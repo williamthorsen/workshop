@@ -1,0 +1,23 @@
+// Defines the files that form part of this package for purposes of ESLint. Similar configs exist at the package level.
+// Because `parseOptions.parser` is set to `"@typescript-eslint/parser"` in the ESLint config, ESLint can lint
+// only the files listed under `include` below.
+// If ESLint is asked to lint a file not targeted by the `include` patterns (e.g., `eslint --ext .js`)
+// it will report an error:
+//   Parsing error: "parserOptions.project" has been set for @typescript-eslint/parser.`
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true, // ensure that nobody can accidentally use this config for a build
+  },
+  // These files will be linted
+  "include": [
+    ".config/**/*.ts", //
+    "__tests__",
+    "config/",
+    "scripts/",
+    "eslint.config.js",
+    "*.json",
+    "*.ts",
+  ],
+}

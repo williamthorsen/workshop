@@ -1,0 +1,6 @@
+# Configuratino: https://lefthook.dev/configuration/
+pre-commit:
+  commands:
+    format:
+      run: pnpm exec prettier --write --log-level warn --ignore-unknown {staged_files}
+      stage_fixed: true

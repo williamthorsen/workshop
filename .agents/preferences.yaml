@@ -1,0 +1,14 @@
+editors:
+  - extensions: '*.md'
+    name: Webstorm
+    command: webstorm # The file path will be appended to this command
+integrations:
+  jira:
+    enabled: false
+project:
+  slug: workshop
+  ticket_prefix: '#'
+repository:
+  default_remote:
+    - name: origin
+      default_branch: main
