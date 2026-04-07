@@ -4,6 +4,9 @@ name: Sync labels
 on:
   workflow_dispatch:
 
+permissions:
+  issues: write
+
 jobs:
   sync:
     uses: williamthorsen/node-monorepo-tools/.github/workflows/sync-labels.reusable.yaml@sync-labels-workflow-v1
