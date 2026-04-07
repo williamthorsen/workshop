@@ -1,0 +1,47 @@
+{
+  "name": "workshop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OSS utilities by William Thorsen",
+  "keywords": [],
+  "homepage": "https://github.com/williamthorsen/workshop#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/williamthorsen/workshop.git"
+  },
+  "license": "MIT",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@types/eslint": "9.6.1",
+    "@types/node": "24.12.2",
+    "@typescript/native-preview": "7.0.0-dev.20260406.1",
+    "@vitest/coverage-v8": "4.1.2",
+    "@vitest/eslint-plugin": "1.6.14",
+    "@williamthorsen/eslint-config-typescript": "5.17.3",
+    "@williamthorsen/nmr": "0.9.0",
+    "@williamthorsen/strict-lint": "6.2.2",
+    "esbuild": "0.28.0",
+    "eslint": "9.39.4",
+    "eslint-plugin-import": "2.32.0",
+    "glob": "13.0.6",
+    "lefthook": "2.1.5",
+    "prettier": "3.8.1",
+    "readyup": "workspace:*",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.58.0",
+    "vitest": "4.1.2",
+    "zod": "4.3.6"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

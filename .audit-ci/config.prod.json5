@@ -1,0 +1,12 @@
+{
+  // $schema provides code completion hints to IDEs.
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "low": true,
+  "allowlist": [
+    // mdast-util-to-hast unsanitized class attribute (moderate severity)
+    // https://github.com/advisories/GHSA-4fh9-h7wg-q85m
+    // "GHSA-4fh9-h7wg-q85m",
+  ],
+  "report-type": "summary",
+  "skip-dev": true,
+}

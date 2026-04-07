@@ -1,0 +1,52 @@
+# GitHub labels for the workshop repo
+- name: breaking
+  color: b60205
+  description: Breaking API change or removal of functionality
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+- name: dependencies
+  color: edc287
+  description: Change to dependencies
+- name: documentation
+  color: a2eeef
+  description: Improvements or additions to documentation
+- name: duplicate
+  color: cfd3d7
+  description: Duplicates another issue or pull request
+- name: feature
+  color: 0075ca
+  description: Added or improved external functionality
+- name: good first issue
+  color: 90ee90
+  description: Good for newcomers
+- name: help wanted
+  color: '008672'
+  description: Please help if you can
+- name: question
+  color: fbca04
+  description: Further information is needed
+- name: refactoring
+  color: edc287
+  description: Improvement to code without change in functionality
+- name: scope:readyup
+  color: 00ff96
+  description: readyup package
+- name: scope:root
+  color: 00ff96
+  description: Monorepo root configuration
+- name: spike
+  color: '000000'
+  description: Investigation
+- name: tests
+  color: edc287
+  description: Tests
+- name: tooling
+  color: edc287
+  description: Development tools
+- name: utility
+  color: 1d76db
+  description: Changed internal functionality
+- name: wontfix
+  color: ffffff
+  description: This will not be worked on

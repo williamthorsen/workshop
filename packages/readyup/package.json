@@ -1,0 +1,60 @@
+{
+  "name": "readyup",
+  "version": "0.12.0",
+  "private": false,
+  "description": "Run pre-deployment checks to verify environment and configuration",
+  "keywords": [
+    "checks",
+    "deploy",
+    "readyup",
+    "verification"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/readyup"
+  },
+  "license": "MIT",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "bin": {
+    "rdy": "bin/rdy.js",
+    "readyup": "bin/rdy.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "tsx ../../config/generateVersion.ts && tsx ../../config/build.ts && tsc --project tsconfig.generate-typings.json"
+  },
+  "dependencies": {
+    "jiti": "2.6.1",
+    "picomatch": "4.0.4",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/picomatch": "4.0.3"
+  },
+  "peerDependencies": {
+    "esbuild": ">=0.17.0"
+  },
+  "peerDependenciesMeta": {
+    "esbuild": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
