@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*-v[0-9]*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    uses: williamthorsen/node-monorepo-tools/.github/workflows/publish.reusable.yaml@publish-workflow-v1
+    with:
+      provenance: true
