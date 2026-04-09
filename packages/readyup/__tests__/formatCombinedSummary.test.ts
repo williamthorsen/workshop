@@ -123,17 +123,35 @@ describe(formatCombinedSummary, () => {
     expect(output).toContain('1 passed. Failed: 1 error. Skipped: 2 blocked');
   });
 
-  it('uses worst severity across all summaries for the Total row', () => {
+  it('renders per-row icons reflecting each checklist worst severity', () => {
     const output = formatCombinedSummary([
       makeSummary({ name: 'only-recommend', recommendations: 1, worstSeverity: 'recommend', durationMs: 10 }),
       makeSummary({ name: 'has-warn', warnings: 1, worstSeverity: 'warn', durationMs: 10 }),
     ]);
 
-    // The Total row uses the formatSummaryCounts which shows the icons per-category;
-    // the Total row is still prefixed with "Total:" not a worst-severity icon — only
-    // the per-checklist rows get worst-severity icons. Verify both per-row icons are
-    // rendered correctly.
+    // Per-checklist rows get worst-severity icons; the Total row itself is always
+    // prefixed with "Total:" and uses per-category icons from `formatSummaryCounts`.
     expect(output).toContain('🟡 only-recommend');
     expect(output).toContain('🟠 has-warn');
+  });
+
+  it('aggregates mixed-severity checklists into a single Total line with per-category icons', () => {
+    const output = formatCombinedSummary([
+      makeSummary({
+        name: 'only-recommend',
+        passed: 0,
+        recommendations: 1,
+        worstSeverity: 'recommend',
+        durationMs: 10,
+      }),
+      makeSummary({ name: 'has-warn', passed: 0, warnings: 1, worstSeverity: 'warn', durationMs: 10 }),
+    ]);
+
+    const totalLine = output.split('\n').find((l) => l.startsWith('Total:'));
+    expect(totalLine).toBeDefined();
+    // Both failure categories are summed with their own per-category icons.
+    expect(totalLine).toContain('Failed: 🟠 1 warning, 🟡 1 recommendation');
+    expect(totalLine).toContain('(20ms)');
+    expect(totalLine).not.toContain('passed');
   });
 });

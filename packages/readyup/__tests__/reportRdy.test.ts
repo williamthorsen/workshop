@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSummaryCounts, reportRdy } from '../src/reportRdy.ts';
+import { formatSummaryCounts, formatSummaryCountsPlain, reportRdy, tallyResult } from '../src/reportRdy.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult, SummaryCounts } from '../src/types.ts';
 
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
@@ -637,5 +637,228 @@ describe(formatSummaryCounts, () => {
 
   it('returns empty string when all counts are zero', () => {
     expect(formatSummaryCounts(makeCounts())).toBe('');
+  });
+});
+
+describe(formatSummaryCountsPlain, () => {
+  it('formats passed count without inline icons', () => {
+    expect(formatSummaryCountsPlain(makeCounts({ passed: 3 }))).toBe('3 passed');
+  });
+
+  it('formats Failed segment without per-count severity icons', () => {
+    const counts = makeCounts({
+      errors: 1,
+      warnings: 2,
+      recommendations: 3,
+      worstSeverity: 'error',
+    });
+
+    const output = formatSummaryCountsPlain(counts);
+
+    expect(output).toBe('Failed: 1 error, 2 warnings, 3 recommendations');
+    expect(output).not.toContain('\u{1F534}');
+    expect(output).not.toContain('\u{1F7E0}');
+    expect(output).not.toContain('\u{1F7E1}');
+  });
+
+  it('formats Skipped segment without per-count reason icons', () => {
+    const counts = makeCounts({ blocked: 2, optional: 3 });
+
+    const output = formatSummaryCountsPlain(counts);
+
+    expect(output).toBe('Skipped: 2 blocked, 3 optional');
+    expect(output).not.toContain('\u26D4');
+    expect(output).not.toContain('\u26AA');
+  });
+
+  it('joins all three groups with icon-free counts', () => {
+    const counts = makeCounts({
+      passed: 14,
+      errors: 1,
+      warnings: 1,
+      recommendations: 2,
+      blocked: 5,
+      optional: 2,
+      worstSeverity: 'error',
+    });
+
+    expect(formatSummaryCountsPlain(counts)).toBe(
+      '14 passed. Failed: 1 error, 1 warning, 2 recommendations. Skipped: 5 blocked, 2 optional',
+    );
+  });
+
+  it('omits the 🟢 prefix from the passed count', () => {
+    expect(formatSummaryCountsPlain(makeCounts({ passed: 5 }))).not.toContain('\u{1F7E2}');
+  });
+
+  it('returns empty string when all counts are zero', () => {
+    expect(formatSummaryCountsPlain(makeCounts())).toBe('');
+  });
+
+  it('matches formatSummaryCounts except for the absence of per-count icon prefixes', () => {
+    const counts = makeCounts({
+      passed: 2,
+      errors: 1,
+      warnings: 1,
+      recommendations: 1,
+      blocked: 1,
+      optional: 1,
+      worstSeverity: 'error',
+    });
+
+    // Strip every known severity/skip icon (and the trailing space) from the iconed output.
+    const iconStripped = formatSummaryCounts(counts)
+      .replace(/\u{1F7E2} /gu, '')
+      .replace(/\u{1F534} /gu, '')
+      .replace(/\u{1F7E0} /gu, '')
+      .replace(/\u{1F7E1} /gu, '')
+      .replace(/\u26D4 /gu, '')
+      .replace(/\u26AA /gu, '');
+
+    expect(formatSummaryCountsPlain(counts)).toBe(iconStripped);
+  });
+});
+
+describe(tallyResult, () => {
+  it('increments `passed` for a passed result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makePassedResult());
+
+    expect(counts.passed).toBe(1);
+    expect(counts.worstSeverity).toBeNull();
+  });
+
+  it('leaves `worstSeverity` null after a passing result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makePassedResult());
+    tallyResult(counts, makePassedResult());
+
+    expect(counts.worstSeverity).toBeNull();
+  });
+
+  it('increments `errors` and sets worstSeverity to error for a failed error result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+
+    expect(counts.errors).toBe(1);
+    expect(counts.warnings).toBe(0);
+    expect(counts.recommendations).toBe(0);
+    expect(counts.worstSeverity).toBe('error');
+  });
+
+  it('increments `warnings` and sets worstSeverity to warn for a failed warn result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+
+    expect(counts.warnings).toBe(1);
+    expect(counts.errors).toBe(0);
+    expect(counts.recommendations).toBe(0);
+    expect(counts.worstSeverity).toBe('warn');
+  });
+
+  it('increments `recommendations` and sets worstSeverity to recommend for a failed recommend result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+
+    expect(counts.recommendations).toBe(1);
+    expect(counts.errors).toBe(0);
+    expect(counts.warnings).toBe(0);
+    expect(counts.worstSeverity).toBe('recommend');
+  });
+
+  it('increments `blocked` for a precondition-skipped result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeSkippedResult({ skipReason: 'precondition' }));
+
+    expect(counts.blocked).toBe(1);
+    expect(counts.optional).toBe(0);
+    expect(counts.worstSeverity).toBeNull();
+  });
+
+  it('increments `optional` for an n/a-skipped result', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeSkippedResult({ skipReason: 'n/a' }));
+
+    expect(counts.optional).toBe(1);
+    expect(counts.blocked).toBe(0);
+    expect(counts.worstSeverity).toBeNull();
+  });
+
+  it('escalates worstSeverity from null to recommend on first recommend failure', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+
+    expect(counts.worstSeverity).toBe('recommend');
+  });
+
+  it('escalates worstSeverity from recommend to warn', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+
+    expect(counts.worstSeverity).toBe('warn');
+  });
+
+  it('escalates worstSeverity from warn to error', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+
+    expect(counts.worstSeverity).toBe('error');
+  });
+
+  it('does not de-escalate worstSeverity when a lower-severity failure follows a higher one', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+
+    expect(counts.worstSeverity).toBe('error');
+
+    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+
+    expect(counts.worstSeverity).toBe('error');
+  });
+
+  it('does not de-escalate worstSeverity from warn when a recommend failure follows', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+
+    expect(counts.worstSeverity).toBe('warn');
+  });
+
+  it('does not change worstSeverity when a passed result follows a failure', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    tallyResult(counts, makePassedResult());
+
+    expect(counts.worstSeverity).toBe('warn');
+    expect(counts.passed).toBe(1);
+    expect(counts.warnings).toBe(1);
+  });
+
+  it('does not change worstSeverity when a skipped result follows a failure', () => {
+    const counts = makeCounts();
+
+    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+    tallyResult(counts, makeSkippedResult({ skipReason: 'precondition' }));
+    tallyResult(counts, makeSkippedResult({ skipReason: 'n/a' }));
+
+    expect(counts.worstSeverity).toBe('error');
+    expect(counts.blocked).toBe(1);
+    expect(counts.optional).toBe(1);
   });
 });
