@@ -5,4 +5,7 @@ export default defineRdyConfig({
   compile: {
     include: '*.ts',
   },
+  internal: {
+    dir: 'internal',
+  },
 });
