@@ -9,6 +9,7 @@ import type {
   Severity,
   SummaryCounts,
 } from './types.ts';
+import { worseSeverity } from './utils/severity.ts';
 
 interface ChecklistEntry {
   name: string;
@@ -31,14 +32,6 @@ function emptyCounts(): SummaryCounts {
     optional: 0,
     worstSeverity: null,
   };
-}
-
-/** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
-function worseSeverity(current: Severity | null, candidate: Severity | null): Severity | null {
-  if (current === 'error' || candidate === 'error') return 'error';
-  if (current === 'warn' || candidate === 'warn') return 'warn';
-  if (current === 'recommend' || candidate === 'recommend') return 'recommend';
-  return null;
 }
 
 /** Transform an array of checklist results into a JSON-serializable report string. */
@@ -133,29 +126,14 @@ function buildCheckEntries(
  */
 function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[] = []): JsonCheckEntry {
   const errorString = result.error !== null ? result.error.message : null;
-
-  if (result.status === 'skipped') {
-    return {
-      name: result.name,
-      status: result.status,
-      ok: result.ok,
-      severity: result.severity,
-      skipReason: result.skipReason,
-      detail: result.detail,
-      fix: result.fix,
-      error: errorString,
-      progress: result.progress,
-      durationMs: result.durationMs,
-      checks: children,
-    };
-  }
+  const skipReason = result.status === 'skipped' ? result.skipReason : null;
 
   return {
     name: result.name,
     status: result.status,
     ok: result.ok,
     severity: result.severity,
-    skipReason: null,
+    skipReason,
     detail: result.detail,
     fix: result.fix,
     error: errorString,

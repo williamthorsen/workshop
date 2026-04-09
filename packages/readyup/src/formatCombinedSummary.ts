@@ -1,19 +1,17 @@
-import { formatSummaryCounts, formatSummaryCountsPlain } from './reportRdy.ts';
+import {
+  formatSummaryCounts,
+  formatSummaryCountsPlain,
+  ICON_ERROR_FAILED,
+  ICON_PASSED,
+  ICON_RECOMMEND_FAILED,
+  ICON_WARN_FAILED,
+} from './reportRdy.ts';
 import type { ChecklistSummary, Severity, SummaryCounts } from './types.ts';
-
-const ICON_PASSED = '\u{1F7E2}';
-const ICON_ERROR_FAILED = '\u{1F534}';
-const ICON_WARN_FAILED = '\u{1F7E0}';
-const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
+import { worseSeverity } from './utils/severity.ts';
 
 /** Format a duration in milliseconds for display. */
 function formatDuration(ms: number): string {
   return `${Math.round(ms)}ms`;
-}
-
-/** Format a single row's granular non-zero counts without inline icons. */
-function formatRowCounts(summary: ChecklistSummary): string {
-  return formatSummaryCountsPlain(summary);
 }
 
 /** Return the row-level icon reflecting the worst failed severity in a summary. */
@@ -22,14 +20,6 @@ function getRowIcon(worstSeverity: Severity | null): string {
   if (worstSeverity === 'warn') return ICON_WARN_FAILED;
   if (worstSeverity === 'recommend') return ICON_RECOMMEND_FAILED;
   return ICON_PASSED;
-}
-
-/** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
-function worseSeverity(current: Severity | null, candidate: Severity | null): Severity | null {
-  if (current === 'error' || candidate === 'error') return 'error';
-  if (current === 'warn' || candidate === 'warn') return 'warn';
-  if (current === 'recommend' || candidate === 'recommend') return 'recommend';
-  return null;
 }
 
 /** Sum granular counts across multiple summaries, propagating the worst severity. */
@@ -68,7 +58,7 @@ export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
     const icon = getRowIcon(summary.worstSeverity);
     const name = summary.name.padEnd(maxNameLen);
     const duration = formatDuration(summary.durationMs).padStart(maxDurationLen);
-    const counts = formatRowCounts(summary);
+    const counts = formatSummaryCountsPlain(summary);
     lines.push(`${icon} ${name}  ${duration}  ${counts}`);
   }
 

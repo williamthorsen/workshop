@@ -2,11 +2,12 @@ import { meetsThreshold } from './runRdy.ts';
 import type { FixLocation, Progress, RdyReport, RdyResult, Severity, SummaryCounts } from './types.ts';
 import { isPercentProgress } from './types.ts';
 import { pluralizeWithCount } from './utils/pluralize.ts';
+import { worseSeverity } from './utils/severity.ts';
 
-const ICON_PASSED = '\u{1F7E2}';
-const ICON_ERROR_FAILED = '\u{1F534}';
-const ICON_WARN_FAILED = '\u{1F7E0}';
-const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
+export const ICON_PASSED = '\u{1F7E2}';
+export const ICON_ERROR_FAILED = '\u{1F534}';
+export const ICON_WARN_FAILED = '\u{1F7E0}';
+export const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
 const ICON_SKIPPED_NA = '\u26AA';
 const ICON_SKIPPED_PRECONDITION = '\u26D4';
 const ICON_FIX = '\u{1F48A}';
@@ -177,13 +178,6 @@ export function tallyResult(counts: SummaryCounts, result: RdyResult): void {
   }
   if (result.skipReason === 'precondition') counts.blocked++;
   else counts.optional++;
-}
-
-/** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
-function worseSeverity(current: Severity | null, candidate: Severity): Severity {
-  if (current === 'error' || candidate === 'error') return 'error';
-  if (current === 'warn' || candidate === 'warn') return 'warn';
-  return 'recommend';
 }
 
 /**
