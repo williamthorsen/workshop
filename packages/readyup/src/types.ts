@@ -153,13 +153,26 @@ export interface RdyReport {
   durationMs: number;
 }
 
-/** Per-checklist aggregate for the combined summary table. */
-export interface ChecklistSummary {
-  name: string;
+/**
+ * Granular counts of check results by severity and skip reason.
+ *
+ * `errors`/`warnings`/`recommendations` replace the coarser `failed` bucket;
+ * `blocked` (precondition-skipped) and `optional` (n/a-skipped) replace `skipped`.
+ * `worstSeverity` is the highest-severity failed bucket (`null` when nothing failed).
+ */
+export interface SummaryCounts {
   passed: number;
-  failed: number;
-  skipped: number;
-  allPassed: boolean;
+  errors: number;
+  warnings: number;
+  recommendations: number;
+  blocked: number;
+  optional: number;
+  worstSeverity: Severity | null;
+}
+
+/** Per-checklist aggregate for the combined summary table. */
+export interface ChecklistSummary extends SummaryCounts {
+  name: string;
   durationMs: number;
 }
 
@@ -279,22 +292,14 @@ export interface JsonCheckEntry {
 }
 
 /** Shape of a single checklist entry in `--json` output. */
-export interface JsonChecklistEntry {
+export interface JsonChecklistEntry extends SummaryCounts {
   name: string;
-  passed: number;
-  failed: number;
-  skipped: number;
-  allPassed: boolean;
   durationMs: number;
   checks: JsonCheckEntry[];
 }
 
 /** Top-level shape of `--json` output. */
-export interface JsonReport {
-  allPassed: boolean;
-  passed: number;
-  failed: number;
-  skipped: number;
+export interface JsonReport extends SummaryCounts {
   durationMs: number;
   checklists: JsonChecklistEntry[];
 }

@@ -1,11 +1,13 @@
 import { meetsThreshold } from './runRdy.ts';
-import type { FixLocation, Progress, RdyReport, RdyResult, Severity } from './types.ts';
+import type { FixLocation, Progress, RdyReport, RdyResult, Severity, SummaryCounts } from './types.ts';
 import { isPercentProgress } from './types.ts';
+import { pluralizeWithCount } from './utils/pluralize.ts';
+import { worseSeverity } from './utils/severity.ts';
 
-const ICON_PASSED = '\u{1F7E2}';
-const ICON_ERROR_FAILED = '\u{1F534}';
-const ICON_WARN_FAILED = '\u{1F7E0}';
-const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
+export const ICON_PASSED = '\u{1F7E2}';
+export const ICON_ERROR_FAILED = '\u{1F534}';
+export const ICON_WARN_FAILED = '\u{1F7E0}';
+export const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
 const ICON_SKIPPED_NA = '\u26AA';
 const ICON_SKIPPED_PRECONDITION = '\u26D4';
 const ICON_FIX = '\u{1F48A}';
@@ -41,13 +43,74 @@ function formatProgress(progress: Progress): string {
   return `${progress.passedCount} of ${progress.count}`;
 }
 
-/** Build an icon-prefixed summary string, omitting counts that are zero. */
-export function formatSummaryCounts(passed: number, failed: number, skipped: number): string {
+/** Build a "Failed: ..." segment with per-severity counts. Returns null when nothing failed. */
+function formatFailedSegment(counts: SummaryCounts, withIcons: boolean): string | null {
   const parts: string[] = [];
-  if (passed > 0) parts.push(`${ICON_PASSED} ${passed} passed`);
-  if (failed > 0) parts.push(`${ICON_ERROR_FAILED} ${failed} failed`);
-  if (skipped > 0) parts.push(`${ICON_SKIPPED_PRECONDITION} ${skipped} skipped`);
-  return parts.join(', ');
+  if (counts.errors > 0) {
+    const label = pluralizeWithCount(counts.errors, 'error');
+    parts.push(withIcons ? `${ICON_ERROR_FAILED} ${label}` : label);
+  }
+  if (counts.warnings > 0) {
+    const label = pluralizeWithCount(counts.warnings, 'warning');
+    parts.push(withIcons ? `${ICON_WARN_FAILED} ${label}` : label);
+  }
+  if (counts.recommendations > 0) {
+    const label = pluralizeWithCount(counts.recommendations, 'recommendation');
+    parts.push(withIcons ? `${ICON_RECOMMEND_FAILED} ${label}` : label);
+  }
+  if (parts.length === 0) return null;
+  return `Failed: ${parts.join(', ')}`;
+}
+
+/** Build a "Skipped: ..." segment with per-reason counts. Returns null when nothing was skipped. */
+function formatSkippedSegment(counts: SummaryCounts, withIcons: boolean): string | null {
+  const parts: string[] = [];
+  if (counts.blocked > 0) {
+    const label = pluralizeWithCount(counts.blocked, 'blocked', 'blocked');
+    parts.push(withIcons ? `${ICON_SKIPPED_PRECONDITION} ${label}` : label);
+  }
+  if (counts.optional > 0) {
+    const label = pluralizeWithCount(counts.optional, 'optional', 'optional');
+    parts.push(withIcons ? `${ICON_SKIPPED_NA} ${label}` : label);
+  }
+  if (parts.length === 0) return null;
+  return `Skipped: ${parts.join(', ')}`;
+}
+
+/**
+ * Build an icon-prefixed summary string with per-severity failure counts and per-reason skip counts.
+ *
+ * Format: `🟢 N passed. Failed: 🔴 N error(s), 🟠 N warning(s), 🟡 N recommendation(s). Skipped: ⛔ N blocked, ⚪ N optional.`
+ * Zero-count entries and empty groups are omitted.
+ */
+export function formatSummaryCounts(counts: SummaryCounts): string {
+  return formatCounts(counts, true);
+}
+
+/**
+ * Build a summary string with the same granular format as `formatSummaryCounts` but
+ * without inline severity icons, for use in combined-summary table rows.
+ */
+export function formatSummaryCountsPlain(counts: SummaryCounts): string {
+  return formatCounts(counts, false);
+}
+
+/** Shared implementation for formatting granular summary counts, with or without icons. */
+function formatCounts(counts: SummaryCounts, withIcons: boolean): string {
+  const segments: string[] = [];
+
+  if (counts.passed > 0) {
+    const passedLabel = pluralizeWithCount(counts.passed, 'passed', 'passed');
+    segments.push(withIcons ? `${ICON_PASSED} ${passedLabel}` : passedLabel);
+  }
+
+  const failedSegment = formatFailedSegment(counts, withIcons);
+  if (failedSegment !== null) segments.push(failedSegment);
+
+  const skippedSegment = formatSkippedSegment(counts, withIcons);
+  if (skippedSegment !== null) segments.push(skippedSegment);
+
+  return segments.join('. ');
 }
 
 /** Collect inline detail lines (error and/or fix) for a failed result. */
@@ -77,21 +140,44 @@ function* iterateWithNaSuppression(results: RdyResult[]): Generator<RdyResult> {
   }
 }
 
-/** Count passed, failed, and skipped results after N/A descendant suppression. */
-function countResults(results: RdyResult[]): {
-  passed: number;
-  failed: number;
-  skipped: number;
-} {
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
+/** Count results by severity and skip reason after N/A descendant suppression. */
+function countResults(results: RdyResult[]): SummaryCounts {
+  const counts: SummaryCounts = {
+    passed: 0,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
+  };
   for (const r of iterateWithNaSuppression(results)) {
-    if (r.status === 'passed') passed++;
-    else if (r.status === 'failed') failed++;
-    else skipped++;
+    tallyResult(counts, r);
   }
-  return { passed, failed, skipped };
+  return counts;
+}
+
+/**
+ * Update a `SummaryCounts` object in place with the contribution of a single result.
+ *
+ * Passed results increment `passed`. Failed results are bucketed by severity, and
+ * `worstSeverity` is updated if the failure is more severe than the current worst.
+ * Skipped results increment `blocked` (precondition) or `optional` (n/a).
+ */
+export function tallyResult(counts: SummaryCounts, result: RdyResult): void {
+  if (result.status === 'passed') {
+    counts.passed++;
+    return;
+  }
+  if (result.status === 'failed') {
+    if (result.severity === 'error') counts.errors++;
+    else if (result.severity === 'warn') counts.warnings++;
+    else counts.recommendations++;
+    counts.worstSeverity = worseSeverity(counts.worstSeverity, result.severity);
+    return;
+  }
+  if (result.skipReason === 'precondition') counts.blocked++;
+  else counts.optional++;
 }
 
 /**
@@ -132,8 +218,8 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
     }
   }
 
-  const { passed, failed, skipped } = countResults(visibleResults);
-  lines.push('', `${formatSummaryCounts(passed, failed, skipped)} (${formatDuration(report.durationMs)})`);
+  const counts = countResults(visibleResults);
+  lines.push('', `${formatSummaryCounts(counts)} (${formatDuration(report.durationMs)})`);
 
   if (fixLocation === 'end' && collectedFixes.length > 0) {
     lines.push('', 'Fixes:', ...collectedFixes.map((fix) => `  ${ICON_FIX} ${fix}`));

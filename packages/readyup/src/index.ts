@@ -23,6 +23,7 @@ export type {
   Severity,
   SkippedResult,
   SkipResult,
+  SummaryCounts,
 } from './types.ts';
 
 // Type guards

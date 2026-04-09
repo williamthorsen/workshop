@@ -31,9 +31,13 @@ vi.mock('../src/runRdy.ts', () => ({
   runRdy: mockRunRdy,
 }));
 
-vi.mock('../src/reportRdy.ts', () => ({
-  reportRdy: mockReportRdy,
-}));
+vi.mock('../src/reportRdy.ts', async () => {
+  const actual = await vi.importActual<typeof import('../src/reportRdy.ts')>('../src/reportRdy.ts');
+  return {
+    ...actual,
+    reportRdy: mockReportRdy,
+  };
+});
 
 vi.mock('../src/formatCombinedSummary.ts', () => ({
   formatCombinedSummary: mockFormatCombinedSummary,
@@ -697,8 +701,26 @@ describe(runCommand, () => {
 
     expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
     expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
-      expect.objectContaining({ name: 'deploy', passed: 1, failed: 0, skipped: 0, allPassed: true }),
-      expect.objectContaining({ name: 'infra', passed: 1, failed: 0, skipped: 0, allPassed: true }),
+      expect.objectContaining({
+        name: 'deploy',
+        passed: 1,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: null,
+      }),
+      expect.objectContaining({
+        name: 'infra',
+        passed: 1,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: null,
+      }),
     ]);
   });
 
@@ -774,8 +796,26 @@ describe(runCommand, () => {
     });
 
     expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
-      expect.objectContaining({ name: 'deploy', passed: 1, failed: 1, skipped: 0, allPassed: false }),
-      expect.objectContaining({ name: 'infra', passed: 0, failed: 0, skipped: 1, allPassed: false }),
+      expect.objectContaining({
+        name: 'deploy',
+        passed: 1,
+        errors: 1,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: 'error',
+      }),
+      expect.objectContaining({
+        name: 'infra',
+        passed: 0,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 1,
+        optional: 0,
+        worstSeverity: null,
+      }),
     ]);
   });
 
@@ -842,7 +882,7 @@ describe(runCommand, () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue(kit);
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-      mockFormatJsonReport.mockReturnValue('{"allPassed":true}');
+      mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
 
       await runCommand({
         names: ['deploy'],
@@ -860,7 +900,7 @@ describe(runCommand, () => {
 
   describe('JSON mode', () => {
     beforeEach(() => {
-      mockFormatJsonReport.mockReturnValue('{"allPassed":true}');
+      mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
       mockFormatJsonError.mockReturnValue('{"error":"boom"}');
     });
 
@@ -878,7 +918,7 @@ describe(runCommand, () => {
       expect(mockFormatJsonReport).toHaveBeenCalledTimes(1);
       expect(mockReportRdy).not.toHaveBeenCalled();
       expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith('{"allPassed":true}\n');
+      expect(stdoutSpy).toHaveBeenCalledWith('{"worstSeverity":null}\n');
       expect(exitCode).toBe(0);
     });
 
