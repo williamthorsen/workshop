@@ -65,7 +65,7 @@ describe(formatJsonReport, () => {
     }).not.toThrow();
   });
 
-  it('returns correct summary counts for a single checklist', () => {
+  it('returns granular summary counts for a single checklist', () => {
     const report = makeReport({
       results: [makePassedResult({ name: 'a' }), makeFailedResult({ name: 'b' }), makeSkippedResult({ name: 'c' })],
       passed: false,
@@ -76,13 +76,16 @@ describe(formatJsonReport, () => {
 
     expect(parsed).toMatchObject({
       passed: 1,
-      failed: 1,
-      skipped: 1,
-      allPassed: false,
+      errors: 1,
+      warnings: 0,
+      recommendations: 0,
+      blocked: 1,
+      optional: 0,
+      worstSeverity: 'error',
     });
   });
 
-  it('aggregates counts across multiple checklists', () => {
+  it('aggregates granular counts across multiple checklists', () => {
     const report1 = makeReport({
       results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' })],
       passed: true,
@@ -103,14 +106,17 @@ describe(formatJsonReport, () => {
 
     expect(parsed).toMatchObject({
       passed: 2,
-      failed: 1,
-      skipped: 0,
-      allPassed: false,
+      errors: 1,
+      warnings: 0,
+      recommendations: 0,
+      blocked: 0,
+      optional: 0,
+      worstSeverity: 'error',
       checklists: expect.arrayContaining([expect.anything(), expect.anything()]),
     });
   });
 
-  it('includes checklist-level allPassed and counts', () => {
+  it('includes granular checklist-level counts and null worstSeverity when all passed', () => {
     const report = makeReport({
       results: [makePassedResult({ name: 'a' })],
       passed: true,
@@ -123,17 +129,20 @@ describe(formatJsonReport, () => {
       checklists: [
         {
           name: 'deploy',
-          allPassed: true,
           passed: 1,
-          failed: 0,
-          skipped: 0,
+          errors: 0,
+          warnings: 0,
+          recommendations: 0,
+          blocked: 0,
+          optional: 0,
+          worstSeverity: null,
           durationMs: 10,
         },
       ],
     });
   });
 
-  it('sets top-level allPassed to true when checks are skipped but none failed', () => {
+  it('sets worstSeverity to null when checks are skipped but none failed', () => {
     const report = makeReport({
       results: [makeSkippedResult({ name: 'a' }), makeSkippedResult({ name: 'b' })],
       passed: true,
@@ -143,14 +152,17 @@ describe(formatJsonReport, () => {
     const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
 
     expect(parsed).toMatchObject({
-      allPassed: true,
       passed: 0,
-      failed: 0,
-      skipped: 2,
+      errors: 0,
+      warnings: 0,
+      recommendations: 0,
+      blocked: 2,
+      optional: 0,
+      worstSeverity: null,
     });
   });
 
-  it('emits the expected top-level shape with no summary wrapper', () => {
+  it('emits the expected top-level shape with granular fields', () => {
     const report = makeReport({
       results: [makePassedResult({ name: 'a' })],
       passed: true,
@@ -162,7 +174,56 @@ describe(formatJsonReport, () => {
     // eslint-disable-next-line unicorn/no-array-sort -- toSorted requires Node 20+; engine target is >=18.17.0
     const topLevelKeys = Object.keys(parsed).sort();
 
-    expect(topLevelKeys).toStrictEqual(['allPassed', 'checklists', 'durationMs', 'failed', 'passed', 'skipped']);
+    expect(topLevelKeys).toStrictEqual([
+      'blocked',
+      'checklists',
+      'durationMs',
+      'errors',
+      'optional',
+      'passed',
+      'recommendations',
+      'warnings',
+      'worstSeverity',
+    ]);
+  });
+
+  it('selects the highest severity across multiple failure buckets for worstSeverity', () => {
+    const report = makeReport({
+      results: [
+        makeFailedResult({ name: 'e', severity: 'error' }),
+        makeFailedResult({ name: 'w', severity: 'warn' }),
+        makeFailedResult({ name: 'r', severity: 'recommend' }),
+      ],
+      passed: false,
+      durationMs: 0,
+    });
+
+    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+
+    expect(parsed).toMatchObject({
+      errors: 1,
+      warnings: 1,
+      recommendations: 1,
+      worstSeverity: 'error',
+    });
+  });
+
+  it('distinguishes blocked skips from optional skips', () => {
+    const report = makeReport({
+      results: [
+        makeSkippedResult({ name: 'pre', skipReason: 'precondition' }),
+        makeSkippedResult({ name: 'na', skipReason: 'n/a' }),
+      ],
+      passed: true,
+      durationMs: 0,
+    });
+
+    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+
+    expect(parsed).toMatchObject({
+      blocked: 1,
+      optional: 1,
+    });
   });
 
   it('serializes error as a string message', () => {
@@ -400,7 +461,7 @@ describe(formatJsonReport, () => {
       });
     });
 
-    it('counts all results across nesting levels in summary', () => {
+    it('counts all results across nesting levels in granular summary', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'parent', depth: 0 }),
@@ -416,9 +477,10 @@ describe(formatJsonReport, () => {
 
       expect(parsed).toMatchObject({
         passed: 2,
-        failed: 1,
-        skipped: 1,
-        checklists: [{ passed: 2, failed: 1, skipped: 1 }],
+        errors: 1,
+        blocked: 1,
+        worstSeverity: 'error',
+        checklists: [{ passed: 2, errors: 1, blocked: 1, worstSeverity: 'error' }],
       });
     });
 
@@ -473,7 +535,7 @@ describe(formatJsonReport, () => {
       });
     });
 
-    it('counts only visible results', () => {
+    it('counts only visible results in granular buckets', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'a', severity: 'error' }),
@@ -487,8 +549,12 @@ describe(formatJsonReport, () => {
 
       expect(parsed).toMatchObject({
         passed: 1,
-        failed: 0,
-        skipped: 0,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: null,
       });
     });
   });

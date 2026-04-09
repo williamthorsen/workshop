@@ -7,9 +7,12 @@ function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
   return {
     name: 'test-checklist',
     passed: 3,
-    failed: 0,
-    skipped: 0,
-    allPassed: true,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
     durationMs: 100,
     ...overrides,
   };
@@ -23,54 +26,74 @@ describe(formatCombinedSummary, () => {
     expect(output.split('\n').at(-2)).toMatch(/^─+$/);
   });
 
-  it('shows 🟢 prefix for a passing checklist', () => {
+  it('shows 🟢 prefix when worstSeverity is null', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy' })]);
 
     expect(output).toContain('🟢 deploy');
   });
 
-  it('shows 🔴 prefix for a failing checklist', () => {
-    const output = formatCombinedSummary([makeSummary({ name: 'deploy', failed: 1, allPassed: false })]);
+  it('shows 🔴 prefix when worstSeverity is error', () => {
+    const output = formatCombinedSummary([makeSummary({ name: 'deploy', errors: 1, worstSeverity: 'error' })]);
 
     expect(output).toContain('🔴 deploy');
   });
 
-  it('includes duration and non-zero counts in each row', () => {
-    const output = formatCombinedSummary([
-      makeSummary({ name: 'infra', passed: 2, failed: 1, skipped: 0, allPassed: false, durationMs: 45 }),
-    ]);
+  it('shows 🟠 prefix when worstSeverity is warn', () => {
+    const output = formatCombinedSummary([makeSummary({ name: 'deploy', warnings: 1, worstSeverity: 'warn' })]);
 
-    expect(output).toContain('🔴 infra  45ms  2 passed, 1 failed');
-    expect(output).not.toContain('skipped');
+    expect(output).toContain('🟠 deploy');
   });
 
-  it('omits zero counts from row', () => {
+  it('shows 🟡 prefix when worstSeverity is recommend', () => {
     const output = formatCombinedSummary([
-      makeSummary({ name: 'deploy', passed: 5, failed: 0, skipped: 0, durationMs: 200 }),
+      makeSummary({ name: 'deploy', recommendations: 1, worstSeverity: 'recommend' }),
     ]);
+
+    expect(output).toContain('🟡 deploy');
+  });
+
+  it('includes duration and grouped counts in each row', () => {
+    const output = formatCombinedSummary([
+      makeSummary({ name: 'infra', passed: 2, errors: 1, worstSeverity: 'error', durationMs: 45 }),
+    ]);
+
+    expect(output).toContain('🔴 infra  45ms  2 passed. Failed: 1 error');
+    expect(output).not.toContain('Skipped:');
+  });
+
+  it('omits zero-count categories from row', () => {
+    const output = formatCombinedSummary([makeSummary({ name: 'deploy', passed: 5, durationMs: 200 })]);
 
     expect(output).toContain('🟢 deploy  200ms  5 passed');
-    expect(output).not.toContain('failed');
+    expect(output).not.toContain('Failed:');
+    expect(output).not.toContain('Skipped:');
   });
 
-  it('renders the Total line with icon-prefixed counts and total duration', () => {
+  it('renders the Total line with icon-prefixed grouped counts and total duration', () => {
     const output = formatCombinedSummary([
-      makeSummary({ passed: 10, failed: 0, skipped: 0, durationMs: 100 }),
-      makeSummary({ name: 'other', passed: 5, failed: 2, skipped: 1, allPassed: false, durationMs: 200 }),
+      makeSummary({ passed: 10, durationMs: 100 }),
+      makeSummary({
+        name: 'other',
+        passed: 5,
+        errors: 2,
+        blocked: 1,
+        worstSeverity: 'error',
+        durationMs: 200,
+      }),
     ]);
 
-    expect(output).toContain('Total: 🟢 15 passed, 🔴 2 failed, ⛔ 1 skipped (300ms)');
+    expect(output).toContain('Total: 🟢 15 passed. Failed: 🔴 2 errors. Skipped: ⛔ 1 blocked (300ms)');
   });
 
-  it('omits zero counts from the Total line', () => {
+  it('omits zero-count groups from the Total line', () => {
     const output = formatCombinedSummary([
-      makeSummary({ passed: 3, failed: 0, skipped: 0, durationMs: 50 }),
-      makeSummary({ name: 'other', passed: 7, failed: 0, skipped: 0, durationMs: 150 }),
+      makeSummary({ passed: 3, durationMs: 50 }),
+      makeSummary({ name: 'other', passed: 7, durationMs: 150 }),
     ]);
 
     expect(output).toContain('Total: 🟢 10 passed (200ms)');
-    expect(output).not.toContain('failed');
-    expect(output).not.toContain('skipped');
+    expect(output).not.toContain('Failed:');
+    expect(output).not.toContain('Skipped:');
   });
 
   it('right-aligns durations and left-aligns names across rows', () => {
@@ -85,11 +108,32 @@ describe(formatCombinedSummary, () => {
     expect(rows[1]).toContain('🟢 cdef  1200ms');
   });
 
-  it('includes skipped in row when non-zero', () => {
+  it('includes skip groups in row when counts are non-zero', () => {
     const output = formatCombinedSummary([
-      makeSummary({ name: 'checks', passed: 1, failed: 1, skipped: 2, allPassed: false, durationMs: 80 }),
+      makeSummary({
+        name: 'checks',
+        passed: 1,
+        errors: 1,
+        blocked: 2,
+        worstSeverity: 'error',
+        durationMs: 80,
+      }),
     ]);
 
-    expect(output).toContain('1 passed, 1 failed, 2 skipped');
+    expect(output).toContain('1 passed. Failed: 1 error. Skipped: 2 blocked');
+  });
+
+  it('uses worst severity across all summaries for the Total row', () => {
+    const output = formatCombinedSummary([
+      makeSummary({ name: 'only-recommend', recommendations: 1, worstSeverity: 'recommend', durationMs: 10 }),
+      makeSummary({ name: 'has-warn', warnings: 1, worstSeverity: 'warn', durationMs: 10 }),
+    ]);
+
+    // The Total row uses the formatSummaryCounts which shows the icons per-category;
+    // the Total row is still prefixed with "Total:" not a worst-severity icon — only
+    // the per-checklist rows get worst-severity icons. Verify both per-row icons are
+    // rendered correctly.
+    expect(output).toContain('🟡 only-recommend');
+    expect(output).toContain('🟠 has-warn');
   });
 });

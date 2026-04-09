@@ -1,5 +1,14 @@
+import { tallyResult } from './reportRdy.ts';
 import { meetsThreshold } from './runRdy.ts';
-import type { JsonCheckEntry, JsonChecklistEntry, JsonReport, RdyReport, RdyResult, Severity } from './types.ts';
+import type {
+  JsonCheckEntry,
+  JsonChecklistEntry,
+  JsonReport,
+  RdyReport,
+  RdyResult,
+  Severity,
+  SummaryCounts,
+} from './types.ts';
 
 interface ChecklistEntry {
   name: string;
@@ -11,42 +20,58 @@ export interface FormatJsonReportOptions {
   reportOn?: Severity;
 }
 
+/** Create a zeroed `SummaryCounts` object. */
+function emptyCounts(): SummaryCounts {
+  return {
+    passed: 0,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
+  };
+}
+
+/** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
+function worseSeverity(current: Severity | null, candidate: Severity | null): Severity | null {
+  if (current === 'error' || candidate === 'error') return 'error';
+  if (current === 'warn' || candidate === 'warn') return 'warn';
+  if (current === 'recommend' || candidate === 'recommend') return 'recommend';
+  return null;
+}
+
 /** Transform an array of checklist results into a JSON-serializable report string. */
 export function formatJsonReport(entries: ChecklistEntry[], options?: FormatJsonReportOptions): string {
   const reportOn = options?.reportOn ?? 'recommend';
-  let totalPassed = 0;
-  let totalFailed = 0;
-  let totalSkipped = 0;
+  const totals = emptyCounts();
 
   const checklists: JsonChecklistEntry[] = entries.map(({ name, report }) => {
-    let passed = 0;
-    let failed = 0;
-    let skipped = 0;
+    const counts = emptyCounts();
 
     // Filter results by reporting threshold.
     const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
 
     // Count all visible results (flat count across all nesting levels).
     for (const result of visibleResults) {
-      if (result.status === 'passed') passed++;
-      else if (result.status === 'failed') failed++;
-      else skipped++;
+      tallyResult(counts, result);
     }
 
     // Reconstruct tree from flat depth-first results.
     const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
 
-    totalPassed += passed;
-    totalFailed += failed;
-    totalSkipped += skipped;
+    totals.passed += counts.passed;
+    totals.errors += counts.errors;
+    totals.warnings += counts.warnings;
+    totals.recommendations += counts.recommendations;
+    totals.blocked += counts.blocked;
+    totals.optional += counts.optional;
+    totals.worstSeverity = worseSeverity(totals.worstSeverity, counts.worstSeverity);
 
     return {
       name,
-      allPassed: report.passed,
       durationMs: report.durationMs,
-      passed,
-      failed,
-      skipped,
+      ...counts,
       checks,
     };
   });
@@ -54,10 +79,7 @@ export function formatJsonReport(entries: ChecklistEntry[], options?: FormatJson
   const totalDurationMs = checklists.reduce((sum, c) => sum + c.durationMs, 0);
 
   const output: JsonReport = {
-    allPassed: entries.every(({ report }) => report.passed),
-    passed: totalPassed,
-    failed: totalFailed,
-    skipped: totalSkipped,
+    ...totals,
     durationMs: totalDurationMs,
     checklists,
   };

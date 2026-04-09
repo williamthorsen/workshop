@@ -7,7 +7,7 @@ import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { parseArgs } from './parseArgs.ts';
-import { reportRdy } from './reportRdy.ts';
+import { reportRdy, tallyResult } from './reportRdy.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { meetsThreshold, runRdy } from './runRdy.ts';
@@ -19,6 +19,7 @@ import type {
   RdyReport,
   RdyStagedChecklist,
   Severity,
+  SummaryCounts,
 } from './types.ts';
 
 /** Valid severity values for CLI flag validation. */
@@ -217,16 +218,20 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
 
 /** Build a checklist summary from a report, filtering results by reporting threshold. */
 function summarizeReport(name: string, report: RdyReport, reportOn: Severity): ChecklistSummary {
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
+  const counts: SummaryCounts = {
+    passed: 0,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
+  };
   for (const r of report.results) {
     if (!meetsThreshold(r.severity, reportOn)) continue;
-    if (r.status === 'passed') passed++;
-    else if (r.status === 'failed') failed++;
-    else skipped++;
+    tallyResult(counts, r);
   }
-  return { name, passed, failed, skipped, allPassed: report.passed, durationMs: report.durationMs };
+  return { name, ...counts, durationMs: report.durationMs };
 }
 
 /** Resolve threshold values from the cascade: CLI flag > kit field > default. */
