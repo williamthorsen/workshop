@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 const mockRunCommand = vi.hoisted(() => vi.fn());
 const mockInitCommand = vi.hoisted(() => vi.fn());
 const mockCompileCommand = vi.hoisted(() => vi.fn());
+const mockListCommand = vi.hoisted(() => vi.fn());
 const mockParseRunArgs = vi.hoisted(() => vi.fn());
 const mockResolveKitSource = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
@@ -23,6 +24,10 @@ vi.mock('../src/compile/compileCommand.ts', () => ({
 
 vi.mock('../src/init/initCommand.ts', () => ({
   initCommand: mockInitCommand,
+}));
+
+vi.mock('../src/list/listCommand.ts', () => ({
+  listCommand: mockListCommand,
 }));
 
 vi.mock('../src/version.ts', () => ({
@@ -50,6 +55,7 @@ describe(routeCommand, () => {
     mockRunCommand.mockReset();
     mockCompileCommand.mockReset();
     mockInitCommand.mockReset();
+    mockListCommand.mockReset();
     mockParseRunArgs.mockReset();
     mockResolveKitSource.mockReset();
     mockLoadConfig.mockReset();
@@ -312,6 +318,45 @@ describe(routeCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown option: --unknown'));
   });
 
+  it('shows list help and returns 0 for list --help', async () => {
+    const exitCode = await routeCommand(['list', '--help']);
+
+    expect(exitCode).toBe(0);
+    const output = infoSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('Usage: rdy list');
+  });
+
+  it('shows list help and returns 0 for list -h', async () => {
+    const exitCode = await routeCommand(['list', '-h']);
+
+    expect(exitCode).toBe(0);
+  });
+
+  it('delegates to listCommand for list subcommand', async () => {
+    mockListCommand.mockResolvedValue(0);
+
+    const exitCode = await routeCommand(['list']);
+
+    expect(mockListCommand).toHaveBeenCalledWith([]);
+    expect(exitCode).toBe(0);
+  });
+
+  it('passes --local flag through to listCommand', async () => {
+    mockListCommand.mockResolvedValue(0);
+
+    const exitCode = await routeCommand(['list', '--local', '.']);
+
+    expect(mockListCommand).toHaveBeenCalledWith(['--local', '.']);
+    expect(exitCode).toBe(0);
+  });
+
+  it('lists list in top-level help', async () => {
+    await routeCommand([]);
+
+    const output = infoSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('list');
+  });
+
   describe('default command routing', () => {
     it('routes flags to run when no subcommand is given', async () => {
       mockParseRunArgs.mockReturnValue({
@@ -356,6 +401,7 @@ describe(routeCommand, () => {
       ['compi', 'compile'],
       ['comp', 'compile'],
       ['ini', 'init'],
+      ['lis', 'list'],
     ])('suggests "%s" -> "%s"', async (input, expected) => {
       const exitCode = await routeCommand([input]);
 
