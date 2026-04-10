@@ -8,9 +8,9 @@ export const ICON_PASSED = '\u{1F7E2}';
 export const ICON_ERROR_FAILED = '\u{1F534}';
 export const ICON_WARN_FAILED = '\u{1F7E0}';
 export const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
-const ICON_SKIPPED_NA = '\u26AA';
-const ICON_SKIPPED_PRECONDITION = '\u26D4';
-const ICON_FIX = '\u{1F48A}';
+export const ICON_SKIPPED_NA = '\u{1F50D}';
+export const ICON_SKIPPED_PRECONDITION = '\u{1F6AB}';
+export const ICON_FIX = '\u{1F48A}';
 
 /** Options controlling how the report is formatted. */
 export interface ReportRdyOptions {
@@ -80,8 +80,7 @@ function formatSkippedSegment(counts: SummaryCounts, withIcons: boolean): string
 /**
  * Build an icon-prefixed summary string with per-severity failure counts and per-reason skip counts.
  *
- * Format: `🟢 N passed. Failed: 🔴 N error(s), 🟠 N warning(s), 🟡 N recommendation(s). Skipped: ⛔ N blocked, ⚪ N optional.`
- * Zero-count entries and empty groups are omitted.
+ * Each segment is icon-prefixed and joined with `. `. Zero-count entries and empty groups are omitted.
  */
 export function formatSummaryCounts(counts: SummaryCounts): string {
   return formatCounts(counts, true);
@@ -116,11 +115,13 @@ function formatCounts(counts: SummaryCounts, withIcons: boolean): string {
 /** Collect inline detail lines (error and/or fix) for a failed result. */
 function collectInlineDetails(result: RdyResult, includeFix: boolean): string[] {
   const details: string[] = [];
+  // The 3-space lead-in matches the icon+space width on the check line above,
+  // so continuation text lands directly under the check name column.
   if (result.error !== null) {
-    details.push(`  Error: ${result.error.message}`);
+    details.push(`   Error: ${result.error.message}`);
   }
   if (includeFix && result.fix !== null) {
-    details.push(`  ${ICON_FIX} Fix: ${result.fix}`);
+    details.push(`   ${ICON_FIX} Fix: ${result.fix}`);
   }
   return details;
 }
@@ -196,7 +197,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
 
   for (const result of iterateWithNaSuppression(visibleResults)) {
-    const indent = '  '.repeat(result.depth);
+    const indent = '   '.repeat(result.depth);
     const icon = getIcon(result);
     let checkLine = `${indent}${icon} ${result.name} (${formatDuration(result.durationMs)})`;
     if (result.detail !== null) {

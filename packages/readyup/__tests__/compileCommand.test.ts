@@ -29,6 +29,7 @@ vi.mock('picomatch', () => ({
 }));
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
+import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 
 describe(compileCommand, () => {
   let stdoutSpy: MockInstance;
@@ -70,12 +71,12 @@ describe(compileCommand, () => {
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('→'));
   });
 
-  it('shows ⚪ indicator for an unchanged single file', async () => {
+  it('shows 🔍 indicator for an unchanged single file', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: false });
 
     await compileCommand(['input.ts']);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚪'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(ICON_NO_CHANGES));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('no changes'));
   });
 
@@ -182,7 +183,7 @@ describe(compileCommand, () => {
     // Header + 2 status lines
     expect(stdoutSpy).toHaveBeenCalledTimes(3);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('📦 a.ts → a.js'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚪ b.ts — no changes'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_NO_CHANGES} b.ts — no changes`));
   });
 
   it('returns 1 when --output is given without an input file', async () => {

@@ -6,6 +6,7 @@ import picomatch from 'picomatch';
 
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
+import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { compileConfig } from './compileConfig.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
@@ -136,5 +137,5 @@ async function compileBatch(): Promise<number> {
 
 /** Format a single compile-result line with a change indicator. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
-  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ⚪ ${srcName} — no changes\n`;
+  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${ICON_NO_CHANGES} ${srcName} — no changes\n`;
 }
