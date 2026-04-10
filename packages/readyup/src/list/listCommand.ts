@@ -38,7 +38,15 @@ export async function listCommand(args: string[]): Promise<number> {
 function runConsumerMode(localPathArg: string): number {
   const cwd = process.cwd();
   const kitsDir = path.join(path.resolve(cwd, localPathArg), '.rdy/kits');
-  const compiledKits = enumerateKits({ dir: kitsDir, extension: '.js' });
+
+  let compiledKits;
+  try {
+    compiledKits = enumerateKits({ dir: kitsDir, extension: '.js' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
 
   const output = formatConsumerView({ compiledKits, localPathArg });
   process.stdout.write(output + '\n');
@@ -61,8 +69,16 @@ async function runOwnerMode(): Promise<number> {
   const internalDir = path.join(cwd, '.rdy/kits', config.internal.dir);
   const compiledDir = path.resolve(cwd, config.compile.outDir);
 
-  const internalKits = enumerateKits({ dir: internalDir, extension: config.internal.extension });
-  const compiledKits = enumerateKits({ dir: compiledDir, extension: '.js' });
+  let internalKits;
+  let compiledKits;
+  try {
+    internalKits = enumerateKits({ dir: internalDir, extension: config.internal.extension });
+    compiledKits = enumerateKits({ dir: compiledDir, extension: '.js' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
 
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
   const output = formatOwnerView({ internalKits, compiledKits, compiledStyle });

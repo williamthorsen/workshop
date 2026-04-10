@@ -66,4 +66,15 @@ describe(enumerateKits, () => {
 
     expect(result).toEqual(['default']);
   });
+
+  it('rethrows non-ENOENT filesystem errors', () => {
+    // Make directory unreadable to trigger EACCES
+    fs.mkdirSync(path.join(tempDir, 'restricted'));
+    fs.chmodSync(path.join(tempDir, 'restricted'), 0o000);
+
+    expect(() => enumerateKits({ dir: path.join(tempDir, 'restricted'), extension: '.ts' })).toThrow();
+
+    // Restore permissions for cleanup
+    fs.chmodSync(path.join(tempDir, 'restricted'), 0o755);
+  });
 });

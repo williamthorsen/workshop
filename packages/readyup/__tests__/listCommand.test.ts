@@ -42,6 +42,12 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalled();
       expect(mockEnumerateKits).toHaveBeenCalledTimes(2);
+      expect(mockEnumerateKits).toHaveBeenCalledWith(
+        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.ts' }),
+      );
+      expect(mockEnumerateKits).toHaveBeenCalledWith(
+        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.js' }),
+      );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Internal:');
       expect(output).toContain('Compiled:');
@@ -89,6 +95,18 @@ describe(listCommand, () => {
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad config'));
     });
+
+    it('returns 1 and writes to stderr when enumerateKits throws', async () => {
+      const permError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+      mockEnumerateKits.mockImplementation(() => {
+        throw permError;
+      });
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
+    });
   });
 
   describe('consumer mode', () => {
@@ -107,6 +125,9 @@ describe(listCommand, () => {
       const exitCode = await listCommand(['--local', '.']);
 
       expect(exitCode).toBe(0);
+      expect(mockEnumerateKits).toHaveBeenCalledWith(
+        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.js' }),
+      );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Compiled:');
       expect(output).toContain('deploy');
@@ -120,6 +141,18 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits/.');
+    });
+
+    it('returns 1 and writes to stderr when enumerateKits throws', async () => {
+      const permError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+      mockEnumerateKits.mockImplementation(() => {
+        throw permError;
+      });
+
+      const exitCode = await listCommand(['--local', '.']);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
     });
 
     it('accepts -l as short form of --local', async () => {

@@ -27,14 +27,34 @@ describe(formatOwnerView, () => {
     expect(result).toContain('deploy');
   });
 
-  it('uses brackets around --kit when default kit exists in internal', () => {
+  it('uses brackets in internal hint and omits them in compiled hint when default is only in internal', () => {
     const result = formatOwnerView({
       internalKits: ['default'],
       compiledKits: ['deploy'],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('[--kit <name>]');
+    const lines = result.split('\n');
+    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
+    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
+
+    expect(internalHeader).toContain('[--kit <name>]');
+    expect(compiledHeader).not.toContain('[--kit <name>]');
+  });
+
+  it('uses brackets in compiled hint when default is in compiled kits', () => {
+    const result = formatOwnerView({
+      internalKits: ['deploy'],
+      compiledKits: ['default', 'monitor'],
+      compiledStyle: { kind: 'local-convention' },
+    });
+
+    const lines = result.split('\n');
+    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
+    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
+
+    expect(internalHeader).not.toContain('[--kit <name>]');
+    expect(compiledHeader).toContain('[--kit <name>]');
   });
 
   it('omits brackets around --kit when no default kit exists', () => {

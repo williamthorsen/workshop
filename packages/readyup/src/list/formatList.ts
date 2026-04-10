@@ -7,7 +7,7 @@ function hasDefault(kits: string[]): boolean {
 }
 
 /** Build the `--kit` flag hint with brackets when a default kit exists. */
-function kitHint(kits: string[]): string {
+function buildKitHint(kits: string[]): string {
   return hasDefault(kits) ? '[--kit <name>]' : '--kit <name>';
 }
 
@@ -45,13 +45,13 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
   const sections: string[] = [];
 
   if (internalKits.length > 0) {
-    const hint = `rdy run ${kitHint(internalKits)}`;
+    const hint = `rdy run ${buildKitHint(internalKits)}`;
     sections.push(formatSection('Internal', hint, internalKits, ICON_INTERNAL));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const hint = `rdy run --local . ${kitHint(compiledKits)}`;
+      const hint = `rdy run --local . ${buildKitHint(compiledKits)}`;
       sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
     } else {
       const hint = `rdy run --file <file path>`;
@@ -80,7 +80,7 @@ export function formatConsumerView({ compiledKits, localPathArg }: ConsumerViewO
     return formatEmpty('consumer', localPathArg);
   }
 
-  const hint = `rdy run --local ${localPathArg} ${kitHint(compiledKits)}`;
+  const hint = `rdy run --local ${localPathArg} ${buildKitHint(compiledKits)}`;
   return formatSection('Compiled', hint, compiledKits, ICON_COMPILED);
 }
 
