@@ -1,3 +1,5 @@
+import { extractMessage } from './utils/error-handling.ts';
+
 /** Schema entry describing a single CLI flag. */
 export interface FlagDefinition {
   long: string;
@@ -166,7 +168,7 @@ export function parseArgs<S extends FlagSchema>(argv: string[], schema: S): Pars
  * passes other messages through unchanged.
  */
 export function translateParseError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = extractMessage(error);
   const flagMatch = message.match(/^unknown flag '(.+)'$/);
   if (flagMatch?.[1] !== undefined) {
     return `Unknown option: ${flagMatch[1]}`;

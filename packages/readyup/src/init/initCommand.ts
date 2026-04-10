@@ -1,4 +1,5 @@
 import { printError, printStep, reportWriteResult } from '../terminal.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { scaffoldConfig } from './scaffold.ts';
 
 interface InitOptions {
@@ -22,7 +23,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   try {
     result = scaffoldConfig({ dryRun, force });
   } catch (error: unknown) {
-    printError(`Failed to scaffold config: ${error instanceof Error ? error.message : String(error)}`);
+    printError(`Failed to scaffold config: ${extractMessage(error)}`);
     return 1;
   }
 

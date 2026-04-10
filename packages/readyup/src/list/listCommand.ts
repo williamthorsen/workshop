@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
 import { formatConsumerView, formatOwnerView } from './formatList.ts';
@@ -42,7 +43,7 @@ function runConsumerMode(localPathArg: string): number {
   try {
     compiledKits = enumerateKits({ dir: kitsDir, extension: '.js' });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
@@ -60,7 +61,7 @@ async function runOwnerMode(): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
@@ -74,7 +75,7 @@ async function runOwnerMode(): Promise<number> {
     internalKits = enumerateKits({ dir: internalDir, extension: config.internal.extension });
     compiledKits = enumerateKits({ dir: compiledDir, extension: '.js' });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
