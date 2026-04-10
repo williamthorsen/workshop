@@ -7,9 +7,14 @@ import { missingFrom } from './missingFrom.ts';
 export function readJsonFile(relativePath: string): Record<string, unknown> | undefined {
   const content = readFile(relativePath);
   if (content === undefined) return undefined;
-  const parsed: unknown = JSON.parse(content);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    return undefined;
+  }
   if (!isRecord(parsed)) return undefined;
-  return Object.fromEntries(Object.entries(parsed));
+  return parsed;
 }
 
 /** Check whether a JSON file has a field, optionally with a specific value. */

@@ -86,6 +86,15 @@ describe(fileDoesNotContain, () => {
 });
 
 describe(filesExist, () => {
+  it('returns ok with zero counts when paths array is empty', () => {
+    const result = filesExist([]);
+
+    expect(result).toEqual({
+      ok: true,
+      progress: { type: 'fraction', passedCount: 0, count: 0 },
+    });
+  });
+
   it('returns ok when all files exist', () => {
     writeFileSync(join(tempDir, 'a.txt'), '');
     writeFileSync(join(tempDir, 'b.txt'), '');

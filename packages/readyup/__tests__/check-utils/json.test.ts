@@ -22,6 +22,10 @@ function writeJson(filename: string, content: unknown): void {
   writeFileSync(join(tempDir, filename), JSON.stringify(content));
 }
 
+function writeRaw(filename: string, content: string): void {
+  writeFileSync(join(tempDir, filename), content);
+}
+
 describe(readJsonFile, () => {
   it('returns the parsed object from a JSON file', () => {
     writeJson('config.json', { key: 'value' });
@@ -37,6 +41,12 @@ describe(readJsonFile, () => {
     writeJson('array.json', [1, 2, 3]);
 
     expect(readJsonFile('array.json')).toBeUndefined();
+  });
+
+  it('returns undefined when the file contains malformed JSON', () => {
+    writeRaw('bad.json', '{ not valid json }}}');
+
+    expect(readJsonFile('bad.json')).toBeUndefined();
   });
 });
 
@@ -91,6 +101,17 @@ describe(hasJsonFields, () => {
       ok: false,
       detail: 'Missing fields: version, type',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
+    });
+  });
+
+  it('returns ok with zero counts when fields array is empty', () => {
+    writeJson('data.json', { name: 'test' });
+
+    const result = hasJsonFields('data.json', []);
+
+    expect(result).toEqual({
+      ok: true,
+      progress: { type: 'fraction', passedCount: 0, count: 0 },
     });
   });
 
