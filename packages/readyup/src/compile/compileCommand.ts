@@ -7,6 +7,7 @@ import picomatch from 'picomatch';
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { compileConfig } from './compileConfig.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
@@ -24,7 +25,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   try {
     parsed = parseArgs(args, compileFlagSchema);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     // Translate generic "requires a value" to domain hint.
     if (message === '--output requires a value') {
       process.stderr.write('Error: --output requires a path argument\n');
@@ -55,7 +56,7 @@ export async function compileCommand(args: string[]): Promise<number> {
       process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
       return 0;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = extractMessage(error);
       process.stderr.write(`Error: ${message}\n`);
       return 1;
     }
@@ -84,7 +85,7 @@ async function compileBatch(): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
@@ -101,7 +102,7 @@ async function compileBatch(): Promise<number> {
   try {
     tsFiles = collectSourceFiles(srcDir, config.compile.include);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: Failed to read source directory: ${message}\n`);
     return 1;
   }
@@ -126,7 +127,7 @@ async function compileBatch(): Promise<number> {
       const outName = fileName.replace(/\.ts$/, '.js');
       process.stdout.write(formatResultLine(fileName, outName, result.changed));
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = extractMessage(error);
       process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
       return 1;
     }

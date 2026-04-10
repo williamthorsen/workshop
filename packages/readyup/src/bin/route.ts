@@ -6,15 +6,11 @@ import { initCommand } from '../init/initCommand.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { VERSION } from '../version.ts';
 
 const SUBCOMMANDS = ['compile', 'init', 'list'];
 const MIN_PREFIX_LENGTH = 3;
-
-/** Extract a displayable message from an unknown thrown value. */
-function extractMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function showHelp(): void {
   console.info(`

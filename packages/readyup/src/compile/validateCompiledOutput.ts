@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { assertIsRdyKit } from '../assertIsRdyKit.ts';
 import { isRecord } from '../isRecord.ts';
 import { resolveKitExports } from '../resolveKitExports.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { validateKit } from '../validateKit.ts';
 
 /**
@@ -18,7 +19,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<void> 
     imported = await import(fileUrl);
   } catch (error: unknown) {
     rmSync(outputPath, { force: true });
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = extractMessage(error);
     throw new Error(`Failed to load compiled output for validation: ${detail}`);
   }
 

@@ -21,6 +21,7 @@ import type {
   Severity,
   SummaryCounts,
 } from './types.ts';
+import { extractMessage } from './utils/error-handling.ts';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
@@ -276,7 +277,7 @@ export async function runCommand({ names, kitSource, json, failOn, reportOn }: R
   try {
     kit = await loadKit(kitSource);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     if (json) {
       process.stdout.write(formatJsonError(message) + '\n');
     } else {
@@ -301,7 +302,7 @@ async function runSingleKit(
   try {
     resolvedNames = resolveRequestedNames(names, kit);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     if (json) {
       process.stdout.write(formatJsonError(message) + '\n');
     } else {
@@ -345,7 +346,7 @@ async function runJsonMode(
       if (!report.passed) allPassed = false;
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stdout.write(formatJsonError(message) + '\n');
     return 1;
   }
@@ -387,7 +388,7 @@ async function runHumanMode(
       }
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
