@@ -40,13 +40,18 @@ export {
 
 // Check utilities
 export {
+  commandExists,
   compareVersions,
   fileContains,
   fileDoesNotContain,
   fileExists,
+  filesExist,
   hasDevDependency,
+  hasJsonField,
+  hasJsonFields,
   hasMinDevDependencyVersion,
   hasPackageJsonField,
   readFile,
+  readJsonFile,
   readPackageJson,
 } from './check-utils/index.ts';
