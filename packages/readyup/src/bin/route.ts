@@ -3,11 +3,12 @@ import process from 'node:process';
 import { parseRunArgs, resolveKitSource, runCommand } from '../cli.ts';
 import { compileCommand } from '../compile/compileCommand.ts';
 import { initCommand } from '../init/initCommand.ts';
+import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { VERSION } from '../version.ts';
 
-const SUBCOMMANDS = ['compile', 'init'];
+const SUBCOMMANDS = ['compile', 'init', 'list'];
 const MIN_PREFIX_LENGTH = 3;
 
 /** Extract a displayable message from an unknown thrown value. */
@@ -24,6 +25,7 @@ Commands:
   run [names...]       Run rdy checklists (default)
   compile [file]       Bundle TypeScript kit(s) into self-contained ESM file(s)
   init                 Scaffold a starter config and kit
+  list                 List available kits
 
 Run options:
   --file, -f <path>                  Path to a local kit file
@@ -79,6 +81,26 @@ Modes:
 Options:
   --output, -o <path>  Output file path (single-file mode only)
   --help, -h           Show this help message
+`);
+}
+
+function showListHelp(): void {
+  console.info(`
+Usage: rdy list [options]
+
+List available kits without running them.
+
+Modes:
+  rdy list                  List internal and compiled kits (owner view)
+  rdy list --local <path>   List compiled kits at a local path (consumer view)
+
+Options:
+  --local, -l <path>  Path to a local repository with compiled kits
+  --help, -h          Show this help message
+
+Examples:
+  rdy list             Show kits in the current project
+  rdy list --local .   Show compiled kits in the current directory
 `);
 }
 
@@ -165,6 +187,20 @@ export async function routeCommand(args: string[]): Promise<number> {
     }
 
     return initCommand({ dryRun: parsed.flags.dryRun, force: parsed.flags.force });
+  }
+
+  if (command === 'list') {
+    const flags = args.slice(1);
+    if (flags.some((f) => f === '--help' || f === '-h')) {
+      showListHelp();
+      return 0;
+    }
+    try {
+      return await listCommand(flags);
+    } catch (error: unknown) {
+      process.stderr.write(`Error: ${extractMessage(error)}\n`);
+      return 1;
+    }
   }
 
   // Check for typos before falling through to the default command
