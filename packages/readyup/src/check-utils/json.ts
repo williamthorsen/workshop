@@ -27,10 +27,7 @@ export function hasJsonField(relativePath: string, field: string, expectedValue?
 
 /** Check whether a JSON file has all of the specified fields. */
 export function hasJsonFields(relativePath: string, fields: string[]): CheckOutcome {
-  const data = readJsonFile(relativePath);
-  if (data === undefined) {
-    return missingFrom('fields', fields, []);
-  }
+  const data = readJsonFile(relativePath) ?? {};
   const presentFields = fields.filter((field) => field in data);
   return missingFrom('fields', fields, presentFields);
 }
