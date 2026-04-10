@@ -3,9 +3,9 @@ import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
+import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
 import { formatConsumerView, formatOwnerView } from './formatList.ts';
-import { enumerateKits } from './enumerateKits.ts';
 
 const listFlagSchema = {
   local: { long: '--local', type: 'string' as const, short: '-l' },
@@ -36,8 +36,7 @@ export async function listCommand(args: string[]): Promise<number> {
 
 /** Enumerate kits from a local path without loading config. */
 function runConsumerMode(localPathArg: string): number {
-  const cwd = process.cwd();
-  const kitsDir = path.join(path.resolve(cwd, localPathArg), '.rdy/kits');
+  const kitsDir = path.join(path.resolve(localPathArg), '.rdy/kits');
 
   let compiledKits;
   try {

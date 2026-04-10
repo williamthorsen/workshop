@@ -134,6 +134,16 @@ describe(formatConsumerView, () => {
     expect(result).toContain('[--kit <name>]');
   });
 
+  it('omits brackets around --kit when default kit is absent', () => {
+    const result = formatConsumerView({
+      compiledKits: ['deploy'],
+      localPathArg: '.',
+    });
+
+    expect(result).toContain('--kit <name>');
+    expect(result).not.toContain('[--kit <name>]');
+  });
+
   it('returns empty-consumer message when kit list is empty', () => {
     const result = formatConsumerView({
       compiledKits: [],

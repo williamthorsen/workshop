@@ -1,14 +1,9 @@
 const ICON_INTERNAL = '📄';
 const ICON_COMPILED = '📦';
 
-/** Check whether a kit list contains a "default" entry. */
-function hasDefault(kits: string[]): boolean {
-  return kits.includes('default');
-}
-
 /** Build the `--kit` flag hint with brackets when a default kit exists. */
 function buildKitHint(kits: string[]): string {
-  return hasDefault(kits) ? '[--kit <name>]' : '--kit <name>';
+  return kits.includes('default') ? '[--kit <name>]' : '--kit <name>';
 }
 
 // -- Compiled-section style discriminants --
@@ -55,8 +50,8 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
       sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
     } else {
       const hint = `rdy run --file <file path>`;
-      const items = compiledKits.map((name) => `  ${ICON_COMPILED} ${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(`Compiled: ${hint}\n${items.join('\n')}`);
+      const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
+      sections.push(formatSection('Compiled', hint, pathItems, ICON_COMPILED));
     }
   }
 
