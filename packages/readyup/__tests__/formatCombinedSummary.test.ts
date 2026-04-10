@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
+import {
+  ICON_ERROR_FAILED,
+  ICON_PASSED,
+  ICON_RECOMMEND_FAILED,
+  ICON_SKIPPED_PRECONDITION,
+  ICON_WARN_FAILED,
+} from '../src/reportRdy.ts';
 import type { ChecklistSummary } from '../src/types.ts';
 
 function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
@@ -26,30 +33,30 @@ describe(formatCombinedSummary, () => {
     expect(output.split('\n').at(-2)).toMatch(/^─+$/);
   });
 
-  it('shows 🟢 prefix when worstSeverity is null', () => {
+  it('shows passed prefix when worstSeverity is null', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy' })]);
 
-    expect(output).toContain('🟢 deploy');
+    expect(output).toContain(`${ICON_PASSED} deploy`);
   });
 
-  it('shows 🔴 prefix when worstSeverity is error', () => {
+  it('shows error prefix when worstSeverity is error', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy', errors: 1, worstSeverity: 'error' })]);
 
-    expect(output).toContain('🔴 deploy');
+    expect(output).toContain(`${ICON_ERROR_FAILED} deploy`);
   });
 
-  it('shows 🟠 prefix when worstSeverity is warn', () => {
+  it('shows warn prefix when worstSeverity is warn', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy', warnings: 1, worstSeverity: 'warn' })]);
 
-    expect(output).toContain('🟠 deploy');
+    expect(output).toContain(`${ICON_WARN_FAILED} deploy`);
   });
 
-  it('shows 🟡 prefix when worstSeverity is recommend', () => {
+  it('shows recommend prefix when worstSeverity is recommend', () => {
     const output = formatCombinedSummary([
       makeSummary({ name: 'deploy', recommendations: 1, worstSeverity: 'recommend' }),
     ]);
 
-    expect(output).toContain('🟡 deploy');
+    expect(output).toContain(`${ICON_RECOMMEND_FAILED} deploy`);
   });
 
   it('includes duration and grouped counts in each row', () => {
@@ -57,14 +64,14 @@ describe(formatCombinedSummary, () => {
       makeSummary({ name: 'infra', passed: 2, errors: 1, worstSeverity: 'error', durationMs: 45 }),
     ]);
 
-    expect(output).toContain('🔴 infra  45ms  2 passed. Failed: 1 error');
+    expect(output).toContain(`${ICON_ERROR_FAILED} infra  45ms  2 passed. Failed: 1 error`);
     expect(output).not.toContain('Skipped:');
   });
 
   it('omits zero-count categories from row', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy', passed: 5, durationMs: 200 })]);
 
-    expect(output).toContain('🟢 deploy  200ms  5 passed');
+    expect(output).toContain(`${ICON_PASSED} deploy  200ms  5 passed`);
     expect(output).not.toContain('Failed:');
     expect(output).not.toContain('Skipped:');
   });
@@ -82,7 +89,9 @@ describe(formatCombinedSummary, () => {
       }),
     ]);
 
-    expect(output).toContain('Total: 🟢 15 passed. Failed: 🔴 2 errors. Skipped: ⛔ 1 blocked (300ms)');
+    expect(output).toContain(
+      `Total: ${ICON_PASSED} 15 passed. Failed: ${ICON_ERROR_FAILED} 2 errors. Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked (300ms)`,
+    );
   });
 
   it('omits zero-count groups from the Total line', () => {
@@ -91,7 +100,7 @@ describe(formatCombinedSummary, () => {
       makeSummary({ name: 'other', passed: 7, durationMs: 150 }),
     ]);
 
-    expect(output).toContain('Total: 🟢 10 passed (200ms)');
+    expect(output).toContain(`Total: ${ICON_PASSED} 10 passed (200ms)`);
     expect(output).not.toContain('Failed:');
     expect(output).not.toContain('Skipped:');
   });
@@ -104,8 +113,8 @@ describe(formatCombinedSummary, () => {
 
     const rows = output.split('\n').filter((l) => l.includes('passed'));
     // "ab" padded to length of "cdef", "5ms" padded to length of "1200ms"
-    expect(rows[0]).toContain('🟢 ab       5ms');
-    expect(rows[1]).toContain('🟢 cdef  1200ms');
+    expect(rows[0]).toContain(`${ICON_PASSED} ab       5ms`);
+    expect(rows[1]).toContain(`${ICON_PASSED} cdef  1200ms`);
   });
 
   it('includes skip groups in row when counts are non-zero', () => {
@@ -131,8 +140,8 @@ describe(formatCombinedSummary, () => {
 
     // Per-checklist rows get worst-severity icons; the Total row itself is always
     // prefixed with "Total:" and uses per-category icons from `formatSummaryCounts`.
-    expect(output).toContain('🟡 only-recommend');
-    expect(output).toContain('🟠 has-warn');
+    expect(output).toContain(`${ICON_RECOMMEND_FAILED} only-recommend`);
+    expect(output).toContain(`${ICON_WARN_FAILED} has-warn`);
   });
 
   it('aggregates mixed-severity checklists into a single Total line with per-category icons', () => {
@@ -150,7 +159,7 @@ describe(formatCombinedSummary, () => {
     const totalLine = output.split('\n').find((l) => l.startsWith('Total:'));
     expect(totalLine).toBeDefined();
     // Both failure categories are summed with their own per-category icons.
-    expect(totalLine).toContain('Failed: 🟠 1 warning, 🟡 1 recommendation');
+    expect(totalLine).toContain(`Failed: ${ICON_WARN_FAILED} 1 warning, ${ICON_RECOMMEND_FAILED} 1 recommendation`);
     expect(totalLine).toContain('(20ms)');
     expect(totalLine).not.toContain('passed');
   });

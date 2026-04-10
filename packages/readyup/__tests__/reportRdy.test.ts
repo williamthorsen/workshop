@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSummaryCounts, formatSummaryCountsPlain, reportRdy, tallyResult } from '../src/reportRdy.ts';
+import {
+  formatSummaryCounts,
+  formatSummaryCountsPlain,
+  ICON_ERROR_FAILED,
+  ICON_FIX,
+  ICON_PASSED,
+  ICON_RECOMMEND_FAILED,
+  ICON_SKIPPED_NA,
+  ICON_SKIPPED_PRECONDITION,
+  ICON_WARN_FAILED,
+  reportRdy,
+  tallyResult,
+} from '../src/reportRdy.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult, SummaryCounts } from '../src/types.ts';
 
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
@@ -69,7 +81,7 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F7E2} check-a (10ms)');
+    expect(output).toContain(`${ICON_PASSED} check-a (10ms)`);
   });
 
   it('shows error-failed checks with red circle icon', () => {
@@ -80,7 +92,7 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F534} check-b (5ms)');
+    expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms)`);
   });
 
   it('shows warn-failed checks with orange circle icon', () => {
@@ -91,7 +103,7 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F7E0} check-warn (5ms)');
+    expect(output).toContain(`${ICON_WARN_FAILED} check-warn (5ms)`);
   });
 
   it('shows recommend-failed checks with yellow circle icon', () => {
@@ -102,27 +114,27 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F7E1} check-rec (5ms)');
+    expect(output).toContain(`${ICON_RECOMMEND_FAILED} check-rec (5ms)`);
   });
 
-  it('shows n/a-skipped checks with white circle icon', () => {
+  it('shows n/a-skipped checks with magnifying glass icon', () => {
     const report = makeReport({
       results: [makeSkippedResult({ name: 'check-na', skipReason: 'n/a' })],
     });
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u26AA check-na (0ms)');
+    expect(output).toContain(`${ICON_SKIPPED_NA} check-na (0ms)`);
   });
 
-  it('shows precondition-skipped checks with no-entry icon', () => {
+  it('shows precondition-skipped checks with prohibition icon', () => {
     const report = makeReport({
       results: [makeSkippedResult({ name: 'check-pre', skipReason: 'precondition' })],
     });
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u26D4 check-pre (0ms)');
+    expect(output).toContain(`${ICON_SKIPPED_PRECONDITION} check-pre (0ms)`);
   });
 
   it('renders the summary line with granular failure and skip groups', () => {
@@ -138,7 +150,9 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F7E2} 1 passed. Failed: \u{1F534} 1 error. Skipped: \u26D4 1 blocked (142ms)');
+    expect(output).toContain(
+      `${ICON_PASSED} 1 passed. Failed: ${ICON_ERROR_FAILED} 1 error. Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked (142ms)`,
+    );
   });
 
   it('omits zero counts from the summary line', () => {
@@ -149,7 +163,7 @@ describe(reportRdy, () => {
 
     const output = reportRdy(report);
 
-    expect(output).toContain('\u{1F7E2} 2 passed (25ms)');
+    expect(output).toContain(`${ICON_PASSED} 2 passed (25ms)`);
     expect(output).not.toContain('failed');
     expect(output).not.toContain('skipped');
   });
@@ -171,7 +185,7 @@ describe(reportRdy, () => {
       const lines = output.split('\n');
 
       expect(output).toContain('Error: Something went wrong');
-      expect(output).toContain('\u{1F48A} Fix: Run npm install');
+      expect(output).toContain(`${ICON_FIX} Fix: Run npm install`);
 
       const checkLineIndex = lines.findIndex((l) => l.includes('broken'));
       const errorLineIndex = lines.findIndex((l) => l.includes('Error: Something went wrong'));
@@ -186,7 +200,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report, { fixLocation: 'inline' });
 
-      expect(output).toContain('\u{1F48A} Fix: Run npm install');
+      expect(output).toContain(`${ICON_FIX} Fix: Run npm install`);
       expect(output).not.toContain('Error:');
     });
 
@@ -199,7 +213,7 @@ describe(reportRdy, () => {
       const output = reportRdy(report, { fixLocation: 'inline' });
 
       expect(output).toContain('Error: Missing file');
-      expect(output).not.toContain('\u{1F48A}');
+      expect(output).not.toContain(ICON_FIX);
     });
   });
 
@@ -224,7 +238,7 @@ describe(reportRdy, () => {
       expect(errorLineIndex).toBe(checkLineIndex + 1);
 
       expect(output).toContain('Fixes:');
-      expect(output).toContain(`  \u{1F48A} Update config file`);
+      expect(output).toContain(`  ${ICON_FIX} Update config file`);
     });
 
     it('omits Fixes section when no fixes are present', () => {
@@ -248,7 +262,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F7E2} check-a (10ms) \u2014 some info');
+      expect(output).toContain(`${ICON_PASSED} check-a (10ms) \u2014 some info`);
     });
 
     it('renders fraction progress', () => {
@@ -264,7 +278,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F534} check-b (5ms) \u2014 7 of 10');
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms) \u2014 7 of 10`);
     });
 
     it('renders percent progress', () => {
@@ -275,7 +289,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F534} check-c (3ms) \u2014 85%');
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-c (3ms) \u2014 85%`);
     });
 
     it('renders both detail and progress as separate segments', () => {
@@ -292,7 +306,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F534} check-d (5ms) \u2014 some detail \u2014 7 of 10');
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-d (5ms) \u2014 some detail \u2014 7 of 10`);
     });
 
     it('renders detail and progress on passing checks', () => {
@@ -309,7 +323,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F7E2} check-e (2ms) \u2014 all good \u2014 100%');
+      expect(output).toContain(`${ICON_PASSED} check-e (2ms) \u2014 all good \u2014 100%`);
     });
 
     it('omits detail segment when detail is null', () => {
@@ -319,7 +333,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F7E2} check-f (1ms)');
+      expect(output).toContain(`${ICON_PASSED} check-f (1ms)`);
       expect(output).not.toContain('\u2014');
     });
   });
@@ -339,7 +353,7 @@ describe(reportRdy, () => {
     const output = reportRdy(report);
 
     expect(output).toContain('Fixes:');
-    expect(output).toContain(`  \u{1F48A} Fix it`);
+    expect(output).toContain(`  ${ICON_FIX} Fix it`);
     expect(output).not.toContain('Fix: Fix it');
   });
 
@@ -356,9 +370,9 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
       const lines = output.split('\n');
 
-      expect(lines[0]).toBe('\u{1F7E2} parent (10ms)');
-      expect(lines[1]).toBe('  \u{1F7E2} child (5ms)');
-      expect(lines[2]).toBe('    \u{1F7E2} grandchild (3ms)');
+      expect(lines[0]).toBe(`${ICON_PASSED} parent (10ms)`);
+      expect(lines[1]).toBe(`   ${ICON_PASSED} child (5ms)`);
+      expect(lines[2]).toBe(`      ${ICON_PASSED} grandchild (3ms)`);
     });
 
     it('renders top-level result at depth 0 with no indentation', () => {
@@ -369,7 +383,7 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
       const lines = output.split('\n');
 
-      expect(lines[0]).toBe('\u{1F7E2} top-check (7ms)');
+      expect(lines[0]).toBe(`${ICON_PASSED} top-check (7ms)`);
     });
 
     it('shows n/a parent but suppresses descendants', () => {
@@ -406,9 +420,9 @@ describe(reportRdy, () => {
       const lines = output.split('\n');
 
       const childLine = lines.findIndex((l) => l.includes('child'));
-      expect(lines[childLine]).toMatch(/^ {2}/);
-      expect(lines[childLine + 1]).toBe('    Error: child error');
-      expect(lines[childLine + 2]).toBe('    \u{1F48A} Fix: fix child');
+      expect(lines[childLine]).toMatch(/^ {3}/);
+      expect(lines[childLine + 1]).toBe('      Error: child error');
+      expect(lines[childLine + 2]).toBe(`      ${ICON_FIX} Fix: fix child`);
     });
 
     it('collects fixes from nested failed checks in end mode', () => {
@@ -429,9 +443,9 @@ describe(reportRdy, () => {
       const lines = output.split('\n');
 
       const childLine = lines.findIndex((l) => l.includes('child'));
-      expect(lines[childLine + 1]).toBe('    Error: child error');
+      expect(lines[childLine + 1]).toBe('      Error: child error');
       expect(output).toContain('Fixes:');
-      expect(output).toContain(`  \u{1F48A} fix the child`);
+      expect(output).toContain(`  ${ICON_FIX} fix the child`);
       // Fix should not appear inline after the error line.
       expect(lines[childLine + 2]).not.toContain('fix the child');
     });
@@ -449,7 +463,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain('\u{1F7E2} 2 passed. Failed: \u{1F534} 1 error');
+      expect(output).toContain(`${ICON_PASSED} 2 passed. Failed: ${ICON_ERROR_FAILED} 1 error`);
     });
 
     it('counts n/a parent as optional skip and excludes suppressed descendants from summary', () => {
@@ -465,8 +479,8 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       // na-parent counts as optional skip; na-child is suppressed; sibling counts as passed.
-      expect(output).toContain('\u{1F7E2} 1 passed');
-      expect(output).toContain('\u26AA 1 optional');
+      expect(output).toContain(`${ICON_PASSED} 1 passed`);
+      expect(output).toContain(`${ICON_SKIPPED_NA} 1 optional`);
       expect(output).toContain('na-parent');
       expect(output).not.toContain('na-child');
     });
@@ -514,7 +528,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report, { reportOn: 'error' });
 
-      expect(output).toContain('\u{1F7E2} 1 passed');
+      expect(output).toContain(`${ICON_PASSED} 1 passed`);
       expect(output).not.toContain('2 passed');
     });
 
@@ -585,53 +599,59 @@ describe(formatSummaryCounts, () => {
     });
 
     expect(formatSummaryCounts(counts)).toBe(
-      '\u{1F7E2} 14 passed. Failed: \u{1F534} 1 error, \u{1F7E0} 1 warning, \u{1F7E1} 2 recommendations. Skipped: \u26D4 5 blocked, \u26AA 2 optional',
+      `${ICON_PASSED} 14 passed. Failed: ${ICON_ERROR_FAILED} 1 error, ${ICON_WARN_FAILED} 1 warning, ${ICON_RECOMMEND_FAILED} 2 recommendations. Skipped: ${ICON_SKIPPED_PRECONDITION} 5 blocked, ${ICON_SKIPPED_NA} 2 optional`,
     );
   });
 
   it('pluralizes errors correctly for counts of 1 and 2', () => {
-    expect(formatSummaryCounts(makeCounts({ errors: 1, worstSeverity: 'error' }))).toBe('Failed: \u{1F534} 1 error');
-    expect(formatSummaryCounts(makeCounts({ errors: 2, worstSeverity: 'error' }))).toBe('Failed: \u{1F534} 2 errors');
+    expect(formatSummaryCounts(makeCounts({ errors: 1, worstSeverity: 'error' }))).toBe(
+      `Failed: ${ICON_ERROR_FAILED} 1 error`,
+    );
+    expect(formatSummaryCounts(makeCounts({ errors: 2, worstSeverity: 'error' }))).toBe(
+      `Failed: ${ICON_ERROR_FAILED} 2 errors`,
+    );
   });
 
   it('pluralizes warnings correctly for counts of 1 and 2', () => {
-    expect(formatSummaryCounts(makeCounts({ warnings: 1, worstSeverity: 'warn' }))).toBe('Failed: \u{1F7E0} 1 warning');
+    expect(formatSummaryCounts(makeCounts({ warnings: 1, worstSeverity: 'warn' }))).toBe(
+      `Failed: ${ICON_WARN_FAILED} 1 warning`,
+    );
     expect(formatSummaryCounts(makeCounts({ warnings: 2, worstSeverity: 'warn' }))).toBe(
-      'Failed: \u{1F7E0} 2 warnings',
+      `Failed: ${ICON_WARN_FAILED} 2 warnings`,
     );
   });
 
   it('pluralizes recommendations correctly for counts of 1 and 2', () => {
     expect(formatSummaryCounts(makeCounts({ recommendations: 1, worstSeverity: 'recommend' }))).toBe(
-      'Failed: \u{1F7E1} 1 recommendation',
+      `Failed: ${ICON_RECOMMEND_FAILED} 1 recommendation`,
     );
     expect(formatSummaryCounts(makeCounts({ recommendations: 2, worstSeverity: 'recommend' }))).toBe(
-      'Failed: \u{1F7E1} 2 recommendations',
+      `Failed: ${ICON_RECOMMEND_FAILED} 2 recommendations`,
     );
   });
 
   it('keeps `blocked` and `optional` labels unchanged for any count', () => {
     expect(formatSummaryCounts(makeCounts({ blocked: 1, optional: 1 }))).toBe(
-      'Skipped: \u26D4 1 blocked, \u26AA 1 optional',
+      `Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked, ${ICON_SKIPPED_NA} 1 optional`,
     );
     expect(formatSummaryCounts(makeCounts({ blocked: 3, optional: 4 }))).toBe(
-      'Skipped: \u26D4 3 blocked, \u26AA 4 optional',
+      `Skipped: ${ICON_SKIPPED_PRECONDITION} 3 blocked, ${ICON_SKIPPED_NA} 4 optional`,
     );
   });
 
   it('omits the Failed group when no failure categories have counts', () => {
-    expect(formatSummaryCounts(makeCounts({ passed: 5 }))).toBe('\u{1F7E2} 5 passed');
+    expect(formatSummaryCounts(makeCounts({ passed: 5 }))).toBe(`${ICON_PASSED} 5 passed`);
   });
 
   it('omits the Skipped group when no skip categories have counts', () => {
     expect(formatSummaryCounts(makeCounts({ passed: 5, errors: 1, worstSeverity: 'error' }))).toBe(
-      '\u{1F7E2} 5 passed. Failed: \u{1F534} 1 error',
+      `${ICON_PASSED} 5 passed. Failed: ${ICON_ERROR_FAILED} 1 error`,
     );
   });
 
   it('omits zero-count categories within an otherwise non-empty group', () => {
     expect(formatSummaryCounts(makeCounts({ errors: 2, recommendations: 1, worstSeverity: 'error' }))).toBe(
-      'Failed: \u{1F534} 2 errors, \u{1F7E1} 1 recommendation',
+      `Failed: ${ICON_ERROR_FAILED} 2 errors, ${ICON_RECOMMEND_FAILED} 1 recommendation`,
     );
   });
 
@@ -656,9 +676,9 @@ describe(formatSummaryCountsPlain, () => {
     const output = formatSummaryCountsPlain(counts);
 
     expect(output).toBe('Failed: 1 error, 2 warnings, 3 recommendations');
-    expect(output).not.toContain('\u{1F534}');
-    expect(output).not.toContain('\u{1F7E0}');
-    expect(output).not.toContain('\u{1F7E1}');
+    expect(output).not.toContain(ICON_ERROR_FAILED);
+    expect(output).not.toContain(ICON_WARN_FAILED);
+    expect(output).not.toContain(ICON_RECOMMEND_FAILED);
   });
 
   it('formats Skipped segment without per-count reason icons', () => {
@@ -667,8 +687,8 @@ describe(formatSummaryCountsPlain, () => {
     const output = formatSummaryCountsPlain(counts);
 
     expect(output).toBe('Skipped: 2 blocked, 3 optional');
-    expect(output).not.toContain('\u26D4');
-    expect(output).not.toContain('\u26AA');
+    expect(output).not.toContain(ICON_SKIPPED_PRECONDITION);
+    expect(output).not.toContain(ICON_SKIPPED_NA);
   });
 
   it('joins all three groups with icon-free counts', () => {
@@ -688,7 +708,7 @@ describe(formatSummaryCountsPlain, () => {
   });
 
   it('omits the 🟢 prefix from the passed count', () => {
-    expect(formatSummaryCountsPlain(makeCounts({ passed: 5 }))).not.toContain('\u{1F7E2}');
+    expect(formatSummaryCountsPlain(makeCounts({ passed: 5 }))).not.toContain(ICON_PASSED);
   });
 
   it('returns empty string when all counts are zero', () => {
@@ -708,12 +728,12 @@ describe(formatSummaryCountsPlain, () => {
 
     // Strip every known severity/skip icon (and the trailing space) from the iconed output.
     const iconStripped = formatSummaryCounts(counts)
-      .replace(/\u{1F7E2} /gu, '')
-      .replace(/\u{1F534} /gu, '')
-      .replace(/\u{1F7E0} /gu, '')
-      .replace(/\u{1F7E1} /gu, '')
-      .replace(/\u26D4 /gu, '')
-      .replace(/\u26AA /gu, '');
+      .replaceAll(`${ICON_PASSED} `, '')
+      .replaceAll(`${ICON_ERROR_FAILED} `, '')
+      .replaceAll(`${ICON_WARN_FAILED} `, '')
+      .replaceAll(`${ICON_RECOMMEND_FAILED} `, '')
+      .replaceAll(`${ICON_SKIPPED_PRECONDITION} `, '')
+      .replaceAll(`${ICON_SKIPPED_NA} `, '');
 
     expect(formatSummaryCountsPlain(counts)).toBe(iconStripped);
   });
