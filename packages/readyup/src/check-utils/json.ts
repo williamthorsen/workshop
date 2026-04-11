@@ -1,4 +1,5 @@
 import { isRecord } from '../isRecord.ts';
+import { safeJsonParse } from '../safeJsonParse.ts';
 import type { CheckOutcome } from '../types.ts';
 import { readFile } from './filesystem.ts';
 import { missingFrom } from './missingFrom.ts';
@@ -7,12 +8,7 @@ import { missingFrom } from './missingFrom.ts';
 export function readJsonFile(relativePath: string): Record<string, unknown> | undefined {
   const content = readFile(relativePath);
   if (content === undefined) return undefined;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    return undefined;
-  }
+  const parsed = safeJsonParse(content);
   if (!isRecord(parsed)) return undefined;
   return parsed;
 }
