@@ -42,9 +42,11 @@ export {
 export {
   commandExists,
   compareVersions,
+  computeHash,
   fileContains,
   fileDoesNotContain,
   fileExists,
+  fileMatchesHash,
   filesExist,
   hasDevDependency,
   hasJsonField,
