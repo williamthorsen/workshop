@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [readyup-v0.15.0] - 2026-04-11
+
+### Features
+
+- Add `computeHash` and `fileMatchesHash` check utilities (#28)
+
+  Adds hash-based file comparison to the check-utils module for detecting drift in configuration files. `computeHash` is a pure function returning a SHA-256 hex digest via `node:crypto`. `fileMatchesHash` composes `readFile` + `computeHash` for ergonomic use in kit checks, returning `false` for missing files consistent with `fileContains`.
+
+- Add `safeJsonParse` utility for safe JSON parsing (#29)
+
+  Adds a reusable `safeJsonParse` utility that wraps `JSON.parse` in a try/catch, returning `undefined` on invalid input instead of throwing. Refactors the existing `readJsonFile` check utility to use it, eliminating inline error handling.
+
 ## [readyup-v0.14.0] - 2026-04-11
 
 ### Bug fixes
