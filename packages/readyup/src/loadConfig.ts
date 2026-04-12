@@ -16,7 +16,7 @@ const DEFAULT_CONFIG: ResolvedRdyConfig = {
   },
   internal: {
     dir: '.',
-    extension: '.ts',
+    infix: undefined,
   },
 };
 
@@ -35,7 +35,7 @@ const RdyConfigSchema = z.looseObject({
   internal: z
     .looseObject({
       dir: z.string().optional(),
-      extension: z.string().optional(),
+      infix: z.string().optional(),
     })
     .optional(),
 });
@@ -96,7 +96,7 @@ export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConf
     },
     internal: {
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
-      extension: typeof internal?.extension === 'string' ? internal.extension : DEFAULT_CONFIG.internal.extension,
+      infix: typeof internal?.infix === 'string' ? internal.infix : DEFAULT_CONFIG.internal.infix,
     },
   };
 }

@@ -78,10 +78,11 @@ describe(parseRunArgs, () => {
     expect(result.checklists).toBeUndefined();
     expect(result.kitSpecifiers).toStrictEqual([]);
     expect(result.filePath).toBeUndefined();
-    expect(result.githubValue).toBeUndefined();
-    expect(result.localValue).toBeUndefined();
+    expect(result.fromValue).toBeUndefined();
     expect(result.urlValue).toBeUndefined();
     expect(result.json).toBe(false);
+    expect(result.jit).toBe(false);
+    expect(result.internal).toBe(false);
   });
 
   it('parses positional kit specifiers', () => {
@@ -119,8 +120,8 @@ describe(parseRunArgs, () => {
     );
   });
 
-  it('throws when --checklists is used with --github', () => {
-    expect(() => parseRunArgs(['--checklists', 'check1', '--github', 'org/repo'])).toThrow(
+  it('throws when --checklists is used with --from', () => {
+    expect(() => parseRunArgs(['--checklists', 'check1', '--from', 'github:org/repo'])).toThrow(
       '--checklists can only be used with --file or --url',
     );
   });
@@ -163,6 +164,53 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['--file='])).toThrow('--file requires a path argument');
   });
 
+  // --from flag
+  it('parses --from flag', () => {
+    const result = parseRunArgs(['--from', 'github:org/repo']);
+
+    expect(result.fromValue).toBe('github:org/repo');
+  });
+
+  it('throws when --from has no value', () => {
+    expect(() => parseRunArgs(['--from'])).toThrow('--from requires a source argument');
+  });
+
+  it('parses --from= syntax', () => {
+    const result = parseRunArgs(['--from=github:org/repo']);
+
+    expect(result.fromValue).toBe('github:org/repo');
+  });
+
+  it('throws when --from= has an empty value', () => {
+    expect(() => parseRunArgs(['--from='])).toThrow('--from requires a source argument');
+  });
+
+  // --jit flag
+  it('parses --jit flag', () => {
+    const result = parseRunArgs(['--jit']);
+
+    expect(result.jit).toBe(true);
+  });
+
+  it('parses -J as short form of --jit', () => {
+    const result = parseRunArgs(['-J']);
+
+    expect(result.jit).toBe(true);
+  });
+
+  // --internal flag
+  it('parses --internal flag', () => {
+    const result = parseRunArgs(['--internal']);
+
+    expect(result.internal).toBe(true);
+  });
+
+  it('parses -i as short form of --internal', () => {
+    const result = parseRunArgs(['-i']);
+
+    expect(result.internal).toBe(true);
+  });
+
   // --json flag
   it('parses --json flag', () => {
     const result = parseRunArgs(['--json']);
@@ -200,12 +248,6 @@ describe(parseRunArgs, () => {
     expect(result.filePath).toBe('custom/path.ts');
   });
 
-  it('parses -g as short form of --github', () => {
-    const result = parseRunArgs(['-g', 'org/repo']);
-
-    expect(result.githubValue).toBe('org/repo');
-  });
-
   it('parses -u as short form of --url', () => {
     const result = parseRunArgs(['-u', 'https://example.com/config.js']);
 
@@ -230,27 +272,6 @@ describe(parseRunArgs, () => {
     expect(result.reportOn).toBe('error');
   });
 
-  // --github flag
-  it('parses --github with ref', () => {
-    const result = parseRunArgs(['--github', 'org/repo@v1']);
-
-    expect(result.githubValue).toBe('org/repo@v1');
-  });
-
-  it('parses --github= syntax', () => {
-    const result = parseRunArgs(['--github=org/repo']);
-
-    expect(result.githubValue).toBe('org/repo');
-  });
-
-  it('throws when --github has no value', () => {
-    expect(() => parseRunArgs(['--github'])).toThrow('--github requires a repository argument');
-  });
-
-  it('throws when --github= has an empty value', () => {
-    expect(() => parseRunArgs(['--github='])).toThrow('--github requires a repository argument');
-  });
-
   // --url flag
   it('parses --url flag with space-separated value', () => {
     const result = parseRunArgs(['--url', 'https://example.com/config.js']);
@@ -272,70 +293,59 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['--url='])).toThrow('--url requires a URL argument');
   });
 
-  // --local flag
-  it('parses --local flag', () => {
-    const result = parseRunArgs(['--local', '/path/to/repo']);
-
-    expect(result.localValue).toBe('/path/to/repo');
-  });
-
-  it('parses -l as short form of --local', () => {
-    const result = parseRunArgs(['-l', '/path/to/repo']);
-
-    expect(result.localValue).toBe('/path/to/repo');
-  });
-
-  it('throws when --local has no value', () => {
-    expect(() => parseRunArgs(['--local'])).toThrow('--local requires a path to a local repository');
-  });
-
   // Mutual exclusivity
-  it('throws when --file and --github are combined', () => {
-    expect(() => parseRunArgs(['--file', 'path.ts', '--github', 'org/repo'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
-    );
-  });
-
-  it('throws when --github and --file are combined (reverse order)', () => {
-    expect(() => parseRunArgs(['--github', 'org/repo', '--file', 'path.ts'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
+  it('throws when --file and --from are combined', () => {
+    expect(() => parseRunArgs(['--file', 'path.ts', '--from', '/other/repo'])).toThrow(
+      'Cannot combine --file, --from flags',
     );
   });
 
   it('throws when --file and --url are combined', () => {
     expect(() => parseRunArgs(['--file', 'path.ts', '--url', 'https://example.com/config.js'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
+      'Cannot combine --file, --url flags',
+    );
+  });
+
+  it('throws when --from and --url are combined', () => {
+    expect(() => parseRunArgs(['--from', '/path', '--url', 'https://example.com/config.js'])).toThrow(
+      'Cannot combine --from, --url flags',
+    );
+  });
+
+  it('throws when --jit is combined with --from', () => {
+    expect(() => parseRunArgs(['--jit', '--from', '/path'])).toThrow('--jit cannot be combined with --from');
+  });
+
+  it('throws when --jit is combined with --file', () => {
+    expect(() => parseRunArgs(['--jit', '--file', 'path.ts'])).toThrow('--jit cannot be combined with --file');
+  });
+
+  it('throws when --internal is combined with --from', () => {
+    expect(() => parseRunArgs(['--internal', '--from', '/path'])).toThrow('--internal cannot be combined with --from');
+  });
+
+  it('throws when --internal is combined with --url', () => {
+    expect(() => parseRunArgs(['--internal', '--url', 'https://example.com'])).toThrow(
+      '--internal cannot be combined with --url',
+    );
+  });
+
+  it('throws when --jit is combined with --url', () => {
+    expect(() => parseRunArgs(['--jit', '--url', 'https://example.com'])).toThrow(
+      '--jit cannot be combined with --url',
+    );
+  });
+
+  it('throws when --internal is combined with --file', () => {
+    expect(() => parseRunArgs(['--internal', '--file', 'path.ts'])).toThrow(
+      '--internal cannot be combined with --file',
     );
   });
 
   it('throws when a flag name is passed as value to another flag', () => {
-    expect(() => parseRunArgs(['--github', '--url'])).toThrow('--github requires a repository argument');
-    expect(() => parseRunArgs(['--url', '--github'])).toThrow('--url requires a URL argument');
-    expect(() => parseRunArgs(['--file', '--github'])).toThrow('--file requires a path argument');
-  });
-
-  it('throws when --github and --url are combined', () => {
-    expect(() => parseRunArgs(['--github', 'org/repo', '--url', 'https://example.com/config.js'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
-    );
-  });
-
-  it('throws when --local and --file are combined', () => {
-    expect(() => parseRunArgs(['--file', 'path.ts', '--local', '/other/repo'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
-    );
-  });
-
-  it('throws when --local and --url are combined', () => {
-    expect(() => parseRunArgs(['--local', '/other/repo', '--url', 'https://example.com/config.js'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
-    );
-  });
-
-  it('throws when --github and --local are combined', () => {
-    expect(() => parseRunArgs(['--github', 'org/repo', '--local', '/path'])).toThrow(
-      'Cannot combine --file, --github, --local, and --url flags',
-    );
+    expect(() => parseRunArgs(['--from', '--url'])).toThrow('--from requires a source argument');
+    expect(() => parseRunArgs(['--url', '--from'])).toThrow('--url requires a URL argument');
+    expect(() => parseRunArgs(['--file', '--from'])).toThrow('--file requires a path argument');
   });
 
   // --fail-on flag
@@ -399,48 +409,76 @@ describe(resolveKitSources, () => {
   ): ReturnType<typeof resolveKitSources> {
     return resolveKitSources({
       filePath: undefined,
-      githubValue: undefined,
-      localValue: undefined,
+      fromValue: undefined,
       urlValue: undefined,
       kitSpecifiers: [],
       checklists: undefined,
+      jit: false,
+      internal: false,
       internalDir: '.',
-      internalExtension: '.ts',
+      internalInfix: undefined,
       ...overrides,
     });
   }
 
-  it('resolves default kit path with default internal config', () => {
-    expect(resolve()).toStrictEqual([{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] }]);
+  // -- Default resolution (compiled .js) --
+
+  it('resolves default kit path to .js', () => {
+    expect(resolve()).toStrictEqual([{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] }]);
   });
 
   it('resolves named kit from positional specifier', () => {
     expect(resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] })).toStrictEqual([
-      { name: 'deploy', source: { path: '.rdy/kits/deploy.ts' }, checklists: [] },
+      { name: 'deploy', source: { path: '.rdy/kits/deploy.js' }, checklists: [] },
     ]);
   });
 
   it('resolves slash-separated kit name', () => {
     expect(resolve({ kitSpecifiers: [{ kitName: 'shared/deploy', checklists: [] }] })).toStrictEqual([
-      { name: 'shared/deploy', source: { path: '.rdy/kits/shared/deploy.ts' }, checklists: [] },
+      { name: 'shared/deploy', source: { path: '.rdy/kits/shared/deploy.js' }, checklists: [] },
     ]);
   });
 
-  it('applies custom internal dir and extension', () => {
-    expect(resolve({ internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual([
+  // -- --jit flag --
+
+  it('resolves to .ts with --jit', () => {
+    expect(resolve({ jit: true })).toStrictEqual([
+      { name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] },
+    ]);
+  });
+
+  // -- --internal flag --
+
+  it('applies internal dir with --internal', () => {
+    expect(resolve({ internal: true, internalDir: 'internal' })).toStrictEqual([
+      { name: 'default', source: { path: '.rdy/kits/internal/default.js' }, checklists: [] },
+    ]);
+  });
+
+  it('applies internal dir and infix with --internal', () => {
+    expect(resolve({ internal: true, internalDir: 'internal', internalInfix: 'int' })).toStrictEqual([
+      { name: 'default', source: { path: '.rdy/kits/internal/default.int.js' }, checklists: [] },
+    ]);
+  });
+
+  it('combines --jit and --internal', () => {
+    expect(resolve({ jit: true, internal: true, internalDir: 'internal', internalInfix: 'int' })).toStrictEqual([
       { name: 'default', source: { path: '.rdy/kits/internal/default.int.ts' }, checklists: [] },
     ]);
   });
 
-  it('applies custom internal dir with named kit', () => {
+  it('applies internal dir with named kit', () => {
     expect(
       resolve({
         kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
+        internal: true,
         internalDir: 'internal',
-        internalExtension: '.int.ts',
+        internalInfix: 'int',
       }),
-    ).toStrictEqual([{ name: 'deploy', source: { path: '.rdy/kits/internal/deploy.int.ts' }, checklists: [] }]);
+    ).toStrictEqual([{ name: 'deploy', source: { path: '.rdy/kits/internal/deploy.int.js' }, checklists: [] }]);
   });
+
+  // -- --file flag --
 
   it('resolves --file to a single path source entry', () => {
     expect(resolve({ filePath: 'custom/path.ts' })).toStrictEqual([
@@ -454,8 +492,12 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('resolves --github without ref to a URL with main ref', () => {
-    expect(resolve({ githubValue: 'org/repo', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] })).toStrictEqual([
+  // -- --from github: --
+
+  it('resolves --from github: without ref to a URL with main ref', () => {
+    expect(
+      resolve({ fromValue: 'github:org/repo', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] }),
+    ).toStrictEqual([
       {
         name: 'nmr',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
@@ -464,8 +506,10 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('resolves --github with ref to a URL with that ref', () => {
-    expect(resolve({ githubValue: 'org/repo@v1', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] })).toStrictEqual([
+  it('resolves --from github: with ref', () => {
+    expect(
+      resolve({ fromValue: 'github:org/repo@v1', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] }),
+    ).toStrictEqual([
       {
         name: 'nmr',
         source: { url: 'https://raw.githubusercontent.com/org/repo/v1/.rdy/kits/nmr.js' },
@@ -474,8 +518,8 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('defaults --github kit to "default"', () => {
-    expect(resolve({ githubValue: 'org/repo' })).toStrictEqual([
+  it('defaults --from github: kit to "default"', () => {
+    expect(resolve({ fromValue: 'github:org/repo' })).toStrictEqual([
       {
         name: 'default',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
@@ -484,10 +528,10 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('resolves multiple kits with --github', () => {
+  it('resolves multiple kits with --from github:', () => {
     expect(
       resolve({
-        githubValue: 'org/repo',
+        fromValue: 'github:org/repo',
         kitSpecifiers: [
           { kitName: 'deploy', checklists: [] },
           { kitName: 'infra', checklists: ['c1'] },
@@ -507,30 +551,50 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('resolves --local to a .js path under .rdy/kits/', () => {
-    expect(resolve({ localValue: '/path/to/repo' })).toStrictEqual([
+  // -- --from bitbucket: --
+
+  it('resolves --from bitbucket: to a Bitbucket raw URL', () => {
+    expect(
+      resolve({ fromValue: 'bitbucket:myteam/deploy-checks', kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] }),
+    ).toStrictEqual([
+      {
+        name: 'deploy',
+        source: { url: 'https://bitbucket.org/myteam/deploy-checks/raw/main/.rdy/kits/deploy.js' },
+        checklists: [],
+      },
+    ]);
+  });
+
+  it('resolves --from bitbucket: with ref', () => {
+    expect(resolve({ fromValue: 'bitbucket:myteam/repo@v2' })).toStrictEqual([
+      {
+        name: 'default',
+        source: { url: 'https://bitbucket.org/myteam/repo/raw/v2/.rdy/kits/default.js' },
+        checklists: [],
+      },
+    ]);
+  });
+
+  // -- --from local path --
+
+  it('resolves --from with local path to a .js path under .rdy/kits/', () => {
+    expect(resolve({ fromValue: '/path/to/repo' })).toStrictEqual([
       { name: 'default', source: { path: '/path/to/repo/.rdy/kits/default.js' }, checklists: [] },
     ]);
   });
 
-  it('resolves --local with named kit to a named .js file', () => {
-    expect(
-      resolve({ localValue: '/path/to/repo', kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] }),
-    ).toStrictEqual([{ name: 'deploy', source: { path: '/path/to/repo/.rdy/kits/deploy.js' }, checklists: [] }]);
-  });
-
-  it('resolves --local with a relative path against cwd', () => {
+  it('resolves --from with relative local path against cwd', () => {
     const expected = path.resolve(process.cwd(), '../sibling-repo');
 
-    expect(resolve({ localValue: '../sibling-repo' })).toStrictEqual([
+    expect(resolve({ fromValue: '../sibling-repo' })).toStrictEqual([
       { name: 'default', source: { path: `${expected}/.rdy/kits/default.js` }, checklists: [] },
     ]);
   });
 
-  it('resolves multiple kits with --local', () => {
+  it('resolves multiple kits with --from local path', () => {
     expect(
       resolve({
-        localValue: '/path/to/repo',
+        fromValue: '/path/to/repo',
         kitSpecifiers: [
           { kitName: 'deploy', checklists: [] },
           { kitName: 'infra', checklists: [] },
@@ -541,6 +605,28 @@ describe(resolveKitSources, () => {
       { name: 'infra', source: { path: '/path/to/repo/.rdy/kits/infra.js' }, checklists: [] },
     ]);
   });
+
+  // -- --from global --
+
+  it('resolves --from global to home directory', () => {
+    const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+
+    expect(resolve({ fromValue: 'global' })).toStrictEqual([
+      { name: 'default', source: { path: `${homeDir}/.rdy/kits/default.js` }, checklists: [] },
+    ]);
+  });
+
+  // -- --from dir: --
+
+  it('resolves --from dir: to an arbitrary directory', () => {
+    const resolved = path.resolve(process.cwd(), 'custom/kits');
+
+    expect(resolve({ fromValue: 'dir:custom/kits' })).toStrictEqual([
+      { name: 'default', source: { path: `${resolved}/default.js` }, checklists: [] },
+    ]);
+  });
+
+  // -- --url flag --
 
   it('resolves --url to a URL source', () => {
     expect(resolve({ urlValue: 'https://example.com/config.js' })).toStrictEqual([
@@ -558,14 +644,18 @@ describe(resolveKitSources, () => {
     ]);
   });
 
+  // -- Isolation of internal config with source flags --
+
   it('ignores internal config when --file is used', () => {
     expect(
-      resolve({ filePath: 'custom/path.ts', internalDir: 'internal', internalExtension: '.int.ts' }),
+      resolve({ filePath: 'custom/path.ts', internal: true, internalDir: 'internal', internalInfix: 'int' }),
     ).toStrictEqual([{ name: 'custom/path.ts', source: { path: 'custom/path.ts' }, checklists: [] }]);
   });
 
-  it('ignores internal config when --github is used', () => {
-    expect(resolve({ githubValue: 'org/repo', internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual([
+  it('ignores internal config when --from is used', () => {
+    expect(
+      resolve({ fromValue: 'github:org/repo', internal: false, internalDir: 'internal', internalInfix: 'int' }),
+    ).toStrictEqual([
       {
         name: 'default',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
@@ -574,15 +664,14 @@ describe(resolveKitSources, () => {
     ]);
   });
 
-  it('ignores internal config when --local is used', () => {
-    expect(
-      resolve({ localValue: '/path/to/repo', internalDir: 'internal', internalExtension: '.int.ts' }),
-    ).toStrictEqual([{ name: 'default', source: { path: '/path/to/repo/.rdy/kits/default.js' }, checklists: [] }]);
-  });
-
   it('ignores internal config when --url is used', () => {
     expect(
-      resolve({ urlValue: 'https://example.com/config.js', internalDir: 'internal', internalExtension: '.int.ts' }),
+      resolve({
+        urlValue: 'https://example.com/config.js',
+        internal: true,
+        internalDir: 'internal',
+        internalInfix: 'int',
+      }),
     ).toStrictEqual([
       {
         name: 'https://example.com/config.js',
@@ -618,7 +707,7 @@ describe(runCommand, () => {
 
   /** Build a single-kit entry for convenience. */
   function singleKitEntry(checklists: string[] = []) {
-    return [{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists }];
+    return [{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists }];
   }
 
   it('runs all checklists when no checklist filter is given', async () => {
@@ -732,8 +821,8 @@ describe(runCommand, () => {
 
     await runCommand({
       kitEntries: [
-        { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
-        { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+        { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
       ],
       json: false,
     });
@@ -750,8 +839,8 @@ describe(runCommand, () => {
 
     await runCommand({
       kitEntries: [
-        { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
-        { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+        { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
       ],
       json: false,
     });
@@ -831,6 +920,43 @@ describe(runCommand, () => {
     });
 
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+  });
+
+  // -- --jit error handling (Task 6) --
+
+  it('throws friendly error when --jit kit import fails due to missing readyup', async () => {
+    const moduleError = Object.assign(new Error("Cannot find package 'readyup'"), {
+      code: 'MODULE_NOT_FOUND',
+    });
+    mockLoadRdyKit.mockRejectedValue(moduleError);
+
+    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      'Error: Running from source requires readyup to be installed as a project dependency.\n',
+    );
+    expect(exitCode).toBe(1);
+  });
+
+  it('passes through non-readyup module errors even with --jit', async () => {
+    const moduleError = Object.assign(new Error("Cannot find package 'chalk'"), {
+      code: 'MODULE_NOT_FOUND',
+    });
+    mockLoadRdyKit.mockRejectedValue(moduleError);
+
+    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+
+    expect(stderrSpy).toHaveBeenCalledWith("Error: Cannot find package 'chalk'\n");
+    expect(exitCode).toBe(1);
+  });
+
+  it('passes through non-module errors with --jit', async () => {
+    mockLoadRdyKit.mockRejectedValue(new Error('Syntax error in kit'));
+
+    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+
+    expect(stderrSpy).toHaveBeenCalledWith('Error: Syntax error in kit\n');
+    expect(exitCode).toBe(1);
   });
 
   describe('threshold cascade', () => {
@@ -1038,8 +1164,8 @@ describe(runCommand, () => {
 
       const exitCode = await runCommand({
         kitEntries: [
-          { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
-          { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+          { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
+          { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
         ],
         json: true,
       });

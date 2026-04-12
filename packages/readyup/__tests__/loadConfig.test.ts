@@ -27,7 +27,7 @@ describe(loadConfig, () => {
 
     expect(config).toStrictEqual({
       compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
-      internal: { dir: '.', extension: '.ts' },
+      internal: { dir: '.', infix: undefined },
     });
   });
 
@@ -152,13 +152,13 @@ describe(loadConfig, () => {
   it('resolves internal block from config', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({
-      default: { internal: { dir: 'internal', extension: '.int.ts' } },
+      default: { internal: { dir: 'internal', infix: 'int' } },
     });
 
     const config = await loadConfig('config.ts');
 
     expect(config.internal.dir).toBe('internal');
-    expect(config.internal.extension).toBe('.int.ts');
+    expect(config.internal.infix).toBe('int');
   });
 
   it('applies internal defaults when internal block is absent', async () => {
@@ -168,7 +168,7 @@ describe(loadConfig, () => {
     const config = await loadConfig('config.ts');
 
     expect(config.internal.dir).toBe('.');
-    expect(config.internal.extension).toBe('.ts');
+    expect(config.internal.infix).toBeUndefined();
   });
 
   it('applies internal defaults for missing fields within internal block', async () => {
@@ -178,7 +178,7 @@ describe(loadConfig, () => {
     const config = await loadConfig('config.ts');
 
     expect(config.internal.dir).toBe('custom');
-    expect(config.internal.extension).toBe('.ts');
+    expect(config.internal.infix).toBeUndefined();
   });
 
   it('throws when internal.dir is not a string', async () => {
@@ -188,9 +188,9 @@ describe(loadConfig, () => {
     await expect(loadConfig('config.ts')).rejects.toThrow(ZodError);
   });
 
-  it('throws when internal.extension is not a string', async () => {
+  it('throws when internal.infix is not a string', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { internal: { extension: false } } });
+    mockJitiImport.mockResolvedValue({ default: { internal: { infix: false } } });
 
     await expect(loadConfig('config.ts')).rejects.toThrow(ZodError);
   });

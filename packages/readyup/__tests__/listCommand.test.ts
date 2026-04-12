@@ -22,7 +22,7 @@ describe(listCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
-      internal: { dir: '.', extension: '.ts' },
+      internal: { dir: '.', infix: undefined },
     });
     mockEnumerateKits.mockReturnValue([]);
   });
@@ -53,6 +53,19 @@ describe(listCommand, () => {
       expect(output).toContain('Compiled:');
     });
 
+    it('uses infix-based extension for internal kits when configured', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+        internal: { dir: '.', infix: 'int' },
+      });
+      mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce([]);
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(0);
+      expect(mockEnumerateKits).toHaveBeenCalledWith(expect.objectContaining({ extension: '.int.ts' }));
+    });
+
     it('renders only Internal section when no compiled kits exist', async () => {
       mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce([]);
 
@@ -67,7 +80,7 @@ describe(listCommand, () => {
     it('uses custom-outDir style when outDir differs from default', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined },
-        internal: { dir: '.', extension: '.ts' },
+        internal: { dir: '.', infix: undefined },
       });
       mockEnumerateKits.mockReturnValueOnce([]).mockReturnValueOnce(['deploy']);
 
@@ -109,20 +122,20 @@ describe(listCommand, () => {
     });
   });
 
-  describe('consumer mode', () => {
-    it('does not load config when --local is given', async () => {
+  describe('from mode', () => {
+    it('does not load config when --from is given', async () => {
       mockEnumerateKits.mockReturnValue([]);
 
-      const exitCode = await listCommand(['--local', '.']);
+      const exitCode = await listCommand(['--from', '.']);
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).not.toHaveBeenCalled();
     });
 
-    it('enumerates compiled kits from the local path', async () => {
+    it('enumerates compiled kits from a local path', async () => {
       mockEnumerateKits.mockReturnValue(['deploy']);
 
-      const exitCode = await listCommand(['--local', '.']);
+      const exitCode = await listCommand(['--from', '.']);
 
       expect(exitCode).toBe(0);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
@@ -136,11 +149,11 @@ describe(listCommand, () => {
     it('prints empty-consumer message when no kits exist at the local path', async () => {
       mockEnumerateKits.mockReturnValue([]);
 
-      const exitCode = await listCommand(['--local', '/nonexistent']);
+      const exitCode = await listCommand(['--from', '/nonexistent']);
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits/.');
+      expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits.');
     });
 
     it('returns 1 and writes to stderr when enumerateKits throws', async () => {
@@ -149,19 +162,24 @@ describe(listCommand, () => {
         throw permError;
       });
 
-      const exitCode = await listCommand(['--local', '.']);
+      const exitCode = await listCommand(['--from', '.']);
 
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
     });
 
-    it('accepts -l as short form of --local', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+    it('returns 1 for github: scheme with not-yet-supported message', async () => {
+      const exitCode = await listCommand(['--from', 'github:org/repo']);
 
-      const exitCode = await listCommand(['-l', '.']);
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('not yet supported'));
+    });
 
-      expect(exitCode).toBe(0);
-      expect(mockLoadConfig).not.toHaveBeenCalled();
+    it('returns 1 for bitbucket: scheme with not-yet-supported message', async () => {
+      const exitCode = await listCommand(['--from', 'bitbucket:team/repo']);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('not yet supported'));
     });
   });
 

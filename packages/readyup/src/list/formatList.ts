@@ -46,7 +46,7 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const hint = `rdy run --local . ${buildKitHint(compiledKits)}`;
+      const hint = `rdy run --from . ${buildKitHint(compiledKits)}`;
       sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
     } else {
       const hint = `rdy run --file <file path>`;
@@ -62,7 +62,8 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
 
 interface ConsumerViewOptions {
   compiledKits: string[];
-  localPathArg: string;
+  fromArg: string;
+  kitsDir: string;
 }
 
 /**
@@ -70,21 +71,21 @@ interface ConsumerViewOptions {
  *
  * Returns the empty-consumer message when the kit list is empty.
  */
-export function formatConsumerView({ compiledKits, localPathArg }: ConsumerViewOptions): string {
+export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerViewOptions): string {
   if (compiledKits.length === 0) {
-    return formatEmpty('consumer', localPathArg);
+    return formatEmpty('consumer', kitsDir);
   }
 
-  const hint = `rdy run --local ${localPathArg} ${buildKitHint(compiledKits)}`;
+  const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
   return formatSection('Compiled', hint, compiledKits, ICON_COMPILED);
 }
 
 // -- Empty messages --
 
 /** Format the "no kits found" message appropriate to the given mode. */
-export function formatEmpty(mode: 'owner' | 'consumer', localPathArg?: string): string {
+export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): string {
   if (mode === 'consumer') {
-    return `No compiled kits found at ${localPathArg ?? '.'}/.rdy/kits/.`;
+    return `No compiled kits found at ${kitsDir ?? '.rdy/kits'}.`;
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
