@@ -175,6 +175,25 @@ describe(routeCommand, () => {
     expect(exitCode).toBe(0);
   });
 
+  it('forwards jit flag to runCommand when --jit is set', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: true,
+      internal: false,
+      json: false,
+    });
+    mockRunCommand.mockResolvedValue(0);
+
+    const exitCode = await routeCommand(['run', '--jit']);
+
+    expect(mockRunCommand).toHaveBeenCalledWith(expect.anything(), true);
+    expect(exitCode).toBe(0);
+  });
+
   it('passes --json flag through to runCommand', async () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],

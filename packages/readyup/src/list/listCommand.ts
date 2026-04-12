@@ -72,7 +72,7 @@ function runFromMode(fromArg: string): number {
     return 1;
   }
 
-  const output = formatConsumerView({ compiledKits, localPathArg: fromArg });
+  const output = formatConsumerView({ compiledKits, fromArg, kitsDir });
   process.stdout.write(output + '\n');
   return 0;
 }

@@ -153,7 +153,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits/.');
+      expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits.');
     });
 
     it('returns 1 and writes to stderr when enumerateKits throws', async () => {

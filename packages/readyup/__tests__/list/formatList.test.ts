@@ -105,10 +105,11 @@ describe(formatOwnerView, () => {
 });
 
 describe(formatConsumerView, () => {
-  it('renders compiled kits with the local path in the hint', () => {
+  it('renders compiled kits with the from arg in the hint', () => {
     const result = formatConsumerView({
       compiledKits: ['default', 'deploy'],
-      localPathArg: '.',
+      fromArg: '.',
+      kitsDir: '/resolved/.rdy/kits',
     });
 
     expect(result).toContain('rdy run --from .');
@@ -116,10 +117,11 @@ describe(formatConsumerView, () => {
     expect(result).toContain('deploy');
   });
 
-  it('preserves the exact localPathArg in the hint', () => {
+  it('preserves the exact fromArg in the hint', () => {
     const result = formatConsumerView({
       compiledKits: ['deploy'],
-      localPathArg: '/other',
+      fromArg: '/other',
+      kitsDir: '/other/.rdy/kits',
     });
 
     expect(result).toContain('rdy run --from /other');
@@ -128,7 +130,8 @@ describe(formatConsumerView, () => {
   it('uses brackets around --kit when default kit exists', () => {
     const result = formatConsumerView({
       compiledKits: ['default'],
-      localPathArg: '.',
+      fromArg: '.',
+      kitsDir: '/resolved/.rdy/kits',
     });
 
     expect(result).toContain('[--kit <name>]');
@@ -137,20 +140,42 @@ describe(formatConsumerView, () => {
   it('omits brackets around --kit when default kit is absent', () => {
     const result = formatConsumerView({
       compiledKits: ['deploy'],
-      localPathArg: '.',
+      fromArg: '.',
+      kitsDir: '/resolved/.rdy/kits',
     });
 
     expect(result).toContain('--kit <name>');
     expect(result).not.toContain('[--kit <name>]');
   });
 
-  it('returns empty-consumer message when kit list is empty', () => {
+  it('returns empty message with resolved kitsDir for local path', () => {
     const result = formatConsumerView({
       compiledKits: [],
-      localPathArg: '.',
+      fromArg: '.',
+      kitsDir: '/resolved/.rdy/kits',
     });
 
-    expect(result).toBe('No compiled kits found at ./.rdy/kits/.');
+    expect(result).toBe('No compiled kits found at /resolved/.rdy/kits.');
+  });
+
+  it('returns empty message with home-based path for global source', () => {
+    const result = formatConsumerView({
+      compiledKits: [],
+      fromArg: 'global',
+      kitsDir: '/home/user/.rdy/kits',
+    });
+
+    expect(result).toBe('No compiled kits found at /home/user/.rdy/kits.');
+  });
+
+  it('returns empty message with directory path for dir: source', () => {
+    const result = formatConsumerView({
+      compiledKits: [],
+      fromArg: 'dir:/custom/path',
+      kitsDir: '/custom/path',
+    });
+
+    expect(result).toBe('No compiled kits found at /custom/path.');
   });
 });
 
@@ -162,15 +187,15 @@ describe(formatEmpty, () => {
     expect(result).toContain('rdy compile');
   });
 
-  it('returns consumer message with the provided path', () => {
-    const result = formatEmpty('consumer', '/some/path');
+  it('returns consumer message with the provided kitsDir', () => {
+    const result = formatEmpty('consumer', '/home/user/.rdy/kits');
 
-    expect(result).toBe('No compiled kits found at /some/path/.rdy/kits/.');
+    expect(result).toBe('No compiled kits found at /home/user/.rdy/kits.');
   });
 
-  it('defaults consumer path to "." when omitted', () => {
+  it('defaults consumer kitsDir to ".rdy/kits" when omitted', () => {
     const result = formatEmpty('consumer');
 
-    expect(result).toContain('./.rdy/kits/');
+    expect(result).toBe('No compiled kits found at .rdy/kits.');
   });
 });
