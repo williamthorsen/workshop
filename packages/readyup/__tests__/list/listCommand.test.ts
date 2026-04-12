@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -39,7 +40,9 @@ describe(listCommand, () => {
     const exitCode = await listCommand(['--from', 'global']);
 
     expect(exitCode).toBe(0);
-    const calledDir = mockEnumerateKits.mock.calls[0]![0].dir;
+    const firstCall = mockEnumerateKits.mock.calls[0];
+    assert.ok(firstCall, 'expected enumerateKits to have been called');
+    const calledDir = firstCall[0].dir;
     expect(calledDir).toMatch(/\/.rdy\/kits$/);
     expect(stdoutSpy).toHaveBeenCalled();
   });
@@ -50,7 +53,9 @@ describe(listCommand, () => {
     const exitCode = await listCommand(['--from', 'dir:/some/path']);
 
     expect(exitCode).toBe(0);
-    const calledDir = mockEnumerateKits.mock.calls[0]![0].dir;
+    const firstCall = mockEnumerateKits.mock.calls[0];
+    assert.ok(firstCall, 'expected enumerateKits to have been called');
+    const calledDir = firstCall[0].dir;
     expect(calledDir).toBe(path.resolve('/some/path'));
     // Directory source does not append .rdy/kits.
     expect(calledDir).not.toContain('.rdy/kits');
@@ -62,7 +67,9 @@ describe(listCommand, () => {
     const exitCode = await listCommand(['--from', '/some/repo']);
 
     expect(exitCode).toBe(0);
-    const calledDir = mockEnumerateKits.mock.calls[0]![0].dir;
+    const firstCall = mockEnumerateKits.mock.calls[0];
+    assert.ok(firstCall, 'expected enumerateKits to have been called');
+    const calledDir = firstCall[0].dir;
     expect(calledDir).toBe(path.join(path.resolve('/some/repo'), '.rdy/kits'));
   });
 
