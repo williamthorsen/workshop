@@ -54,7 +54,7 @@ function runFromMode(fromArg: string): number {
 
   let kitsDir: string;
   if (source.type === 'global') {
-    const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
+    const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
     kitsDir = path.join(homeDir, '.rdy/kits');
   } else if (source.type === 'directory') {
     kitsDir = path.resolve(source.path);

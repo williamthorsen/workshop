@@ -8,7 +8,7 @@ import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { parseArgs } from './parseArgs.ts';
-import { parseFromValue, type FromSource } from './parseFromValue.ts';
+import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { reportRdy, tallyResult } from './reportRdy.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
@@ -111,6 +111,47 @@ function translateParseError(error: unknown): never {
   throw error;
 }
 
+/** Collect active source flags and validate mutual exclusivity and mode-flag constraints. */
+function validateFlagConstraints(
+  parsed: {
+    file: string | undefined;
+    from: string | undefined;
+    url: string | undefined;
+    jit: boolean;
+    internal: boolean;
+    checklists: string | undefined;
+  },
+  positionalCount: number,
+): string | undefined {
+  const sourceFlags: string[] = [];
+  if (parsed.file !== undefined) sourceFlags.push('--file');
+  if (parsed.from !== undefined) sourceFlags.push('--from');
+  if (parsed.url !== undefined) sourceFlags.push('--url');
+
+  if (sourceFlags.length > 1) {
+    throw new Error(`Cannot combine ${sourceFlags.join(', ')} flags`);
+  }
+
+  const sourceType = sourceFlags[0];
+
+  if (parsed.jit && sourceType !== undefined) {
+    throw new Error(`--jit cannot be combined with ${sourceType}`);
+  }
+  if (parsed.internal && sourceType !== undefined) {
+    throw new Error(`--internal cannot be combined with ${sourceType}`);
+  }
+
+  if (parsed.checklists !== undefined && sourceType !== '--file' && sourceType !== '--url') {
+    throw new Error('--checklists can only be used with --file or --url');
+  }
+
+  if ((sourceType === '--file' || sourceType === '--url') && positionalCount > 0) {
+    throw new Error(`${sourceType} cannot be combined with positional kit arguments`);
+  }
+
+  return sourceType;
+}
+
 /** Parse run-subcommand flags into a structured object. */
 export function parseRunArgs(flags: string[]): ParsedRunArgs {
   let result;
@@ -121,38 +162,10 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   }
   const { flags: parsed, positionals } = result;
 
-  // Count source flags for mutual exclusivity.
-  const sourceFlags: string[] = [];
-  if (parsed.file !== undefined) sourceFlags.push('--file');
-  if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.url !== undefined) sourceFlags.push('--url');
-
-  if (sourceFlags.length > 1) {
-    throw new Error(`Cannot combine ${sourceFlags.join(', ')} flags`);
-  }
-
-  // Validate --jit and --internal incompatibility with source flags.
-  if (parsed.jit && sourceFlags.length > 0) {
-    throw new Error(`--jit cannot be combined with ${sourceFlags[0]}`);
-  }
-  if (parsed.internal && sourceFlags.length > 0) {
-    throw new Error(`--internal cannot be combined with ${sourceFlags[0]}`);
-  }
-
-  // Validate --checklists co-dependencies.
-  const checklistsValue = parsed.checklists;
-  const sourceType = sourceFlags[0];
-  if (checklistsValue !== undefined && sourceType !== '--file' && sourceType !== '--url') {
-    throw new Error('--checklists can only be used with --file or --url');
-  }
-
-  // Validate that file/url sources cannot be combined with positional args.
-  if ((sourceType === '--file' || sourceType === '--url') && positionals.length > 0) {
-    throw new Error(`${sourceType} cannot be combined with positional kit arguments`);
-  }
+  validateFlagConstraints(parsed, positionals.length);
 
   // Parse checklists from the flag value.
-  const checklists = checklistsValue !== undefined ? checklistsValue.split(',').filter((s) => s !== '') : undefined;
+  const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
 
   // Parse kit specifiers from positional args.
   const kitSpecifiers = parseKitSpecifiers(positionals);
@@ -247,7 +260,7 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
       }));
 
     case 'global': {
-      const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
+      const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(homeDir, KITS_DIR, `${spec.kitName}${extension}`) },
