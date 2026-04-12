@@ -175,6 +175,16 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['--from'])).toThrow('--from requires a source argument');
   });
 
+  it('parses --from= syntax', () => {
+    const result = parseRunArgs(['--from=github:org/repo']);
+
+    expect(result.fromValue).toBe('github:org/repo');
+  });
+
+  it('throws when --from= has an empty value', () => {
+    expect(() => parseRunArgs(['--from='])).toThrow('--from requires a source argument');
+  });
+
   // --jit flag
   it('parses --jit flag', () => {
     const result = parseRunArgs(['--jit']);
