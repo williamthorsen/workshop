@@ -252,7 +252,7 @@ export interface RdyConfig {
   };
   internal?: {
     dir?: string;
-    extension?: string;
+    infix?: string;
   };
 }
 
@@ -265,7 +265,7 @@ export interface ResolvedRdyConfig {
   };
   internal: {
     dir: string;
-    extension: string;
+    infix: string | undefined;
   };
 }
 

@@ -45,10 +45,10 @@ describe(routeCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
-      internal: { dir: '.', extension: '.ts' },
+      internal: { dir: '.', infix: undefined },
     });
     mockResolveKitSources.mockReturnValue([
-      { name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] },
+      { name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] },
     ]);
   });
 
@@ -103,10 +103,11 @@ describe(routeCommand, () => {
     await routeCommand(['--help']);
 
     const output = infoSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('--from');
     expect(output).toContain('--file, -f');
-    expect(output).toContain('--github, -g');
-    expect(output).toContain('--local, -l');
     expect(output).toContain('--url, -u');
+    expect(output).toContain('--jit, -J');
+    expect(output).toContain('--internal, -i');
     expect(output).toContain('--checklists, -c');
     expect(output).toContain('--json, -j');
     expect(output).toContain('--version, -V');
@@ -153,9 +154,10 @@ describe(routeCommand, () => {
       kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
       checklists: undefined,
       filePath: undefined,
-      githubValue: undefined,
-      localValue: undefined,
+      fromValue: undefined,
       urlValue: undefined,
+      jit: false,
+      internal: false,
       json: false,
     });
     mockRunCommand.mockResolvedValue(0);
@@ -165,9 +167,10 @@ describe(routeCommand, () => {
     expect(mockParseRunArgs).toHaveBeenCalledWith(['deploy']);
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        kitEntries: [{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] }],
+        kitEntries: [{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] }],
         json: false,
       }),
+      false,
     );
     expect(exitCode).toBe(0);
   });
@@ -177,9 +180,10 @@ describe(routeCommand, () => {
       kitSpecifiers: [],
       checklists: undefined,
       filePath: undefined,
-      githubValue: undefined,
-      localValue: undefined,
+      fromValue: undefined,
       urlValue: undefined,
+      jit: false,
+      internal: false,
       json: true,
     });
     mockRunCommand.mockResolvedValue(0);
@@ -190,6 +194,7 @@ describe(routeCommand, () => {
       expect.objectContaining({
         json: true,
       }),
+      false,
     );
     expect(exitCode).toBe(0);
   });
@@ -217,9 +222,10 @@ describe(routeCommand, () => {
       kitSpecifiers: [],
       checklists: undefined,
       filePath: 'path.ts',
-      githubValue: undefined,
-      localValue: undefined,
+      fromValue: undefined,
       urlValue: undefined,
+      jit: false,
+      internal: false,
       json: false,
     });
     mockResolveKitSources.mockImplementation(() => {
@@ -237,9 +243,10 @@ describe(routeCommand, () => {
       kitSpecifiers: [],
       checklists: undefined,
       filePath: undefined,
-      githubValue: undefined,
-      localValue: undefined,
+      fromValue: undefined,
       urlValue: undefined,
+      jit: false,
+      internal: false,
       json: false,
     });
     mockLoadConfig.mockRejectedValue(new Error('bad config'));
@@ -347,12 +354,12 @@ describe(routeCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('passes --local flag through to listCommand', async () => {
+  it('passes --from flag through to listCommand', async () => {
     mockListCommand.mockResolvedValue(0);
 
-    const exitCode = await routeCommand(['list', '--local', '.']);
+    const exitCode = await routeCommand(['list', '--from', '.']);
 
-    expect(mockListCommand).toHaveBeenCalledWith(['--local', '.']);
+    expect(mockListCommand).toHaveBeenCalledWith(['--from', '.']);
     expect(exitCode).toBe(0);
   });
 
@@ -369,9 +376,10 @@ describe(routeCommand, () => {
         kitSpecifiers: [],
         checklists: undefined,
         filePath: 'foo.ts',
-        githubValue: undefined,
-        localValue: undefined,
+        fromValue: undefined,
         urlValue: undefined,
+        jit: false,
+        internal: false,
         json: false,
       });
       mockRunCommand.mockResolvedValue(0);
@@ -387,9 +395,10 @@ describe(routeCommand, () => {
         kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }],
         checklists: undefined,
         filePath: undefined,
-        githubValue: undefined,
-        localValue: undefined,
+        fromValue: undefined,
         urlValue: undefined,
+        jit: false,
+        internal: false,
         json: false,
       });
       mockRunCommand.mockResolvedValue(0);
@@ -420,9 +429,10 @@ describe(routeCommand, () => {
         kitSpecifiers: [{ kitName: 'co', checklists: [] }],
         checklists: undefined,
         filePath: undefined,
-        githubValue: undefined,
-        localValue: undefined,
+        fromValue: undefined,
         urlValue: undefined,
+        jit: false,
+        internal: false,
         json: false,
       });
       mockRunCommand.mockResolvedValue(0);
@@ -438,9 +448,10 @@ describe(routeCommand, () => {
         kitSpecifiers: [],
         checklists: undefined,
         filePath: undefined,
-        githubValue: undefined,
-        localValue: undefined,
+        fromValue: undefined,
         urlValue: undefined,
+        jit: false,
+        internal: false,
         json: false,
       });
       mockRunCommand.mockResolvedValue(0);

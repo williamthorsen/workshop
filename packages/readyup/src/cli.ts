@@ -1,12 +1,14 @@
 import path from 'node:path';
 import process from 'node:process';
 
+import { buildKitFilename } from './buildKitFilename.ts';
 import { loadRdyKit } from './config.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { parseArgs } from './parseArgs.ts';
+import { parseFromValue, type FromSource } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { reportRdy, tallyResult } from './reportRdy.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
@@ -41,10 +43,11 @@ export interface ParsedRunArgs {
   checklists: string[] | undefined;
   failOn?: Severity;
   filePath: string | undefined;
-  githubValue: string | undefined;
+  fromValue: string | undefined;
+  internal: boolean;
+  jit: boolean;
   json: boolean;
   kitSpecifiers: KitSpecifier[];
-  localValue: string | undefined;
   reportOn?: Severity;
   urlValue: string | undefined;
 }
@@ -52,45 +55,20 @@ export interface ParsedRunArgs {
 const runFlagSchema = {
   checklists: { long: '--checklists', type: 'string' as const, short: '-c' },
   file: { long: '--file', type: 'string' as const, short: '-f' },
-  github: { long: '--github', type: 'string' as const, short: '-g' },
+  from: { long: '--from', type: 'string' as const },
   url: { long: '--url', type: 'string' as const, short: '-u' },
-  local: { long: '--local', type: 'string' as const, short: '-l' },
+  jit: { long: '--jit', type: 'boolean' as const, short: '-J' },
+  internal: { long: '--internal', type: 'boolean' as const, short: '-i' },
   json: { long: '--json', type: 'boolean' as const, short: '-j' },
   failOn: { long: '--fail-on', type: 'string' as const, short: '-F' },
   reportOn: { long: '--report-on', type: 'string' as const, short: '-R' },
 };
-
-/** Throw if a kit source flag has already been set. */
-function assertNoExistingSource(existing: string | undefined): void {
-  if (existing !== undefined) {
-    throw new Error('Cannot combine --file, --github, --local, and --url flags');
-  }
-}
-
-/**
- * Parse `org/repo[@ref]` into repo and ref components.
- *
- * The `@ref` part is optional; defaults to `main`.
- */
-function parseGitHubArg(value: string): { repo: string; ref: string } {
-  const atIndex = value.lastIndexOf('@');
-  if (atIndex === -1) {
-    return { repo: value, ref: 'main' };
-  }
-  const repo = value.slice(0, atIndex);
-  const ref = value.slice(atIndex + 1);
-  if (ref === '') {
-    throw new Error(`Invalid --github value: ref after '@' must not be empty in "${value}"`);
-  }
-  return { repo, ref };
-}
 
 /** Validate and narrow a string to a Severity value. */
 function parseSeverityFlag(flagName: string, value: string): Severity {
   if (!VALID_SEVERITIES.has(value)) {
     throw new Error(`${flagName} must be one of: error, warn, recommend (got "${value}")`);
   }
-  // Validated above; narrow without assertion by returning the matched literal.
   if (value === 'error') return 'error';
   if (value === 'warn') return 'warn';
   return 'recommend';
@@ -100,8 +78,13 @@ function parseSeverityFlag(flagName: string, value: string): Severity {
 const KITS_DIR = '.rdy/kits';
 
 /** Build the GitHub raw content URL for a kit. */
-function buildGitHubKitUrl(repo: string, ref: string, kit: string): string {
-  return `https://raw.githubusercontent.com/${repo}/${ref}/${KITS_DIR}/${kit}.js`;
+function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {
+  return `https://raw.githubusercontent.com/${org}/${repo}/${ref}/${KITS_DIR}/${kit}${extension}`;
+}
+
+/** Build the Bitbucket raw content URL for a kit. */
+function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit: string, extension: string): string {
+  return `https://bitbucket.org/${workspace}/${repo}/raw/${ref}/${KITS_DIR}/${kit}${extension}`;
 }
 
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
@@ -109,8 +92,7 @@ const flagErrorHints: Record<string, string> = {
   '--checklists': '--checklists requires a comma-separated list of checklist names',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
-  '--github': '--github requires a repository argument (org/repo[@ref])',
-  '--local': '--local requires a path to a local repository',
+  '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
   '--report-on': '--report-on requires a severity level (error, warn, recommend)',
   '--url': '--url requires a URL argument',
 };
@@ -139,34 +121,34 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   }
   const { flags: parsed, positionals } = result;
 
-  // Validate mutual exclusivity of source flags.
-  let sourceType: string | undefined;
-  if (parsed.file !== undefined) {
-    assertNoExistingSource(sourceType);
-    sourceType = 'file';
+  // Count source flags for mutual exclusivity.
+  const sourceFlags: string[] = [];
+  if (parsed.file !== undefined) sourceFlags.push('--file');
+  if (parsed.from !== undefined) sourceFlags.push('--from');
+  if (parsed.url !== undefined) sourceFlags.push('--url');
+
+  if (sourceFlags.length > 1) {
+    throw new Error(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
-  if (parsed.github !== undefined) {
-    assertNoExistingSource(sourceType);
-    sourceType = 'github';
+
+  // Validate --jit and --internal incompatibility with source flags.
+  if (parsed.jit && sourceFlags.length > 0) {
+    throw new Error(`--jit cannot be combined with ${sourceFlags[0]}`);
   }
-  if (parsed.local !== undefined) {
-    assertNoExistingSource(sourceType);
-    sourceType = 'local';
-  }
-  if (parsed.url !== undefined) {
-    assertNoExistingSource(sourceType);
-    sourceType = 'url';
+  if (parsed.internal && sourceFlags.length > 0) {
+    throw new Error(`--internal cannot be combined with ${sourceFlags[0]}`);
   }
 
   // Validate --checklists co-dependencies.
   const checklistsValue = parsed.checklists;
-  if (checklistsValue !== undefined && sourceType !== 'file' && sourceType !== 'url') {
+  const sourceType = sourceFlags[0];
+  if (checklistsValue !== undefined && sourceType !== '--file' && sourceType !== '--url') {
     throw new Error('--checklists can only be used with --file or --url');
   }
 
   // Validate that file/url sources cannot be combined with positional args.
-  if ((sourceType === 'file' || sourceType === 'url') && positionals.length > 0) {
-    throw new Error(`--${sourceType} cannot be combined with positional kit arguments`);
+  if ((sourceType === '--file' || sourceType === '--url') && positionals.length > 0) {
+    throw new Error(`${sourceType} cannot be combined with positional kit arguments`);
   }
 
   // Parse checklists from the flag value.
@@ -182,10 +164,11 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const parsedArgs: ParsedRunArgs = {
     checklists,
     filePath: parsed.file,
-    githubValue: parsed.github,
+    fromValue: parsed.from,
+    internal: parsed.internal,
+    jit: parsed.jit,
     json: parsed.json,
     kitSpecifiers,
-    localValue: parsed.local,
     urlValue: parsed.url,
   };
   if (failOn !== undefined) parsedArgs.failOn = failOn;
@@ -196,22 +179,24 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 /** Resolve parsed flags into an array of kit entries to execute. */
 export function resolveKitSources({
   filePath,
-  githubValue,
-  localValue,
+  fromValue,
   urlValue,
   kitSpecifiers,
   checklists,
+  jit,
+  internal,
   internalDir,
-  internalExtension,
+  internalInfix,
 }: {
   filePath: string | undefined;
-  githubValue: string | undefined;
-  localValue: string | undefined;
+  fromValue: string | undefined;
   urlValue: string | undefined;
   kitSpecifiers: KitSpecifier[];
   checklists: string[] | undefined;
+  jit: boolean;
+  internal: boolean;
   internalDir: string;
-  internalExtension: string;
+  internalInfix: string | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
     return [{ name: filePath, source: { path: filePath }, checklists: checklists ?? [] }];
@@ -220,32 +205,71 @@ export function resolveKitSources({
     return [{ name: urlValue, source: { url: urlValue }, checklists: checklists ?? [] }];
   }
 
+  const extension = jit ? '.ts' : '.js';
   const specs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
 
-  if (githubValue !== undefined) {
-    const { repo, ref } = parseGitHubArg(githubValue);
+  if (fromValue !== undefined) {
+    return resolveFromSource(parseFromValue(fromValue), specs, extension);
+  }
+
+  // Default/internal case: resolve from the current repo.
+  if (internal) {
     return specs.map((spec) => ({
       name: spec.kitName,
-      source: { url: buildGitHubKitUrl(repo, ref, spec.kitName) },
+      source: { path: path.join(KITS_DIR, internalDir, buildKitFilename(spec.kitName, internalInfix, extension)) },
       checklists: spec.checklists,
     }));
   }
 
-  if (localValue !== undefined) {
-    const resolvedBase = path.resolve(process.cwd(), localValue);
-    return specs.map((spec) => ({
-      name: spec.kitName,
-      source: { path: path.join(resolvedBase, KITS_DIR, `${spec.kitName}.js`) },
-      checklists: spec.checklists,
-    }));
-  }
-
-  // Internal/default case.
   return specs.map((spec) => ({
     name: spec.kitName,
-    source: { path: path.join(KITS_DIR, internalDir, `${spec.kitName}${internalExtension}`) },
+    source: { path: path.join(KITS_DIR, `${spec.kitName}${extension}`) },
     checklists: spec.checklists,
   }));
+}
+
+/** Resolve kit entries from a parsed `--from` source. */
+function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension: string): ResolvedKitEntry[] {
+  switch (source.type) {
+    case 'github':
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { url: buildGitHubKitUrl(source.org, source.repo, source.ref, spec.kitName, extension) },
+        checklists: spec.checklists,
+      }));
+
+    case 'bitbucket':
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { url: buildBitbucketKitUrl(source.workspace, source.repo, source.ref, spec.kitName, extension) },
+        checklists: spec.checklists,
+      }));
+
+    case 'global': {
+      const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { path: path.join(homeDir, KITS_DIR, `${spec.kitName}${extension}`) },
+        checklists: spec.checklists,
+      }));
+    }
+
+    case 'directory':
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { path: path.join(path.resolve(process.cwd(), source.path), `${spec.kitName}${extension}`) },
+        checklists: spec.checklists,
+      }));
+
+    case 'local': {
+      const resolvedBase = path.resolve(process.cwd(), source.path);
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { path: path.join(resolvedBase, KITS_DIR, `${spec.kitName}${extension}`) },
+        checklists: spec.checklists,
+      }));
+    }
+  }
 }
 
 /** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */
@@ -292,7 +316,7 @@ interface RunCommandOptions {
 }
 
 /** Load a rdy kit from a path or URL source. */
-async function loadKit(source: KitSource): Promise<RdyKit> {
+async function loadKit(source: KitSource, isJit: boolean): Promise<RdyKit> {
   if ('url' in source) {
     const options: LoadRemoteKitOptions = { url: source.url };
     if (source.url.includes('raw.githubusercontent.com')) {
@@ -303,15 +327,34 @@ async function loadKit(source: KitSource): Promise<RdyKit> {
     }
     return loadRemoteKit(options);
   }
-  return loadRdyKit(source.path);
+
+  try {
+    return await loadRdyKit(source.path);
+  } catch (error: unknown) {
+    if (isJit && isModuleNotFoundError(error, 'readyup')) {
+      throw new Error('Running from source requires readyup to be installed as a project dependency.');
+    }
+    throw error;
+  }
+}
+
+/** Detect module-not-found errors that mention a specific package name. */
+function isModuleNotFoundError(error: unknown, packageName: string): boolean {
+  if (!(error instanceof Error)) return false;
+  if (!('code' in error)) return false;
+  if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
+  return error.message.includes(packageName);
 }
 
 /** Run rdy checklists across one or more kits. Returns a numeric exit code. */
-export async function runCommand({ kitEntries, json, failOn, reportOn }: RunCommandOptions): Promise<number> {
+export async function runCommand(
+  { kitEntries, json, failOn, reportOn }: RunCommandOptions,
+  isJit = false,
+): Promise<number> {
   if (json) {
-    return runMultiKitJsonMode(kitEntries, failOn, reportOn);
+    return runMultiKitJsonMode(kitEntries, failOn, reportOn, isJit);
   }
-  return runMultiKitHumanMode(kitEntries, failOn, reportOn);
+  return runMultiKitHumanMode(kitEntries, failOn, reportOn, isJit);
 }
 
 /** Run all kit entries in JSON mode, producing a single JSON report. */
@@ -319,6 +362,7 @@ async function runMultiKitJsonMode(
   kitEntries: ResolvedKitEntry[],
   failOn: Severity | undefined,
   reportOn: Severity | undefined,
+  isJit: boolean,
 ): Promise<number> {
   const kitResults: Array<{
     name: string;
@@ -329,7 +373,7 @@ async function runMultiKitJsonMode(
   for (const entry of kitEntries) {
     let kit: RdyKit;
     try {
-      kit = await loadKit(entry.source);
+      kit = await loadKit(entry.source, isJit);
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stdout.write(formatJsonError(message) + '\n');
@@ -384,13 +428,14 @@ async function runMultiKitHumanMode(
   kitEntries: ResolvedKitEntry[],
   failOn: Severity | undefined,
   reportOn: Severity | undefined,
+  isJit: boolean,
 ): Promise<number> {
   const showKitHeader = kitEntries.length > 1;
   let allPassed = true;
   for (const entry of kitEntries) {
     let kit: RdyKit;
     try {
-      kit = await loadKit(entry.source);
+      kit = await loadKit(entry.source, isJit);
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error: ${message}\n`);

@@ -3,13 +3,14 @@ import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
+import { parseFromValue } from '../parseFromValue.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
 import { formatConsumerView, formatOwnerView } from './formatList.ts';
 
 const listFlagSchema = {
-  local: { long: '--local', type: 'string' as const, short: '-l' },
+  from: { long: '--from', type: 'string' as const },
 };
 
 /**
@@ -26,18 +27,34 @@ export async function listCommand(args: string[]): Promise<number> {
     return 1;
   }
 
-  const localPathArg = parsed.flags.local;
+  const fromArg = parsed.flags.from;
 
-  if (localPathArg !== undefined) {
-    return runConsumerMode(localPathArg);
+  if (fromArg !== undefined) {
+    return runFromMode(fromArg);
   }
 
   return runOwnerMode();
 }
 
-/** Enumerate kits from a local path without loading config. */
-function runConsumerMode(localPathArg: string): number {
-  const kitsDir = path.join(path.resolve(localPathArg), '.rdy/kits');
+/** Enumerate kits from a `--from` source. */
+function runFromMode(fromArg: string): number {
+  const source = parseFromValue(fromArg);
+
+  if (source.type === 'github' || source.type === 'bitbucket') {
+    process.stderr.write(`Error: Listing kits from ${source.type} repositories is not yet supported.\n`);
+    return 1;
+  }
+
+  let kitsDir: string;
+  if (source.type === 'global') {
+    const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
+    kitsDir = path.join(homeDir, '.rdy/kits');
+  } else if (source.type === 'directory') {
+    kitsDir = path.resolve(source.path);
+  } else {
+    // local path
+    kitsDir = path.join(path.resolve(source.path), '.rdy/kits');
+  }
 
   let compiledKits;
   try {
@@ -48,7 +65,7 @@ function runConsumerMode(localPathArg: string): number {
     return 1;
   }
 
-  const output = formatConsumerView({ compiledKits, localPathArg });
+  const output = formatConsumerView({ compiledKits, localPathArg: fromArg });
   process.stdout.write(output + '\n');
   return 0;
 }
@@ -69,10 +86,12 @@ async function runOwnerMode(): Promise<number> {
   const internalDir = path.join(cwd, '.rdy/kits', config.internal.dir);
   const compiledDir = path.resolve(cwd, config.compile.outDir);
 
+  const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
+
   let internalKits;
   let compiledKits;
   try {
-    internalKits = enumerateKits({ dir: internalDir, extension: config.internal.extension });
+    internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
     compiledKits = enumerateKits({ dir: compiledDir, extension: '.js' });
   } catch (error: unknown) {
     const message = extractMessage(error);

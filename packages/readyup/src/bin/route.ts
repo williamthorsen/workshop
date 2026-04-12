@@ -24,10 +24,11 @@ Commands:
   list                          List available kits
 
 Run options:
+  --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
-  --github, -g <org/repo[@ref]>      Fetch kit from a GitHub repository
-  --local, -l <path>                 Load compiled kit from a local repository
   --url, -u <url>                    Fetch kit from a URL
+  --jit, -J                          Run from TypeScript source instead of compiled JS
+  --internal, -i                     Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists (with --file or --url only)
   --json, -j                         Output results as JSON
   --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
@@ -48,10 +49,14 @@ to filter checklists within a kit (e.g., deploy:check1,check2).
 If no arguments are given, all checklists in the default kit are run.
 
 Kit source (mutually exclusive):
+  --from <source>                    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref],
+                                     global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
-  --github, -g <org/repo[@ref]>      Fetch kit from a GitHub repository
-  --local, -l <path>                 Load compiled kit from a local repository
   --url, -u <url>                    Fetch kit from a URL
+
+Mode flags (incompatible with --from, --file, --url):
+  --jit, -J                          Run from TypeScript source instead of compiled JS
+  --internal, -i                     Use internal kit directory and infix from config
 
 Options:
   --checklists, -c <name,...>        Filter checklists (with --file or --url only)
@@ -61,7 +66,7 @@ Options:
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
-Defaults to .rdy/kits/default.ts when no source is given.
+Defaults to .rdy/kits/default.js when no source is given.
 `);
 }
 
@@ -89,16 +94,19 @@ Usage: rdy list [options]
 List available kits without running them.
 
 Modes:
-  rdy list                  List internal and compiled kits (owner view)
-  rdy list --local <path>   List compiled kits at a local path (consumer view)
+  rdy list                       List internal and compiled kits (owner view)
+  rdy list --from <path>         List compiled kits at a local path (consumer view)
+  rdy list --from global         List compiled kits in the global directory
+  rdy list --from dir:<path>     List kits in an arbitrary directory
 
 Options:
-  --local, -l <path>  Path to a local repository with compiled kits
-  --help, -h          Show this help message
+  --from <source>  Kit source (local path, global, or dir:path)
+  --help, -h       Show this help message
 
 Examples:
-  rdy list             Show kits in the current project
-  rdy list --local .   Show compiled kits in the current directory
+  rdy list                Show kits in the current project
+  rdy list --from .       Show compiled kits in the current directory
+  rdy list --from global  Show kits in the global directory
 `);
 }
 
@@ -239,23 +247,27 @@ async function handleRun(flags: string[]): Promise<number> {
   try {
     kitEntries = resolveKitSources({
       filePath: parsed.filePath,
-      githubValue: parsed.githubValue,
-      localValue: parsed.localValue,
+      fromValue: parsed.fromValue,
       urlValue: parsed.urlValue,
       kitSpecifiers: parsed.kitSpecifiers,
       checklists: parsed.checklists,
+      jit: parsed.jit,
+      internal: parsed.internal,
       internalDir: config.internal.dir,
-      internalExtension: config.internal.extension,
+      internalInfix: config.internal.infix,
     });
   } catch (error: unknown) {
     process.stderr.write(`Error: ${extractMessage(error)}\n`);
     return 1;
   }
 
-  return runCommand({
-    kitEntries,
-    json: parsed.json,
-    ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
-    ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
-  });
+  return runCommand(
+    {
+      kitEntries,
+      json: parsed.json,
+      ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
+      ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
+    },
+    parsed.jit,
+  );
 }

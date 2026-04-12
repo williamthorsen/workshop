@@ -111,7 +111,7 @@ describe(formatConsumerView, () => {
       localPathArg: '.',
     });
 
-    expect(result).toContain('rdy run --local .');
+    expect(result).toContain('rdy run --from .');
     expect(result).toContain('default');
     expect(result).toContain('deploy');
   });
@@ -122,7 +122,7 @@ describe(formatConsumerView, () => {
       localPathArg: '/other',
     });
 
-    expect(result).toContain('rdy run --local /other');
+    expect(result).toContain('rdy run --from /other');
   });
 
   it('uses brackets around --kit when default kit exists', () => {
