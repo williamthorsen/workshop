@@ -56,9 +56,14 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
   return { results: [], passed: true, durationMs: 0, ...overrides };
 }
 
+/** Wrap a single checklist report as a single-kit input. */
+function singleKit(checklistName: string, report: RdyReport, kitName = 'deploy') {
+  return [{ name: kitName, entries: [{ name: checklistName, report }] }];
+}
+
 describe(formatJsonReport, () => {
   it('produces valid JSON', () => {
-    const output = formatJsonReport([{ name: 'deploy', report: makeReport() }]);
+    const output = formatJsonReport(singleKit('deploy', makeReport()));
 
     expect(() => {
       JSON.parse(output);
@@ -72,7 +77,7 @@ describe(formatJsonReport, () => {
       durationMs: 15,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
       passed: 1,
@@ -85,7 +90,7 @@ describe(formatJsonReport, () => {
     });
   });
 
-  it('aggregates granular counts across multiple checklists', () => {
+  it('aggregates granular counts across multiple checklists in a kit', () => {
     const report1 = makeReport({
       results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' })],
       passed: true,
@@ -99,8 +104,13 @@ describe(formatJsonReport, () => {
 
     const parsed: unknown = JSON.parse(
       formatJsonReport([
-        { name: 'deploy', report: report1 },
-        { name: 'infra', report: report2 },
+        {
+          name: 'deploy',
+          entries: [
+            { name: 'deploy', report: report1 },
+            { name: 'infra', report: report2 },
+          ],
+        },
       ]),
     );
 
@@ -112,7 +122,42 @@ describe(formatJsonReport, () => {
       blocked: 0,
       optional: 0,
       worstSeverity: 'error',
-      checklists: expect.arrayContaining([expect.anything(), expect.anything()]),
+      kits: [
+        {
+          name: 'deploy',
+          checklists: expect.arrayContaining([expect.anything(), expect.anything()]),
+        },
+      ],
+    });
+  });
+
+  it('aggregates counts across multiple kits', () => {
+    const report1 = makeReport({
+      results: [makePassedResult({ name: 'a' })],
+      passed: true,
+      durationMs: 10,
+    });
+    const report2 = makeReport({
+      results: [makeFailedResult({ name: 'b' })],
+      passed: false,
+      durationMs: 5,
+    });
+
+    const parsed: unknown = JSON.parse(
+      formatJsonReport([
+        { name: 'kit1', entries: [{ name: 'check1', report: report1 }] },
+        { name: 'kit2', entries: [{ name: 'check2', report: report2 }] },
+      ]),
+    );
+
+    expect(parsed).toMatchObject({
+      passed: 1,
+      errors: 1,
+      worstSeverity: 'error',
+      kits: [
+        { name: 'kit1', passed: 1, errors: 0 },
+        { name: 'kit2', passed: 0, errors: 1 },
+      ],
     });
   });
 
@@ -123,20 +168,25 @@ describe(formatJsonReport, () => {
       durationMs: 10,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
-      checklists: [
+      kits: [
         {
           name: 'deploy',
-          passed: 1,
-          errors: 0,
-          warnings: 0,
-          recommendations: 0,
-          blocked: 0,
-          optional: 0,
-          worstSeverity: null,
-          durationMs: 10,
+          checklists: [
+            {
+              name: 'deploy',
+              passed: 1,
+              errors: 0,
+              warnings: 0,
+              recommendations: 0,
+              blocked: 0,
+              optional: 0,
+              worstSeverity: null,
+              durationMs: 10,
+            },
+          ],
         },
       ],
     });
@@ -149,7 +199,7 @@ describe(formatJsonReport, () => {
       durationMs: 0,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
       passed: 0,
@@ -162,23 +212,23 @@ describe(formatJsonReport, () => {
     });
   });
 
-  it('emits the expected top-level shape with granular fields', () => {
+  it('emits the expected top-level shape with kits array', () => {
     const report = makeReport({
       results: [makePassedResult({ name: 'a' })],
       passed: true,
       durationMs: 10,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
     if (typeof parsed !== 'object' || parsed === null) throw new Error('expected object');
     // eslint-disable-next-line unicorn/no-array-sort -- toSorted requires Node 20+; engine target is >=18.17.0
     const topLevelKeys = Object.keys(parsed).sort();
 
     expect(topLevelKeys).toStrictEqual([
       'blocked',
-      'checklists',
       'durationMs',
       'errors',
+      'kits',
       'optional',
       'passed',
       'recommendations',
@@ -198,7 +248,7 @@ describe(formatJsonReport, () => {
       durationMs: 0,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
       errors: 1,
@@ -218,7 +268,7 @@ describe(formatJsonReport, () => {
       durationMs: 0,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
       blocked: 1,
@@ -233,10 +283,10 @@ describe(formatJsonReport, () => {
       durationMs: 5,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
-      checklists: [{ checks: [{ error: 'connection refused' }] }],
+      kits: [{ checklists: [{ checks: [{ error: 'connection refused' }] }] }],
     });
   });
 
@@ -247,23 +297,27 @@ describe(formatJsonReport, () => {
       durationMs: 10,
     });
 
-    const output = formatJsonReport([{ name: 'deploy', report }]);
+    const output = formatJsonReport(singleKit('deploy', report));
     const parsed: unknown = JSON.parse(output);
 
     expect(parsed).toMatchObject({
-      checklists: [
+      kits: [
         {
-          checks: [
+          checklists: [
             {
-              name: 'a',
-              status: 'passed',
-              ok: true,
-              severity: 'error',
-              skipReason: null,
-              detail: null,
-              fix: null,
-              error: null,
-              progress: null,
+              checks: [
+                {
+                  name: 'a',
+                  status: 'passed',
+                  ok: true,
+                  severity: 'error',
+                  skipReason: null,
+                  detail: null,
+                  fix: null,
+                  error: null,
+                  progress: null,
+                },
+              ],
             },
           ],
         },
@@ -282,15 +336,19 @@ describe(formatJsonReport, () => {
       durationMs: 15,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
-      checklists: [
+      kits: [
         {
-          checks: [
-            { severity: 'warn', ok: true, skipReason: null },
-            { severity: 'error', ok: false, skipReason: null },
-            { severity: 'recommend', ok: null, skipReason: 'n/a' },
+          checklists: [
+            {
+              checks: [
+                { severity: 'warn', ok: true, skipReason: null },
+                { severity: 'error', ok: false, skipReason: null },
+                { severity: 'recommend', ok: null, skipReason: 'n/a' },
+              ],
+            },
           ],
         },
       ],
@@ -311,16 +369,20 @@ describe(formatJsonReport, () => {
       durationMs: 10,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
-      checklists: [
+      kits: [
         {
-          checks: [
+          checklists: [
             {
-              fix: 'run npm install',
-              detail: 'missing dependency',
-              progress: { type: 'fraction', passedCount: 3, count: 5 },
+              checks: [
+                {
+                  fix: 'run npm install',
+                  detail: 'missing dependency',
+                  progress: { type: 'fraction', passedCount: 3, count: 5 },
+                },
+              ],
             },
           ],
         },
@@ -340,10 +402,10 @@ describe(formatJsonReport, () => {
       durationMs: 10,
     });
 
-    const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+    const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
     expect(parsed).toMatchObject({
-      checklists: [{ checks: [{ progress: { type: 'percent', percent: 75 } }] }],
+      kits: [{ checklists: [{ checks: [{ progress: { type: 'percent', percent: 75 } }] }] }],
     });
   });
 
@@ -355,15 +417,19 @@ describe(formatJsonReport, () => {
         durationMs: 20,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [
+        kits: [
           {
-            checks: [
+            checklists: [
               {
-                name: 'parent',
-                checks: [{ name: 'child', checks: [] }],
+                checks: [
+                  {
+                    name: 'parent',
+                    checks: [{ name: 'child', checks: [] }],
+                  },
+                ],
               },
             ],
           },
@@ -378,10 +444,10 @@ describe(formatJsonReport, () => {
         durationMs: 10,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [{ checks: [{ name: 'top-check', checks: [] }] }],
+        kits: [{ checklists: [{ checks: [{ name: 'top-check', checks: [] }] }] }],
       });
     });
 
@@ -398,22 +464,26 @@ describe(formatJsonReport, () => {
         durationMs: 50,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [
+        kits: [
           {
-            checks: [
+            checklists: [
               {
-                name: 'A',
                 checks: [
-                  { name: 'A1', checks: [] },
-                  { name: 'A2', checks: [] },
+                  {
+                    name: 'A',
+                    checks: [
+                      { name: 'A1', checks: [] },
+                      { name: 'A2', checks: [] },
+                    ],
+                  },
+                  {
+                    name: 'B',
+                    checks: [{ name: 'B1', checks: [] }],
+                  },
                 ],
-              },
-              {
-                name: 'B',
-                checks: [{ name: 'B1', checks: [] }],
               },
             ],
           },
@@ -428,10 +498,10 @@ describe(formatJsonReport, () => {
         durationMs: 10,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [{ checks: [{ name: 'leaf', checks: [] }] }],
+        kits: [{ checklists: [{ checks: [{ name: 'leaf', checks: [] }] }] }],
       });
     });
 
@@ -445,15 +515,19 @@ describe(formatJsonReport, () => {
         durationMs: 0,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [
+        kits: [
           {
-            checks: [
+            checklists: [
               {
-                name: 'na-parent',
-                checks: [{ name: 'na-child' }],
+                checks: [
+                  {
+                    name: 'na-parent',
+                    checks: [{ name: 'na-child' }],
+                  },
+                ],
               },
             ],
           },
@@ -473,14 +547,14 @@ describe(formatJsonReport, () => {
         durationMs: 30,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
         passed: 2,
         errors: 1,
         blocked: 1,
         worstSeverity: 'error',
-        checklists: [{ passed: 2, errors: 1, blocked: 1, worstSeverity: 'error' }],
+        kits: [{ checklists: [{ passed: 2, errors: 1, blocked: 1, worstSeverity: 'error' }] }],
       });
     });
 
@@ -495,18 +569,22 @@ describe(formatJsonReport, () => {
         durationMs: 30,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }]));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
 
       expect(parsed).toMatchObject({
-        checklists: [
+        kits: [
           {
-            checks: [
+            checklists: [
               {
-                name: 'L0',
                 checks: [
                   {
-                    name: 'L1',
-                    checks: [{ name: 'L2', checks: [] }],
+                    name: 'L0',
+                    checks: [
+                      {
+                        name: 'L1',
+                        checks: [{ name: 'L2', checks: [] }],
+                      },
+                    ],
                   },
                 ],
               },
@@ -528,10 +606,10 @@ describe(formatJsonReport, () => {
         durationMs: 20,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }], { reportOn: 'error' }));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report), { reportOn: 'error' }));
 
       expect(parsed).toMatchObject({
-        checklists: [{ checks: [{ name: 'error-check' }] }],
+        kits: [{ checklists: [{ checks: [{ name: 'error-check' }] }] }],
       });
     });
 
@@ -545,7 +623,7 @@ describe(formatJsonReport, () => {
         durationMs: 15,
       });
 
-      const parsed: unknown = JSON.parse(formatJsonReport([{ name: 'deploy', report }], { reportOn: 'error' }));
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report), { reportOn: 'error' }));
 
       expect(parsed).toMatchObject({
         passed: 1,

@@ -3,6 +3,7 @@ import { meetsThreshold } from './runRdy.ts';
 import type {
   JsonCheckEntry,
   JsonChecklistEntry,
+  JsonKitEntry,
   JsonReport,
   RdyReport,
   RdyResult,
@@ -14,6 +15,11 @@ import { worseSeverity } from './utils/severity.ts';
 interface ChecklistEntry {
   name: string;
   report: RdyReport;
+}
+
+interface KitInput {
+  name: string;
+  entries: ChecklistEntry[];
 }
 
 /** Options controlling which results appear in JSON output. */
@@ -34,47 +40,66 @@ function emptyCounts(): SummaryCounts {
   };
 }
 
-/** Transform an array of checklist results into a JSON-serializable report string. */
-export function formatJsonReport(entries: ChecklistEntry[], options?: FormatJsonReportOptions): string {
+/** Aggregate `source` counts into `target` in place. */
+function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
+  target.passed += source.passed;
+  target.errors += source.errors;
+  target.warnings += source.warnings;
+  target.recommendations += source.recommendations;
+  target.blocked += source.blocked;
+  target.optional += source.optional;
+  target.worstSeverity = worseSeverity(target.worstSeverity, source.worstSeverity);
+}
+
+/** Build a single checklist entry from a name and report. */
+function buildChecklistEntry(name: string, report: RdyReport, reportOn: Severity): JsonChecklistEntry {
+  const counts = emptyCounts();
+  const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
+
+  for (const result of visibleResults) {
+    tallyResult(counts, result);
+  }
+
+  const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
+
+  return {
+    name,
+    durationMs: report.durationMs,
+    ...counts,
+    checks,
+  };
+}
+
+/** Transform kit-grouped checklist results into a JSON-serializable report string. */
+export function formatJsonReport(kitInputs: KitInput[], options?: FormatJsonReportOptions): string {
   const reportOn = options?.reportOn ?? 'recommend';
   const totals = emptyCounts();
 
-  const checklists: JsonChecklistEntry[] = entries.map(({ name, report }) => {
-    const counts = emptyCounts();
+  const kits: JsonKitEntry[] = kitInputs.map(({ name, entries }) => {
+    const kitCounts = emptyCounts();
+    const checklists: JsonChecklistEntry[] = entries.map(({ name: checklistName, report }) => {
+      const entry = buildChecklistEntry(checklistName, report, reportOn);
+      mergeCounts(kitCounts, entry);
+      return entry;
+    });
 
-    // Filter results by reporting threshold.
-    const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
-
-    // Count all visible results (flat count across all nesting levels).
-    for (const result of visibleResults) {
-      tallyResult(counts, result);
-    }
-
-    // Reconstruct tree from flat depth-first results.
-    const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
-
-    totals.passed += counts.passed;
-    totals.errors += counts.errors;
-    totals.warnings += counts.warnings;
-    totals.recommendations += counts.recommendations;
-    totals.blocked += counts.blocked;
-    totals.optional += counts.optional;
-    totals.worstSeverity = worseSeverity(totals.worstSeverity, counts.worstSeverity);
+    const kitDurationMs = checklists.reduce((sum, c) => sum + c.durationMs, 0);
+    mergeCounts(totals, kitCounts);
 
     return {
       name,
-      durationMs: report.durationMs,
-      ...counts,
-      checks,
+      durationMs: kitDurationMs,
+      ...kitCounts,
+      checklists,
     };
   });
 
-  const totalDurationMs = checklists.reduce((sum, c) => sum + c.durationMs, 0);
+  const totalDurationMs = kits.reduce((sum, k) => sum + k.durationMs, 0);
 
   const output: JsonReport = {
     ...totals,
     durationMs: totalDurationMs,
-    checklists,
+    kits,
   };
 
   return JSON.stringify(output);
