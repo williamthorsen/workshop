@@ -48,6 +48,7 @@ describe(compileConfig, () => {
       platform: 'node',
       target: 'es2022',
       external: ['node:*'],
+      plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
       write: false,
     });
