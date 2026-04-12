@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { hasJsonField, hasJsonFields, readJsonFile } from '../../src/check-utils/json.ts';
+import { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from '../../src/check-utils/json.ts';
 
 let tempDir: string;
 let cwdSpy: MockInstance;
@@ -47,6 +47,36 @@ describe(readJsonFile, () => {
     writeRaw('bad.json', '{ not valid json }}}');
 
     expect(readJsonFile('bad.json')).toBeUndefined();
+  });
+});
+
+describe(readJsonValue, () => {
+  it('returns a nested value from a JSON file', () => {
+    writeJson('config.json', { publishConfig: { access: 'public' } });
+
+    expect(readJsonValue('config.json', 'publishConfig', 'access')).toBe('public');
+  });
+
+  it('returns undefined when the file does not exist', () => {
+    expect(readJsonValue('missing.json', 'key')).toBeUndefined();
+  });
+
+  it('returns undefined when the JSON is invalid', () => {
+    writeRaw('bad.json', '{ not valid }}}');
+
+    expect(readJsonValue('bad.json', 'key')).toBeUndefined();
+  });
+
+  it('returns undefined when a key in the path is missing', () => {
+    writeJson('config.json', { a: { b: 'value' } });
+
+    expect(readJsonValue('config.json', 'a', 'missing', 'deep')).toBeUndefined();
+  });
+
+  it('returns the full object when no keys are provided', () => {
+    writeJson('config.json', { name: 'test' });
+
+    expect(readJsonValue('config.json')).toEqual({ name: 'test' });
   });
 });
 

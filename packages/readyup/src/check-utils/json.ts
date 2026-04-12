@@ -2,6 +2,7 @@ import { isRecord } from '../isRecord.ts';
 import { safeJsonParse } from '../safeJsonParse.ts';
 import type { CheckOutcome } from '../types.ts';
 import { readFile } from './filesystem.ts';
+import { getJsonValue } from './json-value.ts';
 import { missingFrom } from './missingFrom.ts';
 
 /** Read and parse a JSON file relative to cwd. Return undefined if it doesn't exist or isn't an object. */
@@ -19,6 +20,13 @@ export function hasJsonField(relativePath: string, field: string, expectedValue?
   if (data === undefined) return false;
   if (expectedValue !== undefined) return data[field] === expectedValue;
   return field in data;
+}
+
+/** Read a JSON file and extract a nested value by traversing the key path. */
+export function readJsonValue(relativeFilePath: string, ...keys: string[]): unknown {
+  const obj = readJsonFile(relativeFilePath);
+  if (obj === undefined) return undefined;
+  return getJsonValue(obj, ...keys);
 }
 
 /** Check whether a JSON file has all of the specified fields. */
