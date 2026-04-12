@@ -38,7 +38,14 @@ export async function listCommand(args: string[]): Promise<number> {
 
 /** Enumerate kits from a `--from` source. */
 function runFromMode(fromArg: string): number {
-  const source = parseFromValue(fromArg);
+  let source;
+  try {
+    source = parseFromValue(fromArg);
+  } catch (error: unknown) {
+    const message = extractMessage(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
 
   if (source.type === 'github' || source.type === 'bitbucket') {
     process.stderr.write(`Error: Listing kits from ${source.type} repositories is not yet supported.\n`);

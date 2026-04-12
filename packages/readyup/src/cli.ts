@@ -205,6 +205,7 @@ export function resolveKitSources({
     return [{ name: urlValue, source: { url: urlValue }, checklists: checklists ?? [] }];
   }
 
+  // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
   const specs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
 

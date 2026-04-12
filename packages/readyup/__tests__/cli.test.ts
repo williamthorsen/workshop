@@ -320,6 +320,18 @@ describe(parseRunArgs, () => {
     );
   });
 
+  it('throws when --jit is combined with --url', () => {
+    expect(() => parseRunArgs(['--jit', '--url', 'https://example.com'])).toThrow(
+      '--jit cannot be combined with --url',
+    );
+  });
+
+  it('throws when --internal is combined with --file', () => {
+    expect(() => parseRunArgs(['--internal', '--file', 'path.ts'])).toThrow(
+      '--internal cannot be combined with --file',
+    );
+  });
+
   it('throws when a flag name is passed as value to another flag', () => {
     expect(() => parseRunArgs(['--from', '--url'])).toThrow('--from requires a source argument');
     expect(() => parseRunArgs(['--url', '--from'])).toThrow('--url requires a URL argument');
