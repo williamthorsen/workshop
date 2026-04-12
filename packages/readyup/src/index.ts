@@ -39,6 +39,9 @@ export {
   defineRdyStagedChecklist,
 } from './authoring.ts';
 
+// Compile utilities
+export { pickJson } from './compile/pickJson.ts';
+
 // Check utilities
 export {
   commandExists,
