@@ -8,6 +8,7 @@ export type {
   FractionProgress,
   JsonCheckEntry,
   JsonChecklistEntry,
+  JsonKitEntry,
   JsonReport,
   PassedResult,
   PercentProgress,

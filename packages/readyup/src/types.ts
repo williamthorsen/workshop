@@ -298,8 +298,15 @@ export interface JsonChecklistEntry extends SummaryCounts {
   checks: JsonCheckEntry[];
 }
 
+/** Per-kit entry in JSON output, grouping checklists with per-kit summary counts. */
+export interface JsonKitEntry extends SummaryCounts {
+  name: string;
+  durationMs: number;
+  checklists: JsonChecklistEntry[];
+}
+
 /** Top-level shape of `--json` output. */
 export interface JsonReport extends SummaryCounts {
   durationMs: number;
-  checklists: JsonChecklistEntry[];
+  kits: JsonKitEntry[];
 }

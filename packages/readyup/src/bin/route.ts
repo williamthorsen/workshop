@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { parseRunArgs, resolveKitSource, runCommand } from '../cli.ts';
+import { parseRunArgs, resolveKitSources, runCommand } from '../cli.ts';
 import { compileCommand } from '../compile/compileCommand.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { listCommand } from '../list/listCommand.ts';
@@ -14,21 +14,21 @@ const MIN_PREFIX_LENGTH = 3;
 
 function showHelp(): void {
   console.info(`
-Usage: rdy [names...] [options]
+Usage: rdy [kit[:checklist,...] ...] [options]
        rdy <command> [options]
 
 Commands:
-  run [names...]       Run rdy checklists (default)
-  compile [file]       Bundle TypeScript kit(s) into self-contained ESM file(s)
-  init                 Scaffold a starter config and kit
-  list                 List available kits
+  run [kit[:checklist,...] ...]  Run rdy checklists (default)
+  compile [file]                Bundle TypeScript kit(s) into self-contained ESM file(s)
+  init                          Scaffold a starter config and kit
+  list                          List available kits
 
 Run options:
   --file, -f <path>                  Path to a local kit file
   --github, -g <org/repo[@ref]>      Fetch kit from a GitHub repository
   --local, -l <path>                 Load compiled kit from a local repository
   --url, -u <url>                    Fetch kit from a URL
-  --kit, -k <name>                   Kit name (default: "default")
+  --checklists, -c <name,...>        Filter checklists (with --file or --url only)
   --json, -j                         Output results as JSON
   --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
   --report-on, -R <severity>         Report this severity or above (error, warn, recommend)
@@ -41,9 +41,11 @@ Global options:
 
 function showRunHelp(): void {
   console.info(`
-Usage: rdy run [names...] [options]
+Usage: rdy run [kit[:checklist,...] ...] [options]
 
-Run rdy checklists. If no names are given, all checklists are run.
+Run rdy checklists. Positional arguments select kits to run; use colon syntax
+to filter checklists within a kit (e.g., deploy:check1,check2).
+If no arguments are given, all checklists in the default kit are run.
 
 Kit source (mutually exclusive):
   --file, -f <path>                  Path to a local kit file
@@ -52,13 +54,13 @@ Kit source (mutually exclusive):
   --url, -u <url>                    Fetch kit from a URL
 
 Options:
-  --kit, -k <name>                   Kit name (default: "default")
+  --checklists, -c <name,...>        Filter checklists (with --file or --url only)
   --json, -j                         Output results as JSON
   --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
   --report-on, -R <severity>         Report this severity or above (error, warn, recommend)
   --help, -h                         Show this help message
 
---kit accepts relative paths (e.g., --kit shared/deploy).
+Positional args accept relative paths (e.g., shared/deploy).
 Defaults to .rdy/kits/default.ts when no source is given.
 `);
 }
@@ -233,14 +235,15 @@ async function handleRun(flags: string[]): Promise<number> {
     return 1;
   }
 
-  let kitSource;
+  let kitEntries;
   try {
-    kitSource = resolveKitSource({
+    kitEntries = resolveKitSources({
       filePath: parsed.filePath,
       githubValue: parsed.githubValue,
       localValue: parsed.localValue,
       urlValue: parsed.urlValue,
-      kitName: parsed.kitName,
+      kitSpecifiers: parsed.kitSpecifiers,
+      checklists: parsed.checklists,
       internalDir: config.internal.dir,
       internalExtension: config.internal.extension,
     });
@@ -250,9 +253,8 @@ async function handleRun(flags: string[]): Promise<number> {
   }
 
   return runCommand({
-    kitSource,
+    kitEntries,
     json: parsed.json,
-    names: parsed.names,
     ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
     ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
   });

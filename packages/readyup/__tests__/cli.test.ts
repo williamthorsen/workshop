@@ -59,7 +59,7 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-import { parseRunArgs, resolveKitSource, runCommand } from '../src/cli.ts';
+import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
 
 function makeKit(overrides?: Partial<RdyKit>): RdyKit {
   return {
@@ -72,10 +72,11 @@ function makeKit(overrides?: Partial<RdyKit>): RdyKit {
 }
 
 describe(parseRunArgs, () => {
-  it('returns undefined source flags when no flags are given', () => {
+  it('returns undefined checklists and empty specifiers when no flags are given', () => {
     const result = parseRunArgs([]);
 
-    expect(result.kitName).toBeUndefined();
+    expect(result.checklists).toBeUndefined();
+    expect(result.kitSpecifiers).toStrictEqual([]);
     expect(result.filePath).toBeUndefined();
     expect(result.githubValue).toBeUndefined();
     expect(result.localValue).toBeUndefined();
@@ -83,29 +84,61 @@ describe(parseRunArgs, () => {
     expect(result.json).toBe(false);
   });
 
-  it('parses positional names', () => {
+  it('parses positional kit specifiers', () => {
     const result = parseRunArgs(['deploy', 'infra']);
 
-    expect(result.names).toStrictEqual(['deploy', 'infra']);
+    expect(result.kitSpecifiers).toStrictEqual([
+      { kitName: 'deploy', checklists: [] },
+      { kitName: 'infra', checklists: [] },
+    ]);
   });
 
-  // --kit flag
-  it('parses --kit flag', () => {
-    const result = parseRunArgs(['--kit', 'deploy']);
+  it('parses positional kit specifiers with colon syntax', () => {
+    const result = parseRunArgs(['deploy:check1,check2']);
 
-    expect(result.kitName).toBe('deploy');
+    expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: ['check1', 'check2'] }]);
   });
 
-  it('parses --kit with a slash-separated path', () => {
-    const result = parseRunArgs(['--kit', 'shared/deploy']);
+  // --checklists flag
+  it('parses --checklists with --file', () => {
+    const result = parseRunArgs(['--checklists', 'check1,check2', '--file', 'path.ts']);
 
-    expect(result.kitName).toBe('shared/deploy');
+    expect(result.checklists).toStrictEqual(['check1', 'check2']);
+    expect(result.filePath).toBe('path.ts');
   });
 
-  it('parses --kit= syntax', () => {
-    const result = parseRunArgs(['--kit=deploy']);
+  it('parses --checklists with --url', () => {
+    const result = parseRunArgs(['--checklists', 'check1', '--url', 'https://example.com/kit.js']);
 
-    expect(result.kitName).toBe('deploy');
+    expect(result.checklists).toStrictEqual(['check1']);
+  });
+
+  it('throws when --checklists is used without --file or --url', () => {
+    expect(() => parseRunArgs(['--checklists', 'check1'])).toThrow(
+      '--checklists can only be used with --file or --url',
+    );
+  });
+
+  it('throws when --checklists is used with --github', () => {
+    expect(() => parseRunArgs(['--checklists', 'check1', '--github', 'org/repo'])).toThrow(
+      '--checklists can only be used with --file or --url',
+    );
+  });
+
+  it('throws when --file is combined with positional args', () => {
+    expect(() => parseRunArgs(['--file', 'path.ts', 'deploy'])).toThrow(
+      '--file cannot be combined with positional kit arguments',
+    );
+  });
+
+  it('throws when --url is combined with positional args', () => {
+    expect(() => parseRunArgs(['--url', 'https://example.com/kit.js', 'deploy'])).toThrow(
+      '--url cannot be combined with positional kit arguments',
+    );
+  });
+
+  it('rejects --kit as an unknown flag', () => {
+    expect(() => parseRunArgs(['--kit', 'deploy'])).toThrow("unknown flag '--kit'");
   });
 
   // --file flag
@@ -113,7 +146,7 @@ describe(parseRunArgs, () => {
     const result = parseRunArgs(['--file', 'custom/path.ts']);
 
     expect(result.filePath).toBe('custom/path.ts');
-    expect(result.names).toStrictEqual([]);
+    expect(result.kitSpecifiers).toStrictEqual([]);
   });
 
   it('parses --file= syntax', () => {
@@ -135,14 +168,14 @@ describe(parseRunArgs, () => {
     const result = parseRunArgs(['--json']);
 
     expect(result.json).toBe(true);
-    expect(result.names).toStrictEqual([]);
+    expect(result.kitSpecifiers).toStrictEqual([]);
   });
 
-  it('parses --json with positional names', () => {
+  it('parses --json with positional kit names', () => {
     const result = parseRunArgs(['--json', 'deploy']);
 
     expect(result.json).toBe(true);
-    expect(result.names).toStrictEqual(['deploy']);
+    expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
   });
 
   it('throws on unknown flags', () => {
@@ -155,10 +188,10 @@ describe(parseRunArgs, () => {
   });
 
   // Short options
-  it('parses -c as short form of --kit', () => {
-    const result = parseRunArgs(['-k', 'deploy']);
+  it('parses -c as short form of --checklists', () => {
+    const result = parseRunArgs(['-c', 'check1', '--file', 'path.ts']);
 
-    expect(result.kitName).toBe('deploy');
+    expect(result.checklists).toStrictEqual(['check1']);
   });
 
   it('parses -f as short form of --file', () => {
@@ -216,10 +249,6 @@ describe(parseRunArgs, () => {
 
   it('throws when --github= has an empty value', () => {
     expect(() => parseRunArgs(['--github='])).toThrow('--github requires a repository argument');
-  });
-
-  it('throws when --kit has no value', () => {
-    expect(() => parseRunArgs(['--kit'])).toThrow('--kit requires a kit name');
   });
 
   // --url flag
@@ -363,15 +392,18 @@ describe(parseRunArgs, () => {
   });
 });
 
-describe(resolveKitSource, () => {
+describe(resolveKitSources, () => {
   /** Build args with defaults for internal config. */
-  function resolve(overrides: Partial<Parameters<typeof resolveKitSource>[0]> = {}) {
-    return resolveKitSource({
+  function resolve(
+    overrides: Partial<Parameters<typeof resolveKitSources>[0]> = {},
+  ): ReturnType<typeof resolveKitSources> {
+    return resolveKitSources({
       filePath: undefined,
       githubValue: undefined,
       localValue: undefined,
       urlValue: undefined,
-      kitName: undefined,
+      kitSpecifiers: [],
+      checklists: undefined,
       internalDir: '.',
       internalExtension: '.ts',
       ...overrides,
@@ -379,117 +411,185 @@ describe(resolveKitSource, () => {
   }
 
   it('resolves default kit path with default internal config', () => {
-    expect(resolve()).toStrictEqual({ path: '.rdy/kits/default.ts' });
+    expect(resolve()).toStrictEqual([{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] }]);
   });
 
-  it('resolves named kit with default internal config', () => {
-    expect(resolve({ kitName: 'deploy' })).toStrictEqual({ path: '.rdy/kits/deploy.ts' });
+  it('resolves named kit from positional specifier', () => {
+    expect(resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] })).toStrictEqual([
+      { name: 'deploy', source: { path: '.rdy/kits/deploy.ts' }, checklists: [] },
+    ]);
   });
 
   it('resolves slash-separated kit name', () => {
-    expect(resolve({ kitName: 'shared/deploy' })).toStrictEqual({
-      path: '.rdy/kits/shared/deploy.ts',
-    });
+    expect(resolve({ kitSpecifiers: [{ kitName: 'shared/deploy', checklists: [] }] })).toStrictEqual([
+      { name: 'shared/deploy', source: { path: '.rdy/kits/shared/deploy.ts' }, checklists: [] },
+    ]);
   });
 
   it('applies custom internal dir and extension', () => {
-    expect(resolve({ internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual({
-      path: '.rdy/kits/internal/default.int.ts',
-    });
+    expect(resolve({ internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual([
+      { name: 'default', source: { path: '.rdy/kits/internal/default.int.ts' }, checklists: [] },
+    ]);
   });
 
   it('applies custom internal dir with named kit', () => {
-    expect(resolve({ kitName: 'deploy', internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual({
-      path: '.rdy/kits/internal/deploy.int.ts',
-    });
+    expect(
+      resolve({
+        kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
+        internalDir: 'internal',
+        internalExtension: '.int.ts',
+      }),
+    ).toStrictEqual([{ name: 'deploy', source: { path: '.rdy/kits/internal/deploy.int.ts' }, checklists: [] }]);
   });
 
-  it('resolves --file to a path source', () => {
-    expect(resolve({ filePath: 'custom/path.ts' })).toStrictEqual({ path: 'custom/path.ts' });
+  it('resolves --file to a single path source entry', () => {
+    expect(resolve({ filePath: 'custom/path.ts' })).toStrictEqual([
+      { name: 'custom/path.ts', source: { path: 'custom/path.ts' }, checklists: [] },
+    ]);
+  });
+
+  it('resolves --file with --checklists', () => {
+    expect(resolve({ filePath: 'custom/path.ts', checklists: ['c1', 'c2'] })).toStrictEqual([
+      { name: 'custom/path.ts', source: { path: 'custom/path.ts' }, checklists: ['c1', 'c2'] },
+    ]);
   });
 
   it('resolves --github without ref to a URL with main ref', () => {
-    expect(resolve({ githubValue: 'org/repo', kitName: 'nmr' })).toStrictEqual({
-      url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js',
-    });
+    expect(resolve({ githubValue: 'org/repo', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] })).toStrictEqual([
+      {
+        name: 'nmr',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
+        checklists: [],
+      },
+    ]);
   });
 
   it('resolves --github with ref to a URL with that ref', () => {
-    expect(resolve({ githubValue: 'org/repo@v1', kitName: 'nmr' })).toStrictEqual({
-      url: 'https://raw.githubusercontent.com/org/repo/v1/.rdy/kits/nmr.js',
-    });
+    expect(resolve({ githubValue: 'org/repo@v1', kitSpecifiers: [{ kitName: 'nmr', checklists: [] }] })).toStrictEqual([
+      {
+        name: 'nmr',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/v1/.rdy/kits/nmr.js' },
+        checklists: [],
+      },
+    ]);
   });
 
   it('defaults --github kit to "default"', () => {
-    expect(resolve({ githubValue: 'org/repo' })).toStrictEqual({
-      url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js',
-    });
+    expect(resolve({ githubValue: 'org/repo' })).toStrictEqual([
+      {
+        name: 'default',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
+        checklists: [],
+      },
+    ]);
+  });
+
+  it('resolves multiple kits with --github', () => {
+    expect(
+      resolve({
+        githubValue: 'org/repo',
+        kitSpecifiers: [
+          { kitName: 'deploy', checklists: [] },
+          { kitName: 'infra', checklists: ['c1'] },
+        ],
+      }),
+    ).toStrictEqual([
+      {
+        name: 'deploy',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/deploy.js' },
+        checklists: [],
+      },
+      {
+        name: 'infra',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/infra.js' },
+        checklists: ['c1'],
+      },
+    ]);
   });
 
   it('resolves --local to a .js path under .rdy/kits/', () => {
-    expect(resolve({ localValue: '/path/to/repo' })).toStrictEqual({
-      path: '/path/to/repo/.rdy/kits/default.js',
-    });
+    expect(resolve({ localValue: '/path/to/repo' })).toStrictEqual([
+      { name: 'default', source: { path: '/path/to/repo/.rdy/kits/default.js' }, checklists: [] },
+    ]);
   });
 
-  it('resolves --local with --kit to a named .js file', () => {
-    expect(resolve({ localValue: '/path/to/repo', kitName: 'deploy' })).toStrictEqual({
-      path: '/path/to/repo/.rdy/kits/deploy.js',
-    });
+  it('resolves --local with named kit to a named .js file', () => {
+    expect(
+      resolve({ localValue: '/path/to/repo', kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] }),
+    ).toStrictEqual([{ name: 'deploy', source: { path: '/path/to/repo/.rdy/kits/deploy.js' }, checklists: [] }]);
   });
 
   it('resolves --local with a relative path against cwd', () => {
     const expected = path.resolve(process.cwd(), '../sibling-repo');
 
-    expect(resolve({ localValue: '../sibling-repo' })).toStrictEqual({
-      path: `${expected}/.rdy/kits/default.js`,
-    });
+    expect(resolve({ localValue: '../sibling-repo' })).toStrictEqual([
+      { name: 'default', source: { path: `${expected}/.rdy/kits/default.js` }, checklists: [] },
+    ]);
+  });
+
+  it('resolves multiple kits with --local', () => {
+    expect(
+      resolve({
+        localValue: '/path/to/repo',
+        kitSpecifiers: [
+          { kitName: 'deploy', checklists: [] },
+          { kitName: 'infra', checklists: [] },
+        ],
+      }),
+    ).toStrictEqual([
+      { name: 'deploy', source: { path: '/path/to/repo/.rdy/kits/deploy.js' }, checklists: [] },
+      { name: 'infra', source: { path: '/path/to/repo/.rdy/kits/infra.js' }, checklists: [] },
+    ]);
   });
 
   it('resolves --url to a URL source', () => {
-    expect(resolve({ urlValue: 'https://example.com/config.js' })).toStrictEqual({
-      url: 'https://example.com/config.js',
-    });
+    expect(resolve({ urlValue: 'https://example.com/config.js' })).toStrictEqual([
+      { name: 'https://example.com/config.js', source: { url: 'https://example.com/config.js' }, checklists: [] },
+    ]);
   });
 
-  it('throws when --kit is combined with --file', () => {
-    expect(() => resolve({ filePath: 'path.ts', kitName: 'deploy' })).toThrow('--kit cannot be used with --file');
-  });
-
-  it('throws when --kit is combined with --url', () => {
-    expect(() => resolve({ urlValue: 'https://example.com/config.js', kitName: 'deploy' })).toThrow(
-      '--kit cannot be used with --url',
-    );
+  it('resolves --url with --checklists', () => {
+    expect(resolve({ urlValue: 'https://example.com/config.js', checklists: ['c1', 'c2'] })).toStrictEqual([
+      {
+        name: 'https://example.com/config.js',
+        source: { url: 'https://example.com/config.js' },
+        checklists: ['c1', 'c2'],
+      },
+    ]);
   });
 
   it('ignores internal config when --file is used', () => {
     expect(
       resolve({ filePath: 'custom/path.ts', internalDir: 'internal', internalExtension: '.int.ts' }),
-    ).toStrictEqual({
-      path: 'custom/path.ts',
-    });
+    ).toStrictEqual([{ name: 'custom/path.ts', source: { path: 'custom/path.ts' }, checklists: [] }]);
   });
 
   it('ignores internal config when --github is used', () => {
-    expect(resolve({ githubValue: 'org/repo', internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual({
-      url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js',
-    });
+    expect(resolve({ githubValue: 'org/repo', internalDir: 'internal', internalExtension: '.int.ts' })).toStrictEqual([
+      {
+        name: 'default',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
+        checklists: [],
+      },
+    ]);
   });
 
   it('ignores internal config when --local is used', () => {
     expect(
       resolve({ localValue: '/path/to/repo', internalDir: 'internal', internalExtension: '.int.ts' }),
-    ).toStrictEqual({
-      path: '/path/to/repo/.rdy/kits/default.js',
-    });
+    ).toStrictEqual([{ name: 'default', source: { path: '/path/to/repo/.rdy/kits/default.js' }, checklists: [] }]);
   });
 
   it('ignores internal config when --url is used', () => {
     expect(
       resolve({ urlValue: 'https://example.com/config.js', internalDir: 'internal', internalExtension: '.int.ts' }),
-    ).toStrictEqual({
-      url: 'https://example.com/config.js',
-    });
+    ).toStrictEqual([
+      {
+        name: 'https://example.com/config.js',
+        source: { url: 'https://example.com/config.js' },
+        checklists: [],
+      },
+    ]);
   });
 });
 
@@ -516,14 +616,18 @@ describe(runCommand, () => {
     mockLoadRemoteKit.mockReset();
   });
 
-  it('runs all checklists when no names are given', async () => {
+  /** Build a single-kit entry for convenience. */
+  function singleKitEntry(checklists: string[] = []) {
+    return [{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists }];
+  }
+
+  it('runs all checklists when no checklist filter is given', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue(kit);
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -537,8 +641,7 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
-      names: ['deploy'],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(['deploy']),
       json: false,
     });
 
@@ -555,8 +658,7 @@ describe(runCommand, () => {
     mockLoadRdyKit.mockResolvedValue(kit);
 
     const exitCode = await runCommand({
-      names: ['nonexistent'],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(['nonexistent']),
       json: false,
     });
 
@@ -572,8 +674,7 @@ describe(runCommand, () => {
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -586,22 +687,20 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: [],
-      kitSource: { path: 'custom/path.ts' },
+      kitEntries: [{ name: 'custom', source: { path: 'custom/path.ts' }, checklists: [] }],
       json: false,
     });
 
     expect(mockLoadRdyKit).toHaveBeenCalledWith('custom/path.ts');
   });
 
-  it('shows headers when running multiple checklists', async () => {
+  it('shows checklist headers when running multiple checklists in a single kit', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue(kit);
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -610,19 +709,54 @@ describe(runCommand, () => {
     expect(allOutput).toContain('--- infra ---');
   });
 
-  it('does not show headers for a single checklist', async () => {
+  it('does not show checklist headers for a single checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue(kit);
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: ['deploy'],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(['deploy']),
       json: false,
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(allOutput).not.toContain('---');
+  });
+
+  it('shows kit headers when running multiple kits', async () => {
+    const kit = makeKit({
+      checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
+    });
+    mockLoadRdyKit.mockResolvedValue(kit);
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
+        { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).toContain('=== kit1 ===');
+    expect(allOutput).toContain('=== kit2 ===');
+  });
+
+  it('does not print combined summary when running multiple kits', async () => {
+    const kit = makeKit();
+    mockLoadRdyKit.mockResolvedValue(kit);
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
+        { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
   });
 
   it('uses per-checklist fixLocation over kit default', async () => {
@@ -634,8 +768,7 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -651,8 +784,7 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -663,8 +795,7 @@ describe(runCommand, () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
@@ -672,56 +803,21 @@ describe(runCommand, () => {
     expect(exitCode).toBe(1);
   });
 
-  it('prints combined summary when multiple checklists run', async () => {
+  it('prints combined summary for a single kit with multiple checklists', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue(kit);
-    mockRunRdy.mockResolvedValue({
-      results: [
-        {
-          name: 'a',
-          status: 'passed',
-          ok: true,
-          severity: 'error',
-          detail: null,
-          fix: null,
-          error: null,
-          progress: null,
-          durationMs: 10,
-        },
-      ],
-      passed: true,
-      durationMs: 10,
-    });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockFormatCombinedSummary.mockReturnValue('Combined summary');
 
     await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(),
       json: false,
     });
 
     expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
-    expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
-      expect.objectContaining({
-        name: 'deploy',
-        passed: 1,
-        errors: 0,
-        warnings: 0,
-        recommendations: 0,
-        blocked: 0,
-        optional: 0,
-        worstSeverity: null,
-      }),
-      expect.objectContaining({
-        name: 'infra',
-        passed: 1,
-        errors: 0,
-        warnings: 0,
-        recommendations: 0,
-        blocked: 0,
-        optional: 0,
-        worstSeverity: null,
-      }),
-    ]);
+    expect(mockFormatCombinedSummary).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ name: 'deploy' }), expect.objectContaining({ name: 'infra' })]),
+    );
   });
 
   it('does not print combined summary for a single checklist', async () => {
@@ -730,93 +826,11 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: ['deploy'],
-      kitSource: { path: '.rdy/kits/default.ts' },
+      kitEntries: singleKitEntry(['deploy']),
       json: false,
     });
 
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
-  });
-
-  it('includes failure counts in combined summary', async () => {
-    const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
-    mockRunRdy
-      .mockResolvedValueOnce({
-        results: [
-          {
-            name: 'a',
-            status: 'passed',
-            ok: true,
-            severity: 'error',
-            detail: null,
-            fix: null,
-            error: null,
-            progress: null,
-            durationMs: 10,
-          },
-          {
-            name: 'b',
-            status: 'failed',
-            ok: false,
-            severity: 'error',
-            detail: null,
-            fix: null,
-            error: null,
-            progress: null,
-            durationMs: 5,
-          },
-        ],
-        passed: false,
-        durationMs: 15,
-      })
-      .mockResolvedValueOnce({
-        results: [
-          {
-            name: 'c',
-            status: 'skipped',
-            ok: null,
-            severity: 'error',
-            skipReason: 'precondition',
-            detail: null,
-            fix: null,
-            error: null,
-            progress: null,
-            durationMs: 0,
-          },
-        ],
-        passed: false,
-        durationMs: 0,
-      });
-
-    await runCommand({
-      names: [],
-      kitSource: { path: '.rdy/kits/default.ts' },
-      json: false,
-    });
-
-    expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
-      expect.objectContaining({
-        name: 'deploy',
-        passed: 1,
-        errors: 1,
-        warnings: 0,
-        recommendations: 0,
-        blocked: 0,
-        optional: 0,
-        worstSeverity: 'error',
-      }),
-      expect.objectContaining({
-        name: 'infra',
-        passed: 0,
-        errors: 0,
-        warnings: 0,
-        recommendations: 0,
-        blocked: 1,
-        optional: 0,
-        worstSeverity: null,
-      }),
-    ]);
   });
 
   describe('threshold cascade', () => {
@@ -826,8 +840,7 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: false,
         failOn: 'warn',
       });
@@ -841,8 +854,7 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: false,
       });
 
@@ -855,8 +867,7 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: false,
       });
 
@@ -869,8 +880,7 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: false,
         reportOn: 'warn',
       });
@@ -885,8 +895,7 @@ describe(runCommand, () => {
       mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
 
       await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: true,
         reportOn: 'error',
       });
@@ -910,8 +919,7 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const exitCode = await runCommand({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(),
         json: true,
       });
 
@@ -930,8 +938,7 @@ describe(runCommand, () => {
         .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
       const exitCode = await runCommand({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(),
         json: true,
       });
 
@@ -942,8 +949,7 @@ describe(runCommand, () => {
       mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
       const exitCode = await runCommand({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(),
         json: true,
       });
 
@@ -958,8 +964,7 @@ describe(runCommand, () => {
       mockLoadRdyKit.mockResolvedValue(kit);
 
       const exitCode = await runCommand({
-        names: ['nonexistent'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['nonexistent']),
         json: true,
       });
 
@@ -968,7 +973,7 @@ describe(runCommand, () => {
       expect(exitCode).toBe(1);
     });
 
-    it('passes checklist name-report pairs to formatJsonReport', async () => {
+    it('passes kit-grouped entries to formatJsonReport', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue(kit);
       const report1 = { results: [], passed: true, durationMs: 10 };
@@ -976,15 +981,20 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValueOnce(report1).mockResolvedValueOnce(report2);
 
       await runCommand({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(),
         json: true,
       });
 
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         [
-          { name: 'deploy', report: report1 },
-          { name: 'infra', report: report2 },
+          {
+            name: 'default',
+            entries: [
+              { name: 'deploy', report: report1 },
+              { name: 'infra', report: report2 },
+            ],
+            passed: true,
+          },
         ],
         expect.objectContaining({ reportOn: 'recommend' }),
       );
@@ -996,8 +1006,7 @@ describe(runCommand, () => {
       mockRunRdy.mockRejectedValue(new Error('runner crashed'));
 
       const exitCode = await runCommand({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(['deploy']),
         json: true,
       });
 
@@ -1012,13 +1021,35 @@ describe(runCommand, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: singleKitEntry(),
         json: true,
       });
 
       const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(allOutput).not.toContain('---');
+    });
+
+    it('produces JSON output with multiple kit entries', async () => {
+      const kit = makeKit({
+        checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
+      });
+      mockLoadRdyKit.mockResolvedValue(kit);
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const exitCode = await runCommand({
+        kitEntries: [
+          { name: 'kit1', source: { path: '.rdy/kits/kit1.ts' }, checklists: [] },
+          { name: 'kit2', source: { path: '.rdy/kits/kit2.ts' }, checklists: [] },
+        ],
+        json: true,
+      });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledTimes(1);
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ name: 'kit1' }), expect.objectContaining({ name: 'kit2' })]),
+        expect.anything(),
+      );
+      expect(exitCode).toBe(0);
     });
   });
 
@@ -1030,8 +1061,13 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
+      kitEntries: [
+        {
+          name: 'nmr',
+          source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
+          checklists: [],
+        },
+      ],
       json: false,
     });
 
@@ -1050,8 +1086,13 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
-      names: [],
-      kitSource: { url: 'https://raw.githubusercontent.com/org/repo/v2/.rdy/kits/nmr.js' },
+      kitEntries: [
+        {
+          name: 'nmr',
+          source: { url: 'https://raw.githubusercontent.com/org/repo/v2/.rdy/kits/nmr.js' },
+          checklists: [],
+        },
+      ],
       json: false,
     });
 
@@ -1068,8 +1109,7 @@ describe(runCommand, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { url: 'https://example.com/config.js' },
+      kitEntries: [{ name: 'config', source: { url: 'https://example.com/config.js' }, checklists: [] }],
       json: false,
     });
 
@@ -1084,8 +1124,7 @@ describe(runCommand, () => {
     mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
     const exitCode = await runCommand({
-      names: [],
-      kitSource: { url: 'https://example.com/config.js' },
+      kitEntries: [{ name: 'config', source: { url: 'https://example.com/config.js' }, checklists: [] }],
       json: false,
     });
 

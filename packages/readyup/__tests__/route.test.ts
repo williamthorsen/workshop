@@ -5,12 +5,12 @@ const mockInitCommand = vi.hoisted(() => vi.fn());
 const mockCompileCommand = vi.hoisted(() => vi.fn());
 const mockListCommand = vi.hoisted(() => vi.fn());
 const mockParseRunArgs = vi.hoisted(() => vi.fn());
-const mockResolveKitSource = vi.hoisted(() => vi.fn());
+const mockResolveKitSources = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/cli.ts', () => ({
   parseRunArgs: mockParseRunArgs,
-  resolveKitSource: mockResolveKitSource,
+  resolveKitSources: mockResolveKitSources,
   runCommand: mockRunCommand,
 }));
 
@@ -47,7 +47,9 @@ describe(routeCommand, () => {
       compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
       internal: { dir: '.', extension: '.ts' },
     });
-    mockResolveKitSource.mockReturnValue({ path: '.rdy/kits/default.ts' });
+    mockResolveKitSources.mockReturnValue([
+      { name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] },
+    ]);
   });
 
   afterEach(() => {
@@ -57,7 +59,7 @@ describe(routeCommand, () => {
     mockInitCommand.mockReset();
     mockListCommand.mockReset();
     mockParseRunArgs.mockReset();
-    mockResolveKitSource.mockReset();
+    mockResolveKitSources.mockReset();
     mockLoadConfig.mockReset();
   });
 
@@ -105,9 +107,16 @@ describe(routeCommand, () => {
     expect(output).toContain('--github, -g');
     expect(output).toContain('--local, -l');
     expect(output).toContain('--url, -u');
-    expect(output).toContain('--kit, -k');
+    expect(output).toContain('--checklists, -c');
     expect(output).toContain('--json, -j');
     expect(output).toContain('--version, -V');
+  });
+
+  it('does not include --kit in top-level help', async () => {
+    await routeCommand(['--help']);
+
+    const output = infoSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).not.toContain('--kit');
   });
 
   it('marks run as the default command in top-level help', async () => {
@@ -141,8 +150,8 @@ describe(routeCommand, () => {
 
   it('delegates to runCommand for run subcommand', async () => {
     mockParseRunArgs.mockReturnValue({
-      names: ['deploy'],
-      kitName: undefined,
+      kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
+      checklists: undefined,
       filePath: undefined,
       githubValue: undefined,
       localValue: undefined,
@@ -156,8 +165,7 @@ describe(routeCommand, () => {
     expect(mockParseRunArgs).toHaveBeenCalledWith(['deploy']);
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        names: ['deploy'],
-        kitSource: { path: '.rdy/kits/default.ts' },
+        kitEntries: [{ name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] }],
         json: false,
       }),
     );
@@ -166,8 +174,8 @@ describe(routeCommand, () => {
 
   it('passes --json flag through to runCommand', async () => {
     mockParseRunArgs.mockReturnValue({
-      names: [],
-      kitName: undefined,
+      kitSpecifiers: [],
+      checklists: undefined,
       filePath: undefined,
       githubValue: undefined,
       localValue: undefined,
@@ -180,8 +188,6 @@ describe(routeCommand, () => {
 
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        names: [],
-        kitSource: { path: '.rdy/kits/default.ts' },
         json: true,
       }),
     );
@@ -206,30 +212,30 @@ describe(routeCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("unknown flag '--bad'"));
   });
 
-  it('returns 1 and writes to stderr when resolveKitSource throws', async () => {
+  it('returns 1 and writes to stderr when resolveKitSources throws', async () => {
     mockParseRunArgs.mockReturnValue({
-      names: [],
-      kitName: 'deploy',
+      kitSpecifiers: [],
+      checklists: undefined,
       filePath: 'path.ts',
       githubValue: undefined,
       localValue: undefined,
       urlValue: undefined,
       json: false,
     });
-    mockResolveKitSource.mockImplementation(() => {
-      throw new Error('--kit cannot be used with --file');
+    mockResolveKitSources.mockImplementation(() => {
+      throw new Error('resolution failed');
     });
 
-    const exitCode = await routeCommand(['run', '--file', 'path.ts', '--kit', 'deploy']);
+    const exitCode = await routeCommand(['run', '--file', 'path.ts']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--kit cannot be used with --file'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('resolution failed'));
   });
 
   it('returns 1 and writes to stderr when loadConfig rejects', async () => {
     mockParseRunArgs.mockReturnValue({
-      names: [],
-      kitName: undefined,
+      kitSpecifiers: [],
+      checklists: undefined,
       filePath: undefined,
       githubValue: undefined,
       localValue: undefined,
@@ -360,8 +366,8 @@ describe(routeCommand, () => {
   describe('default command routing', () => {
     it('routes flags to run when no subcommand is given', async () => {
       mockParseRunArgs.mockReturnValue({
-        names: [],
-        kitName: undefined,
+        kitSpecifiers: [],
+        checklists: undefined,
         filePath: 'foo.ts',
         githubValue: undefined,
         localValue: undefined,
@@ -376,10 +382,10 @@ describe(routeCommand, () => {
       expect(exitCode).toBe(0);
     });
 
-    it('routes positional args to run as checklist names', async () => {
+    it('routes positional args to run as kit specifiers', async () => {
       mockParseRunArgs.mockReturnValue({
-        names: ['onboarding'],
-        kitName: undefined,
+        kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }],
+        checklists: undefined,
         filePath: undefined,
         githubValue: undefined,
         localValue: undefined,
@@ -411,8 +417,8 @@ describe(routeCommand, () => {
 
     it('does not suggest for prefixes shorter than 3 characters', async () => {
       mockParseRunArgs.mockReturnValue({
-        names: ['co'],
-        kitName: undefined,
+        kitSpecifiers: [{ kitName: 'co', checklists: [] }],
+        checklists: undefined,
         filePath: undefined,
         githubValue: undefined,
         localValue: undefined,
@@ -429,8 +435,8 @@ describe(routeCommand, () => {
 
     it('does not suggest when input matches a subcommand exactly', async () => {
       mockParseRunArgs.mockReturnValue({
-        names: [],
-        kitName: undefined,
+        kitSpecifiers: [],
+        checklists: undefined,
         filePath: undefined,
         githubValue: undefined,
         localValue: undefined,
