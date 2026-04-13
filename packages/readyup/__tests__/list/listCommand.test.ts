@@ -34,7 +34,7 @@ describe(listCommand, () => {
     mockLoadConfig.mockReset();
   });
 
-  it('with --from global, enumerates kits from the home-based .rdy/kits directory', async () => {
+  it('with --from global, enumerates kits from the home-based .readyup/kits directory', async () => {
     mockEnumerateKits.mockReturnValue(['default']);
 
     const exitCode = await listCommand(['--from', 'global']);
@@ -43,7 +43,7 @@ describe(listCommand, () => {
     const firstCall = mockEnumerateKits.mock.calls[0];
     assert.ok(firstCall, 'expected enumerateKits to have been called');
     const calledDir = firstCall[0].dir;
-    expect(calledDir).toMatch(/\/.rdy\/kits$/);
+    expect(calledDir).toMatch(/\/.readyup\/kits$/);
     expect(stdoutSpy).toHaveBeenCalled();
   });
 
@@ -57,11 +57,11 @@ describe(listCommand, () => {
     assert.ok(firstCall, 'expected enumerateKits to have been called');
     const calledDir = firstCall[0].dir;
     expect(calledDir).toBe(path.resolve('/some/path'));
-    // Directory source does not append .rdy/kits.
-    expect(calledDir).not.toContain('.rdy/kits');
+    // Directory source does not append .readyup/kits.
+    expect(calledDir).not.toContain('.readyup/kits');
   });
 
-  it('with --from <local-path>, enumerates kits from .rdy/kits under the local path', async () => {
+  it('with --from <local-path>, enumerates kits from .readyup/kits under the local path', async () => {
     mockEnumerateKits.mockReturnValue(['default']);
 
     const exitCode = await listCommand(['--from', '/some/repo']);
@@ -70,7 +70,7 @@ describe(listCommand, () => {
     const firstCall = mockEnumerateKits.mock.calls[0];
     assert.ok(firstCall, 'expected enumerateKits to have been called');
     const calledDir = firstCall[0].dir;
-    expect(calledDir).toBe(path.join(path.resolve('/some/repo'), '.rdy/kits'));
+    expect(calledDir).toBe(path.join(path.resolve('/some/repo'), '.readyup/kits'));
   });
 
   it('returns exit code 1 with a user-readable error for malformed --from values', async () => {

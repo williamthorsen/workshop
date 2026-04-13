@@ -21,8 +21,8 @@ import { initCommand } from '../src/init/initCommand.ts';
 /** Build a scaffold result with both files having the same outcome. */
 function makeScaffoldResult(outcome: string) {
   return {
-    configResult: { filePath: '.config/rdy.config.ts', outcome },
-    kitResult: { filePath: '.rdy/kits/default.ts', outcome },
+    configResult: { filePath: '.config/readyup.config.ts', outcome },
+    kitResult: { filePath: '.readyup/kits/default.ts', outcome },
   };
 }
 
@@ -59,8 +59,8 @@ describe(`${initCommand.name} error handling`, () => {
 
   it('returns exit code 1 when kit result is failed', () => {
     mockScaffoldConfig.mockReturnValue({
-      configResult: { filePath: '.config/rdy.config.ts', outcome: 'created' },
-      kitResult: { filePath: '.rdy/kits/default.ts', outcome: 'failed' },
+      configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
+      kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
     });
 
     const exitCode = initCommand({ dryRun: false, force: false });

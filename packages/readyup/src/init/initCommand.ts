@@ -37,8 +37,8 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   if (!dryRun) {
     printStep('Next steps');
     console.info(`
-  1. Customize .config/rdy.config.ts with your compile settings.
-  2. Add checklists to .rdy/kits/.
+  1. Customize .config/readyup.config.ts with your compile settings.
+  2. Add checklists to .readyup/kits/.
   3. Test by running: npx readyup run
   4. Commit the generated files.
 `);

@@ -420,18 +420,20 @@ describe(resolveKitSources, () => {
   // -- Default resolution (compiled .js) --
 
   it('resolves default kit path to .js', () => {
-    expect(resolve()).toStrictEqual([{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] }]);
+    expect(resolve()).toStrictEqual([
+      { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] },
+    ]);
   });
 
   it('resolves named kit from positional specifier', () => {
     expect(resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] })).toStrictEqual([
-      { name: 'deploy', source: { path: '.rdy/kits/deploy.js' }, checklists: [] },
+      { name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [] },
     ]);
   });
 
   it('resolves slash-separated kit name', () => {
     expect(resolve({ kitSpecifiers: [{ kitName: 'shared/deploy', checklists: [] }] })).toStrictEqual([
-      { name: 'shared/deploy', source: { path: '.rdy/kits/shared/deploy.js' }, checklists: [] },
+      { name: 'shared/deploy', source: { path: '.readyup/kits/shared/deploy.js' }, checklists: [] },
     ]);
   });
 
@@ -439,7 +441,7 @@ describe(resolveKitSources, () => {
 
   it('resolves to .ts with --jit', () => {
     expect(resolve({ jit: true })).toStrictEqual([
-      { name: 'default', source: { path: '.rdy/kits/default.ts' }, checklists: [] },
+      { name: 'default', source: { path: '.readyup/kits/default.ts' }, checklists: [] },
     ]);
   });
 
@@ -447,19 +449,19 @@ describe(resolveKitSources, () => {
 
   it('applies internal dir with --internal', () => {
     expect(resolve({ internal: true, internalDir: 'internal' })).toStrictEqual([
-      { name: 'default', source: { path: '.rdy/kits/internal/default.js' }, checklists: [] },
+      { name: 'default', source: { path: '.readyup/kits/internal/default.js' }, checklists: [] },
     ]);
   });
 
   it('applies internal dir and infix with --internal', () => {
     expect(resolve({ internal: true, internalDir: 'internal', internalInfix: 'int' })).toStrictEqual([
-      { name: 'default', source: { path: '.rdy/kits/internal/default.int.js' }, checklists: [] },
+      { name: 'default', source: { path: '.readyup/kits/internal/default.int.js' }, checklists: [] },
     ]);
   });
 
   it('combines --jit and --internal', () => {
     expect(resolve({ jit: true, internal: true, internalDir: 'internal', internalInfix: 'int' })).toStrictEqual([
-      { name: 'default', source: { path: '.rdy/kits/internal/default.int.ts' }, checklists: [] },
+      { name: 'default', source: { path: '.readyup/kits/internal/default.int.ts' }, checklists: [] },
     ]);
   });
 
@@ -471,7 +473,7 @@ describe(resolveKitSources, () => {
         internalDir: 'internal',
         internalInfix: 'int',
       }),
-    ).toStrictEqual([{ name: 'deploy', source: { path: '.rdy/kits/internal/deploy.int.js' }, checklists: [] }]);
+    ).toStrictEqual([{ name: 'deploy', source: { path: '.readyup/kits/internal/deploy.int.js' }, checklists: [] }]);
   });
 
   // -- --file flag --
@@ -496,7 +498,7 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([
       {
         name: 'nmr',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/nmr.js' },
         checklists: [],
       },
     ]);
@@ -508,7 +510,7 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([
       {
         name: 'nmr',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/v1/.rdy/kits/nmr.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/v1/.readyup/kits/nmr.js' },
         checklists: [],
       },
     ]);
@@ -518,7 +520,7 @@ describe(resolveKitSources, () => {
     expect(resolve({ fromValue: 'github:org/repo' })).toStrictEqual([
       {
         name: 'default',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/default.js' },
         checklists: [],
       },
     ]);
@@ -536,12 +538,12 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([
       {
         name: 'deploy',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/deploy.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/deploy.js' },
         checklists: [],
       },
       {
         name: 'infra',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/infra.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/infra.js' },
         checklists: ['c1'],
       },
     ]);
@@ -555,7 +557,7 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([
       {
         name: 'deploy',
-        source: { url: 'https://bitbucket.org/myteam/deploy-checks/raw/main/.rdy/kits/deploy.js' },
+        source: { url: 'https://bitbucket.org/myteam/deploy-checks/raw/main/.readyup/kits/deploy.js' },
         checklists: [],
       },
     ]);
@@ -565,7 +567,7 @@ describe(resolveKitSources, () => {
     expect(resolve({ fromValue: 'bitbucket:myteam/repo@v2' })).toStrictEqual([
       {
         name: 'default',
-        source: { url: 'https://bitbucket.org/myteam/repo/raw/v2/.rdy/kits/default.js' },
+        source: { url: 'https://bitbucket.org/myteam/repo/raw/v2/.readyup/kits/default.js' },
         checklists: [],
       },
     ]);
@@ -573,9 +575,9 @@ describe(resolveKitSources, () => {
 
   // -- --from local path --
 
-  it('resolves --from with local path to a .js path under .rdy/kits/', () => {
+  it('resolves --from with local path to a .js path under .readyup/kits/', () => {
     expect(resolve({ fromValue: '/path/to/repo' })).toStrictEqual([
-      { name: 'default', source: { path: '/path/to/repo/.rdy/kits/default.js' }, checklists: [] },
+      { name: 'default', source: { path: '/path/to/repo/.readyup/kits/default.js' }, checklists: [] },
     ]);
   });
 
@@ -583,7 +585,7 @@ describe(resolveKitSources, () => {
     const expected = path.resolve(process.cwd(), '../sibling-repo');
 
     expect(resolve({ fromValue: '../sibling-repo' })).toStrictEqual([
-      { name: 'default', source: { path: `${expected}/.rdy/kits/default.js` }, checklists: [] },
+      { name: 'default', source: { path: `${expected}/.readyup/kits/default.js` }, checklists: [] },
     ]);
   });
 
@@ -597,8 +599,8 @@ describe(resolveKitSources, () => {
         ],
       }),
     ).toStrictEqual([
-      { name: 'deploy', source: { path: '/path/to/repo/.rdy/kits/deploy.js' }, checklists: [] },
-      { name: 'infra', source: { path: '/path/to/repo/.rdy/kits/infra.js' }, checklists: [] },
+      { name: 'deploy', source: { path: '/path/to/repo/.readyup/kits/deploy.js' }, checklists: [] },
+      { name: 'infra', source: { path: '/path/to/repo/.readyup/kits/infra.js' }, checklists: [] },
     ]);
   });
 
@@ -608,7 +610,7 @@ describe(resolveKitSources, () => {
     const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
 
     expect(resolve({ fromValue: 'global' })).toStrictEqual([
-      { name: 'default', source: { path: `${homeDir}/.rdy/kits/default.js` }, checklists: [] },
+      { name: 'default', source: { path: `${homeDir}/.readyup/kits/default.js` }, checklists: [] },
     ]);
   });
 
@@ -654,7 +656,7 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([
       {
         name: 'default',
-        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/default.js' },
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/default.js' },
         checklists: [],
       },
     ]);
@@ -703,7 +705,7 @@ describe(runCommand, () => {
 
   /** Build a single-kit entry for convenience. */
   function singleKitEntry(checklists: string[] = []) {
-    return [{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists }];
+    return [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists }];
   }
 
   it('runs all checklists when no checklist filter is given', async () => {
@@ -817,8 +819,8 @@ describe(runCommand, () => {
 
     await runCommand({
       kitEntries: [
-        { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
-        { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
       ],
       json: false,
     });
@@ -835,8 +837,8 @@ describe(runCommand, () => {
 
     await runCommand({
       kitEntries: [
-        { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
-        { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
       ],
       json: false,
     });
@@ -1160,8 +1162,8 @@ describe(runCommand, () => {
 
       const exitCode = await runCommand({
         kitEntries: [
-          { name: 'kit1', source: { path: '.rdy/kits/kit1.js' }, checklists: [] },
-          { name: 'kit2', source: { path: '.rdy/kits/kit2.js' }, checklists: [] },
+          { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+          { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
         ],
         json: true,
       });
@@ -1186,7 +1188,7 @@ describe(runCommand, () => {
       kitEntries: [
         {
           name: 'nmr',
-          source: { url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js' },
+          source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/nmr.js' },
           checklists: [],
         },
       ],
@@ -1195,7 +1197,7 @@ describe(runCommand, () => {
 
     expect(mockResolveGitHubToken).toHaveBeenCalled();
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
-      url: 'https://raw.githubusercontent.com/org/repo/main/.rdy/kits/nmr.js',
+      url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/nmr.js',
       token: 'token-abc',
     });
     expect(exitCode).toBe(0);
@@ -1211,7 +1213,7 @@ describe(runCommand, () => {
       kitEntries: [
         {
           name: 'nmr',
-          source: { url: 'https://raw.githubusercontent.com/org/repo/v2/.rdy/kits/nmr.js' },
+          source: { url: 'https://raw.githubusercontent.com/org/repo/v2/.readyup/kits/nmr.js' },
           checklists: [],
         },
       ],
@@ -1219,7 +1221,7 @@ describe(runCommand, () => {
     });
 
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
-      url: 'https://raw.githubusercontent.com/org/repo/v2/.rdy/kits/nmr.js',
+      url: 'https://raw.githubusercontent.com/org/repo/v2/.readyup/kits/nmr.js',
     });
     expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('token');
   });

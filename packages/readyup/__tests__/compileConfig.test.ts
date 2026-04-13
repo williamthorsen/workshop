@@ -39,10 +39,10 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    await compileConfig('config/rdy.config.ts');
+    await compileConfig('config/readyup.config.ts');
 
     expect(mockBuild).toHaveBeenCalledWith({
-      entryPoints: [path.resolve('config/rdy.config.ts')],
+      entryPoints: [path.resolve('config/readyup.config.ts')],
       bundle: true,
       format: 'esm',
       platform: 'node',
@@ -58,16 +58,16 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/rdy.config.ts');
+    const result = await compileConfig('config/readyup.config.ts');
 
-    expect(result.outputPath).toBe(path.resolve('config/rdy.config.js'));
+    expect(result.outputPath).toBe(path.resolve('config/readyup.config.js'));
   });
 
   it('uses a custom output path when provided', async () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/rdy.config.ts', 'dist/bundle.js');
+    const result = await compileConfig('config/readyup.config.ts', 'dist/bundle.js');
 
     expect(result.outputPath).toBe(path.resolve('dist/bundle.js'));
   });

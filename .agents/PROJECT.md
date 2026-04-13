@@ -13,8 +13,8 @@ Packages live under `packages/`:
 Key files:
 
 - `.config/nmr.config.ts` — Per-repo nmr script overrides
-- `.config/rdy.config.ts` — Readyup compile settings
-- `.rdy/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
+- `.config/readyup.config.ts` — Readyup compile settings
+- `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
 - `config/build.ts` — Shared esbuild build script with content-hash caching, `.ts`→`.js` extension rewriting, and `~src/` alias resolution
 - `config/vitest.config.ts` — Shared Vitest base configuration
 

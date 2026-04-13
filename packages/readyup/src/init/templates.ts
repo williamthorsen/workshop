@@ -4,8 +4,8 @@ export const rdyConfigTemplate = `import { defineRdyConfig } from 'readyup';
 /** Repo-level readyup settings. */
 export default defineRdyConfig({
   compile: {
-    srcDir: '.rdy/kits',
-    outDir: '.rdy/kits',
+    srcDir: '.readyup/kits',
+    outDir: '.readyup/kits',
   },
 });
 `;

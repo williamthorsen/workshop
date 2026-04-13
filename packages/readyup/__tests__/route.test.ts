@@ -44,11 +44,11 @@ describe(routeCommand, () => {
     infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
     });
     mockResolveKitSources.mockReturnValue([
-      { name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] },
+      { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] },
     ]);
   });
 
@@ -160,7 +160,7 @@ describe(routeCommand, () => {
     expect(mockParseRunArgs).toHaveBeenCalledWith(['deploy']);
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        kitEntries: [{ name: 'default', source: { path: '.rdy/kits/default.js' }, checklists: [] }],
+        kitEntries: [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] }],
         json: false,
       }),
       false,

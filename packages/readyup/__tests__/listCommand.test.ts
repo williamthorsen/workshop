@@ -21,7 +21,7 @@ describe(listCommand, () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
     });
     mockEnumerateKits.mockReturnValue([]);
@@ -43,10 +43,10 @@ describe(listCommand, () => {
       expect(mockLoadConfig).toHaveBeenCalled();
       expect(mockEnumerateKits).toHaveBeenCalledTimes(2);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.ts' }),
+        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
       );
       expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.js' }),
+        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.js' }),
       );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Internal:');
@@ -55,7 +55,7 @@ describe(listCommand, () => {
 
     it('uses infix-based extension for internal kits when configured', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
         internal: { dir: '.', infix: 'int' },
       });
       mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce([]);
@@ -139,7 +139,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.rdy/kits'), extension: '.js' }),
+        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.js' }),
       );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Compiled:');
@@ -153,7 +153,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('No compiled kits found at /nonexistent/.rdy/kits.');
+      expect(output).toContain('No compiled kits found at /nonexistent/.readyup/kits.');
     });
 
     it('returns 1 and writes to stderr when enumerateKits throws', async () => {

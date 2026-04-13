@@ -66,7 +66,7 @@ Options:
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
-Defaults to .rdy/kits/default.js when no source is given.
+Defaults to .readyup/kits/default.js when no source is given.
 `);
 }
 

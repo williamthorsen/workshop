@@ -10,8 +10,8 @@ import type { RdyConfig, ResolvedRdyConfig } from './types.ts';
 /** Default config values when no config file is found. */
 const DEFAULT_CONFIG: ResolvedRdyConfig = {
   compile: {
-    srcDir: '.rdy/kits',
-    outDir: '.rdy/kits',
+    srcDir: '.readyup/kits',
+    outDir: '.readyup/kits',
     include: undefined,
   },
   internal: {
@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: ResolvedRdyConfig = {
 };
 
 /** Ordered lookup paths for the config file, resolved relative to `process.cwd()`. */
-const LOOKUP_PATHS = ['.config/rdy.config.ts'];
+const LOOKUP_PATHS = ['.config/readyup.config.ts'];
 
 /** Structural schema for RdyConfig. */
 const RdyConfigSchema = z.looseObject({
@@ -48,7 +48,7 @@ function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
 /**
  * Load readyup config from the filesystem.
  *
- * Checks `.config/rdy.config.ts` and returns defaults if not found.
+ * Checks `.config/readyup.config.ts` and returns defaults if not found.
  * An explicit override path skips the lookup chain.
  */
 export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConfig> {
