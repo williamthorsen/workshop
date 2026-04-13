@@ -15,7 +15,7 @@ vi.mock('jiti', () => ({
 
 import { loadRdyKit } from '../src/config.ts';
 
-const KIT_PATH = '.rdy/kits/default.ts';
+const KIT_PATH = '.readyup/kits/default.ts';
 
 describe(loadRdyKit, () => {
   afterEach(() => {
@@ -32,7 +32,7 @@ describe(loadRdyKit, () => {
   it('throws with a rdy init hint when a convention-path kit is missing', async () => {
     mockExistsSync.mockReturnValue(false);
 
-    await expect(loadRdyKit('.rdy/kits/default.ts')).rejects.toThrow(
+    await expect(loadRdyKit('.readyup/kits/default.ts')).rejects.toThrow(
       'Kit "default" not found. Run \'rdy init\' to create one.',
     );
   });

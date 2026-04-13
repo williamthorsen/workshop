@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 
-// .rdy/kits/demo.ts
+// .readyup/kits/demo.ts
 import { execFileSync } from "node:child_process";
 
 // packages/readyup/dist/esm/authoring.js
@@ -10,7 +10,13 @@ function defineRdyKit(kit) {
   return kit;
 }
 
+// packages/readyup/dist/esm/isRecord.js
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 // packages/readyup/dist/esm/check-utils/filesystem.js
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 function fileExists(relativePath) {
@@ -27,34 +33,47 @@ function fileContains(relativePath, pattern) {
   return pattern.test(content);
 }
 
-// packages/readyup/dist/esm/isRecord.js
-function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+// packages/readyup/dist/esm/check-utils/hashing.js
+import { createHash } from "node:crypto";
+
+// packages/readyup/dist/esm/safeJsonParse.js
+function safeJsonParse(content) {
+  try {
+    const parsed = JSON.parse(content);
+    return parsed;
+  } catch {
+    return void 0;
+  }
+}
+
+// packages/readyup/dist/esm/check-utils/json.js
+function readJsonFile(relativePath) {
+  const content = readFile(relativePath);
+  if (content === void 0) return void 0;
+  const parsed = safeJsonParse(content);
+  if (!isRecord(parsed)) return void 0;
+  return parsed;
+}
+function hasJsonField(relativePath, field, expectedValue) {
+  const data = readJsonFile(relativePath);
+  if (data === void 0) return false;
+  if (expectedValue !== void 0) return data[field] === expectedValue;
+  return field in data;
 }
 
 // packages/readyup/dist/esm/check-utils/package-json.js
-function readPackageJson() {
-  const content = readFile("package.json");
-  if (content === void 0) return void 0;
-  const parsed = JSON.parse(content);
-  if (!isRecord(parsed)) return void 0;
-  return Object.fromEntries(Object.entries(parsed));
-}
 function hasPackageJsonField(field, expectedValue) {
-  const pkg = readPackageJson();
-  if (pkg === void 0) return false;
-  if (expectedValue !== void 0) return pkg[field] === expectedValue;
-  return field in pkg;
+  return hasJsonField("package.json", field, expectedValue);
 }
 function hasDevDependency(name) {
-  const pkg = readPackageJson();
+  const pkg = readJsonFile("package.json");
   if (pkg === void 0) return false;
   const devDeps = pkg.devDependencies;
   return isRecord(devDeps) && name in devDeps;
 }
 
-// .rdy/kits/demo.ts
-function commandExists(name) {
+// .readyup/kits/demo.ts
+function commandExists2(name) {
   try {
     execFileSync("which", [name], { stdio: "ignore" });
     return true;
@@ -155,13 +174,13 @@ var codeQuality = {
     {
       name: "actionlint is installed",
       severity: "warn",
-      check: () => commandExists("actionlint"),
+      check: () => commandExists2("actionlint"),
       fix: "brew install actionlint \u2014 catches workflow syntax errors before they hit CI"
     },
     {
       name: "jq is installed",
       severity: "recommend",
-      check: () => commandExists("jq"),
+      check: () => commandExists2("jq"),
       fix: "brew install jq \u2014 useful for JSON processing in shell scripts"
     }
   ]

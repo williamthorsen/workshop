@@ -26,13 +26,13 @@ describe(loadConfig, () => {
     const config = await loadConfig();
 
     expect(config).toStrictEqual({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
     });
   });
 
-  it('loads from .config/rdy.config.ts when it exists', async () => {
-    mockExistsSync.mockImplementation((p: string) => p.includes('.config/rdy.config.ts'));
+  it('loads from .config/readyup.config.ts when it exists', async () => {
+    mockExistsSync.mockImplementation((p: string) => p.includes('.config/readyup.config.ts'));
     mockJitiImport.mockResolvedValue({
       default: { compile: { srcDir: 'src/collections', outDir: 'dist/collections' } },
     });
@@ -94,8 +94,8 @@ describe(loadConfig, () => {
 
     const config = await loadConfig('config.ts');
 
-    expect(config.compile.srcDir).toBe('.rdy/kits');
-    expect(config.compile.outDir).toBe('.rdy/kits');
+    expect(config.compile.srcDir).toBe('.readyup/kits');
+    expect(config.compile.outDir).toBe('.readyup/kits');
   });
 
   it('loads compile.include from config', async () => {

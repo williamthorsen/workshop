@@ -85,7 +85,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
 /** Format the "no kits found" message appropriate to the given mode. */
 export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): string {
   if (mode === 'consumer') {
-    return `No compiled kits found at ${kitsDir ?? '.rdy/kits'}.`;
+    return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }

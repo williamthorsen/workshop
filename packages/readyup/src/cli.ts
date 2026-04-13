@@ -75,7 +75,7 @@ function parseSeverityFlag(flagName: string, value: string): Severity {
 }
 
 /** Convention path for internal kits, relative to the repo root. */
-const KITS_DIR = '.rdy/kits';
+const KITS_DIR = '.readyup/kits';
 
 /** Build the GitHub raw content URL for a kit. */
 function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {

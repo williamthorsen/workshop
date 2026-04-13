@@ -7,8 +7,8 @@ import { initCommand } from '../src/init/initCommand.ts';
 import { rdyConfigTemplate, rdyKitTemplate } from '../src/init/templates.ts';
 
 const TEST_DIR = join(import.meta.dirname, '../.test-tmp');
-const CONFIG_PATH = '.config/rdy.config.ts';
-const KIT_PATH = '.rdy/kits/default.ts';
+const CONFIG_PATH = '.config/readyup.config.ts';
+const KIT_PATH = '.readyup/kits/default.ts';
 
 describe(initCommand, () => {
   let originalCwd: string;
@@ -44,7 +44,7 @@ describe(initCommand, () => {
 
   it('skips with a warning when both files already exist', () => {
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
-    mkdirSync(join(TEST_DIR, '.rdy/kits'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
     writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
 
@@ -57,7 +57,7 @@ describe(initCommand, () => {
 
   it('overwrites existing files when force is true', () => {
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
-    mkdirSync(join(TEST_DIR, '.rdy/kits'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'old config', 'utf8');
     writeFileSync(join(TEST_DIR, KIT_PATH), 'old kit', 'utf8');
 
@@ -78,7 +78,7 @@ describe(initCommand, () => {
 
   it('reports up-to-date when both files match the templates', () => {
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
-    mkdirSync(join(TEST_DIR, '.rdy/kits'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), rdyConfigTemplate, 'utf8');
     writeFileSync(join(TEST_DIR, KIT_PATH), rdyKitTemplate, 'utf8');
 
@@ -91,7 +91,7 @@ describe(initCommand, () => {
 
   it('does not modify existing files during dry-run', () => {
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
-    mkdirSync(join(TEST_DIR, '.rdy/kits'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
     writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
 
@@ -104,7 +104,7 @@ describe(initCommand, () => {
 
   it('does not overwrite during dry-run even with force', () => {
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
-    mkdirSync(join(TEST_DIR, '.rdy/kits'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
     writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
 

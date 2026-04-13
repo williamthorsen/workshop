@@ -16,7 +16,7 @@ export async function loadRdyKit(kitPath: string): Promise<RdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
 
   if (!existsSync(resolvedPath)) {
-    if (kitPath.startsWith('.rdy/kits/')) {
+    if (kitPath.startsWith('.readyup/kits/')) {
       const baseName = path.basename(kitPath, '.ts');
       throw new Error(`Kit "${baseName}" not found. Run 'rdy init' to create one.`);
     }

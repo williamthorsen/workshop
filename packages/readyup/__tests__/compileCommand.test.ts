@@ -140,7 +140,7 @@ describe(compileCommand, () => {
   // Batch compile tests
   it('prints "Compiling kits in" header when srcDir equals outDir', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -154,7 +154,7 @@ describe(compileCommand, () => {
 
   it('prints "from ... to ..." header when srcDir differs from outDir', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/dist', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/dist', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -168,7 +168,7 @@ describe(compileCommand, () => {
 
   it('compiles all .ts files and shows per-file status lines', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts', 'b.ts', 'readme.md']);
@@ -202,7 +202,7 @@ describe(compileCommand, () => {
 
   it('uses compile.include glob to filter files during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: 'shared/*.ts' },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'shared/*.ts' },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['shared/deploy.ts', 'shared/infra.ts', 'other.ts']);
@@ -219,7 +219,7 @@ describe(compileCommand, () => {
 
   it('returns 1 when srcDir does not exist', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(false);
 
@@ -231,7 +231,7 @@ describe(compileCommand, () => {
 
   it('returns 1 when srcDir has no .ts files', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['readme.md']);
@@ -255,7 +255,7 @@ describe(compileCommand, () => {
 
   it('returns 1 when post-compile validation fails during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -270,7 +270,7 @@ describe(compileCommand, () => {
 
   it('returns 1 with structured error when readdirSync throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockImplementation(() => {
@@ -286,7 +286,7 @@ describe(compileCommand, () => {
 
   it('returns 1 when glob matches only non-.ts files during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits', include: 'data/*' },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'data/*' },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['data/readme.md', 'data/config.json']);

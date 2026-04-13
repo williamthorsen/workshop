@@ -55,12 +55,12 @@ function runFromMode(fromArg: string): number {
   let kitsDir: string;
   if (source.type === 'global') {
     const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
-    kitsDir = path.join(homeDir, '.rdy/kits');
+    kitsDir = path.join(homeDir, '.readyup/kits');
   } else if (source.type === 'directory') {
     kitsDir = path.resolve(source.path);
   } else {
     // local path
-    kitsDir = path.join(path.resolve(source.path), '.rdy/kits');
+    kitsDir = path.join(path.resolve(source.path), '.readyup/kits');
   }
 
   let compiledKits;
@@ -90,7 +90,7 @@ async function runOwnerMode(): Promise<number> {
     return 1;
   }
 
-  const internalDir = path.join(cwd, '.rdy/kits', config.internal.dir);
+  const internalDir = path.join(cwd, '.readyup/kits', config.internal.dir);
   const compiledDir = path.resolve(cwd, config.compile.outDir);
 
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
@@ -115,7 +115,7 @@ async function runOwnerMode(): Promise<number> {
 /** Determine the compiled-section display style based on the outDir setting. */
 function resolveCompiledStyle(cwd: string, outDir: string): CompiledStyle {
   const resolvedOutDir = path.resolve(cwd, outDir);
-  const defaultOutDir = path.resolve(cwd, '.rdy/kits');
+  const defaultOutDir = path.resolve(cwd, '.readyup/kits');
 
   if (resolvedOutDir === defaultOutDir) {
     return { kind: 'local-convention' };

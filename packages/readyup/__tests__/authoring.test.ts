@@ -19,7 +19,7 @@ describe(defineChecklists, () => {
 describe(defineRdyConfig, () => {
   it('returns its input unchanged', () => {
     const config = {
-      compile: { srcDir: '.rdy/kits', outDir: '.rdy/kits' },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits' },
     };
 
     expect(defineRdyConfig(config)).toBe(config);

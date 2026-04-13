@@ -18,20 +18,20 @@ rdy init
 
 This creates two files:
 
-**`.config/rdy.config.ts`** — repo-level settings:
+**`.config/readyup.config.ts`** — repo-level settings:
 
 ```ts
 import { defineRdyConfig } from 'readyup';
 
 export default defineRdyConfig({
   compile: {
-    srcDir: '.rdy/kits',
-    outDir: '.rdy/kits',
+    srcDir: '.readyup/kits',
+    outDir: '.readyup/kits',
   },
 });
 ```
 
-**`.rdy/kits/default.ts`** — starter kit:
+**`.readyup/kits/default.ts`** — starter kit:
 
 ```ts
 import { defineRdyKit } from 'readyup';
@@ -100,7 +100,7 @@ The `--from` flag accepts these source types:
 | Global     | `global`                  | `--from global`                                         |
 | Directory  | `dir:<path>`              | `--from dir:/shared/kits`                               |
 
-`@ref` defaults to `main` when omitted. Local repo paths look for kits in `<path>/.rdy/kits/`, while `dir:` paths are used directly.
+`@ref` defaults to `main` when omitted. Local repo paths look for kits in `<path>/.readyup/kits/`, while `dir:` paths are used directly.
 
 ### List
 

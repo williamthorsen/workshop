@@ -2,8 +2,8 @@ import type { WriteResult } from '../writeFileWithCheck.ts';
 import { writeFileWithCheck } from '../writeFileWithCheck.ts';
 import { rdyConfigTemplate, rdyKitTemplate } from './templates.ts';
 
-const CONFIG_PATH = '.config/rdy.config.ts';
-const KIT_PATH = '.rdy/kits/default.ts';
+const CONFIG_PATH = '.config/readyup.config.ts';
+const KIT_PATH = '.readyup/kits/default.ts';
 
 interface ScaffoldOptions {
   dryRun: boolean;
