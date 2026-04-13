@@ -269,6 +269,105 @@ describe(routeCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad config'));
   });
 
+  // -- Config loading: external sources skip loadConfig --
+
+  it('does not call loadConfig when --file is used', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: 'kit.ts',
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: false,
+      internal: false,
+      json: false,
+    });
+    mockResolveKitSources.mockReturnValue([{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }]);
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCommand(['run', '--file', 'kit.ts']);
+
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not call loadConfig when --from is used', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: 'github:org/repo',
+      urlValue: undefined,
+      jit: false,
+      internal: false,
+      json: false,
+    });
+    mockResolveKitSources.mockReturnValue([
+      { name: 'deploy', source: { url: 'https://example.com/deploy.js' }, checklists: [] },
+    ]);
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCommand(['run', '--from', 'github:org/repo', 'deploy']);
+
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+  });
+
+  it('does not call loadConfig when --url is used', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: 'https://example.com/kit.js',
+      jit: false,
+      internal: false,
+      json: false,
+    });
+    mockResolveKitSources.mockReturnValue([
+      { name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] },
+    ]);
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCommand(['run', '--url', 'https://example.com/kit.js']);
+
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+  });
+
+  it('calls loadConfig for default run (no source flags)', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: false,
+      internal: false,
+      json: false,
+    });
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCommand(['run']);
+
+    expect(mockLoadConfig).toHaveBeenCalled();
+  });
+
+  it('calls loadConfig when --internal is used', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: false,
+      internal: true,
+      json: false,
+    });
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCommand(['run', '--internal']);
+
+    expect(mockLoadConfig).toHaveBeenCalled();
+  });
+
   it('shows compile help and returns 0 for compile --help', async () => {
     const exitCode = await routeCommand(['compile', '--help']);
 

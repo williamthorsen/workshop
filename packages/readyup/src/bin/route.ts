@@ -235,12 +235,20 @@ async function handleRun(flags: string[]): Promise<number> {
     return 1;
   }
 
-  let config;
-  try {
-    config = await loadConfig();
-  } catch (error: unknown) {
-    process.stderr.write(`Error: ${extractMessage(error)}\n`);
-    return 1;
+  // Skip config when an external source flag is active — external modes don't use config values.
+  const hasExternalSource =
+    parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
+
+  let configFields: { internalDir: string; internalInfix: string | undefined } | undefined;
+  if (!hasExternalSource) {
+    let config;
+    try {
+      config = await loadConfig();
+    } catch (error: unknown) {
+      process.stderr.write(`Error: ${extractMessage(error)}\n`);
+      return 1;
+    }
+    configFields = { internalDir: config.internal.dir, internalInfix: config.internal.infix };
   }
 
   let kitEntries;
@@ -253,8 +261,7 @@ async function handleRun(flags: string[]): Promise<number> {
       checklists: parsed.checklists,
       jit: parsed.jit,
       internal: parsed.internal,
-      internalDir: config.internal.dir,
-      internalInfix: config.internal.infix,
+      ...configFields,
     });
   } catch (error: unknown) {
     process.stderr.write(`Error: ${extractMessage(error)}\n`);

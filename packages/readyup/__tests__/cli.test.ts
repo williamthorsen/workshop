@@ -476,6 +476,58 @@ describe(resolveKitSources, () => {
     ).toStrictEqual([{ name: 'deploy', source: { path: '.readyup/kits/internal/deploy.int.js' }, checklists: [] }]);
   });
 
+  // -- External sources without config fields --
+
+  it('resolves --file without internalDir/internalInfix', () => {
+    expect(
+      resolveKitSources({
+        filePath: 'custom/path.ts',
+        fromValue: undefined,
+        urlValue: undefined,
+        kitSpecifiers: [],
+        checklists: undefined,
+        jit: false,
+        internal: false,
+      }),
+    ).toStrictEqual([{ name: 'custom/path.ts', source: { path: 'custom/path.ts' }, checklists: [] }]);
+  });
+
+  it('resolves --url without internalDir/internalInfix', () => {
+    expect(
+      resolveKitSources({
+        filePath: undefined,
+        fromValue: undefined,
+        urlValue: 'https://example.com/kit.js',
+        kitSpecifiers: [],
+        checklists: undefined,
+        jit: false,
+        internal: false,
+      }),
+    ).toStrictEqual([
+      { name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] },
+    ]);
+  });
+
+  it('resolves --from without internalDir/internalInfix', () => {
+    expect(
+      resolveKitSources({
+        filePath: undefined,
+        fromValue: 'github:org/repo',
+        urlValue: undefined,
+        kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
+        checklists: undefined,
+        jit: false,
+        internal: false,
+      }),
+    ).toStrictEqual([
+      {
+        name: 'deploy',
+        source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/deploy.js' },
+        checklists: [],
+      },
+    ]);
+  });
+
   // -- --file flag --
 
   it('resolves --file to a single path source entry', () => {
