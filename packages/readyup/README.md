@@ -72,19 +72,46 @@ rdy <command> [options]
 | `run [names...]` | Run checklists (default)                         |
 | `compile [file]` | Bundle TypeScript kit(s) into self-contained ESM |
 | `init`           | Scaffold a starter config and kit                |
+| `list`           | List available kits                              |
 
 ### Run options
 
-| Option                          | Description                               |
-| ------------------------------- | ----------------------------------------- |
-| `--file, -f <path>`             | Path to a local kit file                  |
-| `--github, -g <org/repo[@ref]>` | Fetch kit from a GitHub repository        |
-| `--local, -l <path>`            | Load compiled kit from a local repository |
-| `--url, -u <url>`               | Fetch kit from a URL                      |
-| `--kit, -k <name>`              | Kit name (default: `"default"`)           |
-| `--json, -j`                    | Output results as JSON                    |
-| `--fail-on, -F <severity>`      | Fail on this severity or above            |
-| `--report-on, -R <severity>`    | Report this severity or above             |
+| Option                        | Description                                                   |
+| ----------------------------- | ------------------------------------------------------------- |
+| `--from <source>`             | Kit source (see [kit sources](#kit-sources) below)            |
+| `--file, -f <path>`           | Path to a local kit file                                      |
+| `--url, -u <url>`             | Fetch kit from a URL                                          |
+| `--jit, -J`                   | Run from TypeScript source instead of compiled JS             |
+| `--internal, -i`              | Use internal kit directory and infix from config              |
+| `--checklists, -c <name,...>` | Filter checklists (with `--file` or `--url` only)             |
+| `--json, -j`                  | Output results as JSON                                        |
+| `--fail-on, -F <severity>`    | Fail on this severity or above (`error`, `warn`, `recommend`) |
+| `--report-on, -R <severity>`  | Report this severity or above (`error`, `warn`, `recommend`)  |
+
+### Kit sources
+
+The `--from` flag accepts these source types:
+
+| Source     | Format                    | Example                                                 |
+| ---------- | ------------------------- | ------------------------------------------------------- |
+| Bitbucket  | `bitbucket:ws/repo[@ref]` | `--from bitbucket:team/ops`                             |
+| GitHub     | `github:org/repo[@ref]`   | `--from github:acme/ops` or `--from github:acme/ops@v2` |
+| Local repo | `<path>`                  | `--from .` or `--from ../other-repo`                    |
+| Global     | `global`                  | `--from global`                                         |
+| Directory  | `dir:<path>`              | `--from dir:/shared/kits`                               |
+
+`@ref` defaults to `main` when omitted. Local repo paths look for kits in `<path>/.rdy/kits/`, while `dir:` paths are used directly.
+
+### List
+
+```
+rdy list                       List internal and compiled kits (owner view)
+rdy list --from <path>         List compiled kits at a local path
+rdy list --from global         List compiled kits in the global directory
+rdy list --from dir:<path>     List kits in an arbitrary directory
+```
+
+Listing from GitHub/Bitbucket sources is not yet supported.
 
 ## Authoring API
 

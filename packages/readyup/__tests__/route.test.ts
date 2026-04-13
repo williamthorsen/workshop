@@ -113,13 +113,6 @@ describe(routeCommand, () => {
     expect(output).toContain('--version, -V');
   });
 
-  it('does not include --kit in top-level help', async () => {
-    await routeCommand(['--help']);
-
-    const output = infoSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(output).not.toContain('--kit');
-  });
-
   it('marks run as the default command in top-level help', async () => {
     await routeCommand(['--help']);
 
