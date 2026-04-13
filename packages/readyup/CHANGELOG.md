@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [readyup-v0.16.0] - 2026-04-13
+
+### Bug fixes
+
+- Update list hints and README to use positional kit syntax (#43)
+
+  Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command.
+
+### Features
+
+- Add positional kit arguments and multi-kit execution to `rdy run` (#35)
+
+  Promotes kit names to positional arguments (`rdy run mykit1 mykit2`) and adds colon syntax for per-kit checklist filtering (`mykit:check1,check2`). Removes the `--kit` flag and adds `--checklists` for filtering with `--file`/`--url` sources. Restructures JSON output to use a `kits` array with per-kit summary counts, and supports running multiple kits in a single invocation.
+
+- Add utility functions for working with JSON values (#36)
+
+  Adds pure object traversal functions (`getJsonValue`, `hasJsonValue`) for extracting nested values from parsed JSON objects, and a file-level composition (`readJsonValue`) that combines `readJsonFile` with `getJsonValue`. Promotes the existing `isRecord` type guard to the public API.
+
+- Unify kit source selectors into `--from` and default to compiled JS (#38)
+
+  Defaults `rdy run` to compiled `.js` kits and replaces the `--local` and `--github` source flags with a single `--from` flag that uses scheme detection to select the kit source. Adds `--jit` (`-J`) for running from TypeScript source and `--internal` (`-i`) for resolving kits from the configured internal subdirectory.
+
+- Add `pickJson` compile-time JSON inlining (#41)
+
+  Adds compile-time selective JSON field extraction to readyup's esbuild pipeline, so kit authors can inline only specific fields from JSON files instead of bundling the entire file into compiled output.
+
+- Rename rdy identifier to readyup (#47)
+
+  Renames the conventional kits directory from `.rdy/kits/` to `.readyup/kits/` and the config file from `rdy.config.ts` to `readyup.config.ts` across the entire codebase. The `rdy` CLI command name is unchanged — only filesystem conventions adopt the full package name.
+
 ## [readyup-v0.15.0] - 2026-04-11
 
 ### Features
