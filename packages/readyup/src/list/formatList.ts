@@ -1,9 +1,9 @@
 const ICON_INTERNAL = '📄';
 const ICON_COMPILED = '📦';
 
-/** Build the `--kit` flag hint with brackets when a default kit exists. */
+/** Build the positional name hint, bracketed when a default kit exists. */
 function buildKitHint(kits: string[]): string {
-  return kits.includes('default') ? '[--kit <name>]' : '--kit <name>';
+  return kits.includes('default') ? '[<name>]' : '<name>';
 }
 
 // -- Compiled-section style discriminants --
@@ -40,13 +40,13 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
   const sections: string[] = [];
 
   if (internalKits.length > 0) {
-    const hint = `rdy run ${buildKitHint(internalKits)}`;
+    const hint = `rdy run --jit ${buildKitHint(internalKits)}`;
     sections.push(formatSection('Internal', hint, internalKits, ICON_INTERNAL));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const hint = `rdy run --from . ${buildKitHint(compiledKits)}`;
+      const hint = `rdy run ${buildKitHint(compiledKits)}`;
       sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
     } else {
       const hint = `rdy run --file <file path>`;

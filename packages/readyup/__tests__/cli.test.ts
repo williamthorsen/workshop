@@ -138,10 +138,6 @@ describe(parseRunArgs, () => {
     );
   });
 
-  it('rejects --kit as an unknown flag', () => {
-    expect(() => parseRunArgs(['--kit', 'deploy'])).toThrow("unknown flag '--kit'");
-  });
-
   // --file flag
   it('parses --file flag', () => {
     const result = parseRunArgs(['--file', 'custom/path.ts']);

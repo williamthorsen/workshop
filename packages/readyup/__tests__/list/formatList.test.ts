@@ -27,7 +27,7 @@ describe(formatOwnerView, () => {
     expect(result).toContain('deploy');
   });
 
-  it('uses brackets in internal hint and omits them in compiled hint when default is only in internal', () => {
+  it('uses brackets around positional name in internal hint when default exists', () => {
     const result = formatOwnerView({
       internalKits: ['default'],
       compiledKits: ['deploy'],
@@ -38,8 +38,8 @@ describe(formatOwnerView, () => {
     const internalHeader = lines.find((l) => l.startsWith('Internal:'));
     const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
 
-    expect(internalHeader).toContain('[--kit <name>]');
-    expect(compiledHeader).not.toContain('[--kit <name>]');
+    expect(internalHeader).toContain('rdy run --jit [<name>]');
+    expect(compiledHeader).toContain('rdy run <name>');
   });
 
   it('uses brackets in compiled hint when default is in compiled kits', () => {
@@ -53,19 +53,34 @@ describe(formatOwnerView, () => {
     const internalHeader = lines.find((l) => l.startsWith('Internal:'));
     const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
 
-    expect(internalHeader).not.toContain('[--kit <name>]');
-    expect(compiledHeader).toContain('[--kit <name>]');
+    expect(internalHeader).toContain('rdy run --jit <name>');
+    expect(compiledHeader).toContain('rdy run [<name>]');
   });
 
-  it('omits brackets around --kit when no default kit exists', () => {
+  it('omits brackets around positional name when no default kit exists', () => {
     const result = formatOwnerView({
       internalKits: ['deploy'],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('--kit <name>');
-    expect(result).not.toContain('[--kit <name>]');
+    expect(result).toContain('rdy run --jit <name>');
+    expect(result).not.toContain('[<name>]');
+  });
+
+  it('includes --jit in internal hints but not compiled hints', () => {
+    const result = formatOwnerView({
+      internalKits: ['default'],
+      compiledKits: ['deploy'],
+      compiledStyle: { kind: 'local-convention' },
+    });
+
+    const lines = result.split('\n');
+    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
+    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
+
+    expect(internalHeader).toContain('--jit');
+    expect(compiledHeader).not.toContain('--jit');
   });
 
   it('renders custom outDir style with file paths', () => {
@@ -127,25 +142,25 @@ describe(formatConsumerView, () => {
     expect(result).toContain('rdy run --from /other');
   });
 
-  it('uses brackets around --kit when default kit exists', () => {
+  it('uses brackets around positional name when default kit exists', () => {
     const result = formatConsumerView({
       compiledKits: ['default'],
       fromArg: '.',
       kitsDir: '/resolved/.rdy/kits',
     });
 
-    expect(result).toContain('[--kit <name>]');
+    expect(result).toContain('rdy run --from . [<name>]');
   });
 
-  it('omits brackets around --kit when default kit is absent', () => {
+  it('omits brackets around positional name when default kit is absent', () => {
     const result = formatConsumerView({
       compiledKits: ['deploy'],
       fromArg: '.',
       kitsDir: '/resolved/.rdy/kits',
     });
 
-    expect(result).toContain('--kit <name>');
-    expect(result).not.toContain('[--kit <name>]');
+    expect(result).toContain('rdy run --from . <name>');
+    expect(result).not.toContain('[<name>]');
   });
 
   it('returns empty message with resolved kitsDir for local path', () => {
