@@ -208,8 +208,8 @@ export function resolveKitSources({
   checklists: string[] | undefined;
   jit: boolean;
   internal: boolean;
-  internalDir: string;
-  internalInfix: string | undefined;
+  internalDir?: string | undefined;
+  internalInfix?: string | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
     return [{ name: filePath, source: { path: filePath }, checklists: checklists ?? [] }];
@@ -230,7 +230,9 @@ export function resolveKitSources({
   if (internal) {
     return specs.map((spec) => ({
       name: spec.kitName,
-      source: { path: path.join(KITS_DIR, internalDir, buildKitFilename(spec.kitName, internalInfix, extension)) },
+      source: {
+        path: path.join(KITS_DIR, internalDir ?? '.', buildKitFilename(spec.kitName, internalInfix, extension)),
+      },
       checklists: spec.checklists,
     }));
   }
