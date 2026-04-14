@@ -1,5 +1,5 @@
 import type { LocalRefsCompareResult } from '../../types.ts';
-import { runGit } from './run-git.ts';
+import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Compare two local git refs and return a discriminated-union result. */
 export async function compareLocalRefs(path: string, refA: string, refB: string): Promise<LocalRefsCompareResult> {
@@ -54,12 +54,4 @@ async function resolveAheadBehind(
   } catch {
     return undefined;
   }
-}
-
-/** Determine whether an error represents a missing ref (git exit code 128). */
-function isRefMissingError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  if (!('code' in error)) return false;
-  const { code } = error;
-  return code === 128;
 }

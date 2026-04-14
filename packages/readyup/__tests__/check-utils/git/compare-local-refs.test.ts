@@ -4,9 +4,10 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { compareLocalRefs } from '../../../src/check-utils/git/compare-local-refs.ts';
+import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
 function createTempRepo(): string {
   const dir = mkdtempSync(join(tmpdir(), 'rdy-cmp-'));
@@ -74,5 +75,14 @@ describe(compareLocalRefs, () => {
     const result = await compareLocalRefs(repo, 'HEAD', 'nonexistent');
 
     expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent' });
+  });
+
+  it('rethrows non-ref-missing git errors instead of returning ref-missing', async () => {
+    const gitError = Object.assign(new Error('git failed'), { code: 1, stderr: 'permission denied' });
+    const spy = vi.spyOn(runGitModule, 'runGit').mockRejectedValue(gitError);
+
+    await expect(compareLocalRefs('/tmp', 'a', 'b')).rejects.toThrow('git failed');
+
+    spy.mockRestore();
   });
 });

@@ -4,9 +4,10 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { compareRefToRemote } from '../../../src/check-utils/git/compare-ref-to-remote.ts';
+import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
 function createTempRepoWithRemote(): { local: string; remote: string } {
   const remote = mkdtempSync(join(tmpdir(), 'rdy-remote-'));
@@ -73,6 +74,15 @@ describe(compareRefToRemote, () => {
     const result = await compareRefToRemote(local, 'only-local');
 
     expect(result).toEqual({ status: 'ref-missing', ref: 'origin/only-local' });
+  });
+
+  it('rethrows non-ref-missing git errors instead of returning ref-missing', async () => {
+    const gitError = Object.assign(new Error('git failed'), { code: 1, stderr: 'permission denied' });
+    const spy = vi.spyOn(runGitModule, 'runGit').mockRejectedValue(gitError);
+
+    await expect(compareRefToRemote('/tmp', 'main')).rejects.toThrow('git failed');
+
+    spy.mockRestore();
   });
 
   it('returns unreachable when the remote cannot be contacted', async () => {

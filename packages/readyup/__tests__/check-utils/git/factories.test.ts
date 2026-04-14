@@ -49,7 +49,7 @@ describe(makeLocalRefSyncCheck, () => {
     expect(result).toBe(true);
   });
 
-  it('fails with detail when refs diverge', async () => {
+  it('reports ahead detail when refA is ahead of refB', async () => {
     const repo = createTempRepo();
     execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
     commit(repo, 'main-only');
@@ -57,7 +57,18 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'HEAD', refB: 'feature' });
     const result = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
+  });
+
+  it('reports behind detail when refA is behind refB', async () => {
+    const repo = createTempRepo();
+    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
+    commit(repo, 'main-advance');
+
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'feature', refB: 'HEAD' });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
   });
 
   it('fails with ref-missing detail for a nonexistent ref', async () => {
@@ -124,7 +135,7 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(result).toBe(true);
   });
 
-  it('fails when local is ahead of remote', async () => {
+  it('reports ahead detail when local is ahead of remote', async () => {
     const { local } = createTempRepoWithRemote();
     const branch = currentBranch(local);
     commit(local, 'local-only');
@@ -132,7 +143,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
     const result = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
   });
 
   it('fails with ref-missing detail when local branch has no upstream', async () => {

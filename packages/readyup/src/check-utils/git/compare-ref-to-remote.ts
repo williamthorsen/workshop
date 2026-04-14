@@ -1,5 +1,5 @@
 import type { RemoteRefCompareResult } from '../../types.ts';
-import { runGit } from './run-git.ts';
+import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Compare a local ref to its counterpart on a remote. Uses `ls-remote` (no fetch). */
 export async function compareRefToRemote(
@@ -66,14 +66,6 @@ async function resolveAheadBehind(
   } catch {
     return undefined;
   }
-}
-
-/** Determine whether an error represents a missing ref (git exit code 128). */
-function isRefMissingError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  if (!('code' in error)) return false;
-  const { code } = error;
-  return code === 128;
 }
 
 /** Coerce an unknown value to an Error. */

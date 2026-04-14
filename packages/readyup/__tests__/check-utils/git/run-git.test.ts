@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 
 import { describe, expect, it } from 'vitest';
 
-import { runGit } from '../../../src/check-utils/git/run-git.ts';
+import { isRefMissingError, runGit } from '../../../src/check-utils/git/run-git.ts';
 
 let tempDir: string;
 
@@ -51,5 +51,54 @@ describe(runGit, () => {
     const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((e: Error) => e.message);
 
     expect(await fromTilde).toBe(await fromHome);
+  });
+});
+
+describe(isRefMissingError, () => {
+  it('returns true for code 128 with "unknown revision" in stderr', () => {
+    const error = Object.assign(new Error('git error'), {
+      code: 128,
+      stderr: "fatal: ambiguous argument 'nonexistent': unknown revision or path not in the working tree.",
+    });
+
+    expect(isRefMissingError(error)).toBe(true);
+  });
+
+  it('returns true for code 128 with "not a valid object name" in stderr', () => {
+    const error = Object.assign(new Error('git error'), {
+      code: 128,
+      stderr: "fatal: Needed a single revision\nerror: not a valid object name: 'nonexistent'",
+    });
+
+    expect(isRefMissingError(error)).toBe(true);
+  });
+
+  it('returns false for code 128 with "not a git repository" in stderr', () => {
+    const error = Object.assign(new Error('git error'), {
+      code: 128,
+      stderr: 'fatal: not a git repository (or any of the parent directories): .git',
+    });
+
+    expect(isRefMissingError(error)).toBe(false);
+  });
+
+  it('returns false for code 128 with "cannot change to" in stderr', () => {
+    const error = Object.assign(new Error('git error'), {
+      code: 128,
+      stderr: "fatal: cannot change to '/nonexistent': No such file or directory",
+    });
+
+    expect(isRefMissingError(error)).toBe(false);
+  });
+
+  it('returns false for non-128 exit codes', () => {
+    const error = Object.assign(new Error('git error'), { code: 1, stderr: 'unknown revision' });
+
+    expect(isRefMissingError(error)).toBe(false);
+  });
+
+  it('returns false for non-object values', () => {
+    expect(isRefMissingError('not an error')).toBe(false);
+    expect(isRefMissingError(null)).toBe(false);
   });
 });
