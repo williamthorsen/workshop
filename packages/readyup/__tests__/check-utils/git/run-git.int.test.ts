@@ -8,10 +8,8 @@ import { describe, expect, it } from 'vitest';
 
 import { isRefMissingError, runGit } from '../../../src/check-utils/git/run-git.ts';
 
-let tempDir: string;
-
 function createTempRepo(): string {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-git-'));
+  const tempDir = mkdtempSync(join(tmpdir(), 'rdy-git-'));
   execSync('git init', { cwd: tempDir, stdio: 'ignore' });
   execSync('git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'ignore' });
   return tempDir;

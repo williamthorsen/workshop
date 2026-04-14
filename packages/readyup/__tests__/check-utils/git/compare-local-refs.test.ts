@@ -1,88 +1,176 @@
 import assert from 'node:assert';
-import { execSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { compareLocalRefs } from '../../../src/check-utils/git/compare-local-refs.ts';
 import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
-function createTempRepo(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'rdy-cmp-'));
-  execSync('git init', { cwd: dir, stdio: 'ignore' });
-  execSync('git commit --allow-empty -m "init"', { cwd: dir, stdio: 'ignore' });
-  return dir;
+vi.mock('../../../src/check-utils/git/run-git.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../../src/check-utils/git/run-git.ts')>();
+  return {
+    ...original,
+    runGit: vi.fn(),
+  };
+});
+
+const runGit = vi.mocked(runGitModule.runGit);
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
+
+/** Stub `runGit` to route calls by git subcommand and arguments. */
+function stubRunGit(routes: Record<string, string | Error>): void {
+  runGit.mockImplementation(async (_path: string, ...args: string[]) => {
+    const key = args.join(' ');
+    for (const [pattern, value] of Object.entries(routes)) {
+      if (key.includes(pattern)) {
+        if (value instanceof Error) throw value;
+        return value;
+      }
+    }
+    throw new Error(`Unexpected runGit call: git ${args.join(' ')}`);
+  });
 }
 
-function commit(dir: string, message: string): void {
-  writeFileSync(join(dir, `${Date.now()}.txt`), message);
-  execSync('git add .', { cwd: dir, stdio: 'ignore' });
-  execSync(`git commit -m "${message}"`, { cwd: dir, stdio: 'ignore' });
+function makeRefMissingError(ref: string): Error {
+  return Object.assign(new Error(`unknown revision: ${ref}`), {
+    code: 128,
+    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
+  });
 }
 
 describe(compareLocalRefs, () => {
-  it('returns match when both refs point to the same commit', async () => {
-    const repo = createTempRepo();
-    execSync('git branch test-branch', { cwd: repo, stdio: 'ignore' });
+  it('returns match when both refs resolve to the same SHA', async () => {
+    const sha = 'abc123def456abc123def456abc123def456abc1';
+    stubRunGit({
+      'rev-parse --verify refA': sha,
+      'rev-parse --verify refB': sha,
+      'rev-parse refA': sha,
+      'rev-parse refB': sha,
+    });
 
-    const result = await compareLocalRefs(repo, 'HEAD', 'test-branch');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
     expect(result.status).toBe('match');
     assert.ok(result.status === 'match');
-    expect(result.shaA).toBe(result.shaB);
-    expect(result.shaA).toMatch(/^[0-9a-f]{40}$/);
+    expect(result.shaA).toBe(sha);
+    expect(result.shaB).toBe(sha);
   });
 
-  it('returns mismatch with ahead/behind when refs diverge', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'main-only');
+  it('returns mismatch with ahead count when refA is ahead', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'aaa',
+      'rev-parse --verify refB': 'bbb',
+      'rev-parse refA': 'aaa111',
+      'rev-parse refB': 'bbb222',
+      'rev-list --count --left-right': '3\t0',
+    });
 
-    const result = await compareLocalRefs(repo, 'HEAD', 'feature');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
-    expect(result.shaA).not.toBe(result.shaB);
-    expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
+    expect(result.shaA).toBe('aaa111');
+    expect(result.shaB).toBe('bbb222');
+    expect(result.aheadBehind).toEqual({ ahead: 3, behind: 0 });
   });
 
-  it('returns mismatch with behind count when the first ref is behind', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'main-advance');
+  it('returns mismatch with behind count when refA is behind', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'aaa',
+      'rev-parse --verify refB': 'bbb',
+      'rev-parse refA': 'aaa111',
+      'rev-parse refB': 'bbb222',
+      'rev-list --count --left-right': '0\t2',
+    });
 
-    // feature is behind HEAD by 1 commit
-    const result = await compareLocalRefs(repo, 'feature', 'HEAD');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
-    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 1 });
+    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 2 });
   });
 
-  it('returns ref-missing when the first ref does not exist', async () => {
-    const repo = createTempRepo();
+  it('returns mismatch with both counts when refs have diverged', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'aaa',
+      'rev-parse --verify refB': 'bbb',
+      'rev-parse refA': 'aaa111',
+      'rev-parse refB': 'bbb222',
+      'rev-list --count --left-right': '2\t3',
+    });
 
-    const result = await compareLocalRefs(repo, 'nonexistent', 'HEAD');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent' });
+    expect(result.status).toBe('mismatch');
+    assert.ok(result.status === 'mismatch');
+    expect(result.aheadBehind).toEqual({ ahead: 2, behind: 3 });
   });
 
-  it('returns ref-missing when the second ref does not exist', async () => {
-    const repo = createTempRepo();
+  it('returns ref-missing when refA does not exist', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': makeRefMissingError('refA'),
+      'rev-parse --verify refB': 'exists',
+    });
 
-    const result = await compareLocalRefs(repo, 'HEAD', 'nonexistent');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent' });
+    expect(result).toEqual({ status: 'ref-missing', ref: 'refA' });
   });
 
-  it('rethrows non-ref-missing git errors instead of returning ref-missing', async () => {
-    const gitError = Object.assign(new Error('git failed'), { code: 1, stderr: 'permission denied' });
-    const spy = vi.spyOn(runGitModule, 'runGit').mockRejectedValue(gitError);
+  it('returns ref-missing when refB does not exist', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'exists',
+      'rev-parse --verify refB': makeRefMissingError('refB'),
+    });
 
-    await expect(compareLocalRefs('/tmp', 'a', 'b')).rejects.toThrow('git failed');
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
-    spy.mockRestore();
+    expect(result).toEqual({ status: 'ref-missing', ref: 'refB' });
+  });
+
+  it('rethrows non-ref-missing errors', async () => {
+    const infraError = Object.assign(new Error('not a git repo'), {
+      code: 128,
+      stderr: 'fatal: not a git repository (or any of the parent directories): .git',
+    });
+    stubRunGit({
+      'rev-parse --verify refA': infraError,
+    });
+
+    await expect(compareLocalRefs('/repo', 'refA', 'refB')).rejects.toThrow('not a git repo');
+  });
+
+  it('omits aheadBehind when rev-list output is malformed', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'aaa',
+      'rev-parse --verify refB': 'bbb',
+      'rev-parse refA': 'aaa111',
+      'rev-parse refB': 'bbb222',
+      'rev-list --count --left-right': 'garbage',
+    });
+
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+
+    expect(result.status).toBe('mismatch');
+    assert.ok(result.status === 'mismatch');
+    expect(result.aheadBehind).toBeUndefined();
+  });
+
+  it('omits aheadBehind when rev-list fails', async () => {
+    stubRunGit({
+      'rev-parse --verify refA': 'aaa',
+      'rev-parse --verify refB': 'bbb',
+      'rev-parse refA': 'aaa111',
+      'rev-parse refB': 'bbb222',
+      'rev-list --count --left-right': new Error('rev-list failed'),
+    });
+
+    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+
+    expect(result.status).toBe('mismatch');
+    assert.ok(result.status === 'mismatch');
+    expect(result.aheadBehind).toBeUndefined();
   });
 });

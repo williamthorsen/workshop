@@ -1,122 +1,176 @@
 import assert from 'node:assert';
-import { execSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { compareRefToRemote } from '../../../src/check-utils/git/compare-ref-to-remote.ts';
 import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
-function createTempRepoWithRemote(): { local: string; remote: string } {
-  const remote = mkdtempSync(join(tmpdir(), 'rdy-remote-'));
-  execSync('git init --bare', { cwd: remote, stdio: 'ignore' });
+vi.mock('../../../src/check-utils/git/run-git.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../../src/check-utils/git/run-git.ts')>();
+  return {
+    ...original,
+    runGit: vi.fn(),
+  };
+});
 
-  const local = mkdtempSync(join(tmpdir(), 'rdy-local-'));
-  execSync('git init', { cwd: local, stdio: 'ignore' });
-  execSync(`git remote add origin ${remote}`, { cwd: local, stdio: 'ignore' });
-  execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
-  execSync('git push -u origin HEAD', { cwd: local, stdio: 'ignore' });
+const runGit = vi.mocked(runGitModule.runGit);
 
-  return { local, remote };
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
+
+/** Stub `runGit` to route calls by git subcommand and arguments. */
+function stubRunGit(routes: Record<string, string | Error>): void {
+  runGit.mockImplementation(async (_path: string, ...args: string[]) => {
+    const key = args.join(' ');
+    for (const [pattern, value] of Object.entries(routes)) {
+      if (key.includes(pattern)) {
+        if (value instanceof Error) throw value;
+        return value;
+      }
+    }
+    throw new Error(`Unexpected runGit call: git ${args.join(' ')}`);
+  });
 }
 
-function commit(dir: string, message: string): void {
-  writeFileSync(join(dir, `${Date.now()}.txt`), message);
-  execSync('git add .', { cwd: dir, stdio: 'ignore' });
-  execSync(`git commit -m "${message}"`, { cwd: dir, stdio: 'ignore' });
+function makeRefMissingError(ref: string): Error {
+  return Object.assign(new Error(`unknown revision: ${ref}`), {
+    code: 128,
+    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
+  });
 }
 
-function currentBranch(dir: string): string {
-  return execSync('git rev-parse --abbrev-ref HEAD', { cwd: dir }).toString().trim();
-}
+const LOCAL_SHA = 'aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111';
+const REMOTE_SHA = 'bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222';
 
 describe(compareRefToRemote, () => {
-  it('returns in-sync when local and remote match', async () => {
-    const { local } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+  it('returns in-sync when local and remote SHAs match', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': `${LOCAL_SHA}\trefs/heads/main`,
+    });
 
-    const result = await compareRefToRemote(local, branch);
+    const result = await compareRefToRemote('/repo', 'main');
 
     expect(result.status).toBe('in-sync');
     assert.ok(result.status === 'in-sync');
-    expect(result.localSha).toBe(result.remoteSha);
-    expect(result.localSha).toMatch(/^[0-9a-f]{40}$/);
+    expect(result.localSha).toBe(LOCAL_SHA);
+    expect(result.remoteSha).toBe(LOCAL_SHA);
   });
 
-  it('returns out-of-sync when local is ahead of remote', async () => {
-    const { local } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
-    commit(local, 'local-only');
+  it('returns out-of-sync with ahead count when local is ahead', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': `${REMOTE_SHA}\trefs/heads/main`,
+      'rev-list --count --left-right': '1\t0',
+    });
 
-    const result = await compareRefToRemote(local, branch);
+    const result = await compareRefToRemote('/repo', 'main');
 
     expect(result.status).toBe('out-of-sync');
     assert.ok(result.status === 'out-of-sync');
-    expect(result.localSha).not.toBe(result.remoteSha);
+    expect(result.localSha).toBe(LOCAL_SHA);
+    expect(result.remoteSha).toBe(REMOTE_SHA);
     expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
   });
 
-  it('returns out-of-sync when local is behind remote', async () => {
-    const { local, remote } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+  it('returns out-of-sync with behind count when local is behind', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': `${REMOTE_SHA}\trefs/heads/main`,
+      'rev-list --count --left-right': '0\t3',
+    });
 
-    // Advance remote via a second clone without fetching locally.
-    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-clone2-'));
-    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
-    commit(clone2, 'remote-advance');
-    execSync('git push', { cwd: clone2, stdio: 'ignore' });
-
-    // Fetch so the local tracking ref sees the remote advance.
-    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
-
-    const result = await compareRefToRemote(local, branch);
+    const result = await compareRefToRemote('/repo', 'main');
 
     expect(result.status).toBe('out-of-sync');
     assert.ok(result.status === 'out-of-sync');
-    expect(result.localSha).not.toBe(result.remoteSha);
-    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 1 });
+    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 3 });
+  });
+
+  it('returns out-of-sync with both counts when diverged', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': `${REMOTE_SHA}\trefs/heads/main`,
+      'rev-list --count --left-right': '2\t5',
+    });
+
+    const result = await compareRefToRemote('/repo', 'main');
+
+    expect(result.status).toBe('out-of-sync');
+    assert.ok(result.status === 'out-of-sync');
+    expect(result.aheadBehind).toEqual({ ahead: 2, behind: 5 });
   });
 
   it('returns ref-missing when local ref does not exist', async () => {
-    const { local } = createTempRepoWithRemote();
+    stubRunGit({
+      'rev-parse --verify nonexistent': makeRefMissingError('nonexistent'),
+    });
 
-    const result = await compareRefToRemote(local, 'nonexistent-branch');
+    const result = await compareRefToRemote('/repo', 'nonexistent');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent-branch' });
+    expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent' });
   });
 
   it('returns ref-missing when remote ref does not exist', async () => {
-    const { local } = createTempRepoWithRemote();
-    execSync('git checkout -b only-local', { cwd: local, stdio: 'ignore' });
-    execSync('git commit --allow-empty -m "local"', { cwd: local, stdio: 'ignore' });
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': '',
+    });
 
-    const result = await compareRefToRemote(local, 'only-local');
+    const result = await compareRefToRemote('/repo', 'main');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'origin/only-local' });
+    expect(result).toEqual({ status: 'ref-missing', ref: 'origin/main' });
   });
 
-  it('rethrows non-ref-missing git errors instead of returning ref-missing', async () => {
-    const gitError = Object.assign(new Error('git failed'), { code: 1, stderr: 'permission denied' });
-    const spy = vi.spyOn(runGitModule, 'runGit').mockRejectedValue(gitError);
+  it('returns unreachable when ls-remote throws', async () => {
+    const networkError = new Error('Could not resolve host');
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': networkError,
+    });
 
-    await expect(compareRefToRemote('/tmp', 'main')).rejects.toThrow('git failed');
-
-    spy.mockRestore();
-  });
-
-  it('returns unreachable when the remote cannot be contacted', async () => {
-    const local = mkdtempSync(join(tmpdir(), 'rdy-unreachable-'));
-    execSync('git init', { cwd: local, stdio: 'ignore' });
-    execSync('git remote add origin https://invalid.example.test/repo.git', { cwd: local, stdio: 'ignore' });
-    execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
-    const branch = currentBranch(local);
-
-    const result = await compareRefToRemote(local, branch);
+    const result = await compareRefToRemote('/repo', 'main');
 
     expect(result.status).toBe('unreachable');
     assert.ok(result.status === 'unreachable');
-    expect(result.error).toBeInstanceOf(Error);
+    expect(result.error).toBe(networkError);
+  });
+
+  it('rethrows non-ref-missing errors from ref resolution', async () => {
+    const infraError = Object.assign(new Error('not a git repo'), {
+      code: 128,
+      stderr: 'fatal: not a git repository (or any of the parent directories): .git',
+    });
+    stubRunGit({
+      'rev-parse --verify main': infraError,
+    });
+
+    await expect(compareRefToRemote('/repo', 'main')).rejects.toThrow('not a git repo');
+  });
+
+  it('uses custom remote name', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote upstream main': `${LOCAL_SHA}\trefs/heads/main`,
+    });
+
+    const result = await compareRefToRemote('/repo', 'main', 'upstream');
+
+    expect(result.status).toBe('in-sync');
+  });
+
+  it('omits aheadBehind when rev-list output is malformed', async () => {
+    stubRunGit({
+      'rev-parse --verify main': LOCAL_SHA,
+      'ls-remote origin main': `${REMOTE_SHA}\trefs/heads/main`,
+      'rev-list --count --left-right': 'not-a-number',
+    });
+
+    const result = await compareRefToRemote('/repo', 'main');
+
+    expect(result.status).toBe('out-of-sync');
+    assert.ok(result.status === 'out-of-sync');
+    expect(result.aheadBehind).toBeUndefined();
   });
 });

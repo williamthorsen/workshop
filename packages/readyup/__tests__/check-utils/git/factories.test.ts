@@ -1,213 +1,199 @@
-import { execSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../../../src/check-utils/git/factories.ts';
+import * as compareLocalRefsModule from '../../../src/check-utils/git/compare-local-refs.ts';
 import * as compareRefToRemoteModule from '../../../src/check-utils/git/compare-ref-to-remote.ts';
+import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../src/types.ts';
 
-function createTempRepo(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'rdy-fac-'));
-  execSync('git init', { cwd: dir, stdio: 'ignore' });
-  execSync('git commit --allow-empty -m "init"', { cwd: dir, stdio: 'ignore' });
-  return dir;
-}
+vi.mock('../../../src/check-utils/git/compare-local-refs.ts', () => ({
+  compareLocalRefs: vi.fn(),
+}));
 
-function createTempRepoWithRemote(): { local: string; remote: string } {
-  const remote = mkdtempSync(join(tmpdir(), 'rdy-fac-remote-'));
-  execSync('git init --bare', { cwd: remote, stdio: 'ignore' });
+vi.mock('../../../src/check-utils/git/compare-ref-to-remote.ts', () => ({
+  compareRefToRemote: vi.fn(),
+}));
 
-  const local = mkdtempSync(join(tmpdir(), 'rdy-fac-local-'));
-  execSync('git init', { cwd: local, stdio: 'ignore' });
-  execSync(`git remote add origin ${remote}`, { cwd: local, stdio: 'ignore' });
-  execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
-  execSync('git push -u origin HEAD', { cwd: local, stdio: 'ignore' });
+const mockCompareLocalRefs = vi.mocked(compareLocalRefsModule.compareLocalRefs);
+const mockCompareRefToRemote = vi.mocked(compareRefToRemoteModule.compareRefToRemote);
 
-  return { local, remote };
-}
-
-function commit(dir: string, message: string): void {
-  writeFileSync(join(dir, `${Date.now()}.txt`), message);
-  execSync('git add .', { cwd: dir, stdio: 'ignore' });
-  execSync(`git commit -m "${message}"`, { cwd: dir, stdio: 'ignore' });
-}
-
-function currentBranch(dir: string): string {
-  return execSync('git rev-parse --abbrev-ref HEAD', { cwd: dir }).toString().trim();
-}
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe(makeLocalRefSyncCheck, () => {
-  it('passes when refs point to the same commit', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
+  it('passes when refs match', async () => {
+    const result: LocalRefsCompareResult = { status: 'match', shaA: 'aaa', shaB: 'aaa' };
+    mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'HEAD', refB: 'feature' });
-    const result = await check.check();
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
 
-    expect(result).toBe(true);
+    expect(await check.check()).toBe(true);
   });
 
-  it('reports ahead detail when refA is ahead of refB', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'main-only');
+  it('reports ahead detail when refA is ahead', async () => {
+    const result: LocalRefsCompareResult = {
+      status: 'mismatch',
+      shaA: 'aaa',
+      shaB: 'bbb',
+      aheadBehind: { ahead: 3, behind: 0 },
+    };
+    mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'HEAD', refB: 'feature' });
-    const result = await check.check();
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
   });
 
-  it('reports behind detail when refA is behind refB', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'main-advance');
+  it('reports behind detail when refA is behind', async () => {
+    const result: LocalRefsCompareResult = {
+      status: 'mismatch',
+      shaA: 'aaa',
+      shaB: 'bbb',
+      aheadBehind: { ahead: 0, behind: 2 },
+    };
+    mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'feature', refB: 'HEAD' });
-    const result = await check.check();
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
+    expect(outcome).toEqual(expect.objectContaining({ detail: expect.stringContaining('git merge') }));
   });
 
-  it('fails with ref-missing detail for a nonexistent ref', async () => {
-    const repo = createTempRepo();
+  it('reports diverged detail when both sides have commits', async () => {
+    const result: LocalRefsCompareResult = {
+      status: 'mismatch',
+      shaA: 'aaa',
+      shaB: 'bbb',
+      aheadBehind: { ahead: 2, behind: 3 },
+    };
+    mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'nonexistent', refB: 'HEAD' });
-    const result = await check.check();
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
-    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('nonexistent') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
   });
 
-  it('reports diverged detail when both refs have independent commits', async () => {
-    const repo = createTempRepo();
-    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'main-advance');
-    execSync('git checkout feature', { cwd: repo, stdio: 'ignore' });
-    commit(repo, 'feature-advance');
-    execSync('git checkout -', { cwd: repo, stdio: 'ignore' });
+  it('reports diverged detail when aheadBehind is unavailable', async () => {
+    const result: LocalRefsCompareResult = { status: 'mismatch', shaA: 'aaa', shaB: 'bbb' };
+    mockCompareLocalRefs.mockResolvedValue(result);
 
-    const branch = currentBranch(repo);
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: branch, refB: 'feature' });
-    const result = await check.check();
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
-    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('diverged') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
+  });
+
+  it('reports ref-missing detail for a nonexistent ref', async () => {
+    const result: LocalRefsCompareResult = { status: 'ref-missing', ref: 'nonexistent' };
+    mockCompareLocalRefs.mockResolvedValue(result);
+
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'nonexistent', refB: 'HEAD' });
+    const outcome = await check.check();
+
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('nonexistent') }));
   });
 
   it('uses custom fix when provided', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b', fix: 'custom fix' });
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', fix: 'custom fix' });
 
     expect(check.fix).toBe('custom fix');
   });
 
   it('has no fix when not provided', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b' });
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
 
     expect(check.fix).toBeUndefined();
   });
 
   it('forwards severity to the check', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b', severity: 'warn' });
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', severity: 'warn' });
 
     expect(check.severity).toBe('warn');
   });
 
   it('omits severity when not provided', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b' });
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
 
     expect(check.severity).toBeUndefined();
   });
 });
 
 describe(makeRemoteRefSyncCheck, () => {
-  it('passes when local and remote match', async () => {
-    const { local } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+  it('passes when in-sync', async () => {
+    const result: RemoteRefCompareResult = { status: 'in-sync', localSha: 'aaa', remoteSha: 'aaa' };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const skipResult = await check.skip?.();
     expect(skipResult).toBe(false);
 
-    const result = await check.check();
-    expect(result).toBe(true);
+    expect(await check.check()).toBe(true);
   });
 
-  it('reports ahead detail when local is ahead of remote', async () => {
-    const { local } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
-    commit(local, 'local-only');
+  it('reports ahead detail when local is ahead', async () => {
+    const result: RemoteRefCompareResult = {
+      status: 'out-of-sync',
+      localSha: 'aaa',
+      remoteSha: 'bbb',
+      aheadBehind: { ahead: 1, behind: 0 },
+    };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
-    const result = await check.check();
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
   });
 
-  it('reports behind detail when local is behind remote', async () => {
-    const { local, remote } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+  it('reports behind detail when local is behind', async () => {
+    const result: RemoteRefCompareResult = {
+      status: 'out-of-sync',
+      localSha: 'aaa',
+      remoteSha: 'bbb',
+      aheadBehind: { ahead: 0, behind: 3 },
+    };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    // Advance remote via a second clone.
-    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-fac-clone2b-'));
-    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
-    commit(clone2, 'remote-advance');
-    execSync('git push', { cwd: clone2, stdio: 'ignore' });
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const outcome = await check.check();
 
-    // Fetch so the local tracking ref sees the remote advance.
-    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
-
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
-    const result = await check.check();
-
-    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
+    expect(outcome).toEqual(expect.objectContaining({ detail: expect.stringContaining('git pull') }));
   });
 
-  it('fails with ref-missing detail when local branch has no upstream', async () => {
-    const { local } = createTempRepoWithRemote();
-    execSync('git checkout -b only-local', { cwd: local, stdio: 'ignore' });
-    execSync('git commit --allow-empty -m "local"', { cwd: local, stdio: 'ignore' });
+  it('reports diverged detail when both sides have commits', async () => {
+    const result: RemoteRefCompareResult = {
+      status: 'out-of-sync',
+      localSha: 'aaa',
+      remoteSha: 'bbb',
+      aheadBehind: { ahead: 2, behind: 5 },
+    };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: 'only-local' });
-    const result = await check.check();
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const outcome = await check.check();
 
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
-    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('only-local') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
   });
 
-  it('reports diverged detail when local and remote have independent commits', async () => {
-    const { local, remote } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+  it('reports ref-missing detail when remote ref does not exist', async () => {
+    const result: RemoteRefCompareResult = { status: 'ref-missing', ref: 'origin/feature' };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    // Advance local.
-    commit(local, 'local-advance');
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'feature' });
+    const outcome = await check.check();
 
-    // Advance remote via a second clone so local and remote diverge.
-    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-fac-clone2-'));
-    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
-    commit(clone2, 'remote-advance');
-    execSync('git push', { cwd: clone2, stdio: 'ignore' });
-
-    // Fetch so the local tracking ref is up to date for rev-list.
-    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
-
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
-    const result = await check.check();
-
-    expect(result).toEqual(expect.objectContaining({ ok: false }));
-    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('diverged') }));
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('origin/feature') }));
   });
 
   it('returns skip reason when remote is unreachable', async () => {
-    const local = mkdtempSync(join(tmpdir(), 'rdy-fac-unreach-'));
-    execSync('git init', { cwd: local, stdio: 'ignore' });
-    execSync('git remote add origin https://invalid.example.test/repo.git', { cwd: local, stdio: 'ignore' });
-    execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
-    const branch = currentBranch(local);
+    const result: RemoteRefCompareResult = { status: 'unreachable', error: new Error('network') };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const skipResult = await check.skip?.();
 
     expect(typeof skipResult).toBe('string');
@@ -215,46 +201,45 @@ describe(makeRemoteRefSyncCheck, () => {
   });
 
   it('returns pass from check() when remote is unreachable', async () => {
-    const local = mkdtempSync(join(tmpdir(), 'rdy-fac-unreach2-'));
-    execSync('git init', { cwd: local, stdio: 'ignore' });
-    execSync('git remote add origin https://invalid.example.test/repo.git', { cwd: local, stdio: 'ignore' });
-    execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
-    const branch = currentBranch(local);
+    const result: RemoteRefCompareResult = { status: 'unreachable', error: new Error('network') };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
-    const result = await check.check();
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
 
-    expect(result).toBe(true);
+    expect(await check.check()).toBe(true);
   });
 
   it('invokes the probe at most once when both skip and check are called', async () => {
-    const { local } = createTempRepoWithRemote();
-    const branch = currentBranch(local);
+    const result: RemoteRefCompareResult = { status: 'in-sync', localSha: 'aaa', remoteSha: 'aaa' };
+    mockCompareRefToRemote.mockResolvedValue(result);
 
-    const spy = vi.spyOn(compareRefToRemoteModule, 'compareRefToRemote');
-
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     await check.skip?.();
     await check.check();
 
-    expect(spy).toHaveBeenCalledTimes(1);
-    spy.mockRestore();
+    expect(mockCompareRefToRemote).toHaveBeenCalledTimes(1);
   });
 
   it('uses custom fix when provided', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main', fix: 'run git pull' });
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main', fix: 'run git pull' });
 
     expect(check.fix).toBe('run git pull');
   });
 
+  it('has no fix when not provided', () => {
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
+
+    expect(check.fix).toBeUndefined();
+  });
+
   it('forwards severity to the check', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main', severity: 'recommend' });
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main', severity: 'recommend' });
 
     expect(check.severity).toBe('recommend');
   });
 
   it('omits severity when not provided', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main' });
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
 
     expect(check.severity).toBeUndefined();
   });
