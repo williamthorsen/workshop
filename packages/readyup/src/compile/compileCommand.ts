@@ -5,8 +5,8 @@ import process from 'node:process';
 import picomatch from 'picomatch';
 
 import { loadConfig } from '../loadConfig.ts';
-import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
@@ -56,25 +56,34 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
+    let result;
+    let metadata: KitMetadata;
     try {
-      const result = await compileConfig(inputPath, outputPath);
-      const metadata = await validateCompiledOutput(result.outputPath);
-      const relInput = path.relative(process.cwd(), path.resolve(inputPath));
-      const relOutput = path.relative(process.cwd(), result.outputPath);
-      process.stdout.write('Compiling kit:\n');
-      process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
-
-      if (!skipManifest) {
-        const kitName = path.basename(result.outputPath, '.js');
-        upsertManifest(manifestPath, kitName, metadata);
-      }
-
-      return 0;
+      result = await compileConfig(inputPath, outputPath);
+      metadata = await validateCompiledOutput(result.outputPath);
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error: ${message}\n`);
       return 1;
     }
+
+    const relInput = path.relative(process.cwd(), path.resolve(inputPath));
+    const relOutput = path.relative(process.cwd(), result.outputPath);
+    process.stdout.write('Compiling kit:\n');
+    process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
+
+    if (!skipManifest) {
+      try {
+        const kitName = path.basename(result.outputPath, '.js');
+        upsertManifest(manifestPath, kitName, metadata);
+      } catch (error: unknown) {
+        const message = extractMessage(error);
+        process.stderr.write(`Error writing manifest: ${message}\n`);
+        return 1;
+      }
+    }
+
+    return 0;
   }
 
   // No input file -- compile all sources from config

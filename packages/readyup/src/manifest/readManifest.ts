@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-import { ManifestSchema } from './manifestSchema.ts';
 import type { RdyManifest } from './manifestSchema.ts';
+import { ManifestSchema } from './manifestSchema.ts';
 
 /**
  * Read and validate a manifest file from disk.
@@ -12,8 +12,13 @@ export function readManifest(manifestPath: string): RdyManifest {
   let raw: string;
   try {
     raw = readFileSync(manifestPath, 'utf8');
-  } catch {
-    throw new Error(`Manifest file not found: ${manifestPath}`);
+  } catch (error: unknown) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') {
+      throw new Error(`Manifest file not found: ${manifestPath}`);
+    }
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read manifest file ${manifestPath}: ${detail}`);
   }
 
   let parsed: unknown;

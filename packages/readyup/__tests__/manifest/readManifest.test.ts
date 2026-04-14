@@ -29,10 +29,22 @@ describe(readManifest, () => {
 
   it('throws when the file does not exist', () => {
     mockReadFileSync.mockImplementation(() => {
-      throw new Error('ENOENT');
+      const error = new Error("ENOENT: no such file or directory, open '/missing/manifest.json'");
+      (error as NodeJS.ErrnoException).code = 'ENOENT';
+      throw error;
     });
 
     expect(() => readManifest('/missing/manifest.json')).toThrow('Manifest file not found');
+  });
+
+  it('throws with detail when the file is unreadable', () => {
+    mockReadFileSync.mockImplementation(() => {
+      const error = new Error("EACCES: permission denied, open '/locked/manifest.json'");
+      (error as NodeJS.ErrnoException).code = 'EACCES';
+      throw error;
+    });
+
+    expect(() => readManifest('/locked/manifest.json')).toThrow('Failed to read manifest file');
   });
 
   it('throws when the file contains invalid JSON', () => {
