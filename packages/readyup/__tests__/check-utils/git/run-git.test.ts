@@ -1,62 +1,69 @@
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { promisify } from 'node:util';
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isRefMissingError, runGit } from '../../../src/check-utils/git/run-git.ts';
 
-function createTempRepo(): string {
-  const tempDir = mkdtempSync(join(tmpdir(), 'rdy-git-'));
-  execSync('git init', { cwd: tempDir, stdio: 'ignore' });
-  execSync('git commit --allow-empty -m "init"', { cwd: tempDir, stdio: 'ignore' });
-  return tempDir;
-}
+const execFileAsync = vi.hoisted(() =>
+  vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
+);
+
+vi.mock('node:child_process', () => {
+  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
+  return { execFile: stub };
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe(runGit, () => {
   it('returns trimmed stdout for a successful git command', async () => {
-    const repo = createTempRepo();
-    const result = await runGit(repo, 'rev-parse', '--short', 'HEAD');
+    execFileAsync.mockResolvedValue({ stdout: '  abc123\n', stderr: '' });
 
-    expect(result).toMatch(/^[0-9a-f]+$/);
+    const result = await runGit('/repo', 'rev-parse', 'HEAD');
+
+    expect(result).toBe('abc123');
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'rev-parse', 'HEAD']);
   });
 
   it('throws when git exits with a nonzero code', async () => {
-    const repo = createTempRepo();
+    execFileAsync.mockRejectedValue(Object.assign(new Error('git failed'), { code: 128 }));
 
-    await expect(runGit(repo, 'rev-parse', '--verify', 'nonexistent-ref')).rejects.toThrow();
+    await expect(runGit('/repo', 'rev-parse', 'nonexistent')).rejects.toThrow('git failed');
   });
 
-  it('expands ~ to the home directory', async () => {
-    // Verify tilde expansion produces the same result as homedir()
-    // by running a command that works from any git repo (or fails consistently)
-    const home = homedir();
+  it('expands bare ~ to the home directory', async () => {
+    execFileAsync.mockResolvedValue({ stdout: 'ok\n', stderr: '' });
 
-    // If home is a git repo, both should succeed with same output.
-    // If not, both should fail with the same error.
-    const fromTilde = runGit('~', 'rev-parse', '--git-dir').catch((error: unknown) =>
-      error instanceof Error ? error.message : String(error),
-    );
-    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((error: unknown) =>
-      error instanceof Error ? error.message : String(error),
-    );
+    await runGit('~', 'status');
 
-    expect(await fromTilde).toBe(await fromHome);
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', homedir(), 'status']);
   });
 
   it('expands ~/ prefix to the home directory', async () => {
-    const home = homedir();
+    execFileAsync.mockResolvedValue({ stdout: 'ok\n', stderr: '' });
 
-    const fromTilde = runGit('~/', 'rev-parse', '--git-dir').catch((error: unknown) =>
-      error instanceof Error ? error.message : String(error),
-    );
-    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((error: unknown) =>
-      error instanceof Error ? error.message : String(error),
-    );
+    await runGit('~/projects/repo', 'status');
 
-    expect(await fromTilde).toBe(await fromHome);
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', `${homedir()}/projects/repo`, 'status']);
+  });
+
+  it('expands bare ~/ to the home directory', async () => {
+    execFileAsync.mockResolvedValue({ stdout: 'ok\n', stderr: '' });
+
+    await runGit('~/', 'status');
+
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', homedir(), 'status']);
+  });
+
+  it('does not expand ~ in the middle of a path', async () => {
+    execFileAsync.mockResolvedValue({ stdout: 'ok\n', stderr: '' });
+
+    await runGit('/home/~user/repo', 'status');
+
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/home/~user/repo', 'status']);
   });
 });
 
