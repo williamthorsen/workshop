@@ -21,15 +21,15 @@ beforeEach(() => {
 
 /** Stub `runGit` to route calls by git subcommand and arguments. */
 function stubRunGit(routes: Record<string, string | Error>): void {
-  runGit.mockImplementation(async (_path: string, ...args: string[]) => {
+  runGit.mockImplementation((_path: string, ...args: string[]) => {
     const key = args.join(' ');
     for (const [pattern, value] of Object.entries(routes)) {
       if (key.includes(pattern)) {
-        if (value instanceof Error) throw value;
-        return value;
+        if (value instanceof Error) return Promise.reject(value);
+        return Promise.resolve(value);
       }
     }
-    throw new Error(`Unexpected runGit call: git ${args.join(' ')}`);
+    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
   });
 }
 

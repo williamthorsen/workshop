@@ -46,10 +46,11 @@ async function resolveAheadBehind(
 ): Promise<{ ahead: number; behind: number } | undefined> {
   try {
     const output = await runGit(path, 'rev-list', '--count', '--left-right', `${refA}...${refB}`);
-    const parts = output.split('\t');
-    if (parts.length < 2) return undefined;
-    const ahead = Number(parts[0]);
-    const behind = Number(parts[1]);
+    const aheadStr = output.split('\t')[0];
+    const behindStr = output.split('\t')[1];
+    if (aheadStr === undefined || behindStr === undefined) return undefined;
+    const ahead = Number(aheadStr);
+    const behind = Number(behindStr);
     if (!Number.isFinite(ahead) || !Number.isFinite(behind)) return undefined;
     return { ahead, behind };
   } catch {

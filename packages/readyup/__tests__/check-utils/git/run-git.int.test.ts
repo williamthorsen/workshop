@@ -1,8 +1,8 @@
 import { execSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -36,8 +36,12 @@ describe(runGit, () => {
 
     // If home is a git repo, both should succeed with same output.
     // If not, both should fail with the same error.
-    const fromTilde = runGit('~', 'rev-parse', '--git-dir').catch((e: Error) => e.message);
-    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((e: Error) => e.message);
+    const fromTilde = runGit('~', 'rev-parse', '--git-dir').catch((error: unknown) =>
+      error instanceof Error ? error.message : String(error),
+    );
+    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((error: unknown) =>
+      error instanceof Error ? error.message : String(error),
+    );
 
     expect(await fromTilde).toBe(await fromHome);
   });
@@ -45,8 +49,12 @@ describe(runGit, () => {
   it('expands ~/ prefix to the home directory', async () => {
     const home = homedir();
 
-    const fromTilde = runGit('~/', 'rev-parse', '--git-dir').catch((e: Error) => e.message);
-    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((e: Error) => e.message);
+    const fromTilde = runGit('~/', 'rev-parse', '--git-dir').catch((error: unknown) =>
+      error instanceof Error ? error.message : String(error),
+    );
+    const fromHome = runGit(home, 'rev-parse', '--git-dir').catch((error: unknown) =>
+      error instanceof Error ? error.message : String(error),
+    );
 
     expect(await fromTilde).toBe(await fromHome);
   });

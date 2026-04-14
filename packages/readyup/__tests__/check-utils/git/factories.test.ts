@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../../../src/check-utils/git/factories.ts';
 import * as compareLocalRefsModule from '../../../src/check-utils/git/compare-local-refs.ts';
 import * as compareRefToRemoteModule from '../../../src/check-utils/git/compare-ref-to-remote.ts';
+import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../../../src/check-utils/git/factories.ts';
 import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../src/types.ts';
 
 vi.mock('../../../src/check-utils/git/compare-local-refs.ts', () => ({
