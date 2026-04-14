@@ -44,6 +44,6 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
   }
 
   return {
-    ...(kit.description !== undefined && { description: kit.description }),
+    description: kit.description,
   };
 }

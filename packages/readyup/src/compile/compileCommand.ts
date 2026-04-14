@@ -88,10 +88,7 @@ export async function compileCommand(args: string[]): Promise<number> {
 
 /** Resolve the manifest output path from the optional `--manifest` flag. */
 function resolveManifestPath(flagValue: string | undefined): string {
-  if (flagValue !== undefined) {
-    return path.resolve(process.cwd(), flagValue);
-  }
-  return path.resolve(process.cwd(), DEFAULT_MANIFEST_PATH);
+  return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
 }
 
 /** Collect `.ts` files matching the optional `include` glob, falling back to all `.ts` files. */
@@ -166,8 +163,8 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
 
   if (!skipManifest) {
     try {
-      const sorted = kitEntries.sort((a, b) => a.name.localeCompare(b.name));
-      writeManifest(manifestPath, { version: 1, kits: sorted });
+      kitEntries.sort((a, b) => a.name.localeCompare(b.name));
+      writeManifest(manifestPath, { version: 1, kits: kitEntries });
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error writing manifest: ${message}\n`);

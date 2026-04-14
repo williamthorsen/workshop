@@ -9,10 +9,7 @@ import { validateCompiledOutput } from '../../src/compile/validateCompiledOutput
 function writeTempKit(dir: string, filename: string, kitFields: Record<string, unknown>): string {
   mkdirSync(dir, { recursive: true });
   const filePath = join(dir, filename);
-  const serialized = JSON.stringify(kitFields, (_key, value) => {
-    // Functions can't be JSON-serialized; represent checks as plain objects.
-    return value;
-  });
+  const serialized = JSON.stringify(kitFields);
   writeFileSync(filePath, `export default ${serialized};\n`);
   return filePath;
 }
@@ -42,8 +39,7 @@ describe(validateCompiledOutput, () => {
 
     const metadata = await validateCompiledOutput(outputPath);
 
-    expect(metadata).toStrictEqual({});
-    expect('description' in metadata).toBe(false);
+    expect(metadata).toStrictEqual({ description: undefined });
   });
 
   it('deletes the output file and throws when the bundle fails to load', async () => {
