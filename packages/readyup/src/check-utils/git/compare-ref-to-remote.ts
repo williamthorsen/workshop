@@ -32,12 +32,13 @@ export async function compareRefToRemote(
   return { status: 'out-of-sync', localSha, remoteSha, ...(aheadBehind ? { aheadBehind } : {}) };
 }
 
-/** Resolve a local ref to its SHA, or undefined if it doesn't exist. */
+/** Resolve a local ref to its SHA, or undefined if it doesn't exist. Rethrow non-ref-missing errors. */
 async function resolveLocalRef(path: string, ref: string): Promise<string | undefined> {
   try {
     return await runGit(path, 'rev-parse', '--verify', ref);
-  } catch {
-    return undefined;
+  } catch (error: unknown) {
+    if (isRefMissingError(error)) return undefined;
+    throw error;
   }
 }
 
@@ -58,10 +59,21 @@ async function resolveAheadBehind(
   try {
     const output = await runGit(path, 'rev-list', '--count', '--left-right', `${ref}...${remote}/${ref}`);
     const [aheadStr, behindStr] = output.split('\t');
-    return { ahead: Number(aheadStr), behind: Number(behindStr) };
+    const ahead = Number(aheadStr);
+    const behind = Number(behindStr);
+    if (!Number.isFinite(ahead) || !Number.isFinite(behind)) return undefined;
+    return { ahead, behind };
   } catch {
     return undefined;
   }
+}
+
+/** Determine whether an error represents a missing ref (git exit code 128). */
+function isRefMissingError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  if (!('code' in error)) return false;
+  const { code } = error;
+  return code === 128;
 }
 
 /** Coerce an unknown value to an Error. */

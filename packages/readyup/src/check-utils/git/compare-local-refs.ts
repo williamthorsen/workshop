@@ -27,13 +27,14 @@ async function findMissingRef(path: string, refA: string, refB: string): Promise
   return undefined;
 }
 
-/** Check whether a ref exists in the repository. */
+/** Check whether a ref exists in the repository. Rethrow non-ref-missing errors. */
 async function refExists(path: string, ref: string): Promise<boolean> {
   try {
     await runGit(path, 'rev-parse', '--verify', ref);
     return true;
-  } catch {
-    return false;
+  } catch (error: unknown) {
+    if (isRefMissingError(error)) return false;
+    throw error;
   }
 }
 
@@ -46,8 +47,19 @@ async function resolveAheadBehind(
   try {
     const output = await runGit(path, 'rev-list', '--count', '--left-right', `${refA}...${refB}`);
     const [aheadStr, behindStr] = output.split('\t');
-    return { ahead: Number(aheadStr), behind: Number(behindStr) };
+    const ahead = Number(aheadStr);
+    const behind = Number(behindStr);
+    if (!Number.isFinite(ahead) || !Number.isFinite(behind)) return undefined;
+    return { ahead, behind };
   } catch {
     return undefined;
   }
+}
+
+/** Determine whether an error represents a missing ref (git exit code 128). */
+function isRefMissingError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  if (!('code' in error)) return false;
+  const { code } = error;
+  return code === 128;
 }

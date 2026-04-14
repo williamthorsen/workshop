@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -38,10 +39,9 @@ describe(compareRefToRemote, () => {
     const result = await compareRefToRemote(local, branch);
 
     expect(result.status).toBe('in-sync');
-    if (result.status === 'in-sync') {
-      expect(result.localSha).toBe(result.remoteSha);
-      expect(result.localSha).toMatch(/^[0-9a-f]{40}$/);
-    }
+    assert.ok(result.status === 'in-sync');
+    expect(result.localSha).toBe(result.remoteSha);
+    expect(result.localSha).toMatch(/^[0-9a-f]{40}$/);
   });
 
   it('returns out-of-sync when local is ahead of remote', async () => {
@@ -52,9 +52,9 @@ describe(compareRefToRemote, () => {
     const result = await compareRefToRemote(local, branch);
 
     expect(result.status).toBe('out-of-sync');
-    if (result.status === 'out-of-sync') {
-      expect(result.localSha).not.toBe(result.remoteSha);
-    }
+    assert.ok(result.status === 'out-of-sync');
+    expect(result.localSha).not.toBe(result.remoteSha);
+    expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
   });
 
   it('returns ref-missing when local ref does not exist', async () => {
@@ -85,8 +85,7 @@ describe(compareRefToRemote, () => {
     const result = await compareRefToRemote(local, branch);
 
     expect(result.status).toBe('unreachable');
-    if (result.status === 'unreachable') {
-      expect(result.error).toBeInstanceOf(Error);
-    }
+    assert.ok(result.status === 'unreachable');
+    expect(result.error).toBeInstanceOf(Error);
   });
 });

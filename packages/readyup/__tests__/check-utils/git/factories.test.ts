@@ -3,9 +3,10 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../../../src/check-utils/git/factories.ts';
+import * as compareRefToRemoteModule from '../../../src/check-utils/git/compare-ref-to-remote.ts';
 
 function createTempRepo(): string {
   const dir = mkdtempSync(join(tmpdir(), 'rdy-fac-'));
@@ -59,6 +60,32 @@ describe(makeLocalRefSyncCheck, () => {
     expect(result).toEqual(expect.objectContaining({ ok: false }));
   });
 
+  it('fails with ref-missing detail for a nonexistent ref', async () => {
+    const repo = createTempRepo();
+
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: 'nonexistent', refB: 'HEAD' });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('nonexistent') }));
+  });
+
+  it('reports diverged detail when both refs have independent commits', async () => {
+    const repo = createTempRepo();
+    execSync('git branch feature', { cwd: repo, stdio: 'ignore' });
+    commit(repo, 'main-advance');
+    execSync('git checkout feature', { cwd: repo, stdio: 'ignore' });
+    commit(repo, 'feature-advance');
+    execSync('git checkout -', { cwd: repo, stdio: 'ignore' });
+
+    const branch = currentBranch(repo);
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: repo, refA: branch, refB: 'feature' });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('diverged') }));
+  });
+
   it('uses custom fix when provided', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b', fix: 'custom fix' });
 
@@ -69,6 +96,18 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b' });
 
     expect(check.fix).toBeUndefined();
+  });
+
+  it('forwards severity to the check', () => {
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b', severity: 'warn' });
+
+    expect(check.severity).toBe('warn');
+  });
+
+  it('omits severity when not provided', () => {
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/tmp', refA: 'a', refB: 'b' });
+
+    expect(check.severity).toBeUndefined();
   });
 });
 
@@ -96,6 +135,41 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(result).toEqual(expect.objectContaining({ ok: false }));
   });
 
+  it('fails with ref-missing detail when local branch has no upstream', async () => {
+    const { local } = createTempRepoWithRemote();
+    execSync('git checkout -b only-local', { cwd: local, stdio: 'ignore' });
+    execSync('git commit --allow-empty -m "local"', { cwd: local, stdio: 'ignore' });
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: 'only-local' });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('only-local') }));
+  });
+
+  it('reports diverged detail when local and remote have independent commits', async () => {
+    const { local, remote } = createTempRepoWithRemote();
+    const branch = currentBranch(local);
+
+    // Advance local.
+    commit(local, 'local-advance');
+
+    // Advance remote via a second clone so local and remote diverge.
+    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-fac-clone2-'));
+    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
+    commit(clone2, 'remote-advance');
+    execSync('git push', { cwd: clone2, stdio: 'ignore' });
+
+    // Fetch so the local tracking ref is up to date for rev-list.
+    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+    expect(result).toEqual(expect.objectContaining({ detail: expect.stringContaining('diverged') }));
+  });
+
   it('returns skip reason when remote is unreachable', async () => {
     const local = mkdtempSync(join(tmpdir(), 'rdy-fac-unreach-'));
     execSync('git init', { cwd: local, stdio: 'ignore' });
@@ -110,25 +184,48 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(skipResult).toContain('unreachable');
   });
 
-  it('runs the probe at most once when both skip and check are called', async () => {
+  it('returns pass from check() when remote is unreachable', async () => {
+    const local = mkdtempSync(join(tmpdir(), 'rdy-fac-unreach2-'));
+    execSync('git init', { cwd: local, stdio: 'ignore' });
+    execSync('git remote add origin https://invalid.example.test/repo.git', { cwd: local, stdio: 'ignore' });
+    execSync('git commit --allow-empty -m "init"', { cwd: local, stdio: 'ignore' });
+    const branch = currentBranch(local);
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const result = await check.check();
+
+    expect(result).toBe(true);
+  });
+
+  it('invokes the probe at most once when both skip and check are called', async () => {
     const { local } = createTempRepoWithRemote();
     const branch = currentBranch(local);
 
-    // Create the check and call both skip() and check() — the probe should only run once.
-    // We verify by ensuring both calls return consistent results without error.
+    const spy = vi.spyOn(compareRefToRemoteModule, 'compareRefToRemote');
+
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    await check.skip?.();
+    await check.check();
 
-    const skipResult = await check.skip?.();
-    const checkResult = await check.check();
-
-    // Both should succeed: skip returns false (not skipped), check returns true (in sync).
-    expect(skipResult).toBe(false);
-    expect(checkResult).toBe(true);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
   });
 
   it('uses custom fix when provided', () => {
     const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main', fix: 'run git pull' });
 
     expect(check.fix).toBe('run git pull');
+  });
+
+  it('forwards severity to the check', () => {
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main', severity: 'recommend' });
+
+    expect(check.severity).toBe('recommend');
+  });
+
+  it('omits severity when not provided', () => {
+    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/tmp', ref: 'main' });
+
+    expect(check.severity).toBeUndefined();
   });
 });

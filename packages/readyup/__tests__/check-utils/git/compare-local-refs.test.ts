@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,10 +29,9 @@ describe(compareLocalRefs, () => {
     const result = await compareLocalRefs(repo, 'HEAD', 'test-branch');
 
     expect(result.status).toBe('match');
-    if (result.status === 'match') {
-      expect(result.shaA).toBe(result.shaB);
-      expect(result.shaA).toMatch(/^[0-9a-f]{40}$/);
-    }
+    assert.ok(result.status === 'match');
+    expect(result.shaA).toBe(result.shaB);
+    expect(result.shaA).toMatch(/^[0-9a-f]{40}$/);
   });
 
   it('returns mismatch with ahead/behind when refs diverge', async () => {
@@ -42,10 +42,9 @@ describe(compareLocalRefs, () => {
     const result = await compareLocalRefs(repo, 'HEAD', 'feature');
 
     expect(result.status).toBe('mismatch');
-    if (result.status === 'mismatch') {
-      expect(result.shaA).not.toBe(result.shaB);
-      expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
-    }
+    assert.ok(result.status === 'mismatch');
+    expect(result.shaA).not.toBe(result.shaB);
+    expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
   });
 
   it('returns mismatch with behind count when the first ref is behind', async () => {
@@ -57,9 +56,8 @@ describe(compareLocalRefs, () => {
     const result = await compareLocalRefs(repo, 'feature', 'HEAD');
 
     expect(result.status).toBe('mismatch');
-    if (result.status === 'mismatch') {
-      expect(result.aheadBehind).toEqual({ ahead: 0, behind: 1 });
-    }
+    assert.ok(result.status === 'mismatch');
+    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 1 });
   });
 
   it('returns ref-missing when the first ref does not exist', async () => {

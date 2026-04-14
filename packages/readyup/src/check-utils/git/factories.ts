@@ -1,4 +1,4 @@
-import type { LocalRefsCompareResult, RdyCheck, RemoteRefCompareResult } from '../../types.ts';
+import type { LocalRefsCompareResult, RdyCheck, RemoteRefCompareResult, Severity } from '../../types.ts';
 import { compareLocalRefs } from './compare-local-refs.ts';
 import { compareRefToRemote } from './compare-ref-to-remote.ts';
 
@@ -13,6 +13,8 @@ interface LocalRefSyncCheckOptions {
   refB: string;
   /** Custom remediation message. Overrides the default. */
   fix?: string;
+  /** Severity of the check. When omitted, the kit's default severity applies. */
+  severity?: Severity;
 }
 
 interface RemoteRefSyncCheckOptions {
@@ -26,11 +28,13 @@ interface RemoteRefSyncCheckOptions {
   remote?: string;
   /** Custom remediation message. Overrides the default. */
   fix?: string;
+  /** Severity of the check. When omitted, the kit's default severity applies. */
+  severity?: Severity;
 }
 
 /** Create a check that verifies two local refs point to the same commit. */
 export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyCheck {
-  const { name, path, refA, refB, fix: customFix } = options;
+  const { name, path, refA, refB, fix: customFix, severity } = options;
 
   const check: RdyCheck = {
     name,
@@ -41,12 +45,13 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
     },
   };
   if (customFix !== undefined) check.fix = customFix;
+  if (severity !== undefined) check.severity = severity;
   return check;
 }
 
 /** Create a check that verifies a local ref matches its remote counterpart. Uses a closure-cached probe so the network call runs at most once. */
 export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyCheck {
-  const { name, path, ref, remote = 'origin', fix: customFix } = options;
+  const { name, path, ref, remote = 'origin', fix: customFix, severity } = options;
 
   let probe: Promise<RemoteRefCompareResult> | undefined;
 
@@ -69,10 +74,15 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
     async check() {
       const result = await getProbe();
       if (result.status === 'in-sync') return true;
+      // Treat unreachable as passing: skip() is the intended guard for this case.
+      // If a caller invokes check() directly without skip(), the remote cannot be
+      // verified, so failing would be misleading.
+      if (result.status === 'unreachable') return true;
       return { ok: false, detail: formatRemoteResult(result, ref, remote, path) };
     },
   };
   if (customFix !== undefined) rdyCheck.fix = customFix;
+  if (severity !== undefined) rdyCheck.severity = severity;
   return rdyCheck;
 }
 
