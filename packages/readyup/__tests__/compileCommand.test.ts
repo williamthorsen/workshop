@@ -425,6 +425,53 @@ describe(compileCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
+  it('returns 1 when writeManifest throws during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['a.ts']);
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true });
+    mockWriteManifest.mockImplementation(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    const exitCode = await compileCommand([]);
+
+    expect(exitCode).toBe(1);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error writing manifest'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
+  });
+
+  it('writes warning to stderr when upsert encounters non-missing-file error', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Invalid manifest schema in .readyup/manifest.json: bad data');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid manifest schema'));
+    // Still writes the manifest despite the warning
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses custom manifest path from --manifest flag for single-file compile', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('not found');
+    });
+
+    await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);
+
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
+    const [manifestPath] = mockWriteManifest.mock.calls[0] as [string];
+    expect(manifestPath).toContain('custom/manifest.json');
+  });
+
   it('maintains alphabetical order when upserting manifest entries', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});

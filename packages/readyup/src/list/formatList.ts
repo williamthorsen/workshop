@@ -93,7 +93,7 @@ export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): strin
 // -- Manifest view --
 
 interface ManifestViewOptions {
-  kits: Array<{ name: string; description?: string }>;
+  kits: Array<{ name: string; description?: string | undefined }>;
   manifestPath: string;
 }
 

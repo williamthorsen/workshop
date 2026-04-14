@@ -165,8 +165,14 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
   }
 
   if (!skipManifest) {
-    const sorted = kitEntries.sort((a, b) => a.name.localeCompare(b.name));
-    writeManifest(manifestPath, { version: 1, kits: sorted });
+    try {
+      const sorted = kitEntries.sort((a, b) => a.name.localeCompare(b.name));
+      writeManifest(manifestPath, { version: 1, kits: sorted });
+    } catch (error: unknown) {
+      const message = extractMessage(error);
+      process.stderr.write(`Error writing manifest: ${message}\n`);
+      return 1;
+    }
   }
 
   return 0;
@@ -178,8 +184,12 @@ function upsertManifest(manifestPath: string, kitName: string, metadata: KitMeta
   try {
     const existing = readManifest(manifestPath);
     existingKits = existing.kits;
-  } catch {
-    // No existing manifest or invalid -- start fresh.
+  } catch (error: unknown) {
+    const message = extractMessage(error);
+    // Missing manifest is expected for first compile; other failures should surface.
+    if (!message.includes('not found')) {
+      process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
+    }
   }
 
   const entry: RdyManifestKit = {

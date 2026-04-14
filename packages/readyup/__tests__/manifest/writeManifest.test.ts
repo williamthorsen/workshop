@@ -8,8 +8,8 @@ vi.mock(import('node:fs'), () => ({
   writeFileSync: mockWriteFileSync,
 }));
 
-import { writeManifest } from '../../src/manifest/writeManifest.ts';
 import type { RdyManifest } from '../../src/manifest/manifestSchema.ts';
+import { writeManifest } from '../../src/manifest/writeManifest.ts';
 
 describe(writeManifest, () => {
   it('writes formatted JSON with a trailing newline', () => {
@@ -30,5 +30,12 @@ describe(writeManifest, () => {
     writeManifest('/project/.readyup/manifest.json', manifest);
 
     expect(mockMkdirSync).toHaveBeenCalledWith('/project/.readyup', { recursive: true });
+  });
+
+  it('throws when manifest data fails schema validation', () => {
+    // Deliberately invalid: version must be 1 per ManifestSchema.
+    const invalid = { version: 2, kits: [] } as unknown as RdyManifest;
+
+    expect(() => writeManifest('/project/.readyup/manifest.json', invalid)).toThrow('Invalid manifest data');
   });
 });
