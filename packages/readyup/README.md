@@ -133,17 +133,22 @@ Reusable check functions for common assertions:
 import { fileExists, fileContains, hasPackageJsonField } from 'readyup';
 ```
 
-| Function                                    | Description                                            |
-| ------------------------------------------- | ------------------------------------------------------ |
-| `fileExists(path)`                          | File exists at path                                    |
-| `fileContains(path, pattern)`               | File matches a string or regex                         |
-| `fileDoesNotContain(path, pattern)`         | File does not match                                    |
-| `readFile(path)`                            | Read file contents (returns `undefined` if missing)    |
-| `hasPackageJsonField(field, value?)`        | package.json has a field (optionally matching a value) |
-| `hasDevDependency(name)`                    | package.json has a dev dependency                      |
-| `hasMinDevDependencyVersion(name, version)` | Dev dependency meets minimum version                   |
-| `readPackageJson()`                         | Parse package.json                                     |
-| `compareVersions(a, b)`                     | Compare semver strings                                 |
+| Function                                    | Description                                                |
+| ------------------------------------------- | ---------------------------------------------------------- |
+| `fileExists(path)`                          | File exists at path                                        |
+| `fileContains(path, pattern)`               | File matches a string or regex                             |
+| `fileDoesNotContain(path, pattern)`         | File does not match                                        |
+| `readFile(path)`                            | Read file contents (returns `undefined` if missing)        |
+| `hasPackageJsonField(field, value?)`        | package.json has a field (optionally matching a value)     |
+| `hasDevDependency(name)`                    | package.json has a dev dependency                          |
+| `hasMinDevDependencyVersion(name, version)` | Dev dependency meets minimum version                       |
+| `readPackageJson()`                         | Parse package.json                                         |
+| `compareVersions(a, b)`                     | Compare semver strings                                     |
+| `runGit(path, ...args)`                     | Run a git command and return trimmed stdout                |
+| `compareLocalRefs(path, refA, refB)`        | Compare two local refs (discriminated-union result)        |
+| `compareRefToRemote(path, ref, remote?)`    | Compare a local ref to its remote counterpart              |
+| `makeLocalRefSyncCheck(options)`            | Check factory: verify two local refs match                 |
+| `makeRemoteRefSyncCheck(options)`           | Check factory: verify a ref matches its remote counterpart |
 
 ## License
 
