@@ -58,6 +58,27 @@ describe(compareRefToRemote, () => {
     expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
   });
 
+  it('returns out-of-sync when local is behind remote', async () => {
+    const { local, remote } = createTempRepoWithRemote();
+    const branch = currentBranch(local);
+
+    // Advance remote via a second clone without fetching locally.
+    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-clone2-'));
+    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
+    commit(clone2, 'remote-advance');
+    execSync('git push', { cwd: clone2, stdio: 'ignore' });
+
+    // Fetch so the local tracking ref sees the remote advance.
+    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
+
+    const result = await compareRefToRemote(local, branch);
+
+    expect(result.status).toBe('out-of-sync');
+    assert.ok(result.status === 'out-of-sync');
+    expect(result.localSha).not.toBe(result.remoteSha);
+    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 1 });
+  });
+
   it('returns ref-missing when local ref does not exist', async () => {
     const { local } = createTempRepoWithRemote();
 

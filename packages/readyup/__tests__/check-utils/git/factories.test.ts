@@ -146,6 +146,25 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
   });
 
+  it('reports behind detail when local is behind remote', async () => {
+    const { local, remote } = createTempRepoWithRemote();
+    const branch = currentBranch(local);
+
+    // Advance remote via a second clone.
+    const clone2 = mkdtempSync(join(tmpdir(), 'rdy-fac-clone2b-'));
+    execSync(`git clone ${remote} ${clone2}`, { stdio: 'ignore' });
+    commit(clone2, 'remote-advance');
+    execSync('git push', { cwd: clone2, stdio: 'ignore' });
+
+    // Fetch so the local tracking ref sees the remote advance.
+    execSync('git fetch origin', { cwd: local, stdio: 'ignore' });
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: local, ref: branch });
+    const result = await check.check();
+
+    expect(result).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
+  });
+
   it('fails with ref-missing detail when local branch has no upstream', async () => {
     const { local } = createTempRepoWithRemote();
     execSync('git checkout -b only-local', { cwd: local, stdio: 'ignore' });
