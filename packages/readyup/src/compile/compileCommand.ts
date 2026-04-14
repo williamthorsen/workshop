@@ -205,6 +205,7 @@ function upsertManifest(manifestPath: string, kitName: string, metadata: KitMeta
 
   // Replace existing entry for this kit name, or append.
   const filtered = existingKits.filter((k) => k.name !== kitName);
+  // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib
   const kits = [...filtered, entry].sort((a, b) => a.name.localeCompare(b.name));
 
   writeManifest(manifestPath, { version: 1, kits });

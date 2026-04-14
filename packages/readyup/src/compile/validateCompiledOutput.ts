@@ -10,7 +10,7 @@ import { validateKit } from '../validateKit.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
 export interface KitMetadata {
-  description?: string;
+  description?: string | undefined;
 }
 
 /**

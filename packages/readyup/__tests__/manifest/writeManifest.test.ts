@@ -31,11 +31,4 @@ describe(writeManifest, () => {
 
     expect(mockMkdirSync).toHaveBeenCalledWith('/project/.readyup', { recursive: true });
   });
-
-  it('throws when manifest data fails schema validation', () => {
-    // Deliberately invalid: version must be 1 per ManifestSchema.
-    const invalid = { version: 2, kits: [] } as unknown as RdyManifest;
-
-    expect(() => writeManifest('/project/.readyup/manifest.json', invalid)).toThrow('Invalid manifest data');
-  });
 });

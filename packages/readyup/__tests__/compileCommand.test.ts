@@ -324,13 +324,10 @@ describe(compileCommand, () => {
 
     await compileCommand([]);
 
-    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
-    const [, manifest] = mockWriteManifest.mock.calls[0] as [
-      string,
-      { version: number; kits: Array<{ name: string; description?: string }> },
-    ];
-    expect(manifest.version).toBe(1);
-    expect(manifest.kits).toStrictEqual([{ name: 'alpha', description: 'Alpha checks' }, { name: 'beta' }]);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'alpha', description: 'Alpha checks' }, { name: 'beta' }],
+    });
   });
 
   it('skips manifest generation when --skip-manifest is set', async () => {
@@ -356,9 +353,7 @@ describe(compileCommand, () => {
 
     await compileCommand(['--manifest=custom/manifest.json']);
 
-    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
-    const [manifestPath] = mockWriteManifest.mock.calls[0] as [string];
-    expect(manifestPath).toContain('custom/manifest.json');
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
   });
 
   it('upserts manifest entry for single-file compile', async () => {
@@ -371,15 +366,13 @@ describe(compileCommand, () => {
 
     await compileCommand(['deploy.ts']);
 
-    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
-    const [, manifest] = mockWriteManifest.mock.calls[0] as [
-      string,
-      { version: number; kits: Array<{ name: string; description?: string }> },
-    ];
-    expect(manifest.kits).toStrictEqual([
-      { name: 'default', description: 'Default checks' },
-      { name: 'deploy', description: 'Deploy checks' },
-    ]);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [
+        { name: 'default', description: 'Default checks' },
+        { name: 'deploy', description: 'Deploy checks' },
+      ],
+    });
   });
 
   it('creates new manifest for single-file compile when no manifest exists', async () => {
@@ -391,12 +384,10 @@ describe(compileCommand, () => {
 
     await compileCommand(['deploy.ts']);
 
-    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
-    const [, manifest] = mockWriteManifest.mock.calls[0] as [
-      string,
-      { version: number; kits: Array<{ name: string }> },
-    ];
-    expect(manifest.kits).toStrictEqual([{ name: 'deploy' }]);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'deploy' }],
+    });
   });
 
   it('replaces existing entry when upserting for single-file compile', async () => {
@@ -409,11 +400,10 @@ describe(compileCommand, () => {
 
     await compileCommand(['deploy.ts']);
 
-    const [, manifest] = mockWriteManifest.mock.calls[0] as [
-      string,
-      { version: number; kits: Array<{ name: string; description?: string }> },
-    ];
-    expect(manifest.kits).toStrictEqual([{ name: 'deploy', description: 'Updated' }]);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'deploy', description: 'Updated' }],
+    });
   });
 
   it('skips manifest for single-file compile when --skip-manifest is set', async () => {
@@ -468,8 +458,7 @@ describe(compileCommand, () => {
     await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);
 
     expect(mockWriteManifest).toHaveBeenCalledTimes(1);
-    const [manifestPath] = mockWriteManifest.mock.calls[0] as [string];
-    expect(manifestPath).toContain('custom/manifest.json');
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
   });
 
   it('maintains alphabetical order when upserting manifest entries', async () => {
@@ -482,10 +471,9 @@ describe(compileCommand, () => {
 
     await compileCommand(['alpha.ts']);
 
-    const [, manifest] = mockWriteManifest.mock.calls[0] as [
-      string,
-      { version: number; kits: Array<{ name: string }> },
-    ];
-    expect(manifest.kits.map((k: { name: string }) => k.name)).toStrictEqual(['alpha', 'beta', 'charlie']);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'alpha' }, { name: 'beta' }, { name: 'charlie' }],
+    });
   });
 });

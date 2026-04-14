@@ -13,8 +13,7 @@ export function readManifest(manifestPath: string): RdyManifest {
   try {
     raw = readFileSync(manifestPath, 'utf8');
   } catch (error: unknown) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === 'ENOENT') {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       throw new Error(`Manifest file not found: ${manifestPath}`);
     }
     const detail = error instanceof Error ? error.message : String(error);
