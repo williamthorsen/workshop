@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatConsumerView, formatEmpty, formatOwnerView } from '../../src/list/formatList.ts';
+import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
 
 describe(formatOwnerView, () => {
   it('renders only the Internal section when compiled kits are empty', () => {
@@ -191,6 +191,48 @@ describe(formatConsumerView, () => {
     });
 
     expect(result).toBe('No compiled kits found at /custom/path.');
+  });
+});
+
+describe(formatManifestView, () => {
+  it('renders kit names with the compiled icon', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'deploy' }, { name: 'monitor' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    expect(result).toContain('Manifest: .readyup/manifest.json');
+    expect(result).toContain('📦 deploy');
+    expect(result).toContain('📦 monitor');
+  });
+
+  it('renders description inline after kit name when present', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'default', description: 'General project health checks' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    expect(result).toContain('📦 default — General project health checks');
+  });
+
+  it('omits description suffix when description is absent', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'deploy' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    const lines = result.split('\n');
+    const kitLine = lines.find((l) => l.includes('deploy'));
+    expect(kitLine).toBe('  📦 deploy');
+  });
+
+  it('returns empty-manifest message when kits array is empty', () => {
+    const result = formatManifestView({
+      kits: [],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    expect(result).toBe('No kits found in manifest: .readyup/manifest.json');
   });
 });
 

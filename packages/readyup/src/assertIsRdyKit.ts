@@ -27,6 +27,7 @@ const ChecklistSchema = z
 const RdyKitSchema = z.looseObject({
   checklists: z.array(ChecklistSchema),
   defaultSeverity: SeveritySchema.optional(),
+  description: z.string().optional(),
   failOn: SeveritySchema.optional(),
   fixLocation: z.enum(['inline', 'end']).optional(),
   reportOn: SeveritySchema.optional(),

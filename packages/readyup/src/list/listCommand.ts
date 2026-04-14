@@ -2,15 +2,17 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
+import { readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
-import { formatConsumerView, formatOwnerView } from './formatList.ts';
+import { formatConsumerView, formatManifestView, formatOwnerView } from './formatList.ts';
 
 const listFlagSchema = {
   from: { long: '--from', type: 'string' as const },
+  manifest: { long: '--manifest', type: 'string' as const },
 };
 
 /**
@@ -28,12 +30,41 @@ export async function listCommand(args: string[]): Promise<number> {
   }
 
   const fromArg = parsed.flags.from;
+  const manifestArg = parsed.flags.manifest;
+
+  if (fromArg !== undefined && manifestArg !== undefined) {
+    process.stderr.write('Error: --from and --manifest are mutually exclusive\n');
+    return 1;
+  }
+
+  if (manifestArg !== undefined) {
+    return runManifestMode(manifestArg);
+  }
 
   if (fromArg !== undefined) {
     return runFromMode(fromArg);
   }
 
   return runOwnerMode();
+}
+
+/** Display kits from a manifest file. */
+function runManifestMode(manifestArg: string): number {
+  const manifestPath = path.resolve(process.cwd(), manifestArg);
+
+  let manifest;
+  try {
+    manifest = readManifest(manifestPath);
+  } catch (error: unknown) {
+    const message = extractMessage(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
+
+  const relPath = path.relative(process.cwd(), manifestPath);
+  const output = formatManifestView({ kits: manifest.kits, manifestPath: relPath });
+  process.stdout.write(output + '\n');
+  return 0;
 }
 
 /** Enumerate kits from a `--from` source. */

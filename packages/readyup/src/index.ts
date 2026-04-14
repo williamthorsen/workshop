@@ -45,6 +45,10 @@ export {
 // Compile utilities
 export { pickJson } from './compile/pickJson.ts';
 
+// Manifest
+export type { RdyManifest } from './manifest/manifestSchema.ts';
+export { DEFAULT_MANIFEST_PATH } from './manifest/manifestSchema.ts';
+
 // Check utilities
 export {
   commandExists,

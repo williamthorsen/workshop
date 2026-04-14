@@ -20,6 +20,7 @@ export function resolveKitExports(moduleRecord: Record<string, unknown>): Record
   return {
     checklists: source.checklists,
     ...(source.defaultSeverity !== undefined && { defaultSeverity: source.defaultSeverity }),
+    ...(source.description !== undefined && { description: source.description }),
     ...(source.failOn !== undefined && { failOn: source.failOn }),
     ...(source.fixLocation !== undefined && { fixLocation: source.fixLocation }),
     ...(source.reportOn !== undefined && { reportOn: source.reportOn }),
