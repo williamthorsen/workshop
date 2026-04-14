@@ -1,3 +1,67 @@
+// -- Ahead/behind --
+
+/** Directional commit counts between two refs. */
+export interface AheadBehind {
+  ahead: number;
+  behind: number;
+}
+
+// -- Git comparison results --
+
+/** Result when both local refs point to the same commit. */
+interface LocalRefsMatch {
+  status: 'match';
+  shaA: string;
+  shaB: string;
+}
+
+/** Result when local refs point to different commits. */
+interface LocalRefsMismatch {
+  status: 'mismatch';
+  shaA: string;
+  shaB: string;
+  aheadBehind?: AheadBehind;
+}
+
+/** Result when one of the refs does not exist. */
+interface LocalRefMissing {
+  status: 'ref-missing';
+  ref: string;
+}
+
+/** Discriminated union for a local ref comparison. */
+export type LocalRefsCompareResult = LocalRefsMatch | LocalRefsMismatch | LocalRefMissing;
+
+/** Result when local and remote refs point to the same commit. */
+interface RemoteRefInSync {
+  status: 'in-sync';
+  localSha: string;
+  remoteSha: string;
+}
+
+/** Result when local and remote refs point to different commits. */
+interface RemoteRefOutOfSync {
+  status: 'out-of-sync';
+  localSha: string;
+  remoteSha: string;
+  aheadBehind?: AheadBehind;
+}
+
+/** Result when the remote ref does not exist. */
+interface RemoteRefMissing {
+  status: 'ref-missing';
+  ref: string;
+}
+
+/** Result when the remote cannot be contacted. */
+interface RemoteRefUnreachable {
+  status: 'unreachable';
+  error: Error;
+}
+
+/** Discriminated union for a local-to-remote ref comparison. */
+export type RemoteRefCompareResult = RemoteRefInSync | RemoteRefOutOfSync | RemoteRefMissing | RemoteRefUnreachable;
+
 // -- Severity --
 
 /** Severity levels for assertive checks, ordered from most to least urgent. */

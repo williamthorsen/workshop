@@ -1,5 +1,6 @@
 // Types
 export type {
+  AheadBehind,
   ChecklistSummary,
   CheckOutcome,
   CheckReturnValue,
@@ -10,6 +11,7 @@ export type {
   JsonChecklistEntry,
   JsonKitEntry,
   JsonReport,
+  LocalRefsCompareResult,
   PassedResult,
   PercentProgress,
   Progress,
@@ -20,6 +22,7 @@ export type {
   RdyReport,
   RdyResult,
   RdyStagedChecklist,
+  RemoteRefCompareResult,
   ResolvedRdyConfig,
   Severity,
   SkippedResult,
@@ -45,6 +48,8 @@ export { pickJson } from './compile/pickJson.ts';
 // Check utilities
 export {
   commandExists,
+  compareLocalRefs,
+  compareRefToRemote,
   compareVersions,
   computeHash,
   fileContains,
@@ -60,8 +65,11 @@ export {
   hasMinDevDependencyVersion,
   hasPackageJsonField,
   isRecord,
+  makeLocalRefSyncCheck,
+  makeRemoteRefSyncCheck,
   readFile,
   readJsonFile,
   readJsonValue,
   readPackageJson,
+  runGit,
 } from './check-utils/index.ts';
