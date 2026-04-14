@@ -282,6 +282,9 @@ export interface RdyKit {
   /** Checklists in this kit. */
   checklists: Array<RdyChecklist | RdyStagedChecklist>;
 
+  /** Human-readable summary of what the kit checks. */
+  description?: string;
+
   /** Named subsets of checklists. */
   suites?: Record<string, string[]>;
 

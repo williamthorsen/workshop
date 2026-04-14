@@ -5,14 +5,21 @@ import process from 'node:process';
 import picomatch from 'picomatch';
 
 import { loadConfig } from '../loadConfig.ts';
+import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
+import { readManifest } from '../manifest/readManifest.ts';
+import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { compileConfig } from './compileConfig.ts';
+import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
 const compileFlagSchema = {
+  manifest: { long: '--manifest', type: 'string' as const },
   output: { long: '--output', type: 'string' as const, short: '-o' },
+  skipManifest: { long: '--skip-manifest', type: 'boolean' as const },
 };
 
 /**
@@ -37,6 +44,8 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   const outputPath = parsed.flags.output;
   const positionals = parsed.positionals;
+  const skipManifest = parsed.flags.skipManifest;
+  const manifestPath = resolveManifestPath(parsed.flags.manifest);
 
   if (positionals.length > 1) {
     process.stderr.write('Error: Too many arguments. Expected a single input file.\n');
@@ -47,19 +56,34 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
+    let result;
+    let metadata: KitMetadata;
     try {
-      const result = await compileConfig(inputPath, outputPath);
-      await validateCompiledOutput(result.outputPath);
-      const relInput = path.relative(process.cwd(), path.resolve(inputPath));
-      const relOutput = path.relative(process.cwd(), result.outputPath);
-      process.stdout.write('Compiling kit:\n');
-      process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
-      return 0;
+      result = await compileConfig(inputPath, outputPath);
+      metadata = await validateCompiledOutput(result.outputPath);
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error: ${message}\n`);
       return 1;
     }
+
+    const relInput = path.relative(process.cwd(), path.resolve(inputPath));
+    const relOutput = path.relative(process.cwd(), result.outputPath);
+    process.stdout.write('Compiling kit:\n');
+    process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
+
+    if (!skipManifest) {
+      try {
+        const kitName = path.basename(result.outputPath, '.js');
+        upsertManifest(manifestPath, kitName, metadata);
+      } catch (error: unknown) {
+        const message = extractMessage(error);
+        process.stderr.write(`Error writing manifest: ${message}\n`);
+        return 1;
+      }
+    }
+
+    return 0;
   }
 
   // No input file -- compile all sources from config
@@ -68,7 +92,12 @@ export async function compileCommand(args: string[]): Promise<number> {
     return 1;
   }
 
-  return compileBatch();
+  return compileBatch(skipManifest, manifestPath);
+}
+
+/** Resolve the manifest output path from the optional `--manifest` flag. */
+function resolveManifestPath(flagValue: string | undefined): string {
+  return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
 }
 
 /** Collect `.ts` files matching the optional `include` glob, falling back to all `.ts` files. */
@@ -80,7 +109,7 @@ function collectSourceFiles(srcDir: string, includeGlob: string | undefined): st
 }
 
 /** Compile all matching `.ts` files from the config-driven source directory. */
-async function compileBatch(): Promise<number> {
+async function compileBatch(skipManifest: boolean, manifestPath: string): Promise<number> {
   let config;
   try {
     config = await loadConfig();
@@ -118,14 +147,22 @@ async function compileBatch(): Promise<number> {
     srcDir === outDir ? `Compiling kits in ${relSrcDir}:\n` : `Compiling kits from ${relSrcDir} to ${relOutDir}:\n`;
   process.stdout.write(header);
 
+  const kitEntries: RdyManifestKit[] = [];
+
   for (const fileName of tsFiles) {
     const srcFile = path.join(srcDir, fileName);
     const outFile = path.join(outDir, fileName.replace(/\.ts$/, '.js'));
     try {
       const result = await compileConfig(srcFile, outFile);
-      await validateCompiledOutput(result.outputPath);
+      const metadata = await validateCompiledOutput(result.outputPath);
       const outName = fileName.replace(/\.ts$/, '.js');
       process.stdout.write(formatResultLine(fileName, outName, result.changed));
+
+      const kitName = path.basename(result.outputPath, '.js');
+      kitEntries.push({
+        name: kitName,
+        ...(metadata.description !== undefined && { description: metadata.description }),
+      });
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
@@ -133,7 +170,45 @@ async function compileBatch(): Promise<number> {
     }
   }
 
+  if (!skipManifest) {
+    try {
+      kitEntries.sort((a, b) => a.name.localeCompare(b.name));
+      writeManifest(manifestPath, { version: 1, kits: kitEntries });
+    } catch (error: unknown) {
+      const message = extractMessage(error);
+      process.stderr.write(`Error writing manifest: ${message}\n`);
+      return 1;
+    }
+  }
+
   return 0;
+}
+
+/** Read an existing manifest (if any), upsert a kit entry, and write back. */
+function upsertManifest(manifestPath: string, kitName: string, metadata: KitMetadata): void {
+  let existingKits: RdyManifestKit[] = [];
+  try {
+    const existing = readManifest(manifestPath);
+    existingKits = existing.kits;
+  } catch (error: unknown) {
+    const message = extractMessage(error);
+    // Missing manifest is expected for first compile; other failures should surface.
+    if (!message.includes('not found')) {
+      process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
+    }
+  }
+
+  const entry: RdyManifestKit = {
+    name: kitName,
+    ...(metadata.description !== undefined && { description: metadata.description }),
+  };
+
+  // Replace existing entry for this kit name, or append.
+  const filtered = existingKits.filter((k) => k.name !== kitName);
+  // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib
+  const kits = [...filtered, entry].sort((a, b) => a.name.localeCompare(b.name));
+
+  writeManifest(manifestPath, { version: 1, kits });
 }
 
 /** Format a single compile-result line with a change indicator. */

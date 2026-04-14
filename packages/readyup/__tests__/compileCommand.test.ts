@@ -6,6 +6,8 @@ const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 const mockPicomatch = vi.hoisted(() => vi.fn());
+const mockWriteManifest = vi.hoisted(() => vi.fn());
+const mockReadManifest = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/compile/compileConfig.ts', () => ({
   compileConfig: mockCompileConfig,
@@ -28,6 +30,14 @@ vi.mock('picomatch', () => ({
   default: mockPicomatch,
 }));
 
+vi.mock('../src/manifest/writeManifest.ts', () => ({
+  writeManifest: mockWriteManifest,
+}));
+
+vi.mock('../src/manifest/readManifest.ts', () => ({
+  readManifest: mockReadManifest,
+}));
+
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 
@@ -38,7 +48,7 @@ describe(compileCommand, () => {
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    mockValidateCompiledOutput.mockResolvedValue(undefined);
+    mockValidateCompiledOutput.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -49,6 +59,8 @@ describe(compileCommand, () => {
     mockExistsSync.mockReset();
     mockReaddirSync.mockReset();
     mockPicomatch.mockReset();
+    mockWriteManifest.mockReset();
+    mockReadManifest.mockReset();
   });
 
   // Explicit input file tests
@@ -62,7 +74,7 @@ describe(compileCommand, () => {
     expect(stdoutSpy).toHaveBeenCalledWith('Compiling kit:\n');
   });
 
-  it('shows 📦 indicator for a changed single file', async () => {
+  it('shows compiled indicator for a changed single file', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true });
 
     await compileCommand(['input.ts']);
@@ -71,7 +83,7 @@ describe(compileCommand, () => {
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('→'));
   });
 
-  it('shows 🔍 indicator for an unchanged single file', async () => {
+  it('shows no-changes indicator for an unchanged single file', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: false });
 
     await compileCommand(['input.ts']);
@@ -296,5 +308,172 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+  });
+
+  // Manifest generation tests
+  it('writes manifest after batch compile with kit entries', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+    mockCompileConfig
+      .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true })
+      .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValueOnce({ description: 'Alpha checks' }).mockResolvedValueOnce({});
+
+    await compileCommand([]);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'alpha', description: 'Alpha checks' }, { name: 'beta' }],
+    });
+  });
+
+  it('skips manifest generation when --skip-manifest is set', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['a.ts']);
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true });
+
+    await compileCommand(['--skip-manifest']);
+
+    expect(mockWriteManifest).not.toHaveBeenCalled();
+  });
+
+  it('uses custom manifest path from --manifest flag', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['a.ts']);
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true });
+
+    await compileCommand(['--manifest=custom/manifest.json']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
+  });
+
+  it('upserts manifest entry for single-file compile', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({ description: 'Deploy checks' });
+    mockReadManifest.mockReturnValue({
+      version: 1,
+      kits: [{ name: 'default', description: 'Default checks' }],
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [
+        { name: 'default', description: 'Default checks' },
+        { name: 'deploy', description: 'Deploy checks' },
+      ],
+    });
+  });
+
+  it('creates new manifest for single-file compile when no manifest exists', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('not found');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'deploy' }],
+    });
+  });
+
+  it('replaces existing entry when upserting for single-file compile', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({ description: 'Updated' });
+    mockReadManifest.mockReturnValue({
+      version: 1,
+      kits: [{ name: 'deploy', description: 'Old' }],
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'deploy', description: 'Updated' }],
+    });
+  });
+
+  it('skips manifest for single-file compile when --skip-manifest is set', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true });
+
+    await compileCommand(['input.ts', '--skip-manifest']);
+
+    expect(mockWriteManifest).not.toHaveBeenCalled();
+    expect(mockReadManifest).not.toHaveBeenCalled();
+  });
+
+  it('returns 1 when writeManifest throws during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['a.ts']);
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true });
+    mockWriteManifest.mockImplementation(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    const exitCode = await compileCommand([]);
+
+    expect(exitCode).toBe(1);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error writing manifest'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
+  });
+
+  it('writes warning to stderr when upsert encounters non-missing-file error', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Invalid manifest schema in .readyup/manifest.json: bad data');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid manifest schema'));
+    // Still writes the manifest despite the warning
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses custom manifest path from --manifest flag for single-file compile', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('not found');
+    });
+
+    await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);
+
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
+  });
+
+  it('maintains alphabetical order when upserting manifest entries', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockReturnValue({
+      version: 1,
+      kits: [{ name: 'charlie' }, { name: 'beta' }],
+    });
+
+    await compileCommand(['alpha.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [{ name: 'alpha' }, { name: 'beta' }, { name: 'charlie' }],
+    });
   });
 });

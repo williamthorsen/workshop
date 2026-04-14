@@ -90,6 +90,31 @@ export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): strin
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
 
+// -- Manifest view --
+
+interface ManifestViewOptions {
+  kits: Array<{ name: string; description?: string | undefined }>;
+  manifestPath: string;
+}
+
+/**
+ * Format a view of kits loaded from a manifest file.
+ *
+ * Kit names are displayed with the compiled icon; descriptions appear inline when present.
+ */
+export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
+  if (kits.length === 0) {
+    return `No kits found in manifest: ${manifestPath}`;
+  }
+
+  const items = kits.map((kit) => {
+    const suffix = kit.description !== undefined ? ` — ${kit.description}` : '';
+    return `  ${ICON_COMPILED} ${kit.name}${suffix}`;
+  });
+
+  return `Manifest: ${manifestPath}\n${items.join('\n')}`;
+}
+
 // -- Helpers --
 
 /** Build a titled section with a usage hint and indented item list. */

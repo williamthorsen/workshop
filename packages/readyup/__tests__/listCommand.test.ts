@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
+const mockReadManifest = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/loadConfig.ts', () => ({
   loadConfig: mockLoadConfig,
@@ -9,6 +10,10 @@ vi.mock('../src/loadConfig.ts', () => ({
 
 vi.mock('../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
+}));
+
+vi.mock('../src/manifest/readManifest.ts', () => ({
+  readManifest: mockReadManifest,
 }));
 
 import { listCommand } from '../src/list/listCommand.ts';
@@ -31,6 +36,7 @@ describe(listCommand, () => {
     vi.restoreAllMocks();
     mockLoadConfig.mockReset();
     mockEnumerateKits.mockReset();
+    mockReadManifest.mockReset();
   });
 
   describe('owner mode', () => {
@@ -180,6 +186,43 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('not yet supported'));
+    });
+  });
+
+  describe('manifest mode', () => {
+    it('displays kits from the manifest file', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'default', description: 'Health checks' }, { name: 'deploy' }],
+      });
+
+      const exitCode = await listCommand(['--manifest', '.readyup/manifest.json']);
+
+      expect(exitCode).toBe(0);
+      expect(mockLoadConfig).not.toHaveBeenCalled();
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Manifest:');
+      expect(output).toContain('default');
+      expect(output).toContain('Health checks');
+      expect(output).toContain('deploy');
+    });
+
+    it('returns 1 when manifest file cannot be read', async () => {
+      mockReadManifest.mockImplementation(() => {
+        throw new Error('Manifest file not found: /missing/manifest.json');
+      });
+
+      const exitCode = await listCommand(['--manifest', '/missing/manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
+    });
+
+    it('returns 1 when --from and --manifest are both provided', async () => {
+      const exitCode = await listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('mutually exclusive'));
     });
   });
 

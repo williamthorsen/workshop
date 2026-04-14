@@ -1,11 +1,12 @@
 import { isRecord } from './isRecord.ts';
 
 /**
- * Extract `checklists`, `fixLocation`, and `suites` from an imported module namespace.
+ * Extract all recognized kit fields from an imported module namespace.
  *
- * Supports both `export default defineRdyKit({...})` and the named-export
- * convention (`export const checklists = ...`). Returns a plain record suitable for passing
- * to `assertIsRdyKit`.
+ * Extracts `checklists` (required), and optionally `defaultSeverity`, `description`, `failOn`,
+ * `fixLocation`, `reportOn`, and `suites`. Supports both `export default defineRdyKit({...})`
+ * and the named-export convention (`export const checklists = ...`). Returns a plain record
+ * suitable for passing to `assertIsRdyKit`.
  */
 export function resolveKitExports(moduleRecord: Record<string, unknown>): Record<string, unknown> {
   // Unwrap default export when present (e.g., `export default defineRdyKit({...})`)
@@ -20,6 +21,7 @@ export function resolveKitExports(moduleRecord: Record<string, unknown>): Record
   return {
     checklists: source.checklists,
     ...(source.defaultSeverity !== undefined && { defaultSeverity: source.defaultSeverity }),
+    ...(source.description !== undefined && { description: source.description }),
     ...(source.failOn !== undefined && { failOn: source.failOn }),
     ...(source.fixLocation !== undefined && { fixLocation: source.fixLocation }),
     ...(source.reportOn !== undefined && { reportOn: source.reportOn }),
