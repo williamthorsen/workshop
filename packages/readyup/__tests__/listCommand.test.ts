@@ -12,11 +12,16 @@ vi.mock('../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', () => ({
-  readManifest: mockReadManifest,
-}));
+vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
+  return {
+    ManifestNotFoundError: actual.ManifestNotFoundError,
+    readManifest: mockReadManifest,
+  };
+});
 
 import { listCommand } from '../src/list/listCommand.ts';
+import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
@@ -30,6 +35,7 @@ describe(listCommand, () => {
       internal: { dir: '.', infix: undefined },
     });
     mockEnumerateKits.mockReturnValue([]);
+    mockReadManifest.mockReturnValue({ version: 1, kits: [] });
   });
 
   afterEach(() => {
@@ -40,19 +46,22 @@ describe(listCommand, () => {
   });
 
   describe('owner mode', () => {
-    it('loads config and enumerates both internal and compiled kits', async () => {
-      mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce(['deploy']);
+    it('loads config and reads manifest for compiled kits', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy' }],
+      });
 
       const exitCode = await listCommand([]);
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalled();
-      expect(mockEnumerateKits).toHaveBeenCalledTimes(2);
+      expect(mockReadManifest).toHaveBeenCalled();
+      // enumerateKits is only called for internal kits
+      expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
         expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
-      );
-      expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.js' }),
       );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Internal:');
@@ -64,7 +73,7 @@ describe(listCommand, () => {
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
         internal: { dir: '.', infix: 'int' },
       });
-      mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce([]);
+      mockEnumerateKits.mockReturnValue(['default']);
 
       const exitCode = await listCommand([]);
 
@@ -72,8 +81,9 @@ describe(listCommand, () => {
       expect(mockEnumerateKits).toHaveBeenCalledWith(expect.objectContaining({ extension: '.int.ts' }));
     });
 
-    it('renders only Internal section when no compiled kits exist', async () => {
-      mockEnumerateKits.mockReturnValueOnce(['default']).mockReturnValueOnce([]);
+    it('renders only Internal section when manifest has no compiled kits', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const exitCode = await listCommand([]);
 
@@ -88,7 +98,11 @@ describe(listCommand, () => {
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined },
         internal: { dir: '.', infix: undefined },
       });
-      mockEnumerateKits.mockReturnValueOnce([]).mockReturnValueOnce(['deploy']);
+      mockEnumerateKits.mockReturnValue([]);
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy' }],
+      });
 
       const exitCode = await listCommand([]);
 
@@ -99,6 +113,10 @@ describe(listCommand, () => {
     });
 
     it('prints empty-owner message when no kits exist', async () => {
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
       const exitCode = await listCommand([]);
 
       expect(exitCode).toBe(0);
@@ -126,11 +144,42 @@ describe(listCommand, () => {
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
     });
+
+    it('renders Internal section without Compiled when manifest file is missing and internal kits exist', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal:');
+      expect(output).not.toContain('Compiled:');
+      expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockImplementation(() => {
+        throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal:');
+      expect(output).not.toContain('Compiled:');
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'));
+    });
   });
 
   describe('from mode', () => {
     it('does not load config when --from is given', async () => {
-      mockEnumerateKits.mockReturnValue([]);
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const exitCode = await listCommand(['--from', '.']);
 
@@ -138,40 +187,40 @@ describe(listCommand, () => {
       expect(mockLoadConfig).not.toHaveBeenCalled();
     });
 
-    it('enumerates compiled kits from a local path', async () => {
-      mockEnumerateKits.mockReturnValue(['deploy']);
+    it('reads manifest from a local path and displays compiled kits', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy' }],
+      });
 
       const exitCode = await listCommand(['--from', '.']);
 
       expect(exitCode).toBe(0);
-      expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.js' }),
-      );
+      expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('.readyup/manifest.json'));
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Compiled:');
       expect(output).toContain('deploy');
     });
 
-    it('prints empty-consumer message when no kits exist at the local path', async () => {
-      mockEnumerateKits.mockReturnValue([]);
-
-      const exitCode = await listCommand(['--from', '/nonexistent']);
-
-      expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('No compiled kits found at /nonexistent/.readyup/kits.');
-    });
-
-    it('returns 1 and writes to stderr when enumerateKits throws', async () => {
-      const permError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
-      mockEnumerateKits.mockImplementation(() => {
-        throw permError;
-      });
+    it('prints empty-consumer message when manifest contains no kits', async () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const exitCode = await listCommand(['--from', '.']);
 
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('No compiled kits found');
+    });
+
+    it('returns 1 when manifest is not found at --from path', async () => {
+      mockReadManifest.mockImplementation(() => {
+        throw new Error('Manifest file not found: /nonexistent/.readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand(['--from', '/nonexistent']);
+
       expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
     });
 
     it('returns 1 for github: scheme with not-yet-supported message', async () => {

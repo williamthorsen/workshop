@@ -46,6 +46,39 @@ describe(ManifestSchema, () => {
     expect(result.success).toBe(false);
   });
 
+  it('accepts a manifest with path, source, and sourceHash fields', () => {
+    const input = {
+      version: 1,
+      kits: [
+        {
+          name: 'deploy',
+          description: 'Deploy checks',
+          path: 'kits/deploy.js',
+          source: 'kits/deploy.ts',
+          sourceHash: 'a1b2c3d4',
+        },
+      ],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a manifest mixing entries with and without location fields', () => {
+    const input = {
+      version: 1,
+      kits: [
+        { name: 'default', description: 'General health checks' },
+        { name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts', sourceHash: 'abcd1234' },
+      ],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+  });
+
   it('rejects a kit with an empty name', () => {
     const input = { version: 1, kits: [{ name: '' }] };
 

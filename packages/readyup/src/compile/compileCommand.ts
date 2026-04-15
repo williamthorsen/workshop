@@ -7,12 +7,13 @@ import picomatch from 'picomatch';
 import { loadConfig } from '../loadConfig.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
+import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { compileConfig } from './compileConfig.ts';
+import { hashSourceFile } from './hashSourceFile.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
@@ -75,7 +76,16 @@ export async function compileCommand(args: string[]): Promise<number> {
     if (!skipManifest) {
       try {
         const kitName = path.basename(result.outputPath, '.js');
-        upsertManifest(manifestPath, kitName, metadata);
+        const manifestDir = path.dirname(manifestPath);
+        const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
+        const resolvedInputPath = path.resolve(inputPath);
+        const relSourcePath = path.relative(manifestDir, resolvedInputPath);
+        const sourceHash = hashSourceFile(resolvedInputPath);
+        upsertManifest(manifestPath, kitName, metadata, {
+          path: relOutputPath,
+          source: relSourcePath,
+          sourceHash,
+        });
       } catch (error: unknown) {
         const message = extractMessage(error);
         process.stderr.write(`Error writing manifest: ${message}\n`);
@@ -137,8 +147,18 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
   }
 
   if (tsFiles.length === 0) {
-    process.stderr.write(`Error: No .ts files found in ${srcDir}\n`);
-    return 1;
+    const relSrc = path.relative(process.cwd(), srcDir);
+    process.stdout.write(`No .ts files found in ${relSrc}\n`);
+    if (!skipManifest) {
+      try {
+        writeManifest(manifestPath, { version: 1, kits: [] });
+      } catch (error: unknown) {
+        const message = extractMessage(error);
+        process.stderr.write(`Error writing manifest: ${message}\n`);
+        return 1;
+      }
+    }
+    return 0;
   }
 
   const relSrcDir = path.relative(process.cwd(), srcDir);
@@ -147,6 +167,7 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
     srcDir === outDir ? `Compiling kits in ${relSrcDir}:\n` : `Compiling kits from ${relSrcDir} to ${relOutDir}:\n`;
   process.stdout.write(header);
 
+  const manifestDir = path.dirname(manifestPath);
   const kitEntries: RdyManifestKit[] = [];
 
   for (const fileName of tsFiles) {
@@ -159,8 +180,14 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
       process.stdout.write(formatResultLine(fileName, outName, result.changed));
 
       const kitName = path.basename(result.outputPath, '.js');
+      const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
+      const relSourcePath = path.relative(manifestDir, srcFile);
+      const sourceHash = hashSourceFile(srcFile);
       kitEntries.push({
         name: kitName,
+        path: relOutputPath,
+        source: relSourcePath,
+        sourceHash,
         ...(metadata.description !== undefined && { description: metadata.description }),
       });
     } catch (error: unknown) {
@@ -184,22 +211,37 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
   return 0;
 }
 
+/** Location fields for a manifest kit entry. */
+interface KitLocationFields {
+  path: string;
+  source: string;
+  sourceHash: string;
+}
+
 /** Read an existing manifest (if any), upsert a kit entry, and write back. */
-function upsertManifest(manifestPath: string, kitName: string, metadata: KitMetadata): void {
+function upsertManifest(
+  manifestPath: string,
+  kitName: string,
+  metadata: KitMetadata,
+  location: KitLocationFields,
+): void {
   let existingKits: RdyManifestKit[] = [];
   try {
     const existing = readManifest(manifestPath);
     existingKits = existing.kits;
   } catch (error: unknown) {
-    const message = extractMessage(error);
     // Missing manifest is expected for first compile; other failures should surface.
-    if (!message.includes('not found')) {
+    if (!(error instanceof ManifestNotFoundError)) {
+      const message = extractMessage(error);
       process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
     }
   }
 
   const entry: RdyManifestKit = {
     name: kitName,
+    path: location.path,
+    source: location.source,
+    sourceHash: location.sourceHash,
     ...(metadata.description !== undefined && { description: metadata.description }),
   };
 

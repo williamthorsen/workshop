@@ -1,4 +1,8 @@
+import assert from 'node:assert';
+
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+
+import type { RdyManifest } from '../src/manifest/manifestSchema.ts';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn());
 const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
@@ -8,6 +12,7 @@ const mockReaddirSync = vi.hoisted(() => vi.fn());
 const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
+const mockHashSourceFile = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/compile/compileConfig.ts', () => ({
   compileConfig: mockCompileConfig,
@@ -34,11 +39,20 @@ vi.mock('../src/manifest/writeManifest.ts', () => ({
   writeManifest: mockWriteManifest,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', () => ({
-  readManifest: mockReadManifest,
+vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
+  return {
+    ManifestNotFoundError: actual.ManifestNotFoundError,
+    readManifest: mockReadManifest,
+  };
+});
+
+vi.mock('../src/compile/hashSourceFile.ts', () => ({
+  hashSourceFile: mockHashSourceFile,
 }));
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
+import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 
 describe(compileCommand, () => {
@@ -49,6 +63,7 @@ describe(compileCommand, () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
   });
 
   afterEach(() => {
@@ -61,6 +76,7 @@ describe(compileCommand, () => {
     mockPicomatch.mockReset();
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
+    mockHashSourceFile.mockReset();
   });
 
   // Explicit input file tests
@@ -241,7 +257,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Source directory not found'));
   });
 
-  it('returns 1 when srcDir has no .ts files', async () => {
+  it('writes empty manifest and emits info message when srcDir has no .ts files', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -250,8 +266,23 @@ describe(compileCommand, () => {
 
     const exitCode = await compileCommand([]);
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+  });
+
+  it('returns 0 and skips manifest when --skip-manifest is set and srcDir has no .ts files', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['readme.md']);
+
+    const exitCode = await compileCommand(['--skip-manifest']);
+
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).not.toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
   });
 
   // Post-compile validation tests
@@ -296,7 +327,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
   });
 
-  it('returns 1 when glob matches only non-.ts files during batch compile', async () => {
+  it('writes empty manifest when glob matches only non-.ts files during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'data/*' },
     });
@@ -306,12 +337,12 @@ describe(compileCommand, () => {
 
     const exitCode = await compileCommand([]);
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
   });
 
   // Manifest generation tests
-  it('writes manifest after batch compile with kit entries', async () => {
+  it('writes manifest after batch compile with kit entries including location fields', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -321,13 +352,37 @@ describe(compileCommand, () => {
       .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true })
       .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValueOnce({ description: 'Alpha checks' }).mockResolvedValueOnce({});
+    mockHashSourceFile.mockReturnValueOnce('aaaa1111').mockReturnValueOnce('bbbb2222');
 
     await compileCommand([]);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'alpha', description: 'Alpha checks' }, { name: 'beta' }],
+      kits: [
+        {
+          name: 'alpha',
+          description: 'Alpha checks',
+          path: expect.stringContaining('alpha.js'),
+          source: expect.stringContaining('alpha.ts'),
+          sourceHash: 'aaaa1111',
+        },
+        {
+          name: 'beta',
+          path: expect.stringContaining('beta.js'),
+          source: expect.stringContaining('beta.ts'),
+          sourceHash: 'bbbb2222',
+        },
+      ],
     });
+
+    // Verify paths are relative (not absolute).
+    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    for (const kit of writtenManifest.kits) {
+      assert.ok(kit.path, 'Expected kit.path to be defined');
+      assert.ok(kit.source, 'Expected kit.source to be defined');
+      expect(kit.path).not.toMatch(/^\//);
+      expect(kit.source).not.toMatch(/^\//);
+    }
   });
 
   it('skips manifest generation when --skip-manifest is set', async () => {
@@ -356,9 +411,10 @@ describe(compileCommand, () => {
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
   });
 
-  it('upserts manifest entry for single-file compile', async () => {
+  it('upserts manifest entry for single-file compile with location fields', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({ description: 'Deploy checks' });
+    mockHashSourceFile.mockReturnValue('deadbeef');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'default', description: 'Default checks' }],
@@ -370,7 +426,13 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         { name: 'default', description: 'Default checks' },
-        { name: 'deploy', description: 'Deploy checks' },
+        {
+          name: 'deploy',
+          description: 'Deploy checks',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'deadbeef',
+        },
       ],
     });
   });
@@ -378,21 +440,30 @@ describe(compileCommand, () => {
   it('creates new manifest for single-file compile when no manifest exists', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
     mockReadManifest.mockImplementation(() => {
-      throw new Error('not found');
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
     await compileCommand(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'deploy' }],
+      kits: [
+        {
+          name: 'deploy',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'abcd1234',
+        },
+      ],
     });
   });
 
   it('replaces existing entry when upserting for single-file compile', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({ description: 'Updated' });
+    mockHashSourceFile.mockReturnValue('newh4sh0');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'deploy', description: 'Old' }],
@@ -402,7 +473,15 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'deploy', description: 'Updated' }],
+      kits: [
+        {
+          name: 'deploy',
+          description: 'Updated',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'newh4sh0',
+        },
+      ],
     });
   });
 
@@ -452,7 +531,7 @@ describe(compileCommand, () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
     mockReadManifest.mockImplementation(() => {
-      throw new Error('not found');
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
     await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);
@@ -464,6 +543,7 @@ describe(compileCommand, () => {
   it('maintains alphabetical order when upserting manifest entries', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'charlie' }, { name: 'beta' }],
@@ -473,7 +553,7 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'alpha' }, { name: 'beta' }, { name: 'charlie' }],
+      kits: [expect.objectContaining({ name: 'alpha', sourceHash: 'abcd1234' }), { name: 'beta' }, { name: 'charlie' }],
     });
   });
 });
