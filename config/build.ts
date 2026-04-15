@@ -8,8 +8,12 @@ import { glob } from 'glob';
 
 const CACHE_FILE = 'dist/esm/.cache';
 const format: Format = 'esm';
+const packageDir = path.basename(process.cwd());
 const platform: Platform = 'node';
 const target = 'es2022';
+
+const PACKAGE_ICON = '📦';
+const SKIPPED_ICON = '🔍';
 
 const aliases = {
   '~/src/': 'src/',
@@ -37,11 +41,11 @@ async function hashChanged(): Promise<boolean> {
   const currentHash = await computeHash();
 
   if (previousHash === currentHash) {
-    console.info('No changes detected. Skipping build.');
+    console.info(`${SKIPPED_ICON} ${packageDir}: No changes detected. Skipping build.`);
     return false;
   }
 
-  console.info('Changes detected.');
+  console.info(`${PACKAGE_ICON} ${packageDir}: Changes detected.`);
   await mkdir(path.dirname(CACHE_FILE), { recursive: true });
   await writeFile(CACHE_FILE, currentHash);
   return true;
