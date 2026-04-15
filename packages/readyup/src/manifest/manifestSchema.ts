@@ -5,8 +5,11 @@ export const DEFAULT_MANIFEST_PATH = '.readyup/manifest.json';
 
 /** Schema for a single kit entry in the manifest. */
 const ManifestKitSchema = z.object({
-  name: z.string().min(1),
   description: z.string().optional(),
+  name: z.string().min(1),
+  path: z.string().optional(),
+  source: z.string().optional(),
+  sourceHash: z.string().optional(),
 });
 
 /** Schema for the readyup manifest file. */

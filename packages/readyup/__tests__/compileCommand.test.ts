@@ -8,6 +8,7 @@ const mockReaddirSync = vi.hoisted(() => vi.fn());
 const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
+const mockHashSourceFile = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/compile/compileConfig.ts', () => ({
   compileConfig: mockCompileConfig,
@@ -38,6 +39,10 @@ vi.mock('../src/manifest/readManifest.ts', () => ({
   readManifest: mockReadManifest,
 }));
 
+vi.mock('../src/compile/hashSourceFile.ts', () => ({
+  hashSourceFile: mockHashSourceFile,
+}));
+
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 
@@ -49,6 +54,7 @@ describe(compileCommand, () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
   });
 
   afterEach(() => {
@@ -61,6 +67,7 @@ describe(compileCommand, () => {
     mockPicomatch.mockReset();
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
+    mockHashSourceFile.mockReset();
   });
 
   // Explicit input file tests
@@ -241,7 +248,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Source directory not found'));
   });
 
-  it('returns 1 when srcDir has no .ts files', async () => {
+  it('writes empty manifest and returns 0 when srcDir has no .ts files', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -250,8 +257,8 @@ describe(compileCommand, () => {
 
     const exitCode = await compileCommand([]);
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
   });
 
   // Post-compile validation tests
@@ -296,7 +303,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
   });
 
-  it('returns 1 when glob matches only non-.ts files during batch compile', async () => {
+  it('writes empty manifest when glob matches only non-.ts files during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'data/*' },
     });
@@ -306,12 +313,12 @@ describe(compileCommand, () => {
 
     const exitCode = await compileCommand([]);
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
   });
 
   // Manifest generation tests
-  it('writes manifest after batch compile with kit entries', async () => {
+  it('writes manifest after batch compile with kit entries including location fields', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -321,12 +328,27 @@ describe(compileCommand, () => {
       .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true })
       .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValueOnce({ description: 'Alpha checks' }).mockResolvedValueOnce({});
+    mockHashSourceFile.mockReturnValueOnce('aaaa1111').mockReturnValueOnce('bbbb2222');
 
     await compileCommand([]);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'alpha', description: 'Alpha checks' }, { name: 'beta' }],
+      kits: [
+        {
+          name: 'alpha',
+          description: 'Alpha checks',
+          path: expect.stringContaining('alpha.js'),
+          source: expect.stringContaining('alpha.ts'),
+          sourceHash: 'aaaa1111',
+        },
+        {
+          name: 'beta',
+          path: expect.stringContaining('beta.js'),
+          source: expect.stringContaining('beta.ts'),
+          sourceHash: 'bbbb2222',
+        },
+      ],
     });
   });
 
@@ -356,9 +378,10 @@ describe(compileCommand, () => {
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
   });
 
-  it('upserts manifest entry for single-file compile', async () => {
+  it('upserts manifest entry for single-file compile with location fields', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({ description: 'Deploy checks' });
+    mockHashSourceFile.mockReturnValue('deadbeef');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'default', description: 'Default checks' }],
@@ -370,7 +393,13 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         { name: 'default', description: 'Default checks' },
-        { name: 'deploy', description: 'Deploy checks' },
+        {
+          name: 'deploy',
+          description: 'Deploy checks',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'deadbeef',
+        },
       ],
     });
   });
@@ -378,6 +407,7 @@ describe(compileCommand, () => {
   it('creates new manifest for single-file compile when no manifest exists', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
     mockReadManifest.mockImplementation(() => {
       throw new Error('not found');
     });
@@ -386,13 +416,21 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'deploy' }],
+      kits: [
+        {
+          name: 'deploy',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'abcd1234',
+        },
+      ],
     });
   });
 
   it('replaces existing entry when upserting for single-file compile', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({ description: 'Updated' });
+    mockHashSourceFile.mockReturnValue('newh4sh0');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'deploy', description: 'Old' }],
@@ -402,7 +440,15 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'deploy', description: 'Updated' }],
+      kits: [
+        {
+          name: 'deploy',
+          description: 'Updated',
+          path: expect.stringContaining('deploy.js'),
+          source: expect.stringContaining('deploy.ts'),
+          sourceHash: 'newh4sh0',
+        },
+      ],
     });
   });
 
@@ -464,6 +510,7 @@ describe(compileCommand, () => {
   it('maintains alphabetical order when upserting manifest entries', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
+    mockHashSourceFile.mockReturnValue('abcd1234');
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'charlie' }, { name: 'beta' }],
@@ -473,7 +520,7 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
-      kits: [{ name: 'alpha' }, { name: 'beta' }, { name: 'charlie' }],
+      kits: [expect.objectContaining({ name: 'alpha', sourceHash: 'abcd1234' }), { name: 'beta' }, { name: 'charlie' }],
     });
   });
 });

@@ -2,6 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
+import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
@@ -16,7 +17,7 @@ const listFlagSchema = {
 };
 
 /**
- * Handle the `list` subcommand: enumerate kits from the filesystem and print their names.
+ * Handle the `list` subcommand: enumerate kits from the manifest and filesystem, then print their names.
  *
  * Returns a numeric exit code.
  */
@@ -67,7 +68,7 @@ function runManifestMode(manifestArg: string): number {
   return 0;
 }
 
-/** Enumerate kits from a `--from` source. */
+/** Resolve the manifest path for a `--from` source and display its kits. */
 function runFromMode(fromArg: string): number {
   let source;
   try {
@@ -83,27 +84,19 @@ function runFromMode(fromArg: string): number {
     return 1;
   }
 
-  let kitsDir: string;
-  if (source.type === 'global') {
-    const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
-    kitsDir = path.join(homeDir, '.readyup/kits');
-  } else if (source.type === 'directory') {
-    kitsDir = path.resolve(source.path);
-  } else {
-    // local path
-    kitsDir = path.join(path.resolve(source.path), '.readyup/kits');
-  }
+  const manifestPath = resolveFromManifestPath(source);
 
-  let compiledKits;
+  let manifest;
   try {
-    compiledKits = enumerateKits({ dir: kitsDir, extension: '.js' });
+    manifest = readManifest(manifestPath);
   } catch (error: unknown) {
     const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
 
-  const output = formatConsumerView({ compiledKits, fromArg, kitsDir });
+  const kitNames = manifest.kits.map((kit) => kit.name);
+  const output = formatConsumerView({ compiledKits: kitNames, fromArg, kitsDir: path.dirname(manifestPath) });
   process.stdout.write(output + '\n');
   return 0;
 }
@@ -122,25 +115,53 @@ async function runOwnerMode(): Promise<number> {
   }
 
   const internalDir = path.join(cwd, '.readyup/kits', config.internal.dir);
-  const compiledDir = path.resolve(cwd, config.compile.outDir);
-
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
 
   let internalKits;
-  let compiledKits;
   try {
     internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
-    compiledKits = enumerateKits({ dir: compiledDir, extension: '.js' });
   } catch (error: unknown) {
     const message = extractMessage(error);
     process.stderr.write(`Error: ${message}\n`);
     return 1;
   }
 
+  const manifestPath = path.resolve(cwd, DEFAULT_MANIFEST_PATH);
+  let compiledKits: string[] = [];
+  try {
+    const manifest = readManifest(manifestPath);
+    compiledKits = manifest.kits.map((kit) => kit.name);
+  } catch {
+    // Missing or invalid manifest — show hint only when no internal kits exist either.
+    if (internalKits.length === 0) {
+      process.stdout.write(
+        'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.\n',
+      );
+      return 0;
+    }
+  }
+
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
   const output = formatOwnerView({ internalKits, compiledKits, compiledStyle });
   process.stdout.write(output + '\n');
   return 0;
+}
+
+/** Resolve the manifest path for a parsed `--from` source. */
+function resolveFromManifestPath(
+  source: { type: 'global' } | { type: 'directory'; path: string } | { type: 'local'; path: string },
+): string {
+  if (source.type === 'global') {
+    const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+    return path.join(homeDir, '.readyup/manifest.json');
+  }
+
+  if (source.type === 'directory') {
+    return path.join(path.resolve(source.path), 'manifest.json');
+  }
+
+  // local path
+  return path.join(path.resolve(source.path), '.readyup/manifest.json');
 }
 
 /** Determine the compiled-section display style based on the outDir setting. */
