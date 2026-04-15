@@ -1,4 +1,8 @@
+import assert from 'node:assert';
+
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+
+import type { RdyManifest } from '../src/manifest/manifestSchema.ts';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn());
 const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
@@ -35,15 +39,20 @@ vi.mock('../src/manifest/writeManifest.ts', () => ({
   writeManifest: mockWriteManifest,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', () => ({
-  readManifest: mockReadManifest,
-}));
+vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
+  return {
+    ManifestNotFoundError: actual.ManifestNotFoundError,
+    readManifest: mockReadManifest,
+  };
+});
 
 vi.mock('../src/compile/hashSourceFile.ts', () => ({
   hashSourceFile: mockHashSourceFile,
 }));
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
+import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 
 describe(compileCommand, () => {
@@ -248,7 +257,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Source directory not found'));
   });
 
-  it('writes empty manifest and returns 0 when srcDir has no .ts files', async () => {
+  it('writes empty manifest and emits info message when srcDir has no .ts files', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -259,6 +268,21 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(0);
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
+  });
+
+  it('returns 0 and skips manifest when --skip-manifest is set and srcDir has no .ts files', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['readme.md']);
+
+    const exitCode = await compileCommand(['--skip-manifest']);
+
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).not.toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No .ts files found'));
   });
 
   // Post-compile validation tests
@@ -350,6 +374,15 @@ describe(compileCommand, () => {
         },
       ],
     });
+
+    // Verify paths are relative (not absolute).
+    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    for (const kit of writtenManifest.kits) {
+      assert.ok(kit.path, 'Expected kit.path to be defined');
+      assert.ok(kit.source, 'Expected kit.source to be defined');
+      expect(kit.path).not.toMatch(/^\//);
+      expect(kit.source).not.toMatch(/^\//);
+    }
   });
 
   it('skips manifest generation when --skip-manifest is set', async () => {
@@ -409,7 +442,7 @@ describe(compileCommand, () => {
     mockValidateCompiledOutput.mockResolvedValue({});
     mockHashSourceFile.mockReturnValue('abcd1234');
     mockReadManifest.mockImplementation(() => {
-      throw new Error('not found');
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
     await compileCommand(['deploy.ts']);
@@ -498,7 +531,7 @@ describe(compileCommand, () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true });
     mockValidateCompiledOutput.mockResolvedValue({});
     mockReadManifest.mockImplementation(() => {
-      throw new Error('not found');
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
     await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);

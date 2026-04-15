@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
+import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -131,13 +131,19 @@ async function runOwnerMode(): Promise<number> {
   try {
     const manifest = readManifest(manifestPath);
     compiledKits = manifest.kits.map((kit) => kit.name);
-  } catch {
-    // Missing or invalid manifest — show hint only when no internal kits exist either.
-    if (internalKits.length === 0) {
-      process.stdout.write(
-        'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.\n',
-      );
-      return 0;
+  } catch (error: unknown) {
+    if (error instanceof ManifestNotFoundError) {
+      // Missing manifest — show hint only when no internal kits exist either.
+      if (internalKits.length === 0) {
+        process.stdout.write(
+          'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.\n',
+        );
+        return 0;
+      }
+    } else {
+      // Corrupt or unreadable manifest — warn and continue with empty compiled list.
+      const message = extractMessage(error);
+      process.stderr.write(`Warning: ${message}\n`);
     }
   }
 

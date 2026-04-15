@@ -12,11 +12,16 @@ vi.mock('../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', () => ({
-  readManifest: mockReadManifest,
-}));
+vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
+  return {
+    ManifestNotFoundError: actual.ManifestNotFoundError,
+    readManifest: mockReadManifest,
+  };
+});
 
 import { listCommand } from '../src/list/listCommand.ts';
+import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
@@ -109,7 +114,7 @@ describe(listCommand, () => {
 
     it('prints empty-owner message when no kits exist', async () => {
       mockReadManifest.mockImplementation(() => {
-        throw new Error('not found');
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
 
       const exitCode = await listCommand([]);
@@ -139,6 +144,37 @@ describe(listCommand, () => {
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
     });
+
+    it('renders Internal section without Compiled when manifest file is missing and internal kits exist', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal:');
+      expect(output).not.toContain('Compiled:');
+      expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+      mockReadManifest.mockImplementation(() => {
+        throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand([]);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal:');
+      expect(output).not.toContain('Compiled:');
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'));
+    });
   });
 
   describe('from mode', () => {
@@ -164,6 +200,16 @@ describe(listCommand, () => {
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('Compiled:');
       expect(output).toContain('deploy');
+    });
+
+    it('prints empty-consumer message when manifest contains no kits', async () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      const exitCode = await listCommand(['--from', '.']);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('No compiled kits found');
     });
 
     it('returns 1 when manifest is not found at --from path', async () => {

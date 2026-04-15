@@ -17,9 +17,13 @@ vi.mock('../../src/loadConfig.ts', () => ({
   loadConfig: mockLoadConfig,
 }));
 
-vi.mock('../../src/manifest/readManifest.ts', () => ({
-  readManifest: mockReadManifest,
-}));
+vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/manifest/readManifest.ts')>();
+  return {
+    ManifestNotFoundError: actual.ManifestNotFoundError,
+    readManifest: mockReadManifest,
+  };
+});
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;

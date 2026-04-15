@@ -7,7 +7,7 @@ import picomatch from 'picomatch';
 import { loadConfig } from '../loadConfig.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
+import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
@@ -146,6 +146,8 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
   }
 
   if (tsFiles.length === 0) {
+    const relSrc = path.relative(process.cwd(), srcDir);
+    process.stdout.write(`No .ts files found in ${relSrc}\n`);
     if (!skipManifest) {
       try {
         writeManifest(manifestPath, { version: 1, kits: [] });
@@ -227,9 +229,9 @@ function upsertManifest(
     const existing = readManifest(manifestPath);
     existingKits = existing.kits;
   } catch (error: unknown) {
-    const message = extractMessage(error);
     // Missing manifest is expected for first compile; other failures should surface.
-    if (!message.includes('not found')) {
+    if (!(error instanceof ManifestNotFoundError)) {
+      const message = extractMessage(error);
       process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
     }
   }
