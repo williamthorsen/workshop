@@ -78,8 +78,9 @@ export async function compileCommand(args: string[]): Promise<number> {
         const kitName = path.basename(result.outputPath, '.js');
         const manifestDir = path.dirname(manifestPath);
         const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
-        const relSourcePath = path.relative(manifestDir, path.resolve(inputPath));
-        const sourceHash = hashSourceFile(path.resolve(inputPath));
+        const resolvedInputPath = path.resolve(inputPath);
+        const relSourcePath = path.relative(manifestDir, resolvedInputPath);
+        const sourceHash = hashSourceFile(resolvedInputPath);
         upsertManifest(manifestPath, kitName, metadata, {
           path: relOutputPath,
           source: relSourcePath,
