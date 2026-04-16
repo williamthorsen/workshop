@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Dependency audit
+
+on:
+  pull_request:
+    branches:
+      - main
+      - next
+
+  # Daily schedule — adjust cron expression per repo if a different cadence is desired.
+  schedule:
+    - cron: '0 8 * * *'
+
+  workflow_dispatch: {}
+
+# Permissions must be declared here. The GITHUB_TOKEN scope passed to the called
+# reusable workflow is bounded by this caller's permissions block; when omitted,
+# the repository's default workflow permissions apply (read-only here), which would
+# silently deny the issues/pull-requests writes the reusable workflow needs.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  audit:
+    uses: williamthorsen/node-monorepo-tools/.github/workflows/audit.reusable.yaml@workflow/audit-v1
