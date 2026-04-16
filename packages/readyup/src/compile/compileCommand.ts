@@ -5,8 +5,8 @@ import process from 'node:process';
 import picomatch from 'picomatch';
 
 import { loadConfig } from '../loadConfig.ts';
+import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "kits": [
+    {
+      "name": "demo",
+      "path": "kits/demo.js",
+      "source": "kits/demo.ts",
+      "sourceHash": "55151a06"
+    }
+  ]
+}

@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-/** Default path for the manifest file, relative to the project root. */
-export const DEFAULT_MANIFEST_PATH = '.readyup/manifest.json';
-
 /** Schema for a single kit entry in the manifest. */
 const ManifestKitSchema = z.object({
   description: z.string().optional(),

@@ -2,7 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
-import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestSchema.ts';
+import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
