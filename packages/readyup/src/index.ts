@@ -46,8 +46,8 @@ export {
 export { pickJson } from './compile/pickJson.ts';
 
 // Manifest
+export { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 export type { RdyManifest } from './manifest/manifestSchema.ts';
-export { DEFAULT_MANIFEST_PATH } from './manifest/manifestSchema.ts';
 
 // Check utilities
 export {
