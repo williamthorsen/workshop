@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [readyup-v0.17.0] - 2026-04-17
+
+### Bug fixes
+
+- Prevent authoring deps from being bundled into compiled kit (#61)
+
+  Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files.
+
+### Features
+
+- Add git freshness check utilities (#50)
+
+  Adds git freshness check utilities to readyup's `check-utils` module, enabling kits to verify branch sync state (local-to-local and local-to-remote) without hand-rolling git subprocess calls. The new utilities return discriminated-union results for type-safe status handling and provide check factories with git-status-style diagnostic messages.
+
+- Add manifest schema and `rdy compile` manifest generation (#54)
+
+  Adds a `.readyup/manifest.json` file that is automatically generated on every `rdy compile` invocation, providing machine-readable kit discovery for external consumers. Batch mode writes the full manifest; single-file mode upserts a single entry. A new `rdy list --manifest` flag reads and displays manifest contents. Kit authors can now supply an optional `description` that flows through to the manifest.
+
+- Enable cross-directory kit discovery via manifest (#56)
+
+  Enables `rdy list` to discover compiled kits across directory boundaries by reading location data from the manifest instead of scanning the filesystem. `rdy compile` now records each kit's compiled path, source path, and a content hash in the manifest, making cross-directory resolution possible without filesystem traversal
+
+### Refactoring
+
+- Skip config load for external source flags in `handleRun` (#48)
+
+  Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit.
+
+### Tests
+
+- Add integration test for `pickJson` compile pipeline (#49)
+
+  Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`.
+
 ## [readyup-v0.16.0] - 2026-04-13
 
 ### Bug fixes

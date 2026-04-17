@@ -1,0 +1,97 @@
+[
+  {
+    "version": "0.17.0",
+    "date": "2026-04-17",
+    "sections": [
+      {
+        "title": "Refactoring",
+        "audience": "all",
+        "items": [{ "description": "Skip config load for external source flags in `handleRun` (#48)" }]
+      },
+      {
+        "title": "Tests",
+        "audience": "dev",
+        "items": [{ "description": "Add integration test for `pickJson` compile pipeline (#49)" }]
+      },
+      {
+        "title": "Features",
+        "audience": "all",
+        "items": [
+          { "description": "Add git freshness check utilities (#50)" },
+          { "description": "Add manifest schema and `rdy compile` manifest generation (#54)" },
+          { "description": "Enable cross-directory kit discovery via manifest (#56)" }
+        ]
+      },
+      {
+        "title": "Bug fixes",
+        "audience": "all",
+        "items": [{ "description": "Prevent authoring deps from being bundled into compiled kit (#61)" }]
+      }
+    ]
+  },
+  {
+    "version": "0.16.0",
+    "date": "2026-04-13",
+    "sections": [
+      {
+        "title": "Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add positional kit arguments and multi-kit execution to `rdy run` (#35)"
+          },
+          { "description": "Add utility functions for working with JSON values (#36)" },
+          {
+            "description": "Unify kit source selectors into `--from` and default to compiled JS (#38)"
+          },
+          { "description": "Add `pickJson` compile-time JSON inlining (#41)" },
+          { "description": "Rename rdy identifier to readyup (#47)" }
+        ]
+      },
+      {
+        "title": "Bug fixes",
+        "audience": "all",
+        "items": [{ "description": "Update list hints and README to use positional kit syntax (#43)" }]
+      }
+    ]
+  },
+  {
+    "version": "0.15.0",
+    "date": "2026-04-11",
+    "sections": [
+      {
+        "title": "Features",
+        "audience": "all",
+        "items": [
+          { "description": "Add `computeHash` and `fileMatchesHash` check utilities (#28)" },
+          { "description": "Add `safeJsonParse` utility for safe JSON parsing (#29)" }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "0.14.0",
+    "date": "2026-04-11",
+    "sections": [
+      {
+        "title": "Features",
+        "audience": "all",
+        "items": [
+          { "description": "Make summary counts severity-aware (#14)" },
+          { "description": "Add `rdy list` subcommand for local kit enumeration (#23)" },
+          { "description": "Add utility functions for common check patterns (#26)" }
+        ]
+      },
+      {
+        "title": "Bug fixes",
+        "audience": "all",
+        "items": [{ "description": "Normalize CLI output alignment with uniform-width icons (#17)" }]
+      },
+      {
+        "title": "Refactoring",
+        "audience": "all",
+        "items": [{ "description": "Extract shared `extractMessage` into `error-handling.ts` (#24)" }]
+      }
+    ]
+  }
+]
