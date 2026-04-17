@@ -1,8 +1,6 @@
 export default {
   checkIgnorePragma: true,
-  singleQuote: true,
   jsxSingleQuote: false,
-  trailingComma: 'all',
   overrides: [
     {
       files: ['*.json5', '*.jsonc', 'tsconfig.json', 'tsconfig.*.json'],
@@ -13,4 +11,6 @@ export default {
       },
     },
   ],
+  singleQuote: true,
+  trailingComma: 'all',
 };

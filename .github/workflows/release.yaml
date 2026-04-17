@@ -18,7 +18,7 @@ on:
           - minor
           - major
       force:
-        description: 'Force a version bump even when there are no release-worthy changes'
+        description: 'Force a release even when there are no commits since the last tag (requires --bump)'
         required: false
         type: boolean
         default: false
@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   release:
-    uses: williamthorsen/node-monorepo-tools/.github/workflows/release.reusable.yaml@release-workflow-v1
+    uses: williamthorsen/node-monorepo-tools/.github/workflows/release.reusable.yaml@workflow/release-v1
     with:
       only: ${{ inputs.only }}
       bump: ${{ inputs.bump }}
