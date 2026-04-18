@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { hashBytes, hashFile } from '../../src/verify/hashing.ts';
+import { hashBytes, hashFile } from '../../src/verify/targetHash.ts';
 
 describe(hashBytes, () => {
   it('returns an 8-character hex string', () => {

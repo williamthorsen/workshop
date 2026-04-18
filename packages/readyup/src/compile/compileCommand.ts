@@ -92,17 +92,13 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   process.stdout.write('Compiling kit:\n');
 
-  if (!skipManifest && !force) {
-    const existingKit = findManifestKit(manifestPath, kitName);
-    if (existingKit !== undefined) {
-      const status = checkDrift(existingKit, manifestDir);
-      if (status.kind === 'drift') {
-        const relInput = path.relative(process.cwd(), resolvedInputPath);
-        process.stdout.write(formatDriftLine(relInput, status));
-        process.stdout.write('\nRe-run with --force to overwrite, or move edits into the source.\n');
-        return 1;
-      }
-    }
+  const existingKit = skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName);
+  const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
+  if (drift !== undefined) {
+    const relInput = path.relative(process.cwd(), resolvedInputPath);
+    process.stdout.write(formatDriftLine(relInput, drift.status));
+    process.stdout.write('\nRe-run with --force to overwrite, or move edits into the source.\n');
+    return 1;
   }
 
   let result;
@@ -312,16 +308,6 @@ function upsertManifest(
   writeManifest(manifestPath, { version: 1, kits });
 }
 
-/** Look up a single kit by name from the manifest, returning undefined if the manifest or kit is missing. */
-function findManifestKit(manifestPath: string, kitName: string): RdyManifestKit | undefined {
-  try {
-    const manifest = readManifest(manifestPath);
-    return manifest.kits.find((k) => k.name === kitName);
-  } catch {
-    return undefined;
-  }
-}
-
 /** Read the manifest and index its kits by name, returning an empty map on any read failure. */
 function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKit> {
   const map = new Map<string, RdyManifestKit>();
@@ -353,13 +339,17 @@ interface DetectDriftArgs {
   manifestDir: string;
 }
 
+/** Materialized skip decision: the drift status to report plus the manifest entry to preserve. */
+interface DriftSkip {
+  status: Extract<DriftStatus, { kind: 'drift' }>;
+  existingKit: RdyManifestKit;
+}
+
 /**
  * Evaluate the drift gate for a single kit. Returns the drift status and the manifest entry
  * to preserve when a skip is warranted, or undefined when the kit should proceed to compile.
  */
-function detectDrift(
-  args: DetectDriftArgs,
-): { status: Extract<DriftStatus, { kind: 'drift' }>; existingKit: RdyManifestKit } | undefined {
+function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   const { skipManifest, force, existingKit, manifestDir } = args;
   if (skipManifest || force || existingKit === undefined) return undefined;
   const status = checkDrift(existingKit, manifestDir);

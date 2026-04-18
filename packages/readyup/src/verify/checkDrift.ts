@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { hashFile } from './hashing.ts';
+import { hashFile } from './targetHash.ts';
 
 /** Outcome of a per-kit drift check. */
 export type DriftStatus =

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { checkDrift } from '../../src/verify/checkDrift.ts';
-import { hashBytes } from '../../src/verify/hashing.ts';
+import { hashBytes } from '../../src/verify/targetHash.ts';
 
 describe(checkDrift, () => {
   let tempDir: string;

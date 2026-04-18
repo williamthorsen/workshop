@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { hashBytes } from '../verify/hashing.ts';
+import { hashBytes } from '../verify/targetHash.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 
 /** Result of a successful compilation. */
