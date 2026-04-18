@@ -1,12 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { hashBytes } from '../verify/hashing.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
   outputPath: string;
   changed: boolean;
+  targetHash: string;
 }
 
 /** Generated-file header prepended to compiled output. */
@@ -71,5 +73,5 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     writeFileSync(resolvedOutput, compiled);
   }
 
-  return { outputPath: resolvedOutput, changed };
+  return { outputPath: resolvedOutput, changed, targetHash: hashBytes(compiled) };
 }

@@ -12,12 +12,14 @@ import { writeManifest } from '../manifest/writeManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import type { DriftStatus } from '../verify/checkDrift.ts';
+import { checkDrift } from '../verify/checkDrift.ts';
 import { compileConfig } from './compileConfig.ts';
-import { hashSourceFile } from './hashSourceFile.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
 const compileFlagSchema = {
+  force: { long: '--force', type: 'boolean' as const },
   manifest: { long: '--manifest', type: 'string' as const },
   output: { long: '--output', type: 'string' as const, short: '-o' },
   skipManifest: { long: '--skip-manifest', type: 'boolean' as const },
@@ -43,6 +45,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     return 1;
   }
 
+  const force = parsed.flags.force;
   const outputPath = parsed.flags.output;
   const positionals = parsed.positionals;
   const skipManifest = parsed.flags.skipManifest;
@@ -57,43 +60,7 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
-    let result;
-    let metadata: KitMetadata;
-    try {
-      result = await compileConfig(inputPath, outputPath);
-      metadata = await validateCompiledOutput(result.outputPath);
-    } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error: ${message}\n`);
-      return 1;
-    }
-
-    const relInput = path.relative(process.cwd(), path.resolve(inputPath));
-    const relOutput = path.relative(process.cwd(), result.outputPath);
-    process.stdout.write('Compiling kit:\n');
-    process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
-
-    if (!skipManifest) {
-      try {
-        const kitName = path.basename(result.outputPath, '.js');
-        const manifestDir = path.dirname(manifestPath);
-        const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
-        const resolvedInputPath = path.resolve(inputPath);
-        const relSourcePath = path.relative(manifestDir, resolvedInputPath);
-        const sourceHash = hashSourceFile(resolvedInputPath);
-        upsertManifest(manifestPath, kitName, metadata, {
-          path: relOutputPath,
-          source: relSourcePath,
-          sourceHash,
-        });
-      } catch (error: unknown) {
-        const message = extractMessage(error);
-        process.stderr.write(`Error writing manifest: ${message}\n`);
-        return 1;
-      }
-    }
-
-    return 0;
+    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath });
   }
 
   // No input file -- compile all sources from config
@@ -102,7 +69,74 @@ export async function compileCommand(args: string[]): Promise<number> {
     return 1;
   }
 
-  return compileBatch(skipManifest, manifestPath);
+  return compileBatch({ skipManifest, force, manifestPath });
+}
+
+/** Arguments for the single-file compile path. */
+interface CompileSingleArgs {
+  inputPath: string;
+  outputPath: string | undefined;
+  skipManifest: boolean;
+  force: boolean;
+  manifestPath: string;
+}
+
+/** Compile a single explicit input file, applying the drift gate before overwriting. */
+async function compileSingle(args: CompileSingleArgs): Promise<number> {
+  const { inputPath, outputPath, skipManifest, force, manifestPath } = args;
+  const manifestDir = path.dirname(manifestPath);
+
+  const resolvedInputPath = path.resolve(inputPath);
+  const resolvedOutputPath = path.resolve(outputPath ?? deriveJsPath(resolvedInputPath));
+  const kitName = path.basename(resolvedOutputPath, '.js');
+
+  process.stdout.write('Compiling kit:\n');
+
+  if (!skipManifest && !force) {
+    const existingKit = findManifestKit(manifestPath, kitName);
+    if (existingKit !== undefined) {
+      const status = checkDrift(existingKit, manifestDir);
+      if (status.kind === 'drift') {
+        const relInput = path.relative(process.cwd(), resolvedInputPath);
+        process.stdout.write(formatDriftLine(relInput, status));
+        process.stdout.write('\nRe-run with --force to overwrite, or move edits into the source.\n');
+        return 1;
+      }
+    }
+  }
+
+  let result;
+  let metadata: KitMetadata;
+  try {
+    result = await compileConfig(inputPath, outputPath);
+    metadata = await validateCompiledOutput(result.outputPath);
+  } catch (error: unknown) {
+    const message = extractMessage(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
+
+  const relInput = path.relative(process.cwd(), resolvedInputPath);
+  const relOutput = path.relative(process.cwd(), result.outputPath);
+  process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
+
+  if (!skipManifest) {
+    try {
+      const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
+      const relSourcePath = path.relative(manifestDir, resolvedInputPath);
+      upsertManifest(manifestPath, kitName, metadata, {
+        path: relOutputPath,
+        source: relSourcePath,
+        targetHash: result.targetHash,
+      });
+    } catch (error: unknown) {
+      const message = extractMessage(error);
+      process.stderr.write(`Error writing manifest: ${message}\n`);
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 /** Resolve the manifest output path from the optional `--manifest` flag. */
@@ -118,8 +152,16 @@ function collectSourceFiles(srcDir: string, includeGlob: string | undefined): st
   return entries.filter((name) => name.endsWith('.ts') && (isMatch === undefined || isMatch(name))).sort();
 }
 
+/** Arguments for the batch compile path. */
+interface CompileBatchArgs {
+  skipManifest: boolean;
+  force: boolean;
+  manifestPath: string;
+}
+
 /** Compile all matching `.ts` files from the config-driven source directory. */
-async function compileBatch(skipManifest: boolean, manifestPath: string): Promise<number> {
+async function compileBatch(args: CompileBatchArgs): Promise<number> {
+  const { skipManifest, force, manifestPath } = args;
   let config;
   try {
     config = await loadConfig();
@@ -168,26 +210,36 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
   process.stdout.write(header);
 
   const manifestDir = path.dirname(manifestPath);
+  const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
   const kitEntries: RdyManifestKit[] = [];
+  let skippedCount = 0;
 
   for (const fileName of tsFiles) {
     const srcFile = path.join(srcDir, fileName);
     const outFile = path.join(outDir, fileName.replace(/\.ts$/, '.js'));
+    const kitName = path.basename(outFile, '.js');
+
+    const drift = detectDrift({ skipManifest, force, existingKit: existingKitsByName.get(kitName), manifestDir });
+    if (drift !== undefined) {
+      process.stdout.write(formatDriftLine(fileName, drift.status));
+      kitEntries.push(drift.existingKit);
+      skippedCount += 1;
+      continue;
+    }
+
     try {
       const result = await compileConfig(srcFile, outFile);
       const metadata = await validateCompiledOutput(result.outputPath);
       const outName = fileName.replace(/\.ts$/, '.js');
       process.stdout.write(formatResultLine(fileName, outName, result.changed));
 
-      const kitName = path.basename(result.outputPath, '.js');
       const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
       const relSourcePath = path.relative(manifestDir, srcFile);
-      const sourceHash = hashSourceFile(srcFile);
       kitEntries.push({
         name: kitName,
         path: relOutputPath,
         source: relSourcePath,
-        sourceHash,
+        targetHash: result.targetHash,
         ...(metadata.description !== undefined && { description: metadata.description }),
       });
     } catch (error: unknown) {
@@ -195,6 +247,13 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
       process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
       return 1;
     }
+  }
+
+  if (skippedCount > 0) {
+    process.stdout.write(
+      `\n${skippedCount} of ${tsFiles.length} kit${tsFiles.length === 1 ? '' : 's'} skipped due to drift.` +
+        ` Re-run with --force to overwrite, or move edits into the source.\n`,
+    );
   }
 
   if (!skipManifest) {
@@ -208,14 +267,14 @@ async function compileBatch(skipManifest: boolean, manifestPath: string): Promis
     }
   }
 
-  return 0;
+  return skippedCount > 0 ? 1 : 0;
 }
 
 /** Location fields for a manifest kit entry. */
 interface KitLocationFields {
   path: string;
   source: string;
-  sourceHash: string;
+  targetHash: string;
 }
 
 /** Read an existing manifest (if any), upsert a kit entry, and write back. */
@@ -241,7 +300,7 @@ function upsertManifest(
     name: kitName,
     path: location.path,
     source: location.source,
-    sourceHash: location.sourceHash,
+    targetHash: location.targetHash,
     ...(metadata.description !== undefined && { description: metadata.description }),
   };
 
@@ -253,7 +312,68 @@ function upsertManifest(
   writeManifest(manifestPath, { version: 1, kits });
 }
 
+/** Look up a single kit by name from the manifest, returning undefined if the manifest or kit is missing. */
+function findManifestKit(manifestPath: string, kitName: string): RdyManifestKit | undefined {
+  try {
+    const manifest = readManifest(manifestPath);
+    return manifest.kits.find((k) => k.name === kitName);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Read the manifest and index its kits by name, returning an empty map on any read failure. */
+function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKit> {
+  const map = new Map<string, RdyManifestKit>();
+  try {
+    const manifest = readManifest(manifestPath);
+    for (const kit of manifest.kits) {
+      map.set(kit.name, kit);
+    }
+  } catch {
+    // Missing or unreadable manifest — drift gate becomes a no-op for this run.
+  }
+  return map;
+}
+
+/** Derive a `.js` sibling path from a `.ts`/`.mts`/`.cts` input. */
+function deriveJsPath(inputPath: string): string {
+  const ext = path.extname(inputPath);
+  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
+    return inputPath.slice(0, -ext.length) + '.js';
+  }
+  return `${inputPath}.js`;
+}
+
+/** Arguments for the per-kit drift-detection helper. */
+interface DetectDriftArgs {
+  skipManifest: boolean;
+  force: boolean;
+  existingKit: RdyManifestKit | undefined;
+  manifestDir: string;
+}
+
+/**
+ * Evaluate the drift gate for a single kit. Returns the drift status and the manifest entry
+ * to preserve when a skip is warranted, or undefined when the kit should proceed to compile.
+ */
+function detectDrift(
+  args: DetectDriftArgs,
+): { status: Extract<DriftStatus, { kind: 'drift' }>; existingKit: RdyManifestKit } | undefined {
+  const { skipManifest, force, existingKit, manifestDir } = args;
+  if (skipManifest || force || existingKit === undefined) return undefined;
+  const status = checkDrift(existingKit, manifestDir);
+  if (status.kind !== 'drift') return undefined;
+  return { status, existingKit };
+}
+
 /** Format a single compile-result line with a change indicator. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
   return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${ICON_NO_CHANGES} ${srcName} — no changes\n`;
+}
+
+/** Format a drift-skip status line. Requires a `drift` status; other statuses never produce this line. */
+function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
+  const target = path.basename(status.resolvedPath);
+  return `  ⚠️  ${srcName} — skipped (drift in ${target}; expected ${status.expected}, got ${status.actual})\n`;
 }

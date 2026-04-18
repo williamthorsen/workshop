@@ -7,9 +7,10 @@ import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 
-const SUBCOMMANDS = ['compile', 'init', 'list'];
+const SUBCOMMANDS = ['compile', 'init', 'list', 'verify'];
 const MIN_PREFIX_LENGTH = 3;
 
 function showHelp(): void {
@@ -22,6 +23,7 @@ Commands:
   compile [file]                Bundle TypeScript kit(s) into self-contained ESM file(s)
   init                          Scaffold a starter config and kit
   list                          List available kits
+  verify                        Check compiled kits against manifest hashes
 
 Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, global, dir:path, or local path)
@@ -83,7 +85,35 @@ Modes:
 
 Options:
   --output, -o <path>  Output file path (single-file mode only)
+  --manifest <path>    Manifest file path (default: .readyup/manifest.json)
+  --force              Overwrite compiled kits even if they have drifted from the manifest
+  --skip-manifest      Do not read or write the manifest
   --help, -h           Show this help message
+
+Drift detection:
+  rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
+  manifest's recorded targetHash (e.g. someone edited the compiled file directly).
+  Drifted kits are reported and skipped; use --force to overwrite anyway.
+`);
+}
+
+function showVerifyHelp(): void {
+  console.info(`
+Usage: rdy verify [options]
+
+Check compiled kits against the hashes recorded in the manifest.
+
+Each kit is reported as one of:
+  ok          on-disk hash matches the manifest's targetHash
+  drift       on-disk hash differs from the manifest's targetHash
+  missing     compiled file is absent
+  unverified  manifest entry has no targetHash (predates the feature)
+
+Exits non-zero when any kit is in drift or missing; unverified kits do not fail.
+
+Options:
+  --manifest <path>  Manifest file path (default: .readyup/manifest.json)
+  --help, -h         Show this help message
 `);
 }
 
@@ -203,6 +233,20 @@ export async function routeCommand(args: string[]): Promise<number> {
     }
     try {
       return await listCommand(flags);
+    } catch (error: unknown) {
+      process.stderr.write(`Error: ${extractMessage(error)}\n`);
+      return 1;
+    }
+  }
+
+  if (command === 'verify') {
+    const flags = args.slice(1);
+    if (flags.some((f) => f === '--help' || f === '-h')) {
+      showVerifyHelp();
+      return 0;
+    }
+    try {
+      return verifyCommand(flags);
     } catch (error: unknown) {
       process.stderr.write(`Error: ${extractMessage(error)}\n`);
       return 1;
