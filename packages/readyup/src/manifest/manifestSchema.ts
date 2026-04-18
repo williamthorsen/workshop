@@ -6,7 +6,7 @@ const ManifestKitSchema = z.object({
   name: z.string().min(1),
   path: z.string().optional(),
   source: z.string().optional(),
-  sourceHash: z.string().optional(),
+  targetHash: z.string().optional(),
 });
 
 /** Schema for the readyup manifest file. */
