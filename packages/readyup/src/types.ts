@@ -106,8 +106,8 @@ export function isPercentProgress(progress: Progress): progress is PercentProgre
 /** Structured outcome from a check, carrying diagnostic data alongside the pass/fail status. */
 export interface CheckOutcome {
   ok: boolean;
-  detail?: string;
-  progress?: Progress;
+  detail?: string | undefined;
+  progress?: Progress | undefined;
 }
 
 /** The value a check function may return (or resolve to). */
@@ -127,19 +127,19 @@ export interface RdyCheck {
    * Severity of this check. Determines failure and reporting behavior.
    * Default: kit's `defaultSeverity`, falling back to 'error'.
    */
-  severity?: Severity;
+  severity?: Severity | undefined;
 
   /**
    * Skip condition. When provided, evaluated before the check runs.
    * Return `false` to run the check, or a reason string to skip it.
    */
-  skip?: () => SkipResult | Promise<SkipResult>;
+  skip?: (() => SkipResult | Promise<SkipResult>) | undefined;
 
   /** Remediation message shown when the check fails. */
-  fix?: string;
+  fix?: string | undefined;
 
   /** Dependent checks that run only if this check passes. */
-  checks?: RdyCheck[];
+  checks?: RdyCheck[] | undefined;
 }
 
 // -- Results --
@@ -255,19 +255,19 @@ export interface RdyChecklist {
    * Each dependent check's own severity determines whether its skipped entry
    * is shown.
    */
-  preconditions?: RdyCheck[];
+  preconditions?: RdyCheck[] | undefined;
 
   checks: RdyCheck[];
 
-  fixLocation?: FixLocation;
+  fixLocation?: FixLocation | undefined;
 }
 
 /** A staged checklist where groups run sequentially; checks within each group run concurrently. */
 export interface RdyStagedChecklist {
   name: string;
-  preconditions?: RdyCheck[];
+  preconditions?: RdyCheck[] | undefined;
   groups: RdyCheck[][];
-  fixLocation?: FixLocation;
+  fixLocation?: FixLocation | undefined;
 }
 
 /** Distinguish a flat checklist from a staged checklist by the presence of `checks`. */
@@ -283,44 +283,48 @@ export interface RdyKit {
   checklists: Array<RdyChecklist | RdyStagedChecklist>;
 
   /** Human-readable summary of what the kit checks. */
-  description?: string;
+  description?: string | undefined;
 
   /** Named subsets of checklists. */
-  suites?: Record<string, string[]>;
+  suites?: Record<string, string[]> | undefined;
 
   /**
    * Default severity for checks that don't declare one.
    * Default: 'error'.
    */
-  defaultSeverity?: Severity;
+  defaultSeverity?: Severity | undefined;
 
   /**
    * Minimum severity at which a failed check causes the run to fail.
    * Default: 'error'.
    */
-  failOn?: Severity;
+  failOn?: Severity | undefined;
 
   /**
    * Minimum severity at which results appear in output.
    * Default: 'recommend' (show all assertive results).
    */
-  reportOn?: Severity;
+  reportOn?: Severity | undefined;
 
   /** Default placement of fix messages across all checklists. */
-  fixLocation?: FixLocation;
+  fixLocation?: FixLocation | undefined;
 }
 
 /** Repo-level settings for the rdy CLI (user-facing, all fields optional). */
 export interface RdyConfig {
-  compile?: {
-    srcDir?: string;
-    outDir?: string;
-    include?: string;
-  };
-  internal?: {
-    dir?: string;
-    infix?: string;
-  };
+  compile?:
+    | {
+        srcDir?: string | undefined;
+        outDir?: string | undefined;
+        include?: string | undefined;
+      }
+    | undefined;
+  internal?:
+    | {
+        dir?: string | undefined;
+        infix?: string | undefined;
+      }
+    | undefined;
 }
 
 /** Fully-resolved config with defaults applied, returned by `loadConfig`. */
