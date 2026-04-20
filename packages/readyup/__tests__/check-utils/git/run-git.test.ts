@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isRefMissingError, runGit } from '../../../src/check-utils/git/run-git.ts';
+import { expandHome, isRefMissingError, runGit } from '../../../src/check-utils/git/run-git.ts';
 
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
@@ -113,5 +113,29 @@ describe(isRefMissingError, () => {
   it('returns false for non-object values', () => {
     expect(isRefMissingError('not an error')).toBe(false);
     expect(isRefMissingError(null)).toBe(false);
+  });
+});
+
+describe(expandHome, () => {
+  it('expands bare ~ to the home directory', () => {
+    expect(expandHome('~')).toBe(homedir());
+  });
+
+  it('expands bare ~/ to the home directory', () => {
+    expect(expandHome('~/')).toBe(homedir());
+  });
+
+  it('expands ~/ prefix to the home directory', () => {
+    expect(expandHome('~/projects/repo')).toBe(`${homedir()}/projects/repo`);
+  });
+
+  it('leaves paths without a leading tilde unchanged', () => {
+    expect(expandHome('/absolute/path')).toBe('/absolute/path');
+    expect(expandHome('relative/path')).toBe('relative/path');
+  });
+
+  it('does not expand ~ that is not a leading path segment', () => {
+    expect(expandHome('/home/~user/repo')).toBe('/home/~user/repo');
+    expect(expandHome('./~/repo')).toBe('./~/repo');
   });
 });

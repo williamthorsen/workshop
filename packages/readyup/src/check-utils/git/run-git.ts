@@ -6,7 +6,7 @@ const execFileAsync = promisify(execFile);
 
 /** Run a git command in the given directory and return trimmed stdout. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {
-  const resolved = expandTilde(path);
+  const resolved = expandHome(path);
   const { stdout } = await execFileAsync('git', ['-C', resolved, ...args]);
   return stdout.trim();
 }
@@ -33,7 +33,7 @@ export function isRefMissingError(error: unknown): boolean {
 }
 
 /** Expand leading `~` or `~/` to the user's home directory. */
-function expandTilde(path: string): string {
+export function expandHome(path: string): string {
   if (path === '~' || path === '~/') return homedir();
   if (path.startsWith('~/')) return homedir() + path.slice(1);
   return path;

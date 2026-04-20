@@ -145,6 +145,9 @@ import { fileExists, fileContains, hasPackageJsonField } from 'readyup';
 | `readPackageJson()`                         | Parse package.json                                         |
 | `compareVersions(a, b)`                     | Compare semver strings                                     |
 | `runGit(path, ...args)`                     | Run a git command and return trimmed stdout                |
+| `expandHome(path)`                          | Expand leading `~` or `~/` to the home directory           |
+| `isAtRepoRoot(path)`                        | Path is the top of a git working tree                      |
+| `isGitRepo(path)`                           | Path is inside a git working tree                          |
 | `compareLocalRefs(path, refA, refB)`        | Compare two local refs (discriminated-union result)        |
 | `compareRefToRemote(path, ref, remote?)`    | Compare a local ref to its remote counterpart              |
 | `makeLocalRefSyncCheck(options)`            | Check factory: verify two local refs match                 |
