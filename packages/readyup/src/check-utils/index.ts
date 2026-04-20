@@ -3,6 +3,9 @@ export { commandExists, fileContains, fileDoesNotContain, fileExists, filesExist
 export {
   compareLocalRefs,
   compareRefToRemote,
+  expandHome,
+  isAtRepoRoot,
+  isGitRepo,
   makeLocalRefSyncCheck,
   makeRemoteRefSyncCheck,
   runGit,

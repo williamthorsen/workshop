@@ -39,6 +39,9 @@ import { homedir } from "node:os";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
 
+// packages/readyup/dist/esm/check-utils/git/repo-predicates.js
+import { existsSync as existsSync2 } from "node:fs";
+
 // packages/readyup/dist/esm/check-utils/hashing.js
 import { createHash } from "node:crypto";
 
