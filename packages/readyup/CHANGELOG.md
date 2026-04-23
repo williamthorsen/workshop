@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [readyup-v0.18.0] - 2026-04-23
+
+### Bug fixes
+
+- Allow explicit undefined on optional authoring-type fields (#69)
+
+  Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes.
+
+### Features
+
+- Detect drift between manifest and compiled kits (#65)
+
+  Adds drift detection for compiled readyup kits so manual or accidental edits to generated `.js` files can no longer be silently erased by `rdy compile`.
+
+  Adds a new `rdy verify` subcommand that audits the manifest on demand without mutating anything, reporting each kit as `ok`, `drift`, `missing`, or `unverified` and exiting non-zero when any kit has drifted or is missing.
+
+- Add isGitRepo, isAtRepoRoot, and expandHome helpers (#72)
+
+  Adds three generic git-path helpers to `readyup`'s `check-utils/git` subpath:
+  - `isGitRepo(path)` returns `true` when the path is inside a git working tree (subdirectories and worktrees count).
+  - `isAtRepoRoot(path)` returns `true` only when the path is the top of a working tree, using `git rev-parse --show-cdup` to avoid the path-comparison pitfalls of `--show-toplevel`.
+  - `expandHome(path)` expands a leading `~` or `~/` to the user's home directory. Previously this existed as a private `expandTilde` inside `run-git.ts`; it is now exported under a more general name so consumers can reuse the same tilde handling that `runGit` uses internally.
+
 ## [readyup-v0.17.0] - 2026-04-17
 
 ### Bug fixes
