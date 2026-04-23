@@ -2,6 +2,8 @@
 
 Run pre-deployment verification checks against your environment and configuration. Define checklists in TypeScript kits, run them locally or from a remote source, and get clear pass/fail reporting with remediation hints.
 
+<!-- section:release-notes --><!-- /section:release-notes -->
+
 ## Installation
 
 ```bash
