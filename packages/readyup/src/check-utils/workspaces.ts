@@ -32,8 +32,11 @@ type WorkspacePatternSource = 'pnpm-workspace.yaml' | 'package.json';
 /** Maximum recursion depth for the glob walk. */
 const MAX_WALK_DEPTH = 10;
 
-/** Directory names that are never traversed. */
-const PRUNED_NAMES = new Set(['node_modules', '.git']);
+/**
+ * Directory names that are never traversed. Only `node_modules` is listed here;
+ * dot-prefixed directories (including `.git`) are pruned separately in `walk`.
+ */
+const PRUNED_NAMES = new Set(['node_modules']);
 
 /**
  * Discover the workspaces of the current repo.
@@ -61,6 +64,8 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
     throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
   }
 
+  // `matchedDirs` is already sorted ascending by `expandPatterns`, and each workspace's
+  // `dir` equals its entry in that list, so the result is sorted without an extra pass.
   const matchedDirs = expandPatterns(cwd, patternResult.patterns, patternResult.source);
   const workspaces: Workspace[] = [];
   for (const relDir of matchedDirs) {
@@ -70,9 +75,7 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
     }
   }
 
-  // eslint-disable-next-line unicorn/no-array-sort -- `toSorted` requires Node 20; this package supports Node 18.17+.
-  const sortedWorkspaces = [...workspaces].sort((a, b) => compareDirs(a.dir, b.dir));
-  return applyFilter(sortedWorkspaces, options?.filter);
+  return applyFilter(workspaces, options?.filter);
 }
 
 // region | Helpers
@@ -158,13 +161,6 @@ function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatter
 
   // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib / Node 20+; this package supports Node 18.17+.
   return [...matched].sort();
-}
-
-/** Ascending lexicographic comparator for workspace dir strings. */
-function compareDirs(a: string, b: string): number {
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
 }
 
 /**
