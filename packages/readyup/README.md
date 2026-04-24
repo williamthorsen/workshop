@@ -135,25 +135,40 @@ Reusable check functions for common assertions:
 import { fileExists, fileContains, hasPackageJsonField } from 'readyup';
 ```
 
-| Function                                    | Description                                                |
-| ------------------------------------------- | ---------------------------------------------------------- |
-| `fileExists(path)`                          | File exists at path                                        |
-| `fileContains(path, pattern)`               | File matches a string or regex                             |
-| `fileDoesNotContain(path, pattern)`         | File does not match                                        |
-| `readFile(path)`                            | Read file contents (returns `undefined` if missing)        |
-| `hasPackageJsonField(field, value?)`        | package.json has a field (optionally matching a value)     |
-| `hasDevDependency(name)`                    | package.json has a dev dependency                          |
-| `hasMinDevDependencyVersion(name, version)` | Dev dependency meets minimum version                       |
-| `readPackageJson()`                         | Parse package.json                                         |
-| `compareVersions(a, b)`                     | Compare semver strings                                     |
-| `runGit(path, ...args)`                     | Run a git command and return trimmed stdout                |
-| `expandHome(path)`                          | Expand leading `~` or `~/` to the home directory           |
-| `isAtRepoRoot(path)`                        | Path is the top of a git working tree                      |
-| `isGitRepo(path)`                           | Path is inside a git working tree                          |
-| `compareLocalRefs(path, refA, refB)`        | Compare two local refs (discriminated-union result)        |
-| `compareRefToRemote(path, ref, remote?)`    | Compare a local ref to its remote counterpart              |
-| `makeLocalRefSyncCheck(options)`            | Check factory: verify two local refs match                 |
-| `makeRemoteRefSyncCheck(options)`           | Check factory: verify a ref matches its remote counterpart |
+| Function                                    | Description                                                             |
+| ------------------------------------------- | ----------------------------------------------------------------------- |
+| `fileExists(path)`                          | File exists at path                                                     |
+| `fileContains(path, pattern)`               | File matches a string or regex                                          |
+| `fileDoesNotContain(path, pattern)`         | File does not match                                                     |
+| `readFile(path)`                            | Read file contents (returns `undefined` if missing)                     |
+| `hasPackageJsonField(field, value?)`        | package.json has a field (optionally matching a value)                  |
+| `hasDevDependency(name)`                    | package.json has a dev dependency                                       |
+| `hasMinDevDependencyVersion(name, version)` | Dev dependency meets minimum version                                    |
+| `readPackageJson()`                         | Parse package.json                                                      |
+| `discoverWorkspaces(options?)`              | Enumerate monorepo workspaces (single-workspace repos return one entry) |
+| `compareVersions(a, b)`                     | Compare semver strings                                                  |
+| `runGit(path, ...args)`                     | Run a git command and return trimmed stdout                             |
+| `expandHome(path)`                          | Expand leading `~` or `~/` to the home directory                        |
+| `isAtRepoRoot(path)`                        | Path is the top of a git working tree                                   |
+| `isGitRepo(path)`                           | Path is inside a git working tree                                       |
+| `compareLocalRefs(path, refA, refB)`        | Compare two local refs (discriminated-union result)                     |
+| `compareRefToRemote(path, ref, remote?)`    | Compare a local ref to its remote counterpart                           |
+| `makeLocalRefSyncCheck(options)`            | Check factory: verify two local refs match                              |
+| `makeRemoteRefSyncCheck(options)`           | Check factory: verify a ref matches its remote counterpart              |
+
+### Discovering workspaces
+
+`discoverWorkspaces()` returns a uniform `Workspace[]` that collapses pnpm, npm, and yarn monorepo conventions — and single-workspace repos — into one iteration shape. Every entry includes `dir` (relative to `cwd`; `'.'` for a single-workspace repo), `absolutePath`, `name`, `isPackage` (true when `package.json.private !== true`), and the parsed `packageJson`.
+
+Common filter pattern — get all publishable workspaces:
+
+```ts
+import { discoverWorkspaces } from 'readyup';
+
+const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
+```
+
+Note: `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, negation patterns, or other non-trivial features will raise a clear error with a pointer to file an issue.
 
 ## License
 

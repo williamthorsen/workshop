@@ -15,3 +15,5 @@ export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json
 export { getJsonValue, hasJsonValue } from './json-value.ts';
 export { hasDevDependency, hasMinDevDependencyVersion, hasPackageJsonField, readPackageJson } from './package-json.ts';
 export { compareVersions } from './semver.ts';
+export type { DiscoverWorkspacesOptions, Workspace } from './workspaces.ts';
+export { discoverWorkspaces } from './workspaces.ts';
