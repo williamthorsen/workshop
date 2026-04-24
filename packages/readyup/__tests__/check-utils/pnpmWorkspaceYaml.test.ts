@@ -75,6 +75,18 @@ describe(readPnpmWorkspacePackages, () => {
     expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*']);
   });
 
+  it('preserves `#` inside single-quoted items (not treated as an inline comment)', () => {
+    writeYaml(['packages:', "  - 'packages/foo#bar'", ''].join('\n'));
+
+    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/foo#bar']);
+  });
+
+  it('preserves `#` inside double-quoted items (not treated as an inline comment)', () => {
+    writeYaml(['packages:', '  - "packages/foo#bar"', ''].join('\n'));
+
+    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/foo#bar']);
+  });
+
   it('ignores blank lines between items', () => {
     writeYaml(['packages:', '  - packages/*', '', '  - apps/*', '', ''].join('\n'));
 

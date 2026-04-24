@@ -181,8 +181,12 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
   let entries: Dirent[];
   try {
     entries = readdirSync(absDir, { withFileTypes: true, encoding: 'utf8' });
-  } catch {
-    return;
+  } catch (error) {
+    // Skip directories we can't read for benign reasons (missing, permission-denied).
+    // Rethrow systemic failures (e.g. EMFILE, EIO) so an incomplete walk isn't masked.
+    const code = isRecord(error) && typeof error.code === 'string' ? error.code : undefined;
+    if (code === 'ENOENT' || code === 'EACCES' || code === 'EPERM') return;
+    throw error;
   }
 
   for (const entry of entries) {

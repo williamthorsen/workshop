@@ -102,6 +102,17 @@ describe(discoverWorkspaces, () => {
 
       expect(workspaces.map((w) => w.dir)).toEqual(['apps/web', 'packages/alpha']);
     });
+
+    it('returns isPackage: false for a discovered workspace with `private: true`', () => {
+      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage('packages/internal', { name: 'internal', private: true });
+
+      const workspaces = discoverWorkspaces();
+      const byDir = Object.fromEntries(workspaces.map((w) => [w.dir, w.isPackage]));
+
+      expect(byDir).toEqual({ 'packages/alpha': true, 'packages/internal': false });
+    });
   });
 
   describe('single-workspace repo', () => {
@@ -257,6 +268,16 @@ describe(discoverWorkspaces, () => {
         name: 'root',
         private: true,
         workspaces: ['packages/*', '!packages/deprecated/*'],
+      });
+
+      expect(() => discoverWorkspaces()).toThrow(/negation pattern "!packages\/deprecated\/\*"/);
+    });
+
+    it('throws when `workspaces.packages` contains a negation pattern', () => {
+      writeRootPackageJson({
+        name: 'root',
+        private: true,
+        workspaces: { packages: ['packages/*', '!packages/deprecated/*'] },
       });
 
       expect(() => discoverWorkspaces()).toThrow(/negation pattern "!packages\/deprecated\/\*"/);
