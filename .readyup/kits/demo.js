@@ -33,18 +33,6 @@ function fileContains(relativePath, pattern) {
   return pattern.test(content);
 }
 
-// packages/readyup/dist/esm/check-utils/git/run-git.js
-import { execFile } from "node:child_process";
-import { homedir } from "node:os";
-import { promisify } from "node:util";
-var execFileAsync = promisify(execFile);
-
-// packages/readyup/dist/esm/check-utils/git/repo-predicates.js
-import { existsSync as existsSync2 } from "node:fs";
-
-// packages/readyup/dist/esm/check-utils/hashing.js
-import { createHash } from "node:crypto";
-
 // packages/readyup/dist/esm/safeJsonParse.js
 function safeJsonParse(content) {
   try {
