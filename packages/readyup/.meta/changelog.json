@@ -1,5 +1,21 @@
 [
   {
+    "version": "0.19.0",
+    "date": "2026-04-24",
+    "sections": [
+      {
+        "title": "Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add `discoverWorkspaces` check-util for monorepo-aware kits (#74)",
+            "body": "Adds `discoverWorkspaces()` to readyup's `check-utils`, a single helper that enumerates a repo's workspaces across pnpm, npm/yarn, and single-workspace layouts with a uniform return shape. Consumer kits can now answer workspace-iteration questions — including \"does this repo have anything publishable?\" as `discoverWorkspaces({ filter: (w) => w.isPackage }).length > 0` — without bundling their own `glob` + YAML-parser combination."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.18.0",
     "date": "2026-04-23",
     "sections": [
