@@ -20,6 +20,9 @@
   },
   "license": "MIT",
   "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/rdy.js"
+  ],
   "type": "module",
   "exports": {
     ".": {

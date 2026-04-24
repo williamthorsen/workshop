@@ -50,12 +50,14 @@ export { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 export type { RdyManifest } from './manifest/manifestSchema.ts';
 
 // Check utilities
+export type { DiscoverWorkspacesOptions, Workspace } from './check-utils/index.ts';
 export {
   commandExists,
   compareLocalRefs,
   compareRefToRemote,
   compareVersions,
   computeHash,
+  discoverWorkspaces,
   expandHome,
   fileContains,
   fileDoesNotContain,
