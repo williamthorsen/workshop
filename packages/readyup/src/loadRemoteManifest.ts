@@ -11,7 +11,7 @@ export class RemoteManifestNotFoundError extends Error {
 
 export interface LoadRemoteManifestOptions {
   url: string;
-  token?: string;
+  token?: string | undefined;
 }
 
 /**

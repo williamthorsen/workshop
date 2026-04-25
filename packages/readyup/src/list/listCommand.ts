@@ -113,7 +113,7 @@ async function runFromMode(fromArg: string): Promise<number> {
 async function runRemoteFromMode({ url, token }: { url: string; token: string | undefined }): Promise<number> {
   let manifest;
   try {
-    manifest = await loadRemoteManifest(token !== undefined ? { url, token } : { url });
+    manifest = await loadRemoteManifest({ url, token });
   } catch (error: unknown) {
     if (error instanceof RemoteManifestNotFoundError) {
       process.stderr.write(`Error: No manifest found at ${url}. Has \`rdy compile --with-manifest\` been run?\n`);

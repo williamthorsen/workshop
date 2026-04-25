@@ -32,20 +32,7 @@ vi.mock('../../src/resolveGitHubToken.ts', () => ({
 vi.stubGlobal('fetch', mockFetch);
 
 import { listCommand } from '../../src/list/listCommand.ts';
-
-/** Build a minimal mock Response with the given body and status. */
-function mockResponse(
-  body: string,
-  init?: { status?: number; statusText?: string },
-): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
-  return {
-    ok: (init?.status ?? 200) >= 200 && (init?.status ?? 200) < 300,
-    status: init?.status ?? 200,
-    statusText: init?.statusText ?? 'OK',
-    text: () => Promise.resolve(body),
-    headers: new Headers(),
-  };
-}
+import { mockResponse } from '../helpers/mockResponse.ts';
 
 const validRemoteManifestBody = JSON.stringify({
   version: 1,
