@@ -2,10 +2,12 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { loadConfig } from '../loadConfig.ts';
+import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
+import { resolveGitHubToken } from '../resolveGitHubToken.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
@@ -69,7 +71,7 @@ function runManifestMode(manifestArg: string): number {
 }
 
 /** Resolve the manifest path for a `--from` source and display its kits. */
-function runFromMode(fromArg: string): number {
+async function runFromMode(fromArg: string): Promise<number> {
   let source;
   try {
     source = parseFromValue(fromArg);
@@ -79,7 +81,13 @@ function runFromMode(fromArg: string): number {
     return 1;
   }
 
-  if (source.type === 'github' || source.type === 'bitbucket') {
+  if (source.type === 'github') {
+    const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
+    const token = resolveGitHubToken();
+    return runRemoteFromMode({ url, token });
+  }
+
+  if (source.type === 'bitbucket') {
     process.stderr.write(`Error: Listing kits from ${source.type} repositories is not yet supported.\n`);
     return 1;
   }
@@ -97,6 +105,26 @@ function runFromMode(fromArg: string): number {
 
   const kitNames = manifest.kits.map((kit) => kit.name);
   const output = formatConsumerView({ compiledKits: kitNames, fromArg, kitsDir: path.dirname(manifestPath) });
+  process.stdout.write(output + '\n');
+  return 0;
+}
+
+/** Fetch and display kits from a remote manifest URL. */
+async function runRemoteFromMode({ url, token }: { url: string; token: string | undefined }): Promise<number> {
+  let manifest;
+  try {
+    manifest = await loadRemoteManifest(token !== undefined ? { url, token } : { url });
+  } catch (error: unknown) {
+    if (error instanceof RemoteManifestNotFoundError) {
+      process.stderr.write(`Error: No manifest found at ${url}. Has \`rdy compile --with-manifest\` been run?\n`);
+      return 1;
+    }
+    const message = extractMessage(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return 1;
+  }
+
+  const output = formatManifestView({ kits: manifest.kits, manifestPath: url });
   process.stdout.write(output + '\n');
   return 0;
 }

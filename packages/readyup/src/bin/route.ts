@@ -124,19 +124,21 @@ Usage: rdy list [options]
 List available kits without running them.
 
 Modes:
-  rdy list                       List internal and compiled kits (owner view)
-  rdy list --from <path>         List compiled kits at a local path (consumer view)
-  rdy list --from global         List compiled kits in the global directory
-  rdy list --from dir:<path>     List kits in an arbitrary directory
+  rdy list                                List internal and compiled kits (owner view)
+  rdy list --from <path>                  List compiled kits at a local path (consumer view)
+  rdy list --from global                  List compiled kits in the global directory
+  rdy list --from dir:<path>              List kits in an arbitrary directory
+  rdy list --from github:org/repo[@ref]   List kits in a remote GitHub repository
 
 Options:
-  --from <source>  Kit source (local path, global, or dir:path)
+  --from <source>  Kit source (github:org/repo[@ref], global, dir:path, or local path)
   --help, -h       Show this help message
 
 Examples:
-  rdy list                Show kits in the current project
-  rdy list --from .       Show compiled kits in the current directory
-  rdy list --from global  Show kits in the global directory
+  rdy list                                       Show kits in the current project
+  rdy list --from .                              Show compiled kits in the current directory
+  rdy list --from global                         Show kits in the global directory
+  rdy list --from github:williamthorsen/workshop Show kits in a remote GitHub repository
 `);
 }
 

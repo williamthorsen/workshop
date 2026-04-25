@@ -3,11 +3,11 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { listCommand } from '../../src/list/listCommand.ts';
-
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
+const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
+const mockFetch = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
@@ -25,6 +25,33 @@ vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
   };
 });
 
+vi.mock('../../src/resolveGitHubToken.ts', () => ({
+  resolveGitHubToken: mockResolveGitHubToken,
+}));
+
+vi.stubGlobal('fetch', mockFetch);
+
+import { listCommand } from '../../src/list/listCommand.ts';
+
+/** Build a minimal mock Response with the given body and status. */
+function mockResponse(
+  body: string,
+  init?: { status?: number; statusText?: string },
+): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
+  return {
+    ok: (init?.status ?? 200) >= 200 && (init?.status ?? 200) < 300,
+    status: init?.status ?? 200,
+    statusText: init?.statusText ?? 'OK',
+    text: () => Promise.resolve(body),
+    headers: new Headers(),
+  };
+}
+
+const validRemoteManifestBody = JSON.stringify({
+  version: 1,
+  kits: [{ name: 'default', description: 'General project health checks' }, { name: 'deploy' }],
+});
+
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
   let stderrSpy: MockInstance;
@@ -34,6 +61,7 @@ describe(listCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+    mockResolveGitHubToken.mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -41,6 +69,8 @@ describe(listCommand, () => {
     mockEnumerateKits.mockReset();
     mockLoadConfig.mockReset();
     mockReadManifest.mockReset();
+    mockResolveGitHubToken.mockReset();
+    mockFetch.mockReset();
   });
 
   it('with --from global, reads manifest from the home-based .readyup directory', async () => {
@@ -98,5 +128,87 @@ describe(listCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error:'));
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('URLs are not accepted by --from'));
     expect(mockReadManifest).not.toHaveBeenCalled();
+  });
+
+  it('with --from github:org/repo, fetches and renders the remote manifest', async () => {
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+      { headers: {} },
+    );
+    expect(mockReadManifest).not.toHaveBeenCalled();
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+
+    const stdoutCalls = stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stdoutCalls).toContain(
+      'Manifest: https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+    );
+    expect(stdoutCalls).toContain('default — General project health checks');
+    expect(stdoutCalls).toContain('deploy');
+  });
+
+  it('with --from github:org/repo@ref, builds the URL using the supplied ref', async () => {
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop@develop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/williamthorsen/workshop/develop/.readyup/manifest.json',
+      { headers: {} },
+    );
+  });
+
+  it('with --from github:..., forwards the GitHub token as an Authorization header when available', async () => {
+    mockResolveGitHubToken.mockReturnValue('my-token');
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+      { headers: { Authorization: 'token my-token' } },
+    );
+  });
+
+  it('with --from github:... and a 404 response, writes an actionable stderr message', async () => {
+    mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json. Has `rdy compile --with-manifest` been run?',
+    );
+  });
+
+  it('with --from github:... and an HTML soft-404 body, writes an actionable stderr message', async () => {
+    mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json. Has `rdy compile --with-manifest` been run?',
+    );
+  });
+
+  it('with --from github:... and a malformed manifest, writes a stderr message including the URL and "malformed"', async () => {
+    mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Manifest at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json is malformed:',
+    );
   });
 });
