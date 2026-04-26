@@ -198,4 +198,43 @@ describe(listCommand, () => {
       'Manifest at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json is malformed:',
     );
   });
+
+  it('with --from github:... and a schema-invalid manifest, writes a stderr message including the URL and "malformed"', async () => {
+    mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Manifest at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json is malformed:',
+    );
+  });
+
+  it('with --from github:... and a 500 response, writes a stderr message including the URL and status', async () => {
+    mockFetch.mockResolvedValue(
+      mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
+    );
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Failed to fetch manifest from https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json: 500 Internal Server Error',
+    );
+  });
+
+  it('with --from github:... and a network failure, writes a stderr message including the URL', async () => {
+    mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Failed to reach https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+    );
+    expect(stderrCalls).toContain('ECONNREFUSED');
+  });
 });

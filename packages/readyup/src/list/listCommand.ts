@@ -120,7 +120,9 @@ async function runRemoteFromMode({ url, token }: { url: string; token: string | 
       return 1;
     }
     const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
+    // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteManifest` already include the URL.
+    const detail = message.includes(url) ? message : `Failed to reach ${url}: ${message}`;
+    process.stderr.write(`Error: ${detail}\n`);
     return 1;
   }
 
