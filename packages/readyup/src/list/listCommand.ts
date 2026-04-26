@@ -116,7 +116,7 @@ async function runRemoteFromMode({ url, token }: { url: string; token: string | 
     manifest = await loadRemoteManifest({ url, token });
   } catch (error: unknown) {
     if (error instanceof RemoteManifestNotFoundError) {
-      process.stderr.write(`Error: No manifest found at ${url}. Has \`rdy compile --with-manifest\` been run?\n`);
+      process.stderr.write(`Error: No manifest found at ${url}.\n`);
       return 1;
     }
     const message = extractMessage(error);

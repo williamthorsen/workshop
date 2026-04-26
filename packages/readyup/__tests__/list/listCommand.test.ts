@@ -163,7 +163,7 @@ describe(listCommand, () => {
     );
   });
 
-  it('with --from github:... and a 404 response, writes an actionable stderr message', async () => {
+  it('with --from github:... and a 404 response, writes a stderr message naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
     const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
@@ -171,11 +171,11 @@ describe(listCommand, () => {
     expect(exitCode).toBe(1);
     const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
     expect(stderrCalls).toContain(
-      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json. Has `rdy compile --with-manifest` been run?',
+      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
     );
   });
 
-  it('with --from github:... and an HTML soft-404 body, writes an actionable stderr message', async () => {
+  it('with --from github:... and an HTML soft-404 body, writes a stderr message naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
     const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
@@ -183,7 +183,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(1);
     const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
     expect(stderrCalls).toContain(
-      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json. Has `rdy compile --with-manifest` been run?',
+      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
     );
   });
 
