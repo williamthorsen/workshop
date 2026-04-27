@@ -291,7 +291,7 @@ describe(listCommand, () => {
     );
   });
 
-  it('with --from bitbucket:... and no token, the request goes anonymous', async () => {
+  it('with --from bitbucket:... and BITBUCKET_TOKEN unset, omits the Authorization header', async () => {
     mockResolveBitbucketToken.mockReturnValue(undefined);
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 

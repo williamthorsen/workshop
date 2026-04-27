@@ -119,7 +119,7 @@ async function runRemoteFromMode({
   headers,
 }: {
   url: string;
-  headers: Record<string, string> | undefined;
+  headers?: Record<string, string> | undefined;
 }): Promise<number> {
   let manifest;
   try {

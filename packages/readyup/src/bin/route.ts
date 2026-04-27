@@ -140,7 +140,7 @@ Examples:
   rdy list --from .                                Show compiled kits in the current directory
   rdy list --from global                           Show kits in the global directory
   rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
-  rdy list --from bitbucket:tutorials/markdowndemo Show kits in a remote Bitbucket repository
+  rdy list --from bitbucket:tutorials/markdowndemo@master Show kits in a remote Bitbucket repository
 `);
 }
 
