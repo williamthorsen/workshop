@@ -124,21 +124,23 @@ Usage: rdy list [options]
 List available kits without running them.
 
 Modes:
-  rdy list                                List internal and compiled kits (owner view)
-  rdy list --from <path>                  List compiled kits at a local path (consumer view)
-  rdy list --from global                  List compiled kits in the global directory
-  rdy list --from dir:<path>              List kits in an arbitrary directory
-  rdy list --from github:org/repo[@ref]   List kits in a remote GitHub repository
+  rdy list                                  List internal and compiled kits (owner view)
+  rdy list --from <path>                    List compiled kits at a local path (consumer view)
+  rdy list --from global                    List compiled kits in the global directory
+  rdy list --from dir:<path>                List kits in an arbitrary directory
+  rdy list --from github:org/repo[@ref]     List kits in a remote GitHub repository
+  rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>  Kit source (github:org/repo[@ref], global, dir:path, or local path)
+  --from <source>  Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
   --help, -h       Show this help message
 
 Examples:
-  rdy list                                       Show kits in the current project
-  rdy list --from .                              Show compiled kits in the current directory
-  rdy list --from global                         Show kits in the global directory
-  rdy list --from github:williamthorsen/workshop Show kits in a remote GitHub repository
+  rdy list                                         Show kits in the current project
+  rdy list --from .                                Show compiled kits in the current directory
+  rdy list --from global                           Show kits in the global directory
+  rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
+  rdy list --from bitbucket:tutorials/markdowndemo Show kits in a remote Bitbucket repository
 `);
 }
 

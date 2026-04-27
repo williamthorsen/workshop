@@ -222,13 +222,6 @@ describe(listCommand, () => {
       expect(exitCode).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
     });
-
-    it('returns 1 for bitbucket: scheme with not-yet-supported message', async () => {
-      const exitCode = await listCommand(['--from', 'bitbucket:team/repo']);
-
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('not yet supported'));
-    });
   });
 
   describe('manifest mode', () => {

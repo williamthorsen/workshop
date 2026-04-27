@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
+const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockFetch = vi.hoisted(() => vi.fn());
 
@@ -24,6 +25,10 @@ vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
     readManifest: mockReadManifest,
   };
 });
+
+vi.mock('../../src/resolveBitbucketToken.ts', () => ({
+  resolveBitbucketToken: mockResolveBitbucketToken,
+}));
 
 vi.mock('../../src/resolveGitHubToken.ts', () => ({
   resolveGitHubToken: mockResolveGitHubToken,
@@ -48,6 +53,7 @@ describe(listCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+    mockResolveBitbucketToken.mockReturnValue(undefined);
     mockResolveGitHubToken.mockReturnValue(undefined);
   });
 
@@ -56,6 +62,7 @@ describe(listCommand, () => {
     mockEnumerateKits.mockReset();
     mockLoadConfig.mockReset();
     mockReadManifest.mockReset();
+    mockResolveBitbucketToken.mockReset();
     mockResolveGitHubToken.mockReset();
     mockFetch.mockReset();
   });
@@ -234,6 +241,128 @@ describe(listCommand, () => {
     const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
     expect(stderrCalls).toContain(
       'Failed to reach https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+    );
+    expect(stderrCalls).toContain('ECONNREFUSED');
+  });
+
+  it('with --from bitbucket:ws/repo, fetches and renders the remote manifest', async () => {
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
+      { headers: {} },
+    );
+    expect(mockReadManifest).not.toHaveBeenCalled();
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+
+    const stdoutCalls = stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stdoutCalls).toContain(
+      'Manifest: https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
+    );
+    expect(stdoutCalls).toContain('default — General project health checks');
+    expect(stdoutCalls).toContain('deploy');
+  });
+
+  it('with --from bitbucket:ws/repo@ref, builds the URL using the supplied ref', async () => {
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo@develop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/develop/.readyup/manifest.json',
+      { headers: {} },
+    );
+  });
+
+  it('with --from bitbucket:..., forwards the Bitbucket token as a Bearer Authorization header when available', async () => {
+    mockResolveBitbucketToken.mockReturnValue('bb-token');
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
+      { headers: { Authorization: 'Bearer bb-token' } },
+    );
+  });
+
+  it('with --from bitbucket:... and no token, the request goes anonymous', async () => {
+    mockResolveBitbucketToken.mockReturnValue(undefined);
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
+      { headers: {} },
+    );
+  });
+
+  it('with --from bitbucket:... and a 404 response, writes a stderr message naming the URL', async () => {
+    mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Error: No manifest found at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json.',
+    );
+  });
+
+  it('with --from bitbucket:... and a malformed manifest, writes a stderr message including the URL and "malformed"', async () => {
+    mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Manifest at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json is malformed:',
+    );
+  });
+
+  it('with --from bitbucket:... and a schema-invalid manifest, writes a stderr message including the URL and "malformed"', async () => {
+    mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Manifest at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json is malformed:',
+    );
+  });
+
+  it('with --from bitbucket:... and a 500 response, writes a stderr message including the URL and status', async () => {
+    mockFetch.mockResolvedValue(
+      mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
+    );
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Failed to fetch manifest from https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json: 500 Internal Server Error',
+    );
+  });
+
+  it('with --from bitbucket:... and a network failure, writes a stderr message including the URL', async () => {
+    mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+
+    expect(exitCode).toBe(1);
+    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
+    expect(stderrCalls).toContain(
+      'Failed to reach https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
     );
     expect(stderrCalls).toContain('ECONNREFUSED');
   });

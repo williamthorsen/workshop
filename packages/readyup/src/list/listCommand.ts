@@ -7,6 +7,7 @@ import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
+import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
 import { resolveGitHubToken } from '../resolveGitHubToken.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { enumerateKits } from './enumerateKits.ts';
@@ -84,12 +85,15 @@ async function runFromMode(fromArg: string): Promise<number> {
   if (source.type === 'github') {
     const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
     const token = resolveGitHubToken();
-    return runRemoteFromMode({ url, token });
+    const headers = token !== undefined ? { Authorization: `token ${token}` } : undefined;
+    return runRemoteFromMode({ url, headers });
   }
 
   if (source.type === 'bitbucket') {
-    process.stderr.write(`Error: Listing kits from ${source.type} repositories is not yet supported.\n`);
-    return 1;
+    const url = `https://api.bitbucket.org/2.0/repositories/${source.workspace}/${source.repo}/src/${source.ref}/.readyup/manifest.json`;
+    const token = resolveBitbucketToken();
+    const headers = token !== undefined ? { Authorization: `Bearer ${token}` } : undefined;
+    return runRemoteFromMode({ url, headers });
   }
 
   const manifestPath = resolveFromManifestPath(source);
@@ -110,10 +114,16 @@ async function runFromMode(fromArg: string): Promise<number> {
 }
 
 /** Fetch and display kits from a remote manifest URL. */
-async function runRemoteFromMode({ url, token }: { url: string; token: string | undefined }): Promise<number> {
+async function runRemoteFromMode({
+  url,
+  headers,
+}: {
+  url: string;
+  headers: Record<string, string> | undefined;
+}): Promise<number> {
   let manifest;
   try {
-    manifest = await loadRemoteManifest({ url, token });
+    manifest = await loadRemoteManifest({ url, headers });
   } catch (error: unknown) {
     if (error instanceof RemoteManifestNotFoundError) {
       process.stderr.write(`Error: No manifest found at ${url}.\n`);

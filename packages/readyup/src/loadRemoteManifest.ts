@@ -11,22 +11,18 @@ export class RemoteManifestNotFoundError extends Error {
 
 export interface LoadRemoteManifestOptions {
   url: string;
-  token?: string | undefined;
+  headers?: Record<string, string> | undefined;
 }
 
 /**
  * Fetch, parse, and schema-validate a manifest from a URL.
  *
- * Sends `Authorization: token {token}` (GitHub-style) when a token is provided.
+ * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
+ * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
  * Throws `RemoteManifestNotFoundError` for 404 and HTML soft-404 responses,
  * and a plain `Error` for other non-2xx responses, malformed JSON, and schema-invalid bodies.
  */
-export async function loadRemoteManifest({ url, token }: LoadRemoteManifestOptions): Promise<RdyManifest> {
-  const headers: Record<string, string> = {};
-  if (token !== undefined) {
-    headers.Authorization = `token ${token}`;
-  }
-
+export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManifestOptions): Promise<RdyManifest> {
   const response = await fetch(url, { headers });
 
   if (response.status === 404) {
