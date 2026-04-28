@@ -76,17 +76,20 @@ describe(loadRemoteManifest, () => {
     );
   });
 
-  it('sends Authorization header when token is provided', async () => {
+  it('forwards supplied headers to fetch', async () => {
     mockFetch.mockResolvedValue(mockResponse(validManifestBody));
 
-    await loadRemoteManifest({ url: 'https://example.com/manifest.json', token: 'my-token' });
+    await loadRemoteManifest({
+      url: 'https://example.com/manifest.json',
+      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+    });
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/manifest.json', {
-      headers: { Authorization: 'token my-token' },
+      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
     });
   });
 
-  it('omits Authorization header when no token is provided', async () => {
+  it('calls fetch with empty headers when none are provided', async () => {
     mockFetch.mockResolvedValue(mockResponse(validManifestBody));
 
     await loadRemoteManifest({ url: 'https://example.com/manifest.json' });
