@@ -11,6 +11,7 @@ import { parseArgs } from './parseArgs.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { reportRdy, tallyResult } from './reportRdy.ts';
+import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { meetsThreshold, runRdy } from './runRdy.ts';
@@ -82,9 +83,9 @@ function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, 
   return `https://raw.githubusercontent.com/${org}/${repo}/${ref}/${KITS_DIR}/${kit}${extension}`;
 }
 
-/** Build the Bitbucket raw content URL for a kit. */
+/** Build the Bitbucket Cloud API source URL for a kit. */
 function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit: string, extension: string): string {
-  return `https://bitbucket.org/${workspace}/${repo}/raw/${ref}/${KITS_DIR}/${kit}${extension}`;
+  return `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/src/${ref}/${KITS_DIR}/${kit}${extension}`;
 }
 
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
@@ -340,8 +341,21 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<RdyKit> {
       if (token !== undefined) {
         options.headers = { Authorization: `token ${token}` };
       }
+    } else if (source.url.includes('api.bitbucket.org')) {
+      const token = resolveBitbucketToken();
+      if (token !== undefined) {
+        options.headers = { Authorization: `Bearer ${token}` };
+      }
     }
-    return loadRemoteKit(options);
+
+    try {
+      return await loadRemoteKit(options);
+    } catch (error: unknown) {
+      const message = extractMessage(error);
+      // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteKit` already include the URL.
+      if (message.includes(source.url)) throw error;
+      throw new Error(`Failed to reach ${source.url}: ${message}`);
+    }
   }
 
   try {

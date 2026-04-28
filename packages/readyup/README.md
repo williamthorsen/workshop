@@ -104,6 +104,15 @@ The `--from` flag accepts these source types:
 
 `@ref` defaults to `main` when omitted. Local repo paths look for kits in `<path>/.readyup/kits/`, while `dir:` paths are used directly.
 
+### Authentication for remote sources
+
+Private repositories are accessed via tokens resolved from ambient sources:
+
+- **GitHub** (`--from github:`): reads `GITHUB_TOKEN`; falls back to `gh auth token` when the env var is unset.
+- **Bitbucket** (`--from bitbucket:`): reads `BITBUCKET_TOKEN`.
+
+When no token is available, requests go anonymous and only public repositories will succeed.
+
 ### List
 
 ```
@@ -111,9 +120,9 @@ rdy list                       List internal and compiled kits (owner view)
 rdy list --from <path>         List compiled kits at a local path
 rdy list --from global         List compiled kits in the global directory
 rdy list --from dir:<path>     List kits in an arbitrary directory
+rdy list --from github:org/repo[@ref]      List kits from a GitHub manifest
+rdy list --from bitbucket:ws/repo[@ref]    List kits from a Bitbucket manifest
 ```
-
-Listing from GitHub/Bitbucket sources is not yet supported.
 
 ## Authoring API
 
