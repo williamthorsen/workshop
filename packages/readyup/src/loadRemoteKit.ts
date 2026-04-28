@@ -11,20 +11,17 @@ import { validateKit } from './validateKit.ts';
 
 export interface LoadRemoteKitOptions {
   url: string;
-  token?: string;
+  headers?: Record<string, string> | undefined;
 }
 
 /**
  * Fetch a remote `.js` kit bundle, evaluate it, and return a validated RdyKit.
  *
+ * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
+ * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
  * Writes the fetched content to a temp file for dynamic import, then cleans up.
  */
-export async function loadRemoteKit({ url, token }: LoadRemoteKitOptions): Promise<RdyKit> {
-  const headers: Record<string, string> = {};
-  if (token !== undefined) {
-    headers.Authorization = `token ${token}`;
-  }
-
+export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<RdyKit> {
   const response = await fetch(url, { headers });
 
   if (!response.ok) {

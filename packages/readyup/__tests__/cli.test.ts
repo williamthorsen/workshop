@@ -1250,7 +1250,7 @@ describe(runCommand, () => {
     expect(mockResolveGitHubToken).toHaveBeenCalled();
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
       url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/nmr.js',
-      token: 'token-abc',
+      headers: { Authorization: 'token token-abc' },
     });
     expect(exitCode).toBe(0);
   });
@@ -1275,7 +1275,7 @@ describe(runCommand, () => {
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
       url: 'https://raw.githubusercontent.com/org/repo/v2/.readyup/kits/nmr.js',
     });
-    expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('token');
+    expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('headers');
   });
 
   // URL source tests

@@ -14,20 +14,7 @@ const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
 import { loadRemoteKit } from '../src/loadRemoteKit.ts';
-
-/** Build a minimal mock Response with the given body and status. */
-function mockResponse(
-  body: string,
-  init?: { status?: number; statusText?: string },
-): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
-  return {
-    ok: (init?.status ?? 200) >= 200 && (init?.status ?? 200) < 300,
-    status: init?.status ?? 200,
-    statusText: init?.statusText ?? 'OK',
-    text: () => Promise.resolve(body),
-    headers: new Headers(),
-  };
-}
+import { mockResponse } from './helpers/mockResponse.ts';
 
 describe(loadRemoteKit, () => {
   afterEach(() => {
@@ -61,19 +48,22 @@ describe(loadRemoteKit, () => {
     );
   });
 
-  it('sends authorization header when token is provided', async () => {
+  it('forwards supplied headers to fetch', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    await loadRemoteKit({ url: 'https://example.com/config.js', token: 'my-token' }).catch(() => {
+    await loadRemoteKit({
+      url: 'https://example.com/config.js',
+      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+    }).catch(() => {
       // Expected to throw due to 404
     });
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
-      headers: { Authorization: 'token my-token' },
+      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
     });
   });
 
-  it('does not send authorization header when no token is provided', async () => {
+  it('calls fetch with empty headers when none are provided', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
     await loadRemoteKit({ url: 'https://example.com/config.js' }).catch(() => {
