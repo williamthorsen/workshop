@@ -338,7 +338,7 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<RdyKit> {
     if (source.url.includes('raw.githubusercontent.com')) {
       const token = resolveGitHubToken();
       if (token !== undefined) {
-        options.token = token;
+        options.headers = { Authorization: `token ${token}` };
       }
     }
     return loadRemoteKit(options);
