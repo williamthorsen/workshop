@@ -12,6 +12,7 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
 const mockFormatJsonReport = vi.hoisted(() => vi.fn());
 const mockFormatJsonError = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
+const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/config.ts', () => ({
@@ -53,6 +54,10 @@ vi.mock('../src/formatJsonError.ts', () => ({
 
 vi.mock('../src/resolveGitHubToken.ts', () => ({
   resolveGitHubToken: mockResolveGitHubToken,
+}));
+
+vi.mock('../src/resolveBitbucketToken.ts', () => ({
+  resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
 vi.mock('../src/loadRemoteKit.ts', () => ({
@@ -603,13 +608,15 @@ describe(resolveKitSources, () => {
 
   // -- --from bitbucket: --
 
-  it('resolves --from bitbucket: to a Bitbucket raw URL', () => {
+  it('resolves --from bitbucket: to a Bitbucket Cloud API source URL', () => {
     expect(
       resolve({ fromValue: 'bitbucket:myteam/deploy-checks', kitSpecifiers: [{ kitName: 'deploy', checklists: [] }] }),
     ).toStrictEqual([
       {
         name: 'deploy',
-        source: { url: 'https://bitbucket.org/myteam/deploy-checks/raw/main/.readyup/kits/deploy.js' },
+        source: {
+          url: 'https://api.bitbucket.org/2.0/repositories/myteam/deploy-checks/src/main/.readyup/kits/deploy.js',
+        },
         checklists: [],
       },
     ]);
@@ -619,7 +626,7 @@ describe(resolveKitSources, () => {
     expect(resolve({ fromValue: 'bitbucket:myteam/repo@v2' })).toStrictEqual([
       {
         name: 'default',
-        source: { url: 'https://bitbucket.org/myteam/repo/raw/v2/.readyup/kits/default.js' },
+        source: { url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/v2/.readyup/kits/default.js' },
         checklists: [],
       },
     ]);
@@ -752,6 +759,7 @@ describe(runCommand, () => {
     mockFormatJsonReport.mockReset();
     mockFormatJsonError.mockReset();
     mockResolveGitHubToken.mockReset();
+    mockResolveBitbucketToken.mockReset();
     mockLoadRemoteKit.mockReset();
   });
 
@@ -1278,6 +1286,84 @@ describe(runCommand, () => {
     expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('headers');
   });
 
+  // Bitbucket source tests (via URL with api.bitbucket.org)
+  it('forwards Bitbucket token as Bearer Authorization for Bitbucket Cloud API URLs', async () => {
+    const kit = makeKit();
+    mockResolveBitbucketToken.mockReturnValue('bb-token-xyz');
+    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    const exitCode = await runCommand({
+      kitEntries: [
+        {
+          name: 'deploy',
+          source: { url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/deploy.js' },
+          checklists: [],
+        },
+      ],
+      json: false,
+    });
+
+    expect(mockResolveBitbucketToken).toHaveBeenCalled();
+    expect(mockLoadRemoteKit).toHaveBeenCalledWith({
+      url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/deploy.js',
+      headers: { Authorization: 'Bearer bb-token-xyz' },
+    });
+    expect(exitCode).toBe(0);
+  });
+
+  it('omits Authorization when resolveBitbucketToken returns undefined for Bitbucket URLs', async () => {
+    const kit = makeKit();
+    mockResolveBitbucketToken.mockReturnValue(undefined);
+    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: [
+        {
+          name: 'deploy',
+          source: { url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/v2/.readyup/kits/deploy.js' },
+          checklists: [],
+        },
+      ],
+      json: false,
+    });
+
+    expect(mockLoadRemoteKit).toHaveBeenCalledWith({
+      url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/v2/.readyup/kits/deploy.js',
+    });
+    expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('headers');
+  });
+
+  it('reports a 404 for a Bitbucket URL with the URL in stderr', async () => {
+    const url = 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/missing.js';
+    mockResolveBitbucketToken.mockReturnValue(undefined);
+    mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${url}: 404 Not Found`));
+
+    const exitCode = await runCommand({
+      kitEntries: [{ name: 'missing', source: { url }, checklists: [] }],
+      json: false,
+    });
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(url));
+    expect(exitCode).toBe(1);
+  });
+
+  it('reports a network failure for a Bitbucket URL with the URL in stderr', async () => {
+    const url = 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/deploy.js';
+    mockResolveBitbucketToken.mockReturnValue(undefined);
+    // Raw fetch rejection — no URL in the error message; loadKit must inject it.
+    mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
+
+    const exitCode = await runCommand({
+      kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }],
+      json: false,
+    });
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(url));
+    expect(exitCode).toBe(1);
+  });
+
   // URL source tests
   it('fetches directly for non-GitHub URL source without token resolution', async () => {
     const kit = makeKit();
@@ -1290,21 +1376,23 @@ describe(runCommand, () => {
     });
 
     expect(mockResolveGitHubToken).not.toHaveBeenCalled();
+    expect(mockResolveBitbucketToken).not.toHaveBeenCalled();
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
       url: 'https://example.com/config.js',
     });
     expect(exitCode).toBe(0);
   });
 
-  it('reports remote kit loading errors to stderr', async () => {
+  it('reports remote kit loading errors to stderr, prepending the URL when missing from the message', async () => {
+    const url = 'https://example.com/config.js';
     mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
     const exitCode = await runCommand({
-      kitEntries: [{ name: 'config', source: { url: 'https://example.com/config.js' }, checklists: [] }],
+      kitEntries: [{ name: 'config', source: { url }, checklists: [] }],
       json: false,
     });
 
-    expect(stderrSpy).toHaveBeenCalledWith('Error: Failed to fetch remote kit\n');
+    expect(stderrSpy).toHaveBeenCalledWith(`Error: Failed to reach ${url}: Failed to fetch remote kit\n`);
     expect(exitCode).toBe(1);
   });
 });
