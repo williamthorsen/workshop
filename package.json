@@ -24,14 +24,15 @@
   "devDependencies": {
     "@types/eslint": "9.6.1",
     "@types/node": "24.12.2",
-    "@typescript/native-preview": "7.0.0-dev.20260423.1",
+    "@typescript-eslint/utils": "8.59.1",
+    "@typescript/native-preview": "7.0.0-dev.20260501.1",
     "@vitest/coverage-v8": "4.1.5",
     "@vitest/eslint-plugin": "1.6.16",
-    "@williamthorsen/audit-deps": "0.5.0",
-    "@williamthorsen/eslint-config-typescript": "5.17.3",
-    "@williamthorsen/nmr": "0.12.0",
-    "@williamthorsen/release-kit": "5.0.0",
-    "@williamthorsen/strict-lint": "6.2.2",
+    "@williamthorsen/audit-deps": "0.6.0",
+    "@williamthorsen/eslint-config-typescript": "5.17.4",
+    "@williamthorsen/nmr": "0.12.1",
+    "@williamthorsen/release-kit": "5.1.0",
+    "@williamthorsen/strict-lint": "6.3.0",
     "esbuild": "0.28.0",
     "eslint": "9.39.4",
     "eslint-plugin-import": "2.32.0",
@@ -41,9 +42,9 @@
     "readyup": "workspace:*",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.59.0",
+    "typescript-eslint": "8.59.1",
     "vitest": "4.1.5",
-    "zod": "4.3.6"
+    "zod": "4.4.1"
   },
   "packageManager": "pnpm@10.33.2"
 }

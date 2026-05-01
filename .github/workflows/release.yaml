@@ -18,7 +18,7 @@ on:
           - minor
           - major
       force:
-        description: 'Force a release even when there are no commits since the last tag (requires --bump)'
+        description: 'Force a release even when no commits or no bump-worthy commits exist (defaults to patch; combine with --bump for a different level)'
         required: false
         type: boolean
         default: false

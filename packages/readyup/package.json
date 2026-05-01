@@ -44,7 +44,7 @@
   "dependencies": {
     "jiti": "2.6.1",
     "picomatch": "4.0.4",
-    "zod": "4.3.6"
+    "zod": "4.4.1"
   },
   "devDependencies": {
     "@types/picomatch": "4.0.3"
