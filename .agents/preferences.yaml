@@ -1,14 +1,4 @@
-editors:
-  - extensions: '*.md'
-    name: Webstorm
-    command: webstorm # The file path will be appended to this command
-integrations:
-  jira:
-    enabled: false
+# yaml-language-server: $schema=https://github.com/williamthorsen/codeassembly/raw/main/packages/agents/schemas/preferences.json
 project:
   slug: workshop
-  ticket_prefix: '#'
-repository:
-  default_remote:
-    - name: origin
-      default_branch: main
+  ticket_ref_prefix: '#'
