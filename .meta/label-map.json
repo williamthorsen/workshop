@@ -1,0 +1,23 @@
+{
+  "$schema": "https://github.com/williamthorsen/codeassembly/raw/main/packages/agents/schemas/label-map.json",
+  "types": {
+    "ai": "ai",
+    "ci": "ci",
+    "deprecate": "deprecate",
+    "deps": "dependencies",
+    "docs": "documentation",
+    "feat": "feature",
+    "fix": "fix",
+    "fmt": "formatting",
+    "internal": "utility",
+    "perf": "performance",
+    "refactor": "refactoring",
+    "sec": "security",
+    "tests": "tests",
+    "tooling": "tooling"
+  },
+  "scopes": {
+    "readyup": "scope:readyup",
+    "root": "scope:root"
+  }
+}
