@@ -2,9 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [readyup-v0.20.0] - 2026-05-04
+
+### 🎉 Features
+
+- Add `rdy list --from github:` remote kit listing (#76)
+
+  Adds support for listing kits from a remote GitHub repository via `rdy list --from github:org/repo[@ref]`. The command fetches the manifest from `raw.githubusercontent.com`, validates it against the manifest schema, and renders the kit list in the same format as the local `--from` modes. A `GITHUB_TOKEN` (when present) is forwarded as `Authorization: token …` so private and rate-limited public repos work without extra configuration. Missing manifests, malformed responses, and network failures all produce actionable error messages with the URL in context.
+
+- Add `rdy list --from bitbucket:` remote kit listing (#80)
+
+  Adds support for listing kits from a remote Bitbucket Cloud repository via `rdy list --from bitbucket:workspace/repo[@ref]`. The command fetches the manifest from Bitbucket's documented file-source API endpoint, validates it against the manifest schema, and renders the kit list in the same format as the `--from github:` and local modes. When `BITBUCKET_TOKEN` is set, the request is authenticated as `Authorization: Bearer …` so private and rate-limited public repos work without extra configuration; without a token, public repos still work anonymously.
+
+- Add `rdy run --from bitbucket:` private-repo support (#82)
+
+  Adds support for fetching kits from private Bitbucket repositories with `rdy run --from bitbucket:`. When `BITBUCKET_TOKEN` is set, the request authenticates as that token; when unset, requests go anonymous and continue to work for public repos as before.
+
+  Improves error reporting for all remote kit sources by always including the source URL in stderr, even when the underlying failure (such as a network rejection) carries no URL of its own. This brings `rdy run` to parity with `rdy list`.
+
+### ♻️ Refactoring
+
+- Generalize `loadRemoteKit` to headers-based auth (#81)
+
+  Generalizes the `loadRemoteKit` helper used by `rdy run` to fetch remote kit files: the GitHub-specific `token?: string` option is replaced with a scheme-agnostic `headers?: Record<string, string> | undefined`. Callers now pre-format their own `Authorization` header (and can add proxy or telemetry headers as needed). Behavior for `rdy run --from github:org/repo` is unchanged.
+
 ## [readyup-v0.19.0] - 2026-04-24
 
-### Features
+### 🎉 Features
 
 - Add `discoverWorkspaces` check-util for monorepo-aware kits (#74)
 
@@ -12,13 +36,7 @@ All notable changes to this project will be documented in this file.
 
 ## [readyup-v0.18.0] - 2026-04-23
 
-### Bug fixes
-
-- Allow explicit undefined on optional authoring-type fields (#69)
-
-  Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes.
-
-### Features
+### 🎉 Features
 
 - Detect drift between manifest and compiled kits (#65)
 
@@ -33,15 +51,15 @@ All notable changes to this project will be documented in this file.
   - `isAtRepoRoot(path)` returns `true` only when the path is the top of a working tree, using `git rev-parse --show-cdup` to avoid the path-comparison pitfalls of `--show-toplevel`.
   - `expandHome(path)` expands a leading `~` or `~/` to the user's home directory. Previously this existed as a private `expandTilde` inside `run-git.ts`; it is now exported under a more general name so consumers can reuse the same tilde handling that `runGit` uses internally.
 
+### 🐛 Bug fixes
+
+- Allow explicit undefined on optional authoring-type fields (#69)
+
+  Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes.
+
 ## [readyup-v0.17.0] - 2026-04-17
 
-### Bug fixes
-
-- Prevent authoring deps from being bundled into compiled kit (#61)
-
-  Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files.
-
-### Features
+### 🎉 Features
 
 - Add git freshness check utilities (#50)
 
@@ -55,13 +73,19 @@ All notable changes to this project will be documented in this file.
 
   Enables `rdy list` to discover compiled kits across directory boundaries by reading location data from the manifest instead of scanning the filesystem. `rdy compile` now records each kit's compiled path, source path, and a content hash in the manifest, making cross-directory resolution possible without filesystem traversal
 
-### Refactoring
+### 🐛 Bug fixes
+
+- Prevent authoring deps from being bundled into compiled kit (#61)
+
+  Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files.
+
+### ♻️ Refactoring
 
 - Skip config load for external source flags in `handleRun` (#48)
 
   Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit.
 
-### Tests
+### 🧪 Tests
 
 - Add integration test for `pickJson` compile pipeline (#49)
 
@@ -69,13 +93,7 @@ All notable changes to this project will be documented in this file.
 
 ## [readyup-v0.16.0] - 2026-04-13
 
-### Bug fixes
-
-- Update list hints and README to use positional kit syntax (#43)
-
-  Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command.
-
-### Features
+### 🎉 Features
 
 - Add positional kit arguments and multi-kit execution to `rdy run` (#35)
 
@@ -97,9 +115,15 @@ All notable changes to this project will be documented in this file.
 
   Renames the conventional kits directory from `.rdy/kits/` to `.readyup/kits/` and the config file from `rdy.config.ts` to `readyup.config.ts` across the entire codebase. The `rdy` CLI command name is unchanged — only filesystem conventions adopt the full package name.
 
+### 🐛 Bug fixes
+
+- Update list hints and README to use positional kit syntax (#43)
+
+  Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command.
+
 ## [readyup-v0.15.0] - 2026-04-11
 
-### Features
+### 🎉 Features
 
 - Add `computeHash` and `fileMatchesHash` check utilities (#28)
 
@@ -111,13 +135,7 @@ All notable changes to this project will be documented in this file.
 
 ## [readyup-v0.14.0] - 2026-04-11
 
-### Bug fixes
-
-- Normalize CLI output alignment with uniform-width icons (#17)
-
-  Replace the two narrow `ICON_SKIPPED_*` constants in `reportRdy.ts` with their 2-cell-wide counterparts (⚪ → 🔍 and ⛔ → 🚫), bringing the entire icon set to a uniform terminal cell width. Increase the per-depth nesting indent and the continuation-line lead-in from 2 to 3 spaces each. Wire `compileCommand.ts` to import `ICON_SKIPPED_NA` from `reportRdy.ts` under a local alias `ICON_NO_CHANGES`. Migrate icon-using test assertions across three test files to reference imported constants instead of raw Unicode escape sequences.
-
-### Features
+### 🎉 Features
 
 - Make summary counts severity-aware (#14)
 
@@ -133,7 +151,13 @@ All notable changes to this project will be documented in this file.
 
   Adds generic JSON, multi-file, and command-exists utilities to readyup's `check-utils`, giving kit authors ready-made functions for the common "check several things and report what's missing" pattern. Reimplements the package.json helpers as thin wrappers around the new generic forms, eliminating duplicated parsing logic.
 
-### Refactoring
+### 🐛 Bug fixes
+
+- Normalize CLI output alignment with uniform-width icons (#17)
+
+  Replace the two narrow `ICON_SKIPPED_*` constants in `reportRdy.ts` with their 2-cell-wide counterparts (⚪ → 🔍 and ⛔ → 🚫), bringing the entire icon set to a uniform terminal cell width. Increase the per-depth nesting indent and the continuation-line lead-in from 2 to 3 spaces each. Wire `compileCommand.ts` to import `ICON_SKIPPED_NA` from `reportRdy.ts` under a local alias `ICON_NO_CHANGES`. Migrate icon-using test assertions across three test files to reference imported constants instead of raw Unicode escape sequences.
+
+### ♻️ Refactoring
 
 - Extract shared `extractMessage` into `error-handling.ts` (#24)
 

@@ -1,10 +1,44 @@
 [
   {
+    "version": "0.20.0",
+    "date": "2026-05-04",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add `rdy list --from github:` remote kit listing (#76)",
+            "body": "Adds support for listing kits from a remote GitHub repository via `rdy list --from github:org/repo[@ref]`. The command fetches the manifest from `raw.githubusercontent.com`, validates it against the manifest schema, and renders the kit list in the same format as the local `--from` modes. A `GITHUB_TOKEN` (when present) is forwarded as `Authorization: token …` so private and rate-limited public repos work without extra configuration. Missing manifests, malformed responses, and network failures all produce actionable error messages with the URL in context."
+          },
+          {
+            "description": "Add `rdy list --from bitbucket:` remote kit listing (#80)",
+            "body": "Adds support for listing kits from a remote Bitbucket Cloud repository via `rdy list --from bitbucket:workspace/repo[@ref]`. The command fetches the manifest from Bitbucket's documented file-source API endpoint, validates it against the manifest schema, and renders the kit list in the same format as the `--from github:` and local modes. When `BITBUCKET_TOKEN` is set, the request is authenticated as `Authorization: Bearer …` so private and rate-limited public repos work without extra configuration; without a token, public repos still work anonymously."
+          },
+          {
+            "description": "Add `rdy run --from bitbucket:` private-repo support (#82)",
+            "body": "Adds support for fetching kits from private Bitbucket repositories with `rdy run --from bitbucket:`. When `BITBUCKET_TOKEN` is set, the request authenticates as that token; when unset, requests go anonymous and continue to work for public repos as before.\n\nImproves error reporting for all remote kit sources by always including the source URL in stderr, even when the underlying failure (such as a network rejection) carries no URL of its own. This brings `rdy run` to parity with `rdy list`."
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Generalize `loadRemoteKit` to headers-based auth (#81)",
+            "body": "Generalizes the `loadRemoteKit` helper used by `rdy run` to fetch remote kit files: the GitHub-specific `token?: string` option is replaced with a scheme-agnostic `headers?: Record<string, string> | undefined`. Callers now pre-format their own `Authorization` header (and can add proxy or telemetry headers as needed). Behavior for `rdy run --from github:org/repo` is unchanged."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.19.0",
     "date": "2026-04-24",
     "sections": [
       {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -20,7 +54,7 @@
     "date": "2026-04-23",
     "sections": [
       {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -34,7 +68,7 @@
         ]
       },
       {
-        "title": "Bug fixes",
+        "title": "🐛 Bug fixes",
         "audience": "all",
         "items": [
           {
@@ -50,27 +84,7 @@
     "date": "2026-04-17",
     "sections": [
       {
-        "title": "Refactoring",
-        "audience": "dev",
-        "items": [
-          {
-            "description": "Skip config load for external source flags in `handleRun` (#48)",
-            "body": "Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit."
-          }
-        ]
-      },
-      {
-        "title": "Tests",
-        "audience": "dev",
-        "items": [
-          {
-            "description": "Add integration test for `pickJson` compile pipeline (#49)",
-            "body": "Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`."
-          }
-        ]
-      },
-      {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -88,12 +102,32 @@
         ]
       },
       {
-        "title": "Bug fixes",
+        "title": "🐛 Bug fixes",
         "audience": "all",
         "items": [
           {
             "description": "Prevent authoring deps from being bundled into compiled kit (#61)",
             "body": "Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files."
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Skip config load for external source flags in `handleRun` (#48)",
+            "body": "Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit."
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Add integration test for `pickJson` compile pipeline (#49)",
+            "body": "Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`."
           }
         ]
       }
@@ -104,7 +138,7 @@
     "date": "2026-04-13",
     "sections": [
       {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -130,7 +164,7 @@
         ]
       },
       {
-        "title": "Bug fixes",
+        "title": "🐛 Bug fixes",
         "audience": "all",
         "items": [
           {
@@ -146,7 +180,7 @@
     "date": "2026-04-11",
     "sections": [
       {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -166,7 +200,7 @@
     "date": "2026-04-11",
     "sections": [
       {
-        "title": "Features",
+        "title": "🎉 Features",
         "audience": "all",
         "items": [
           {
@@ -184,7 +218,7 @@
         ]
       },
       {
-        "title": "Bug fixes",
+        "title": "🐛 Bug fixes",
         "audience": "all",
         "items": [
           {
@@ -194,7 +228,7 @@
         ]
       },
       {
-        "title": "Refactoring",
+        "title": "♻️ Refactoring",
         "audience": "dev",
         "items": [
           {
