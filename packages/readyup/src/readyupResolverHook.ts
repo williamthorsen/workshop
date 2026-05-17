@@ -14,6 +14,15 @@
  * intercepted. All other specifiers pass through unchanged. If a third bare
  * specifier ever needs interception, design that case explicitly rather than
  * generalizing this hook.
+ *
+ * **Subpath status (PR #84):** This hook routes any `readyup/<subpath>` specifier
+ * correctly, but the `readyup` package `exports` map currently only declares `"."`
+ * and `"./readyupResolverHook"`. A kit importing `readyup/check-utils` (or any
+ * other subpath) today would receive `ERR_PACKAGE_PATH_NOT_EXPORTED` from Node's
+ * exports enforcement — even though the hook rewrites `parentURL` correctly. The
+ * hook is forward-compatible: PR #85 adds the `readyup/check-utils` subpath
+ * export (and any others), at which point `readyup/<subpath>` imports from
+ * compiled kits will work end-to-end without further hook changes.
  */
 
 /** Data passed from `module.register()` to `initialize()`. */
@@ -58,14 +67,22 @@ export function initialize(data: ReadyupResolverHookData): void {
 /**
  * Resolve hook: routes `readyup` and `readyup/*` specifiers through the runner's
  * own readyup installation by rewriting `parentURL`. All other specifiers are
- * delegated to the default resolver unchanged.
+ * delegated to the default resolver unchanged. Throws if a readyup specifier is
+ * encountered before `initialize()` has been called — silently falling back to
+ * the original `parentURL` would defeat the hook's purpose and produce an opaque
+ * `ERR_MODULE_NOT_FOUND` later.
  */
 export function resolve(
   specifier: string,
   context: ResolveContext,
   nextResolve: NextResolve,
 ): ResolveOutput | Promise<ResolveOutput> {
-  if (isReadyupSpecifier(specifier) && readyupParentURL !== undefined) {
+  if (isReadyupSpecifier(specifier)) {
+    if (readyupParentURL === undefined) {
+      throw new Error(
+        `readyupResolverHook: initialize() was not called before resolve(); hook was registered without the required readyupParentURL data (specifier: "${specifier}")`,
+      );
+    }
     return nextResolve(specifier, { ...context, parentURL: readyupParentURL });
   }
   return nextResolve(specifier, context);

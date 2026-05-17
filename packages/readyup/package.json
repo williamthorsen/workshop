@@ -28,6 +28,10 @@
     ".": {
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
+    },
+    "./readyupResolverHook": {
+      "import": "./dist/esm/readyupResolverHook.js",
+      "types": "./dist/esm/readyupResolverHook.d.ts"
     }
   },
   "bin": {

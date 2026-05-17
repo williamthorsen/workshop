@@ -14,6 +14,7 @@
 
 import module from 'node:module';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
 const argv = process.argv.slice(2);
 const compiledFixturePath = argv[0];
@@ -29,7 +30,7 @@ module.register(hookPath, {
   data: { readyupParentURL: import.meta.url },
 });
 
-const fixtureUrl = new URL(`file://${compiledFixturePath}`).href;
+const fixtureUrl = pathToFileURL(compiledFixturePath).href;
 const fixtureModule = await import(fixtureUrl);
 const kit = fixtureModule.default;
 const firstChecklist = kit?.checklists?.[0];

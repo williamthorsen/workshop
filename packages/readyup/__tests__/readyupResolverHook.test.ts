@@ -39,7 +39,12 @@ describe('readyupResolverHook', () => {
       });
     });
 
-    it("rewrites parentURL for 'readyup/<subpath>' specifiers", () => {
+    it("rewrites parentURL for 'readyup/<subpath>' specifiers in isolation (end-to-end resolution lands with subpath exports in PR #85)", () => {
+      // This verifies the hook's pass-through-with-rewritten-parentURL behavior
+      // in isolation — `nextResolve` is stubbed. End-to-end resolution of
+      // `readyup/check-utils` against the real Node resolver also requires the
+      // package `exports` map to declare the subpath (currently it does not;
+      // PR #85 adds those entries). The hook is forward-compatible.
       const nextResolve = buildNextResolve();
       const context = buildContext({ parentURL: KIT_PARENT_URL });
 
@@ -105,6 +110,35 @@ describe('readyupResolverHook', () => {
         importAttributes: expect.any(Object),
         parentURL: 'file:///different/runner/node_modules/readyup/index.js',
       });
+    });
+  });
+
+  describe('when initialize() has not been called', () => {
+    it('throws a descriptive error if a readyup specifier is resolved', async () => {
+      // The module-level `readyupParentURL` is set by `initialize()` (called in
+      // `beforeEach`); reset it by re-importing the module in isolation so the
+      // throw branch is reachable.
+      vi.resetModules();
+      const { resolve: freshResolve } = await import('../src/readyupResolverHook.ts');
+      const nextResolve = buildNextResolve();
+      const context = buildContext({ parentURL: KIT_PARENT_URL });
+
+      expect(() => freshResolve('readyup', context, nextResolve)).toThrow(
+        /readyupResolverHook: initialize\(\) was not called/,
+      );
+      expect(nextResolve).not.toHaveBeenCalled();
+    });
+
+    it('passes non-readyup specifiers through unchanged even if initialize() has not been called', async () => {
+      vi.resetModules();
+      const { resolve: freshResolve } = await import('../src/readyupResolverHook.ts');
+      const nextResolve = buildNextResolve();
+      const context = buildContext({ parentURL: KIT_PARENT_URL });
+
+      void freshResolve('node:fs', context, nextResolve);
+
+      expect(nextResolve).toHaveBeenCalledTimes(1);
+      expect(nextResolve).toHaveBeenCalledWith('node:fs', context);
     });
   });
 });

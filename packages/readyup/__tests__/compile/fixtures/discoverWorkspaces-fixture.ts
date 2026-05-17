@@ -9,11 +9,15 @@ export default defineRdyKit({
         {
           name: 'resolves readyup at runtime',
           check: () => {
-            // Call `discoverWorkspaces` to force the externalized `readyup` specifier
-            // to actually resolve at runtime; the return value is intentionally
-            // discarded so the fixture is independent of the subprocess's filesystem
-            // state. A sentinel on stdout signals successful module resolution.
-            discoverWorkspaces();
+            // Reference `discoverWorkspaces` (a value, not just a type) so esbuild
+            // cannot dead-code-eliminate the externalized `readyup` import. We
+            // verify the binding is a function rather than invoking it — calling
+            // `discoverWorkspaces()` reads from `process.cwd()`, which couples
+            // the resolution signal to the subprocess's filesystem state. The
+            // sentinel on stdout signals successful module resolution alone.
+            if (typeof discoverWorkspaces !== 'function') {
+              throw new TypeError('discoverWorkspaces did not resolve to a function');
+            }
             process.stdout.write('resolved-ok\n');
             return true;
           },
