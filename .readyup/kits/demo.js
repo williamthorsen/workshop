@@ -4,73 +4,8 @@
 
 // .readyup/kits/demo.ts
 import { execFileSync } from "node:child_process";
-
-// packages/readyup/dist/esm/authoring.js
-function defineRdyKit(kit) {
-  return kit;
-}
-
-// packages/readyup/dist/esm/isRecord.js
-function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-// packages/readyup/dist/esm/check-utils/filesystem.js
-import { execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-function fileExists(relativePath) {
-  return existsSync(join(process.cwd(), relativePath));
-}
-function readFile(relativePath) {
-  const fullPath = join(process.cwd(), relativePath);
-  if (!existsSync(fullPath)) return void 0;
-  return readFileSync(fullPath, "utf8");
-}
-function fileContains(relativePath, pattern) {
-  const content = readFile(relativePath);
-  if (content === void 0) return false;
-  return pattern.test(content);
-}
-
-// packages/readyup/dist/esm/safeJsonParse.js
-function safeJsonParse(content) {
-  try {
-    const parsed = JSON.parse(content);
-    return parsed;
-  } catch {
-    return void 0;
-  }
-}
-
-// packages/readyup/dist/esm/check-utils/json.js
-function readJsonFile(relativePath) {
-  const content = readFile(relativePath);
-  if (content === void 0) return void 0;
-  const parsed = safeJsonParse(content);
-  if (!isRecord(parsed)) return void 0;
-  return parsed;
-}
-function hasJsonField(relativePath, field, expectedValue) {
-  const data = readJsonFile(relativePath);
-  if (data === void 0) return false;
-  if (expectedValue !== void 0) return data[field] === expectedValue;
-  return field in data;
-}
-
-// packages/readyup/dist/esm/check-utils/package-json.js
-function hasPackageJsonField(field, expectedValue) {
-  return hasJsonField("package.json", field, expectedValue);
-}
-function hasDevDependency(name) {
-  const pkg = readJsonFile("package.json");
-  if (pkg === void 0) return false;
-  const devDeps = pkg.devDependencies;
-  return isRecord(devDeps) && name in devDeps;
-}
-
-// .readyup/kits/demo.ts
-function commandExists2(name) {
+import { defineRdyKit, fileContains, fileExists, hasDevDependency, hasPackageJsonField } from "readyup";
+function commandExists(name) {
   try {
     execFileSync("which", [name], { stdio: "ignore" });
     return true;
@@ -171,13 +106,13 @@ var codeQuality = {
     {
       name: "actionlint is installed",
       severity: "warn",
-      check: () => commandExists2("actionlint"),
+      check: () => commandExists("actionlint"),
       fix: "brew install actionlint \u2014 catches workflow syntax errors before they hit CI"
     },
     {
       name: "jq is installed",
       severity: "recommend",
-      check: () => commandExists2("jq"),
+      check: () => commandExists("jq"),
       fix: "brew install jq \u2014 useful for JSON processing in shell scripts"
     }
   ]
