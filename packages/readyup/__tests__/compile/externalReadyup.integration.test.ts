@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -70,8 +70,7 @@ describe('readyup externalization + resolver-hook integration', () => {
     });
 
     compiledSource = await readFile(compiledFixturePath, 'utf8');
-    const fixtureStat = await stat(compiledFixturePath);
-    compiledSize = fixtureStat.size;
+    compiledSize = Buffer.byteLength(compiledSource, 'utf8');
   });
 
   afterAll(async () => {
@@ -91,10 +90,6 @@ describe('readyup externalization + resolver-hook integration', () => {
     // tree. If `mkdtemp(tmpdir())` ever drops the bundle inside a project, this assertion
     // would silently pass via filesystem walk-up; surface that here for future maintainers.
     expect(outputDir.startsWith(tmpdir())).toBe(true);
-
-    // Stage a sentinel marker for the wrapper to consume; not strictly needed
-    // but documents that the wrapper runs against a fresh working directory.
-    await writeFile(path.join(outputDir, 'marker'), 'subprocess-cwd');
 
     const result = await spawnNode([WRAPPER_PATH, compiledFixturePath, hookOutputPath]);
 

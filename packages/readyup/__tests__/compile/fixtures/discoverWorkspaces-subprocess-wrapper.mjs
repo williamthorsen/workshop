@@ -25,7 +25,7 @@ if (!compiledFixturePath || !hookPath) {
   process.exit(2);
 }
 
-module.register(hookPath, {
+module.register(pathToFileURL(hookPath).href, {
   parentURL: import.meta.url,
   data: { readyupParentURL: import.meta.url },
 });
