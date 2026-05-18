@@ -39,12 +39,7 @@ describe('readyupResolverHook', () => {
       });
     });
 
-    it("rewrites parentURL for 'readyup/<subpath>' specifiers in isolation (end-to-end resolution lands with subpath exports in PR #85)", () => {
-      // This verifies the hook's pass-through-with-rewritten-parentURL behavior
-      // in isolation — `nextResolve` is stubbed. End-to-end resolution of
-      // `readyup/check-utils` against the real Node resolver also requires the
-      // package `exports` map to declare the subpath (currently it does not;
-      // PR #85 adds those entries). The hook is forward-compatible.
+    it("rewrites parentURL for 'readyup/<subpath>' specifiers", () => {
       const nextResolve = buildNextResolve();
       const context = buildContext({ parentURL: KIT_PARENT_URL });
 

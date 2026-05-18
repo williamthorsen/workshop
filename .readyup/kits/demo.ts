@@ -8,7 +8,8 @@
  */
 import { execFileSync } from 'node:child_process';
 
-import { defineRdyKit, fileContains, fileExists, hasDevDependency, hasPackageJsonField } from 'readyup';
+import { defineRdyKit } from 'readyup';
+import { fileContains, fileExists, hasDevDependency, hasPackageJsonField } from 'readyup/check-utils';
 
 /** Return true if a CLI command is available on PATH. */
 function commandExists(name: string): boolean {

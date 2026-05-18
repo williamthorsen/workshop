@@ -141,7 +141,7 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 Reusable check functions for common assertions:
 
 ```ts
-import { fileExists, fileContains, hasPackageJsonField } from 'readyup';
+import { fileExists, fileContains, hasPackageJsonField } from 'readyup/check-utils';
 ```
 
 | Function                                    | Description                                                             |
@@ -172,12 +172,18 @@ import { fileExists, fileContains, hasPackageJsonField } from 'readyup';
 Common filter pattern — get all publishable workspaces:
 
 ```ts
-import { discoverWorkspaces } from 'readyup';
+import { discoverWorkspaces } from 'readyup/check-utils';
 
 const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 ```
 
 Note: `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, negation patterns, or other non-trivial features will raise a clear error with a pointer to file an issue.
+
+## Compatibility
+
+`readyup/check-utils` is the stable, versioned surface for kit-author imports of check utilities. It follows semver: no breaking changes within a major version.
+
+Compiled kits embed nothing of readyup itself — the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when you upgrade readyup across a major, recompile your kits with `rdy compile` so any newly-shipped or changed check utilities are picked up.
 
 ## License
 

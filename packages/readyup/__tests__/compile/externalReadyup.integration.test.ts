@@ -77,8 +77,9 @@ describe('readyup externalization + resolver-hook integration', () => {
     await rm(outputDir, { recursive: true, force: true });
   });
 
-  it("preserves the bare 'readyup' import as a live specifier in the compiled output", () => {
+  it('preserves readyup specifiers as live imports in the compiled output', () => {
     expect(compiledSource).toMatch(/from\s+["']readyup["']/);
+    expect(compiledSource).toMatch(/from\s+["']readyup\/check-utils["']/);
   });
 
   it('compiles the fixture below the 2KB regression threshold', () => {

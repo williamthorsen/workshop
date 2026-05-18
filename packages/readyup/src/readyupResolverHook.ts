@@ -14,15 +14,6 @@
  * intercepted. All other specifiers pass through unchanged. If a third bare
  * specifier ever needs interception, design that case explicitly rather than
  * generalizing this hook.
- *
- * **Subpath status (PR #84):** This hook routes any `readyup/<subpath>` specifier
- * correctly, but the `readyup` package `exports` map currently only declares `"."`
- * and `"./readyupResolverHook"`. A kit importing `readyup/check-utils` (or any
- * other subpath) today would receive `ERR_PACKAGE_PATH_NOT_EXPORTED` from Node's
- * exports enforcement — even though the hook rewrites `parentURL` correctly. The
- * hook is forward-compatible: PR #85 adds the `readyup/check-utils` subpath
- * export (and any others), at which point `readyup/<subpath>` imports from
- * compiled kits will work end-to-end without further hook changes.
  */
 
 /** Data passed from `module.register()` to `initialize()`. */
