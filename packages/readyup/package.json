@@ -50,7 +50,7 @@
     "prepare": "tsx ../../config/generateVersion.ts && tsx ../../config/build.ts && tsc --project tsconfig.generate-typings.json"
   },
   "dependencies": {
-    "jiti": "2.6.1",
+    "jiti": "2.7.0",
     "picomatch": "4.0.4",
     "zod": "4.4.3"
   },
