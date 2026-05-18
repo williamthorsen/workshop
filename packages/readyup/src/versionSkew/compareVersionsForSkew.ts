@@ -23,13 +23,9 @@ interface ParsedVersion {
 function parseSemverTriple(version: string): ParsedVersion | undefined {
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
   if (match === null) return undefined;
-  const [majorRaw, minorRaw, patchRaw] = [match[1], match[2], match[3]];
+  const [, majorRaw, minorRaw, patchRaw] = match;
   if (majorRaw === undefined || minorRaw === undefined || patchRaw === undefined) return undefined;
-  const major = Number(majorRaw);
-  const minor = Number(minorRaw);
-  const patch = Number(patchRaw);
-  if (!Number.isFinite(major) || !Number.isFinite(minor) || !Number.isFinite(patch)) return undefined;
-  return { major, minor, patch };
+  return { major: Number(majorRaw), minor: Number(minorRaw), patch: Number(patchRaw) };
 }
 
 /** Look up a numeric segment by its leftmost-non-zero index (0=major, 1=minor, 2=patch). */
