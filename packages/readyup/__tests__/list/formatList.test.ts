@@ -234,6 +234,47 @@ describe(formatManifestView, () => {
 
     expect(result).toBe('No kits found in manifest: .readyup/manifest.json');
   });
+
+  it('renders readyup version as a parenthetical between name and description', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'default', description: 'General project health checks', readyupVersion: '0.20.0' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    expect(result).toContain('📦 default (readyup v0.20.0) — General project health checks');
+  });
+
+  it('renders version-only parenthetical when description is absent', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'deploy', readyupVersion: '0.19.2' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    const lines = result.split('\n');
+    const kitLine = lines.find((l) => l.includes('deploy'));
+    expect(kitLine).toBe('  📦 deploy (readyup v0.19.2)');
+  });
+
+  it('omits the version parenthetical entirely when readyupVersion is absent', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'legacy', description: 'Older kit' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    expect(result).toContain('📦 legacy — Older kit');
+    expect(result).not.toContain('readyup v');
+  });
+
+  it('omits both segments when both version and description are absent', () => {
+    const result = formatManifestView({
+      kits: [{ name: 'bare' }],
+      manifestPath: '.readyup/manifest.json',
+    });
+
+    const lines = result.split('\n');
+    const kitLine = lines.find((l) => l.includes('bare'));
+    expect(kitLine).toBe('  📦 bare');
+  });
 });
 
 describe(formatEmpty, () => {

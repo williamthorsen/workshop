@@ -54,6 +54,7 @@ vi.mock('../src/verify/checkDrift.ts', () => ({
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
+import { VERSION } from '../src/version.ts';
 
 describe(compileCommand, () => {
   let stdoutSpy: MockInstance;
@@ -362,12 +363,14 @@ describe(compileCommand, () => {
           name: 'alpha',
           description: 'Alpha checks',
           path: expect.stringContaining('alpha.js'),
+          readyupVersion: VERSION,
           source: expect.stringContaining('alpha.ts'),
           targetHash: 'aaaa1111',
         },
         {
           name: 'beta',
           path: expect.stringContaining('beta.js'),
+          readyupVersion: VERSION,
           source: expect.stringContaining('beta.ts'),
           targetHash: 'bbbb2222',
         },
@@ -428,6 +431,7 @@ describe(compileCommand, () => {
           name: 'deploy',
           description: 'Deploy checks',
           path: expect.stringContaining('deploy.js'),
+          readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
           targetHash: 'deadbeef',
         },
@@ -450,6 +454,7 @@ describe(compileCommand, () => {
         {
           name: 'deploy',
           path: expect.stringContaining('deploy.js'),
+          readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
           targetHash: 'deadbeef',
         },
@@ -474,6 +479,7 @@ describe(compileCommand, () => {
           name: 'deploy',
           description: 'Updated',
           path: expect.stringContaining('deploy.js'),
+          readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
           targetHash: 'deadbeef',
         },
@@ -534,6 +540,39 @@ describe(compileCommand, () => {
 
     expect(mockWriteManifest).toHaveBeenCalledTimes(1);
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
+  });
+
+  it('populates readyupVersion from the runner version on every batch-compile entry', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+    mockCompileConfig
+      .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' })
+      .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+
+    await compileCommand([]);
+
+    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    for (const kit of writtenManifest.kits) {
+      expect(kit.readyupVersion).toBe(VERSION);
+    }
+  });
+
+  it('populates readyupVersion when upserting a single-file compile entry', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockValidateCompiledOutput.mockResolvedValue({});
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    const deployEntry = writtenManifest.kits.find((k) => k.name === 'deploy');
+    assert.ok(deployEntry, 'Expected deploy entry to be present');
+    expect(deployEntry.readyupVersion).toBe(VERSION);
   });
 
   it('maintains alphabetical order when upserting manifest entries', async () => {
@@ -676,5 +715,38 @@ describe(compileCommand, () => {
     await compileCommand([]);
 
     expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('skipped due to drift'));
+  });
+
+  it('warns on stderr when the existing manifest is unreadable during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts']);
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Unexpected token in JSON at position 0');
+    });
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unexpected token in JSON'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
+  });
+
+  it('is silent when the manifest is missing during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts']);
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    expect(stderrSpy).not.toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
   });
 });

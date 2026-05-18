@@ -20,6 +20,7 @@ vi.mock(import('node:fs'), () => ({
 }));
 
 import { compileConfig } from '../src/compile/compileConfig.ts';
+import { VERSION } from '../src/version.ts';
 
 /** Build a mock esbuild result with the given output text. */
 function buildResult(text: string) {
@@ -52,6 +53,19 @@ describe(compileConfig, () => {
       banner: { js: expect.stringContaining('@generated') },
       write: false,
     });
+  });
+
+  it('embeds an export of __readyupVersion in the banner', async () => {
+    mockBuild.mockResolvedValue(buildResult('compiled'));
+    mockExistsSync.mockReturnValue(false);
+
+    await compileConfig('config/readyup.config.ts');
+
+    expect(mockBuild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        banner: { js: expect.stringContaining(`export const __readyupVersion = ${JSON.stringify(VERSION)};`) },
+      }),
+    );
   });
 
   it('returns the resolved output path', async () => {

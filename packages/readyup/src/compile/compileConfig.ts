@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
+import { VERSION } from '../version.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 
 /** Result of a successful compilation. */
@@ -11,10 +12,16 @@ export interface CompileResult {
   targetHash: string;
 }
 
-/** Generated-file header prepended to compiled output. */
+/**
+ * Generated-file header prepended to compiled output.
+ *
+ * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
+ * readyup version a kit was compiled against and the runner's own version at execution time.
+ */
 const GENERATED_HEADER = [
   '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
   '/* eslint-disable */',
+  `export const __readyupVersion = ${JSON.stringify(VERSION)};`,
   '',
 ].join('\n');
 

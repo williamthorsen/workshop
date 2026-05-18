@@ -32,7 +32,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const kit = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
 
     expect(kit.checklists).toHaveLength(1);
     expect(kit.checklists[0].name).toBe('test');
@@ -56,7 +56,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const kit = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
 
     expect(kit.fixLocation).toBe('inline');
   });
@@ -69,8 +69,49 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const kit = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
 
     expect(kit.fixLocation).toBeUndefined();
+  });
+
+  it('returns compileTimeVersion when __readyupVersion is exported as a string', async () => {
+    const jsBody = `
+      export const __readyupVersion = '0.19.2';
+      export const checklists = [
+        { name: 'test', checks: [{ name: 'check-a', check: () => true }] },
+      ];
+    `;
+    mockFetch.mockResolvedValue(mockResponse(jsBody));
+
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+
+    expect(compileTimeVersion).toBe('0.19.2');
+  });
+
+  it('returns undefined compileTimeVersion when __readyupVersion is absent', async () => {
+    const jsBody = `
+      export const checklists = [
+        { name: 'test', checks: [{ name: 'check-a', check: () => true }] },
+      ];
+    `;
+    mockFetch.mockResolvedValue(mockResponse(jsBody));
+
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+
+    expect(compileTimeVersion).toBeUndefined();
+  });
+
+  it('returns undefined compileTimeVersion when __readyupVersion is not a string', async () => {
+    const jsBody = `
+      export const __readyupVersion = 42;
+      export const checklists = [
+        { name: 'test', checks: [{ name: 'check-a', check: () => true }] },
+      ];
+    `;
+    mockFetch.mockResolvedValue(mockResponse(jsBody));
+
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+
+    expect(compileTimeVersion).toBeUndefined();
   });
 });

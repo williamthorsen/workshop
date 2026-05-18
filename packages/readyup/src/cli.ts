@@ -2,7 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { buildKitFilename } from './buildKitFilename.ts';
-import { loadRdyKit } from './config.ts';
+import { type LoadedRdyKit, loadRdyKit } from './config.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
@@ -26,6 +26,8 @@ import type {
   SummaryCounts,
 } from './types.ts';
 import { extractMessage } from './utils/error-handling.ts';
+import { VERSION } from './version.ts';
+import { compareVersionsForSkew } from './versionSkew/compareVersionsForSkew.ts';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
@@ -333,7 +335,7 @@ interface RunCommandOptions {
 }
 
 /** Load a rdy kit from a path or URL source. */
-async function loadKit(source: KitSource, isJit: boolean): Promise<RdyKit> {
+async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit> {
   if ('url' in source) {
     const options: LoadRemoteKitOptions = { url: source.url };
     if (source.url.includes('raw.githubusercontent.com')) {
@@ -366,6 +368,23 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<RdyKit> {
     }
     throw error;
   }
+}
+
+/**
+ * Emit a directional, advisory stderr warning when a kit's compile-time readyup version skews
+ * from the runner's version above the leftmost-non-zero boundary.
+ *
+ * Silent when the compile-time version is absent (older kit, third-party `--url` source, or
+ * uncompiled `.ts` source via `--jit`) and when the comparator returns no-skew.
+ */
+function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): void {
+  if (compileTimeVersion === undefined) return;
+  const result = compareVersionsForSkew(compileTimeVersion, VERSION);
+  if (result.kind === 'no-skew') return;
+  const remedy = result.direction === 'runner-newer' ? 'Run `rdy compile` to refresh.' : 'Upgrade readyup to match.';
+  process.stderr.write(
+    `Warning: kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}. ${remedy}\n`,
+  );
 }
 
 /** Detect module-not-found errors that mention a specific package name. */
@@ -402,13 +421,16 @@ async function runMultiKitJsonMode(
 
   for (const entry of kitEntries) {
     let kit: RdyKit;
+    let compileTimeVersion: string | undefined;
     try {
-      kit = await loadKit(entry.source, isJit);
+      ({ kit, compileTimeVersion } = await loadKit(entry.source, isJit));
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stdout.write(formatJsonError(message) + '\n');
       return 1;
     }
+
+    warnOnVersionSkew(entry.name, compileTimeVersion);
 
     const thresholds = resolveThresholds(kit, failOn, reportOn);
     let resolvedNames: string[];
@@ -464,13 +486,16 @@ async function runMultiKitHumanMode(
   let allPassed = true;
   for (const entry of kitEntries) {
     let kit: RdyKit;
+    let compileTimeVersion: string | undefined;
     try {
-      kit = await loadKit(entry.source, isJit);
+      ({ kit, compileTimeVersion } = await loadKit(entry.source, isJit));
     } catch (error: unknown) {
       const message = extractMessage(error);
       process.stderr.write(`Error: ${message}\n`);
       return 1;
     }
+
+    warnOnVersionSkew(entry.name, compileTimeVersion);
 
     if (showKitHeader) {
       process.stdout.write(`\n=== ${entry.name} ===\n`);

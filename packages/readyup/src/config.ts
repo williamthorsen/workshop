@@ -7,12 +7,21 @@ import { resolveKitExports } from './resolveKitExports.ts';
 import type { RdyKit } from './types.ts';
 import { validateKit } from './validateKit.ts';
 
+/** Result of loading a rdy kit: the validated kit plus the compile-time readyup version, if embedded. */
+export interface LoadedRdyKit {
+  kit: RdyKit;
+  compileTimeVersion: string | undefined;
+}
+
 /**
  * Load and validate a rdy kit file.
  *
- * Uses jiti to load TypeScript config files at runtime.
+ * Uses jiti to load TypeScript config files at runtime. Returns the validated kit and the
+ * embedded `__readyupVersion` from the imported module namespace when present, or `undefined`
+ * for kits compiled before that field was introduced (and for `.ts` sources, which have no
+ * generated banner).
  */
-export async function loadRdyKit(kitPath: string): Promise<RdyKit> {
+export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
 
   if (!existsSync(resolvedPath)) {
@@ -30,8 +39,17 @@ export async function loadRdyKit(kitPath: string): Promise<RdyKit> {
     'Kit file',
   );
 
+  // Extract __readyupVersion from the raw module namespace before `resolveKitExports` strips it.
+  const compileTimeVersion = readCompileTimeVersion(imported);
+
   const resolved = resolveKitExports(imported);
   assertIsRdyKit(resolved);
   validateKit(resolved);
-  return resolved;
+  return { kit: resolved, compileTimeVersion };
+}
+
+/** Narrow `__readyupVersion` from an imported module namespace to a string, or undefined. */
+function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string | undefined {
+  const value = moduleRecord.__readyupVersion;
+  return typeof value === 'string' ? value : undefined;
 }

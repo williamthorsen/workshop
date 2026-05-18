@@ -93,14 +93,17 @@ export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): strin
 // -- Manifest view --
 
 interface ManifestViewOptions {
-  kits: Array<{ name: string; description?: string | undefined }>;
+  kits: Array<{ name: string; description?: string | undefined; readyupVersion?: string | undefined }>;
   manifestPath: string;
 }
 
 /**
  * Format a view of kits loaded from a manifest file.
  *
- * Kit names are displayed with the compiled icon; descriptions appear inline when present.
+ * Kit names are displayed with the compiled icon. When a kit's `readyupVersion` is present, it
+ * appears as a parenthetical between the name and the description — `📦 <name> (readyup v<X>) — <description>`.
+ * The literal `readyup` label is load-bearing: it disambiguates the version from a hypothetical
+ * kit-own version. Descriptions appear inline when present; both fields are omitted independently.
  */
 export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
   if (kits.length === 0) {
@@ -108,8 +111,9 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
   }
 
   const items = kits.map((kit) => {
-    const suffix = kit.description !== undefined ? ` — ${kit.description}` : '';
-    return `  ${ICON_COMPILED} ${kit.name}${suffix}`;
+    const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
+    const descriptionSegment = kit.description !== undefined ? ` — ${kit.description}` : '';
+    return `  ${ICON_COMPILED} ${kit.name}${versionSegment}${descriptionSegment}`;
   });
 
   return `Manifest: ${manifestPath}\n${items.join('\n')}`;

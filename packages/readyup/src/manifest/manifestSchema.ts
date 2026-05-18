@@ -5,6 +5,7 @@ const ManifestKitSchema = z.object({
   description: z.string().optional(),
   name: z.string().min(1),
   path: z.string().optional(),
+  readyupVersion: z.string().optional(),
   source: z.string().optional(),
   targetHash: z.string().optional(),
 });

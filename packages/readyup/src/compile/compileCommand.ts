@@ -14,6 +14,7 @@ import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
+import { VERSION } from '../version.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
@@ -234,6 +235,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitEntries.push({
         name: kitName,
         path: relOutputPath,
+        readyupVersion: VERSION,
         source: relSourcePath,
         targetHash: result.targetHash,
         ...(metadata.description !== undefined && { description: metadata.description }),
@@ -295,6 +297,7 @@ function upsertManifest(
   const entry: RdyManifestKit = {
     name: kitName,
     path: location.path,
+    readyupVersion: VERSION,
     source: location.source,
     targetHash: location.targetHash,
     ...(metadata.description !== undefined && { description: metadata.description }),
@@ -308,7 +311,7 @@ function upsertManifest(
   writeManifest(manifestPath, { version: 1, kits });
 }
 
-/** Read the manifest and index its kits by name, returning an empty map on any read failure. */
+/** Read the manifest and index its kits by name. Missing manifest is expected (first compile); other failures are surfaced on stderr and treated as a no-op drift gate. */
 function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKit> {
   const map = new Map<string, RdyManifestKit>();
   try {
@@ -316,8 +319,11 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
     for (const kit of manifest.kits) {
       map.set(kit.name, kit);
     }
-  } catch {
-    // Missing or unreadable manifest — drift gate becomes a no-op for this run.
+  } catch (error: unknown) {
+    if (!(error instanceof ManifestNotFoundError)) {
+      const message = extractMessage(error);
+      process.stderr.write(`Warning: ${message} — drift gate skipped\n`);
+    }
   }
   return map;
 }

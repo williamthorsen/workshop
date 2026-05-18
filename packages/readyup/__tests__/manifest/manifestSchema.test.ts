@@ -103,6 +103,51 @@ describe(ManifestSchema, () => {
     expect(result.data.kits[0].targetHash).toBe('e5f6a7b8');
   });
 
+  it('accepts a manifest with readyupVersion as an optional string and preserves it on parse', () => {
+    const input = {
+      version: 1,
+      kits: [
+        {
+          name: 'deploy',
+          path: 'kits/deploy.js',
+          source: 'kits/deploy.ts',
+          targetHash: 'a1b2c3d4',
+          readyupVersion: '0.20.0',
+        },
+      ],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+    assert.ok(result.success);
+    expect(result.data.kits[0]?.readyupVersion).toBe('0.20.0');
+  });
+
+  it('accepts a manifest where readyupVersion is omitted', () => {
+    const input = {
+      version: 1,
+      kits: [{ name: 'deploy' }],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+    assert.ok(result.success);
+    expect(result.data.kits[0]?.readyupVersion).toBeUndefined();
+  });
+
+  it('rejects a manifest where readyupVersion is a non-string value', () => {
+    const input = {
+      version: 1,
+      kits: [{ name: 'deploy', readyupVersion: 42 }],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
+  });
+
   it('rejects a kit with an empty name', () => {
     const input = { version: 1, kits: [{ name: '' }] };
 
