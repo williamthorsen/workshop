@@ -47,7 +47,7 @@ describe(compileConfig, () => {
       format: 'esm',
       platform: 'node',
       target: 'es2022',
-      external: ['node:*'],
+      external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
       write: false,

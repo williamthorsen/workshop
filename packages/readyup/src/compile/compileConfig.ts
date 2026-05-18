@@ -30,8 +30,17 @@ function deriveOutputPath(inputPath: string): string {
 /**
  * Bundle a TypeScript checklist file into a self-contained ESM bundle using esbuild.
  *
- * Node built-in modules are kept external; all other imports are inlined.
- * Prepends a generated-file header comment to the output.
+ * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are
+ * kept external; all other imports are inlined. The externalized `readyup` specifiers
+ * are resolved at runtime by the `rdy` runner's module-resolution hook
+ * (`readyupResolverHook.ts`), which routes them to the runner's own readyup
+ * installation. Prepends a generated-file header comment to the output.
+ *
+ * Note: `readyup/<subpath>` specifiers are listed external so that the bundler
+ * leaves them as live imports, and the hook routes them correctly at runtime.
+ * However, the `readyup` package's `exports` map only declares `"."` at present;
+ * subpath exports (e.g., `readyup/check-utils`) ship in PR #85. Until then,
+ * compiled kits should import from `readyup` only.
  */
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
   const resolvedInput = path.resolve(inputPath);
@@ -53,7 +62,7 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     format: 'esm',
     platform: 'node',
     target: 'es2022',
-    external: ['node:*'],
+    external: ['node:*', 'readyup', 'readyup/*'],
     plugins: [pickJsonPlugin()],
     banner: { js: GENERATED_HEADER },
     write: false,

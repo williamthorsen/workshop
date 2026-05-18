@@ -159,7 +159,7 @@ function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatter
     }
   });
 
-  // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib / Node 20+; this package supports Node 18.17+.
+  // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib; tsconfig target is es2022.
   return [...matched].sort();
 }
 
