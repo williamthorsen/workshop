@@ -4,7 +4,8 @@
 
 // .readyup/kits/demo.ts
 import { execFileSync } from "node:child_process";
-import { defineRdyKit, fileContains, fileExists, hasDevDependency, hasPackageJsonField } from "readyup";
+import { defineRdyKit } from "readyup";
+import { fileContains, fileExists, hasDevDependency, hasPackageJsonField } from "readyup/check-utils";
 function commandExists(name) {
   try {
     execFileSync("which", [name], { stdio: "ignore" });

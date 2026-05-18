@@ -1,4 +1,5 @@
-import { defineRdyKit, discoverWorkspaces } from 'readyup';
+import { defineRdyKit } from 'readyup';
+import { discoverWorkspaces } from 'readyup/check-utils';
 
 export default defineRdyKit({
   description: 'Minimal fixture that exercises a runtime `readyup` import.',

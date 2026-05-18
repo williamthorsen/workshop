@@ -29,6 +29,10 @@
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
+    "./check-utils": {
+      "import": "./dist/esm/check-utils/index.js",
+      "types": "./dist/esm/check-utils/index.d.ts"
+    },
     "./readyupResolverHook": {
       "import": "./dist/esm/readyupResolverHook.js",
       "types": "./dist/esm/readyupResolverHook.d.ts"

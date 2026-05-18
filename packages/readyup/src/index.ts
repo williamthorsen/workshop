@@ -48,37 +48,3 @@ export { pickJson } from './compile/pickJson.ts';
 // Manifest
 export { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 export type { RdyManifest } from './manifest/manifestSchema.ts';
-
-// Check utilities
-export type { DiscoverWorkspacesOptions, Workspace } from './check-utils/index.ts';
-export {
-  commandExists,
-  compareLocalRefs,
-  compareRefToRemote,
-  compareVersions,
-  computeHash,
-  discoverWorkspaces,
-  expandHome,
-  fileContains,
-  fileDoesNotContain,
-  fileExists,
-  fileMatchesHash,
-  filesExist,
-  getJsonValue,
-  hasDevDependency,
-  hasJsonField,
-  hasJsonFields,
-  hasJsonValue,
-  hasMinDevDependencyVersion,
-  hasPackageJsonField,
-  isAtRepoRoot,
-  isGitRepo,
-  isRecord,
-  makeLocalRefSyncCheck,
-  makeRemoteRefSyncCheck,
-  readFile,
-  readJsonFile,
-  readJsonValue,
-  readPackageJson,
-  runGit,
-} from './check-utils/index.ts';
