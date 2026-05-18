@@ -14,6 +14,7 @@ import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
+import { VERSION } from '../version.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
@@ -234,6 +235,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitEntries.push({
         name: kitName,
         path: relOutputPath,
+        readyupVersion: VERSION,
         source: relSourcePath,
         targetHash: result.targetHash,
         ...(metadata.description !== undefined && { description: metadata.description }),
@@ -295,6 +297,7 @@ function upsertManifest(
   const entry: RdyManifestKit = {
     name: kitName,
     path: location.path,
+    readyupVersion: VERSION,
     source: location.source,
     targetHash: location.targetHash,
     ...(metadata.description !== undefined && { description: metadata.description }),

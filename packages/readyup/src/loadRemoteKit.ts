@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { assertIsRdyKit } from './assertIsRdyKit.ts';
+import type { LoadedRdyKit } from './config.ts';
 import { isRecord } from './isRecord.ts';
 import { resolveKitExports } from './resolveKitExports.ts';
-import type { RdyKit } from './types.ts';
 import { validateKit } from './validateKit.ts';
 
 export interface LoadRemoteKitOptions {
@@ -19,9 +19,11 @@ export interface LoadRemoteKitOptions {
  *
  * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
  * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
- * Writes the fetched content to a temp file for dynamic import, then cleans up.
+ * Writes the fetched content to a temp file for dynamic import, then cleans up. Returns the kit
+ * alongside the embedded `__readyupVersion` (undefined for kits compiled before that field existed
+ * or fetched from third-party sources that omit it).
  */
-export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<RdyKit> {
+export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
@@ -47,10 +49,13 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
     // Narrow the module namespace to access exports. `import()` always returns an object,
     // but TypeScript types it as `any`; narrowing avoids unsafe-member-access lint errors.
     const moduleRecord = isRecord(imported) ? imported : {};
+    // Read __readyupVersion from the raw namespace before resolveKitExports drops unknown fields.
+    const versionValue = moduleRecord.__readyupVersion;
+    const compileTimeVersion = typeof versionValue === 'string' ? versionValue : undefined;
     const resolved = resolveKitExports(moduleRecord);
     assertIsRdyKit(resolved);
     validateKit(resolved);
-    return resolved;
+    return { kit: resolved, compileTimeVersion };
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

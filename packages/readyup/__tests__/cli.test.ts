@@ -770,7 +770,7 @@ describe(runCommand, () => {
 
   it('runs all checklists when no checklist filter is given', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
@@ -784,7 +784,7 @@ describe(runCommand, () => {
 
   it('filters to named checklists only', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
@@ -802,7 +802,7 @@ describe(runCommand, () => {
 
   it('errors when an unknown checklist name is given', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
     const exitCode = await runCommand({
       kitEntries: singleKitEntry(['nonexistent']),
@@ -815,7 +815,7 @@ describe(runCommand, () => {
 
   it('returns exit code 1 when any checklist fails', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
@@ -830,7 +830,7 @@ describe(runCommand, () => {
 
   it('passes kit path to local kit loader', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -843,7 +843,7 @@ describe(runCommand, () => {
 
   it('shows checklist headers when running multiple checklists in a single kit', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -858,7 +858,7 @@ describe(runCommand, () => {
 
   it('does not show checklist headers for a single checklist', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -874,7 +874,7 @@ describe(runCommand, () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -892,7 +892,7 @@ describe(runCommand, () => {
 
   it('does not print combined summary when running multiple kits', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -911,7 +911,7 @@ describe(runCommand, () => {
       fixLocation: 'end',
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }], fixLocation: 'inline' }],
     });
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -927,7 +927,7 @@ describe(runCommand, () => {
       fixLocation: 'end',
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -952,7 +952,7 @@ describe(runCommand, () => {
 
   it('prints combined summary for a single kit with multiple checklists', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     mockFormatCombinedSummary.mockReturnValue('Combined summary');
 
@@ -969,7 +969,7 @@ describe(runCommand, () => {
 
   it('does not print combined summary for a single checklist', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue(kit);
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -1020,7 +1020,7 @@ describe(runCommand, () => {
   describe('threshold cascade', () => {
     it('uses CLI --fail-on flag over kit default', async () => {
       const kit = makeKit({ failOn: 'error' });
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
@@ -1034,7 +1034,7 @@ describe(runCommand, () => {
 
     it('falls back to kit failOn when CLI flag is absent', async () => {
       const kit = makeKit({ failOn: 'recommend' });
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
@@ -1047,7 +1047,7 @@ describe(runCommand, () => {
 
     it('falls back to kit reportOn when CLI flag is absent', async () => {
       const kit = makeKit({ reportOn: 'warn' });
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
@@ -1060,7 +1060,7 @@ describe(runCommand, () => {
 
     it('passes reportOn to reportRdy', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
@@ -1074,7 +1074,7 @@ describe(runCommand, () => {
 
     it('passes reportOn to formatJsonReport', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
       mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
 
@@ -1099,7 +1099,7 @@ describe(runCommand, () => {
 
     it('emits JSON output and no human-readable text', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const exitCode = await runCommand({
@@ -1116,7 +1116,7 @@ describe(runCommand, () => {
 
     it('returns exit code 1 when any checklist fails in JSON mode', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy
         .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
         .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
@@ -1145,7 +1145,7 @@ describe(runCommand, () => {
 
     it('emits JSON error to stdout for unknown checklist names', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
       const exitCode = await runCommand({
         kitEntries: singleKitEntry(['nonexistent']),
@@ -1159,7 +1159,7 @@ describe(runCommand, () => {
 
     it('passes kit-grouped entries to formatJsonReport', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       const report1 = { results: [], passed: true, durationMs: 10 };
       const report2 = { results: [], passed: true, durationMs: 20 };
       mockRunRdy.mockResolvedValueOnce(report1).mockResolvedValueOnce(report2);
@@ -1186,7 +1186,7 @@ describe(runCommand, () => {
 
     it('emits JSON error to stdout when runRdy throws', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockRejectedValue(new Error('runner crashed'));
 
       const exitCode = await runCommand({
@@ -1201,7 +1201,7 @@ describe(runCommand, () => {
 
     it('does not write headers in JSON mode', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runCommand({
@@ -1217,7 +1217,7 @@ describe(runCommand, () => {
       const kit = makeKit({
         checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
       });
-      mockLoadRdyKit.mockResolvedValue(kit);
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const exitCode = await runCommand({
@@ -1241,7 +1241,7 @@ describe(runCommand, () => {
   it('resolves token for GitHub raw URLs', async () => {
     const kit = makeKit();
     mockResolveGitHubToken.mockReturnValue('token-abc');
-    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockLoadRemoteKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
@@ -1266,7 +1266,7 @@ describe(runCommand, () => {
   it('omits token when resolveGitHubToken returns undefined for GitHub URLs', async () => {
     const kit = makeKit();
     mockResolveGitHubToken.mockReturnValue(undefined);
-    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockLoadRemoteKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -1290,7 +1290,7 @@ describe(runCommand, () => {
   it('forwards Bitbucket token as Bearer Authorization for Bitbucket Cloud API URLs', async () => {
     const kit = makeKit();
     mockResolveBitbucketToken.mockReturnValue('bb-token-xyz');
-    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockLoadRemoteKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({
@@ -1315,7 +1315,7 @@ describe(runCommand, () => {
   it('omits Authorization when resolveBitbucketToken returns undefined for Bitbucket URLs', async () => {
     const kit = makeKit();
     mockResolveBitbucketToken.mockReturnValue(undefined);
-    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockLoadRemoteKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     await runCommand({
@@ -1367,7 +1367,7 @@ describe(runCommand, () => {
   // URL source tests
   it('fetches directly for non-GitHub URL source without token resolution', async () => {
     const kit = makeKit();
-    mockLoadRemoteKit.mockResolvedValue(kit);
+    mockLoadRemoteKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
     const exitCode = await runCommand({

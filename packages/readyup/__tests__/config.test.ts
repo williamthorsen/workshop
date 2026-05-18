@@ -121,7 +121,7 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ default: { checklists: validChecklists } });
 
-    const kit = await loadRdyKit(KIT_PATH);
+    const { kit } = await loadRdyKit(KIT_PATH);
 
     expect(kit.checklists).toHaveLength(1);
     expect(kit.checklists[0]?.name).toBe('test');
@@ -132,7 +132,7 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ default: { checklists: validChecklists, fixLocation: 'inline' } });
 
-    const kit = await loadRdyKit(KIT_PATH);
+    const { kit } = await loadRdyKit(KIT_PATH);
 
     expect(kit.fixLocation).toBe('inline');
   });
@@ -142,7 +142,7 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ checklists: validChecklists });
 
-    const kit = await loadRdyKit(KIT_PATH);
+    const { kit } = await loadRdyKit(KIT_PATH);
 
     expect(kit.checklists).toHaveLength(1);
     expect(kit.checklists[0]?.name).toBe('test');
@@ -153,7 +153,7 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ checklists: validChecklists, fixLocation: 'inline' });
 
-    const kit = await loadRdyKit(KIT_PATH);
+    const { kit } = await loadRdyKit(KIT_PATH);
 
     expect(kit.fixLocation).toBe('inline');
   });
@@ -163,8 +163,38 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ checklists: validChecklists });
 
-    const kit = await loadRdyKit(KIT_PATH);
+    const { kit } = await loadRdyKit(KIT_PATH);
 
     expect(kit.fixLocation).toBeUndefined();
+  });
+
+  it('returns compileTimeVersion when __readyupVersion is exported as a string', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists, __readyupVersion: '0.19.2' });
+
+    const { compileTimeVersion } = await loadRdyKit(KIT_PATH);
+
+    expect(compileTimeVersion).toBe('0.19.2');
+  });
+
+  it('returns undefined compileTimeVersion when __readyupVersion is absent', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists });
+
+    const { compileTimeVersion } = await loadRdyKit(KIT_PATH);
+
+    expect(compileTimeVersion).toBeUndefined();
+  });
+
+  it('returns undefined compileTimeVersion when __readyupVersion is not a string', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists, __readyupVersion: 42 });
+
+    const { compileTimeVersion } = await loadRdyKit(KIT_PATH);
+
+    expect(compileTimeVersion).toBeUndefined();
   });
 });
