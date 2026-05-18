@@ -1,10 +1,10 @@
 ---
-source: '@williamthorsen/nmr@0.13.0'
+source: '@williamthorsen/nmr@0.14.0'
 ---
 
 # nmr: agent guidance
 
-This file is managed by `@williamthorsen/nmr`. Do not edit — re-run `pnpm exec nmr sync-agent-files` after an nmr upgrade to refresh it.
+This file is managed by `@williamthorsen/nmr`. Do not edit — re-run `nmr sync-agent-files` after an nmr upgrade to refresh it.
 
 ## Discover scripts by running nmr
 
@@ -13,8 +13,20 @@ Run `nmr` with no command (from the monorepo root or any workspace package) to l
 ## Invocation rules
 
 - Use `nmr <command>` for anything nmr provides. Do not use `pnpm run <command>`.
-- Use `pnpm exec nmr`, not `npx nmr`. Inside git worktrees, `npx` can resolve a different nmr binary from outside the working tree.
-- If `nmr` itself fails to run (fresh clone, missing build output), run `pnpm run bootstrap` from the repo root first.
+- You can invoke nmr from the monorepo root or any workspace package.
+
+### How to make `nmr` resolvable
+
+`nmr` ships as a workspace bin. The bare `nmr` command works only when your shell can find `<root>/node_modules/.bin/nmr`. Choose one:
+
+- **direnv** (recommended for contributors). With [direnv](https://direnv.net/) installed, the repo's `.envrc` adds `node_modules/.bin` to your `PATH` automatically. From any subdirectory, bare `nmr` works.
+- **`pnpm exec nmr <command>`** — works without setup. pnpm resolves the bin from the workspace root.
+
+Avoid `npx nmr`. Inside git worktrees, `npx` can resolve a different nmr binary from outside the working tree.
+
+### Bootstrap fallback
+
+If `nmr` itself fails to run (fresh clone, missing build output), run `pnpm run bootstrap` from the repo root first.
 
 ## Root vs. workspace context
 
