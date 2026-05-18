@@ -716,4 +716,37 @@ describe(compileCommand, () => {
 
     expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('skipped due to drift'));
   });
+
+  it('warns on stderr when the existing manifest is unreadable during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts']);
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Unexpected token in JSON at position 0');
+    });
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unexpected token in JSON'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
+  });
+
+  it('is silent when the manifest is missing during batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockReturnValue(['alpha.ts']);
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    expect(stderrSpy).not.toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
+  });
 });
