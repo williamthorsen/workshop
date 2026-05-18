@@ -210,6 +210,44 @@ describe('version-skew warning', () => {
     expect(stderrText()).not.toContain('Warning:');
   });
 
+  it('scopes the warning to the skewing kit when running multiple kits in human mode', async () => {
+    // First kit has skew (compile-time 0.20.0 vs runner 0.21.0); second kit has no compile-time version.
+    mockLoadRdyKit
+      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: '0.20.0' })
+      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: [] },
+        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    const stderr = stderrText();
+    expect(stderr).toContain('Warning: kit "alpha" was compiled against readyup 0.20.0');
+    expect(stderr).not.toContain('kit "beta"');
+  });
+
+  it('scopes the warning to the skewing kit when running multiple kits in JSON mode', async () => {
+    mockLoadRdyKit
+      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: '0.20.0' })
+      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
+    mockFormatJsonReport.mockReturnValue('{"kits":[]}');
+
+    await runCommand({
+      kitEntries: [
+        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: [] },
+        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: [] },
+      ],
+      json: true,
+    });
+
+    const stderr = stderrText();
+    expect(stderr).toContain('Warning: kit "alpha" was compiled against readyup 0.20.0');
+    expect(stderr).not.toContain('kit "beta"');
+  });
+
   it('emits the warning before any checklist runs', async () => {
     mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '0.20.0' });
     const order: string[] = [];

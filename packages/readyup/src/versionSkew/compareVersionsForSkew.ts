@@ -56,11 +56,26 @@ function leftmostNonZeroIndex(version: ParsedVersion): 0 | 1 | 2 | undefined {
  *
  * Returns `no-skew` for identical versions, sub-boundary differences, all-zero compile-time
  * versions, and unparseable inputs.
+ *
+ * When the two versions have different major numbers, direction is determined by the major
+ * comparison alone — the boundary-index logic only applies to within-major comparisons, since
+ * a lower-segment value in a higher-major version (e.g. `1.0.0` vs `0.20.0`) is semantically
+ * newer despite having a numerically smaller minor.
  */
 export function compareVersionsForSkew(compileTime: string, runtime: string): SkewResult {
   const compileTimeParsed = parseSemverTriple(compileTime);
   const runtimeParsed = parseSemverTriple(runtime);
   if (compileTimeParsed === undefined || runtimeParsed === undefined) return { kind: 'no-skew' };
+
+  // When majors differ, the major comparison alone determines direction.
+  // This guards against the cross-boundary inversion that would otherwise occur when
+  // the compile-time boundary index points at a non-major segment.
+  if (runtimeParsed.major !== compileTimeParsed.major) {
+    return {
+      kind: 'skew',
+      direction: runtimeParsed.major > compileTimeParsed.major ? 'runner-newer' : 'runner-older',
+    };
+  }
 
   const boundaryIndex = leftmostNonZeroIndex(compileTimeParsed);
   if (boundaryIndex === undefined) return { kind: 'no-skew' };

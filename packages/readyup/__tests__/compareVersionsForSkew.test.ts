@@ -57,4 +57,23 @@ describe(compareVersionsForSkew, () => {
   it('ignores build metadata suffixes when parsing', () => {
     expect(compareVersionsForSkew('1.2.3+sha.abc', '1.2.3')).toStrictEqual({ kind: 'no-skew' });
   });
+
+  // Cross-major regression: when majors differ, direction must be decided by the major comparison
+  // alone, not by the boundary-index segment. Otherwise `0.20.0 → 1.0.0` would mis-report as
+  // `runner-older` because runtime.minor (0) < compileTime.minor (20).
+  it('reports runner-newer when runtime crosses the major boundary from 0.x.y to 1.y.z', () => {
+    expect(compareVersionsForSkew('0.20.0', '1.0.0')).toStrictEqual({ kind: 'skew', direction: 'runner-newer' });
+  });
+
+  it('reports runner-older when runtime is 0.x.y and compile-time is 1.y.z', () => {
+    expect(compareVersionsForSkew('1.0.0', '0.20.0')).toStrictEqual({ kind: 'skew', direction: 'runner-older' });
+  });
+
+  it('reports runner-newer when runtime crosses multiple majors upward', () => {
+    expect(compareVersionsForSkew('1.5.0', '3.0.0')).toStrictEqual({ kind: 'skew', direction: 'runner-newer' });
+  });
+
+  it('reports runner-older when runtime is multiple majors behind', () => {
+    expect(compareVersionsForSkew('3.0.0', '1.5.0')).toStrictEqual({ kind: 'skew', direction: 'runner-older' });
+  });
 });
