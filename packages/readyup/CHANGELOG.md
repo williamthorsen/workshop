@@ -2,7 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-## [readyup-v0.20.0] - 2026-05-04
+## 0.21.0 — 2026-05-18
+
+### 🎉 Features
+
+- 🚨 **Breaking:** Externalize readyup from compiled kit bundles (#88)
+
+  Compiled `readyup` kits no longer inline the `readyup` package. Imports of `readyup` and `readyup/<subpath>` survive in the compiled output as live specifiers and resolve at run time through the `rdy` runner's own installation.
+
+  The `rdy` runner remains the authoritative source of `readyup` for kits it runs — whether invoked via `npx readyup`, `rdy run --from github:…`, a global install, or any other entrypoint. Kits do not need `readyup` as a project dependency, which preserves use cases where readyup is run against environments with no `package.json`.
+
+  🚨 **Breaking:** Node 20.6 or later is now required (was Node 18.17 or later). The `module.register()` API the runner depends on becomes stable at Node 20.6.
+
+- 🚨 **Breaking:** Move check-utils to dedicated subpath export (#89)
+
+  Check utilities now import from a dedicated `readyup/check-utils` subpath rather than the `readyup` package root. Kit authors must split imports: authoring helpers stay on `readyup`; check utilities like `fileExists` and `discoverWorkspaces` move to `readyup/check-utils`.
+
+  `readyup/check-utils` is the stable surface for these imports. After upgrading readyup across a major boundary, recompile kits with `rdy compile` so newly-shipped or changed check utilities are picked up.
+
+- Embed compile-time readyup version and warn on runtime skew (#90)
+
+  The `rdy` runner now prints an advisory when a compiled kit was built against a different readyup version than the one running it. `rdy list` displays the readyup version against which each kit was compiled.
+
+  When `rdy compile`'s batch mode encounters an unreadable manifest, it now surfaces the error and proceeds as if the manifest were absent. Previously these failures were swallowed silently.
+
+## 0.20.0 — 2026-05-04
 
 ### 🎉 Features
 
@@ -26,7 +50,7 @@ All notable changes to this project will be documented in this file.
 
   Generalizes the `loadRemoteKit` helper used by `rdy run` to fetch remote kit files: the GitHub-specific `token?: string` option is replaced with a scheme-agnostic `headers?: Record<string, string> | undefined`. Callers now pre-format their own `Authorization` header (and can add proxy or telemetry headers as needed). Behavior for `rdy run --from github:org/repo` is unchanged.
 
-## [readyup-v0.19.0] - 2026-04-24
+## 0.19.0 — 2026-04-24
 
 ### 🎉 Features
 
@@ -34,7 +58,7 @@ All notable changes to this project will be documented in this file.
 
   Adds `discoverWorkspaces()` to readyup's `check-utils`, a single helper that enumerates a repo's workspaces across pnpm, npm/yarn, and single-workspace layouts with a uniform return shape. Consumer kits can now answer workspace-iteration questions — including "does this repo have anything publishable?" as `discoverWorkspaces({ filter: (w) => w.isPackage }).length > 0` — without bundling their own `glob` + YAML-parser combination.
 
-## [readyup-v0.18.0] - 2026-04-23
+## 0.18.0 — 2026-04-23
 
 ### 🎉 Features
 
@@ -57,7 +81,7 @@ All notable changes to this project will be documented in this file.
 
   Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes.
 
-## [readyup-v0.17.0] - 2026-04-17
+## 0.17.0 — 2026-04-17
 
 ### 🎉 Features
 
@@ -91,7 +115,7 @@ All notable changes to this project will be documented in this file.
 
   Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`.
 
-## [readyup-v0.16.0] - 2026-04-13
+## 0.16.0 — 2026-04-13
 
 ### 🎉 Features
 
@@ -121,7 +145,7 @@ All notable changes to this project will be documented in this file.
 
   Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command.
 
-## [readyup-v0.15.0] - 2026-04-11
+## 0.15.0 — 2026-04-11
 
 ### 🎉 Features
 
@@ -133,7 +157,7 @@ All notable changes to this project will be documented in this file.
 
   Adds a reusable `safeJsonParse` utility that wraps `JSON.parse` in a try/catch, returning `undefined` on invalid input instead of throwing. Refactors the existing `readJsonFile` check utility to use it, eliminating inline error handling.
 
-## [readyup-v0.14.0] - 2026-04-11
+## 0.14.0 — 2026-04-11
 
 ### 🎉 Features
 
@@ -163,6 +187,4 @@ All notable changes to this project will be documented in this file.
 
   Consolidates 20 inline `error instanceof Error ? error.message : String(error)` occurrences across the `readyup` package into a single shared `extractMessage` utility in `src/utils/error-handling.ts`.
 
-## [readyup-v0.13.0] - 2026-04-08
-
-<!-- generated by git-cliff -->
+<!-- Generated by release-kit. Do not edit this file. Use .meta/changelog-overrides.json to override entries. -->

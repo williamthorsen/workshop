@@ -1,5 +1,34 @@
 [
   {
+    "version": "0.21.0",
+    "date": "2026-05-18",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Externalize readyup from compiled kit bundles (#88)",
+            "body": "Compiled `readyup` kits no longer inline the `readyup` package. Imports of `readyup` and `readyup/<subpath>` survive in the compiled output as live specifiers and resolve at run time through the `rdy` runner's own installation.\n\nThe `rdy` runner remains the authoritative source of `readyup` for kits it runs — whether invoked via `npx readyup`, `rdy run --from github:…`, a global install, or any other entrypoint. Kits do not need `readyup` as a project dependency, which preserves use cases where readyup is run against environments with no `package.json`.\n\n🚨 **Breaking:** Node 20.6 or later is now required (was Node 18.17 or later). The `module.register()` API the runner depends on becomes stable at Node 20.6.",
+            "breaking": true,
+            "hash": "e922cf4df007c96305492f557b130bcde1ee1a61"
+          },
+          {
+            "description": "Move check-utils to dedicated subpath export (#89)",
+            "body": "Check utilities now import from a dedicated `readyup/check-utils` subpath rather than the `readyup` package root. Kit authors must split imports: authoring helpers stay on `readyup`; check utilities like `fileExists` and `discoverWorkspaces` move to `readyup/check-utils`.\n\n`readyup/check-utils` is the stable surface for these imports. After upgrading readyup across a major boundary, recompile kits with `rdy compile` so newly-shipped or changed check utilities are picked up.",
+            "breaking": true,
+            "hash": "15d6664b8272eb3f77e2d761b222a3fe8af8f15a"
+          },
+          {
+            "description": "Embed compile-time readyup version and warn on runtime skew (#90)",
+            "body": "The `rdy` runner now prints an advisory when a compiled kit was built against a different readyup version than the one running it. `rdy list` displays the readyup version against which each kit was compiled.\n\nWhen `rdy compile`'s batch mode encounters an unreadable manifest, it now surfaces the error and proceeds as if the manifest were absent. Previously these failures were swallowed silently.",
+            "hash": "b07c695dff7ef61a23c8f2111130494775cb526f"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.20.0",
     "date": "2026-05-04",
     "sections": [
@@ -9,15 +38,18 @@
         "items": [
           {
             "description": "Add `rdy list --from github:` remote kit listing (#76)",
-            "body": "Adds support for listing kits from a remote GitHub repository via `rdy list --from github:org/repo[@ref]`. The command fetches the manifest from `raw.githubusercontent.com`, validates it against the manifest schema, and renders the kit list in the same format as the local `--from` modes. A `GITHUB_TOKEN` (when present) is forwarded as `Authorization: token …` so private and rate-limited public repos work without extra configuration. Missing manifests, malformed responses, and network failures all produce actionable error messages with the URL in context."
+            "body": "Adds support for listing kits from a remote GitHub repository via `rdy list --from github:org/repo[@ref]`. The command fetches the manifest from `raw.githubusercontent.com`, validates it against the manifest schema, and renders the kit list in the same format as the local `--from` modes. A `GITHUB_TOKEN` (when present) is forwarded as `Authorization: token …` so private and rate-limited public repos work without extra configuration. Missing manifests, malformed responses, and network failures all produce actionable error messages with the URL in context.",
+            "hash": "4274f271ae8cabb9396501888f1637aca6cc5450"
           },
           {
             "description": "Add `rdy list --from bitbucket:` remote kit listing (#80)",
-            "body": "Adds support for listing kits from a remote Bitbucket Cloud repository via `rdy list --from bitbucket:workspace/repo[@ref]`. The command fetches the manifest from Bitbucket's documented file-source API endpoint, validates it against the manifest schema, and renders the kit list in the same format as the `--from github:` and local modes. When `BITBUCKET_TOKEN` is set, the request is authenticated as `Authorization: Bearer …` so private and rate-limited public repos work without extra configuration; without a token, public repos still work anonymously."
+            "body": "Adds support for listing kits from a remote Bitbucket Cloud repository via `rdy list --from bitbucket:workspace/repo[@ref]`. The command fetches the manifest from Bitbucket's documented file-source API endpoint, validates it against the manifest schema, and renders the kit list in the same format as the `--from github:` and local modes. When `BITBUCKET_TOKEN` is set, the request is authenticated as `Authorization: Bearer …` so private and rate-limited public repos work without extra configuration; without a token, public repos still work anonymously.",
+            "hash": "077197b2af306f1dba3e851f66bd901a56733ba9"
           },
           {
             "description": "Add `rdy run --from bitbucket:` private-repo support (#82)",
-            "body": "Adds support for fetching kits from private Bitbucket repositories with `rdy run --from bitbucket:`. When `BITBUCKET_TOKEN` is set, the request authenticates as that token; when unset, requests go anonymous and continue to work for public repos as before.\n\nImproves error reporting for all remote kit sources by always including the source URL in stderr, even when the underlying failure (such as a network rejection) carries no URL of its own. This brings `rdy run` to parity with `rdy list`."
+            "body": "Adds support for fetching kits from private Bitbucket repositories with `rdy run --from bitbucket:`. When `BITBUCKET_TOKEN` is set, the request authenticates as that token; when unset, requests go anonymous and continue to work for public repos as before.\n\nImproves error reporting for all remote kit sources by always including the source URL in stderr, even when the underlying failure (such as a network rejection) carries no URL of its own. This brings `rdy run` to parity with `rdy list`.",
+            "hash": "cf30ea9960de767fca04dbcb3964acc14cba3595"
           }
         ]
       },
@@ -27,7 +59,8 @@
         "items": [
           {
             "description": "Generalize `loadRemoteKit` to headers-based auth (#81)",
-            "body": "Generalizes the `loadRemoteKit` helper used by `rdy run` to fetch remote kit files: the GitHub-specific `token?: string` option is replaced with a scheme-agnostic `headers?: Record<string, string> | undefined`. Callers now pre-format their own `Authorization` header (and can add proxy or telemetry headers as needed). Behavior for `rdy run --from github:org/repo` is unchanged."
+            "body": "Generalizes the `loadRemoteKit` helper used by `rdy run` to fetch remote kit files: the GitHub-specific `token?: string` option is replaced with a scheme-agnostic `headers?: Record<string, string> | undefined`. Callers now pre-format their own `Authorization` header (and can add proxy or telemetry headers as needed). Behavior for `rdy run --from github:org/repo` is unchanged.",
+            "hash": "3f1e4fdf670f77b82db440252b5ea2640dfa2eea"
           }
         ]
       }
@@ -43,7 +76,8 @@
         "items": [
           {
             "description": "Add `discoverWorkspaces` check-util for monorepo-aware kits (#74)",
-            "body": "Adds `discoverWorkspaces()` to readyup's `check-utils`, a single helper that enumerates a repo's workspaces across pnpm, npm/yarn, and single-workspace layouts with a uniform return shape. Consumer kits can now answer workspace-iteration questions — including \"does this repo have anything publishable?\" as `discoverWorkspaces({ filter: (w) => w.isPackage }).length > 0` — without bundling their own `glob` + YAML-parser combination."
+            "body": "Adds `discoverWorkspaces()` to readyup's `check-utils`, a single helper that enumerates a repo's workspaces across pnpm, npm/yarn, and single-workspace layouts with a uniform return shape. Consumer kits can now answer workspace-iteration questions — including \"does this repo have anything publishable?\" as `discoverWorkspaces({ filter: (w) => w.isPackage }).length > 0` — without bundling their own `glob` + YAML-parser combination.",
+            "hash": "bd99840760de86c8ba481932a2124af2d18efce6"
           }
         ]
       }
@@ -59,11 +93,13 @@
         "items": [
           {
             "description": "Detect drift between manifest and compiled kits (#65)",
-            "body": "Adds drift detection for compiled readyup kits so manual or accidental edits to generated `.js` files can no longer be silently erased by `rdy compile`.\n\nAdds a new `rdy verify` subcommand that audits the manifest on demand without mutating anything, reporting each kit as `ok`, `drift`, `missing`, or `unverified` and exiting non-zero when any kit has drifted or is missing."
+            "body": "Adds drift detection for compiled readyup kits so manual or accidental edits to generated `.js` files can no longer be silently erased by `rdy compile`.\n\nAdds a new `rdy verify` subcommand that audits the manifest on demand without mutating anything, reporting each kit as `ok`, `drift`, `missing`, or `unverified` and exiting non-zero when any kit has drifted or is missing.",
+            "hash": "97983e7aa96726469d6b4479e65d834bb53c2c7f"
           },
           {
             "description": "Add isGitRepo, isAtRepoRoot, and expandHome helpers (#72)",
-            "body": "Adds three generic git-path helpers to `readyup`'s `check-utils/git` subpath:\n\n- `isGitRepo(path)` returns `true` when the path is inside a git working tree (subdirectories and worktrees count).\n- `isAtRepoRoot(path)` returns `true` only when the path is the top of a working tree, using `git rev-parse --show-cdup` to avoid the path-comparison pitfalls of `--show-toplevel`.\n- `expandHome(path)` expands a leading `~` or `~/` to the user's home directory. Previously this existed as a private `expandTilde` inside `run-git.ts`; it is now exported under a more general name so consumers can reuse the same tilde handling that `runGit` uses internally."
+            "body": "Adds three generic git-path helpers to `readyup`'s `check-utils/git` subpath:\n\n- `isGitRepo(path)` returns `true` when the path is inside a git working tree (subdirectories and worktrees count).\n- `isAtRepoRoot(path)` returns `true` only when the path is the top of a working tree, using `git rev-parse --show-cdup` to avoid the path-comparison pitfalls of `--show-toplevel`.\n- `expandHome(path)` expands a leading `~` or `~/` to the user's home directory. Previously this existed as a private `expandTilde` inside `run-git.ts`; it is now exported under a more general name so consumers can reuse the same tilde handling that `runGit` uses internally.",
+            "hash": "7c352af93bc36a2210b32dcef4869cb775fe89e1"
           }
         ]
       },
@@ -73,7 +109,8 @@
         "items": [
           {
             "description": "Allow explicit undefined on optional authoring-type fields (#69)",
-            "body": "Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes."
+            "body": "Fixes an issue where TypeScript consumers of `readyup` with `exactOptionalPropertyTypes: true` could not use idiomatic factory patterns to construct public authoring types. No runtime behavior changes.",
+            "hash": "1901888c38266e53d1b854aef281fdea868f056f"
           }
         ]
       }
@@ -89,15 +126,18 @@
         "items": [
           {
             "description": "Add git freshness check utilities (#50)",
-            "body": "Adds git freshness check utilities to readyup's `check-utils` module, enabling kits to verify branch sync state (local-to-local and local-to-remote) without hand-rolling git subprocess calls. The new utilities return discriminated-union results for type-safe status handling and provide check factories with git-status-style diagnostic messages."
+            "body": "Adds git freshness check utilities to readyup's `check-utils` module, enabling kits to verify branch sync state (local-to-local and local-to-remote) without hand-rolling git subprocess calls. The new utilities return discriminated-union results for type-safe status handling and provide check factories with git-status-style diagnostic messages.",
+            "hash": "dea07eeb20f5197ff16cc7c91e8abc62d7ae8898"
           },
           {
             "description": "Add manifest schema and `rdy compile` manifest generation (#54)",
-            "body": "Adds a `.readyup/manifest.json` file that is automatically generated on every `rdy compile` invocation, providing machine-readable kit discovery for external consumers. Batch mode writes the full manifest; single-file mode upserts a single entry. A new `rdy list --manifest` flag reads and displays manifest contents. Kit authors can now supply an optional `description` that flows through to the manifest."
+            "body": "Adds a `.readyup/manifest.json` file that is automatically generated on every `rdy compile` invocation, providing machine-readable kit discovery for external consumers. Batch mode writes the full manifest; single-file mode upserts a single entry. A new `rdy list --manifest` flag reads and displays manifest contents. Kit authors can now supply an optional `description` that flows through to the manifest.",
+            "hash": "4f65f25bf19ad8aaf283d1ace9ef19c1c9b0cba6"
           },
           {
             "description": "Enable cross-directory kit discovery via manifest (#56)",
-            "body": "Enables `rdy list` to discover compiled kits across directory boundaries by reading location data from the manifest instead of scanning the filesystem. `rdy compile` now records each kit's compiled path, source path, and a content hash in the manifest, making cross-directory resolution possible without filesystem traversal"
+            "body": "Enables `rdy list` to discover compiled kits across directory boundaries by reading location data from the manifest instead of scanning the filesystem. `rdy compile` now records each kit's compiled path, source path, and a content hash in the manifest, making cross-directory resolution possible without filesystem traversal",
+            "hash": "7a7bf1de5d7b7df5542141263bd9ba71f4432712"
           }
         ]
       },
@@ -107,7 +147,8 @@
         "items": [
           {
             "description": "Prevent authoring deps from being bundled into compiled kit (#61)",
-            "body": "Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files."
+            "body": "Restores compiled kit bundles produced by rdy compile to their pre-regression size of ~7 KB, eliminating a 76× bloat (~526 KB) where every compiled kit silently inlined the entire zod library and its locale files.",
+            "hash": "ec0eca5a6c27d91fd997db66b90550ad9aa9d663"
           }
         ]
       },
@@ -117,7 +158,8 @@
         "items": [
           {
             "description": "Skip config load for external source flags in `handleRun` (#48)",
-            "body": "Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit."
+            "body": "Aligns `rdy run` with the rule established by `rdy list`: when an external source flag (`--from`, `--file`, `--url`) is active, project config is not loaded. Makes `internalDir` and `internalInfix` optional in `resolveKitSources`, making the API contract explicit.",
+            "hash": "ccce8397bac74a60a5e0f0ddf85ebe43387cda48"
           }
         ]
       },
@@ -127,7 +169,8 @@
         "items": [
           {
             "description": "Add integration test for `pickJson` compile pipeline (#49)",
-            "body": "Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`."
+            "body": "Adds an integration test that exercises the full `pickJson` compile pipeline — plugin registration, JSON inlining, runtime stub elimination, and valid ESM output — using real fixture files and `compileConfig`.",
+            "hash": "8b966836ef46d9f46df72928c662f113e80d32bc"
           }
         ]
       }
@@ -143,23 +186,28 @@
         "items": [
           {
             "description": "Add positional kit arguments and multi-kit execution to `rdy run` (#35)",
-            "body": "Promotes kit names to positional arguments (`rdy run mykit1 mykit2`) and adds colon syntax for per-kit checklist filtering (`mykit:check1,check2`). Removes the `--kit` flag and adds `--checklists` for filtering with `--file`/`--url` sources. Restructures JSON output to use a `kits` array with per-kit summary counts, and supports running multiple kits in a single invocation."
+            "body": "Promotes kit names to positional arguments (`rdy run mykit1 mykit2`) and adds colon syntax for per-kit checklist filtering (`mykit:check1,check2`). Removes the `--kit` flag and adds `--checklists` for filtering with `--file`/`--url` sources. Restructures JSON output to use a `kits` array with per-kit summary counts, and supports running multiple kits in a single invocation.",
+            "hash": "422feebdbbff624412ce8af3313f21ccfe796809"
           },
           {
             "description": "Add utility functions for working with JSON values (#36)",
-            "body": "Adds pure object traversal functions (`getJsonValue`, `hasJsonValue`) for extracting nested values from parsed JSON objects, and a file-level composition (`readJsonValue`) that combines `readJsonFile` with `getJsonValue`. Promotes the existing `isRecord` type guard to the public API."
+            "body": "Adds pure object traversal functions (`getJsonValue`, `hasJsonValue`) for extracting nested values from parsed JSON objects, and a file-level composition (`readJsonValue`) that combines `readJsonFile` with `getJsonValue`. Promotes the existing `isRecord` type guard to the public API.",
+            "hash": "bc6be9d15f476433c63bd098273e43bd8a20b478"
           },
           {
             "description": "Unify kit source selectors into `--from` and default to compiled JS (#38)",
-            "body": "Defaults `rdy run` to compiled `.js` kits and replaces the `--local` and `--github` source flags with a single `--from` flag that uses scheme detection to select the kit source. Adds `--jit` (`-J`) for running from TypeScript source and `--internal` (`-i`) for resolving kits from the configured internal subdirectory."
+            "body": "Defaults `rdy run` to compiled `.js` kits and replaces the `--local` and `--github` source flags with a single `--from` flag that uses scheme detection to select the kit source. Adds `--jit` (`-J`) for running from TypeScript source and `--internal` (`-i`) for resolving kits from the configured internal subdirectory.",
+            "hash": "1697aa98c1b81152626dd0bac244277d09601b2d"
           },
           {
             "description": "Add `pickJson` compile-time JSON inlining (#41)",
-            "body": "Adds compile-time selective JSON field extraction to readyup's esbuild pipeline, so kit authors can inline only specific fields from JSON files instead of bundling the entire file into compiled output."
+            "body": "Adds compile-time selective JSON field extraction to readyup's esbuild pipeline, so kit authors can inline only specific fields from JSON files instead of bundling the entire file into compiled output.",
+            "hash": "45396b373fda859d260955608b9838f963f62829"
           },
           {
             "description": "Rename rdy identifier to readyup (#47)",
-            "body": "Renames the conventional kits directory from `.rdy/kits/` to `.readyup/kits/` and the config file from `rdy.config.ts` to `readyup.config.ts` across the entire codebase. The `rdy` CLI command name is unchanged — only filesystem conventions adopt the full package name."
+            "body": "Renames the conventional kits directory from `.rdy/kits/` to `.readyup/kits/` and the config file from `rdy.config.ts` to `readyup.config.ts` across the entire codebase. The `rdy` CLI command name is unchanged — only filesystem conventions adopt the full package name.",
+            "hash": "ba271394cda838a38d433afa370b997f7d1f3100"
           }
         ]
       },
@@ -169,7 +217,8 @@
         "items": [
           {
             "description": "Update list hints and README to use positional kit syntax (#43)",
-            "body": "Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command."
+            "body": "Fixes the `rdy list` output to show positional kit syntax (`rdy run --jit [<name>]` for internal, `rdy run [<name>]` for compiled) instead of the stale `--kit <name>` flag syntax. Rewrites the README CLI reference to document all current flags, the five `--from` source types, and the `list` command.",
+            "hash": "0ec4c5fa446f95a6d7fd84b93eb1cedc81aaf472"
           }
         ]
       }
@@ -185,11 +234,13 @@
         "items": [
           {
             "description": "Add `computeHash` and `fileMatchesHash` check utilities (#28)",
-            "body": "Adds hash-based file comparison to the check-utils module for detecting drift in configuration files. `computeHash` is a pure function returning a SHA-256 hex digest via `node:crypto`. `fileMatchesHash` composes `readFile` + `computeHash` for ergonomic use in kit checks, returning `false` for missing files consistent with `fileContains`."
+            "body": "Adds hash-based file comparison to the check-utils module for detecting drift in configuration files. `computeHash` is a pure function returning a SHA-256 hex digest via `node:crypto`. `fileMatchesHash` composes `readFile` + `computeHash` for ergonomic use in kit checks, returning `false` for missing files consistent with `fileContains`.",
+            "hash": "6fd1126b4f9fbab43c8a5ef5ea07f1d3d16f2123"
           },
           {
             "description": "Add `safeJsonParse` utility for safe JSON parsing (#29)",
-            "body": "Adds a reusable `safeJsonParse` utility that wraps `JSON.parse` in a try/catch, returning `undefined` on invalid input instead of throwing. Refactors the existing `readJsonFile` check utility to use it, eliminating inline error handling."
+            "body": "Adds a reusable `safeJsonParse` utility that wraps `JSON.parse` in a try/catch, returning `undefined` on invalid input instead of throwing. Refactors the existing `readJsonFile` check utility to use it, eliminating inline error handling.",
+            "hash": "721ae7fe4e2d8c7b384793ed4b5c97fc82abfdfa"
           }
         ]
       }
@@ -205,15 +256,18 @@
         "items": [
           {
             "description": "Make summary counts severity-aware (#14)",
-            "body": "Replaces readyup's three-bucket `passed`/`failed`/`skipped`/`allPassed` summary model with a granular `SummaryCounts` shape that tracks failures by severity (`errors`, `warnings`, `recommendations`), skips by reason (`blocked`, `optional`), and carries a `worstSeverity` indicator.\n\nThe new shape is shared across `ChecklistSummary` (console) and `JsonChecklistEntry`/`JsonReport` (JSON). Console output now renders as `🟢 14 passed. Failed: 🔴 1 error, 🟠 1 warning, 🟡 2 recommendations. Skipped: ⛔ 5 blocked, ⚪ 2 optional` with zero-count entries and empty groups omitted, and combined-summary row icons reflect the worst failed severity per checklist instead of a binary 🟢/🔴 split."
+            "body": "Replaces readyup's three-bucket `passed`/`failed`/`skipped`/`allPassed` summary model with a granular `SummaryCounts` shape that tracks failures by severity (`errors`, `warnings`, `recommendations`), skips by reason (`blocked`, `optional`), and carries a `worstSeverity` indicator.\n\nThe new shape is shared across `ChecklistSummary` (console) and `JsonChecklistEntry`/`JsonReport` (JSON). Console output now renders as `🟢 14 passed. Failed: 🔴 1 error, 🟠 1 warning, 🟡 2 recommendations. Skipped: ⛔ 5 blocked, ⚪ 2 optional` with zero-count entries and empty groups omitted, and combined-summary row icons reflect the worst failed severity per checklist instead of a binary 🟢/🔴 split.",
+            "hash": "7b60743a7f4719bc1ac65fbca8e2dd91fa14561c"
           },
           {
             "description": "Add `rdy list` subcommand for local kit enumeration (#23)",
-            "body": "Adds a `rdy list` subcommand that enumerates available kits from the filesystem without loading or executing kit code. Supports two modes: an owner view that loads project config and shows both internal and compiled kits in separate sections, and an external-consumer view (`--local <path>`) that skips config and shows only compiled kits at the target path."
+            "body": "Adds a `rdy list` subcommand that enumerates available kits from the filesystem without loading or executing kit code. Supports two modes: an owner view that loads project config and shows both internal and compiled kits in separate sections, and an external-consumer view (`--local <path>`) that skips config and shows only compiled kits at the target path.",
+            "hash": "7f35068d3372e81afcaa9a0c37c3523d612b065a"
           },
           {
             "description": "Add utility functions for common check patterns (#26)",
-            "body": "Adds generic JSON, multi-file, and command-exists utilities to readyup's `check-utils`, giving kit authors ready-made functions for the common \"check several things and report what's missing\" pattern. Reimplements the package.json helpers as thin wrappers around the new generic forms, eliminating duplicated parsing logic."
+            "body": "Adds generic JSON, multi-file, and command-exists utilities to readyup's `check-utils`, giving kit authors ready-made functions for the common \"check several things and report what's missing\" pattern. Reimplements the package.json helpers as thin wrappers around the new generic forms, eliminating duplicated parsing logic.",
+            "hash": "3ac8faded5d6f3bf47643bbc5c5ac9a3bbf802d9"
           }
         ]
       },
@@ -223,7 +277,8 @@
         "items": [
           {
             "description": "Normalize CLI output alignment with uniform-width icons (#17)",
-            "body": "Replace the two narrow `ICON_SKIPPED_*` constants in `reportRdy.ts` with their 2-cell-wide counterparts (⚪ → 🔍 and ⛔ → 🚫), bringing the entire icon set to a uniform terminal cell width. Increase the per-depth nesting indent and the continuation-line lead-in from 2 to 3 spaces each. Wire `compileCommand.ts` to import `ICON_SKIPPED_NA` from `reportRdy.ts` under a local alias `ICON_NO_CHANGES`. Migrate icon-using test assertions across three test files to reference imported constants instead of raw Unicode escape sequences."
+            "body": "Replace the two narrow `ICON_SKIPPED_*` constants in `reportRdy.ts` with their 2-cell-wide counterparts (⚪ → 🔍 and ⛔ → 🚫), bringing the entire icon set to a uniform terminal cell width. Increase the per-depth nesting indent and the continuation-line lead-in from 2 to 3 spaces each. Wire `compileCommand.ts` to import `ICON_SKIPPED_NA` from `reportRdy.ts` under a local alias `ICON_NO_CHANGES`. Migrate icon-using test assertions across three test files to reference imported constants instead of raw Unicode escape sequences.",
+            "hash": "34d3ead70340848f2ac15dd457261b3233520798"
           }
         ]
       },
@@ -233,7 +288,8 @@
         "items": [
           {
             "description": "Extract shared `extractMessage` into `error-handling.ts` (#24)",
-            "body": "Consolidates 20 inline `error instanceof Error ? error.message : String(error)` occurrences across the `readyup` package into a single shared `extractMessage` utility in `src/utils/error-handling.ts`."
+            "body": "Consolidates 20 inline `error instanceof Error ? error.message : String(error)` occurrences across the `readyup` package into a single shared `extractMessage` utility in `src/utils/error-handling.ts`.",
+            "hash": "d9402def71273918d9d9b3b6e87bed2dcc054416"
           }
         ]
       }
