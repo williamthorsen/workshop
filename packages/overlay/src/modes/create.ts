@@ -30,26 +30,35 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
     .filter((entry) => entry.outcome === 'created' || entry.outcome === 'deleted')
     .map((entry) => path.join(context.target, entry.path));
 
+  const conflicts = countOutcome(entries, 'conflict');
+  const counts = {
+    created: countOutcome(entries, 'created'),
+    deleted: countOutcome(entries, 'deleted'),
+    forced: 0,
+    conflicts,
+    pending: 0,
+  };
+
   const applyCode =
     applyPaths.length > 0
       ? await runChezmoiStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])
       : 0;
 
+  // A failed file-apply aborts before the scripts pass, mirroring `--force`'s
+  // single apply: don't run normalization scripts against a target whose files
+  // never converged.
+  if (applyCode !== 0) {
+    return { mode: 'create', entries, scripts: { ran: pendingScripts, ok: false }, counts, exitCode: 2 };
+  }
+
   const scriptsCode = pendingScripts > 0 ? await runChezmoiStreamed(context, ['apply', '--include=scripts']) : 0;
-  const ok = applyCode === 0 && scriptsCode === 0;
-  const conflicts = countOutcome(entries, 'conflict');
+  const ok = scriptsCode === 0;
 
   return {
     mode: 'create',
     entries,
-    scripts: { ran: pendingScripts, ok: scriptsCode === 0 },
-    counts: {
-      created: countOutcome(entries, 'created'),
-      deleted: countOutcome(entries, 'deleted'),
-      forced: 0,
-      conflicts,
-      pending: 0,
-    },
+    scripts: { ran: pendingScripts, ok },
+    counts,
     exitCode: computeExitCode(ok, conflicts),
   };
 }

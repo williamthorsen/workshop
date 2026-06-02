@@ -97,6 +97,19 @@ describe(runCreate, () => {
     const result = await runCreate(context);
 
     expect(result.exitCode).toBe(2);
-    expect(result.scripts.ok).toBe(true);
+    expect(result.scripts.ok).toBe(false);
+  });
+
+  it('short-circuits before the scripts pass when the file-apply fails', async () => {
+    mockStatus(' A .new\n R normalize.sh\n');
+    const streamed = vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(1);
+
+    const result = await runCreate(context);
+
+    expect(result.exitCode).toBe(2);
+    // Only the file-apply ran; normalization scripts are never attempted against a half-written target.
+    expect(streamed).toHaveBeenCalledTimes(1);
+    expect(streamed).toHaveBeenCalledWith(context, ['apply', '--include=files,dirs,remove', '--', '/target/.new']);
+    expect(streamed).not.toHaveBeenCalledWith(context, ['apply', '--include=scripts']);
   });
 });
