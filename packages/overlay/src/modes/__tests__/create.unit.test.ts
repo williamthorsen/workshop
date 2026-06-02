@@ -5,14 +5,6 @@ import { runCreate } from '../create.ts';
 
 const context = { source: '/src', target: '/target' };
 
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
-
-function mockStreamed(code: number): ReturnType<typeof vi.spyOn> {
-  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -113,3 +105,13 @@ describe(runCreate, () => {
     expect(streamed).not.toHaveBeenCalledWith(context, ['apply', '--include=scripts']);
   });
 });
+
+/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
+function mockStatus(stdout: string): void {
+  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
+}
+
+/** Stub every streamed `chezmoi apply` to resolve with the given exit code. */
+function mockStreamed(code: number): ReturnType<typeof vi.spyOn> {
+  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
+}

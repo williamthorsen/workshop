@@ -16,8 +16,8 @@ export const MIN_CHEZMOI_VERSION = formatVersion(MINIMUM);
 /**
  * Verify chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
  *
- * Throws an actionable error (which the caller maps to exit 2) when chezmoi is
- * absent, its version cannot be parsed, or it is below the minimum.
+ * Throws an actionable error (which the caller maps to exit 2) when chezmoi is absent, its version cannot be parsed,
+ * or it is below the minimum.
  */
 export async function assertChezmoiVersion(context: ChezmoiContext): Promise<void> {
   const { stdout, code } = await runChezmoiCaptured(context, ['--version']);

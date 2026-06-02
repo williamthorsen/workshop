@@ -3,17 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { formatReport } from '../formatReport.ts';
 import type { OverlayResult } from '../types.ts';
 
-function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
-  return {
-    mode: 'verify',
-    entries: [],
-    scripts: { ran: 0, ok: true },
-    counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
-    exitCode: 0,
-    ...overrides,
-  };
-}
-
 describe(formatReport, () => {
   it('reports a converged target under verify', () => {
     const report = formatReport(buildResult({ mode: 'verify' }));
@@ -96,3 +85,15 @@ describe(formatReport, () => {
     expect(report).toContain('a script failed');
   });
 });
+
+/** Build an `OverlayResult` from a converged-verify baseline, applying the given overrides. */
+function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
+  return {
+    mode: 'verify',
+    entries: [],
+    scripts: { ran: 0, ok: true },
+    counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
+    exitCode: 0,
+    ...overrides,
+  };
+}

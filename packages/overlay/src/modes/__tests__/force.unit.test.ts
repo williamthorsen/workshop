@@ -5,14 +5,6 @@ import { runForce } from '../force.ts';
 
 const context = { source: '/src', target: '/target' };
 
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
-
-function mockApply(code: number): ReturnType<typeof vi.spyOn> {
-  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -50,3 +42,13 @@ describe(runForce, () => {
     expect(result.entries.every((entry) => entry.outcome !== 'conflict')).toBe(true);
   });
 });
+
+/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
+function mockStatus(stdout: string): void {
+  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
+}
+
+/** Stub the streamed `chezmoi apply` to resolve with the given exit code. */
+function mockApply(code: number): ReturnType<typeof vi.spyOn> {
+  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
+}

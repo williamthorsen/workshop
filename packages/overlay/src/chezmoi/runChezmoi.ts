@@ -23,8 +23,8 @@ export interface ChezmoiContext {
 /**
  * Build the chezmoi arguments shared by every invocation.
  *
- * Injects `--source`/`--destination`, the throwaway `--persistent-state` and
- * empty `--config` paths, and `--no-tty`, then the caller's own arguments.
+ * Injects `--source`/`--destination`, the throwaway `--persistent-state` and empty `--config` paths, and `--no-tty`,
+ * then the caller's own arguments.
  */
 function buildArgs(context: ChezmoiContext, persistentStatePath: string, configPath: string, args: string[]): string[] {
   return [
@@ -38,8 +38,8 @@ function buildArgs(context: ChezmoiContext, persistentStatePath: string, configP
 }
 
 /**
- * Run a chezmoi command inside a throwaway state/config sandbox, invoking `body`
- * with the fully-assembled argument list. The sandbox is removed in a `finally`.
+ * Run a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
+ * list. The sandbox is removed in a `finally`.
  */
 async function withSandbox<T>(
   context: ChezmoiContext,
@@ -59,11 +59,10 @@ async function withSandbox<T>(
 }
 
 /**
- * Run chezmoi and capture its output. Used for read-only commands (`status`,
- * `--version`) where overlay needs the text rather than live streaming.
+ * Run chezmoi and capture its output. Used for read-only commands (`status`, `--version`) where overlay needs the
+ * text rather than live streaming.
  *
- * A non-zero exit does not reject: the captured `code` is returned so callers
- * decide how to interpret it.
+ * A non-zero exit does not reject: the captured `code` is returned so callers decide how to interpret it.
  */
 export async function runChezmoiCaptured(context: ChezmoiContext, args: string[]): Promise<CapturedResult> {
   return withSandbox(context, args, async (fullArgs) => {
@@ -77,10 +76,9 @@ export async function runChezmoiCaptured(context: ChezmoiContext, args: string[]
 }
 
 /**
- * Run chezmoi with the child's stdout and stderr inherited to overlay's
- * `process.stderr`, never stdout. Used for every `apply` that may run `run_`
- * scripts, so script output streams live while overlay's stdout stays clean for
- * the reporter or `--json`. Resolves with the child's exit code.
+ * Run chezmoi with the child's stdout and stderr inherited to overlay's `process.stderr`, never stdout. Used for
+ * every `apply` that may run `run_` scripts, so script output streams live while overlay's stdout stays clean for the
+ * reporter or `--json`. Resolves with the child's exit code.
  */
 export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]): Promise<number> {
   return withSandbox(context, args, async (fullArgs) => {

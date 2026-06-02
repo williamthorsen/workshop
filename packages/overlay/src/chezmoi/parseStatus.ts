@@ -12,10 +12,9 @@ const APPLY_CODES = new Set<string>(['A', 'M', 'D', 'R']);
 /**
  * Parse `chezmoi status` output into apply-side entries.
  *
- * `chezmoi status` is git-like with two columns: the first is the source-side
- * code, the second (index 1) is the apply-side code overlay acts on. Each line
- * is `<col1><col2> <path>`. Lines whose apply-side column is blank or not one of
- * `A`/`M`/`D`/`R` (including malformed or short lines) are ignored.
+ * `chezmoi status` is git-like with two columns: the first is the source-side code, the second (index 1) is the
+ * apply-side code overlay acts on. Each line is `<col1><col2> <path>`. Lines whose apply-side column is blank or not
+ * one of `A`/`M`/`D`/`R` (including malformed or short lines) are ignored.
  */
 export function parseStatus(stdout: string): StatusEntry[] {
   const entries: StatusEntry[] = [];

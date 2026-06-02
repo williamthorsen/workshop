@@ -5,10 +5,6 @@ import { runVerify } from '../verify.ts';
 
 const context = { source: '/src', target: '/target' };
 
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -58,3 +54,8 @@ describe(runVerify, () => {
     expect(result.counts.pending).toBe(1);
   });
 });
+
+/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
+function mockStatus(stdout: string): void {
+  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
+}

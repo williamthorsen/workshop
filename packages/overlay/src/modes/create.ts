@@ -8,16 +8,13 @@ import type { OverlayResult } from '../types.ts';
 import { countOutcome, partitionStatus } from './buildEntries.ts';
 
 /**
- * Non-clobbering convergence: create missing entries (`A`), perform native
- * deletions (`D`), run `run_` scripts (`R`), and report differing files (`M`)
- * as conflicts that are never written.
+ * Non-clobbering convergence: create missing entries (`A`), perform native deletions (`D`), run `run_` scripts (`R`),
+ * and report differing files (`M`) as conflicts that are never written.
  *
- * The `A`/`D` set is applied by *absolute* target path so chezmoi touches only
- * those entries. When that set is empty the targeted apply is skipped entirely
- * — a bare `chezmoi apply` would converge *every* file and clobber the `M`
- * entries the mode exists to protect. Scripts run in a separate
- * `--include=scripts` pass. Exit `2` if the file-apply or scripts pass failed,
- * else `1` if any conflicts exist, else `0`.
+ * The `A`/`D` set is applied by *absolute* target path so chezmoi touches only those entries. When that set is empty
+ * the targeted apply is skipped entirely — a bare `chezmoi apply` would converge *every* file and clobber the `M`
+ * entries the mode exists to protect. Scripts run in a separate `--include=scripts` pass. Exit `2` if the file-apply
+ * or scripts pass failed, else `1` if any conflicts exist, else `0`.
  */
 export async function runCreate(context: ChezmoiContext): Promise<OverlayResult> {
   const { entries, pendingScripts } = partitionStatus(parseStatus(await readStatus(context)), {
@@ -44,9 +41,8 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
       ? await runChezmoiStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])
       : 0;
 
-  // A failed file-apply aborts before the scripts pass, mirroring `--force`'s
-  // single apply: don't run normalization scripts against a target whose files
-  // never converged.
+  // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
+  // scripts against a target whose files never converged.
   if (applyCode !== 0) {
     return { mode: 'create', entries, scripts: { ran: pendingScripts, ok: false }, counts, exitCode: 2 };
   }

@@ -13,8 +13,8 @@ export interface PartitionedStatus {
 /**
  * Partition parsed status rows into overlay entries using a mode's outcome map.
  *
- * Rows whose code is absent from the map (other than `R`) are dropped; `R` rows
- * are tallied into `pendingScripts` rather than becoming entries.
+ * Rows whose code is absent from the map (other than `R`) are dropped; `R` rows are tallied into `pendingScripts`
+ * rather than becoming entries.
  */
 export function partitionStatus(status: StatusEntry[], outcomes: OutcomeMap): PartitionedStatus {
   const entries: OverlayEntry[] = [];

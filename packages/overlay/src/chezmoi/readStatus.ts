@@ -4,9 +4,8 @@ import { runChezmoiCaptured } from './runChezmoi.ts';
 /**
  * Read `chezmoi status`, treating a non-zero exit as a hard error.
  *
- * A non-zero `status` exit (missing source dir, rejected flag, config issue)
- * yields empty stdout, which `parseStatus` would read as "no drift" — silently
- * masking the failure as a converged target. Throwing here propagates to the
+ * A non-zero `status` exit (missing source dir, rejected flag, config issue) yields empty stdout, which `parseStatus`
+ * would read as "no drift" — silently masking the failure as a converged target. Throwing here propagates to the
  * top-level handler, which maps it to exit `2`.
  */
 export async function readStatus(context: ChezmoiContext): Promise<string> {

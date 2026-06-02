@@ -17,16 +17,18 @@ export interface OverlayEntry {
   outcome: EntryOutcome;
 }
 
-/** Summary of `run_` script execution. `ran` is the number of pending/run scripts; `ok` is false only if execution failed. */
+/**
+ * Summary of `run_` script execution. `ran` is the number of pending/run scripts; `ok` is false only if execution
+ * failed.
+ */
 export interface ScriptsSummary {
   ran: number;
   ok: boolean;
 }
 
 /**
- * Mode-relative tallies. Under `verify` they count pending drift; under
- * `create`/`force` they count what was actually done. `conflicts` is always
- * `0` under `force`.
+ * Mode-relative tallies. Under `verify` they count pending drift; under `create`/`force` they count what was actually
+ * done. `conflicts` is always `0` under `force`.
  */
 export interface OverlayCounts {
   created: number;

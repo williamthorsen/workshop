@@ -10,11 +10,10 @@ export type ParsedCommand =
 /**
  * Parse overlay's CLI arguments via `node:util.parseArgs`.
  *
- * Accepts `--verify`/`--create`/`--force` (mutually exclusive; default
- * `verify`), `--json`, and `--help`/`-h`. The first positional is the required
- * source directory; the second is the optional target. Throws an `Error` with a
- * user-facing message on unknown options, multiple mode flags, or a missing
- * source. Never calls `console` or `process.exit`.
+ * Accepts `--verify`/`--create`/`--force` (mutually exclusive; default `verify`), `--json`, and `--help`/`-h`. The
+ * first positional is the required source directory; the second is the optional target. Throws an `Error` with a
+ * user-facing message on unknown options, multiple mode flags, or a missing source. Never calls `console` or
+ * `process.exit`.
  */
 export function parseArgs(argv: string[]): ParsedCommand {
   const { values, positionals } = nodeParseArgs({

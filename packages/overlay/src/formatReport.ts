@@ -4,9 +4,8 @@ import { pluralizeWithCount } from './utils/pluralize.ts';
 /**
  * Render an `OverlayResult` as human-readable report text for stdout.
  *
- * Lists per-entry outcomes, a counts summary, the scripts summary (phrased
- * "would run" under verify, "ran" otherwise), and — when conflicts exist — a
- * fix-it hint to re-run with `--force`. Built entirely from the structured
+ * Lists per-entry outcomes, a counts summary, the scripts summary (phrased "would run" under verify, "ran"
+ * otherwise), and — when conflicts exist — a fix-it hint to re-run with `--force`. Built entirely from the structured
  * result; chezmoi's own output never reaches stdout.
  */
 export function formatReport(result: OverlayResult): string {

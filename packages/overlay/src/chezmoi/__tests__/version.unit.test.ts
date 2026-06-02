@@ -6,10 +6,6 @@ import { assertChezmoiVersion, MIN_CHEZMOI_VERSION, parseVersion } from '../vers
 
 const context: ChezmoiContext = { source: '/src', target: '/dst' };
 
-function mockVersionOutput(stdout: string, code = 0): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code });
-}
-
 describe(parseVersion, () => {
   it('extracts the major.minor.patch triple from chezmoi version output', () => {
     expect(parseVersion('chezmoi version v2.70.4, commit abc, built at ...')).toStrictEqual({
@@ -59,3 +55,8 @@ describe(assertChezmoiVersion, () => {
     await expect(assertChezmoiVersion(context)).rejects.toThrow(/could not determine chezmoi version/);
   });
 });
+
+/** Stub `chezmoi --version` to return the given stdout and exit code. */
+function mockVersionOutput(stdout: string, code = 0): void {
+  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code });
+}

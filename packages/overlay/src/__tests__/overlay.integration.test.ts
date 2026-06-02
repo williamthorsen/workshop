@@ -34,21 +34,6 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
   let source: string;
   let target: string;
 
-  /** Build a chezmoi source tree with a new file, a differing file, a native removal, and a sentinel-writing run_ script. */
-  async function buildConvergenceFixture(): Promise<void> {
-    await writeFile(path.join(source, 'dot_newfile'), NEW_CONTENT);
-    await writeFile(path.join(source, 'dot_difffile'), CANONICAL_CONTENT);
-    await writeFile(path.join(source, '.chezmoiremove'), '.removeme\n');
-    await writeFile(
-      path.join(source, 'run_after_normalize.sh'),
-      `#!/bin/sh\necho ran-normalize\nrm -f "${path.join(target, '.planted')}"\ntouch "${path.join(target, '.sentinel')}"\n`,
-    );
-
-    await writeFile(path.join(target, '.difffile'), LOCAL_CONTENT);
-    await writeFile(path.join(target, '.removeme'), 'to be removed\n');
-    await writeFile(path.join(target, '.planted'), 'planted\n');
-  }
-
   beforeEach(async () => {
     source = await mkdtemp(path.join(tmpdir(), 'overlay-src-'));
     target = await mkdtemp(path.join(tmpdir(), 'overlay-dst-'));
@@ -116,4 +101,19 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     expect(result.exitCode).toBe(2);
     expect(result.scripts.ok).toBe(false);
   });
+
+  /** Build a chezmoi source tree with a new file, a differing file, a native removal, and a sentinel-writing run_ script. */
+  async function buildConvergenceFixture(): Promise<void> {
+    await writeFile(path.join(source, 'dot_newfile'), NEW_CONTENT);
+    await writeFile(path.join(source, 'dot_difffile'), CANONICAL_CONTENT);
+    await writeFile(path.join(source, '.chezmoiremove'), '.removeme\n');
+    await writeFile(
+      path.join(source, 'run_after_normalize.sh'),
+      `#!/bin/sh\necho ran-normalize\nrm -f "${path.join(target, '.planted')}"\ntouch "${path.join(target, '.sentinel')}"\n`,
+    );
+
+    await writeFile(path.join(target, '.difffile'), LOCAL_CONTENT);
+    await writeFile(path.join(target, '.removeme'), 'to be removed\n');
+    await writeFile(path.join(target, '.planted'), 'planted\n');
+  }
 });
