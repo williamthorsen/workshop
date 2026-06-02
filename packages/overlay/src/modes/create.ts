@@ -30,8 +30,6 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
     .filter((entry) => entry.outcome === 'created' || entry.outcome === 'deleted')
     .map((entry) => path.join(context.target, entry.path));
 
-  // Apply only the additions and deletions by absolute path; skip entirely when
-  // empty so chezmoi cannot converge (and clobber) the differing files.
   const applyCode =
     applyPaths.length > 0
       ? await runChezmoiStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])

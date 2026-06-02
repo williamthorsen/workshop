@@ -48,9 +48,7 @@ function summarizeCounts(result: OverlayResult): string {
     result.counts.created > 0 ? `${result.counts.created} created` : undefined,
     result.counts.deleted > 0 ? `${result.counts.deleted} deleted` : undefined,
     result.counts.forced > 0 ? `${result.counts.forced} forced` : undefined,
-    result.counts.conflicts > 0
-      ? `${result.counts.conflicts} conflict${result.counts.conflicts === 1 ? '' : 's'}`
-      : undefined,
+    result.counts.conflicts > 0 ? pluralizeWithCount(result.counts.conflicts, 'conflict') : undefined,
   ].filter((part): part is string => part !== undefined);
   if (parts.length === 0) {
     return 'Nothing to do.';

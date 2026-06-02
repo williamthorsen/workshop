@@ -1,14 +1,17 @@
 import type { ChezmoiContext } from './runChezmoi.ts';
 import { runChezmoiCaptured } from './runChezmoi.ts';
 
-/** Minimum chezmoi version whose `status`-column semantics overlay relies on. */
-export const MIN_CHEZMOI_VERSION = '2.46.0';
-
 interface SemverParts {
   major: number;
   minor: number;
   patch: number;
 }
+
+/** Minimum chezmoi version whose `status`-column semantics overlay relies on. */
+const MINIMUM: SemverParts = { major: 2, minor: 46, patch: 0 };
+
+/** Minimum chezmoi version as a display string (e.g. `2.46.0`). */
+export const MIN_CHEZMOI_VERSION = formatVersion(MINIMUM);
 
 /**
  * Verify chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
@@ -25,8 +28,7 @@ export async function assertChezmoiVersion(context: ChezmoiContext): Promise<voi
   if (installed === undefined) {
     throw new Error(`could not determine chezmoi version from: ${stdout.trim()}`);
   }
-  const minimum = parseVersion(MIN_CHEZMOI_VERSION);
-  if (minimum === undefined || compareVersions(installed, minimum) < 0) {
+  if (compareVersions(installed, MINIMUM) < 0) {
     throw new Error(`chezmoi ${MIN_CHEZMOI_VERSION} or later is required; found ${formatVersion(installed)}`);
   }
 }

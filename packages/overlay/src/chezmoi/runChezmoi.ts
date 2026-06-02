@@ -115,5 +115,5 @@ interface ExecFileError {
 }
 
 function isExecFileError(error: unknown): error is ExecFileError {
-  return typeof error === 'object' && error !== null;
+  return typeof error === 'object' && error !== null && 'code' in error;
 }

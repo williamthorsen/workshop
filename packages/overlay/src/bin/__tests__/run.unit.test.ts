@@ -56,6 +56,15 @@ describe(run, () => {
     expect(code).toBe(2);
   });
 
+  it('returns exit 2 and writes a JSON error when argument parsing fails', async () => {
+    const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+    const code = await run(['--unknown-flag']);
+
+    expect(code).toBe(2);
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('"error"'));
+  });
+
   it('writes help to stdout and returns 0 for --help', async () => {
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
 
