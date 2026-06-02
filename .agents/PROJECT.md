@@ -1,5 +1,7 @@
 # Workshop
 
+@.agents/nmr/AGENTS.md
+
 ## Overview
 
 A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI.

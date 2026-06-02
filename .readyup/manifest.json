@@ -4,9 +4,9 @@
     {
       "name": "demo",
       "path": "kits/demo.js",
-      "readyupVersion": "0.20.0",
+      "readyupVersion": "0.21.0",
       "source": "kits/demo.ts",
-      "targetHash": "7a100ea0"
+      "targetHash": "c648722e"
     }
   ]
 }
