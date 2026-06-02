@@ -9,7 +9,7 @@ export interface OverlayOptions {
 }
 
 /** What happened (or would happen) to a single managed entry. */
-export type EntryOutcome = 'verified' | 'created' | 'deleted' | 'forced' | 'conflict';
+export type EntryOutcome = 'created' | 'deleted' | 'forced' | 'conflict';
 
 /** A single managed entry and its outcome. */
 export interface OverlayEntry {

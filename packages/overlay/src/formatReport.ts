@@ -1,4 +1,4 @@
-import type { OverlayResult } from './types.ts';
+import type { EntryOutcome, OverlayResult } from './types.ts';
 import { pluralizeWithCount } from './utils/pluralize.ts';
 
 /**
@@ -28,13 +28,12 @@ export function formatReport(result: OverlayResult): string {
   return lines.join('\n');
 }
 
-const OUTCOME_LABELS = {
-  verified: 'verified',
+const OUTCOME_LABELS: Record<EntryOutcome, string> = {
   created: 'create ',
   deleted: 'delete ',
   forced: 'force  ',
   conflict: 'conflict',
-} as const;
+};
 
 /** Build the counts line, phrased as pending drift under verify and as actions taken otherwise. */
 function summarizeCounts(result: OverlayResult): string {
@@ -46,11 +45,16 @@ function summarizeCounts(result: OverlayResult): string {
   }
 
   const parts = [
-    `${result.counts.created} created`,
-    `${result.counts.deleted} deleted`,
-    `${result.counts.forced} forced`,
-    `${result.counts.conflicts} conflict${result.counts.conflicts === 1 ? '' : 's'}`,
-  ];
+    result.counts.created > 0 ? `${result.counts.created} created` : undefined,
+    result.counts.deleted > 0 ? `${result.counts.deleted} deleted` : undefined,
+    result.counts.forced > 0 ? `${result.counts.forced} forced` : undefined,
+    result.counts.conflicts > 0
+      ? `${result.counts.conflicts} conflict${result.counts.conflicts === 1 ? '' : 's'}`
+      : undefined,
+  ].filter((part): part is string => part !== undefined);
+  if (parts.length === 0) {
+    return 'Nothing to do.';
+  }
   return parts.join(', ') + '.';
 }
 

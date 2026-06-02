@@ -51,7 +51,7 @@ describe(formatReport, () => {
     expect(report).toContain('1 script ran.');
   });
 
-  it('summarizes action counts under create', () => {
+  it('summarizes only non-zero action counts under create', () => {
     const report = formatReport(
       buildResult({
         mode: 'create',
@@ -60,7 +60,13 @@ describe(formatReport, () => {
       }),
     );
 
-    expect(report).toContain('2 created, 1 deleted, 0 forced, 1 conflict.');
+    expect(report).toContain('2 created, 1 deleted, 1 conflict.');
+  });
+
+  it('reports "Nothing to do." when every action count is zero under create', () => {
+    const report = formatReport(buildResult({ mode: 'create' }));
+
+    expect(report).toContain('Nothing to do.');
   });
 
   it('includes a --force fix-it hint when conflicts exist', () => {

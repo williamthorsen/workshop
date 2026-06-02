@@ -1,3 +1,4 @@
+import type { ChezmoiContext } from './runChezmoi.ts';
 import { runChezmoiCaptured } from './runChezmoi.ts';
 
 /** Minimum chezmoi version whose `status`-column semantics overlay relies on. */
@@ -15,8 +16,8 @@ interface SemverParts {
  * Throws an actionable error (which the caller maps to exit 2) when chezmoi is
  * absent, its version cannot be parsed, or it is below the minimum.
  */
-export async function assertChezmoiVersion(): Promise<void> {
-  const { stdout, code } = await runChezmoiCaptured({ source: '.', target: '.' }, ['--version']);
+export async function assertChezmoiVersion(context: ChezmoiContext): Promise<void> {
+  const { stdout, code } = await runChezmoiCaptured(context, ['--version']);
   if (code !== 0) {
     throw new Error('chezmoi is not available — install it (e.g. `brew install chezmoi`)');
   }

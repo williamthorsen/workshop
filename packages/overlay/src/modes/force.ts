@@ -1,6 +1,7 @@
 import { parseStatus } from '../chezmoi/parseStatus.ts';
+import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/runChezmoi.ts';
-import { runChezmoiCaptured, runChezmoiStreamed } from '../chezmoi/runChezmoi.ts';
+import { runChezmoiStreamed } from '../chezmoi/runChezmoi.ts';
 import type { OverlayResult } from '../types.ts';
 import { countOutcome, partitionStatus } from './buildEntries.ts';
 
@@ -11,8 +12,11 @@ import { countOutcome, partitionStatus } from './buildEntries.ts';
  * report). A non-zero apply (typically a failing script) maps to exit `2`.
  */
 export async function runForce(context: ChezmoiContext): Promise<OverlayResult> {
-  const { stdout } = await runChezmoiCaptured(context, ['status']);
-  const { entries, pendingScripts } = partitionStatus(parseStatus(stdout), { A: 'created', D: 'deleted', M: 'forced' });
+  const { entries, pendingScripts } = partitionStatus(parseStatus(await readStatus(context)), {
+    A: 'created',
+    D: 'deleted',
+    M: 'forced',
+  });
 
   const applyCode = await runChezmoiStreamed(context, ['apply']);
   const ok = applyCode === 0;

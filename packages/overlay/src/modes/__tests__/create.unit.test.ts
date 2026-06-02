@@ -89,4 +89,14 @@ describe(runCreate, () => {
     expect(result.exitCode).toBe(2);
     expect(result.scripts.ok).toBe(false);
   });
+
+  it('maps a failing file-apply pass to exit 2 without masking it as drift', async () => {
+    mockStatus(' A .new\n M .diff\n');
+    mockStreamed(1);
+
+    const result = await runCreate(context);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.scripts.ok).toBe(true);
+  });
 });

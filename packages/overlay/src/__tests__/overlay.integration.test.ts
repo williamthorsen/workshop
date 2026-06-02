@@ -91,6 +91,9 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     const result = await overlay({ source, target, mode: 'force' });
 
     expect(await readFile(path.join(target, '.difffile'), 'utf8')).toBe(CANONICAL_CONTENT);
+    expect(existsSync(path.join(target, '.sentinel'))).toBe(true);
+    expect(existsSync(path.join(target, '.planted'))).toBe(false);
+    expect(result.scripts.ran).toBeGreaterThan(0);
     expect(result.exitCode).toBe(0);
   });
 

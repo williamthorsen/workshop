@@ -23,7 +23,7 @@ export async function overlay(options: OverlayOptions): Promise<OverlayResult> {
     target: path.resolve(options.target ?? process.cwd()),
   };
 
-  await assertChezmoiVersion();
+  await assertChezmoiVersion(context);
 
   if (mode === 'create') return runCreate(context);
   if (mode === 'force') return runForce(context);
