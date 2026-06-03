@@ -1,15 +1,16 @@
 import path from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockBuild = vi.hoisted(() => vi.fn());
+const mockLoadEsbuild = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockReadFileSync = vi.hoisted(() => vi.fn());
 const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('esbuild', () => ({
-  build: mockBuild,
+vi.mock('../src/compile/loadEsbuild.ts', () => ({
+  loadEsbuild: mockLoadEsbuild,
 }));
 
 vi.mock(import('node:fs'), () => ({
@@ -22,14 +23,16 @@ vi.mock(import('node:fs'), () => ({
 import { compileConfig } from '../src/compile/compileConfig.ts';
 import { VERSION } from '../src/version.ts';
 
-/** Build a mock esbuild result with the given output text. */
-function buildResult(text: string) {
-  return { outputFiles: [{ contents: new TextEncoder().encode(text) }] };
-}
-
 describe(compileConfig, () => {
+  beforeEach(() => {
+    // Default: The esbuild import succeeds and exposes the mocked `build`.
+    // Failure-path tests override this with `mockRejectedValue`.
+    mockLoadEsbuild.mockResolvedValue({ build: mockBuild });
+  });
+
   afterEach(() => {
     mockBuild.mockReset();
+    mockLoadEsbuild.mockReset();
     mockExistsSync.mockReset();
     mockMkdirSync.mockReset();
     mockReadFileSync.mockReset();
@@ -141,36 +144,24 @@ describe(compileConfig, () => {
   });
 
   it('throws a clear error when esbuild is not installed', async () => {
-    vi.doMock('esbuild', () => {
-      throw new Error('Cannot find module esbuild');
-    });
-    vi.resetModules();
+    mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-    const { compileConfig: freshCompile } = await import('../src/compile/compileConfig.ts');
-
-    await expect(freshCompile('input.ts')).rejects.toThrow('esbuild is required');
-
-    // Restore the mock for subsequent tests
-    vi.doMock('esbuild', () => ({ build: mockBuild }));
-    vi.resetModules();
+    await expect(compileConfig('input.ts')).rejects.toThrow('esbuild is required');
   });
 
   it('chains the original error as cause when esbuild import fails', async () => {
-    vi.doMock('esbuild', () => {
-      throw new Error('Cannot find module esbuild');
-    });
-    vi.resetModules();
+    const importError = new Error('Cannot find module esbuild');
+    mockLoadEsbuild.mockRejectedValue(importError);
 
-    const { compileConfig: freshCompile } = await import('../src/compile/compileConfig.ts');
-
-    const thrownError = await freshCompile('input.ts').catch((error: unknown) => error);
+    const thrownError = await compileConfig('input.ts').catch((error: unknown) => error);
     expect(thrownError).toBeInstanceOf(Error);
     if (thrownError instanceof Error) {
-      expect(thrownError.cause).toBeInstanceOf(Error);
+      expect(thrownError.cause).toBe(importError);
     }
-
-    // Restore the mock for subsequent tests
-    vi.doMock('esbuild', () => ({ build: mockBuild }));
-    vi.resetModules();
   });
 });
+
+/** Builds a mock esbuild result with the given output text. */
+function buildResult(text: string) {
+  return { outputFiles: [{ contents: new TextEncoder().encode(text) }] };
+}
