@@ -1,17 +1,18 @@
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
-import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import type { DriftStatus } from './checkDrift.ts';
 import { checkDrift } from './checkDrift.ts';
 
-const verifyFlagSchema = {
-  manifest: { long: '--manifest', type: 'string' as const },
-};
+const verifyOptions = {
+  manifest: { type: 'string' },
+} as const;
 
 /**
  * Handle the `verify` subcommand: read the manifest, hash each compiled kit, and report drift.
@@ -21,18 +22,26 @@ const verifyFlagSchema = {
 export function verifyCommand(args: string[]): number {
   let parsed;
   try {
-    parsed = parseArgs(args, verifyFlagSchema);
+    parsed = nodeParseArgs({ args, options: verifyOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    process.stderr.write(`Error: ${translateParseError(error)}\n`);
+    process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
     return 1;
   }
+  const { values, positionals } = parsed;
 
-  if (parsed.positionals.length > 0) {
+  if (positionals.length > 0) {
     process.stderr.write('Error: rdy verify does not accept positional arguments.\n');
     return 1;
   }
 
-  const manifestPath = path.resolve(process.cwd(), parsed.flags.manifest ?? DEFAULT_MANIFEST_PATH);
+  for (const [name, value] of Object.entries(values)) {
+    if (value === '') {
+      process.stderr.write(`Error: --${name} requires a value\n`);
+      return 1;
+    }
+  }
+
+  const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
   const manifestDir = path.dirname(manifestPath);
 
   let manifest;

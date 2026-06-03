@@ -228,12 +228,12 @@ describe(parseRunArgs, () => {
   });
 
   it('throws on unknown flags', () => {
-    expect(() => parseRunArgs(['--unknown'])).toThrow("unknown flag '--unknown'");
+    expect(() => parseRunArgs(['--unknown'])).toThrow("Unknown option '--unknown'");
   });
 
   // --config is no longer supported
   it('rejects --config as an unknown flag', () => {
-    expect(() => parseRunArgs(['--config', 'x'])).toThrow("unknown flag '--config'");
+    expect(() => parseRunArgs(['--config', 'x'])).toThrow("Unknown option '--config'");
   });
 
   // Short options
@@ -259,6 +259,14 @@ describe(parseRunArgs, () => {
     const result = parseRunArgs(['-j']);
 
     expect(result.json).toBe(true);
+  });
+
+  // node:util.parseArgs expands grouped boolean shorts (`-jJ`) into separate flags.
+  it('accepts grouped short boolean flags', () => {
+    const result = parseRunArgs(['-jJ']);
+
+    expect(result.json).toBe(true);
+    expect(result.jit).toBe(true);
   });
 
   it('parses -F as short form of --fail-on', () => {

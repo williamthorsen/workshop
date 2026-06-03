@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
@@ -7,7 +8,6 @@ import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
-import { parseArgs } from './parseArgs.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { reportRdy, tallyResult } from './reportRdy.ts';
@@ -26,6 +26,7 @@ import type {
   SummaryCounts,
 } from './types.ts';
 import { extractMessage } from './utils/error-handling.ts';
+import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { VERSION } from './version.ts';
 import { compareVersionsForSkew } from './versionSkew/compareVersionsForSkew.ts';
 
@@ -55,17 +56,17 @@ export interface ParsedRunArgs {
   urlValue: string | undefined;
 }
 
-const runFlagSchema = {
-  checklists: { long: '--checklists', type: 'string' as const, short: '-c' },
-  file: { long: '--file', type: 'string' as const, short: '-f' },
-  from: { long: '--from', type: 'string' as const },
-  url: { long: '--url', type: 'string' as const, short: '-u' },
-  jit: { long: '--jit', type: 'boolean' as const, short: '-J' },
-  internal: { long: '--internal', type: 'boolean' as const, short: '-i' },
-  json: { long: '--json', type: 'boolean' as const, short: '-j' },
-  failOn: { long: '--fail-on', type: 'string' as const, short: '-F' },
-  reportOn: { long: '--report-on', type: 'string' as const, short: '-R' },
-};
+const runOptions = {
+  checklists: { type: 'string', short: 'c' },
+  file: { type: 'string', short: 'f' },
+  from: { type: 'string' },
+  url: { type: 'string', short: 'u' },
+  jit: { type: 'boolean', short: 'J' },
+  internal: { type: 'boolean', short: 'i' },
+  json: { type: 'boolean', short: 'j' },
+  'fail-on': { type: 'string', short: 'F' },
+  'report-on': { type: 'string', short: 'R' },
+} as const;
 
 /** Validate and narrow a string to a Severity value. */
 function parseSeverityFlag(flagName: string, value: string): Severity {
@@ -99,20 +100,6 @@ const flagErrorHints: Record<string, string> = {
   '--report-on': '--report-on requires a severity level (error, warn, recommend)',
   '--url': '--url requires a URL argument',
 };
-
-/** Translate generic parseArgs errors into domain-specific messages where applicable. */
-function translateParseError(error: unknown): never {
-  if (error instanceof Error) {
-    const match = error.message.match(/^(--\S+) requires a value$/);
-    if (match?.[1] !== undefined) {
-      const hint = flagErrorHints[match[1]];
-      if (hint !== undefined) {
-        throw new Error(hint);
-      }
-    }
-  }
-  throw error;
-}
 
 /** Collect active source flags and validate mutual exclusivity and mode-flag constraints. */
 function validateFlagConstraints(
@@ -155,15 +142,38 @@ function validateFlagConstraints(
   return sourceType;
 }
 
+/** Tokenize run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
+function parseRunFlags(flags: string[]) {
+  try {
+    return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
+  } catch (error: unknown) {
+    throw new Error(translateParseArgsError(error, flagErrorHints));
+  }
+}
+
 /** Parse run-subcommand flags into a structured object. */
 export function parseRunArgs(flags: string[]): ParsedRunArgs {
-  let result;
-  try {
-    result = parseArgs(flags, runFlagSchema);
-  } catch (error: unknown) {
-    translateParseError(error);
+  const { values, positionals } = parseRunFlags(flags);
+
+  // parseArgs accepts `--flag=` as an empty string; the CLI treats an empty value as missing.
+  for (const [name, value] of Object.entries(values)) {
+    if (value === '') {
+      const flag = `--${name}`;
+      throw new Error(flagErrorHints[flag] ?? `${flag} requires a value`);
+    }
   }
-  const { flags: parsed, positionals } = result;
+
+  const parsed = {
+    checklists: values.checklists,
+    file: values.file,
+    from: values.from,
+    internal: values.internal === true,
+    jit: values.jit === true,
+    json: values.json === true,
+    url: values.url,
+    failOn: values['fail-on'],
+    reportOn: values['report-on'],
+  };
 
   validateFlagConstraints(parsed, positionals.length);
 

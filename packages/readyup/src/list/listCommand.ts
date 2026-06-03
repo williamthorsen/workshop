@@ -1,23 +1,24 @@
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { loadConfig } from '../loadConfig.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
-import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
 import { resolveGitHubToken } from '../resolveGitHubToken.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import type { CompiledStyle } from './formatList.ts';
 import { formatConsumerView, formatManifestView, formatOwnerView } from './formatList.ts';
 
-const listFlagSchema = {
-  from: { long: '--from', type: 'string' as const },
-  manifest: { long: '--manifest', type: 'string' as const },
-};
+const listOptions = {
+  from: { type: 'string' },
+  manifest: { type: 'string' },
+} as const;
 
 /**
  * Handle the `list` subcommand: enumerate kits from the manifest and filesystem, then print their names.
@@ -27,14 +28,22 @@ const listFlagSchema = {
 export async function listCommand(args: string[]): Promise<number> {
   let parsed;
   try {
-    parsed = parseArgs(args, listFlagSchema);
+    parsed = nodeParseArgs({ args, options: listOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    process.stderr.write(`Error: ${translateParseError(error)}\n`);
+    process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
     return 1;
   }
+  const { values } = parsed;
 
-  const fromArg = parsed.flags.from;
-  const manifestArg = parsed.flags.manifest;
+  for (const [name, value] of Object.entries(values)) {
+    if (value === '') {
+      process.stderr.write(`Error: --${name} requires a value\n`);
+      return 1;
+    }
+  }
+
+  const fromArg = values.from;
+  const manifestArg = values.manifest;
 
   if (fromArg !== undefined && manifestArg !== undefined) {
     process.stderr.write('Error: --from and --manifest are mutually exclusive\n');
