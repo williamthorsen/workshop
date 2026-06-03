@@ -1,6 +1,6 @@
 # Workshop
 
-@.agents/nmr/AGENTS.md
+@nmr/AGENTS.md
 
 ## Overview
 

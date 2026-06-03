@@ -1,1 +1,1 @@
-@.agents/PROJECT.md
+@../.agents/PROJECT.md
