@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
+import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 
 /** Result of a successful compilation. */
@@ -25,17 +26,8 @@ const GENERATED_HEADER = [
   '',
 ].join('\n');
 
-/** Derive the default output path by replacing the `.ts` extension with `.js`. */
-function deriveOutputPath(inputPath: string): string {
-  const ext = path.extname(inputPath);
-  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
-    return inputPath.slice(0, -ext.length) + '.js';
-  }
-  return `${inputPath}.js`;
-}
-
 /**
- * Bundle a TypeScript checklist file into a self-contained ESM bundle using esbuild.
+ * Bundles a TypeScript checklist file into a self-contained ESM bundle using esbuild.
  *
  * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are
  * kept external; all other imports are inlined. The externalized `readyup` specifiers
@@ -49,7 +41,7 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
 
   let esbuild: typeof import('esbuild');
   try {
-    esbuild = await import('esbuild');
+    esbuild = await loadEsbuild();
   } catch (error: unknown) {
     throw new Error(
       'esbuild is required for the compile command but is not installed. Install it with: pnpm add --save-dev esbuild',
@@ -84,4 +76,13 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
   }
 
   return { outputPath: resolvedOutput, changed, targetHash: hashBytes(compiled) };
+}
+
+/** Derives the default output path by replacing the `.ts` extension with `.js`. */
+function deriveOutputPath(inputPath: string): string {
+  const ext = path.extname(inputPath);
+  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
+    return inputPath.slice(0, -ext.length) + '.js';
+  }
+  return `${inputPath}.js`;
 }
