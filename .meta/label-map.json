@@ -9,7 +9,7 @@
     "feat": "feature",
     "fix": "fix",
     "fmt": "formatting",
-    "internal": "utility",
+    "internal": "internal",
     "perf": "performance",
     "refactor": "refactoring",
     "sec": "security",
@@ -17,6 +17,7 @@
     "tooling": "tooling"
   },
   "scopes": {
+    "overlay": "scope:overlay",
     "readyup": "scope:readyup",
     "root": "scope:root"
   }

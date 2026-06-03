@@ -1,0 +1,46 @@
+{
+  "name": "@williamthorsen/overlay",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Idempotently overlay a canonical set of scaffolding files onto a target directory, backed by chezmoi",
+  "keywords": [
+    "chezmoi",
+    "overlay",
+    "scaffold",
+    "verify"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/overlay#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/overlay"
+  },
+  "license": "MIT",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/overlay.js"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "bin": {
+    "overlay": "bin/overlay.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "tsx ../../config/generateVersion.ts && tsx ../../config/build.ts && tsc --project tsconfig.generate-typings.json"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  }
+}
