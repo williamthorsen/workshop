@@ -143,11 +143,18 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--output requires a path argument'));
   });
 
+  it('returns 1 when --output is given an empty value', async () => {
+    const exitCode = await compileCommand(['input.ts', '--output=']);
+
+    expect(exitCode).toBe(1);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--output requires a path argument'));
+  });
+
   it('returns 1 for unknown flags', async () => {
     const exitCode = await compileCommand(['input.ts', '--verbose']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown option: --verbose'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--verbose'"));
   });
 
   it('returns 1 when compileConfig throws', async () => {
@@ -226,7 +233,7 @@ describe(compileCommand, () => {
     const exitCode = await compileCommand(['--all']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown option: --all'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--all'"));
   });
 
   it('uses compile.include glob to filter files during batch compile', async () => {

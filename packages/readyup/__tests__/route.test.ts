@@ -439,7 +439,7 @@ describe(routeCommand, () => {
     const exitCode = await routeCommand(['init', '--unknown']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown option: --unknown'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--unknown'"));
   });
 
   it('shows list help and returns 0 for list --help', async () => {

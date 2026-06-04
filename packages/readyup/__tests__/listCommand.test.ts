@@ -265,6 +265,6 @@ describe(listCommand, () => {
     const exitCode = await listCommand(['--unknown']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown option: --unknown'));
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--unknown'"));
   });
 });

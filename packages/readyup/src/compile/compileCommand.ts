@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs as nodeParseArgs } from 'node:util';
 
 import picomatch from 'picomatch';
 
@@ -9,9 +10,9 @@ import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
-import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import { VERSION } from '../version.ts';
@@ -19,11 +20,16 @@ import { compileConfig } from './compileConfig.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
-const compileFlagSchema = {
-  force: { long: '--force', type: 'boolean' as const },
-  manifest: { long: '--manifest', type: 'string' as const },
-  output: { long: '--output', type: 'string' as const, short: '-o' },
-  skipManifest: { long: '--skip-manifest', type: 'boolean' as const },
+const compileOptions = {
+  force: { type: 'boolean' },
+  manifest: { type: 'string' },
+  output: { type: 'string', short: 'o' },
+  'skip-manifest': { type: 'boolean' },
+} as const;
+
+/** Domain-specific hints for compile flags that require a value. */
+const compileHints: Record<string, string> = {
+  '--output': '--output requires a path argument',
 };
 
 /**
@@ -34,23 +40,26 @@ const compileFlagSchema = {
 export async function compileCommand(args: string[]): Promise<number> {
   let parsed;
   try {
-    parsed = parseArgs(args, compileFlagSchema);
+    parsed = nodeParseArgs({ args, options: compileOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    // Translate generic "requires a value" to domain hint.
-    if (message === '--output requires a value') {
-      process.stderr.write('Error: --output requires a path argument\n');
-    } else {
-      process.stderr.write(`Error: ${translateParseError(error)}\n`);
-    }
+    process.stderr.write(`Error: ${translateParseArgsError(error, compileHints)}\n`);
     return 1;
   }
+  const { values, positionals } = parsed;
 
-  const force = parsed.flags.force;
-  const outputPath = parsed.flags.output;
-  const positionals = parsed.positionals;
-  const skipManifest = parsed.flags.skipManifest;
-  const manifestPath = resolveManifestPath(parsed.flags.manifest);
+  // parseArgs accepts `--flag=` as an empty string; treat an empty value as missing.
+  for (const [name, value] of Object.entries(values)) {
+    if (value === '') {
+      const flag = `--${name}`;
+      process.stderr.write(`Error: ${compileHints[flag] ?? `${flag} requires a value`}\n`);
+      return 1;
+    }
+  }
+
+  const force = values.force === true;
+  const outputPath = values.output;
+  const skipManifest = values['skip-manifest'] === true;
+  const manifestPath = resolveManifestPath(values.manifest);
 
   if (positionals.length > 1) {
     process.stderr.write('Error: Too many arguments. Expected a single input file.\n');

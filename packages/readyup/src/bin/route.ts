@@ -1,12 +1,13 @@
 import process from 'node:process';
+import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { parseRunArgs, resolveKitSources, runCommand } from '../cli.ts';
 import { compileCommand } from '../compile/compileCommand.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
-import { parseArgs, translateParseError } from '../parseArgs.ts';
 import { extractMessage } from '../utils/error-handling.ts';
+import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 
@@ -213,20 +214,20 @@ export async function routeCommand(args: string[]): Promise<number> {
       return 0;
     }
 
-    const initFlagSchema = {
-      dryRun: { long: '--dry-run', type: 'boolean' as const, short: '-n' },
-      force: { long: '--force', type: 'boolean' as const, short: '-f' },
-    };
+    const initOptions = {
+      'dry-run': { type: 'boolean', short: 'n' },
+      force: { type: 'boolean', short: 'f' },
+    } as const;
 
     let parsed;
     try {
-      parsed = parseArgs(flags, initFlagSchema);
+      parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
     } catch (error: unknown) {
-      process.stderr.write(`Error: ${translateParseError(error)}\n`);
+      process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
       return 1;
     }
 
-    return initCommand({ dryRun: parsed.flags.dryRun, force: parsed.flags.force });
+    return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
   }
 
   if (command === 'list') {
