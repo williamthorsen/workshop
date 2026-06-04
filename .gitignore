@@ -1,5 +1,6 @@
 # Agents
 .agents/*.branch-manifest.json
+.claude/scheduled_tasks.lock
 
 # Editor directories and files
 .idea/
@@ -55,6 +56,7 @@ logs
 
 # Testing
 coverage/
+.shellspec-local
 .vitest-result.json
 
 # Generated files
