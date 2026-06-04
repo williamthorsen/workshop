@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.2.0",
+    "date": "2026-06-04",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add chezmoi-backed overlay CLI with verify/create/force modes (#96)",
+            "body": "Adds `overlay`, a command-line tool (installable as `@williamthorsen/overlay`) that brings a target directory into line with a directory of canonical scaffolding files — adding what's missing, removing what's been marked for deletion, and running any normalization steps. Three modes set how much it will change: `--verify` (the default) reports what's out of sync without touching anything; `--create` brings everything into line except files you've changed locally, which it will not overwrite; and `--force` brings everything into line and overwrites your local changes too. The same behavior is also available as a typed function for use from other TypeScript code.",
+            "hash": "4ed7da6132172518eeefcd3fabe42766509ef28f"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Enable public npm publishing for the scoped package (#101)",
+            "body": "Releases of `@williamthorsen/overlay` now publish publicly to npm instead of as a restricted, private package.",
+            "hash": "a781a625a9d9d45dc7af558658d709a9b7725053"
+          }
+        ]
+      }
+    ]
+  }
+]

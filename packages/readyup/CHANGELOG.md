@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.21.1 — 2026-06-04
+
+### ♻️ Refactoring
+
+- Migrate CLI parser to node:util.parseArgs (#98)
+
+  Reworks how `readyup` parses command-line arguments, with no change to which flags are accepted or to the guidance shown when a value-taking option is given without its value. Two edge behaviors change: passing an unrecognized option now reports a standard error message instead of the previous custom wording, and grouped single-letter boolean flags (for example, `-jJ`) are now accepted.
+
+### 🧪 Tests
+
+- Stabilize compileConfig esbuild-import-failure test (#97)
+
+  Fixes intermittent failures in the readyup test suite, where a set of test cases failed roughly one run in twelve regardless of the code under test. The suite now passes reliably, so a green branch no longer fails the gate on an unlucky run.
+
 ## 0.21.0 — 2026-05-18
 
 ### 🎉 Features
