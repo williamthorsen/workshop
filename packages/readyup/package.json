@@ -58,7 +58,7 @@
     "@types/picomatch": "4.0.3"
   },
   "peerDependencies": {
-    "esbuild": ">=0.17.0"
+    "esbuild": ">=0.28.1"
   },
   "peerDependenciesMeta": {
     "esbuild": {
