@@ -85,6 +85,7 @@ All notable changes to this project will be documented in this file.
 - Add isGitRepo, isAtRepoRoot, and expandHome helpers (#72)
 
   Adds three generic git-path helpers to `readyup`'s `check-utils/git` subpath:
+
   - `isGitRepo(path)` returns `true` when the path is inside a git working tree (subdirectories and worktrees count).
   - `isAtRepoRoot(path)` returns `true` only when the path is the top of a working tree, using `git rev-parse --show-cdup` to avoid the path-comparison pitfalls of `--show-toplevel`.
   - `expandHome(path)` expands a leading `~` or `~/` to the user's home directory. Previously this existed as a private `expandTilde` inside `run-git.ts`; it is now exported under a more general name so consumers can reuse the same tilde handling that `runGit` uses internally.
