@@ -47,9 +47,6 @@ importers:
       eslint-plugin-import:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))
-      glob:
-        specifier: 13.0.6
-        version: 13.0.6
       lefthook:
         specifier: 2.1.9
         version: 2.1.9

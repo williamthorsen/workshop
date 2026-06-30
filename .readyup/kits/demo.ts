@@ -150,9 +150,9 @@ const publishingPipeline = {
     // Stage 1: Build infrastructure
     [
       {
-        name: 'shared build script exists',
-        check: () => fileExists('config/build.ts'),
-        fix: 'Add config/build.ts — packages depend on the shared esbuild configuration',
+        name: 'build config exists',
+        check: () => fileExists('.config/nmr.config.ts'),
+        fix: 'Add .config/nmr.config.ts to declare per-repo nmr script overrides',
       },
       {
         name: 'shared Vitest config exists',
