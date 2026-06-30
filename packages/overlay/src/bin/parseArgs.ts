@@ -4,8 +4,7 @@ import type { OverlayMode } from '../types.ts';
 
 /** The CLI invocation parsed from argv: either a request to show help or a resolved overlay command. */
 export type ParsedCommand =
-  | { kind: 'help' }
-  | { kind: 'run'; source: string; target: string | undefined; mode: OverlayMode; json: boolean };
+  { kind: 'help' } | { kind: 'run'; source: string; target: string | undefined; mode: OverlayMode; json: boolean };
 
 /**
  * Parse overlay's CLI arguments via `node:util.parseArgs`.
