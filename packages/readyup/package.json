@@ -47,7 +47,7 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "tsx ../../config/generateVersion.ts && tsx ../../config/build.ts && tsc --project tsconfig.generate-typings.json"
+    "prepare": "tsx ../../config/generateVersion.ts && nmr-compile && tsc --project tsconfig.generate-typings.json"
   },
   "dependencies": {
     "jiti": "2.7.0",

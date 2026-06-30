@@ -17,7 +17,6 @@ Key files:
 - `.config/nmr.config.ts` — Per-repo nmr script overrides
 - `.config/readyup.config.ts` — Readyup compile settings
 - `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
-- `config/build.ts` — Shared esbuild build script with content-hash caching, `.ts`→`.js` extension rewriting, and `~src/` alias resolution
 - `config/vitest.config.ts` — Shared Vitest base configuration
 
 ## Commands
@@ -43,8 +42,8 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 ### Build system
 
-- esbuild via `config/build.ts`, run as `tsx ../../config/build.ts` from each package
-- Content-hash caching in `dist/esm/.cache` — skips rebuild when sources haven't changed
+- `nmr-compile` (from `@williamthorsen/nmr`) esbuild-compiles each package's `src` to `dist/esm`; run via `nmr build` (CI) and each package's `prepare` script
+- Content-hash caching in `dist/esm/.cache` (written by `nmr-compile`) — skips rebuild when sources haven't changed
 - Each package also generates `.d.ts` typings via `tsc --project tsconfig.generate-typings.json`
 - ESM-only output (`type: "module"` in all packages)
 
@@ -60,4 +59,4 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 ## Gotchas
 
-- **Build caching**: The content-hash cache (`dist/esm/.cache`) means a rebuild won't run if only non-source files change. Delete the cache file to force a rebuild.
+- **Build caching**: `nmr-compile`'s content-hash cache (`dist/esm/.cache`) means a rebuild won't run if only non-source files change. Delete the cache file to force a rebuild.
