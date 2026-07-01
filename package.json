@@ -22,14 +22,15 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.4",
     "@types/eslint": "9.6.1",
     "@types/node": "24.13.2",
     "@typescript-eslint/utils": "8.62.1",
-    "@typescript/native-preview": "7.0.0-dev.20260629.1",
+    "@typescript/native-preview": "7.0.0-dev.20260701.1",
     "@vitest/coverage-v8": "4.1.9",
     "@vitest/eslint-plugin": "1.6.20",
     "@williamthorsen/eslint-config-typescript": "5.17.6",
-    "@williamthorsen/nmr": "0.15.0",
+    "@williamthorsen/nmr": "0.17.0",
     "@williamthorsen/release-kit": "5.4.0",
     "@williamthorsen/strict-lint": "6.3.2",
     "esbuild": "0.28.1",
@@ -41,7 +42,7 @@
     "tsx": "4.22.4",
     "typescript": "5.9.3",
     "typescript-eslint": "8.62.1",
-    "v11y-check": "0.8.0",
+    "v11y-check": "0.10.0",
     "vitest": "4.1.9",
     "zod": "4.4.3"
   },
