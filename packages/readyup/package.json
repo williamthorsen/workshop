@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "jiti": "2.7.0",
-    "picomatch": "4.0.4",
+    "picomatch": "4.0.5",
     "zod": "4.4.3"
   },
   "devDependencies": {
