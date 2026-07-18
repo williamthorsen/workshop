@@ -8,7 +8,7 @@ export const ICON_PASSED = '\u{1F7E2}';
 export const ICON_ERROR_FAILED = '\u{1F534}';
 export const ICON_WARN_FAILED = '\u{1F7E0}';
 export const ICON_RECOMMEND_FAILED = '\u{1F7E1}';
-export const ICON_SKIPPED_NA = '\u{1F50D}';
+export const ICON_SKIPPED_NA = '\u{23ED}\u{FE0F}';
 export const ICON_SKIPPED_PRECONDITION = '\u{1F6AB}';
 export const ICON_FIX = '\u{1F48A}';
 
