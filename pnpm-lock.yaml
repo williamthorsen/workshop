@@ -33,11 +33,11 @@ importers:
         specifier: 5.17.6
         version: 5.17.6(@types/estree@1.0.8)(@typescript-eslint/utils@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
       '@williamthorsen/nmr':
-        specifier: 0.18.1
-        version: 0.18.1(typescript@5.9.3)
+        specifier: 0.18.2
+        version: 0.18.2(typescript@5.9.3)
       '@williamthorsen/release-kit':
-        specifier: 8.0.0
-        version: 8.0.0
+        specifier: 8.0.1
+        version: 8.0.1
       '@williamthorsen/strict-lint':
         specifier: 6.3.2
         version: 6.3.2(eslint@9.39.5(jiti@2.7.0))
@@ -860,14 +860,14 @@ packages:
   '@williamthorsen/nmr-core@0.7.0':
     resolution: {integrity: sha512-0Go/8helfB+nXldaAt6z9lDpV0m7gu9tZ8rrmu2KhEVGeH3VrnLB83wNwm41lZffmooC5tkj3cD3Z04xzt6yJg==}
 
-  '@williamthorsen/nmr@0.18.1':
-    resolution: {integrity: sha512-wEXadR7+jQiPZnjuCSiiAAj3GD4IRQ3hKAH2b96HEWDxRytg6DeFU7uLZlS1wSmg9DSLmo4Hdg6Y/d8BOOqzdA==}
+  '@williamthorsen/nmr@0.18.2':
+    resolution: {integrity: sha512-ZWCn4oPUw6w7a7kPW4uB+DavPoWKg+a1WfvRRH4leFoGnT2MdYTxtG2Y++zKKNGc9b2+/oCwsrgAwqUYUOqf9w==}
     hasBin: true
     peerDependencies:
       typescript: '>=5.7.0'
 
-  '@williamthorsen/release-kit@8.0.0':
-    resolution: {integrity: sha512-MYAC5QmoDtzIiN01H1rjZrQZREQYbh13S+CTY3f+YDt2QnkMDbHSTdGsI84CEcEz4VuQyiHkU12vdtPkW5rYyQ==}
+  '@williamthorsen/release-kit@8.0.1':
+    resolution: {integrity: sha512-9RXkhvTdQiFo+txj9UY2Ry3BklyKwTT4HJIoLsjx7epKL2B8IHvJFpys8UC9VBdr5FMlnHwXbn/eWW3ntls1qA==}
     engines: {node: '>=18.17.0'}
     hasBin: true
 
@@ -2231,11 +2231,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  semver@7.8.4:
-    resolution: {integrity: sha512-rUCObTnP32Q08R2uuIrt7r9PlEonuTmtuXYcW6s5kjdlj3xbnwe+21yXptAUYcMAABLkYYTtnmzb3w3EDZfueA==}
-    engines: {node: '>=10'}
-    hasBin: true
-
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
     engines: {node: '>=10'}
@@ -3449,7 +3444,7 @@ snapshots:
 
   '@williamthorsen/nmr-core@0.7.0': {}
 
-  '@williamthorsen/nmr@0.18.1(typescript@5.9.3)':
+  '@williamthorsen/nmr@0.18.2(typescript@5.9.3)':
     dependencies:
       '@williamthorsen/nmr-core': 0.7.0
       glob: 13.0.6
@@ -3458,7 +3453,7 @@ snapshots:
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@williamthorsen/release-kit@8.0.0':
+  '@williamthorsen/release-kit@8.0.1':
     dependencies:
       '@williamthorsen/nmr-core': 0.7.0
       glob: 13.0.6
@@ -4830,7 +4825,7 @@ snapshots:
   package-json-validator@1.4.1:
     dependencies:
       npm-package-arg: 13.0.2
-      semver: 7.8.4
+      semver: 7.8.5
       validate-npm-package-license: 3.0.4
       validate-npm-package-name: 7.0.2
 
@@ -4993,8 +4988,6 @@ snapshots:
 
   semver@7.8.0: {}
 
-  semver@7.8.4: {}
-
   semver@7.8.5: {}
 
   set-function-length@1.2.2:
@@ -5067,7 +5060,7 @@ snapshots:
       detect-newline: 4.0.1
       git-hooks-list: 4.2.1
       is-plain-obj: 4.1.0
-      semver: 7.8.4
+      semver: 7.8.5
       sort-object-keys: 2.1.0
       tinyglobby: 0.2.17
 
