@@ -882,3 +882,9 @@ describe(tallyResult, () => {
     expect(counts.optional).toBe(1);
   });
 });
+
+describe('status icons', () => {
+  it('marks skipped-N/A outcomes with the skip-forward emoji, not the magnifying glass', () => {
+    expect(ICON_SKIPPED_NA).toBe('\u{23ED}\u{FE0F}');
+  });
+});
