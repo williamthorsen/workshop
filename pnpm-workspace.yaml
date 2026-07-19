@@ -1,6 +1,14 @@
 packages:
   - packages/*
 
-onlyBuiltDependencies:
-  - esbuild
-  - lefthook
+allowBuilds:
+  esbuild: true
+  lefthook: true
+
+savePrefix: ''
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@williamthorsen/*'
+  - readyup
+  - v11y-check
