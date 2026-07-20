@@ -31,7 +31,7 @@
     "@williamthorsen/eslint-config-typescript": "6.0.2",
     "@williamthorsen/nmr": "0.18.2",
     "@williamthorsen/release-kit": "8.0.1",
-    "@williamthorsen/strict-lint": "7.0.0",
+    "@williamthorsen/strict-lint": "8.0.0",
     "esbuild": "0.28.1",
     "eslint": "10.7.0",
     "lefthook": "2.1.10",
