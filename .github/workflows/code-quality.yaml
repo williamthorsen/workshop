@@ -22,4 +22,4 @@ jobs:
     uses: williamthorsen/.github/.github/workflows/code-quality-pnpm-workflow.yaml@v5
     with:
       check-command: pnpm exec nmr build && pnpm exec nmr check:strict
-      node-version: '24.14.1'
+      node-version: '24.18.0'
