@@ -116,7 +116,7 @@ describe(listCommand, () => {
   });
 
   it('returns exit code 1 with a user-readable error for malformed --from values', async () => {
-    const exitCode = await listCommand(['--from', 'http://example.com']);
+    const exitCode = await listCommand(['--from', 'https://example.com']);
 
     expect(exitCode).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error:'));

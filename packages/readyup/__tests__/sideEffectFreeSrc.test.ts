@@ -92,7 +92,7 @@ function findTopLevelSideEffects(absolutePath: string): Offender[] {
     const start = statement.getStart(source);
     const line = source.getLineAndCharacterOfPosition(start).line + 1;
     const fullText = statement.getText(source);
-    const firstLineRaw = fullText.split('\n')[0] ?? '';
+    const firstLineRaw = fullText.split('\n', 1)[0] ?? '';
     const snippet = firstLineRaw.length > 100 ? `${firstLineRaw.slice(0, 97)}...` : firstLineRaw;
     offenders.push({ line, kind: ts.SyntaxKind[statement.kind], snippet });
   }

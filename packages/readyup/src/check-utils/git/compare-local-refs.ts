@@ -16,7 +16,7 @@ export async function compareLocalRefs(path: string, refA: string, refB: string)
 
   const aheadBehind = await resolveAheadBehind(path, refA, refB);
 
-  return { status: 'mismatch', shaA, shaB, ...(aheadBehind ? { aheadBehind } : {}) };
+  return { status: 'mismatch', shaA, shaB, ...(aheadBehind && { aheadBehind }) };
 }
 
 /** Return the name of the first ref that does not exist, or undefined if both exist. */
@@ -46,8 +46,8 @@ async function resolveAheadBehind(
 ): Promise<{ ahead: number; behind: number } | undefined> {
   try {
     const output = await runGit(path, 'rev-list', '--count', '--left-right', `${refA}...${refB}`);
-    const aheadStr = output.split('\t')[0];
-    const behindStr = output.split('\t')[1];
+    const aheadStr = output.split('\t', 1)[0];
+    const behindStr = output.split('\t', 2)[1];
     if (aheadStr === undefined || behindStr === undefined) return undefined;
     const ahead = Number(aheadStr);
     const behind = Number(behindStr);

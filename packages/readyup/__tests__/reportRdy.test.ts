@@ -262,7 +262,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain(`${ICON_PASSED} check-a (10ms) \u2014 some info`);
+      expect(output).toContain(`${ICON_PASSED} check-a (10ms) \u{2014} some info`);
     });
 
     it('renders fraction progress', () => {
@@ -278,7 +278,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms) \u2014 7 of 10`);
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms) \u{2014} 7 of 10`);
     });
 
     it('renders percent progress', () => {
@@ -289,7 +289,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-c (3ms) \u2014 85%`);
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-c (3ms) \u{2014} 85%`);
     });
 
     it('renders both detail and progress as separate segments', () => {
@@ -306,7 +306,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-d (5ms) \u2014 some detail \u2014 7 of 10`);
+      expect(output).toContain(`${ICON_ERROR_FAILED} check-d (5ms) \u{2014} some detail \u{2014} 7 of 10`);
     });
 
     it('renders detail and progress on passing checks', () => {
@@ -323,7 +323,7 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      expect(output).toContain(`${ICON_PASSED} check-e (2ms) \u2014 all good \u2014 100%`);
+      expect(output).toContain(`${ICON_PASSED} check-e (2ms) \u{2014} all good \u{2014} 100%`);
     });
 
     it('omits detail segment when detail is null', () => {
@@ -334,7 +334,7 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       expect(output).toContain(`${ICON_PASSED} check-f (1ms)`);
-      expect(output).not.toContain('\u2014');
+      expect(output).not.toContain('\u{2014}');
     });
   });
 

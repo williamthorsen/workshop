@@ -25,10 +25,12 @@ export function resolveRequestedNames(requestedNames: string[], kit: RdyKit): st
     const suiteEntries = suites[name];
     if (suiteEntries !== undefined) {
       for (const entry of suiteEntries) {
-        if (!seen.has(entry)) {
-          seen.add(entry);
-          resolved.push(entry);
+        if (seen.has(entry)) {
+          continue;
         }
+
+        seen.add(entry);
+        resolved.push(entry);
       }
     } else if (checklistNames.has(name)) {
       if (!seen.has(name)) {
