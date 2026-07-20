@@ -35,7 +35,8 @@ describe('loadRemoteKit validation', () => {
     const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
 
     expect(kit.checklists).toHaveLength(1);
-    expect(kit.checklists[0].name).toBe('test');
+    const [firstChecklist] = kit.checklists;
+    expect(firstChecklist?.name).toBe('test');
   });
 
   it('throws when the module lacks a checklists export', async () => {

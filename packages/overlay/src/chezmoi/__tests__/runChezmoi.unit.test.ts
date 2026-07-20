@@ -109,11 +109,12 @@ function rejectExecFile(error: Record<string, unknown>): void {
 
 /** Create a child stub and arrange for `spawn` to return it and emit `event` with `value` on the next microtask. */
 function arrangeSpawn(event: string, value: unknown): ChildStub {
+  const handlers: ChildStub['handlers'] = new Map();
   const child: ChildStub = {
-    handlers: new Map(),
+    handlers,
     on(name, handler) {
-      this.handlers.set(name, handler);
-      return this;
+      handlers.set(name, handler);
+      return child;
     },
   };
   spawnMock.mockImplementation((_cmd: string, _args: string[], _options: unknown) => {

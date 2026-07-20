@@ -1,3 +1,4 @@
+import * as esbuild from 'esbuild';
 import { describe, expect, it, vi } from 'vitest';
 
 const mockReadFileSync = vi.hoisted(() => vi.fn());
@@ -11,23 +12,44 @@ vi.mock(import('node:fs'), () => ({
 
 import { pickJsonPlugin } from '../../src/compile/pickJsonPlugin.ts';
 
-interface LoadCallback {
-  (args: { path: string }): { contents: string; loader: string } | null | undefined;
+type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
+
+/** Minimal `PluginBuild` stub; only `onLoad` is exercised by these tests. */
+function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
+  return {
+    initialOptions: {},
+    resolve: () => Promise.reject(new Error('resolve is not exercised in these tests')),
+    onStart() {},
+    onEnd() {},
+    onResolve() {},
+    onLoad,
+    onDispose() {},
+    esbuild,
+  };
 }
 
 /** Capture the onLoad callback registered by the plugin. */
-function captureOnLoad(): LoadCallback {
-  let captured: LoadCallback | undefined;
+function captureOnLoad(): OnLoadCallback {
+  let captured: OnLoadCallback | undefined;
   const plugin = pickJsonPlugin();
-  void plugin.setup({
-    onLoad(_options: { filter: RegExp }, callback: LoadCallback) {
+  void plugin.setup(
+    stubBuild((_options, callback) => {
       captured = callback;
-    },
-  });
+    }),
+  );
   if (captured === undefined) {
     throw new Error('onLoad callback was not registered');
   }
   return captured;
+}
+
+/** Invoke the captured onLoad for a source path and return its synchronous result. */
+function runOnLoad(onLoad: OnLoadCallback, path: string): esbuild.OnLoadResult | null | undefined {
+  const result = onLoad({ path, namespace: 'file', suffix: '', pluginData: undefined, with: {} });
+  if (result instanceof Promise) {
+    throw new TypeError('pickJson onLoad is synchronous');
+  }
+  return result;
 }
 
 describe(pickJsonPlugin, () => {
@@ -41,7 +63,7 @@ describe(pickJsonPlugin, () => {
     const onLoad = captureOnLoad();
     mockReadFileSync.mockReturnValue('const x = 1;');
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).toBeNull();
   });
@@ -53,7 +75,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).not.toBeNull();
     expect(result?.contents).toBe(`const meta = ${JSON.stringify({ name: 'my-pkg', version: '1.0.0' })};`);
@@ -68,7 +90,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonA).mockReturnValueOnce(jsonB);
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).not.toBeNull();
     expect(result?.contents).toContain(JSON.stringify({ x: 1 }));
@@ -82,7 +104,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).not.toBeNull();
     expect(result?.contents).toBe(`const meta = ${JSON.stringify({ config: { debug: true } })};`);
@@ -95,7 +117,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
 
-    onLoad({ path: '/project/src/kit.ts' });
+    runOnLoad(onLoad, '/project/src/kit.ts');
 
     // Second call to readFileSync is for the JSON file.
     expect(mockReadFileSync).toHaveBeenCalledWith('/project/data.json', 'utf8');
@@ -109,7 +131,7 @@ describe(pickJsonPlugin, () => {
       throw new Error('ENOENT');
     });
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Cannot read JSON file');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot read JSON file');
   });
 
   it('throws when a requested path is not found in the JSON', () => {
@@ -119,7 +141,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Path not found in JSON: missing');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Path not found in JSON: missing');
   });
 
   it('throws when pickJson arguments cannot be parsed', () => {
@@ -128,7 +150,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode);
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Cannot parse pickJson arguments');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot parse pickJson arguments');
   });
 
   it('throws when the JSON file contains invalid JSON', () => {
@@ -137,7 +159,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce('{broken');
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Invalid JSON');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Invalid JSON');
   });
 
   it('throws when the JSON root is not an object', () => {
@@ -146,7 +168,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce('[1,2,3]');
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Expected a JSON object');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Expected a JSON object');
   });
 
   it('throws when a path element is neither a string nor a string array', () => {
@@ -155,7 +177,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode);
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Invalid path in pickJson paths array');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Invalid path in pickJson paths array');
   });
 
   it('throws when the source file cannot be read', () => {
@@ -165,14 +187,14 @@ describe(pickJsonPlugin, () => {
       throw new Error('EACCES');
     });
 
-    expect(() => onLoad({ path: '/project/src/kit.ts' })).toThrow('Cannot read source file');
+    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot read source file');
   });
 
   it('returns null when pickJson appears only in a comment', () => {
     const onLoad = captureOnLoad();
     mockReadFileSync.mockReturnValue('// pickJson is handled at compile time\nconst x = 1;');
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).toBeNull();
   });
@@ -184,7 +206,7 @@ describe(pickJsonPlugin, () => {
 
     mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
 
-    const result = onLoad({ path: '/project/src/kit.ts' });
+    const result = runOnLoad(onLoad, '/project/src/kit.ts');
 
     expect(result).not.toBeNull();
     expect(result?.contents).toContain('"name":"my-pkg"');
@@ -193,11 +215,11 @@ describe(pickJsonPlugin, () => {
   it('registers onLoad filter for TypeScript extensions only', () => {
     let capturedFilter: RegExp | undefined;
     const plugin = pickJsonPlugin();
-    void plugin.setup({
-      onLoad(options: { filter: RegExp }, _callback: LoadCallback) {
+    void plugin.setup(
+      stubBuild((options, _callback) => {
         capturedFilter = options.filter;
-      },
-    });
+      }),
+    );
 
     expect(capturedFilter).toBeDefined();
     // TypeScript extensions match.
