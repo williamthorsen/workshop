@@ -253,7 +253,7 @@ describe(compileCommand, () => {
     expect(mockCompileConfig).toHaveBeenCalledTimes(2);
   });
 
-  it('returns 1 when srcDir does not exist', async () => {
+  it('writes empty manifest and emits info message when srcDir does not exist', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -261,8 +261,23 @@ describe(compileCommand, () => {
 
     const exitCode = await compileCommand([]);
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Source directory not found'));
+    expect(exitCode).toBe(0);
+    expect(mockReaddirSync).not.toHaveBeenCalled();
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('treating as empty'));
+  });
+
+  it('returns 0 and skips manifest when --skip-manifest is set and srcDir does not exist', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(false);
+
+    const exitCode = await compileCommand(['--skip-manifest']);
+
+    expect(exitCode).toBe(0);
+    expect(mockWriteManifest).not.toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('treating as empty'));
   });
 
   it('writes empty manifest and emits info message when srcDir has no .ts files', async () => {
