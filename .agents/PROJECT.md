@@ -33,7 +33,7 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 **Package-level (from any package directory):**
 
-- `nmr build` — Build current package (compile + generate typings)
+- `nmr build` — Build current package (compile `src` to `dist/esm`, including `.d.ts`)
 - `nmr test` — Run tests for current package
 - `nmr test:watch` — Tests in watch mode
 - `nmr test:coverage` — Tests with coverage
@@ -42,9 +42,8 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 ### Build system
 
-- `nmr-compile` (from `@williamthorsen/nmr`) esbuild-compiles each package's `src` to `dist/esm`; run via `nmr build` (CI) and each package's `prepare` script
+- `nmr-compile` (from `@williamthorsen/nmr`) compiles each package's `src` to `dist/esm`, emitting `.js` and `.d.ts` in one pass; run via `nmr build` (CI) and each package's `prepare` script
 - Content-hash caching in `dist/esm/.cache` (written by `nmr-compile`) — skips rebuild when sources haven't changed
-- Each package also generates `.d.ts` typings via `tsc --project tsconfig.generate-typings.json`
 - ESM-only output (`type: "module"` in all packages)
 
 ### Testing
