@@ -29,7 +29,7 @@ export async function compareRefToRemote(
 
   const aheadBehind = await resolveAheadBehind(path, ref, remote);
 
-  return { status: 'out-of-sync', localSha, remoteSha, ...(aheadBehind ? { aheadBehind } : {}) };
+  return { status: 'out-of-sync', localSha, remoteSha, ...(aheadBehind && { aheadBehind }) };
 }
 
 /** Resolve a local ref to its SHA, or undefined if it doesn't exist. Rethrow non-ref-missing errors. */
@@ -46,7 +46,7 @@ async function resolveLocalRef(path: string, ref: string): Promise<string | unde
 async function resolveRemoteRef(path: string, ref: string, remote: string): Promise<string | undefined> {
   const output = await runGit(path, 'ls-remote', remote, ref);
   if (!output) return undefined;
-  const sha = output.split('\t')[0];
+  const sha = output.split('\t', 1)[0];
   return sha;
 }
 
@@ -58,8 +58,8 @@ async function resolveAheadBehind(
 ): Promise<{ ahead: number; behind: number } | undefined> {
   try {
     const output = await runGit(path, 'rev-list', '--count', '--left-right', `${ref}...${remote}/${ref}`);
-    const aheadStr = output.split('\t')[0];
-    const behindStr = output.split('\t')[1];
+    const aheadStr = output.split('\t', 1)[0];
+    const behindStr = output.split('\t', 2)[1];
     if (aheadStr === undefined || behindStr === undefined) return undefined;
     const ahead = Number(aheadStr);
     const behind = Number(behindStr);

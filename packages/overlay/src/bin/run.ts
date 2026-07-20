@@ -53,7 +53,7 @@ export async function run(argv: string[]): Promise<number> {
     const result = await overlay({
       source: command.source,
       mode: command.mode,
-      ...(command.target === undefined ? {} : { target: command.target }),
+      ...(command.target !== undefined && { target: command.target }),
     });
     if (command.json) {
       process.stdout.write(`${JSON.stringify(result)}\n`);

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
-const existsSyncMock = vi.hoisted(() => vi.fn<(path: string) => boolean>());
+const existsSyncMock = vi.hoisted(() => vi.fn<(path: import('node:fs').PathLike) => boolean>());
 
 vi.mock('node:child_process', () => {
   const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });

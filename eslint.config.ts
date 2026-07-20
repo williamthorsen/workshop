@@ -1,19 +1,17 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import baseConfig from '@williamthorsen/eslint-config-typescript';
+import { defineConfig } from 'eslint/config';
 
-const thisFilePath = fileURLToPath(import.meta.url);
-const thisDirPath = dirname(thisFilePath);
+import { deferredLintRules } from './.config/eslint/deferred-lint-rules.ts';
 
-import config from '@williamthorsen/eslint-config-typescript';
-
-/**
- * @type {import('eslint').Linter.FlatConfig[]}
- */
-export default [
-  ...config,
+const config = defineConfig([
+  ...baseConfig,
   {
     // Completely ignore these files
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
+  },
+  {
+    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    rules: deferredLintRules,
   },
   {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs', '**/*.ts', '**/*.tsx'],
@@ -27,8 +25,8 @@ export default [
     files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.eslint.json', './packages/*/tsconfig.eslint.json'],
-        tsconfigRootDir: thisDirPath,
+        // Anchor the project service (enabled by the base config) at the repo root.
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
@@ -56,9 +54,18 @@ export default [
     },
   },
   {
+    // Config files legitimately mutate and compose configuration objects at module top level.
+    files: ['**/*.config.{cjs,js,mjs,ts}', '**/config/**'],
+    rules: {
+      'unicorn/no-top-level-side-effects': 'off',
+    },
+  },
+  {
     files: ['**/scripts/**/*'],
     rules: {
       'no-console': 'off',
     },
   },
-];
+]);
+
+export default config;

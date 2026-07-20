@@ -308,7 +308,7 @@ export async function runRdy(
   const durationMs = performance.now() - start;
 
   // The run passes when no failed result has severity at or above the failure threshold.
-  const passed = !results.some((r) => r.status === 'failed' && meetsThreshold(r.severity, failOn));
+  const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   return { results, passed, durationMs };
 }

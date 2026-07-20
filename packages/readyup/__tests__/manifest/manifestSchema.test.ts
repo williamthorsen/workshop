@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ManifestSchema } from '../../src/manifest/manifestSchema.ts';
 
-describe(ManifestSchema, () => {
+describe('ManifestSchema', () => {
   it('accepts a valid manifest with descriptions', () => {
     const input = {
       version: 1,
@@ -99,8 +99,10 @@ describe(ManifestSchema, () => {
 
     expect(result.success).toBe(true);
     assert.ok(result.success);
-    expect(result.data.kits[0]).not.toHaveProperty('sourceHash');
-    expect(result.data.kits[0].targetHash).toBe('e5f6a7b8');
+    const [firstKit] = result.data.kits;
+    assert.ok(firstKit);
+    expect(firstKit).not.toHaveProperty('sourceHash');
+    expect(firstKit.targetHash).toBe('e5f6a7b8');
   });
 
   it('accepts a manifest with readyupVersion as an optional string and preserves it on parse', () => {

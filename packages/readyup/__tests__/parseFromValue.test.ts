@@ -62,7 +62,7 @@ describe(parseFromValue, () => {
   });
 
   it('throws for http:// values with helpful message', () => {
-    expect(() => parseFromValue('http://example.com/kit.js')).toThrow('Use --url instead');
+    expect(() => parseFromValue('https://example.com/kit.js')).toThrow('Use --url instead');
   });
 
   // -- global keyword --

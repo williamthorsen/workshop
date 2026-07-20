@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -1291,7 +1292,9 @@ describe(runCommand, () => {
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
       url: 'https://raw.githubusercontent.com/org/repo/v2/.readyup/kits/nmr.js',
     });
-    expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('headers');
+    const [firstRemoteKitCall] = mockLoadRemoteKit.mock.calls;
+    assert.ok(firstRemoteKitCall);
+    expect(firstRemoteKitCall[0]).not.toHaveProperty('headers');
   });
 
   // Bitbucket source tests (via URL with api.bitbucket.org)
@@ -1340,7 +1343,9 @@ describe(runCommand, () => {
     expect(mockLoadRemoteKit).toHaveBeenCalledWith({
       url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/v2/.readyup/kits/deploy.js',
     });
-    expect(mockLoadRemoteKit.mock.calls[0][0]).not.toHaveProperty('headers');
+    const [firstRemoteKitCall] = mockLoadRemoteKit.mock.calls;
+    assert.ok(firstRemoteKitCall);
+    expect(firstRemoteKitCall[0]).not.toHaveProperty('headers');
   });
 
   it('reports a 404 for a Bitbucket URL with the URL in stderr', async () => {

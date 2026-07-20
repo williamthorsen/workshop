@@ -400,7 +400,9 @@ describe(compileCommand, () => {
     });
 
     // Verify paths are relative (not absolute).
-    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    const [writeManifestCall] = mockWriteManifest.mock.calls;
+    assert.ok(writeManifestCall);
+    const writtenManifest: RdyManifest = writeManifestCall[1];
     for (const kit of writtenManifest.kits) {
       assert.ok(kit.path, 'Expected kit.path to be defined');
       assert.ok(kit.source, 'Expected kit.source to be defined');
@@ -576,7 +578,9 @@ describe(compileCommand, () => {
 
     await compileCommand([]);
 
-    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    const [writeManifestCall] = mockWriteManifest.mock.calls;
+    assert.ok(writeManifestCall);
+    const writtenManifest: RdyManifest = writeManifestCall[1];
     for (const kit of writtenManifest.kits) {
       expect(kit.readyupVersion).toBe(VERSION);
     }
@@ -591,7 +595,9 @@ describe(compileCommand, () => {
 
     await compileCommand(['deploy.ts']);
 
-    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    const [writeManifestCall] = mockWriteManifest.mock.calls;
+    assert.ok(writeManifestCall);
+    const writtenManifest: RdyManifest = writeManifestCall[1];
     const deployEntry = writtenManifest.kits.find((k) => k.name === 'deploy');
     assert.ok(deployEntry, 'Expected deploy entry to be present');
     expect(deployEntry.readyupVersion).toBe(VERSION);
@@ -690,7 +696,9 @@ describe(compileCommand, () => {
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️  alpha.ts — skipped'));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits skipped due to drift'));
 
-    const writtenManifest: RdyManifest = mockWriteManifest.mock.calls[0][1];
+    const [writeManifestCall] = mockWriteManifest.mock.calls;
+    assert.ok(writeManifestCall);
+    const writtenManifest: RdyManifest = writeManifestCall[1];
     const alphaEntry = writtenManifest.kits.find((k) => k.name === 'alpha');
     assert.ok(alphaEntry, 'Expected alpha entry to remain in manifest');
     expect(alphaEntry.targetHash).toBe('aaaa1111');

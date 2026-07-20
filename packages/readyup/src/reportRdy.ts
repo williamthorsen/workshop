@@ -197,14 +197,14 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
 
   for (const result of iterateWithNaSuppression(visibleResults)) {
-    const indent = '   '.repeat(result.depth);
+    const indent = ' '.repeat(3).repeat(result.depth);
     const icon = getIcon(result);
     let checkLine = `${indent}${icon} ${result.name} (${formatDuration(result.durationMs)})`;
     if (result.detail !== null) {
-      checkLine += ` \u2014 ${result.detail}`;
+      checkLine += ` \u{2014} ${result.detail}`;
     }
     if (result.progress !== null) {
-      checkLine += ` \u2014 ${formatProgress(result.progress)}`;
+      checkLine += ` \u{2014} ${formatProgress(result.progress)}`;
     }
     lines.push(checkLine);
 

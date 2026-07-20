@@ -9,11 +9,7 @@ import { pluralizeWithCount } from './utils/pluralize.ts';
  * result; chezmoi's own output never reaches stdout.
  */
 export function formatReport(result: OverlayResult): string {
-  const lines: string[] = [];
-
-  for (const entry of result.entries) {
-    lines.push(`  ${OUTCOME_LABELS[entry.outcome]} ${entry.path}`);
-  }
+  const lines: string[] = Array.from(result.entries, (entry) => `  ${OUTCOME_LABELS[entry.outcome]} ${entry.path}`);
   if (result.entries.length > 0) {
     lines.push('');
   }
