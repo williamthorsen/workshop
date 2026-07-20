@@ -180,23 +180,27 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
   const outDir = path.resolve(process.cwd(), config.compile.outDir);
 
-  if (!existsSync(srcDir)) {
-    process.stderr.write(`Error: Source directory not found: ${srcDir}\n`);
-    return 1;
-  }
+  // A missing source directory is treated as an empty one: fall through to the empty-kit-list
+  // manifest write below rather than erroring.
+  const srcDirExists = existsSync(srcDir);
 
-  let tsFiles: string[];
-  try {
-    tsFiles = collectSourceFiles(srcDir, config.compile.include);
-  } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: Failed to read source directory: ${message}\n`);
-    return 1;
+  let tsFiles: string[] = [];
+  if (srcDirExists) {
+    try {
+      tsFiles = collectSourceFiles(srcDir, config.compile.include);
+    } catch (error: unknown) {
+      const message = extractMessage(error);
+      process.stderr.write(`Error: Failed to read source directory: ${message}\n`);
+      return 1;
+    }
   }
 
   if (tsFiles.length === 0) {
     const relSrc = path.relative(process.cwd(), srcDir);
-    process.stdout.write(`No .ts files found in ${relSrc}\n`);
+    const reason = srcDirExists
+      ? `No .ts files found in ${relSrc}`
+      : `Source directory not found: ${relSrc} — treating as empty`;
+    process.stdout.write(`${reason}\n`);
     if (!skipManifest) {
       try {
         writeManifest(manifestPath, { version: 1, kits: [] });
