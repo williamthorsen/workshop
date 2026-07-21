@@ -10,6 +10,8 @@ Run pre-deployment verification checks against your environment and configuratio
 pnpm add -D readyup
 ```
 
+Node 24 or later is required, for the runner and for the kits it compiles.
+
 ## Quick start
 
 Scaffold a starter config and kit:
