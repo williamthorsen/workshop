@@ -30,6 +30,14 @@ const SEVERITY_RANK: Record<Severity, number> = {
   recommend: 2,
 };
 
+/**
+ * Severity assigned to a check whose `check` or `skip` function throws.
+ *
+ * An exception is a defect in the check itself, not a soft finding, so it overrides
+ * whatever severity the check declares.
+ */
+const THROWN_SEVERITY: Severity = 'error';
+
 /** Return true if `severity` is at or above (more severe than or equal to) `threshold`. */
 export function meetsThreshold(severity: Severity, threshold: Severity): boolean {
   return SEVERITY_RANK[severity] <= SEVERITY_RANK[threshold];
@@ -107,15 +115,14 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
     try {
       const skipResult = await check.skip();
       if (typeof skipResult === 'string') {
-        const result = buildSkippedResult(check.name, severity, 'n/a', skipResult, fix, depth);
-        const childResults = skipAllDescendants(children, defaultSeverity, 'n/a', depth + 1);
-        return [result, ...childResults];
+        // An `n/a` skip terminates its subtree: descendants produce no results at all.
+        return [buildSkippedResult(check.name, severity, 'n/a', skipResult, fix, depth)];
       }
     } catch (error_: unknown) {
       const durationMs = performance.now() - start;
       const error = error_ instanceof Error ? error_ : new Error(String(error_));
-      const result = buildFailedResult(check.name, severity, durationMs, null, fix, error, null, depth);
-      const childResults = skipAllDescendants(children, defaultSeverity, 'precondition', depth + 1);
+      const result = buildFailedResult(check.name, THROWN_SEVERITY, durationMs, null, fix, error, null, depth);
+      const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
       return [result, ...childResults];
     }
   }
@@ -124,7 +131,7 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
   try {
     const raw = await check.check();
     const durationMs = performance.now() - start;
-    let result: RdyResult;
+    let result: PassedResult | FailedResult;
     if (typeof raw === 'boolean') {
       result = raw
         ? buildPassedResult(check.name, severity, durationMs, null, fix, null, depth)
@@ -142,8 +149,8 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
   } catch (error_: unknown) {
     const durationMs = performance.now() - start;
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
-    const result = buildFailedResult(check.name, severity, durationMs, null, fix, error, null, depth);
-    const childResults = skipAllDescendants(children, defaultSeverity, 'precondition', depth + 1);
+    const result = buildFailedResult(check.name, THROWN_SEVERITY, durationMs, null, fix, error, null, depth);
+    const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   }
 }
@@ -152,10 +159,10 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
  * Collect results from child checks based on the parent's outcome.
  *
  * Passed parents: execute children concurrently, then iterate in declaration order
- * to produce depth-first results. Failed/skipped parents: skip all descendants.
+ * to produce depth-first results. Failed parents: skip all descendants.
  */
 async function collectChildResults(
-  parentResult: RdyResult,
+  parentResult: PassedResult | FailedResult,
   children: RdyCheck[],
   defaultSeverity: Severity,
   childDepth: number,
@@ -163,12 +170,7 @@ async function collectChildResults(
   if (children.length === 0) return [];
 
   if (parentResult.status === 'failed') {
-    return skipAllDescendants(children, defaultSeverity, 'precondition', childDepth);
-  }
-
-  if (parentResult.status === 'skipped') {
-    const reason = parentResult.skipReason === 'n/a' ? 'n/a' : 'precondition';
-    return skipAllDescendants(children, defaultSeverity, reason, childDepth);
+    return skipAllDescendants(children, defaultSeverity, childDepth);
   }
 
   return runSiblingChecks(children, defaultSeverity, childDepth);
@@ -186,32 +188,27 @@ async function runSiblingChecks(checks: RdyCheck[], defaultSeverity: Severity, d
   return siblingTrees.flat();
 }
 
-/** Recursively skip a check and all its descendants. */
-function skipAllDescendants(
-  checks: RdyCheck[],
-  defaultSeverity: Severity,
-  skipReason: 'n/a' | 'precondition',
-  depth: number,
-): RdyResult[] {
+/**
+ * Recursively skip a check and all its descendants.
+ *
+ * Every skip produced here is a `precondition` skip: an `n/a` skip terminates its own
+ * subtree in `executeCheck` and so never reaches this function.
+ */
+function skipAllDescendants(checks: RdyCheck[], defaultSeverity: Severity, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
   for (const check of checks) {
-    results.push(skipCheck(check, defaultSeverity, skipReason, depth));
+    results.push(skipCheck(check, defaultSeverity, depth));
     if (check.checks !== undefined && check.checks.length > 0) {
-      results.push(...skipAllDescendants(check.checks, defaultSeverity, skipReason, depth + 1));
+      results.push(...skipAllDescendants(check.checks, defaultSeverity, depth + 1));
     }
   }
   return results;
 }
 
-/** Mark a check as skipped due to a failed precondition or N/A parent. */
-function skipCheck(
-  check: RdyCheck,
-  defaultSeverity: Severity,
-  skipReason: 'n/a' | 'precondition' = 'precondition',
-  depth = 0,
-): RdyResult {
+/** Mark a check as skipped because a precondition or ancestor check failed. */
+function skipCheck(check: RdyCheck, defaultSeverity: Severity, depth: number): RdyResult {
   const severity = resolveSeverity(check, defaultSeverity);
-  return buildSkippedResult(check.name, severity, skipReason, null, check.fix ?? null, depth);
+  return buildSkippedResult(check.name, severity, 'precondition', null, check.fix ?? null, depth);
 }
 
 /** Run preconditions concurrently. Return true if all passed. */
@@ -226,8 +223,9 @@ async function runPreconditions(
   const flat = trees.flat();
   results.push(...flat);
 
-  // Only top-level precondition results (depth 0) determine pass/fail.
-  return flat.filter((r) => r.depth === 0).every((r) => r.status === 'passed');
+  // Only top-level precondition results (depth 0) determine pass/fail. A precondition
+  // skipped `n/a` does not gate: "the gate does not apply" is not "the gate failed".
+  return flat.filter((r) => r.depth === 0).every((r) => r.status !== 'failed');
 }
 
 /** Run a flat checklist: all checks concurrently. */
@@ -238,7 +236,7 @@ async function runFlatChecks(
   defaultSeverity: Severity,
 ): Promise<void> {
   if (!preconditionsPassed) {
-    results.push(...skipAllDescendants(checklist.checks, defaultSeverity, 'precondition', 0));
+    results.push(...skipAllDescendants(checklist.checks, defaultSeverity, 0));
     return;
   }
 
@@ -256,7 +254,7 @@ async function runStagedChecks(
 ): Promise<void> {
   if (!preconditionsPassed) {
     for (const group of checklist.groups) {
-      results.push(...skipAllDescendants(group, defaultSeverity, 'precondition', 0));
+      results.push(...skipAllDescendants(group, defaultSeverity, 0));
     }
     return;
   }
@@ -264,7 +262,7 @@ async function runStagedChecks(
   let shouldSkipRemaining = false;
   for (const group of checklist.groups) {
     if (shouldSkipRemaining) {
-      results.push(...skipAllDescendants(group, defaultSeverity, 'precondition', 0));
+      results.push(...skipAllDescendants(group, defaultSeverity, 0));
       continue;
     }
 
@@ -285,7 +283,8 @@ async function runStagedChecks(
 /**
  * Run all checks in a checklist and produce a report.
  *
- * Preconditions run first. If any fails, all subsequent checks are skipped.
+ * Preconditions run first. If any fails, all subsequent checks are skipped; a precondition
+ * skipped `n/a` does not gate the checklist.
  * Flat checklists run all checks concurrently. Staged checklists run groups
  * sequentially, bailing on later groups when an earlier group has a failure
  * at or above the failure threshold.

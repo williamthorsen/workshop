@@ -126,22 +126,7 @@ function collectInlineDetails(result: RdyResult, includeFix: boolean): string[] 
   return details;
 }
 
-/** Iterate visible results, skipping N/A descendants (depth > N/A parent). */
-function* iterateWithNaSuppression(results: RdyResult[]): Generator<RdyResult> {
-  let suppressBelowDepth: number | null = null;
-  for (const result of results) {
-    if (suppressBelowDepth !== null) {
-      if (result.depth > suppressBelowDepth) continue;
-      suppressBelowDepth = null;
-    }
-    if (result.status === 'skipped' && result.skipReason === 'n/a') {
-      suppressBelowDepth = result.depth;
-    }
-    yield result;
-  }
-}
-
-/** Count results by severity and skip reason after N/A descendant suppression. */
+/** Count results by severity and skip reason. */
 function countResults(results: RdyResult[]): SummaryCounts {
   const counts: SummaryCounts = {
     passed: 0,
@@ -152,7 +137,7 @@ function countResults(results: RdyResult[]): SummaryCounts {
     optional: 0,
     worstSeverity: null,
   };
-  for (const r of iterateWithNaSuppression(results)) {
+  for (const r of results) {
     tallyResult(counts, r);
   }
   return counts;
@@ -196,7 +181,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
 
   const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
 
-  for (const result of iterateWithNaSuppression(visibleResults)) {
+  for (const result of visibleResults) {
     const indent = ' '.repeat(3).repeat(result.depth);
     const icon = getIcon(result);
     let checkLine = `${indent}${icon} ${result.name} (${formatDuration(result.durationMs)})`;
