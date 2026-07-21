@@ -126,9 +126,9 @@ function collectInlineDetails(result: RdyResult, includeFix: boolean): string[] 
   return details;
 }
 
-/** Count results by severity and skip reason. */
-function countResults(results: RdyResult[]): SummaryCounts {
-  const counts: SummaryCounts = {
+/** Create a zeroed `SummaryCounts` object. */
+export function emptyCounts(): SummaryCounts {
+  return {
     passed: 0,
     errors: 0,
     warnings: 0,
@@ -137,6 +137,17 @@ function countResults(results: RdyResult[]): SummaryCounts {
     optional: 0,
     worstSeverity: null,
   };
+}
+
+/**
+ * Count results by severity and skip reason.
+ *
+ * This is the only entry point for tallying a result list, and it expects the run's
+ * complete results. The reporting threshold selects what is *displayed*; passing a
+ * pre-filtered list here is what once made the human, table, and JSON counts disagree.
+ */
+export function countResults(results: RdyResult[]): SummaryCounts {
+  const counts = emptyCounts();
   for (const r of results) {
     tallyResult(counts, r);
   }
@@ -171,7 +182,8 @@ export function tallyResult(counts: SummaryCounts, result: RdyResult): void {
  *
  * In `end` mode (default), errors appear inline but fix messages are collected in a "Fixes" section at the bottom.
  * In `inline` mode, error and fix messages appear directly below each failed check.
- * Results below the reporting threshold are omitted from output.
+ * Results below the reporting threshold are omitted from the detail tree; the summary
+ * counts always reflect the whole run.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -204,7 +216,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
     }
   }
 
-  const counts = countResults(visibleResults);
+  const counts = countResults(report.results);
   lines.push('', `${formatSummaryCounts(counts)} (${formatDuration(report.durationMs)})`);
 
   if (fixLocation === 'end' && collectedFixes.length > 0) {

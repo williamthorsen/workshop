@@ -35,7 +35,8 @@ Run options:
   --checklists, -c <name,...>        Filter checklists (with --file or --url only)
   --json, -j                         Output results as JSON
   --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
-  --report-on, -R <severity>         Report this severity or above (error, warn, recommend)
+  --report-on, -R <severity>         Show this severity or above in the detail tree (error, warn, recommend);
+                                     summary counts always cover the whole run
 
 Global options:
   --help, -h           Show this help message
@@ -65,7 +66,8 @@ Options:
   --checklists, -c <name,...>        Filter checklists (with --file or --url only)
   --json, -j                         Output results as JSON
   --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
-  --report-on, -R <severity>         Report this severity or above (error, warn, recommend)
+  --report-on, -R <severity>         Show this severity or above in the detail tree (error, warn, recommend);
+                                     summary counts always cover the whole run
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
