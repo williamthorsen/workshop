@@ -17,9 +17,14 @@ on:
 
   workflow_dispatch: {}
 
+# Concurrency is caller-owned from @v6 onward. Declared at workflow level so a superseded run is
+# cancelled while the current run's legs stay intact.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   code-quality:
-    uses: williamthorsen/.github/.github/workflows/code-quality-pnpm-workflow.yaml@v5
+    uses: williamthorsen/.github/.github/workflows/code-quality-pnpm-workflow.yaml@v7
     with:
       check-command: pnpm exec nmr build && pnpm exec nmr check:strict
-      node-version: '24.18.0'

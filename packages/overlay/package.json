@@ -41,7 +41,7 @@
     "prepare": "tsx ../../config/generateVersion.ts && nmr-compile"
   },
   "engines": {
-    "node": ">=20.6.0"
+    "node": ">=24"
   },
   "publishConfig": {
     "access": "public"

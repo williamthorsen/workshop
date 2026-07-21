@@ -12,6 +12,9 @@ const config = defineConfig({
       include: [],
     },
     exclude: ['packages/**'],
+    // The root carries no tests of its own. Confined to this config, which only `root:test` loads,
+    // so a package that loses its whole suite still fails.
+    passWithNoTests: true,
   },
 });
 

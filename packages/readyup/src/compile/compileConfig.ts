@@ -13,6 +13,9 @@ export interface CompileResult {
   targetHash: string;
 }
 
+/** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
+export const KIT_COMPILE_TARGET = 'es2025';
+
 /**
  * Generated-file header prepended to compiled output.
  *
@@ -54,7 +57,7 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     bundle: true,
     format: 'esm',
     platform: 'node',
-    target: 'es2022',
+    target: KIT_COMPILE_TARGET,
     external: ['node:*', 'readyup', 'readyup/*'],
     plugins: [pickJsonPlugin()],
     banner: { js: GENERATED_HEADER },

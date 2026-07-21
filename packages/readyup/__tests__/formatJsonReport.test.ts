@@ -221,8 +221,7 @@ describe(formatJsonReport, () => {
 
     const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report)));
     if (typeof parsed !== 'object' || parsed === null) throw new Error('expected object');
-    // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib; tsconfig target is es2022.
-    const topLevelKeys = Object.keys(parsed).sort();
+    const topLevelKeys = Object.keys(parsed).toSorted();
 
     expect(topLevelKeys).toStrictEqual([
       'blocked',

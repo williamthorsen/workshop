@@ -20,6 +20,8 @@ pnpm add -g @williamthorsen/overlay
 pnpm link --global
 ```
 
+Node 24 or later is required.
+
 chezmoi `2.46.0` or later is required; overlay preflights the version and exits with an actionable error otherwise.
 
 ## Usage

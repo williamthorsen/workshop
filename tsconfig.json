@@ -13,7 +13,7 @@
     "exactOptionalPropertyTypes": true,
     // Each file must transpile standalone.
     "isolatedModules": true,
-    "lib": ["ES2024"], // Keep this value aligned with the `engines` floor.
+    "lib": ["ES2025"], // Keep aligned with the `engines` floor: Node 24 → ES2025.
     // Omitting this would default to `ES2022` with `Bundler` resolution, which is wrong for published Node packages.
     "module": "NodeNext",
     // Treat every file as a module, including those with no import or export.
@@ -36,7 +36,7 @@
     // Don't typecheck libraries and declaration (.d.ts) files
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "ES2024", // Keep this value aligned with the `engines` floor.
+    "target": "ES2025", // Keep aligned with the `engines` floor: Node 24 → ES2025.
     "types": ["node"],
   },
   "exclude": ["node_modules"],

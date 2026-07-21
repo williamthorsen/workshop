@@ -1,8 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "lib": ["es2022"],
-  },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "__tests__/", "*.ts"],
 }

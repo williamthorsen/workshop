@@ -154,8 +154,7 @@ function resolveManifestPath(flagValue: string | undefined): string {
 function collectSourceFiles(srcDir: string, includeGlob: string | undefined): string[] {
   const entries = readdirSync(srcDir, { recursive: true, encoding: 'utf8' });
   const isMatch = includeGlob !== undefined ? picomatch(includeGlob) : undefined;
-  // eslint-disable-next-line unicorn/no-array-sort -- filter() returns a new array; toSorted() requires es2023 lib
-  return entries.filter((name) => name.endsWith('.ts') && (isMatch === undefined || isMatch(name))).sort();
+  return entries.filter((name) => name.endsWith('.ts') && (isMatch === undefined || isMatch(name))).toSorted();
 }
 
 /** Arguments for the batch compile path. */
@@ -318,8 +317,7 @@ function upsertManifest(
 
   // Replace existing entry for this kit name, or append.
   const filtered = existingKits.filter((k) => k.name !== kitName);
-  // eslint-disable-next-line unicorn/no-array-sort -- toSorted() requires es2023 lib
-  const kits = [...filtered, entry].sort((a, b) => a.name.localeCompare(b.name));
+  const kits = [...filtered, entry].toSorted((a, b) => a.name.localeCompare(b.name));
 
   writeManifest(manifestPath, { version: 1, kits });
 }
