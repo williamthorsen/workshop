@@ -36,6 +36,19 @@ const checklist: RdyChecklist = {
   ],
 };
 
+/** A checklist whose only failing check sits under a passing parent that is below the reporting threshold. */
+const nestedChecklist: RdyChecklist = {
+  name: 'nested',
+  checks: [
+    {
+      name: 'context-parent',
+      check: () => true,
+      severity: 'recommend',
+      checks: [{ name: 'failing-child', check: () => false, severity: 'error' }],
+    },
+  ],
+};
+
 const expectedCounts: SummaryCounts = {
   passed: 1,
   errors: 1,
@@ -78,6 +91,21 @@ describe('count agreement across views', () => {
     expect(json).not.toContain('warn-fail');
     expect(human).toContain('gate-fails');
     expect(json).toContain('gate-fails');
+  });
+
+  it('retains the parent chain of a visible result in every view', async () => {
+    const report = await runRdy(nestedChecklist);
+
+    const human = reportRdy(report, { reportOn: 'error' });
+    const parsed: unknown = JSON.parse(
+      formatJsonReport([{ name: 'kit', entries: [{ name: 'nested', report }] }], { reportOn: 'error' }),
+    );
+
+    expect(human).toContain('context-parent');
+    expect(human.indexOf('context-parent')).toBeLessThan(human.indexOf('failing-child'));
+    expect(parsed).toMatchObject({
+      kits: [{ checklists: [{ checks: [{ name: 'context-parent', checks: [{ name: 'failing-child' }] }] }] }],
+    });
   });
 
   it('emits no descendants of an n/a result in any view', async () => {

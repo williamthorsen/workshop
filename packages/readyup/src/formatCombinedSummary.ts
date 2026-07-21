@@ -1,13 +1,14 @@
 import {
+  emptyCounts,
   formatSummaryCounts,
   formatSummaryCountsPlain,
   ICON_ERROR_FAILED,
   ICON_PASSED,
   ICON_RECOMMEND_FAILED,
   ICON_WARN_FAILED,
+  mergeCounts,
 } from './reportRdy.ts';
 import type { ChecklistSummary, Severity, SummaryCounts } from './types.ts';
-import { worseSeverity } from './utils/severity.ts';
 
 /** Format a duration in milliseconds for display. */
 function formatDuration(ms: number): string {
@@ -24,23 +25,9 @@ function getRowIcon(worstSeverity: Severity | null): string {
 
 /** Sum granular counts across multiple summaries, propagating the worst severity. */
 function aggregateCounts(summaries: ChecklistSummary[]): SummaryCounts {
-  const totals: SummaryCounts = {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-  };
-  for (const s of summaries) {
-    totals.passed += s.passed;
-    totals.errors += s.errors;
-    totals.warnings += s.warnings;
-    totals.recommendations += s.recommendations;
-    totals.blocked += s.blocked;
-    totals.optional += s.optional;
-    totals.worstSeverity = worseSeverity(totals.worstSeverity, s.worstSeverity);
+  const totals = emptyCounts();
+  for (const summary of summaries) {
+    mergeCounts(totals, summary);
   }
   return totals;
 }

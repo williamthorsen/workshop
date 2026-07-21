@@ -92,7 +92,7 @@ rdy <command> [options]
 | `--fail-on, -F <severity>`    | Fail on this severity or above (`error`, `warn`, `recommend`) |
 | `--report-on, -R <severity>`  | Show this severity or above (`error`, `warn`, `recommend`)    |
 
-`--report-on` prunes only the reported detail tree. Summary counts, worst severity, and the exit code always reflect the whole run.
+`--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
 
 ### Kit sources
 

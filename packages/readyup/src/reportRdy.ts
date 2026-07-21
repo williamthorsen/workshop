@@ -155,13 +155,48 @@ export function countResults(results: RdyResult[]): SummaryCounts {
 }
 
 /**
+ * Selects the results a reporting threshold leaves visible, retaining the ancestors of every survivor.
+ *
+ * A result is visible when its own severity meets the threshold or when any of its descendants is visible, so a
+ * surviving check is never rendered under a pruned parent. Assumes the contiguous depth-first ordering `runRdy`
+ * produces: a result's descendants are exactly the run of deeper results that follows it.
+ *
+ * Visible results are returned in their original order.
+ */
+export function selectVisibleResults(results: RdyResult[], reportOn: Severity): RdyResult[] {
+  const visible: RdyResult[] = [];
+  // Scanning right to left, the nearest visible result is a descendant exactly when it is deeper, so its
+  // depth alone decides whether the current result must be retained as an ancestor.
+  let nearestVisibleDepth = -Infinity;
+
+  for (const result of results.toReversed()) {
+    if (!meetsThreshold(result.severity, reportOn) && nearestVisibleDepth <= result.depth) continue;
+    visible.push(result);
+    nearestVisibleDepth = result.depth;
+  }
+
+  return visible.toReversed();
+}
+
+/** Aggregates `source` counts into `target` in place, propagating the worse severity. */
+export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
+  target.passed += source.passed;
+  target.errors += source.errors;
+  target.warnings += source.warnings;
+  target.recommendations += source.recommendations;
+  target.blocked += source.blocked;
+  target.optional += source.optional;
+  target.worstSeverity = worseSeverity(target.worstSeverity, source.worstSeverity);
+}
+
+/**
  * Update a `SummaryCounts` object in place with the contribution of a single result.
  *
  * Passed results increment `passed`. Failed results are bucketed by severity, and
  * `worstSeverity` is updated if the failure is more severe than the current worst.
  * Skipped results increment `blocked` (precondition) or `optional` (n/a).
  */
-export function tallyResult(counts: SummaryCounts, result: RdyResult): void {
+function tallyResult(counts: SummaryCounts, result: RdyResult): void {
   if (result.status === 'passed') {
     counts.passed++;
     return;
@@ -182,8 +217,8 @@ export function tallyResult(counts: SummaryCounts, result: RdyResult): void {
  *
  * In `end` mode (default), errors appear inline but fix messages are collected in a "Fixes" section at the bottom.
  * In `inline` mode, error and fix messages appear directly below each failed check.
- * Results below the reporting threshold are omitted from the detail tree; the summary
- * counts always reflect the whole run.
+ * Results below the reporting threshold are omitted from the detail tree unless they are an ancestor of a
+ * result that is shown; the summary counts always reflect the whole run.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -191,7 +226,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const lines: string[] = [];
   const collectedFixes: string[] = [];
 
-  const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
+  const visibleResults = selectVisibleResults(report.results, reportOn);
 
   for (const result of visibleResults) {
     const indent = ' '.repeat(3).repeat(result.depth);

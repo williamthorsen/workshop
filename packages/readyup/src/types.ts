@@ -249,11 +249,12 @@ export interface RdyChecklist {
   /**
    * Gating checks. If any precondition fails, all downstream checks are skipped.
    *
-   * Reporting of precondition results and skipped dependent checks follows the
-   * same reporting-threshold rule as all other results: a result appears in
-   * output only when its severity is at or above the reporting threshold.
-   * Each dependent check's own severity determines whether its skipped entry
-   * is shown.
+   * Only a failure gates. A precondition skipped `n/a` does not: the checklist runs in full. To make a whole checklist
+   * inapplicable, nest its checks under a single parent check whose `skip` returns `n/a`, terminating that subtree.
+   *
+   * Reporting of precondition results and skipped dependent checks follows the same reporting-threshold rule as all
+   * other results: a result appears in output only when its severity is at or above the reporting threshold. Each
+   * dependent check's own severity determines whether its skipped entry is shown.
    */
   preconditions?: RdyCheck[] | undefined;
 
