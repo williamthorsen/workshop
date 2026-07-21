@@ -1,4 +1,4 @@
-import { tallyResult } from './reportRdy.ts';
+import { countResults, emptyCounts } from './reportRdy.ts';
 import { meetsThreshold } from './runRdy.ts';
 import type {
   JsonCheckEntry,
@@ -27,19 +27,6 @@ export interface FormatJsonReportOptions {
   reportOn?: Severity;
 }
 
-/** Create a zeroed `SummaryCounts` object. */
-function emptyCounts(): SummaryCounts {
-  return {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-  };
-}
-
 /** Aggregate `source` counts into `target` in place. */
 function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
   target.passed += source.passed;
@@ -51,15 +38,14 @@ function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
   target.worstSeverity = worseSeverity(target.worstSeverity, source.worstSeverity);
 }
 
-/** Build a single checklist entry from a name and report. */
+/**
+ * Build a single checklist entry from a name and report.
+ *
+ * Counts cover the whole run; the reporting threshold prunes only the serialized detail tree.
+ */
 function buildChecklistEntry(name: string, report: RdyReport, reportOn: Severity): JsonChecklistEntry {
-  const counts = emptyCounts();
+  const counts = countResults(report.results);
   const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
-
-  for (const result of visibleResults) {
-    tallyResult(counts, result);
-  }
-
   const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
 
   return {

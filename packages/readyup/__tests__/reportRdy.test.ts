@@ -515,7 +515,7 @@ describe(reportRdy, () => {
       expect(output).not.toContain('recommend-check');
     });
 
-    it('counts only visible results in the summary', () => {
+    it('counts every result in the summary, including results pruned from the tree', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'error-pass', severity: 'error' }),
@@ -525,8 +525,23 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report, { reportOn: 'error' });
 
-      expect(output).toContain(`${ICON_PASSED} 1 passed`);
-      expect(output).not.toContain('2 passed');
+      expect(output).toContain(`${ICON_PASSED} 2 passed`);
+      expect(output).not.toContain('recommend-pass');
+    });
+
+    it('reports a below-threshold failure in the counts and worst severity', () => {
+      const report = makeReport({
+        results: [
+          makePassedResult({ name: 'error-pass', severity: 'error' }),
+          makeFailedResult({ name: 'warn-fail', severity: 'warn' }),
+        ],
+        passed: false,
+      });
+
+      const output = reportRdy(report, { reportOn: 'error' });
+
+      expect(output).toContain(`${ICON_WARN_FAILED} 1 warning`);
+      expect(output).not.toContain('warn-fail');
     });
 
     it('hides precondition result when its severity is below the reporting threshold', () => {
