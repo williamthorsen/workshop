@@ -23,13 +23,10 @@ export function enumerateKits({ dir, extension }: EnumerateKitsOptions): string[
     throw error;
   }
 
-  return (
-    entries
-      .filter((entry) => entry.isFile() && entry.name.endsWith(extension) && !entry.name.startsWith('.'))
-      .map((entry) => path.basename(entry.name, extension))
-      // eslint-disable-next-line unicorn/no-array-sort
-      .sort()
-  );
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(extension) && !entry.name.startsWith('.'))
+    .map((entry) => path.basename(entry.name, extension))
+    .toSorted();
 }
 
 /** Type guard for Node.js filesystem errors with a `code` property. */
