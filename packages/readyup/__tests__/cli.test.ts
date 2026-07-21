@@ -66,6 +66,7 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
 }));
 
 import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
+import { captureRdyError } from './helpers/captureRdyError.ts';
 
 describe(parseRunArgs, () => {
   it('returns undefined checklists and empty specifiers when no flags are given', () => {
@@ -799,17 +800,14 @@ describe(runCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('errors when an unknown checklist name is given', async () => {
+  it('reports a usage error when an unknown checklist name is given', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
-    const exitCode = await runCommand({
-      kitEntries: singleKitEntry(['nonexistent']),
-      json: false,
-    });
+    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: false }));
 
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown name(s): nonexistent'));
-    expect(exitCode).toBe(1);
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('Unknown name(s): nonexistent');
   });
 
   it('returns exit code 1 when any checklist fails', async () => {
@@ -937,16 +935,13 @@ describe(runCommand, () => {
     expect(mockReportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ fixLocation: 'end' }));
   });
 
-  it('reports kit loading errors to stderr', async () => {
+  it('reports a kit-load error when the kit cannot be loaded', async () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
-    const exitCode = await runCommand({
-      kitEntries: singleKitEntry(),
-      json: false,
-    });
+    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }));
 
-    expect(stderrSpy).toHaveBeenCalledWith('Error: Kit not found\n');
-    expect(exitCode).toBe(1);
+    expect(error.code).toBe('kit-load');
+    expect(error.message).toBe('Kit not found');
   });
 
   it('prints combined summary for a single kit with multiple checklists', async () => {
@@ -1002,18 +997,16 @@ describe(runCommand, () => {
 
   // -- --jit error handling (Task 6) --
 
-  it('throws friendly error when --jit kit import fails due to missing readyup', async () => {
+  it('throws a friendly kit-load error when --jit kit import fails due to missing readyup', async () => {
     const moduleError = Object.assign(new Error("Cannot find package 'readyup'"), {
       code: 'MODULE_NOT_FOUND',
     });
     mockLoadRdyKit.mockRejectedValue(moduleError);
 
-    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
 
-    expect(stderrSpy).toHaveBeenCalledWith(
-      'Error: Running from source requires readyup to be installed as a project dependency.\n',
-    );
-    expect(exitCode).toBe(1);
+    expect(error.code).toBe('kit-load');
+    expect(error.message).toBe('Running from source requires readyup to be installed as a project dependency.');
   });
 
   it('passes through non-readyup module errors even with --jit', async () => {
@@ -1022,19 +1015,17 @@ describe(runCommand, () => {
     });
     mockLoadRdyKit.mockRejectedValue(moduleError);
 
-    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
 
-    expect(stderrSpy).toHaveBeenCalledWith("Error: Cannot find package 'chalk'\n");
-    expect(exitCode).toBe(1);
+    expect(error.message).toBe("Cannot find package 'chalk'");
   });
 
   it('passes through non-module errors with --jit', async () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Syntax error in kit'));
 
-    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
+    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
 
-    expect(stderrSpy).toHaveBeenCalledWith('Error: Syntax error in kit\n');
-    expect(exitCode).toBe(1);
+    expect(error.message).toBe('Syntax error in kit');
   });
 
   describe('threshold cascade', () => {
@@ -1149,32 +1140,27 @@ describe(runCommand, () => {
       expect(exitCode).toBe(1);
     });
 
-    it('emits JSON error to stdout for kit loading errors', async () => {
+    it('throws a kit-load error without writing to either stream', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
-      const exitCode = await runCommand({
-        kitEntries: singleKitEntry(),
-        json: true,
-      });
+      const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: true }));
 
-      expect(mockFormatJsonError).toHaveBeenCalledWith('Kit not found');
-      expect(stdoutSpy).toHaveBeenCalledWith('{"error":"boom"}\n');
+      expect(error.code).toBe('kit-load');
+      expect(stdoutSpy).not.toHaveBeenCalled();
       expect(stderrSpy).not.toHaveBeenCalled();
-      expect(exitCode).toBe(1);
     });
 
-    it('emits JSON error to stdout for unknown checklist names', async () => {
+    it('throws a usage error for unknown checklist names without writing to either stream', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
-      const exitCode = await runCommand({
-        kitEntries: singleKitEntry(['nonexistent']),
-        json: true,
-      });
+      const error = await captureRdyError(() =>
+        runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: true }),
+      );
 
-      expect(mockFormatJsonError).toHaveBeenCalledWith(expect.stringContaining('Unknown name(s): nonexistent'));
+      expect(error.code).toBe('usage');
+      expect(stdoutSpy).not.toHaveBeenCalled();
       expect(stderrSpy).not.toHaveBeenCalled();
-      expect(exitCode).toBe(1);
     });
 
     it('passes kit-grouped entries to formatJsonReport', async () => {
@@ -1204,19 +1190,16 @@ describe(runCommand, () => {
       );
     });
 
-    it('emits JSON error to stdout when runRdy throws', async () => {
+    it('lets a runner crash escape undiagnosed so the boundary classifies it internal', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockRejectedValue(new Error('runner crashed'));
 
-      const exitCode = await runCommand({
-        kitEntries: singleKitEntry(['deploy']),
-        json: true,
-      });
-
-      expect(mockFormatJsonError).toHaveBeenCalledWith('runner crashed');
+      await expect(runCommand({ kitEntries: singleKitEntry(['deploy']), json: true })).rejects.toThrow(
+        'runner crashed',
+      );
+      expect(stdoutSpy).not.toHaveBeenCalled();
       expect(stderrSpy).not.toHaveBeenCalled();
-      expect(exitCode).toBe(1);
     });
 
     it('does not write headers in JSON mode', async () => {
@@ -1359,33 +1342,31 @@ describe(runCommand, () => {
     expect(firstRemoteKitCall[0]).not.toHaveProperty('headers');
   });
 
-  it('reports a 404 for a Bitbucket URL with the URL in stderr', async () => {
+  it('reports a 404 for a Bitbucket URL with the URL in the error message', async () => {
     const url = 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/missing.js';
     mockResolveBitbucketToken.mockReturnValue(undefined);
     mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${url}: 404 Not Found`));
 
-    const exitCode = await runCommand({
-      kitEntries: [{ name: 'missing', source: { url }, checklists: [] }],
-      json: false,
-    });
+    const error = await captureRdyError(() =>
+      runCommand({ kitEntries: [{ name: 'missing', source: { url }, checklists: [] }], json: false }),
+    );
 
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(url));
-    expect(exitCode).toBe(1);
+    expect(error.code).toBe('kit-load');
+    expect(error.message).toContain(url);
   });
 
-  it('reports a network failure for a Bitbucket URL with the URL in stderr', async () => {
+  it('reports a network failure for a Bitbucket URL with the URL in the error message', async () => {
     const url = 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/main/.readyup/kits/deploy.js';
     mockResolveBitbucketToken.mockReturnValue(undefined);
     // Raw fetch rejection — no URL in the error message; loadKit must inject it.
     mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
-    const exitCode = await runCommand({
-      kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }],
-      json: false,
-    });
+    const error = await captureRdyError(() =>
+      runCommand({ kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }], json: false }),
+    );
 
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(url));
-    expect(exitCode).toBe(1);
+    expect(error.code).toBe('kit-load');
+    expect(error.message).toContain(url);
   });
 
   // URL source tests
@@ -1407,17 +1388,15 @@ describe(runCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('reports remote kit loading errors to stderr, prepending the URL when missing from the message', async () => {
+  it('prepends the URL to a remote kit-load error message when it is missing', async () => {
     const url = 'https://example.com/config.js';
     mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
-    const exitCode = await runCommand({
-      kitEntries: [{ name: 'config', source: { url }, checklists: [] }],
-      json: false,
-    });
+    const error = await captureRdyError(() =>
+      runCommand({ kitEntries: [{ name: 'config', source: { url }, checklists: [] }], json: false }),
+    );
 
-    expect(stderrSpy).toHaveBeenCalledWith(`Error: Failed to reach ${url}: Failed to fetch remote kit\n`);
-    expect(exitCode).toBe(1);
+    expect(error.message).toBe(`Failed to reach ${url}: Failed to fetch remote kit`);
   });
 });
 

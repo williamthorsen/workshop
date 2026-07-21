@@ -55,6 +55,7 @@ import { compileCommand } from '../src/compile/compileCommand.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 import { VERSION } from '../src/version.ts';
+import { captureRdyError } from './helpers/captureRdyError.ts';
 
 describe(compileCommand, () => {
   let stdoutSpy: MockInstance;
@@ -136,25 +137,25 @@ describe(compileCommand, () => {
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
   });
 
-  it('returns 1 when --output is provided without a value', async () => {
-    const exitCode = await compileCommand(['input.ts', '--output']);
+  it('reports a usage error when --output is provided without a value', async () => {
+    const error = await captureRdyError(() => compileCommand(['input.ts', '--output']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--output requires a path argument'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('--output requires a path argument');
   });
 
-  it('returns 1 when --output is given an empty value', async () => {
-    const exitCode = await compileCommand(['input.ts', '--output=']);
+  it('reports a usage error when --output is given an empty value', async () => {
+    const error = await captureRdyError(() => compileCommand(['input.ts', '--output=']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--output requires a path argument'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('--output requires a path argument');
   });
 
-  it('returns 1 for unknown flags', async () => {
-    const exitCode = await compileCommand(['input.ts', '--verbose']);
+  it('reports a usage error for unknown flags', async () => {
+    const error = await captureRdyError(() => compileCommand(['input.ts', '--verbose']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--verbose'"));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain("Unknown option '--verbose'");
   });
 
   it('returns 1 when compileConfig throws', async () => {
@@ -166,11 +167,11 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('esbuild is required'));
   });
 
-  it('returns 1 when multiple positional arguments are provided', async () => {
-    const exitCode = await compileCommand(['a.ts', 'b.ts']);
+  it('reports a usage error when multiple positional arguments are provided', async () => {
+    const error = await captureRdyError(() => compileCommand(['a.ts', 'b.ts']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Too many arguments'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('Too many arguments');
   });
 
   // Batch compile tests
@@ -222,18 +223,18 @@ describe(compileCommand, () => {
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_NO_CHANGES} b.ts — no changes`));
   });
 
-  it('returns 1 when --output is given without an input file', async () => {
-    const exitCode = await compileCommand(['--output', 'out.js']);
+  it('reports a usage error when --output is given without an input file', async () => {
+    const error = await captureRdyError(() => compileCommand(['--output', 'out.js']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('--output requires an input file'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('--output requires an input file');
   });
 
-  it('returns 1 for --all (removed flag)', async () => {
-    const exitCode = await compileCommand(['--all']);
+  it('reports a usage error for --all (removed flag)', async () => {
+    const error = await captureRdyError(() => compileCommand(['--all']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--all'"));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain("Unknown option '--all'");
   });
 
   it('uses compile.include glob to filter files during batch compile', async () => {
@@ -334,7 +335,7 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('references unknown checklist'));
   });
 
-  it('returns 1 with structured error when readdirSync throws during batch compile', async () => {
+  it('reports a config error when readdirSync throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -343,11 +344,11 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const exitCode = await compileCommand([]);
+    const error = await captureRdyError(() => compileCommand([]));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to read source directory'));
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('Failed to read source directory');
+    expect(error.message).toContain('EACCES');
   });
 
   it('writes empty manifest when glob matches only non-.ts files during batch compile', async () => {
@@ -520,7 +521,7 @@ describe(compileCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
-  it('returns 1 when writeManifest throws during batch compile', async () => {
+  it('reports a config error when writeManifest throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -531,11 +532,11 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const exitCode = await compileCommand([]);
+    const error = await captureRdyError(() => compileCommand([]));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error writing manifest'));
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('Error writing manifest');
+    expect(error.message).toContain('EACCES');
   });
 
   it('writes warning to stderr when upsert encounters non-missing-file error', async () => {

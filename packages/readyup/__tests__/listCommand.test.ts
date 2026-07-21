@@ -22,6 +22,7 @@ vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
 
 import { listCommand } from '../src/list/listCommand.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
+import { captureRdyError } from './helpers/captureRdyError.ts';
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
@@ -124,25 +125,25 @@ describe(listCommand, () => {
       expect(output).toContain('No kits found.');
     });
 
-    it('returns 1 and writes to stderr when config load fails', async () => {
+    it('reports a config error when config load fails', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
-      const exitCode = await listCommand([]);
+      const error = await captureRdyError(() => listCommand([]));
 
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad config'));
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('bad config');
     });
 
-    it('returns 1 and writes to stderr when enumerateKits throws', async () => {
+    it('reports a config error when enumerateKits throws', async () => {
       const permError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
       mockEnumerateKits.mockImplementation(() => {
         throw permError;
       });
 
-      const exitCode = await listCommand([]);
+      const error = await captureRdyError(() => listCommand([]));
 
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('permission denied'));
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('permission denied');
     });
 
     it('renders Internal section without Compiled when manifest file is missing and internal kits exist', async () => {
@@ -212,15 +213,15 @@ describe(listCommand, () => {
       expect(output).toContain('No compiled kits found');
     });
 
-    it('returns 1 when manifest is not found at --from path', async () => {
+    it('reports a config error when the manifest is not found at the --from path', async () => {
       mockReadManifest.mockImplementation(() => {
         throw new Error('Manifest file not found: /nonexistent/.readyup/manifest.json');
       });
 
-      const exitCode = await listCommand(['--from', '/nonexistent']);
+      const error = await captureRdyError(() => listCommand(['--from', '/nonexistent']));
 
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('Manifest file not found');
     });
   });
 
@@ -242,29 +243,29 @@ describe(listCommand, () => {
       expect(output).toContain('deploy');
     });
 
-    it('returns 1 when manifest file cannot be read', async () => {
+    it('reports a config error when the manifest file cannot be read', async () => {
       mockReadManifest.mockImplementation(() => {
         throw new Error('Manifest file not found: /missing/manifest.json');
       });
 
-      const exitCode = await listCommand(['--manifest', '/missing/manifest.json']);
+      const error = await captureRdyError(() => listCommand(['--manifest', '/missing/manifest.json']));
 
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('Manifest file not found');
     });
 
-    it('returns 1 when --from and --manifest are both provided', async () => {
-      const exitCode = await listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']);
+    it('reports a usage error when --from and --manifest are both provided', async () => {
+      const error = await captureRdyError(() => listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']));
 
-      expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('mutually exclusive'));
+      expect(error.code).toBe('usage');
+      expect(error.message).toContain('mutually exclusive');
     });
   });
 
-  it('returns 1 for unknown flags', async () => {
-    const exitCode = await listCommand(['--unknown']);
+  it('reports a usage error for unknown flags', async () => {
+    const error = await captureRdyError(() => listCommand(['--unknown']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Unknown option '--unknown'"));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain("Unknown option '--unknown'");
   });
 });

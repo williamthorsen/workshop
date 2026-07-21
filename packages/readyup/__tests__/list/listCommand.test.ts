@@ -37,6 +37,7 @@ vi.mock('../../src/resolveGitHubToken.ts', () => ({
 vi.stubGlobal('fetch', mockFetch);
 
 import { listCommand } from '../../src/list/listCommand.ts';
+import { captureRdyError } from '../helpers/captureRdyError.ts';
 import { mockResponse } from '../helpers/mockResponse.ts';
 
 const validRemoteManifestBody = JSON.stringify({
@@ -46,11 +47,10 @@ const validRemoteManifestBody = JSON.stringify({
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
 
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
     mockResolveBitbucketToken.mockReturnValue(undefined);
@@ -115,12 +115,11 @@ describe(listCommand, () => {
     expect(calledPath).toBe(path.join(path.resolve('/some/repo'), '.readyup/manifest.json'));
   });
 
-  it('returns exit code 1 with a user-readable error for malformed --from values', async () => {
-    const exitCode = await listCommand(['--from', 'https://example.com']);
+  it('reports a usage error for malformed --from values', async () => {
+    const error = await captureRdyError(() => listCommand(['--from', 'https://example.com']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error:'));
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('URLs are not accepted by --from'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('URLs are not accepted by --from');
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
@@ -170,79 +169,73 @@ describe(listCommand, () => {
     );
   });
 
-  it('with --from github:... and a 404 response, writes a stderr message naming the URL', async () => {
+  it('with --from github:... and a 404 response, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
-      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
+      'No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
     );
   });
 
-  it('with --from github:... and an HTML soft-404 body, writes a stderr message naming the URL', async () => {
+  it('with --from github:... and an HTML soft-404 body, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
-      'Error: No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
+      'No manifest found at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json.',
     );
   });
 
-  it('with --from github:... and a malformed manifest, writes a stderr message including the URL and "malformed"', async () => {
+  it('with --from github:... and a malformed manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Manifest at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json is malformed:',
     );
   });
 
-  it('with --from github:... and a schema-invalid manifest, writes a stderr message including the URL and "malformed"', async () => {
+  it('with --from github:... and a schema-invalid manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Manifest at https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json is malformed:',
     );
   });
 
-  it('with --from github:... and a 500 response, writes a stderr message including the URL and status', async () => {
+  it('with --from github:... and a 500 response, reports a config error naming the URL and status', async () => {
     mockFetch.mockResolvedValue(
       mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
     );
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Failed to fetch manifest from https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json: 500 Internal Server Error',
     );
   });
 
-  it('with --from github:... and a network failure, writes a stderr message including the URL', async () => {
+  it('with --from github:... and a network failure, reports a config error naming the URL', async () => {
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Failed to reach https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
     );
-    expect(stderrCalls).toContain('ECONNREFUSED');
+    expect(error.message).toContain('ECONNREFUSED');
   });
 
   it('with --from bitbucket:ws/repo, fetches and renders the remote manifest', async () => {
@@ -304,66 +297,61 @@ describe(listCommand, () => {
     );
   });
 
-  it('with --from bitbucket:... and a 404 response, writes a stderr message naming the URL', async () => {
+  it('with --from bitbucket:... and a 404 response, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
-      'Error: No manifest found at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json.',
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
+      'No manifest found at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json.',
     );
   });
 
-  it('with --from bitbucket:... and a malformed manifest, writes a stderr message including the URL and "malformed"', async () => {
+  it('with --from bitbucket:... and a malformed manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Manifest at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json is malformed:',
     );
   });
 
-  it('with --from bitbucket:... and a schema-invalid manifest, writes a stderr message including the URL and "malformed"', async () => {
+  it('with --from bitbucket:... and a schema-invalid manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Manifest at https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json is malformed:',
     );
   });
 
-  it('with --from bitbucket:... and a 500 response, writes a stderr message including the URL and status', async () => {
+  it('with --from bitbucket:... and a 500 response, reports a config error naming the URL and status', async () => {
     mockFetch.mockResolvedValue(
       mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
     );
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Failed to fetch manifest from https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json: 500 Internal Server Error',
     );
   });
 
-  it('with --from bitbucket:... and a network failure, writes a stderr message including the URL', async () => {
+  it('with --from bitbucket:... and a network failure, reports a config error naming the URL', async () => {
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
-    expect(exitCode).toBe(1);
-    const stderrCalls = stderrSpy.mock.calls.map((call) => String(call[0])).join('');
-    expect(stderrCalls).toContain(
+    expect(error.code).toBe('config');
+    expect(error.message).toContain(
       'Failed to reach https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
     );
-    expect(stderrCalls).toContain('ECONNREFUSED');
+    expect(error.message).toContain('ECONNREFUSED');
   });
 });
