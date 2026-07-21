@@ -66,7 +66,7 @@ describe('readyup externalization + resolver-hook integration', () => {
       bundle: false,
       format: 'esm',
       platform: 'node',
-      target: 'es2022',
+      target: 'es2025',
     });
 
     compiledSource = await readFile(compiledFixturePath, 'utf8');

@@ -19,6 +19,9 @@ export interface CompileResult {
  * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
  * readyup version a kit was compiled against and the runner's own version at execution time.
  */
+/** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
+export const KIT_COMPILE_TARGET = 'es2025';
+
 const GENERATED_HEADER = [
   '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
   '/* eslint-disable */',
@@ -54,7 +57,7 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     bundle: true,
     format: 'esm',
     platform: 'node',
-    target: 'es2022',
+    target: KIT_COMPILE_TARGET,
     external: ['node:*', 'readyup', 'readyup/*'],
     plugins: [pickJsonPlugin()],
     banner: { js: GENERATED_HEADER },

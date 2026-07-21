@@ -20,7 +20,7 @@ vi.mock(import('node:fs'), () => ({
   writeFileSync: mockWriteFileSync,
 }));
 
-import { compileConfig } from '../src/compile/compileConfig.ts';
+import { compileConfig, KIT_COMPILE_TARGET } from '../src/compile/compileConfig.ts';
 import { VERSION } from '../src/version.ts';
 
 describe(compileConfig, () => {
@@ -50,7 +50,7 @@ describe(compileConfig, () => {
       bundle: true,
       format: 'esm',
       platform: 'node',
-      target: 'es2022',
+      target: KIT_COMPILE_TARGET,
       external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
