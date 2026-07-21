@@ -386,11 +386,10 @@ describe(reportRdy, () => {
       expect(lines[0]).toBe(`${ICON_PASSED} top-check (7ms)`);
     });
 
-    it('shows n/a parent but suppresses descendants', () => {
+    it('renders an n/a result and the results that follow it', () => {
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 1 }),
           makePassedResult({ name: 'next-sibling', depth: 0, durationMs: 10 }),
         ],
       });
@@ -398,7 +397,6 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       expect(output).toContain('na-parent');
-      expect(output).not.toContain('na-child');
       expect(output).toContain('next-sibling');
     });
 
@@ -466,11 +464,10 @@ describe(reportRdy, () => {
       expect(output).toContain(`${ICON_PASSED} 2 passed. Failed: ${ICON_ERROR_FAILED} 1 error`);
     });
 
-    it('counts n/a parent as optional skip and excludes suppressed descendants from summary', () => {
+    it('counts an n/a result as an optional skip', () => {
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 1 }),
           makePassedResult({ name: 'sibling', depth: 0, durationMs: 10 }),
         ],
         durationMs: 50,
@@ -478,18 +475,17 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      // na-parent counts as optional skip; na-child is suppressed; sibling counts as passed.
       expect(output).toContain(`${ICON_PASSED} 1 passed`);
       expect(output).toContain(`${ICON_SKIPPED_NA} 1 optional`);
-      expect(output).toContain('na-parent');
-      expect(output).not.toContain('na-child');
     });
 
-    it('resumes output after n/a subtree at same depth', () => {
+    it('renders every result it is given, applying no suppression of its own', () => {
+      // `runRdy` no longer emits descendants of an n/a result, so the renderer must not
+      // second-guess its input: whatever arrives is displayed and counted.
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-check', skipReason: 'n/a', depth: 1 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 2 }),
+          makeSkippedResult({ name: 'deeper', skipReason: 'precondition', depth: 2 }),
           makePassedResult({ name: 'sibling', depth: 1, durationMs: 5 }),
         ],
       });
@@ -497,8 +493,9 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       expect(output).toContain('na-check');
-      expect(output).not.toContain('na-child');
+      expect(output).toContain('deeper');
       expect(output).toContain('sibling');
+      expect(output).toContain(`${ICON_SKIPPED_PRECONDITION} 1 blocked`);
     });
   });
 

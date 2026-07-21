@@ -187,6 +187,167 @@ describe(runRdy, () => {
       expect(report.results[0]?.status).toBe('passed');
       expect(report.results[1]?.status).toBe('passed');
     });
+
+    it('runs checks when a precondition is skipped n/a', async () => {
+      const checklist: RdyChecklist = {
+        name: 'gated',
+        preconditions: [{ name: 'pre-na', check: () => true, skip: () => 'not applicable here' }],
+        checks: [{ name: 'runs-anyway', check: () => true }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.passed).toBe(true);
+      expect(report.results).toHaveLength(2);
+      expect(report.results[0]?.status).toBe('skipped');
+      expect(report.results[1]?.name).toBe('runs-anyway');
+      expect(report.results[1]?.status).toBe('passed');
+    });
+
+    it('runs the checklist when one precondition is n/a and the rest pass', async () => {
+      const checklist: RdyChecklist = {
+        name: 'gated',
+        preconditions: [
+          { name: 'pre-na', check: () => true, skip: () => 'not applicable here' },
+          { name: 'pre-pass', check: () => true },
+        ],
+        checks: [{ name: 'runs-anyway', check: () => false }],
+      };
+
+      const report = await runRdy(checklist);
+
+      const target = report.results.find((r) => r.name === 'runs-anyway');
+      expect(target?.status).toBe('failed');
+    });
+
+    it('still skips the checklist when one precondition is n/a and another fails', async () => {
+      const checklist: RdyChecklist = {
+        name: 'gated',
+        preconditions: [
+          { name: 'pre-na', check: () => true, skip: () => 'not applicable here' },
+          { name: 'pre-fail', check: () => false },
+        ],
+        checks: [{ name: 'should-skip', check: () => true }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.passed).toBe(false);
+      const target = report.results.find((r) => r.name === 'should-skip');
+      assert.ok(target?.status === 'skipped');
+      expect(target.skipReason).toBe('precondition');
+    });
+  });
+
+  describe('thrown checks', () => {
+    it('reports a thrown check at error severity regardless of its declared severity', async () => {
+      const checklist: RdyChecklist = {
+        name: 'throwing',
+        checks: [
+          {
+            name: 'recommend-throws',
+            severity: 'recommend',
+            check: () => {
+              throw new Error('boom');
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.status).toBe('failed');
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.results[0]?.error?.message).toBe('boom');
+    });
+
+    it('reports a thrown skip function at error severity regardless of declared severity', async () => {
+      const checklist: RdyChecklist = {
+        name: 'throwing',
+        checks: [
+          {
+            name: 'recommend-skip-throws',
+            severity: 'recommend',
+            check: () => true,
+            skip: () => {
+              throw new Error('skip boom');
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.status).toBe('failed');
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.results[0]?.error?.message).toBe('skip boom');
+    });
+
+    it('fails the run when a recommend-severity check throws under the default failOn', async () => {
+      const checklist: RdyChecklist = {
+        name: 'throwing',
+        checks: [
+          {
+            name: 'recommend-throws',
+            severity: 'recommend',
+            check: () => {
+              throw new Error('boom');
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.passed).toBe(false);
+    });
+
+    it('leaves sibling results intact when one check throws', async () => {
+      const checklist: RdyChecklist = {
+        name: 'throwing',
+        checks: [
+          {
+            name: 'throws',
+            check: () => {
+              throw new Error('boom');
+            },
+          },
+          { name: 'sibling-passes', check: () => true },
+          { name: 'sibling-fails', check: () => false },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results.map((r) => ({ name: r.name, status: r.status }))).toStrictEqual([
+        { name: 'throws', status: 'failed' },
+        { name: 'sibling-passes', status: 'passed' },
+        { name: 'sibling-fails', status: 'failed' },
+      ]);
+    });
+
+    it('escalates only the thrown check, leaving descendant severities untouched', async () => {
+      const checklist: RdyChecklist = {
+        name: 'throwing',
+        checks: [
+          {
+            name: 'parent-throws',
+            severity: 'recommend',
+            check: () => {
+              throw new Error('boom');
+            },
+            checks: [{ name: 'child', check: () => true, severity: 'warn' }],
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.results[1]?.name).toBe('child');
+      expect(report.results[1]?.status).toBe('skipped');
+      expect(report.results[1]?.severity).toBe('warn');
+    });
   });
 
   describe('staged checklists', () => {
@@ -665,7 +826,7 @@ describe(runRdy, () => {
       expect(child.depth).toBe(1);
     });
 
-    it('skips children of an n/a-skipped check with n/a reason', async () => {
+    it('emits no results for descendants of an n/a-skipped check', async () => {
       const checklist: RdyChecklist = {
         name: 'nested',
         checks: [
@@ -680,12 +841,96 @@ describe(runRdy, () => {
 
       const report = await runRdy(checklist);
 
-      expect(report.results).toHaveLength(2);
-      expect(report.results[0]?.status).toBe('skipped');
-      expect(report.results[1]?.name).toBe('child');
-      const child = report.results[1];
-      assert.ok(child?.status === 'skipped');
-      expect(child.skipReason).toBe('n/a');
+      expect(report.results).toHaveLength(1);
+      const parent = report.results[0];
+      assert.ok(parent?.status === 'skipped');
+      expect(parent.skipReason).toBe('n/a');
+    });
+
+    it('emits exactly one result for an n/a-skipped check with a multi-level subtree', async () => {
+      const checklist: RdyChecklist = {
+        name: 'nested',
+        checks: [
+          {
+            name: 'na-parent',
+            check: () => true,
+            skip: () => 'not applicable',
+            checks: [
+              {
+                name: 'child-a',
+                check: () => true,
+                checks: [{ name: 'grandchild-a', check: () => true }],
+              },
+              {
+                name: 'child-b',
+                check: () => true,
+                checks: [{ name: 'grandchild-b', check: () => true }],
+              },
+            ],
+          },
+          { name: 'next-sibling', check: () => true },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results.map((r) => r.name)).toStrictEqual(['na-parent', 'next-sibling']);
+    });
+
+    it('does not run descendants of an n/a-skipped check', async () => {
+      let childCalled = false;
+      const checklist: RdyChecklist = {
+        name: 'nested',
+        checks: [
+          {
+            name: 'na-parent',
+            check: () => true,
+            skip: () => 'not applicable',
+            checks: [
+              {
+                name: 'child',
+                check: () => {
+                  childCalled = true;
+                  return true;
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      await runRdy(checklist);
+
+      expect(childCalled).toBe(false);
+    });
+
+    it('emits one result per descendant of a precondition-skipped check', async () => {
+      const checklist: RdyChecklist = {
+        name: 'nested',
+        checks: [
+          {
+            name: 'failing-parent',
+            check: () => false,
+            checks: [
+              {
+                name: 'child-a',
+                check: () => true,
+                checks: [{ name: 'grandchild-a', check: () => true }],
+              },
+              { name: 'child-b', check: () => true },
+            ],
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results.map((r) => ({ name: r.name, depth: r.depth }))).toStrictEqual([
+        { name: 'failing-parent', depth: 0 },
+        { name: 'child-a', depth: 1 },
+        { name: 'grandchild-a', depth: 2 },
+        { name: 'child-b', depth: 1 },
+      ]);
     });
 
     it('produces depth-first ordering for multi-level nesting', async () => {
