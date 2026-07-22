@@ -403,6 +403,33 @@ describe(parseRunArgs, () => {
     expect(result).not.toHaveProperty('failOn');
     expect(result).not.toHaveProperty('reportOn');
   });
+
+  // --detail flag
+  it.each(['summary', 'full'])('parses --detail %s', (projection) => {
+    expect(parseRunArgs(['--json', '--detail', projection])).toMatchObject({ detail: projection });
+  });
+
+  it('parses --detail= syntax', () => {
+    expect(parseRunArgs(['--json', '--detail=summary'])).toMatchObject({ detail: 'summary' });
+  });
+
+  it('throws when --detail has an invalid value', () => {
+    expect(() => parseRunArgs(['--json', '--detail', 'terse'])).toThrow(
+      '--detail must be one of: summary, full (got "terse")',
+    );
+  });
+
+  it('throws when --detail has no value', () => {
+    expect(() => parseRunArgs(['--json', '--detail'])).toThrow('--detail requires a projection');
+  });
+
+  it('rejects --detail without --json rather than ignoring it', () => {
+    expect(() => parseRunArgs(['--detail', 'summary'])).toThrow('--detail requires --json');
+  });
+
+  it('omits detail when not specified', () => {
+    expect(parseRunArgs(['--json'])).not.toHaveProperty('detail');
+  });
 });
 
 describe(resolveKitSources, () => {

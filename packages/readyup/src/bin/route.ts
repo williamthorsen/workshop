@@ -37,6 +37,7 @@ Run options:
   --internal                         Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists within the selected kit
   --json                             Output results as JSON
+  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
@@ -84,6 +85,9 @@ Options:
   --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
   --json                             Output results as JSON
+  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json.
+                                     "summary" drops the detail tree to the failed checks and their fixes,
+                                     keeping counts, verdicts, and worst severity intact
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
@@ -290,6 +294,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     {
       kitEntries,
       json: parsed.json,
+      ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
       ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
     },

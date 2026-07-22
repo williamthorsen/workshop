@@ -46,6 +46,7 @@ export interface ResolvedKitEntry {
 
 export interface ParsedRunArgs {
   checklists: string[] | undefined;
+  detail?: JsonDetail;
   failOn?: Severity;
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -67,6 +68,7 @@ export interface ParsedRunArgs {
  */
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
+  detail: { type: 'string' },
   'fail-on': { type: 'string' },
   file: { type: 'string', short: 'f' },
   from: { type: 'string' },
@@ -85,6 +87,12 @@ function parseSeverityFlag(flagName: string, value: string): Severity {
   if (value === 'error') return 'error';
   if (value === 'warn') return 'warn';
   return 'recommend';
+}
+
+/** Validate and narrow a string to a detail projection. */
+function parseDetailFlag(value: string): JsonDetail {
+  if (value === 'full' || value === 'summary') return value;
+  throw usageError(`--detail must be one of: summary, full (got "${value}")`);
 }
 
 /** Convention path for internal kits, relative to the repo root. */
@@ -106,6 +114,7 @@ const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checkli
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
+  '--detail': '--detail requires a projection (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
   '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
@@ -116,15 +125,23 @@ const flagErrorHints: Record<string, string> = {
 /** The subset of parsed run flags whose combinations are constrained. */
 interface RunFlagConstraints {
   checklists: string | undefined;
+  detail: string | undefined;
   file: string | undefined;
   from: string | undefined;
   internal: boolean;
   jit: boolean;
+  json: boolean;
   url: string | undefined;
 }
 
 /** Collects the active source flags and enforces mutual exclusivity, mode-flag, and selection constraints. */
 function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
+  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human
+  // report. Erroring beats ignoring it: a caller that passed it meant to change the output.
+  if (parsed.detail !== undefined && !parsed.json) {
+    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
+  }
+
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
   if (parsed.from !== undefined) sourceFlags.push('--from');
@@ -200,6 +217,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 
   const parsed = {
     checklists: values.checklists,
+    detail: values.detail,
     file: values.file,
     from: values.from,
     internal: values.internal === true,
@@ -228,9 +246,10 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     throw usageError(CHECKLISTS_HINT);
   }
 
-  // Validate severity flags.
+  // Validate severity and projection flags.
   const failOn = parsed.failOn !== undefined ? parseSeverityFlag('--fail-on', parsed.failOn) : undefined;
   const reportOn = parsed.reportOn !== undefined ? parseSeverityFlag('--report-on', parsed.reportOn) : undefined;
+  const detail = parsed.detail !== undefined ? parseDetailFlag(parsed.detail) : undefined;
 
   const parsedArgs: ParsedRunArgs = {
     checklists,
@@ -242,6 +261,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     kitSpecifiers,
     urlValue: parsed.url,
   };
+  if (detail !== undefined) parsedArgs.detail = detail;
   if (failOn !== undefined) parsedArgs.failOn = failOn;
   if (reportOn !== undefined) parsedArgs.reportOn = reportOn;
   return parsedArgs;
