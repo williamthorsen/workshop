@@ -427,13 +427,20 @@ describe(routeCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('passes -n and -f short flags to initCommand', async () => {
+  it('passes the -n short flag to initCommand', async () => {
     mockInitCommand.mockReturnValue(0);
 
-    const exitCode = await routeCommand(['init', '-n', '-f']);
+    const exitCode = await routeCommand(['init', '-n']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: true });
+    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: false });
     expect(exitCode).toBe(0);
+  });
+
+  it('rejects the retired init -f short flag', async () => {
+    const exitCode = await routeCommand(['init', '-f']);
+
+    expect(exitCode).toBe(2);
+    expect(mockInitCommand).not.toHaveBeenCalled();
   });
 
   it('returns 2 for unknown init flags', async () => {

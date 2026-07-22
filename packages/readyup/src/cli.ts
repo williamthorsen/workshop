@@ -56,16 +56,25 @@ export interface ParsedRunArgs {
   urlValue: string | undefined;
 }
 
+/**
+ * Options accepted by the `run` subcommand.
+ *
+ * A letter earns a short flag only when it carries no dominant conflicting meaning in comparable
+ * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
+ * `--file` here and nothing anywhere else. The retired rule — first letter, uppercased on
+ * collision — manufactured `-j`/`-J` and `-f`/`-F`, pairs differing only by case where a typo
+ * silently changed what ran.
+ */
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
+  'fail-on': { type: 'string' },
   file: { type: 'string', short: 'f' },
   from: { type: 'string' },
-  url: { type: 'string', short: 'u' },
-  jit: { type: 'boolean', short: 'J' },
-  internal: { type: 'boolean', short: 'i' },
-  json: { type: 'boolean', short: 'j' },
-  'fail-on': { type: 'string', short: 'F' },
-  'report-on': { type: 'string', short: 'R' },
+  internal: { type: 'boolean' },
+  jit: { type: 'boolean' },
+  json: { type: 'boolean' },
+  'report-on': { type: 'string' },
+  url: { type: 'string' },
 } as const;
 
 /** Validate and narrow a string to a Severity value. */

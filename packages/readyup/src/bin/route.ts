@@ -295,7 +295,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
 function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
-    force: { type: 'boolean', short: 'f' },
+    force: { type: 'boolean' },
   } as const;
 
   let parsed;

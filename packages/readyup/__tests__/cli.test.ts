@@ -185,21 +185,9 @@ describe(parseRunArgs, () => {
     expect(result.jit).toBe(true);
   });
 
-  it('parses -J as short form of --jit', () => {
-    const result = parseRunArgs(['-J']);
-
-    expect(result.jit).toBe(true);
-  });
-
   // --internal flag
   it('parses --internal flag', () => {
     const result = parseRunArgs(['--internal']);
-
-    expect(result.internal).toBe(true);
-  });
-
-  it('parses -i as short form of --internal', () => {
-    const result = parseRunArgs(['-i']);
 
     expect(result.internal).toBe(true);
   });
@@ -241,36 +229,23 @@ describe(parseRunArgs, () => {
     expect(result.filePath).toBe('custom/path.ts');
   });
 
-  it('parses -u as short form of --url', () => {
-    const result = parseRunArgs(['-u', 'https://example.com/config.js']);
-
-    expect(result.urlValue).toBe('https://example.com/config.js');
+  it.each(['-J', '-F', '-R', '-i', '-u', '-j'])('rejects the retired short flag %s', (short) => {
+    expect(() => parseRunArgs([short])).toThrow(`Unknown option '${short}'`);
   });
 
-  it('parses -j as short form of --json', () => {
-    const result = parseRunArgs(['-j']);
-
-    expect(result.json).toBe(true);
-  });
-
-  // node:util.parseArgs expands grouped boolean shorts (`-jJ`) into separate flags.
-  it('accepts grouped short boolean flags', () => {
-    const result = parseRunArgs(['-jJ']);
-
-    expect(result.json).toBe(true);
-    expect(result.jit).toBe(true);
-  });
-
-  it('parses -F as short form of --fail-on', () => {
-    const result = parseRunArgs(['-F', 'warn']);
-
-    expect(result.failOn).toBe('warn');
-  });
-
-  it('parses -R as short form of --report-on', () => {
-    const result = parseRunArgs(['-R', 'error']);
-
-    expect(result.reportOn).toBe('error');
+  it.each([
+    { long: '--internal', args: ['--internal'], expected: { internal: true } },
+    { long: '--jit', args: ['--jit'], expected: { jit: true } },
+    { long: '--json', args: ['--json'], expected: { json: true } },
+    { long: '--fail-on', args: ['--fail-on', 'warn'], expected: { failOn: 'warn' } },
+    { long: '--report-on', args: ['--report-on', 'error'], expected: { reportOn: 'error' } },
+    {
+      long: '--url',
+      args: ['--url', 'https://example.com/kit.js'],
+      expected: { urlValue: 'https://example.com/kit.js' },
+    },
+  ])('keeps $long working after its short is retired', ({ args, expected }) => {
+    expect(parseRunArgs(args)).toMatchObject(expected);
   });
 
   // --url flag
