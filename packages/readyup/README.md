@@ -90,6 +90,7 @@ rdy <command> [options]
 | `--internal`                  | Use internal kit directory and infix from config              |
 | `--checklists, -c <name,...>` | Filter checklists within the selected kit                     |
 | `--json`                      | Output results as JSON                                        |
+| `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`)         |
 | `--fail-on <severity>`        | Fail on this severity or above (`error`, `warn`, `recommend`) |
 | `--report-on <severity>`      | Show this severity or above (`error`, `warn`, `recommend`)    |
 
@@ -111,13 +112,41 @@ A run that loses a kit part-way exits `2` even when the kits that ran also found
 
 ### JSON output
 
-With `--json`, stdout carries exactly one JSON document, chosen by how far the invocation got: the report when a run produced one, and otherwise an error envelope. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
+`run`, `compile`, `list`, and `verify` all accept `--json`. `init` does not: scaffolding is interactive and stays human-only.
+
+With `--json`, stdout carries exactly one JSON document and every human-readable line — headers, progress, warnings, errors — goes to stderr. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
+
+#### Published schemas
+
+Each payload is specified by a JSON Schema shipped with the package, and carries an integer `schemaVersion` matching the `vN` in its schema's filename.
+
+| Payload        | Import path                              | `$id`                                                      |
+| -------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `compile`      | `readyup/schemas/compile.v1.json`        | `https://unpkg.com/readyup/schemas/compile.v1.json`        |
+| error envelope | `readyup/schemas/error-envelope.v1.json` | `https://unpkg.com/readyup/schemas/error-envelope.v1.json` |
+| `list`         | `readyup/schemas/list.v1.json`           | `https://unpkg.com/readyup/schemas/list.v1.json`           |
+| `run` report   | `readyup/schemas/report.v1.json`         | `https://unpkg.com/readyup/schemas/report.v1.json`         |
+| `verify`       | `readyup/schemas/verify.v1.json`         | `https://unpkg.com/readyup/schemas/verify.v1.json`         |
+
+The schemas are generated from the same definitions the exported `Json*` TypeScript types are derived from, so the published contract and the types cannot drift apart.
+
+#### Evolution policy
+
+The five payloads version independently: reshaping the report leaves a consumer pinned to `list.v1.json` untouched.
+
+- **Adding an optional field does not bump `schemaVersion`.** The schemas do not constrain properties they have not heard of, so a validator pinned to `v1` keeps accepting payloads from a later readyup that added one.
+- **Removing, renaming, or re-typing a field does bump it**, and publishes a new `vN` file beside the old one. Widening a closed set of values — an error `code`, a check `status` — counts as re-typing.
+- **A field is `required` only when every payload carries it.** Omission is reserved for genuinely absent or empty data, so a present field never means "nothing here".
+
+#### Error envelope
+
+An invocation that fails before it can produce anything else emits the envelope:
 
 ```json
-{ "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
+{ "schemaVersion": 1, "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
 ```
 
-`code` is one of `usage`, `config`, `kit-load`, or `internal`. Every human-readable line — help text, progress headers, warnings — goes to stderr, and the exit code does not determine which document appears.
+`code` is one of `usage`, `config`, `kit-load`, or `internal`. The exit code does not determine which document appears.
 
 The envelope covers only failures that precede dispatch. Once the run reaches its kits, a kit that fails is reported inside the report instead of replacing it, so each entry in `kits` takes one of two shapes, told apart by whether `error` is present:
 
@@ -125,7 +154,42 @@ The envelope covers only failures that precede dispatch. Once the run reaches it
 { "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }
 ```
 
-An error entry carries no counts, because a kit that never ran has none to report; the top-level totals cover only the kits that ran. In human mode the same failure goes to stderr, which keeps it distinct from a failed check. A run of more than one kit prefixes the kit's name, as `Error [release]: ...`.
+An error entry carries no counts and no verdict, because a kit that never ran has neither to report; the top-level totals cover only the kits that ran. In human mode the same failure goes to stderr, which keeps it distinct from a failed check. A run of more than one kit prefixes the kit's name, as `Error [release]: ...`.
+
+#### The run report
+
+```json
+{
+  "schemaVersion": 1,
+  "readyupVersion": "0.21.2",
+  "passed": false,
+  "counts": { "passed": 4, "errors": 1, "warnings": 0, "recommendations": 0, "blocked": 2, "optional": 1 },
+  "worstSeverity": "error",
+  "failOn": "error",
+  "reportOn": "recommend",
+  "detail": "full",
+  "durationMs": 68,
+  "kits": [{ "name": "deploy", "passed": false, "counts": {}, "durationMs": 68, "checklists": [] }]
+}
+```
+
+- **`passed`** is the run verdict: true when every requested kit produced results and no result at or above `failOn` failed, so it agrees with exit code 0 in every case. Kit and checklist entries carry their own `passed`, which means the narrower "nothing here failed".
+- **`counts`** holds the six result tallies at the report, kit, and checklist levels. They nest rather than sitting flat so the count names and the verdict names share no namespace, which is what makes the additive-evolution rule above sound rather than merely conventional.
+- **`worstSeverity`** sits beside `counts` — it is derived verdict data, not a count — and is omitted when nothing failed.
+- **`failOn`**, **`reportOn`**, and **`detail`** echo the settings the run resolved, so a consumer holding only the payload can tell a clean run from one whose failures were filtered out of view. A kit that declares its own `failOn` overrides the run-level value for its own checks.
+- **`warnings`** carries any advisory the run raised, as `{ code, message, remedy? }`. Warnings keep their stderr line in both modes; under `--json` they are captured here as well, because a consumer that owns only stdout would otherwise never see them. The field is absent when the run raised none.
+
+Payloads are slim by construction: a field carrying nothing is omitted rather than emitted as `null`, empty `checks` arrays are dropped, durations are whole milliseconds, and `fix` appears only on checks that failed.
+
+#### Choosing how much detail to receive
+
+`--detail summary` keeps the counts, verdicts, and worst severity but reduces the detail tree to the checks that failed and the fixes they carry — the shape an agent needs to decide what to do next, at a fraction of the tokens. `--detail full` is the default and keeps every reported check.
+
+```bash
+rdy run --json --detail summary
+```
+
+Both projections are described by `report.v1.json`, so a consumer validates one document either way and reads the report's own `detail` field to learn which projection it received. Passing `--detail` without `--json`, or to any command other than `run`, is a usage error rather than a silently ignored flag.
 
 ### Kit sources
 
@@ -159,7 +223,35 @@ rdy list --from global         List compiled kits in the global directory
 rdy list --from dir:<path>     List kits in an arbitrary directory
 rdy list --from github:org/repo[@ref]      List kits from a GitHub manifest
 rdy list --from bitbucket:ws/repo[@ref]    List kits from a Bitbucket manifest
+rdy list --manifest <path>     List the kits a manifest file declares
 ```
+
+A local `--from` source with no manifest beside its kits falls back to listing the compiled kits on disk, which are the same kits `rdy run --from` would resolve. Those rows carry a name and a path only; descriptions, checklist names, and versions live in the manifest that is absent. A remote source still requires one.
+
+Under `--json`, each row reports `name`, `kind` (`internal` for a TypeScript source, `compiled` for a bundle), `path`, and — for kits a manifest describes — `checklists`, `description`, and `readyupVersion`. Checklist names are read from the manifest, so listing kits never imports a compiled bundle and never runs kit code.
+
+### Compile
+
+```
+rdy compile                    Compile every source in the config's srcDir
+rdy compile <file>             Compile a single file
+```
+
+A sweep runs to completion: a kit that fails to compile is reported and the next kit is tried, so one broken kit cannot hide the state of the kits that sort after it. A kit that failed is left out of the manifest rather than recorded as though it had compiled, and the run exits 1.
+
+`rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` — someone edited the compiled file directly. Drifted kits are reported and skipped; `--force` overwrites them anyway.
+
+Each kit's checklist names are recorded in the manifest so `rdy list` can report them without running the kit. The field is optional and absent from manifests written by earlier versions, so the manifest format stays at version 1.
+
+Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed.
+
+### Verify
+
+```
+rdy verify                     Check compiled kits against the manifest's hashes
+```
+
+Each kit is reported as `ok`, `drift`, `missing`, or `unverified`. Drift and missing fail the run; `unverified` — a manifest entry with no recorded hash — does not, since it says nothing about whether the kit has changed. Under `--json`, a `drift` entry carries the `expected` and `actual` hashes alongside an overall verdict.
 
 ## Authoring API
 

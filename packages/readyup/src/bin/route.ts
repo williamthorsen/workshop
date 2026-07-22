@@ -55,9 +55,15 @@ Exit codes:
 
   list and init use only 0 and 2; neither can find problems to report.
 
-With --json, stdout carries exactly one JSON document: the report when a run produced
-one, otherwise {"error": {"code", "message"}}. Prose goes to stderr. --help and --version
-have no JSON form: their text goes to stderr and stdout stays empty.
+run, compile, list, and verify accept --json; init does not, since scaffolding is
+interactive. With --json, stdout carries exactly one JSON document and all prose goes to
+stderr. For run that document is the report when a run produced one, otherwise the error
+envelope {"schemaVersion", "error": {"code", "message"}}. --help and --version have no
+JSON form: their text goes to stderr and stdout stays empty.
+
+Every payload carries an integer schemaVersion and is specified by a JSON Schema shipped
+with the package, importable as readyup/schemas/<name>.v1.json. Adding an optional field
+does not bump a payload's schemaVersion; removing, renaming, or re-typing one does.
 
 A kit that fails once the run has reached its kits does not discard the kits that ran.
 Under --json it becomes a kits entry carrying "error" in place of results; otherwise it
@@ -125,6 +131,9 @@ Drift detection:
 A sweep runs to completion: a kit that fails to compile is reported and the next kit is
 tried, so every kit's status is known after one run. A kit that failed is left out of the
 manifest rather than recorded as though it had compiled.
+
+Each kit's checklist names are recorded in the manifest so rdy list can report them
+without running the kit. The field is optional, so the manifest format stays at version 1.
 
 Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
 manifest cannot be read or written.
