@@ -66,7 +66,6 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
 }));
 
 import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
-import { captureRdyError } from './helpers/captureRdyError.ts';
 
 describe(parseRunArgs, () => {
   it('returns undefined checklists and empty specifiers when no flags are given', () => {
@@ -783,6 +782,11 @@ describe(runCommand, () => {
     return [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists }];
   }
 
+  /** Concatenate every stderr write into one string, where human mode reports a failed kit. */
+  function stderrText(): string {
+    return stderrSpy.mock.calls.map((c) => String(c[0])).join('');
+  }
+
   it('runs all checklists when no checklist filter is given', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -815,14 +819,14 @@ describe(runCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('reports a usage error when an unknown checklist name is given', async () => {
+  it('reports an unknown checklist name against its kit and exits 2', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
-    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: false }));
+    const exitCode = await runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: false });
 
-    expect(error.code).toBe('usage');
-    expect(error.message).toContain('Unknown name(s): nonexistent');
+    expect(exitCode).toBe(2);
+    expect(stderrText()).toContain('Error [default]: Unknown name(s): nonexistent');
   });
 
   it('returns exit code 1 when any checklist fails', async () => {
@@ -950,13 +954,13 @@ describe(runCommand, () => {
     expect(mockReportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ fixLocation: 'end' }));
   });
 
-  it('reports a kit-load error when the kit cannot be loaded', async () => {
+  it('reports an unloadable kit against its kit name and exits 2', async () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
-    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }));
+    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false });
 
-    expect(error.code).toBe('kit-load');
-    expect(error.message).toBe('Kit not found');
+    expect(exitCode).toBe(2);
+    expect(stderrText()).toBe('Error [default]: Kit not found\n');
   });
 
   it('prints combined summary for a single kit with multiple checklists', async () => {
@@ -1012,16 +1016,17 @@ describe(runCommand, () => {
 
   // -- --jit error handling (Task 6) --
 
-  it('throws a friendly kit-load error when --jit kit import fails due to missing readyup', async () => {
+  it('reports a friendly message when a --jit kit import fails due to missing readyup', async () => {
     const moduleError = Object.assign(new Error("Cannot find package 'readyup'"), {
       code: 'MODULE_NOT_FOUND',
     });
     mockLoadRdyKit.mockRejectedValue(moduleError);
 
-    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
+    await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(error.code).toBe('kit-load');
-    expect(error.message).toBe('Running from source requires readyup to be installed as a project dependency.');
+    expect(stderrText()).toBe(
+      'Error [default]: Running from source requires readyup to be installed as a project dependency.\n',
+    );
   });
 
   it('passes through non-readyup module errors even with --jit', async () => {
@@ -1030,17 +1035,17 @@ describe(runCommand, () => {
     });
     mockLoadRdyKit.mockRejectedValue(moduleError);
 
-    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
+    await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(error.message).toBe("Cannot find package 'chalk'");
+    expect(stderrText()).toBe("Error [default]: Cannot find package 'chalk'\n");
   });
 
   it('passes through non-module errors with --jit', async () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Syntax error in kit'));
 
-    const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: false }, true));
+    await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(error.message).toBe('Syntax error in kit');
+    expect(stderrText()).toBe('Error [default]: Syntax error in kit\n');
   });
 
   describe('threshold cascade', () => {
@@ -1155,26 +1160,32 @@ describe(runCommand, () => {
       expect(exitCode).toBe(1);
     });
 
-    it('throws a kit-load error without writing to either stream', async () => {
+    it('records an unloadable kit as an error entry, leaving stderr clean', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
+      mockFormatJsonReport.mockReturnValue('{}');
 
-      const error = await captureRdyError(() => runCommand({ kitEntries: singleKitEntry(), json: true }));
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: true });
 
-      expect(error.code).toBe('kit-load');
-      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(exitCode).toBe(2);
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [{ name: 'default', error: { code: 'kit-load', message: 'Kit not found' } }],
+        expect.anything(),
+      );
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
-    it('throws a usage error for unknown checklist names without writing to either stream', async () => {
+    it('records an unknown checklist name as an error entry, leaving stderr clean', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockFormatJsonReport.mockReturnValue('{}');
 
-      const error = await captureRdyError(() =>
-        runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: true }),
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: true });
+
+      expect(exitCode).toBe(2);
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [{ name: 'default', error: { code: 'usage', message: expect.stringContaining('nonexistent') } }],
+        expect.anything(),
       );
-
-      expect(error.code).toBe('usage');
-      expect(stdoutSpy).not.toHaveBeenCalled();
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
@@ -1198,23 +1209,25 @@ describe(runCommand, () => {
               { name: 'deploy', report: report1 },
               { name: 'infra', report: report2 },
             ],
-            passed: true,
           },
         ],
         expect.objectContaining({ reportOn: 'recommend' }),
       );
     });
 
-    it('lets a runner crash escape undiagnosed so the boundary classifies it internal', async () => {
+    it('records an undiagnosed runner crash as an internal error entry', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockRejectedValue(new Error('runner crashed'));
+      mockFormatJsonReport.mockReturnValue('{}');
 
-      await expect(runCommand({ kitEntries: singleKitEntry(['deploy']), json: true })).rejects.toThrow(
-        'runner crashed',
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(['deploy']), json: true });
+
+      expect(exitCode).toBe(2);
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [{ name: 'default', error: { code: 'internal', message: 'runner crashed' } }],
+        expect.anything(),
       );
-      expect(stdoutSpy).not.toHaveBeenCalled();
-      expect(stderrSpy).not.toHaveBeenCalled();
     });
 
     it('does not write headers in JSON mode', async () => {
@@ -1362,12 +1375,9 @@ describe(runCommand, () => {
     mockResolveBitbucketToken.mockReturnValue(undefined);
     mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${url}: 404 Not Found`));
 
-    const error = await captureRdyError(() =>
-      runCommand({ kitEntries: [{ name: 'missing', source: { url }, checklists: [] }], json: false }),
-    );
+    await runCommand({ kitEntries: [{ name: 'missing', source: { url }, checklists: [] }], json: false });
 
-    expect(error.code).toBe('kit-load');
-    expect(error.message).toContain(url);
+    expect(stderrText()).toContain(url);
   });
 
   it('reports a network failure for a Bitbucket URL with the URL in the error message', async () => {
@@ -1376,12 +1386,9 @@ describe(runCommand, () => {
     // Raw fetch rejection — no URL in the error message; loadKit must inject it.
     mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
-    const error = await captureRdyError(() =>
-      runCommand({ kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }], json: false }),
-    );
+    await runCommand({ kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }], json: false });
 
-    expect(error.code).toBe('kit-load');
-    expect(error.message).toContain(url);
+    expect(stderrText()).toContain(url);
   });
 
   // URL source tests
@@ -1407,11 +1414,9 @@ describe(runCommand, () => {
     const url = 'https://example.com/config.js';
     mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
-    const error = await captureRdyError(() =>
-      runCommand({ kitEntries: [{ name: 'config', source: { url }, checklists: [] }], json: false }),
-    );
+    await runCommand({ kitEntries: [{ name: 'config', source: { url }, checklists: [] }], json: false });
 
-    expect(error.message).toBe(`Failed to reach ${url}: Failed to fetch remote kit`);
+    expect(stderrText()).toBe(`Error [config]: Failed to reach ${url}: Failed to fetch remote kit\n`);
   });
 });
 

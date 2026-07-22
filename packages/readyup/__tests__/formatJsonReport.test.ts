@@ -161,6 +161,55 @@ describe(formatJsonReport, () => {
     });
   });
 
+  describe('kits that produced no results', () => {
+    const FAILURE = { name: 'release', error: { code: 'kit-load' as const, message: 'Cannot find release.js' } };
+
+    /** A one-check kit that passes in 10ms, for pairing with a failed kit. */
+    function ranKit(name: string) {
+      const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true, durationMs: 10 });
+      return { name, entries: [{ name: 'check', report }] };
+    }
+
+    it('passes a failed kit through carrying only its name and error', () => {
+      const parsed: unknown = JSON.parse(formatJsonReport([FAILURE]));
+
+      expect(parsed).toStrictEqual({
+        passed: 0,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: null,
+        durationMs: 0,
+        kits: [FAILURE],
+      });
+    });
+
+    it('keeps kits in the order they were requested', () => {
+      const parsed: unknown = JSON.parse(formatJsonReport([ranKit('first'), FAILURE, ranKit('last')]));
+
+      expect(parsed).toMatchObject({
+        kits: [{ name: 'first' }, { name: 'release' }, { name: 'last' }],
+      });
+    });
+
+    it('leaves top-level counts and duration to the kits that ran', () => {
+      const parsed: unknown = JSON.parse(formatJsonReport([ranKit('deploy'), FAILURE]));
+
+      expect(parsed).toMatchObject({
+        passed: 1,
+        errors: 0,
+        warnings: 0,
+        recommendations: 0,
+        blocked: 0,
+        optional: 0,
+        worstSeverity: null,
+        durationMs: 10,
+      });
+    });
+  });
+
   it('includes granular checklist-level counts and null worstSeverity when all passed', () => {
     const report = makeReport({
       results: [makePassedResult({ name: 'a' })],

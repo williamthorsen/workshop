@@ -4,10 +4,10 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
-import { kitLoadError, usageError } from './errors.ts';
-import { EXIT_OK, EXIT_PROBLEMS_FOUND } from './exitCodes.ts';
+import { kitLoadError, toRdyError, usageError } from './errors.ts';
+import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
-import { formatJsonReport } from './formatJsonReport.ts';
+import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
@@ -458,49 +458,65 @@ export async function runCommand(
   return runMultiKitHumanMode(kitEntries, failOn, reportOn, isJit);
 }
 
-/** Run all kit entries in JSON mode, producing a single JSON report. */
+/**
+ * Runs all kit entries in JSON mode, producing a single JSON report.
+ *
+ * Each iteration is its own error boundary: once the run has dispatched, anything the loop body
+ * throws is attributable to that kit alone, so it becomes an entry in the report rather than
+ * discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
+ * — a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
+ */
 async function runMultiKitJsonMode(
   kitEntries: ResolvedKitEntry[],
   failOn: Severity | undefined,
   reportOn: Severity | undefined,
   isJit: boolean,
 ): Promise<number> {
-  const kitResults: Array<{
-    name: string;
-    entries: Array<{ name: string; report: RdyReport }>;
-    passed: boolean;
-  }> = [];
+  const kitInputs: KitInput[] = [];
+  let allPassed = true;
+  let anyKitFailed = false;
 
   for (const entry of kitEntries) {
-    const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
+    try {
+      const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
 
-    warnOnVersionSkew(entry.name, compileTimeVersion);
+      warnOnVersionSkew(entry.name, compileTimeVersion);
 
-    const thresholds = resolveThresholds(kit, failOn, reportOn);
-    const checklists = selectChecklists(kit, entry.checklists);
+      const thresholds = resolveThresholds(kit, failOn, reportOn);
+      const checklists = selectChecklists(kit, entry.checklists);
 
-    const entries: Array<{ name: string; report: RdyReport }> = [];
-    let kitPassed = true;
+      const entries: Array<{ name: string; report: RdyReport }> = [];
 
-    for (const checklist of checklists) {
-      const report = await runRdy(checklist, {
-        defaultSeverity: thresholds.defaultSeverity,
-        failOn: thresholds.failOn,
-      });
-      entries.push({ name: checklist.name, report });
-      if (!report.passed) kitPassed = false;
+      for (const checklist of checklists) {
+        const report = await runRdy(checklist, {
+          defaultSeverity: thresholds.defaultSeverity,
+          failOn: thresholds.failOn,
+        });
+        entries.push({ name: checklist.name, report });
+        if (!report.passed) allPassed = false;
+      }
+
+      kitInputs.push({ name: entry.name, entries });
+    } catch (error: unknown) {
+      const { code, message } = toRdyError(error);
+      kitInputs.push({ name: entry.name, error: { code, message } });
+      anyKitFailed = true;
     }
-
-    kitResults.push({ name: entry.name, entries, passed: kitPassed });
   }
 
   const resolvedReportOn = reportOn ?? 'recommend';
-  process.stdout.write(formatJsonReport(kitResults, { reportOn: resolvedReportOn }) + '\n');
-  const allPassed = kitResults.every((k) => k.passed);
-  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+  process.stdout.write(formatJsonReport(kitInputs, { reportOn: resolvedReportOn }) + '\n');
+
+  return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
-/** Run all kit entries in human-readable mode. */
+/**
+ * Runs all kit entries in human-readable mode.
+ *
+ * Carries the same per-kit boundary as JSON mode, reporting the failure on stderr so it stays
+ * distinguishable from a failed check, which prints into the stdout report and means a different
+ * exit code.
+ */
 async function runMultiKitHumanMode(
   kitEntries: ResolvedKitEntry[],
   failOn: Severity | undefined,
@@ -509,20 +525,28 @@ async function runMultiKitHumanMode(
 ): Promise<number> {
   const showKitHeader = kitEntries.length > 1;
   let allPassed = true;
+  let anyKitFailed = false;
+
   for (const entry of kitEntries) {
-    const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
-
-    warnOnVersionSkew(entry.name, compileTimeVersion);
-
+    // Precedes the load so stdout lists every requested kit, including one that never ran.
     if (showKitHeader) {
       process.stdout.write(`\n=== ${entry.name} ===\n`);
     }
 
-    const exitCode = await runSingleKitHumanMode(kit, entry.checklists, failOn, reportOn, showKitHeader);
-    if (exitCode !== EXIT_OK) allPassed = false;
+    try {
+      const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
+
+      warnOnVersionSkew(entry.name, compileTimeVersion);
+
+      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, failOn, reportOn, showKitHeader);
+      if (exitCode !== EXIT_OK) allPassed = false;
+    } catch (error: unknown) {
+      process.stderr.write(`Error [${entry.name}]: ${toRdyError(error).message}\n`);
+      anyKitFailed = true;
+    }
   }
 
-  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+  return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
 /** Run checklists from a single kit in human-readable mode. */
@@ -582,4 +606,15 @@ function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChec
     const checklist = checklistByName.get(name);
     return checklist !== undefined ? [checklist] : [];
   });
+}
+
+/**
+ * Reduces a run's outcomes to one exit code, worst first.
+ *
+ * A kit that never ran outranks failed checks: part of the invocation was not completed, so
+ * reporting "ran, found problems" would be false.
+ */
+function resolveRunExitCode(anyKitFailed: boolean, allPassed: boolean): number {
+  if (anyKitFailed) return EXIT_TOOL_FAILURE;
+  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }

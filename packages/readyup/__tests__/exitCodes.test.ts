@@ -92,16 +92,24 @@ describe('exit codes', () => {
     await expect(routeCommand(args)).resolves.toBe(expected);
   });
 
+  it('reports a pre-dispatch failure through the error envelope', async () => {
+    const exitCode = await routeCommand(['--bogus', '--json']);
+
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(readStdout())).toStrictEqual({ error: { code: 'usage', message: expect.any(String) } });
+  });
+
   it.each([
-    { label: 'a bad flag', args: ['--bogus'], code: 'usage' },
-    { label: 'an unknown checklist', args: ['passing:absent'], code: 'usage' },
-    { label: 'a missing kit', args: ['absent'], code: 'kit-load' },
-    { label: 'an unloadable kit', args: ['invalid'], code: 'kit-load' },
-  ])('reports code "$code" for $label', async ({ args, code }) => {
+    { label: 'an unknown checklist', args: ['passing:absent'], kit: 'passing', code: 'usage' },
+    { label: 'a missing kit', args: ['absent'], kit: 'absent', code: 'kit-load' },
+    { label: 'an unloadable kit', args: ['invalid'], kit: 'invalid', code: 'kit-load' },
+  ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }) => {
     const exitCode = await routeCommand([...args, '--json']);
 
     expect(exitCode).toBe(2);
-    expect(JSON.parse(readStdout())).toStrictEqual({ error: { code, message: expect.any(String) } });
+    expect(JSON.parse(readStdout())).toMatchObject({
+      kits: [{ name: kit, error: { code, message: expect.any(String) } }],
+    });
   });
 
   it('reports code "config" for an unreadable config file', async () => {
