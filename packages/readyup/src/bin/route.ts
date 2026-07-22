@@ -45,6 +45,16 @@ Run options:
 Global options:
   --help, -h           Show this help message
   --version, -V        Show version number
+
+Exit codes:
+  0  Ran and found no problems
+  1  Ran and found problems with the repo or its kits
+  2  Could not complete the invocation (usage, config, kit-load, or internal error)
+
+  list and init use only 0 and 2; neither can find problems to report.
+
+With --json, stdout carries exactly one JSON document: the report when a run produced
+one, otherwise {"error": {"code", "message"}}. Prose goes to stderr.
 `;
 
 const RUN_HELP = `
@@ -98,6 +108,9 @@ Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
   manifest's recorded targetHash (e.g. someone edited the compiled file directly).
   Drifted kits are reported and skipped; use --force to overwrite anyway.
+
+Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
+manifest cannot be read or written.
 `;
 
 const VERIFY_HELP = `
@@ -111,7 +124,8 @@ Each kit is reported as one of:
   missing     compiled file is absent
   unverified  manifest entry has no targetHash (predates the feature)
 
-Exits non-zero when any kit is in drift or missing; unverified kits do not fail.
+Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unreadable
+manifest exits 2.
 
 Options:
   --manifest <path>  Manifest file path (default: .readyup/manifest.json)

@@ -77,6 +77,7 @@ rdy <command> [options]
 | `compile [file]` | Bundle TypeScript kit(s) into self-contained ESM |
 | `init`           | Scaffold a starter config and kit                |
 | `list`           | List available kits                              |
+| `verify`         | Check compiled kits against manifest hashes      |
 
 ### Run options
 
@@ -93,6 +94,26 @@ rdy <command> [options]
 | `--report-on, -R <severity>`  | Show this severity or above (`error`, `warn`, `recommend`)    |
 
 `--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
+
+### Exit codes
+
+| Code | Meaning                                                                                                                       |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | Ran and found no problems                                                                                                     |
+| `1`  | Ran and found problems with the repo or its kits: failed checks, a `verify` drift or missing kit, a kit that fails to compile |
+| `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error                                               |
+
+The distinction is between "fix the repo" (`1`) and "fix the invocation" (`2`), so a pipeline can branch on which is which. `rdy list` and `rdy init` produce only `0` and `2` — neither can find problems to report.
+
+### JSON output
+
+With `--json`, stdout carries exactly one JSON document, chosen by how far the invocation got: the report when a run produced one, and otherwise an error envelope.
+
+```json
+{ "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
+```
+
+`code` is one of `usage`, `config`, `kit-load`, or `internal`. Every human-readable line — help text, progress headers, warnings — goes to stderr, and the exit code does not determine which document appears.
 
 ### Kit sources
 
