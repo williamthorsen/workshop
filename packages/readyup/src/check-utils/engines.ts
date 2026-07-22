@@ -13,6 +13,9 @@ export type EnginesNodeFloor =
 /** Matches the simple floor forms: `>=x[.y[.z]]`, `^x[.y[.z]]`, and a bare `x[.y[.z]]`. */
 const SIMPLE_FLOOR = /^(?:>=|\^)?\s*(\d+(?:\.\d+){0,2})$/;
 
+/** Matches a dotted numeric version, the only shape `compareVersions` can order. */
+const COMPARABLE_VERSION = /^\d+(?:\.\d+)*$/;
+
 /**
  * Reads the minimum Node version a parsed manifest declares in `engines.node`.
  * Ranges outside the simple floor forms are reported as unparseable rather than guessed at.
@@ -29,11 +32,15 @@ export function readEnginesNodeFloor(manifest: Record<string, unknown>): Engines
 }
 
 /**
- * Reports whether a Node version is at or above a floor.
+ * Reports whether a Node version is at or above a floor, and undefined when either argument is not a
+ * dotted numeric version — the shape `.tool-versions` tokens such as `lts` and `system` do not take.
  * A leading `v` is tolerated on either argument, so `process.version` can be passed as it comes.
  */
-export function satisfiesNodeFloor(version: string, floor: string): boolean {
-  return compareVersions(normalizeVersion(version), normalizeVersion(floor)) >= 0;
+export function satisfiesNodeFloor(version: string, floor: string): boolean | undefined {
+  const normalizedVersion = normalizeVersion(version);
+  const normalizedFloor = normalizeVersion(floor);
+  if (!COMPARABLE_VERSION.test(normalizedVersion) || !COMPARABLE_VERSION.test(normalizedFloor)) return undefined;
+  return compareVersions(normalizedVersion, normalizedFloor) >= 0;
 }
 
 // region | Helpers

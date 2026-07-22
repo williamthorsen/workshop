@@ -76,4 +76,15 @@ describe(satisfiesNodeFloor, () => {
     expect(satisfiesNodeFloor('v24.18.0', '24')).toBe(true);
     expect(satisfiesNodeFloor('v20.6.0', 'v24')).toBe(false);
   });
+
+  it.each(['lts', 'latest', 'system', 'ref:v24.0.0', 'lts-jod', '24.18.0-rc.1', ''])(
+    'returns undefined for the uncomparable version %s',
+    (version) => {
+      expect(satisfiesNodeFloor(version, '24')).toBeUndefined();
+    },
+  );
+
+  it('returns undefined for an uncomparable floor', () => {
+    expect(satisfiesNodeFloor('24.18.0', 'latest')).toBeUndefined();
+  });
 });

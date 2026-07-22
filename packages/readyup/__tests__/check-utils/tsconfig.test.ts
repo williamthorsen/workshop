@@ -91,6 +91,21 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
+  it('reads a shared parent once, along the higher-priority branch', () => {
+    writeConfig('base.json', { compilerOptions: { lib: ['ES2021'], target: 'ES2021' } });
+    writeConfig('low.json', { extends: './base.json', compilerOptions: { target: 'ES2022' } });
+    writeConfig('high.json', { extends: './base.json', compilerOptions: { target: 'ES2024' } });
+    writeConfig('tsconfig.json', { extends: ['./low.json', './high.json'] });
+
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+      // `high` outranks `low`, so `base` is reached through it; `low` is visited with both fields already resolved.
+      lib: ['es2021'],
+      target: 'es2024',
+      chain: ['tsconfig.json', 'high.json', 'base.json', 'low.json'],
+      unresolvedExtends: [],
+    });
+  });
+
   it('parses JSONC comments and trailing commas', () => {
     writeRawConfig(
       'tsconfig.json',
