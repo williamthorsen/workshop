@@ -1,4 +1,4 @@
-import { internalError } from '../errors.ts';
+import { configError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { printStep, reportWriteResult } from '../terminal.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -25,7 +25,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   try {
     result = scaffoldConfig({ dryRun, force });
   } catch (error: unknown) {
-    throw internalError(`Failed to scaffold config: ${extractMessage(error)}`, { cause: error });
+    throw configError(`Failed to scaffold config: ${extractMessage(error)}`, { cause: error });
   }
 
   reportWriteResult(result.configResult, dryRun);
@@ -34,7 +34,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   // `reportWriteResult` has already printed the per-file reason, so the thrown message stays terse.
   const failure = [result.configResult, result.kitResult].find((r) => r.outcome === 'failed');
   if (failure !== undefined) {
-    throw internalError(`Failed to scaffold ${failure.filePath}`);
+    throw configError(`Failed to scaffold ${failure.filePath}`);
   }
 
   if (!dryRun) {

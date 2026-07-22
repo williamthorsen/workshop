@@ -39,32 +39,32 @@ describe(`${initCommand.name} error handling`, () => {
     mockReportWriteResult.mockReset();
   });
 
-  it('throws an internal error when scaffoldConfig throws', () => {
+  it('throws a config error when scaffoldConfig throws', () => {
     mockScaffoldConfig.mockImplementation(() => {
       throw new Error('disk full');
     });
 
     expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'internal', message: expect.stringContaining('disk full') }),
+      expect.objectContaining({ code: 'config', message: expect.stringContaining('disk full') }),
     );
   });
 
-  it('throws an internal error naming the file when the config result failed', () => {
+  it('throws a config error naming the file when the config result failed', () => {
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
 
     expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'internal', message: 'Failed to scaffold .config/readyup.config.ts' }),
+      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .config/readyup.config.ts' }),
     );
   });
 
-  it('throws an internal error naming the file when the kit result failed', () => {
+  it('throws a config error naming the file when the kit result failed', () => {
     mockScaffoldConfig.mockReturnValue({
       configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
       kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
     });
 
     expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'internal', message: 'Failed to scaffold .readyup/kits/default.ts' }),
+      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .readyup/kits/default.ts' }),
     );
   });
 

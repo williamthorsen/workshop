@@ -60,5 +60,5 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  */
 export function toRdyError(error: unknown): RdyError {
   if (error instanceof RdyError) return error;
-  return new RdyError('internal', extractMessage(error), { cause: error });
+  return internalError(extractMessage(error), { cause: error });
 }
