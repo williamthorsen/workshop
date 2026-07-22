@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "jiti": "2.7.0",
+    "jsonc-parser": "3.3.1",
     "picomatch": "4.0.5",
     "zod": "4.4.3"
   },
