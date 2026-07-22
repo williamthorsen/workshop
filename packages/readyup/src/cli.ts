@@ -56,16 +56,24 @@ export interface ParsedRunArgs {
   urlValue: string | undefined;
 }
 
+/**
+ * Options accepted by the `run` subcommand.
+ *
+ * A letter earns a short flag only when it carries no dominant conflicting meaning in comparable
+ * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
+ * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: a
+ * shift-key slip must not be able to change what runs.
+ */
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
+  'fail-on': { type: 'string' },
   file: { type: 'string', short: 'f' },
   from: { type: 'string' },
-  url: { type: 'string', short: 'u' },
-  jit: { type: 'boolean', short: 'J' },
-  internal: { type: 'boolean', short: 'i' },
-  json: { type: 'boolean', short: 'j' },
-  'fail-on': { type: 'string', short: 'F' },
-  'report-on': { type: 'string', short: 'R' },
+  internal: { type: 'boolean' },
+  jit: { type: 'boolean' },
+  json: { type: 'boolean' },
+  'report-on': { type: 'string' },
+  url: { type: 'string' },
 } as const;
 
 /** Validate and narrow a string to a Severity value. */
@@ -91,9 +99,12 @@ function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit:
   return `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/src/${ref}/${KITS_DIR}/${kit}${extension}`;
 }
 
+/** Guidance shown for every spelling of `--checklists` that names no checklist. */
+const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
+
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
-  '--checklists': '--checklists requires a comma-separated list of checklist names',
+  '--checklists': CHECKLISTS_HINT,
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
   '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
@@ -101,18 +112,18 @@ const flagErrorHints: Record<string, string> = {
   '--url': '--url requires a URL argument',
 };
 
-/** Collect active source flags and validate mutual exclusivity and mode-flag constraints. */
-function validateFlagConstraints(
-  parsed: {
-    file: string | undefined;
-    from: string | undefined;
-    url: string | undefined;
-    jit: boolean;
-    internal: boolean;
-    checklists: string | undefined;
-  },
-  positionalCount: number,
-): string | undefined {
+/** The subset of parsed run flags whose combinations are constrained. */
+interface RunFlagConstraints {
+  checklists: string | undefined;
+  file: string | undefined;
+  from: string | undefined;
+  internal: boolean;
+  jit: boolean;
+  url: string | undefined;
+}
+
+/** Collects the active source flags and enforces mutual exclusivity, mode-flag, and selection constraints. */
+function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
   if (parsed.from !== undefined) sourceFlags.push('--from');
@@ -131,15 +142,38 @@ function validateFlagConstraints(
     throw usageError(`--internal cannot be combined with ${sourceType}`);
   }
 
-  if (parsed.checklists !== undefined && sourceType !== '--file' && sourceType !== '--url') {
-    throw usageError('--checklists can only be used with --file or --url');
-  }
-
-  if ((sourceType === '--file' || sourceType === '--url') && positionalCount > 0) {
+  if ((sourceType === '--file' || sourceType === '--url') && kitSpecifiers.length > 0) {
     throw usageError(`${sourceType} cannot be combined with positional kit arguments`);
   }
 
+  if (parsed.checklists !== undefined) {
+    validateChecklistsSelection(sourceType, kitSpecifiers);
+  }
+
   return sourceType;
+}
+
+/**
+ * Rejects `--checklists` when the selection it expresses is ambiguous.
+ *
+ * The flag names checklists within one kit, so it needs exactly one kit and no competing per-kit
+ * filter. `--file` and `--url` each name their one kit implicitly; a bare invocation names the
+ * default kit. Conflicting selections error rather than merging: an invocation carrying both is a
+ * bug in whatever generated it, and no merge rule for "run `deploy:build`, filtered to `test`" is
+ * obviously right.
+ */
+function validateChecklistsSelection(sourceType: string | undefined, kitSpecifiers: KitSpecifier[]): void {
+  if (sourceType === '--file' || sourceType === '--url') return;
+
+  if (kitSpecifiers.length > 1) {
+    const names = kitSpecifiers.map((spec) => spec.kitName).join(', ');
+    throw usageError(`--checklists requires a single kit, but ${kitSpecifiers.length} were given: ${names}`);
+  }
+
+  const spec = kitSpecifiers[0];
+  if (spec !== undefined && spec.checklists.length > 0) {
+    throw usageError(`--checklists cannot be combined with the ":" checklist filter on "${spec.kitName}"`);
+  }
 }
 
 /** Tokenize run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
@@ -175,17 +209,22 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     reportOn: values['report-on'],
   };
 
-  validateFlagConstraints(parsed, positionals.length);
-
-  // Parse checklists from the flag value.
-  const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
-
-  // Parse kit specifiers from positional args.
+  // Parse kit specifiers from positional args. This precedes validation because `--checklists`
+  // is constrained by how many kits were named and whether the one named carries its own filter.
   let kitSpecifiers: KitSpecifier[];
   try {
     kitSpecifiers = parseKitSpecifiers(positionals);
   } catch (error: unknown) {
     throw usageError(extractMessage(error), { cause: error });
+  }
+
+  validateFlagConstraints(parsed, kitSpecifiers);
+
+  // Parse checklists from the flag value. An empty list selects every checklist, so a value that
+  // names none — `,,,` — would invert what an explicit filter asks for.
+  const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
+  if (checklists?.length === 0) {
+    throw usageError(CHECKLISTS_HINT);
   }
 
   // Validate severity flags.
@@ -238,7 +277,10 @@ export function resolveKitSources({
 
   // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
-  const specs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
+  const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
+  // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
+  // invocation where "one kit" is ambiguous, so this map never covers more than a single spec.
+  const specs = checklists === undefined ? declaredSpecs : declaredSpecs.map((spec) => ({ ...spec, checklists }));
 
   if (fromValue !== undefined) {
     let source: FromSource;

@@ -106,12 +106,25 @@ describe(routeCommand, () => {
     const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(output).toContain('--from');
     expect(output).toContain('--file, -f');
-    expect(output).toContain('--url, -u');
-    expect(output).toContain('--jit, -J');
-    expect(output).toContain('--internal, -i');
+    expect(output).toContain('--url');
+    expect(output).toContain('--jit');
+    expect(output).toContain('--internal');
     expect(output).toContain('--checklists, -c');
-    expect(output).toContain('--json, -j');
+    expect(output).toContain('--json');
     expect(output).toContain('--version, -V');
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+    { label: 'init', args: ['init', '--help'] },
+  ])('names no retired short flag in $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    for (const short of ['-J', '-F', '-R', '-i', '-u', '-j']) {
+      expect(output).not.toContain(`, ${short}`);
+    }
   });
 
   it('marks run as the default command in top-level help', async () => {
@@ -427,13 +440,20 @@ describe(routeCommand, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('passes -n and -f short flags to initCommand', async () => {
+  it('passes the -n short flag to initCommand', async () => {
     mockInitCommand.mockReturnValue(0);
 
-    const exitCode = await routeCommand(['init', '-n', '-f']);
+    const exitCode = await routeCommand(['init', '-n']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: true });
+    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: false });
     expect(exitCode).toBe(0);
+  });
+
+  it('rejects the retired init -f short flag', async () => {
+    const exitCode = await routeCommand(['init', '-f']);
+
+    expect(exitCode).toBe(2);
+    expect(mockInitCommand).not.toHaveBeenCalled();
   });
 
   it('returns 2 for unknown init flags', async () => {

@@ -111,15 +111,43 @@ describe(parseRunArgs, () => {
     expect(result.checklists).toStrictEqual(['check1']);
   });
 
-  it('throws when --checklists is used without --file or --url', () => {
-    expect(() => parseRunArgs(['--checklists', 'check1'])).toThrow(
-      '--checklists can only be used with --file or --url',
+  it('parses --checklists with a single positional kit', () => {
+    const result = parseRunArgs(['deploy', '--checklists', 'build,test']);
+
+    expect(result.checklists).toStrictEqual(['build', 'test']);
+    expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+  });
+
+  it('parses --checklists with no positional kit, selecting within the default kit', () => {
+    const result = parseRunArgs(['--checklists', 'build']);
+
+    expect(result.checklists).toStrictEqual(['build']);
+    expect(result.kitSpecifiers).toStrictEqual([]);
+  });
+
+  it('parses --checklists with --from and a single positional kit', () => {
+    const result = parseRunArgs(['--checklists', 'check1', '--from', 'github:org/repo', 'deploy']);
+
+    expect(result.checklists).toStrictEqual(['check1']);
+  });
+
+  it('throws when --checklists competes with a ":" filter on the positional kit', () => {
+    expect(() => parseRunArgs(['deploy:build', '--checklists', 'test'])).toThrow(
+      '--checklists cannot be combined with the ":" checklist filter on "deploy"',
     );
   });
 
-  it('throws when --checklists is used with --from', () => {
-    expect(() => parseRunArgs(['--checklists', 'check1', '--from', 'github:org/repo'])).toThrow(
-      '--checklists can only be used with --file or --url',
+  it.each([
+    { label: 'no value', args: ['--checklists='] },
+    { label: 'only separators', args: ['--checklists', ',,,'] },
+    { label: 'only separators alongside a kit', args: ['deploy', '--checklists', ','] },
+  ])('throws when --checklists is given $label', ({ args }) => {
+    expect(() => parseRunArgs(args)).toThrow('--checklists requires a comma-separated list of checklist names');
+  });
+
+  it('throws when --checklists is given more than one positional kit', () => {
+    expect(() => parseRunArgs(['a', 'b', '--checklists', 'x'])).toThrow(
+      '--checklists requires a single kit, but 2 were given: a, b',
     );
   });
 
@@ -185,21 +213,9 @@ describe(parseRunArgs, () => {
     expect(result.jit).toBe(true);
   });
 
-  it('parses -J as short form of --jit', () => {
-    const result = parseRunArgs(['-J']);
-
-    expect(result.jit).toBe(true);
-  });
-
   // --internal flag
   it('parses --internal flag', () => {
     const result = parseRunArgs(['--internal']);
-
-    expect(result.internal).toBe(true);
-  });
-
-  it('parses -i as short form of --internal', () => {
-    const result = parseRunArgs(['-i']);
 
     expect(result.internal).toBe(true);
   });
@@ -241,36 +257,23 @@ describe(parseRunArgs, () => {
     expect(result.filePath).toBe('custom/path.ts');
   });
 
-  it('parses -u as short form of --url', () => {
-    const result = parseRunArgs(['-u', 'https://example.com/config.js']);
-
-    expect(result.urlValue).toBe('https://example.com/config.js');
+  it.each(['-J', '-F', '-R', '-i', '-u', '-j'])('rejects the retired short flag %s', (short) => {
+    expect(() => parseRunArgs([short])).toThrow(`Unknown option '${short}'`);
   });
 
-  it('parses -j as short form of --json', () => {
-    const result = parseRunArgs(['-j']);
-
-    expect(result.json).toBe(true);
-  });
-
-  // node:util.parseArgs expands grouped boolean shorts (`-jJ`) into separate flags.
-  it('accepts grouped short boolean flags', () => {
-    const result = parseRunArgs(['-jJ']);
-
-    expect(result.json).toBe(true);
-    expect(result.jit).toBe(true);
-  });
-
-  it('parses -F as short form of --fail-on', () => {
-    const result = parseRunArgs(['-F', 'warn']);
-
-    expect(result.failOn).toBe('warn');
-  });
-
-  it('parses -R as short form of --report-on', () => {
-    const result = parseRunArgs(['-R', 'error']);
-
-    expect(result.reportOn).toBe('error');
+  it.each([
+    { long: '--internal', args: ['--internal'], expected: { internal: true } },
+    { long: '--jit', args: ['--jit'], expected: { jit: true } },
+    { long: '--json', args: ['--json'], expected: { json: true } },
+    { long: '--fail-on', args: ['--fail-on', 'warn'], expected: { failOn: 'warn' } },
+    { long: '--report-on', args: ['--report-on', 'error'], expected: { reportOn: 'error' } },
+    {
+      long: '--url',
+      args: ['--url', 'https://example.com/kit.js'],
+      expected: { urlValue: 'https://example.com/kit.js' },
+    },
+  ])('keeps $long working after its short is retired', ({ args, expected }) => {
+    expect(parseRunArgs(args)).toMatchObject(expected);
   });
 
   // --url flag
@@ -439,6 +442,18 @@ describe(resolveKitSources, () => {
   it('resolves slash-separated kit name', () => {
     expect(resolve({ kitSpecifiers: [{ kitName: 'shared/deploy', checklists: [] }] })).toStrictEqual([
       { name: 'shared/deploy', source: { path: '.readyup/kits/shared/deploy.js' }, checklists: [] },
+    ]);
+  });
+
+  it('applies --checklists to the named kit', () => {
+    expect(
+      resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }], checklists: ['build', 'test'] }),
+    ).toStrictEqual([{ name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: ['build', 'test'] }]);
+  });
+
+  it('applies --checklists to the default kit when no kit is named', () => {
+    expect(resolve({ checklists: ['build'] })).toStrictEqual([
+      { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: ['build'] },
     ]);
   });
 

@@ -32,13 +32,13 @@ Commands:
 Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
-  --url, -u <url>                    Fetch kit from a URL
-  --jit, -J                          Run from TypeScript source instead of compiled JS
-  --internal, -i                     Use internal kit directory and infix from config
-  --checklists, -c <name,...>        Filter checklists (with --file or --url only)
-  --json, -j                         Output results as JSON
-  --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
-  --report-on, -R <severity>         Show this severity or above in the detail tree (error, warn, recommend),
+  --url <url>                        Fetch kit from a URL
+  --jit                              Run from TypeScript source instead of compiled JS
+  --internal                         Use internal kit directory and infix from config
+  --checklists, -c <name,...>        Filter checklists within the selected kit
+  --json                             Output results as JSON
+  --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
 
@@ -69,17 +69,18 @@ Kit source (mutually exclusive):
   --from <source>                    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref],
                                      global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
-  --url, -u <url>                    Fetch kit from a URL
+  --url <url>                        Fetch kit from a URL
 
 Mode flags (incompatible with --from, --file, --url):
-  --jit, -J                          Run from TypeScript source instead of compiled JS
-  --internal, -i                     Use internal kit directory and infix from config
+  --jit                              Run from TypeScript source instead of compiled JS
+  --internal                         Use internal kit directory and infix from config
 
 Options:
-  --checklists, -c <name,...>        Filter checklists (with --file or --url only)
-  --json, -j                         Output results as JSON
-  --fail-on, -F <severity>           Fail on this severity or above (error, warn, recommend)
-  --report-on, -R <severity>         Show this severity or above in the detail tree (error, warn, recommend),
+  --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
+                                     single kit and no ":" filter on it
+  --json                             Output results as JSON
+  --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
   --help, -h                         Show this help message
@@ -165,7 +166,7 @@ Scaffold a starter config and kit file.
 
 Options:
   --dry-run, -n   Preview changes without writing files
-  --force, -f     Overwrite existing files
+  --force         Overwrite existing files
   --help, -h      Show this help message
 `;
 
@@ -295,7 +296,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
 function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
-    force: { type: 'boolean', short: 'f' },
+    force: { type: 'boolean' },
   } as const;
 
   let parsed;
