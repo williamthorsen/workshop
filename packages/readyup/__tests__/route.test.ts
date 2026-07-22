@@ -106,12 +106,25 @@ describe(routeCommand, () => {
     const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(output).toContain('--from');
     expect(output).toContain('--file, -f');
-    expect(output).toContain('--url, -u');
-    expect(output).toContain('--jit, -J');
-    expect(output).toContain('--internal, -i');
+    expect(output).toContain('--url');
+    expect(output).toContain('--jit');
+    expect(output).toContain('--internal');
     expect(output).toContain('--checklists, -c');
-    expect(output).toContain('--json, -j');
+    expect(output).toContain('--json');
     expect(output).toContain('--version, -V');
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+    { label: 'init', args: ['init', '--help'] },
+  ])('names no retired short flag in $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    for (const short of ['-J', '-F', '-R', '-i', '-u', '-j']) {
+      expect(output).not.toContain(`, ${short}`);
+    }
   });
 
   it('marks run as the default command in top-level help', async () => {

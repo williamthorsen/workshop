@@ -85,13 +85,15 @@ rdy <command> [options]
 | ----------------------------- | ------------------------------------------------------------- |
 | `--from <source>`             | Kit source (see [kit sources](#kit-sources) below)            |
 | `--file, -f <path>`           | Path to a local kit file                                      |
-| `--url, -u <url>`             | Fetch kit from a URL                                          |
-| `--jit, -J`                   | Run from TypeScript source instead of compiled JS             |
-| `--internal, -i`              | Use internal kit directory and infix from config              |
-| `--checklists, -c <name,...>` | Filter checklists (with `--file` or `--url` only)             |
-| `--json, -j`                  | Output results as JSON                                        |
-| `--fail-on, -F <severity>`    | Fail on this severity or above (`error`, `warn`, `recommend`) |
-| `--report-on, -R <severity>`  | Show this severity or above (`error`, `warn`, `recommend`)    |
+| `--url <url>`                 | Fetch kit from a URL                                          |
+| `--jit`                       | Run from TypeScript source instead of compiled JS             |
+| `--internal`                  | Use internal kit directory and infix from config              |
+| `--checklists, -c <name,...>` | Filter checklists within the selected kit                     |
+| `--json`                      | Output results as JSON                                        |
+| `--fail-on <severity>`        | Fail on this severity or above (`error`, `warn`, `recommend`) |
+| `--report-on <severity>`      | Show this severity or above (`error`, `warn`, `recommend`)    |
+
+`--checklists` selects checklists within one kit. Pair it with a single positional kit, with `--file` or `--url`, or with no kit at all to filter the default kit. Naming two or more kits, or naming one that already carries a `:checklist` filter, is an error rather than a merge.
 
 `--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
 
