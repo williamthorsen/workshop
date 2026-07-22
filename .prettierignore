@@ -1,1 +1,3 @@
+# Written by `rdy compile`, whose own formatting Prettier would fight over on every build.
+.readyup/manifest.json
 pnpm-lock.yaml
