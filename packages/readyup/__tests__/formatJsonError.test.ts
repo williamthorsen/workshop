@@ -1,24 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { configError, internalError, kitLoadError, RdyError, usageError } from '../src/errors.ts';
+import { configError, internalError, kitLoadError, usageError } from '../src/errors.ts';
 import { formatJsonError } from '../src/formatJsonError.ts';
 
 describe(formatJsonError, () => {
-  it('wraps the message, code, and remedy in a versioned envelope', () => {
+  it('wraps the code and message in an envelope carrying nothing else', () => {
     const output = formatJsonError(usageError('something went wrong'));
     const parsed: unknown = JSON.parse(output);
 
-    expect(parsed).toStrictEqual({
-      error: { code: 'usage', message: 'something went wrong', remedy: '' },
-      schemaVersion: 1,
-    });
-  });
-
-  it('carries the remedy when one is supplied', () => {
-    const output = formatJsonError(new RdyError('config', 'bad config', { remedy: 'Run `rdy init`.' }));
-    const parsed: unknown = JSON.parse(output);
-
-    expect(parsed).toMatchObject({ error: { remedy: 'Run `rdy init`.' } });
+    expect(parsed).toStrictEqual({ error: { code: 'usage', message: 'something went wrong' } });
   });
 
   it.each([

@@ -14,25 +14,21 @@ export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 /** Optional fields accepted by every `RdyError` constructor and factory. */
 export interface RdyErrorOptions {
   cause?: unknown;
-  remedy?: string;
 }
 
 /**
  * A failure that prevented rdy from completing the invocation.
  *
  * Every code maps to the same exit status, because the exit code answers "can I retry this
- * invocation?" while `code` carries the diagnosis. `remedy` is emitted in the JSON error
- * envelope and may be empty.
+ * invocation?" while `code` carries the diagnosis.
  */
 export class RdyError extends Error {
   readonly code: RdyErrorCode;
-  readonly remedy: string;
 
   constructor(code: RdyErrorCode, message: string, options: RdyErrorOptions = {}) {
     super(message, ...(options.cause === undefined ? [] : [{ cause: options.cause }]));
     this.name = 'RdyError';
     this.code = code;
-    this.remedy = options.remedy ?? '';
   }
 }
 

@@ -100,7 +100,7 @@ describe('exit codes', () => {
     const exitCode = await routeCommand([...args, '--json']);
 
     expect(exitCode).toBe(2);
-    expect(JSON.parse(readStdout())).toMatchObject({ error: { code }, schemaVersion: 1 });
+    expect(JSON.parse(readStdout())).toStrictEqual({ error: { code, message: expect.any(String) } });
   });
 
   it('reports code "config" for an unreadable config file', async () => {
@@ -114,7 +114,7 @@ describe('exit codes', () => {
       const exitCode = await routeCommand(['--json']);
 
       expect(exitCode).toBe(2);
-      expect(JSON.parse(readStdout())).toMatchObject({ error: { code: 'config' }, schemaVersion: 1 });
+      expect(JSON.parse(readStdout())).toStrictEqual({ error: { code: 'config', message: expect.any(String) } });
     } finally {
       process.chdir(cwd);
       rmSync(brokenCwd, { recursive: true, force: true });
