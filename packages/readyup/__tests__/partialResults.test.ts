@@ -116,6 +116,12 @@ describe('partial results when a kit fails after dispatch', () => {
 
       expect(readStdout()).not.toContain('Error [absent]:');
     });
+
+    it('drops the kit label when a lone kit leaves nothing to disambiguate', async () => {
+      await routeCommand(['absent']);
+
+      expect(readStderr()).toMatch(/^Error: /);
+    });
   });
 });
 

@@ -782,7 +782,7 @@ describe(runCommand, () => {
     return [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists }];
   }
 
-  /** Concatenate every stderr write into one string, where human mode reports a failed kit. */
+  /** Every stderr write concatenated into one string. */
   function stderrText(): string {
     return stderrSpy.mock.calls.map((c) => String(c[0])).join('');
   }
@@ -826,7 +826,7 @@ describe(runCommand, () => {
     const exitCode = await runCommand({ kitEntries: singleKitEntry(['nonexistent']), json: false });
 
     expect(exitCode).toBe(2);
-    expect(stderrText()).toContain('Error [default]: Unknown name(s): nonexistent');
+    expect(stderrText()).toContain('Error: Unknown name(s): nonexistent');
   });
 
   it('returns exit code 1 when any checklist fails', async () => {
@@ -960,7 +960,7 @@ describe(runCommand, () => {
     const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false });
 
     expect(exitCode).toBe(2);
-    expect(stderrText()).toBe('Error [default]: Kit not found\n');
+    expect(stderrText()).toBe('Error: Kit not found\n');
   });
 
   it('prints combined summary for a single kit with multiple checklists', async () => {
@@ -1024,9 +1024,7 @@ describe(runCommand, () => {
 
     await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(stderrText()).toBe(
-      'Error [default]: Running from source requires readyup to be installed as a project dependency.\n',
-    );
+    expect(stderrText()).toBe('Error: Running from source requires readyup to be installed as a project dependency.\n');
   });
 
   it('passes through non-readyup module errors even with --jit', async () => {
@@ -1037,7 +1035,7 @@ describe(runCommand, () => {
 
     await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(stderrText()).toBe("Error [default]: Cannot find package 'chalk'\n");
+    expect(stderrText()).toBe("Error: Cannot find package 'chalk'\n");
   });
 
   it('passes through non-module errors with --jit', async () => {
@@ -1045,7 +1043,7 @@ describe(runCommand, () => {
 
     await runCommand({ kitEntries: singleKitEntry(), json: false }, true);
 
-    expect(stderrText()).toBe('Error [default]: Syntax error in kit\n');
+    expect(stderrText()).toBe('Error: Syntax error in kit\n');
   });
 
   describe('threshold cascade', () => {
@@ -1416,7 +1414,7 @@ describe(runCommand, () => {
 
     await runCommand({ kitEntries: [{ name: 'config', source: { url }, checklists: [] }], json: false });
 
-    expect(stderrText()).toBe(`Error [config]: Failed to reach ${url}: Failed to fetch remote kit\n`);
+    expect(stderrText()).toBe(`Error: Failed to reach ${url}: Failed to fetch remote kit\n`);
   });
 });
 

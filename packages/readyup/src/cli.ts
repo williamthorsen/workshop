@@ -541,7 +541,9 @@ async function runMultiKitHumanMode(
       const exitCode = await runSingleKitHumanMode(kit, entry.checklists, failOn, reportOn, showKitHeader);
       if (exitCode !== EXIT_OK) allPassed = false;
     } catch (error: unknown) {
-      process.stderr.write(`Error [${entry.name}]: ${toRdyError(error).message}\n`);
+      // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
+      const label = showKitHeader ? ` [${entry.name}]` : '';
+      process.stderr.write(`Error${label}: ${toRdyError(error).message}\n`);
       anyKitFailed = true;
     }
   }

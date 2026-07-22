@@ -125,7 +125,7 @@ The envelope covers only failures that precede dispatch. Once the run reaches it
 { "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }
 ```
 
-An error entry carries no counts, because a kit that never ran has none to report; the top-level totals cover only the kits that ran. In human mode the same failure goes to stderr as `Error [release]: ...`, which keeps it distinct from a failed check.
+An error entry carries no counts, because a kit that never ran has none to report; the top-level totals cover only the kits that ran. In human mode the same failure goes to stderr, which keeps it distinct from a failed check. A run of more than one kit prefixes the kit's name, as `Error [release]: ...`.
 
 ### Kit sources
 

@@ -59,7 +59,8 @@ have no JSON form: their text goes to stderr and stdout stays empty.
 
 A kit that fails once the run has reached its kits does not discard the kits that ran.
 Under --json it becomes a kits entry carrying "error" in place of results; otherwise it
-is reported on stderr as Error [kit]. Either way the run continues and exits 2.
+is reported on stderr, prefixed with the kit's name when more than one kit was
+requested. Either way the run continues and exits 2.
 `;
 
 const RUN_HELP = `
