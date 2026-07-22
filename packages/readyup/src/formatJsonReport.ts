@@ -1,5 +1,4 @@
-import { tallyResult } from './reportRdy.ts';
-import { meetsThreshold } from './runRdy.ts';
+import { countResults, emptyCounts, mergeCounts, selectVisibleResults } from './reportRdy.ts';
 import type {
   JsonCheckEntry,
   JsonChecklistEntry,
@@ -8,9 +7,7 @@ import type {
   RdyReport,
   RdyResult,
   Severity,
-  SummaryCounts,
 } from './types.ts';
-import { worseSeverity } from './utils/severity.ts';
 
 interface ChecklistEntry {
   name: string;
@@ -27,39 +24,15 @@ export interface FormatJsonReportOptions {
   reportOn?: Severity;
 }
 
-/** Create a zeroed `SummaryCounts` object. */
-function emptyCounts(): SummaryCounts {
-  return {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-  };
-}
-
-/** Aggregate `source` counts into `target` in place. */
-function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
-  target.passed += source.passed;
-  target.errors += source.errors;
-  target.warnings += source.warnings;
-  target.recommendations += source.recommendations;
-  target.blocked += source.blocked;
-  target.optional += source.optional;
-  target.worstSeverity = worseSeverity(target.worstSeverity, source.worstSeverity);
-}
-
-/** Build a single checklist entry from a name and report. */
+/**
+ * Build a single checklist entry from a name and report.
+ *
+ * Counts cover the whole run; the reporting threshold prunes only the serialized detail tree,
+ * retaining the ancestors of every result it keeps so the nesting stays intact.
+ */
 function buildChecklistEntry(name: string, report: RdyReport, reportOn: Severity): JsonChecklistEntry {
-  const counts = emptyCounts();
-  const visibleResults = report.results.filter((r) => meetsThreshold(r.severity, reportOn));
-
-  for (const result of visibleResults) {
-    tallyResult(counts, result);
-  }
-
+  const counts = countResults(report.results);
+  const visibleResults = selectVisibleResults(report.results, reportOn);
   const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
 
   return {

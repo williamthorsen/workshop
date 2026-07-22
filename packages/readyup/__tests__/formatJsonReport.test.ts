@@ -612,7 +612,7 @@ describe(formatJsonReport, () => {
       });
     });
 
-    it('counts only visible results in granular buckets', () => {
+    it('counts every result in granular buckets, including results pruned from the tree', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'a', severity: 'error' }),
@@ -628,11 +628,31 @@ describe(formatJsonReport, () => {
         passed: 1,
         errors: 0,
         warnings: 0,
-        recommendations: 0,
+        recommendations: 1,
         blocked: 0,
         optional: 0,
-        worstSeverity: null,
+        worstSeverity: 'recommend',
       });
+    });
+
+    it('reports a below-threshold failure in the counts while omitting it from the detail tree', () => {
+      const report = makeReport({
+        results: [
+          makePassedResult({ name: 'error-pass', severity: 'error' }),
+          makeFailedResult({ name: 'warn-fail', severity: 'warn' }),
+        ],
+        passed: false,
+        durationMs: 15,
+      });
+
+      const parsed: unknown = JSON.parse(formatJsonReport(singleKit('deploy', report), { reportOn: 'error' }));
+
+      expect(parsed).toMatchObject({
+        warnings: 1,
+        worstSeverity: 'warn',
+        kits: [{ warnings: 1, checklists: [{ warnings: 1, checks: [{ name: 'error-pass' }] }] }],
+      });
+      expect(JSON.stringify(parsed)).not.toContain('warn-fail');
     });
   });
 });

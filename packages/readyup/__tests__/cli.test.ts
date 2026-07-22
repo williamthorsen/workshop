@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import type { RdyKit } from '../src/types.ts';
+import type { FailedResult, PassedResult, RdyKit, Severity } from '../src/types.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
 const mockRunRdy = vi.hoisted(() => vi.fn());
@@ -66,16 +66,6 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
 }));
 
 import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
-
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return {
-    checklists: [
-      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
-      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
-    ],
-    ...overrides,
-  };
-}
 
 describe(parseRunArgs, () => {
   it('returns undefined checklists and empty specifiers when no flags are given', () => {
@@ -976,6 +966,27 @@ describe(runCommand, () => {
     );
   });
 
+  it('counts results pruned by the reporting threshold in each combined-summary row', async () => {
+    const kit = makeKit();
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({
+      results: [makePassedResult('gate', 'error'), makeFailedResult('lint', 'warn')],
+      passed: true,
+      durationMs: 0,
+    });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+      reportOn: 'error',
+    });
+
+    expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
+      expect.objectContaining({ name: 'deploy', passed: 1, warnings: 1, worstSeverity: 'warn' }),
+      expect.objectContaining({ name: 'infra', passed: 1, warnings: 1, worstSeverity: 'warn' }),
+    ]);
+  });
+
   it('does not print combined summary for a single checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -1409,3 +1420,46 @@ describe(runCommand, () => {
     expect(exitCode).toBe(1);
   });
 });
+
+/** Builds a two-checklist kit named `deploy` and `infra`. */
+function makeKit(overrides?: Partial<RdyKit>): RdyKit {
+  return {
+    checklists: [
+      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
+      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
+    ],
+    ...overrides,
+  };
+}
+
+/** Builds a passed result at the given severity. */
+function makePassedResult(name: string, severity: Severity): PassedResult {
+  return {
+    name,
+    status: 'passed',
+    ok: true,
+    severity,
+    detail: null,
+    fix: null,
+    error: null,
+    progress: null,
+    durationMs: 0,
+    depth: 0,
+  };
+}
+
+/** Builds a failed result at the given severity. */
+function makeFailedResult(name: string, severity: Severity): FailedResult {
+  return {
+    name,
+    status: 'failed',
+    ok: false,
+    severity,
+    detail: null,
+    fix: null,
+    error: null,
+    progress: null,
+    durationMs: 0,
+    depth: 0,
+  };
+}

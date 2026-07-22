@@ -10,11 +10,11 @@ import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
-import { reportRdy, tallyResult } from './reportRdy.ts';
+import { countResults, reportRdy } from './reportRdy.ts';
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
-import { meetsThreshold, runRdy } from './runRdy.ts';
+import { runRdy } from './runRdy.ts';
 import type {
   ChecklistSummary,
   FixLocation,
@@ -23,7 +23,6 @@ import type {
   RdyReport,
   RdyStagedChecklist,
   Severity,
-  SummaryCounts,
 } from './types.ts';
 import { extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
@@ -306,22 +305,9 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
 
-/** Build a checklist summary from a report, filtering results by reporting threshold. */
-function summarizeReport(name: string, report: RdyReport, reportOn: Severity): ChecklistSummary {
-  const counts: SummaryCounts = {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-  };
-  for (const r of report.results) {
-    if (!meetsThreshold(r.severity, reportOn)) continue;
-    tallyResult(counts, r);
-  }
-  return { name, ...counts, durationMs: report.durationMs };
+/** Build a checklist summary from a report. */
+function summarizeReport(name: string, report: RdyReport): ChecklistSummary {
+  return { name, ...countResults(report.results), durationMs: report.durationMs };
 }
 
 /** Resolve threshold values from the cascade: CLI flag > kit field > default. */
@@ -565,7 +551,7 @@ async function runSingleKitHumanMode(
       }
 
       if (showChecklistHeader) {
-        summaries.push(summarizeReport(checklist.name, report, thresholds.reportOn));
+        summaries.push(summarizeReport(checklist.name, report));
       }
     }
   } catch (error: unknown) {

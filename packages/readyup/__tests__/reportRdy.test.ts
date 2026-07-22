@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  countResults,
   formatSummaryCounts,
   formatSummaryCountsPlain,
   ICON_ERROR_FAILED,
@@ -11,7 +12,7 @@ import {
   ICON_SKIPPED_PRECONDITION,
   ICON_WARN_FAILED,
   reportRdy,
-  tallyResult,
+  selectVisibleResults,
 } from '../src/reportRdy.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult, SummaryCounts } from '../src/types.ts';
 
@@ -386,11 +387,10 @@ describe(reportRdy, () => {
       expect(lines[0]).toBe(`${ICON_PASSED} top-check (7ms)`);
     });
 
-    it('shows n/a parent but suppresses descendants', () => {
+    it('renders an n/a result and the results that follow it', () => {
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 1 }),
           makePassedResult({ name: 'next-sibling', depth: 0, durationMs: 10 }),
         ],
       });
@@ -398,7 +398,6 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       expect(output).toContain('na-parent');
-      expect(output).not.toContain('na-child');
       expect(output).toContain('next-sibling');
     });
 
@@ -466,11 +465,10 @@ describe(reportRdy, () => {
       expect(output).toContain(`${ICON_PASSED} 2 passed. Failed: ${ICON_ERROR_FAILED} 1 error`);
     });
 
-    it('counts n/a parent as optional skip and excludes suppressed descendants from summary', () => {
+    it('counts an n/a result as an optional skip', () => {
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 1 }),
           makePassedResult({ name: 'sibling', depth: 0, durationMs: 10 }),
         ],
         durationMs: 50,
@@ -478,18 +476,17 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report);
 
-      // na-parent counts as optional skip; na-child is suppressed; sibling counts as passed.
       expect(output).toContain(`${ICON_PASSED} 1 passed`);
       expect(output).toContain(`${ICON_SKIPPED_NA} 1 optional`);
-      expect(output).toContain('na-parent');
-      expect(output).not.toContain('na-child');
     });
 
-    it('resumes output after n/a subtree at same depth', () => {
+    it('renders every result it is given, applying no suppression of its own', () => {
+      // `runRdy` no longer emits descendants of an n/a result, so the renderer must not
+      // second-guess its input: whatever arrives is displayed and counted.
       const report = makeReport({
         results: [
           makeSkippedResult({ name: 'na-check', skipReason: 'n/a', depth: 1 }),
-          makeSkippedResult({ name: 'na-child', skipReason: 'n/a', depth: 2 }),
+          makeSkippedResult({ name: 'deeper', skipReason: 'precondition', depth: 2 }),
           makePassedResult({ name: 'sibling', depth: 1, durationMs: 5 }),
         ],
       });
@@ -497,8 +494,9 @@ describe(reportRdy, () => {
       const output = reportRdy(report);
 
       expect(output).toContain('na-check');
-      expect(output).not.toContain('na-child');
+      expect(output).toContain('deeper');
       expect(output).toContain('sibling');
+      expect(output).toContain(`${ICON_SKIPPED_PRECONDITION} 1 blocked`);
     });
   });
 
@@ -518,7 +516,7 @@ describe(reportRdy, () => {
       expect(output).not.toContain('recommend-check');
     });
 
-    it('counts only visible results in the summary', () => {
+    it('counts every result in the summary, including results pruned from the tree', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'error-pass', severity: 'error' }),
@@ -528,8 +526,23 @@ describe(reportRdy, () => {
 
       const output = reportRdy(report, { reportOn: 'error' });
 
-      expect(output).toContain(`${ICON_PASSED} 1 passed`);
-      expect(output).not.toContain('2 passed');
+      expect(output).toContain(`${ICON_PASSED} 2 passed`);
+      expect(output).not.toContain('recommend-pass');
+    });
+
+    it('reports a below-threshold failure in the counts and worst severity', () => {
+      const report = makeReport({
+        results: [
+          makePassedResult({ name: 'error-pass', severity: 'error' }),
+          makeFailedResult({ name: 'warn-fail', severity: 'warn' }),
+        ],
+        passed: false,
+      });
+
+      const output = reportRdy(report, { reportOn: 'error' });
+
+      expect(output).toContain(`${ICON_WARN_FAILED} 1 warning`);
+      expect(output).not.toContain('warn-fail');
     });
 
     it('hides precondition result when its severity is below the reporting threshold', () => {
@@ -739,29 +752,28 @@ describe(formatSummaryCountsPlain, () => {
   });
 });
 
-describe(tallyResult, () => {
-  it('increments `passed` for a passed result', () => {
-    const counts = makeCounts();
+describe(countResults, () => {
+  it('returns zeroed counts for an empty result list', () => {
+    const counts = countResults([]);
 
-    tallyResult(counts, makePassedResult());
+    expect(counts).toStrictEqual(makeCounts());
+  });
+
+  it('increments `passed` for a passed result', () => {
+    const counts = countResults([makePassedResult()]);
 
     expect(counts.passed).toBe(1);
     expect(counts.worstSeverity).toBeNull();
   });
 
   it('leaves `worstSeverity` null after a passing result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makePassedResult());
-    tallyResult(counts, makePassedResult());
+    const counts = countResults([makePassedResult(), makePassedResult()]);
 
     expect(counts.worstSeverity).toBeNull();
   });
 
   it('increments `errors` and sets worstSeverity to error for a failed error result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+    const counts = countResults([makeFailedResult({ severity: 'error' })]);
 
     expect(counts.errors).toBe(1);
     expect(counts.warnings).toBe(0);
@@ -770,9 +782,7 @@ describe(tallyResult, () => {
   });
 
   it('increments `warnings` and sets worstSeverity to warn for a failed warn result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    const counts = countResults([makeFailedResult({ severity: 'warn' })]);
 
     expect(counts.warnings).toBe(1);
     expect(counts.errors).toBe(0);
@@ -781,9 +791,7 @@ describe(tallyResult, () => {
   });
 
   it('increments `recommendations` and sets worstSeverity to recommend for a failed recommend result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+    const counts = countResults([makeFailedResult({ severity: 'recommend' })]);
 
     expect(counts.recommendations).toBe(1);
     expect(counts.errors).toBe(0);
@@ -792,9 +800,7 @@ describe(tallyResult, () => {
   });
 
   it('increments `blocked` for a precondition-skipped result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeSkippedResult({ skipReason: 'precondition' }));
+    const counts = countResults([makeSkippedResult({ skipReason: 'precondition' })]);
 
     expect(counts.blocked).toBe(1);
     expect(counts.optional).toBe(0);
@@ -802,9 +808,7 @@ describe(tallyResult, () => {
   });
 
   it('increments `optional` for an n/a-skipped result', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeSkippedResult({ skipReason: 'n/a' }));
+    const counts = countResults([makeSkippedResult({ skipReason: 'n/a' })]);
 
     expect(counts.optional).toBe(1);
     expect(counts.blocked).toBe(0);
@@ -812,58 +816,45 @@ describe(tallyResult, () => {
   });
 
   it('escalates worstSeverity from null to recommend on first recommend failure', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+    const counts = countResults([makeFailedResult({ severity: 'recommend' })]);
 
     expect(counts.worstSeverity).toBe('recommend');
   });
 
   it('escalates worstSeverity from recommend to warn', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    const counts = countResults([makeFailedResult({ severity: 'recommend' }), makeFailedResult({ severity: 'warn' })]);
 
     expect(counts.worstSeverity).toBe('warn');
   });
 
   it('escalates worstSeverity from warn to error', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
-    tallyResult(counts, makeFailedResult({ severity: 'error' }));
+    const counts = countResults([makeFailedResult({ severity: 'warn' }), makeFailedResult({ severity: 'error' })]);
 
     expect(counts.worstSeverity).toBe('error');
   });
 
   it('does not de-escalate worstSeverity when a lower-severity failure follows a higher one', () => {
-    const counts = makeCounts();
+    const twoFailures = countResults([makeFailedResult({ severity: 'error' }), makeFailedResult({ severity: 'warn' })]);
 
-    tallyResult(counts, makeFailedResult({ severity: 'error' }));
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
+    expect(twoFailures.worstSeverity).toBe('error');
 
-    expect(counts.worstSeverity).toBe('error');
+    const threeFailures = countResults([
+      makeFailedResult({ severity: 'error' }),
+      makeFailedResult({ severity: 'warn' }),
+      makeFailedResult({ severity: 'recommend' }),
+    ]);
 
-    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
-
-    expect(counts.worstSeverity).toBe('error');
+    expect(threeFailures.worstSeverity).toBe('error');
   });
 
   it('does not de-escalate worstSeverity from warn when a recommend failure follows', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
-    tallyResult(counts, makeFailedResult({ severity: 'recommend' }));
+    const counts = countResults([makeFailedResult({ severity: 'warn' }), makeFailedResult({ severity: 'recommend' })]);
 
     expect(counts.worstSeverity).toBe('warn');
   });
 
   it('does not change worstSeverity when a passed result follows a failure', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'warn' }));
-    tallyResult(counts, makePassedResult());
+    const counts = countResults([makeFailedResult({ severity: 'warn' }), makePassedResult()]);
 
     expect(counts.worstSeverity).toBe('warn');
     expect(counts.passed).toBe(1);
@@ -871,15 +862,96 @@ describe(tallyResult, () => {
   });
 
   it('does not change worstSeverity when a skipped result follows a failure', () => {
-    const counts = makeCounts();
-
-    tallyResult(counts, makeFailedResult({ severity: 'error' }));
-    tallyResult(counts, makeSkippedResult({ skipReason: 'precondition' }));
-    tallyResult(counts, makeSkippedResult({ skipReason: 'n/a' }));
+    const counts = countResults([
+      makeFailedResult({ severity: 'error' }),
+      makeSkippedResult({ skipReason: 'precondition' }),
+      makeSkippedResult({ skipReason: 'n/a' }),
+    ]);
 
     expect(counts.worstSeverity).toBe('error');
     expect(counts.blocked).toBe(1);
     expect(counts.optional).toBe(1);
+  });
+});
+
+describe(selectVisibleResults, () => {
+  it('returns an empty list when given no results', () => {
+    expect(selectVisibleResults([], 'error')).toStrictEqual([]);
+  });
+
+  it('keeps a below-threshold parent when a descendant meets the threshold', () => {
+    const visible = selectVisibleResults(
+      [
+        makePassedResult({ name: 'parent', severity: 'recommend', depth: 0 }),
+        makeFailedResult({ name: 'child', severity: 'error', depth: 1 }),
+      ],
+      'error',
+    );
+
+    expect(visible.map((r) => r.name)).toStrictEqual(['parent', 'child']);
+  });
+
+  it('prunes a below-threshold parent when no descendant meets the threshold', () => {
+    const visible = selectVisibleResults(
+      [
+        makePassedResult({ name: 'parent', severity: 'recommend', depth: 0 }),
+        makeFailedResult({ name: 'child', severity: 'warn', depth: 1 }),
+      ],
+      'error',
+    );
+
+    expect(visible).toStrictEqual([]);
+  });
+
+  it('keeps an entire ancestor chain for a single deep survivor', () => {
+    const visible = selectVisibleResults(
+      [
+        makePassedResult({ name: 'a', severity: 'recommend', depth: 0 }),
+        makePassedResult({ name: 'b', severity: 'recommend', depth: 1 }),
+        makeFailedResult({ name: 'c', severity: 'error', depth: 2 }),
+      ],
+      'error',
+    );
+
+    expect(visible.map((r) => r.name)).toStrictEqual(['a', 'b', 'c']);
+  });
+
+  it('keeps only the sibling subtree containing a survivor', () => {
+    const visible = selectVisibleResults(
+      [
+        makePassedResult({ name: 'first', severity: 'recommend', depth: 0 }),
+        makeFailedResult({ name: 'first-child', severity: 'warn', depth: 1 }),
+        makePassedResult({ name: 'second', severity: 'recommend', depth: 0 }),
+        makeFailedResult({ name: 'second-child', severity: 'error', depth: 1 }),
+      ],
+      'error',
+    );
+
+    expect(visible.map((r) => r.name)).toStrictEqual(['second', 'second-child']);
+  });
+
+  it('does not retain a pruned subtree because a later top-level result survives', () => {
+    const visible = selectVisibleResults(
+      [
+        makePassedResult({ name: 'pruned', severity: 'recommend', depth: 0 }),
+        makePassedResult({ name: 'pruned-child', severity: 'recommend', depth: 1 }),
+        makeFailedResult({ name: 'later', severity: 'error', depth: 0 }),
+      ],
+      'error',
+    );
+
+    expect(visible.map((r) => r.name)).toStrictEqual(['later']);
+  });
+
+  it('leaves the caller\u{2019}s list unmodified', () => {
+    const results = [
+      makePassedResult({ name: 'parent', severity: 'recommend', depth: 0 }),
+      makeFailedResult({ name: 'child', severity: 'error', depth: 1 }),
+    ];
+
+    selectVisibleResults(results, 'error');
+
+    expect(results.map((r) => r.name)).toStrictEqual(['parent', 'child']);
   });
 });
 
