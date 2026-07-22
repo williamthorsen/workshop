@@ -37,21 +37,6 @@ vi.mock('../src/version.ts', () => ({
 import { routeCommand } from '../src/bin/route.ts';
 import { usageError } from '../src/errors.ts';
 
-/** Build a `parseRunArgs` return value with the no-flags defaults. */
-function parsedRunArgs(overrides?: Record<string, unknown>) {
-  return {
-    kitSpecifiers: [],
-    checklists: undefined,
-    filePath: undefined,
-    fromValue: undefined,
-    urlValue: undefined,
-    jit: false,
-    internal: false,
-    json: false,
-    ...overrides,
-  };
-}
-
 describe(routeCommand, () => {
   let stdoutSpy: MockInstance;
   let stderrSpy: MockInstance;
@@ -498,7 +483,7 @@ describe(routeCommand, () => {
   });
 
   describe('error envelope and stdout purity', () => {
-    /** Collect everything written to stdout during the call, parsed as a single JSON document. */
+    /** Collects everything written to stdout during the call, parsed as a single JSON document. */
     function parseStdout(): unknown {
       const written = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       return JSON.parse(written);
@@ -660,3 +645,18 @@ describe(routeCommand, () => {
     });
   });
 });
+
+/** Builds a `parseRunArgs` return value with the no-flags defaults. */
+function parsedRunArgs(overrides?: Record<string, unknown>) {
+  return {
+    kitSpecifiers: [],
+    checklists: undefined,
+    filePath: undefined,
+    fromValue: undefined,
+    urlValue: undefined,
+    jit: false,
+    internal: false,
+    json: false,
+    ...overrides,
+  };
+}

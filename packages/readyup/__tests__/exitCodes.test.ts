@@ -23,16 +23,6 @@ let stderr: string[];
 let stdoutSpy: MockInstance;
 let stderrSpy: MockInstance;
 
-/** Everything written to stdout during the current test. */
-function readStdout(): string {
-  return stdout.join('');
-}
-
-/** Everything written to stderr during the current test. */
-function readStderr(): string {
-  return stderr.join('');
-}
-
 beforeAll(() => {
   originalCwd = process.cwd();
   cwd = mkdtempSync(path.join(tmpdir(), 'readyup-exit-codes-'));
@@ -182,3 +172,13 @@ describe('subcommand error classification', () => {
     expect(JSON.parse(readStdout())).toMatchObject({ error: { code: 'usage' } });
   });
 });
+
+/** Everything written to stdout during the current test. */
+function readStdout(): string {
+  return stdout.join('');
+}
+
+/** Everything written to stderr during the current test. */
+function readStderr(): string {
+  return stderr.join('');
+}

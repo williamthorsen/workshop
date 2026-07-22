@@ -32,28 +32,28 @@ export class RdyError extends Error {
   }
 }
 
-/** Build a `usage` error: the invocation itself is malformed. */
+/** Builds a `usage` error: the invocation itself is malformed. */
 export function usageError(message: string, options?: RdyErrorOptions): RdyError {
   return new RdyError('usage', message, options);
 }
 
-/** Build a `config` error: repo configuration or a manifest could not be read or written. */
+/** Builds a `config` error: repo configuration or a manifest could not be read or written. */
 export function configError(message: string, options?: RdyErrorOptions): RdyError {
   return new RdyError('config', message, options);
 }
 
-/** Build a `kit-load` error: a kit could not be resolved, fetched, or evaluated. */
+/** Builds a `kit-load` error: a kit could not be resolved, fetched, or evaluated. */
 export function kitLoadError(message: string, options?: RdyErrorOptions): RdyError {
   return new RdyError('kit-load', message, options);
 }
 
-/** Build an `internal` error: a defect in rdy or an unexpected environment failure. */
+/** Builds an `internal` error: a defect in rdy or an unexpected environment failure. */
 export function internalError(message: string, options?: RdyErrorOptions): RdyError {
   return new RdyError('internal', message, options);
 }
 
 /**
- * Coerce an unknown thrown value into an `RdyError`.
+ * Coerces an unknown thrown value into an `RdyError`.
  *
  * Anything not already classified is `internal`: escaping the command boundary undiagnosed
  * is itself the definition of a defect rather than a known failure mode.

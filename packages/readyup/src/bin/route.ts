@@ -169,7 +169,7 @@ Options:
 `;
 
 /**
- * Route CLI arguments to the appropriate subcommand.
+ * Routes CLI arguments to the appropriate subcommand.
  *
  * Returns a numeric exit code. Every failure that prevents the invocation from completing
  * is rendered here — as prose on stderr, or as the JSON error envelope on stdout when
@@ -185,7 +185,7 @@ export async function routeCommand(args: string[]): Promise<number> {
 }
 
 /**
- * Render a failed invocation and return its exit code.
+ * Renders a failed invocation and returns its exit code.
  *
  * Exported so the runner's outer boundary reports a failure that escaped `routeCommand`
  * through the same channel.
@@ -200,7 +200,7 @@ export function reportFailure(error: unknown, json: boolean): number {
   return EXIT_TOOL_FAILURE;
 }
 
-/** Select and run the subcommand named by the first argument. */
+/** Selects and runs the subcommand named by the first argument. */
 async function dispatchCommand(args: string[], json: boolean): Promise<number> {
   const command = args[0];
 
@@ -247,7 +247,7 @@ async function dispatchCommand(args: string[], json: boolean): Promise<number> {
   return handleRun(args, json);
 }
 
-/** Parse and execute the `run` subcommand. */
+/** Parses and executes the `run` subcommand. */
 async function handleRun(flags: string[], json: boolean): Promise<number> {
   if (wantsHelp(flags)) return writeHelp(RUN_HELP, json);
 
@@ -290,7 +290,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   );
 }
 
-/** Parse and execute the `init` subcommand. */
+/** Parses and executes the `init` subcommand. */
 function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
@@ -307,24 +307,24 @@ function handleInit(flags: string[]): number {
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
 }
 
-/** Return true when the flags request help for the current subcommand. */
+/** Returns true when the flags request help for the current subcommand. */
 function wantsHelp(flags: string[]): boolean {
   return flags.some((f) => f === '--help' || f === '-h');
 }
 
-/** Emit help text through the human channel and report success. */
+/** Emits help text through the human channel and reports success. */
 function writeHelp(text: string, json: boolean): number {
   writeHuman(`${text}\n`, json);
   return EXIT_OK;
 }
 
-/** Write human-readable prose, diverting it to stderr when JSON mode owns stdout. */
+/** Writes human-readable prose, diverting it to stderr when JSON mode owns stdout. */
 function writeHuman(text: string, json: boolean): void {
   const stream = json ? process.stderr : process.stdout;
   stream.write(text);
 }
 
-/** Check whether a positional arg is a close prefix of a known subcommand. */
+/** Checks whether a positional arg is a close prefix of a known subcommand. */
 function findTypoMatch(input: string): string | undefined {
   if (input.length < MIN_PREFIX_LENGTH || input.startsWith('-')) {
     return undefined;

@@ -177,7 +177,7 @@ async function runOwnerMode(): Promise<number> {
   return EXIT_OK;
 }
 
-/** Read a manifest, reporting an unreadable or invalid one as a config failure. */
+/** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
 function readManifestOrThrow(manifestPath: string): ReturnType<typeof readManifest> {
   try {
     return readManifest(manifestPath);

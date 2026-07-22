@@ -10,7 +10,7 @@ interface InitOptions {
 }
 
 /**
- * Run the `rdy init` command.
+ * Runs the `rdy init` command.
  *
  * Scaffolds a starter config file and kit file, then prints next steps. Scaffolding is
  * either completed or not attempted, so the only outcomes are success and a thrown failure.

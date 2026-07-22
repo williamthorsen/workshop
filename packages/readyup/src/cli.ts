@@ -526,7 +526,7 @@ async function runSingleKitHumanMode(
   return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
-/** Resolve a kit's requested checklist names to the checklists themselves, in requested order. */
+/** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */
 function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChecklist | RdyStagedChecklist> {
   let resolvedNames: string[];
   try {
