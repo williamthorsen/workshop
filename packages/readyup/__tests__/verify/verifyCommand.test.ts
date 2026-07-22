@@ -16,14 +16,14 @@ vi.mock('../../src/verify/checkDrift.ts', () => ({
 }));
 
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
+import { captureRdyError } from '../helpers/captureRdyError.ts';
 
 describe(verifyCommand, () => {
   let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
 
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -111,15 +111,15 @@ describe(verifyCommand, () => {
     expect(mockCheckDrift).not.toHaveBeenCalled();
   });
 
-  it('returns 1 when the manifest cannot be read', () => {
+  it('reports a config error when the manifest cannot be read', async () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file not found: /path/to/manifest.json');
     });
 
-    const exitCode = verifyCommand([]);
+    const error = await captureRdyError(() => verifyCommand([]));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Manifest file not found'));
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('Manifest file not found');
   });
 
   it('honors --manifest flag to resolve a custom path', () => {
@@ -130,10 +130,10 @@ describe(verifyCommand, () => {
     expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'));
   });
 
-  it('returns 1 when positional arguments are supplied', () => {
-    const exitCode = verifyCommand(['unexpected']);
+  it('reports a usage error when positional arguments are supplied', async () => {
+    const error = await captureRdyError(() => verifyCommand(['unexpected']));
 
-    expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('does not accept positional arguments'));
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('does not accept positional arguments');
   });
 });

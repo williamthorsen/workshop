@@ -3,6 +3,10 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { parseRunArgs, resolveKitSources, runCommand } from '../cli.ts';
 import { compileCommand } from '../compile/compileCommand.ts';
+import { configError, toRdyError, usageError } from '../errors.ts';
+import { EXIT_OK, EXIT_TOOL_FAILURE } from '../exitCodes.ts';
+import { formatJsonError } from '../formatJsonError.ts';
+import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
@@ -14,8 +18,7 @@ import { VERSION } from '../version.ts';
 const SUBCOMMANDS = ['compile', 'init', 'list', 'verify'];
 const MIN_PREFIX_LENGTH = 3;
 
-function showHelp(): void {
-  console.info(`
+const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
        rdy <command> [options]
 
@@ -42,11 +45,20 @@ Run options:
 Global options:
   --help, -h           Show this help message
   --version, -V        Show version number
-`);
-}
 
-function showRunHelp(): void {
-  console.info(`
+Exit codes:
+  0  Ran and found no problems
+  1  Ran and found problems with the repo or its kits
+  2  Could not complete the invocation (usage, config, kit-load, or internal error)
+
+  list and init use only 0 and 2; neither can find problems to report.
+
+With --json, stdout carries exactly one JSON document: the report when a run produced
+one, otherwise {"error": {"code", "message"}}. Prose goes to stderr. --help and --version
+have no JSON form: their text goes to stderr and stdout stays empty.
+`;
+
+const RUN_HELP = `
 Usage: rdy run [kit[:checklist,...] ...] [options]
 
 Run rdy checklists. Positional arguments select kits to run; use colon syntax
@@ -74,11 +86,9 @@ Options:
 
 Positional args accept relative paths (e.g., shared/deploy).
 Defaults to .readyup/kits/default.js when no source is given.
-`);
-}
+`;
 
-function showCompileHelp(): void {
-  console.info(`
+const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
 
 Bundle TypeScript kit(s) into self-contained ESM bundle(s).
@@ -99,11 +109,12 @@ Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
   manifest's recorded targetHash (e.g. someone edited the compiled file directly).
   Drifted kits are reported and skipped; use --force to overwrite anyway.
-`);
-}
 
-function showVerifyHelp(): void {
-  console.info(`
+Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
+manifest cannot be read or written.
+`;
+
+const VERIFY_HELP = `
 Usage: rdy verify [options]
 
 Check compiled kits against the hashes recorded in the manifest.
@@ -114,16 +125,15 @@ Each kit is reported as one of:
   missing     compiled file is absent
   unverified  manifest entry has no targetHash (predates the feature)
 
-Exits non-zero when any kit is in drift or missing; unverified kits do not fail.
+Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unreadable
+manifest exits 2.
 
 Options:
   --manifest <path>  Manifest file path (default: .readyup/manifest.json)
   --help, -h         Show this help message
-`);
-}
+`;
 
-function showListHelp(): void {
-  console.info(`
+const LIST_HELP = `
 Usage: rdy list [options]
 
 List available kits without running them.
@@ -146,11 +156,9 @@ Examples:
   rdy list --from global                           Show kits in the global directory
   rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
   rdy list --from bitbucket:tutorials/markdowndemo@master Show kits in a remote Bitbucket repository
-`);
-}
+`;
 
-function showInitHelp(): void {
-  console.info(`
+const INIT_HELP = `
 Usage: rdy init [options]
 
 Scaffold a starter config and kit file.
@@ -159,134 +167,92 @@ Options:
   --dry-run, -n   Preview changes without writing files
   --force, -f     Overwrite existing files
   --help, -h      Show this help message
-`);
-}
+`;
 
-/** Check whether a positional arg is a close prefix of a known subcommand. */
-function findTypoMatch(input: string): string | undefined {
-  if (input.length < MIN_PREFIX_LENGTH || input.startsWith('-')) {
-    return undefined;
+/**
+ * Routes CLI arguments to the appropriate subcommand.
+ *
+ * Returns a numeric exit code. Every failure that prevents the invocation from completing
+ * is rendered here — as prose on stderr, or as the JSON error envelope on stdout when
+ * `--json` is in argv — so no command carries its own error-reporting path.
+ */
+export async function routeCommand(args: string[]): Promise<number> {
+  const json = hasJsonFlag(args);
+  try {
+    return await dispatchCommand(args, json);
+  } catch (error: unknown) {
+    return reportFailure(error, json);
   }
-  for (const cmd of SUBCOMMANDS) {
-    if (cmd !== input && cmd.startsWith(input)) {
-      return cmd;
-    }
-  }
-  return undefined;
 }
 
 /**
- * Route CLI arguments to the appropriate subcommand.
+ * Renders a failed invocation and returns its exit code.
  *
- * Returns a numeric exit code: 0 for success, 1 for errors.
+ * Exported so the runner's outer boundary reports a failure that escaped `routeCommand`
+ * through the same channel.
  */
-export async function routeCommand(args: string[]): Promise<number> {
+export function reportFailure(error: unknown, json: boolean): number {
+  const rdyError = toRdyError(error);
+  if (json) {
+    process.stdout.write(formatJsonError(rdyError) + '\n');
+  } else {
+    process.stderr.write(`Error: ${rdyError.message}\n`);
+  }
+  return EXIT_TOOL_FAILURE;
+}
+
+/** Selects and runs the subcommand named by the first argument. */
+async function dispatchCommand(args: string[], json: boolean): Promise<number> {
   const command = args[0];
 
   if (command === undefined || command === '--help' || command === '-h') {
-    showHelp();
-    return 0;
+    return writeHelp(HELP, json);
   }
 
   if (command === '--version' || command === '-V') {
-    console.info(VERSION);
-    return 0;
+    writeHuman(`${VERSION}\n`, json);
+    return EXIT_OK;
   }
 
   if (command === 'run') {
-    return handleRun(args.slice(1));
+    return handleRun(args.slice(1), json);
   }
 
   if (command === 'compile') {
     const flags = args.slice(1);
-    if (flags.some((f) => f === '--help' || f === '-h')) {
-      showCompileHelp();
-      return 0;
-    }
-    try {
-      return await compileCommand(flags);
-    } catch (error: unknown) {
-      process.stderr.write(`Error: ${extractMessage(error)}\n`);
-      return 1;
-    }
+    return wantsHelp(flags) ? writeHelp(COMPILE_HELP, json) : compileCommand(flags);
   }
 
   if (command === 'init') {
     const flags = args.slice(1);
-    if (flags.some((f) => f === '--help' || f === '-h')) {
-      showInitHelp();
-      return 0;
-    }
-
-    const initOptions = {
-      'dry-run': { type: 'boolean', short: 'n' },
-      force: { type: 'boolean', short: 'f' },
-    } as const;
-
-    let parsed;
-    try {
-      parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
-    } catch (error: unknown) {
-      process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
-      return 1;
-    }
-
-    return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
+    return wantsHelp(flags) ? writeHelp(INIT_HELP, json) : handleInit(flags);
   }
 
   if (command === 'list') {
     const flags = args.slice(1);
-    if (flags.some((f) => f === '--help' || f === '-h')) {
-      showListHelp();
-      return 0;
-    }
-    try {
-      return await listCommand(flags);
-    } catch (error: unknown) {
-      process.stderr.write(`Error: ${extractMessage(error)}\n`);
-      return 1;
-    }
+    return wantsHelp(flags) ? writeHelp(LIST_HELP, json) : listCommand(flags);
   }
 
   if (command === 'verify') {
     const flags = args.slice(1);
-    if (flags.some((f) => f === '--help' || f === '-h')) {
-      showVerifyHelp();
-      return 0;
-    }
-    try {
-      return verifyCommand(flags);
-    } catch (error: unknown) {
-      process.stderr.write(`Error: ${extractMessage(error)}\n`);
-      return 1;
-    }
+    return wantsHelp(flags) ? writeHelp(VERIFY_HELP, json) : verifyCommand(flags);
   }
 
-  // Check for typos before falling through to the default command
+  // Check for typos before falling through to the default command.
   const typoMatch = findTypoMatch(command);
   if (typoMatch !== undefined) {
-    process.stderr.write(`Error: Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?\n`);
-    return 1;
+    throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
   }
 
-  // Default: treat all args as `run` arguments
-  return handleRun(args);
+  // Default: treat all args as `run` arguments.
+  return handleRun(args, json);
 }
 
-/** Parse and execute the `run` subcommand. */
-async function handleRun(flags: string[]): Promise<number> {
-  if (flags.some((f) => f === '--help' || f === '-h')) {
-    showRunHelp();
-    return 0;
-  }
+/** Parses and executes the `run` subcommand. */
+async function handleRun(flags: string[], json: boolean): Promise<number> {
+  if (wantsHelp(flags)) return writeHelp(RUN_HELP, json);
 
-  let parsed: ReturnType<typeof parseRunArgs>;
-  try {
-    parsed = parseRunArgs(flags);
-  } catch (error: unknown) {
-    process.stderr.write(`Error: ${extractMessage(error)}\n`);
-    return 1;
-  }
+  const parsed = parseRunArgs(flags);
 
   // Skip config when an external source flag is active — external modes don't use config values.
   const hasExternalSource =
@@ -298,28 +264,21 @@ async function handleRun(flags: string[]): Promise<number> {
     try {
       config = await loadConfig();
     } catch (error: unknown) {
-      process.stderr.write(`Error: ${extractMessage(error)}\n`);
-      return 1;
+      throw configError(extractMessage(error), { cause: error });
     }
     configFields = { internalDir: config.internal.dir, internalInfix: config.internal.infix };
   }
 
-  let kitEntries;
-  try {
-    kitEntries = resolveKitSources({
-      filePath: parsed.filePath,
-      fromValue: parsed.fromValue,
-      urlValue: parsed.urlValue,
-      kitSpecifiers: parsed.kitSpecifiers,
-      checklists: parsed.checklists,
-      jit: parsed.jit,
-      internal: parsed.internal,
-      ...configFields,
-    });
-  } catch (error: unknown) {
-    process.stderr.write(`Error: ${extractMessage(error)}\n`);
-    return 1;
-  }
+  const kitEntries = resolveKitSources({
+    filePath: parsed.filePath,
+    fromValue: parsed.fromValue,
+    urlValue: parsed.urlValue,
+    kitSpecifiers: parsed.kitSpecifiers,
+    checklists: parsed.checklists,
+    jit: parsed.jit,
+    internal: parsed.internal,
+    ...configFields,
+  });
 
   return runCommand(
     {
@@ -330,4 +289,51 @@ async function handleRun(flags: string[]): Promise<number> {
     },
     parsed.jit,
   );
+}
+
+/** Parses and executes the `init` subcommand. */
+function handleInit(flags: string[]): number {
+  const initOptions = {
+    'dry-run': { type: 'boolean', short: 'n' },
+    force: { type: 'boolean', short: 'f' },
+  } as const;
+
+  let parsed;
+  try {
+    parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
+  } catch (error: unknown) {
+    throw usageError(translateParseArgsError(error), { cause: error });
+  }
+
+  return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
+}
+
+/** Returns true when the flags request help for the current subcommand. */
+function wantsHelp(flags: string[]): boolean {
+  return flags.some((f) => f === '--help' || f === '-h');
+}
+
+/** Emits help text through the human channel and reports success. */
+function writeHelp(text: string, json: boolean): number {
+  writeHuman(`${text}\n`, json);
+  return EXIT_OK;
+}
+
+/** Writes human-readable prose, diverting it to stderr when JSON mode owns stdout. */
+function writeHuman(text: string, json: boolean): void {
+  const stream = json ? process.stderr : process.stdout;
+  stream.write(text);
+}
+
+/** Checks whether a positional arg is a close prefix of a known subcommand. */
+function findTypoMatch(input: string): string | undefined {
+  if (input.length < MIN_PREFIX_LENGTH || input.startsWith('-')) {
+    return undefined;
+  }
+  for (const cmd of SUBCOMMANDS) {
+    if (cmd !== input && cmd.startsWith(input)) {
+      return cmd;
+    }
+  }
+  return undefined;
 }

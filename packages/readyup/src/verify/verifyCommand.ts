@@ -2,6 +2,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { configError, usageError } from '../errors.ts';
+import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
@@ -18,26 +20,24 @@ const verifyOptions = {
  * Handle the `verify` subcommand: read the manifest, hash each compiled kit, and report drift.
  *
  * Returns 0 when every kit is `ok` or `unverified`; 1 when any kit has `drift` or `missing`.
+ * An unreadable manifest is a config failure and is thrown rather than reported as drift.
  */
 export function verifyCommand(args: string[]): number {
   let parsed;
   try {
     parsed = nodeParseArgs({ args, options: verifyOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
-    return 1;
+    throw usageError(translateParseArgsError(error), { cause: error });
   }
   const { values, positionals } = parsed;
 
   if (positionals.length > 0) {
-    process.stderr.write('Error: rdy verify does not accept positional arguments.\n');
-    return 1;
+    throw usageError('rdy verify does not accept positional arguments.');
   }
 
   for (const [name, value] of Object.entries(values)) {
     if (value === '') {
-      process.stderr.write(`Error: --${name} requires a value\n`);
-      return 1;
+      throw usageError(`--${name} requires a value`);
     }
   }
 
@@ -48,9 +48,7 @@ export function verifyCommand(args: string[]): number {
   try {
     manifest = readManifest(manifestPath);
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    throw configError(extractMessage(error), { cause: error });
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
@@ -58,7 +56,7 @@ export function verifyCommand(args: string[]): number {
 
   if (manifest.kits.length === 0) {
     process.stdout.write('  (no kits in manifest)\n');
-    return 0;
+    return EXIT_OK;
   }
 
   let failed = 0;
@@ -74,7 +72,7 @@ export function verifyCommand(args: string[]): number {
     process.stdout.write(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`);
   }
 
-  return failed > 0 ? 1 : 0;
+  return failed > 0 ? EXIT_PROBLEMS_FOUND : EXIT_OK;
 }
 
 /** Format a single per-kit status line for the verify report. */

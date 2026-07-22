@@ -39,33 +39,33 @@ describe(`${initCommand.name} error handling`, () => {
     mockReportWriteResult.mockReset();
   });
 
-  it('returns exit code 1 when scaffoldConfig throws', () => {
+  it('throws a config error when scaffoldConfig throws', () => {
     mockScaffoldConfig.mockImplementation(() => {
       throw new Error('disk full');
     });
 
-    const exitCode = initCommand({ dryRun: false, force: false });
-
-    expect(exitCode).toBe(1);
+    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+      expect.objectContaining({ code: 'config', message: expect.stringContaining('disk full') }),
+    );
   });
 
-  it('returns exit code 1 when config result is failed', () => {
+  it('throws a config error naming the file when the config result failed', () => {
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
 
-    const exitCode = initCommand({ dryRun: false, force: false });
-
-    expect(exitCode).toBe(1);
+    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .config/readyup.config.ts' }),
+    );
   });
 
-  it('returns exit code 1 when kit result is failed', () => {
+  it('throws a config error naming the file when the kit result failed', () => {
     mockScaffoldConfig.mockReturnValue({
       configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
       kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
     });
 
-    const exitCode = initCommand({ dryRun: false, force: false });
-
-    expect(exitCode).toBe(1);
+    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .readyup/kits/default.ts' }),
+    );
   });
 
   it('returns exit code 0 when both results are created', () => {
@@ -87,7 +87,12 @@ describe(`${initCommand.name} error handling`, () => {
     const result = makeScaffoldResult(outcome);
     mockScaffoldConfig.mockReturnValue(result);
 
-    initCommand({ dryRun, force: false });
+    // A failed write is reported per-file before the command throws, so both calls land either way.
+    try {
+      initCommand({ dryRun, force: false });
+    } catch {
+      // The thrown failure is asserted by its own test.
+    }
 
     expect(mockReportWriteResult).toHaveBeenCalledWith(result.configResult, dryRun);
     expect(mockReportWriteResult).toHaveBeenCalledWith(result.kitResult, dryRun);

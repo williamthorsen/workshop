@@ -2,9 +2,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { configError, usageError } from '../errors.ts';
+import { EXIT_OK } from '../exitCodes.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
@@ -30,15 +33,13 @@ export async function listCommand(args: string[]): Promise<number> {
   try {
     parsed = nodeParseArgs({ args, options: listOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    process.stderr.write(`Error: ${translateParseArgsError(error)}\n`);
-    return 1;
+    throw usageError(translateParseArgsError(error), { cause: error });
   }
   const { values } = parsed;
 
   for (const [name, value] of Object.entries(values)) {
     if (value === '') {
-      process.stderr.write(`Error: --${name} requires a value\n`);
-      return 1;
+      throw usageError(`--${name} requires a value`);
     }
   }
 
@@ -46,8 +47,7 @@ export async function listCommand(args: string[]): Promise<number> {
   const manifestArg = values.manifest;
 
   if (fromArg !== undefined && manifestArg !== undefined) {
-    process.stderr.write('Error: --from and --manifest are mutually exclusive\n');
-    return 1;
+    throw usageError('--from and --manifest are mutually exclusive');
   }
 
   if (manifestArg !== undefined) {
@@ -64,20 +64,12 @@ export async function listCommand(args: string[]): Promise<number> {
 /** Display kits from a manifest file. */
 function runManifestMode(manifestArg: string): number {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
-
-  let manifest;
-  try {
-    manifest = readManifest(manifestPath);
-  } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
-  }
+  const manifest = readManifestOrThrow(manifestPath);
 
   const relPath = path.relative(process.cwd(), manifestPath);
   const output = formatManifestView({ kits: manifest.kits, manifestPath: relPath });
   process.stdout.write(output + '\n');
-  return 0;
+  return EXIT_OK;
 }
 
 /** Resolve the manifest path for a `--from` source and display its kits. */
@@ -86,9 +78,7 @@ async function runFromMode(fromArg: string): Promise<number> {
   try {
     source = parseFromValue(fromArg);
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    throw usageError(extractMessage(error), { cause: error });
   }
 
   if (source.type === 'github') {
@@ -106,20 +96,12 @@ async function runFromMode(fromArg: string): Promise<number> {
   }
 
   const manifestPath = resolveFromManifestPath(source);
-
-  let manifest;
-  try {
-    manifest = readManifest(manifestPath);
-  } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
-  }
+  const manifest = readManifestOrThrow(manifestPath);
 
   const kitNames = manifest.kits.map((kit) => kit.name);
   const output = formatConsumerView({ compiledKits: kitNames, fromArg, kitsDir: path.dirname(manifestPath) });
   process.stdout.write(output + '\n');
-  return 0;
+  return EXIT_OK;
 }
 
 /** Fetch and display kits from a remote manifest URL. */
@@ -135,19 +117,17 @@ async function runRemoteFromMode({
     manifest = await loadRemoteManifest({ url, headers });
   } catch (error: unknown) {
     if (error instanceof RemoteManifestNotFoundError) {
-      process.stderr.write(`Error: No manifest found at ${url}.\n`);
-      return 1;
+      throw configError(`No manifest found at ${url}.`, { cause: error });
     }
     const message = extractMessage(error);
     // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteManifest` already include the URL.
     const detail = message.includes(url) ? message : `Failed to reach ${url}: ${message}`;
-    process.stderr.write(`Error: ${detail}\n`);
-    return 1;
+    throw configError(detail, { cause: error });
   }
 
   const output = formatManifestView({ kits: manifest.kits, manifestPath: url });
   process.stdout.write(output + '\n');
-  return 0;
+  return EXIT_OK;
 }
 
 /** Enumerate kits using the project config. */
@@ -158,9 +138,7 @@ async function runOwnerMode(): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    throw configError(extractMessage(error), { cause: error });
   }
 
   const internalDir = path.join(cwd, '.readyup/kits', config.internal.dir);
@@ -170,9 +148,7 @@ async function runOwnerMode(): Promise<number> {
   try {
     internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    throw configError(extractMessage(error), { cause: error });
   }
 
   const manifestPath = path.resolve(cwd, DEFAULT_MANIFEST_PATH);
@@ -187,7 +163,7 @@ async function runOwnerMode(): Promise<number> {
         process.stdout.write(
           'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.\n',
         );
-        return 0;
+        return EXIT_OK;
       }
     } else {
       // Corrupt or unreadable manifest — warn and continue with empty compiled list.
@@ -199,7 +175,16 @@ async function runOwnerMode(): Promise<number> {
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
   const output = formatOwnerView({ internalKits, compiledKits, compiledStyle });
   process.stdout.write(output + '\n');
-  return 0;
+  return EXIT_OK;
+}
+
+/** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
+function readManifestOrThrow(manifestPath: string): RdyManifest {
+  try {
+    return readManifest(manifestPath);
+  } catch (error: unknown) {
+    throw configError(extractMessage(error), { cause: error });
+  }
 }
 
 /** Resolve the manifest path for a parsed `--from` source. */

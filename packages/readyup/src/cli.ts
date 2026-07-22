@@ -4,8 +4,9 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
+import { kitLoadError, usageError } from './errors.ts';
+import { EXIT_OK, EXIT_PROBLEMS_FOUND } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
-import { formatJsonError } from './formatJsonError.ts';
 import { formatJsonReport } from './formatJsonReport.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
@@ -70,7 +71,7 @@ const runOptions = {
 /** Validate and narrow a string to a Severity value. */
 function parseSeverityFlag(flagName: string, value: string): Severity {
   if (!VALID_SEVERITIES.has(value)) {
-    throw new Error(`${flagName} must be one of: error, warn, recommend (got "${value}")`);
+    throw usageError(`${flagName} must be one of: error, warn, recommend (got "${value}")`);
   }
   if (value === 'error') return 'error';
   if (value === 'warn') return 'warn';
@@ -118,24 +119,24 @@ function validateFlagConstraints(
   if (parsed.url !== undefined) sourceFlags.push('--url');
 
   if (sourceFlags.length > 1) {
-    throw new Error(`Cannot combine ${sourceFlags.join(', ')} flags`);
+    throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
 
   const sourceType = sourceFlags[0];
 
   if (parsed.jit && sourceType !== undefined) {
-    throw new Error(`--jit cannot be combined with ${sourceType}`);
+    throw usageError(`--jit cannot be combined with ${sourceType}`);
   }
   if (parsed.internal && sourceType !== undefined) {
-    throw new Error(`--internal cannot be combined with ${sourceType}`);
+    throw usageError(`--internal cannot be combined with ${sourceType}`);
   }
 
   if (parsed.checklists !== undefined && sourceType !== '--file' && sourceType !== '--url') {
-    throw new Error('--checklists can only be used with --file or --url');
+    throw usageError('--checklists can only be used with --file or --url');
   }
 
   if ((sourceType === '--file' || sourceType === '--url') && positionalCount > 0) {
-    throw new Error(`${sourceType} cannot be combined with positional kit arguments`);
+    throw usageError(`${sourceType} cannot be combined with positional kit arguments`);
   }
 
   return sourceType;
@@ -146,7 +147,7 @@ function parseRunFlags(flags: string[]) {
   try {
     return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw new Error(translateParseArgsError(error, flagErrorHints));
+    throw usageError(translateParseArgsError(error, flagErrorHints), { cause: error });
   }
 }
 
@@ -158,7 +159,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   for (const [name, value] of Object.entries(values)) {
     if (value === '') {
       const flag = `--${name}`;
-      throw new Error(flagErrorHints[flag] ?? `${flag} requires a value`);
+      throw usageError(flagErrorHints[flag] ?? `${flag} requires a value`);
     }
   }
 
@@ -180,7 +181,12 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
 
   // Parse kit specifiers from positional args.
-  const kitSpecifiers = parseKitSpecifiers(positionals);
+  let kitSpecifiers: KitSpecifier[];
+  try {
+    kitSpecifiers = parseKitSpecifiers(positionals);
+  } catch (error: unknown) {
+    throw usageError(extractMessage(error), { cause: error });
+  }
 
   // Validate severity flags.
   const failOn = parsed.failOn !== undefined ? parseSeverityFlag('--fail-on', parsed.failOn) : undefined;
@@ -235,7 +241,13 @@ export function resolveKitSources({
   const specs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
 
   if (fromValue !== undefined) {
-    return resolveFromSource(parseFromValue(fromValue), specs, extension);
+    let source: FromSource;
+    try {
+      source = parseFromValue(fromValue);
+    } catch (error: unknown) {
+      throw usageError(extractMessage(error), { cause: error });
+    }
+    return resolveFromSource(source, specs, extension);
   }
 
   // Default/internal case: resolve from the current repo.
@@ -351,8 +363,8 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
     } catch (error: unknown) {
       const message = extractMessage(error);
       // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteKit` already include the URL.
-      if (message.includes(source.url)) throw error;
-      throw new Error(`Failed to reach ${source.url}: ${message}`);
+      const detail = message.includes(source.url) ? message : `Failed to reach ${source.url}: ${message}`;
+      throw kitLoadError(detail, { cause: error });
     }
   }
 
@@ -360,9 +372,11 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
     return await loadRdyKit(source.path);
   } catch (error: unknown) {
     if (isJit && isModuleNotFoundError(error, 'readyup')) {
-      throw new Error('Running from source requires readyup to be installed as a project dependency.');
+      throw kitLoadError('Running from source requires readyup to be installed as a project dependency.', {
+        cause: error,
+      });
     }
-    throw error;
+    throw kitLoadError(extractMessage(error), { cause: error });
   }
 }
 
@@ -416,50 +430,23 @@ async function runMultiKitJsonMode(
   }> = [];
 
   for (const entry of kitEntries) {
-    let kit: RdyKit;
-    let compileTimeVersion: string | undefined;
-    try {
-      ({ kit, compileTimeVersion } = await loadKit(entry.source, isJit));
-    } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stdout.write(formatJsonError(message) + '\n');
-      return 1;
-    }
+    const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
 
     warnOnVersionSkew(entry.name, compileTimeVersion);
 
     const thresholds = resolveThresholds(kit, failOn, reportOn);
-    let resolvedNames: string[];
-    try {
-      resolvedNames = resolveRequestedNames(entry.checklists, kit);
-    } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stdout.write(formatJsonError(message) + '\n');
-      return 1;
-    }
-
-    const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));
-    const checklists = resolvedNames.flatMap((name) => {
-      const checklist = checklistByName.get(name);
-      return checklist !== undefined ? [checklist] : [];
-    });
+    const checklists = selectChecklists(kit, entry.checklists);
 
     const entries: Array<{ name: string; report: RdyReport }> = [];
     let kitPassed = true;
 
-    try {
-      for (const checklist of checklists) {
-        const report = await runRdy(checklist, {
-          defaultSeverity: thresholds.defaultSeverity,
-          failOn: thresholds.failOn,
-        });
-        entries.push({ name: checklist.name, report });
-        if (!report.passed) kitPassed = false;
-      }
-    } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stdout.write(formatJsonError(message) + '\n');
-      return 1;
+    for (const checklist of checklists) {
+      const report = await runRdy(checklist, {
+        defaultSeverity: thresholds.defaultSeverity,
+        failOn: thresholds.failOn,
+      });
+      entries.push({ name: checklist.name, report });
+      if (!report.passed) kitPassed = false;
     }
 
     kitResults.push({ name: entry.name, entries, passed: kitPassed });
@@ -468,7 +455,7 @@ async function runMultiKitJsonMode(
   const resolvedReportOn = reportOn ?? 'recommend';
   process.stdout.write(formatJsonReport(kitResults, { reportOn: resolvedReportOn }) + '\n');
   const allPassed = kitResults.every((k) => k.passed);
-  return allPassed ? 0 : 1;
+  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
 /** Run all kit entries in human-readable mode. */
@@ -481,15 +468,7 @@ async function runMultiKitHumanMode(
   const showKitHeader = kitEntries.length > 1;
   let allPassed = true;
   for (const entry of kitEntries) {
-    let kit: RdyKit;
-    let compileTimeVersion: string | undefined;
-    try {
-      ({ kit, compileTimeVersion } = await loadKit(entry.source, isJit));
-    } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error: ${message}\n`);
-      return 1;
-    }
+    const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
 
     warnOnVersionSkew(entry.name, compileTimeVersion);
 
@@ -498,10 +477,10 @@ async function runMultiKitHumanMode(
     }
 
     const exitCode = await runSingleKitHumanMode(kit, entry.checklists, failOn, reportOn, showKitHeader);
-    if (exitCode !== 0) allPassed = false;
+    if (exitCode !== EXIT_OK) allPassed = false;
   }
 
-  return allPassed ? 0 : 1;
+  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
 /** Run checklists from a single kit in human-readable mode. */
@@ -512,57 +491,53 @@ async function runSingleKitHumanMode(
   reportOn: Severity | undefined,
   isMultiKit: boolean,
 ): Promise<number> {
-  let resolvedNames: string[];
-  try {
-    resolvedNames = resolveRequestedNames(checklistFilter, kit);
-  } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
-  }
-
-  const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));
-  const checklists = resolvedNames.flatMap((name) => {
-    const checklist = checklistByName.get(name);
-    return checklist !== undefined ? [checklist] : [];
-  });
-
+  const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, failOn, reportOn);
   const showChecklistHeader = checklists.length > 1;
   let allPassed = true;
   const summaries: ChecklistSummary[] = [];
 
-  try {
-    for (const checklist of checklists) {
-      if (showChecklistHeader) {
-        process.stdout.write(`\n--- ${checklist.name} ---\n\n`);
-      }
-
-      const report = await runRdy(checklist, {
-        defaultSeverity: thresholds.defaultSeverity,
-        failOn: thresholds.failOn,
-      });
-      const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-      const output = reportRdy(report, { fixLocation, reportOn: thresholds.reportOn });
-      process.stdout.write(output + '\n');
-
-      if (!report.passed) {
-        allPassed = false;
-      }
-
-      if (showChecklistHeader) {
-        summaries.push(summarizeReport(checklist.name, report));
-      }
+  for (const checklist of checklists) {
+    if (showChecklistHeader) {
+      process.stdout.write(`\n--- ${checklist.name} ---\n\n`);
     }
-  } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+
+    const report = await runRdy(checklist, {
+      defaultSeverity: thresholds.defaultSeverity,
+      failOn: thresholds.failOn,
+    });
+    const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
+    const output = reportRdy(report, { fixLocation, reportOn: thresholds.reportOn });
+    process.stdout.write(output + '\n');
+
+    if (!report.passed) {
+      allPassed = false;
+    }
+
+    if (showChecklistHeader) {
+      summaries.push(summarizeReport(checklist.name, report));
+    }
   }
 
   if (summaries.length > 1 && !isMultiKit) {
     process.stdout.write('\n' + formatCombinedSummary(summaries) + '\n');
   }
 
-  return allPassed ? 0 : 1;
+  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */
+function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChecklist | RdyStagedChecklist> {
+  let resolvedNames: string[];
+  try {
+    resolvedNames = resolveRequestedNames(checklistFilter, kit);
+  } catch (error: unknown) {
+    throw usageError(extractMessage(error), { cause: error });
+  }
+
+  const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));
+  return resolvedNames.flatMap((name) => {
+    const checklist = checklistByName.get(name);
+    return checklist !== undefined ? [checklist] : [];
+  });
 }

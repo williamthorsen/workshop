@@ -5,6 +5,8 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import picomatch from 'picomatch';
 
+import { configError, usageError } from '../errors.ts';
+import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -42,8 +44,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   try {
     parsed = nodeParseArgs({ args, options: compileOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    process.stderr.write(`Error: ${translateParseArgsError(error, compileHints)}\n`);
-    return 1;
+    throw usageError(translateParseArgsError(error, compileHints), { cause: error });
   }
   const { values, positionals } = parsed;
 
@@ -51,8 +52,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   for (const [name, value] of Object.entries(values)) {
     if (value === '') {
       const flag = `--${name}`;
-      process.stderr.write(`Error: ${compileHints[flag] ?? `${flag} requires a value`}\n`);
-      return 1;
+      throw usageError(compileHints[flag] ?? `${flag} requires a value`);
     }
   }
 
@@ -62,8 +62,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   const manifestPath = resolveManifestPath(values.manifest);
 
   if (positionals.length > 1) {
-    process.stderr.write('Error: Too many arguments. Expected a single input file.\n');
-    return 1;
+    throw usageError('Too many arguments. Expected a single input file.');
   }
 
   const inputPath = positionals[0];
@@ -75,8 +74,7 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // No input file -- compile all sources from config
   if (outputPath !== undefined) {
-    process.stderr.write('Error: --output requires an input file\n');
-    return 1;
+    throw usageError('--output requires an input file');
   }
 
   return compileBatch({ skipManifest, force, manifestPath });
@@ -108,7 +106,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     const relInput = path.relative(process.cwd(), resolvedInputPath);
     process.stdout.write(formatDriftLine(relInput, drift.status));
     process.stdout.write('\nRe-run with --force to overwrite, or move edits into the source.\n');
-    return 1;
+    return EXIT_PROBLEMS_FOUND;
   }
 
   let result;
@@ -117,9 +115,9 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     result = await compileConfig(inputPath, outputPath);
     metadata = await validateCompiledOutput(result.outputPath);
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    // A kit that fails to compile is a problem with the kit, not with the invocation.
+    process.stderr.write(`Error: ${extractMessage(error)}\n`);
+    return EXIT_PROBLEMS_FOUND;
   }
 
   const relInput = path.relative(process.cwd(), resolvedInputPath);
@@ -136,13 +134,11 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
         targetHash: result.targetHash,
       });
     } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error writing manifest: ${message}\n`);
-      return 1;
+      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
     }
   }
 
-  return 0;
+  return EXIT_OK;
 }
 
 /** Resolve the manifest output path from the optional `--manifest` flag. */
@@ -171,9 +167,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    const message = extractMessage(error);
-    process.stderr.write(`Error: ${message}\n`);
-    return 1;
+    throw configError(extractMessage(error), { cause: error });
   }
 
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
@@ -188,9 +182,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     try {
       tsFiles = collectSourceFiles(srcDir, config.compile.include);
     } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error: Failed to read source directory: ${message}\n`);
-      return 1;
+      throw configError(`Failed to read source directory: ${extractMessage(error)}`, { cause: error });
     }
   }
 
@@ -204,12 +196,10 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       try {
         writeManifest(manifestPath, { version: 1, kits: [] });
       } catch (error: unknown) {
-        const message = extractMessage(error);
-        process.stderr.write(`Error writing manifest: ${message}\n`);
-        return 1;
+        throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
       }
     }
-    return 0;
+    return EXIT_OK;
   }
 
   const relSrcDir = path.relative(process.cwd(), srcDir);
@@ -253,9 +243,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
         ...(metadata.description !== undefined && { description: metadata.description }),
       });
     } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
-      return 1;
+      // A kit that fails to compile is a problem with the kit, not with the invocation.
+      process.stderr.write(`Error compiling ${fileName}: ${extractMessage(error)}\n`);
+      return EXIT_PROBLEMS_FOUND;
     }
   }
 
@@ -271,13 +261,11 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitEntries.sort((a, b) => a.name.localeCompare(b.name));
       writeManifest(manifestPath, { version: 1, kits: kitEntries });
     } catch (error: unknown) {
-      const message = extractMessage(error);
-      process.stderr.write(`Error writing manifest: ${message}\n`);
-      return 1;
+      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
     }
   }
 
-  return skippedCount > 0 ? 1 : 0;
+  return skippedCount > 0 ? EXIT_PROBLEMS_FOUND : EXIT_OK;
 }
 
 /** Location fields for a manifest kit entry. */
