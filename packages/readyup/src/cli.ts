@@ -8,6 +8,7 @@ import { kitLoadError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
+import { KITS_DIR } from './kitsDir.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
@@ -94,9 +95,6 @@ function parseDetailFlag(value: string): JsonDetail {
   if (value === 'full' || value === 'summary') return value;
   throw usageError(`--detail must be one of: summary, full (got "${value}")`);
 }
-
-/** Convention path for internal kits, relative to the repo root. */
-const KITS_DIR = '.readyup/kits';
 
 /** Build the GitHub raw content URL for a kit. */
 function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {

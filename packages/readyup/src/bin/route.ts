@@ -146,6 +146,7 @@ manifest exits 2.
 
 Options:
   --manifest <path>  Manifest file path (default: .readyup/manifest.json)
+  --json             Report each kit's verification status as JSON
   --help, -h         Show this help message
 `;
 
@@ -163,8 +164,15 @@ Modes:
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>  Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
-  --help, -h       Show this help message
+  --from <source>    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
+  --manifest <path>  List the kits a manifest file declares
+  --json             Output the kit list as JSON
+  --help, -h         Show this help message
+
+A local --from source with no manifest beside its kits falls back to listing the compiled
+kits on disk, which are the same kits rdy run --from would resolve. Those rows carry only
+a name and a path; descriptions, checklist names, and versions live in the absent manifest.
+A remote source still requires a manifest.
 
 Examples:
   rdy list                                         Show kits in the current project

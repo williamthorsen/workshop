@@ -262,6 +262,68 @@ describe(listCommand, () => {
     });
   });
 
+  describe('--json', () => {
+    /** Read the single JSON document the command wrote to stdout. */
+    function parseStdout(): unknown {
+      return JSON.parse(stdoutSpy.mock.calls.map((c) => String(c[0])).join(''));
+    }
+
+    it('distinguishes internal sources from compiled kits in owner mode', async () => {
+      mockEnumerateKits.mockReturnValue(['draft']);
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', path: 'kits/deploy.js', checklists: ['preflight'] }],
+      });
+
+      const exitCode = await listCommand(['--json']);
+
+      expect(exitCode).toBe(0);
+      expect(parseStdout()).toMatchObject({
+        schemaVersion: 1,
+        kits: [
+          { name: 'draft', kind: 'internal', path: expect.stringContaining('draft.ts') },
+          { name: 'deploy', kind: 'compiled', checklists: ['preflight'] },
+        ],
+      });
+    });
+
+    it('sends the human view to stderr so stdout carries one document', async () => {
+      mockEnumerateKits.mockReturnValue(['draft']);
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      await listCommand(['--json']);
+
+      expect(stdoutSpy).toHaveBeenCalledTimes(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Internal:'));
+    });
+
+    it('reports an empty kit list rather than the empty-owner prose', async () => {
+      mockEnumerateKits.mockReturnValue([]);
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
+      await listCommand(['--json']);
+
+      expect(parseStdout()).toStrictEqual({ schemaVersion: 1, kits: [] });
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No kits found.'));
+    });
+
+    it('carries the manifest fields in manifest mode', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', description: 'Deploy checks', readyupVersion: '0.21.2' }],
+      });
+
+      await listCommand(['--manifest', '.readyup/manifest.json', '--json']);
+
+      expect(parseStdout()).toStrictEqual({
+        schemaVersion: 1,
+        kits: [{ name: 'deploy', kind: 'compiled', description: 'Deploy checks', readyupVersion: '0.21.2' }],
+      });
+    });
+  });
+
   it('reports a usage error for unknown flags', async () => {
     const error = await captureRdyError(() => listCommand(['--unknown']));
 
