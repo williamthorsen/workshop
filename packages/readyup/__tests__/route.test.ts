@@ -517,7 +517,10 @@ describe(routeCommand, () => {
       const exitCode = await routeCommand(['--json', '--bogus']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout()).toStrictEqual({ error: { code: 'usage', message: "Unknown option '--bogus'" } });
+      expect(parseStdout()).toStrictEqual({
+        schemaVersion: 1,
+        error: { code: 'usage', message: "Unknown option '--bogus'" },
+      });
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 

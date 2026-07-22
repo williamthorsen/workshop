@@ -60,9 +60,9 @@ describe('partial results when a kit fails after dispatch', () => {
       expect(exitCode).toBe(2);
       expect(JSON.parse(readStdout())).toMatchObject({
         kits: [
-          { name: 'passing', passed: 1, errors: 0 },
+          { name: 'passing', passed: true, counts: { passed: 1, errors: 0 } },
           { name: 'absent', error: { code: 'kit-load', message: expect.any(String) } },
-          { name: 'failing', passed: 0, errors: 1 },
+          { name: 'failing', passed: false, counts: { passed: 0, errors: 1 } },
         ],
       });
     });
@@ -71,14 +71,15 @@ describe('partial results when a kit fails after dispatch', () => {
       await routeCommand(['passing', 'absent', '--json']);
 
       expect(JSON.parse(readStdout())).toMatchObject({
-        passed: 1,
-        errors: 0,
-        warnings: 0,
-        recommendations: 0,
-        blocked: 0,
-        optional: 0,
-        worstSeverity: null,
+        counts: { passed: 1, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0 },
       });
+      expect(JSON.parse(readStdout())).not.toHaveProperty('worstSeverity');
+    });
+
+    it('reports the run as failed when a kit never ran, even though what ran passed', async () => {
+      await routeCommand(['passing', 'absent', '--json']);
+
+      expect(JSON.parse(readStdout())).toMatchObject({ passed: false });
     });
 
     it('emits a report rather than an envelope when the only kit fails', async () => {

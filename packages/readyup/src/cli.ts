@@ -16,6 +16,7 @@ import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
+import type { JsonDetail, JsonWarning } from './schemas/index.ts';
 import type {
   ChecklistSummary,
   FixLocation,
@@ -380,6 +381,7 @@ function resolveThresholds(
 interface RunCommandOptions {
   kitEntries: ResolvedKitEntry[];
   json: boolean;
+  detail?: JsonDetail;
   failOn?: Severity;
   reportOn?: Severity;
 }
@@ -428,15 +430,18 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
  *
  * Silent when the compile-time version is absent (older kit, third-party `--url` source, or
  * uncompiled `.ts` source via `--jit`) and when the comparator returns no-skew.
+ *
+ * The stderr line is written in both modes; the returned entry is what JSON mode captures into the
+ * report, so a consumer that owns only stdout still learns the run was advised of something.
  */
-function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): void {
-  if (compileTimeVersion === undefined) return;
+function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): JsonWarning | undefined {
+  if (compileTimeVersion === undefined) return undefined;
   const result = compareVersionsForSkew(compileTimeVersion, VERSION);
-  if (result.kind === 'no-skew') return;
+  if (result.kind === 'no-skew') return undefined;
   const remedy = result.direction === 'runner-newer' ? 'Run `rdy compile` to refresh.' : 'Upgrade readyup to match.';
-  process.stderr.write(
-    `Warning: kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}. ${remedy}\n`,
-  );
+  const message = `kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}.`;
+  process.stderr.write(`Warning: ${message} ${remedy}\n`);
+  return { code: 'version-skew', message, remedy };
 }
 
 /** Detect module-not-found errors that mention a specific package name. */
@@ -449,11 +454,11 @@ function isModuleNotFoundError(error: unknown, packageName: string): boolean {
 
 /** Run rdy checklists across one or more kits. Returns a numeric exit code. */
 export async function runCommand(
-  { kitEntries, json, failOn, reportOn }: RunCommandOptions,
+  { kitEntries, json, detail, failOn, reportOn }: RunCommandOptions,
   isJit = false,
 ): Promise<number> {
   if (json) {
-    return runMultiKitJsonMode(kitEntries, failOn, reportOn, isJit);
+    return runMultiKitJsonMode(kitEntries, { detail: detail ?? 'full', failOn, reportOn }, isJit);
   }
   return runMultiKitHumanMode(kitEntries, failOn, reportOn, isJit);
 }
@@ -468,11 +473,12 @@ export async function runCommand(
  */
 async function runMultiKitJsonMode(
   kitEntries: ResolvedKitEntry[],
-  failOn: Severity | undefined,
-  reportOn: Severity | undefined,
+  runSettings: { detail: JsonDetail; failOn: Severity | undefined; reportOn: Severity | undefined },
   isJit: boolean,
 ): Promise<number> {
+  const { detail, failOn, reportOn } = runSettings;
   const kitInputs: KitInput[] = [];
+  const warnings: JsonWarning[] = [];
   let allPassed = true;
   let anyKitFailed = false;
 
@@ -480,7 +486,8 @@ async function runMultiKitJsonMode(
     try {
       const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
 
-      warnOnVersionSkew(entry.name, compileTimeVersion);
+      const warning = warnOnVersionSkew(entry.name, compileTimeVersion);
+      if (warning !== undefined) warnings.push(warning);
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
       const checklists = selectChecklists(kit, entry.checklists);
@@ -504,8 +511,15 @@ async function runMultiKitJsonMode(
     }
   }
 
-  const resolvedReportOn = reportOn ?? 'recommend';
-  process.stdout.write(formatJsonReport(kitInputs, { reportOn: resolvedReportOn }) + '\n');
+  // The echoed thresholds are the run-level resolution: the CLI flag when given, otherwise the
+  // default. A kit that declares its own `failOn` overrides this for its own checks.
+  const output = formatJsonReport(kitInputs, {
+    detail,
+    failOn: failOn ?? 'error',
+    reportOn: reportOn ?? 'recommend',
+    ...(warnings.length > 0 && { warnings }),
+  });
+  process.stdout.write(output + '\n');
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }

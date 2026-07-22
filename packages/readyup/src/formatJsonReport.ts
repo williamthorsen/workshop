@@ -2,13 +2,17 @@ import { countResults, emptyCounts, mergeCounts, selectVisibleResults } from './
 import type {
   JsonCheckEntry,
   JsonChecklistEntry,
+  JsonCounts,
+  JsonDetail,
   JsonKitEntry,
   JsonKitErrorEntry,
+  JsonKitResultEntry,
   JsonReport,
-  RdyReport,
-  RdyResult,
-  Severity,
-} from './types.ts';
+  JsonWarning,
+} from './schemas/index.ts';
+import { SCHEMA_VERSION } from './schemas/reportSchema.ts';
+import type { RdyReport, RdyResult, Severity, SummaryCounts } from './types.ts';
+import { VERSION } from './version.ts';
 
 interface ChecklistEntry {
   name: string;
@@ -29,67 +33,151 @@ interface KitResultInput {
  */
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 
-/** Options controlling which results appear in JSON output. */
+/**
+ * The resolved run settings the report echoes back, plus anything it must carry alongside results.
+ *
+ * These are resolved rather than optional: by serialization time every threshold has a value, and a
+ * consumer holding only the payload needs them to tell a clean run from one whose failures were
+ * filtered out of view.
+ */
 export interface FormatJsonReportOptions {
-  reportOn?: Severity;
+  failOn: Severity;
+  reportOn: Severity;
+  detail: JsonDetail;
+  warnings?: JsonWarning[];
 }
 
 /**
- * Build a single checklist entry from a name and report.
+ * A kit that ran, paired with the unrounded figures the report aggregates from it.
  *
- * Counts cover the whole run; the reporting threshold prunes only the serialized detail tree,
- * retaining the ancestors of every result it keeps so the nesting stays intact.
+ * The entry's own `durationMs` is already rounded for the wire; totals are summed from the raw value
+ * so a run of many short kits does not accumulate one rounding error per kit.
  */
-function buildChecklistEntry(name: string, report: RdyReport, reportOn: Severity): JsonChecklistEntry {
-  const counts = countResults(report.results);
-  const visibleResults = selectVisibleResults(report.results, reportOn);
-  const { entries: checks } = buildCheckEntries(visibleResults, 0, 0);
-
-  return {
-    name,
-    durationMs: report.durationMs,
-    ...counts,
-    checks,
-  };
+interface AggregatedKit {
+  entry: JsonKitResultEntry;
+  counts: SummaryCounts;
+  durationMs: number;
 }
 
 /** Transform kit-grouped checklist results into a JSON-serializable report string. */
-export function formatJsonReport(kitInputs: KitInput[], options?: FormatJsonReportOptions): string {
-  const reportOn = options?.reportOn ?? 'recommend';
-  const totals = emptyCounts();
+export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonReportOptions): string {
+  const { failOn, reportOn, detail, warnings } = options;
+  const kits: JsonKitEntry[] = [];
+  const aggregates: AggregatedKit[] = [];
 
-  const kits: JsonKitEntry[] = kitInputs.map((input) => {
+  for (const input of kitInputs) {
     // A kit that never ran contributes nothing to the totals, so they cover only the kits that did.
-    if ('error' in input) return input;
+    if ('error' in input) {
+      kits.push(input);
+      continue;
+    }
+    const aggregate = aggregateKit(input, reportOn, detail);
+    kits.push(aggregate.entry);
+    aggregates.push(aggregate);
+  }
 
-    const { name, entries } = input;
-    const kitCounts = emptyCounts();
-    const checklists: JsonChecklistEntry[] = entries.map(({ name: checklistName, report }) => {
-      const entry = buildChecklistEntry(checklistName, report, reportOn);
-      mergeCounts(kitCounts, entry);
-      return entry;
-    });
+  const totals = emptyCounts();
+  let totalDurationMs = 0;
+  for (const aggregate of aggregates) {
+    mergeCounts(totals, aggregate.counts);
+    totalDurationMs += aggregate.durationMs;
+  }
 
-    const kitDurationMs = checklists.reduce((sum, c) => sum + c.durationMs, 0);
-    mergeCounts(totals, kitCounts);
+  // A kit that never ran leaves the run incomplete, which the verdict must reflect even when
+  // everything that did run passed.
+  const everyKitRan = aggregates.length === kits.length;
 
-    return {
-      name,
-      durationMs: kitDurationMs,
-      ...kitCounts,
-      checklists,
-    };
-  });
-
-  const totalDurationMs = kits.reduce((sum, k) => sum + ('error' in k ? 0 : k.durationMs), 0);
-
-  const output: JsonReport = {
-    ...totals,
-    durationMs: totalDurationMs,
+  const report: JsonReport = {
+    schemaVersion: SCHEMA_VERSION,
+    readyupVersion: VERSION,
+    passed: everyKitRan && aggregates.every(({ entry }) => entry.passed),
+    ...splitCounts(totals),
+    failOn,
+    reportOn,
+    detail,
+    durationMs: Math.round(totalDurationMs),
+    ...(warnings !== undefined && warnings.length > 0 && { warnings }),
     kits,
   };
 
-  return JSON.stringify(output);
+  return JSON.stringify(report);
+}
+
+/** Build one kit's entry and the raw figures the report aggregates from it. */
+function aggregateKit(input: KitResultInput, reportOn: Severity, detail: JsonDetail): AggregatedKit {
+  const counts = emptyCounts();
+  let durationMs = 0;
+
+  const checklists: JsonChecklistEntry[] = input.entries.map(({ name, report }) => {
+    const checklistCounts = countResults(report.results);
+    mergeCounts(counts, checklistCounts);
+    durationMs += report.durationMs;
+
+    return {
+      name,
+      passed: report.passed,
+      ...splitCounts(checklistCounts),
+      durationMs: Math.round(report.durationMs),
+      ...buildDetailTree(report.results, reportOn, detail),
+    };
+  });
+
+  const entry: JsonKitResultEntry = {
+    name: input.name,
+    passed: checklists.every((checklist) => checklist.passed),
+    ...splitCounts(counts),
+    durationMs: Math.round(durationMs),
+    checklists,
+  };
+
+  return { entry, counts, durationMs };
+}
+
+/**
+ * Split the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
+ * beside them.
+ *
+ * `worstSeverity` is derived verdict data rather than a count, so it sits outside the object it
+ * summarizes; a run that failed nothing has no worst severity and omits the field.
+ */
+function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity?: Severity } {
+  const { worstSeverity, ...numeric } = counts;
+  return worstSeverity === null ? { counts: numeric } : { counts: numeric, worstSeverity };
+}
+
+/**
+ * Build the `checks` property for a checklist entry, or nothing when the projection leaves it empty.
+ *
+ * The reporting threshold prunes first and the detail projection second, so `summary` shows the same
+ * failures `full` would — just without the checks that passed around them.
+ */
+function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
+  const visibleResults = selectVisibleResults(results, reportOn);
+  const checks =
+    detail === 'summary' ? buildSummaryEntries(visibleResults) : buildCheckEntries(visibleResults, 0, 0).entries;
+  return checks.length > 0 ? { checks } : {};
+}
+
+/**
+ * Project visible results down to what `--detail summary` carries: the failures and their remedies.
+ *
+ * Nesting is dropped along with the checks that passed, because what survives is a work list rather
+ * than a trace of the run — the caller wants what to fix, and `full` remains one flag away.
+ */
+function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
+  return results
+    .filter((result) => result.status === 'failed')
+    .map((result) => {
+      const entry: JsonCheckEntry = {
+        name: result.name,
+        status: result.status,
+        ok: result.ok,
+        severity: result.severity,
+        durationMs: Math.round(result.durationMs),
+      };
+      if (result.fix !== null) entry.fix = result.fix;
+      return entry;
+    });
 }
 
 /**
@@ -131,26 +219,27 @@ function buildCheckEntries(
 }
 
 /**
- * Build a single JSON check entry, normalizing the union to include all fields.
+ * Build a single JSON check entry, omitting every field that carries nothing.
  *
- * Non-skipped results get `skipReason: null` for uniform JSON shape.
- * Error objects are serialized to their message string.
+ * A field is present only when it holds information the consumer could act on: no `null` placeholders,
+ * no empty `checks` array, and no `fix` on a check that has nothing to remediate. Durations are whole
+ * milliseconds, since sub-millisecond precision on a check that took 3ms describes only the scheduler.
  */
-function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[] = []): JsonCheckEntry {
-  const errorString = result.error !== null ? result.error.message : null;
-  const skipReason = result.status === 'skipped' ? result.skipReason : null;
-
-  return {
+function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[]): JsonCheckEntry {
+  const entry: JsonCheckEntry = {
     name: result.name,
     status: result.status,
     ok: result.ok,
     severity: result.severity,
-    skipReason,
-    detail: result.detail,
-    fix: result.fix,
-    error: errorString,
-    progress: result.progress,
-    durationMs: result.durationMs,
-    checks: children,
+    durationMs: Math.round(result.durationMs),
   };
+
+  if (result.status === 'skipped') entry.skipReason = result.skipReason;
+  if (result.detail !== null) entry.detail = result.detail;
+  if (result.status === 'failed' && result.fix !== null) entry.fix = result.fix;
+  if (result.error !== null) entry.error = result.error.message;
+  if (result.progress !== null) entry.progress = result.progress;
+  if (children.length > 0) entry.checks = children;
+
+  return entry;
 }
