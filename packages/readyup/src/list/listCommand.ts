@@ -7,6 +7,7 @@ import { EXIT_OK } from '../exitCodes.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
@@ -178,7 +179,7 @@ async function runOwnerMode(): Promise<number> {
 }
 
 /** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
-function readManifestOrThrow(manifestPath: string): ReturnType<typeof readManifest> {
+function readManifestOrThrow(manifestPath: string): RdyManifest {
   try {
     return readManifest(manifestPath);
   } catch (error: unknown) {

@@ -54,7 +54,8 @@ Exit codes:
   list and init use only 0 and 2; neither can find problems to report.
 
 With --json, stdout carries exactly one JSON document: the report when a run produced
-one, otherwise {"error": {"code", "message"}}. Prose goes to stderr.
+one, otherwise {"error": {"code", "message"}}. Prose goes to stderr. --help and --version
+have no JSON form: their text goes to stderr and stdout stays empty.
 `;
 
 const RUN_HELP = `

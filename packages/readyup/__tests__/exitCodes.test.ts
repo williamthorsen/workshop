@@ -38,6 +38,8 @@ beforeAll(() => {
       kits: [{ name: 'passing', path: 'kits/passing.js', targetHash: '0'.repeat(8) }],
     }),
   );
+  // Compiling this drives real esbuild, which writes its own diagnostic straight to stderr; the
+  // error banner that appears in an otherwise-passing test run belongs to this fixture.
   writeFileSync(path.join(cwd, 'broken.ts'), 'export default { this is not valid TypeScript\n');
   process.chdir(cwd);
 });

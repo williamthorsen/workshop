@@ -107,7 +107,7 @@ The distinction is between "fix the repo" (`1`) and "fix the invocation" (`2`), 
 
 ### JSON output
 
-With `--json`, stdout carries exactly one JSON document, chosen by how far the invocation got: the report when a run produced one, and otherwise an error envelope.
+With `--json`, stdout carries exactly one JSON document, chosen by how far the invocation got: the report when a run produced one, and otherwise an error envelope. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
 
 ```json
 { "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
