@@ -10,6 +10,7 @@ import { validateKit } from '../validateKit.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
 export interface KitMetadata {
+  checklists: string[];
   description?: string | undefined;
 }
 
@@ -44,6 +45,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
   }
 
   return {
+    checklists: kit.checklists.map((checklist) => checklist.name),
     description: kit.description,
   };
 }

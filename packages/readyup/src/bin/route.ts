@@ -14,6 +14,7 @@ import { extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
+import { writeHuman } from '../writeHuman.ts';
 
 const SUBCOMMANDS = ['compile', 'init', 'list', 'verify'];
 const MIN_PREFIX_LENGTH = 3;
@@ -112,6 +113,7 @@ Options:
   --output, -o <path>  Output file path (single-file mode only)
   --manifest <path>    Manifest file path (default: .readyup/manifest.json)
   --force              Overwrite compiled kits even if they have drifted from the manifest
+  --json               Report each kit's status as JSON
   --skip-manifest      Do not read or write the manifest
   --help, -h           Show this help message
 
@@ -119,6 +121,10 @@ Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
   manifest's recorded targetHash (e.g. someone edited the compiled file directly).
   Drifted kits are reported and skipped; use --force to overwrite anyway.
+
+A sweep runs to completion: a kit that fails to compile is reported and the next kit is
+tried, so every kit's status is known after one run. A kit that failed is left out of the
+manifest rather than recorded as though it had compiled.
 
 Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
 manifest cannot be read or written.
@@ -328,12 +334,6 @@ function wantsHelp(flags: string[]): boolean {
 function writeHelp(text: string, json: boolean): number {
   writeHuman(`${text}\n`, json);
   return EXIT_OK;
-}
-
-/** Writes human-readable prose, diverting it to stderr when JSON mode owns stdout. */
-function writeHuman(text: string, json: boolean): void {
-  const stream = json ? process.stderr : process.stdout;
-  stream.write(text);
 }
 
 /** Checks whether a positional arg is a close prefix of a known subcommand. */

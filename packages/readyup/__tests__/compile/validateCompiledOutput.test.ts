@@ -30,7 +30,7 @@ describe(validateCompiledOutput, () => {
 
     const metadata = await validateCompiledOutput(outputPath);
 
-    expect(metadata).toStrictEqual({ description: 'A kit for testing' });
+    expect(metadata).toStrictEqual({ checklists: ['test'], description: 'A kit for testing' });
   });
 
   it('omits description key when the kit has none', async () => {
@@ -40,7 +40,20 @@ describe(validateCompiledOutput, () => {
 
     const metadata = await validateCompiledOutput(outputPath);
 
-    expect(metadata).toStrictEqual({ description: undefined });
+    expect(metadata).toStrictEqual({ checklists: ['test'], description: undefined });
+  });
+
+  it('records every checklist name in declaration order', async () => {
+    const outputPath = writeTempKit(testDir, 'kit-multi-checklist.mjs', {
+      checklists: [
+        { name: 'preflight', checks: [] },
+        { name: 'deploy', checks: [] },
+      ],
+    });
+
+    const metadata = await validateCompiledOutput(outputPath);
+
+    expect(metadata.checklists).toStrictEqual(['preflight', 'deploy']);
   });
 
   it('deletes the output file and throws when the bundle fails to load', async () => {
