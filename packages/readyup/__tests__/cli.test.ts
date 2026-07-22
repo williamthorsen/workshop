@@ -137,6 +137,14 @@ describe(parseRunArgs, () => {
     );
   });
 
+  it.each([
+    { label: 'no value', args: ['--checklists='] },
+    { label: 'only separators', args: ['--checklists', ',,,'] },
+    { label: 'only separators alongside a kit', args: ['deploy', '--checklists', ','] },
+  ])('throws when --checklists is given $label', ({ args }) => {
+    expect(() => parseRunArgs(args)).toThrow('--checklists requires a comma-separated list of checklist names');
+  });
+
   it('throws when --checklists is given more than one positional kit', () => {
     expect(() => parseRunArgs(['a', 'b', '--checklists', 'x'])).toThrow(
       '--checklists requires a single kit, but 2 were given: a, b',

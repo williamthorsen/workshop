@@ -61,9 +61,8 @@ export interface ParsedRunArgs {
  *
  * A letter earns a short flag only when it carries no dominant conflicting meaning in comparable
  * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
- * `--file` here and nothing anywhere else. The retired rule — first letter, uppercased on
- * collision — manufactured `-j`/`-J` and `-f`/`-F`, pairs differing only by case where a typo
- * silently changed what ran.
+ * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: a
+ * shift-key slip must not be able to change what runs.
  */
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
@@ -100,9 +99,12 @@ function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit:
   return `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/src/${ref}/${KITS_DIR}/${kit}${extension}`;
 }
 
+/** Guidance shown for every spelling of `--checklists` that names no checklist. */
+const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
+
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
-  '--checklists': '--checklists requires a comma-separated list of checklist names',
+  '--checklists': CHECKLISTS_HINT,
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
   '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
@@ -218,8 +220,12 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 
   validateFlagConstraints(parsed, kitSpecifiers);
 
-  // Parse checklists from the flag value.
+  // Parse checklists from the flag value. An empty list selects every checklist, so a value that
+  // names none — `,,,` — would invert what an explicit filter asks for.
   const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
+  if (checklists?.length === 0) {
+    throw usageError(CHECKLISTS_HINT);
+  }
 
   // Validate severity flags.
   const failOn = parsed.failOn !== undefined ? parseSeverityFlag('--fail-on', parsed.failOn) : undefined;
