@@ -193,6 +193,11 @@ import { fileExists, fileContains, hasPackageJsonField } from 'readyup/check-uti
 | `readPackageJson()`                         | Parse package.json                                                      |
 | `discoverWorkspaces(options?)`              | Enumerate monorepo workspaces (single-workspace repos return one entry) |
 | `compareVersions(a, b)`                     | Compare semver strings                                                  |
+| `readTsconfigLanguageLevel(path)`           | Effective `lib` and `target` of a tsconfig, resolved through `extends`  |
+| `readEnginesNodeFloor(manifest)`            | Minimum Node version a parsed manifest declares in `engines.node`       |
+| `satisfiesNodeFloor(version, floor)`        | Runtime version is at or above a floor                                  |
+| `readToolVersionsNode(path?)`               | Node version declared in `.tool-versions`                               |
+| `esYearForNodeMajor(major)`                 | ECMAScript year a Node major supports (`24` → `es2025`)                 |
 | `runGit(path, ...args)`                     | Run a git command and return trimmed stdout                             |
 | `expandHome(path)`                          | Expand leading `~` or `~/` to the home directory                        |
 | `isAtRepoRoot(path)`                        | Path is the top of a git working tree                                   |
@@ -215,6 +220,27 @@ const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 ```
 
 Note: `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, negation patterns, or other non-trivial features will raise a clear error with a pointer to file an issue.
+
+### Reading runtime alignment
+
+`readTsconfigLanguageLevel(path)` reports what language level a tsconfig actually declares, which may be several `extends` hops away. Alongside `lib` and `target` — lowercased, so comparisons are string equality — it returns `chain`, the configs it read with the entry file first, and `unresolvedExtends`, the references it could not follow. Bare package specifiers such as `@tsconfig/node24/tsconfig.json` are never followed, and a missing or unparseable parent ends that branch of the walk; both land in `unresolvedExtends`, so a check can tell an incomplete answer from a genuinely undeclared setting. A missing or unparseable entry file returns `undefined`. Configs are read as JSONC, so comments and trailing commas are fine.
+
+`readEnginesNodeFloor(manifest)` recognizes only the range forms from which a single floor follows: `>=24`, `^22.1`, and a bare `24.1.0`. Anything else — a union such as `^20 || ^22`, a hyphen range, a wildcard — comes back as `{ kind: 'unparseable' }` rather than an invented floor. It takes an already-parsed manifest, so it composes with `discoverWorkspaces` without re-reading files:
+
+```ts
+import {
+  discoverWorkspaces,
+  readEnginesNodeFloor,
+  readToolVersionsNode,
+  satisfiesNodeFloor,
+} from 'readyup/check-utils';
+
+const runtime = readToolVersionsNode();
+const unmetFloors = discoverWorkspaces().filter((workspace) => {
+  const declared = readEnginesNodeFloor(workspace.packageJson);
+  return runtime !== undefined && declared.kind === 'found' && !satisfiesNodeFloor(runtime, declared.floor);
+});
+```
 
 ## Compatibility
 

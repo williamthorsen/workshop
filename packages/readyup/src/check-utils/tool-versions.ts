@@ -13,7 +13,7 @@ export function readToolVersionsNode(relativePath = '.tool-versions'): string | 
 
   for (const line of content.split('\n')) {
     // A `#` opens a comment that runs to the end of the line, whether or not anything precedes it.
-    const declaration = (line.split('#')[0] ?? '').trim();
+    const declaration = (line.split('#', 1)[0] ?? '').trim();
     if (declaration === '') continue;
 
     const [tool, ...versions] = declaration.split(/\s+/);
