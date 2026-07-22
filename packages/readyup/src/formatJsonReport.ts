@@ -3,6 +3,7 @@ import type {
   JsonCheckEntry,
   JsonChecklistEntry,
   JsonKitEntry,
+  JsonKitErrorEntry,
   JsonReport,
   RdyReport,
   RdyResult,
@@ -14,10 +15,19 @@ interface ChecklistEntry {
   report: RdyReport;
 }
 
-interface KitInput {
+/** Input for a kit that ran, carrying the reports its checklists produced. */
+interface KitResultInput {
   name: string;
   entries: ChecklistEntry[];
 }
+
+/**
+ * Input for one kit, discriminated by the presence of `error`.
+ *
+ * A failed kit is described by the entry it serializes to, because it passes through verbatim.
+ * Failures arrive interleaved rather than appended so kits keep the order they were requested in.
+ */
+export type KitInput = JsonKitErrorEntry | KitResultInput;
 
 /** Options controlling which results appear in JSON output. */
 export interface FormatJsonReportOptions {
@@ -48,7 +58,11 @@ export function formatJsonReport(kitInputs: KitInput[], options?: FormatJsonRepo
   const reportOn = options?.reportOn ?? 'recommend';
   const totals = emptyCounts();
 
-  const kits: JsonKitEntry[] = kitInputs.map(({ name, entries }) => {
+  const kits: JsonKitEntry[] = kitInputs.map((input) => {
+    // A kit that never ran contributes nothing to the totals, so they cover only the kits that did.
+    if ('error' in input) return input;
+
+    const { name, entries } = input;
     const kitCounts = emptyCounts();
     const checklists: JsonChecklistEntry[] = entries.map(({ name: checklistName, report }) => {
       const entry = buildChecklistEntry(checklistName, report, reportOn);
@@ -67,7 +81,7 @@ export function formatJsonReport(kitInputs: KitInput[], options?: FormatJsonRepo
     };
   });
 
-  const totalDurationMs = kits.reduce((sum, k) => sum + k.durationMs, 0);
+  const totalDurationMs = kits.reduce((sum, k) => sum + ('error' in k ? 0 : k.durationMs), 0);
 
   const output: JsonReport = {
     ...totals,

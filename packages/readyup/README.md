@@ -107,6 +107,8 @@ rdy <command> [options]
 
 The distinction is between "fix the repo" (`1`) and "fix the invocation" (`2`), so a pipeline can branch on which is which. `rdy list` and `rdy init` produce only `0` and `2` — neither can find problems to report.
 
+A run that loses a kit part-way exits `2` even when the kits that ran also found problems, since part of the invocation did not complete. It still reports what it collected.
+
 ### JSON output
 
 With `--json`, stdout carries exactly one JSON document, chosen by how far the invocation got: the report when a run produced one, and otherwise an error envelope. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
@@ -116,6 +118,14 @@ With `--json`, stdout carries exactly one JSON document, chosen by how far the i
 ```
 
 `code` is one of `usage`, `config`, `kit-load`, or `internal`. Every human-readable line — help text, progress headers, warnings — goes to stderr, and the exit code does not determine which document appears.
+
+The envelope covers only failures that precede dispatch. Once the run reaches its kits, a kit that fails is reported inside the report instead of replacing it, so each entry in `kits` takes one of two shapes, told apart by whether `error` is present:
+
+```json
+{ "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }
+```
+
+An error entry carries no counts, because a kit that never ran has none to report; the top-level totals cover only the kits that ran. In human mode the same failure goes to stderr, which keeps it distinct from a failed check. A run of more than one kit prefixes the kit's name, as `Error [release]: ...`.
 
 ### Kit sources
 

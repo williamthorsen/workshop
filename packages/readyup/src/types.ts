@@ -1,3 +1,5 @@
+import type { RdyErrorCode } from './errors.ts';
+
 // -- Ahead/behind --
 
 /** Directional commit counts between two refs. */
@@ -370,12 +372,29 @@ export interface JsonChecklistEntry extends SummaryCounts {
   checks: JsonCheckEntry[];
 }
 
-/** Per-kit entry in JSON output, grouping checklists with per-kit summary counts. */
-export interface JsonKitEntry extends SummaryCounts {
+/** Entry for a kit that ran, grouping its checklists with per-kit summary counts. */
+export interface JsonKitResultEntry extends SummaryCounts {
   name: string;
   durationMs: number;
   checklists: JsonChecklistEntry[];
 }
+
+/**
+ * Entry for a kit that produced no results, carrying the same object as the error envelope.
+ *
+ * Deliberately counts-free: a kit that never ran has no `errors: 0` to report, and emitting
+ * zeroes would misstate the run.
+ */
+export interface JsonKitErrorEntry {
+  name: string;
+  error: {
+    code: RdyErrorCode;
+    message: string;
+  };
+}
+
+/** Per-kit entry in JSON output, discriminated by the presence of `error`. */
+export type JsonKitEntry = JsonKitErrorEntry | JsonKitResultEntry;
 
 /** Top-level shape of `--json` output. */
 export interface JsonReport extends SummaryCounts {

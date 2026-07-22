@@ -10,6 +10,8 @@ export type {
   JsonCheckEntry,
   JsonChecklistEntry,
   JsonKitEntry,
+  JsonKitErrorEntry,
+  JsonKitResultEntry,
   JsonReport,
   LocalRefsCompareResult,
   PassedResult,
@@ -29,6 +31,9 @@ export type {
   SkipResult,
   SummaryCounts,
 } from './types.ts';
+
+// Error taxonomy
+export type { RdyErrorCode } from './errors.ts';
 
 // Type guards
 export { isFlatChecklist, isPercentProgress } from './types.ts';
