@@ -16,6 +16,14 @@ const FAILING_KIT = `export default { checklists: [{ name: 'main', checks: [{ na
 /** A kit that is not a valid kit at all, so loading it fails. */
 const INVALID_KIT = `export default { nope: true };\n`;
 
+/** A kit with three named checklists, for exercising checklist selection. */
+const MULTI_KIT =
+  `export default { checklists: [\n` +
+  `  { name: 'build', checks: [{ name: 'build-ok', check: () => true }] },\n` +
+  `  { name: 'test', checks: [{ name: 'test-ok', check: () => true }] },\n` +
+  `  { name: 'lint', checks: [{ name: 'lint-ok', check: () => true }] },\n` +
+  `] };\n`;
+
 let cwd: string;
 let originalCwd: string;
 let stdout: string[];
@@ -30,6 +38,7 @@ beforeAll(() => {
   writeFileSync(path.join(cwd, '.readyup/kits/passing.js'), PASSING_KIT);
   writeFileSync(path.join(cwd, '.readyup/kits/failing.js'), FAILING_KIT);
   writeFileSync(path.join(cwd, '.readyup/kits/invalid.js'), INVALID_KIT);
+  writeFileSync(path.join(cwd, '.readyup/kits/deploy.js'), MULTI_KIT);
   // A manifest whose recorded hash cannot match the file on disk, so `verify` reports drift.
   writeFileSync(
     path.join(cwd, '.readyup/manifest.json'),
@@ -157,6 +166,62 @@ describe('stdout purity under --json', () => {
     expect(exitCode).toBe(2);
     expect(readStdout()).toBe('');
     expect(readStderr()).toContain('Error:');
+  });
+});
+
+describe('flag surface', () => {
+  it.each(['-J', '-F', '-R', '-i', '-u', '-j'])(
+    'exits 2 with a usage error for the retired short %s',
+    async (short) => {
+      const exitCode = await routeCommand(['--json', short]);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(readStdout())).toMatchObject({ error: { code: 'usage' } });
+    },
+  );
+
+  it.each([
+    { long: '--jit', args: ['--jit'] },
+    { long: '--internal', args: ['--internal'] },
+    { long: '--url', args: ['--url', 'file://absent'] },
+    { long: '--fail-on', args: ['passing', '--fail-on', 'warn'] },
+    { long: '--report-on', args: ['passing', '--report-on', 'error'] },
+  ])('leaves $long accepted after its short is retired', async ({ args }) => {
+    // The flag may still fail for want of a kit; what matters is that it is not a usage error.
+    const exitCode = await routeCommand([...args, '--json']);
+
+    if (exitCode === 2) {
+      expect(JSON.parse(readStdout())).not.toMatchObject({ error: { code: 'usage' } });
+    }
+  });
+
+  it('runs the named checklists from a single positional kit', async () => {
+    const exitCode = await routeCommand(['deploy', '--checklists', 'build,test', '--json']);
+
+    expect(exitCode).toBe(0);
+    const written = readStdout();
+    expect(written).toContain('build');
+    expect(written).toContain('test');
+    expect(written).not.toContain('lint');
+  });
+
+  it.each([
+    { label: 'a ":" filter competing with --checklists', args: ['deploy:build', '--checklists', 'test'] },
+    { label: 'more than one positional kit', args: ['deploy', 'passing', '--checklists', 'build'] },
+  ])('exits 2 with a usage error for $label', async ({ args }) => {
+    const exitCode = await routeCommand([...args, '--json']);
+
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(readStdout())).toMatchObject({ error: { code: 'usage' } });
+  });
+
+  // Asserted without `--json`, which `init` does not accept either; adding it would let this pass
+  // on the wrong flag.
+  it('exits 2 for the retired init -f short', async () => {
+    const exitCode = await routeCommand(['init', '-f']);
+
+    expect(exitCode).toBe(2);
+    expect(readStderr()).toContain("Unknown option '-f'");
   });
 });
 
