@@ -155,6 +155,17 @@ describe('stdout purity under --json', () => {
     expect(readStderr()).toContain('Error:');
     expect(readStdout()).toBe('');
   });
+
+  it.each([
+    { label: 'the short flag', flag: '-j' },
+    { label: 'a short cluster', flag: '-jJ' },
+  ])('takes the envelope path for a flag-parse failure spelled with $label', async ({ flag }) => {
+    const exitCode = await routeCommand(['--bogus', flag]);
+
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(readStdout())).toStrictEqual({ error: { code: 'usage', message: expect.any(String) } });
+    expect(readStderr()).toBe('');
+  });
 });
 
 describe('subcommand error classification', () => {
