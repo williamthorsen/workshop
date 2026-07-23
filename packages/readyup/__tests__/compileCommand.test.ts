@@ -52,10 +52,16 @@ vi.mock('../src/verify/checkDrift.ts', () => ({
 }));
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
+import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 import { VERSION } from '../src/version.ts';
 import { captureRdyError } from './helpers/captureRdyError.ts';
+
+/** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
+function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
+  return { checklists: [], ...overrides };
+}
 
 describe(compileCommand, () => {
   let stdoutSpy: MockInstance;
@@ -64,7 +70,7 @@ describe(compileCommand, () => {
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
   });
 
@@ -335,6 +341,184 @@ describe(compileCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('references unknown checklist'));
   });
 
+  describe('sweep completion', () => {
+    /** A two-kit batch whose first kit fails to compile and whose second succeeds. */
+    function arrangeMixedBatch(): void {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+      mockCompileConfig
+        .mockRejectedValueOnce(new Error('alpha is not valid TypeScript'))
+        .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+    }
+
+    it('compiles the kits after a failed one instead of abandoning the sweep', async () => {
+      arrangeMixedBatch();
+
+      const exitCode = await compileCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(mockCompileConfig).toHaveBeenCalledTimes(2);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error compiling alpha.ts'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('beta.ts'));
+    });
+
+    it('reports how many kits failed once the sweep finishes', async () => {
+      arrangeMixedBatch();
+
+      await compileCommand([]);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits failed to compile.'));
+    });
+
+    it('leaves a failed kit out of the manifest rather than recording it as compiled', async () => {
+      arrangeMixedBatch();
+
+      await compileCommand([]);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [expect.objectContaining({ name: 'beta' })],
+      });
+    });
+
+    it('keeps the manifest entry a failed kit already had', async () => {
+      arrangeMixedBatch();
+      const recordedAlpha = {
+        name: 'alpha',
+        path: 'alpha.js',
+        readyupVersion: VERSION,
+        source: 'alpha.ts',
+        targetHash: 'aaaa1111',
+      };
+      mockReadManifest.mockReturnValue({ version: 1, kits: [recordedAlpha] });
+
+      await compileCommand([]);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [recordedAlpha, expect.objectContaining({ name: 'beta' })],
+      });
+    });
+
+    it('reports the failure even though the kit keeps its entry', async () => {
+      arrangeMixedBatch();
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [
+          { name: 'alpha', path: 'alpha.js', readyupVersion: VERSION, source: 'alpha.ts', targetHash: 'aaaa1111' },
+        ],
+      });
+
+      const exitCode = await compileCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error compiling alpha.ts'));
+    });
+  });
+
+  describe('manifest checklist names', () => {
+    it('records the checklist names the compiled kit declares', async () => {
+      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ checklists: ['preflight', 'deploy'] }));
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+
+      await compileCommand(['deploy.ts']);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [expect.objectContaining({ name: 'deploy', checklists: ['preflight', 'deploy'] })],
+      });
+    });
+
+    it('omits the field for a kit with no checklists to record', async () => {
+      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+
+      await compileCommand(['deploy.ts']);
+
+      const [call] = mockWriteManifest.mock.calls;
+      assert.ok(call);
+      const manifest: RdyManifest = call[1];
+
+      expect(manifest.kits[0]).not.toHaveProperty('checklists');
+    });
+  });
+
+  describe('--json', () => {
+    it('reports every kit status on stdout and keeps prose on stderr', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+      mockCompileConfig
+        .mockRejectedValueOnce(new Error('alpha is not valid TypeScript'))
+        .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+
+      const exitCode = await compileCommand(['--json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledTimes(1);
+      const [jsonCall] = stdoutSpy.mock.calls;
+      assert.ok(jsonCall);
+      expect(JSON.parse(String(jsonCall[0]))).toStrictEqual({
+        schemaVersion: 1,
+        passed: false,
+        kits: [
+          { name: 'alpha', status: 'failed', error: 'alpha is not valid TypeScript' },
+          { name: 'beta', status: 'compiled' },
+        ],
+      });
+    });
+
+    it('reports a clean single-file compile as passed', async () => {
+      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+
+      const exitCode = await compileCommand(['deploy.ts', '--json']);
+
+      expect(exitCode).toBe(0);
+      const [jsonCall] = stdoutSpy.mock.calls;
+      assert.ok(jsonCall);
+      expect(JSON.parse(String(jsonCall[0]))).toMatchObject({
+        passed: true,
+        kits: [{ name: 'deploy', status: 'compiled' }],
+      });
+    });
+
+    it('reports a drift-skipped kit with the reason it was left alone', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', path: 'deploy.js', targetHash: 'aaaa1111' }],
+      });
+      mockCheckDrift.mockReturnValue({
+        kind: 'drift',
+        expected: 'aaaa1111',
+        actual: 'ffff9999',
+        resolvedPath: '/abs/deploy.js',
+      });
+
+      const exitCode = await compileCommand(['deploy.ts', '--json']);
+
+      expect(exitCode).toBe(1);
+      const [jsonCall] = stdoutSpy.mock.calls;
+      assert.ok(jsonCall);
+      expect(JSON.parse(String(jsonCall[0]))).toMatchObject({
+        passed: false,
+        kits: [{ name: 'deploy', status: 'skipped', error: expect.stringContaining('drifted') }],
+      });
+    });
+  });
+
   it('reports a config error when readdirSync throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
@@ -375,7 +559,9 @@ describe(compileCommand, () => {
     mockCompileConfig
       .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' })
       .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
-    mockValidateCompiledOutput.mockResolvedValueOnce({ description: 'Alpha checks' }).mockResolvedValueOnce({});
+    mockValidateCompiledOutput
+      .mockResolvedValueOnce(kitMetadata({ description: 'Alpha checks' }))
+      .mockResolvedValueOnce(kitMetadata());
 
     await compileCommand([]);
 
@@ -440,7 +626,7 @@ describe(compileCommand, () => {
 
   it('upserts manifest entry for single-file compile with location fields', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({ description: 'Deploy checks' });
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ description: 'Deploy checks' }));
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'default', description: 'Default checks' }],
@@ -466,7 +652,7 @@ describe(compileCommand, () => {
 
   it('creates new manifest for single-file compile when no manifest exists', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
@@ -489,7 +675,7 @@ describe(compileCommand, () => {
 
   it('replaces existing entry when upserting for single-file compile', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({ description: 'Updated' });
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ description: 'Updated' }));
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'deploy', description: 'Old' }],
@@ -541,7 +727,7 @@ describe(compileCommand, () => {
 
   it('writes warning to stderr when upsert encounters non-missing-file error', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new Error('Invalid manifest schema in .readyup/manifest.json: bad data');
     });
@@ -556,7 +742,7 @@ describe(compileCommand, () => {
 
   it('uses custom manifest path from --manifest flag for single-file compile', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
@@ -589,7 +775,7 @@ describe(compileCommand, () => {
 
   it('populates readyupVersion when upserting a single-file compile entry', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
@@ -606,7 +792,7 @@ describe(compileCommand, () => {
 
   it('maintains alphabetical order when upserting manifest entries', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'charlie' }, { name: 'beta' }],
@@ -646,7 +832,7 @@ describe(compileCommand, () => {
 
   it('bypasses drift gate with --force on single-file compile', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'bbbb2222' });
-    mockValidateCompiledOutput.mockResolvedValue({});
+    mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'deploy', path: 'deploy.js', targetHash: 'aaaa1111' }],

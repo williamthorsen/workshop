@@ -61,6 +61,7 @@ coverage/
 
 # Generated files
 packages/*/src/version.ts
+packages/readyup/schemas/
 
 # TypeScript
 *.tsbuildinfo

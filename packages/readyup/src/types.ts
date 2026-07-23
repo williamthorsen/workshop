@@ -1,5 +1,3 @@
-import type { RdyErrorCode } from './errors.ts';
-
 // -- Ahead/behind --
 
 /** Directional commit counts between two refs. */
@@ -225,6 +223,10 @@ export interface RdyReport {
  * `errors`/`warnings`/`recommendations` replace the coarser `failed` bucket;
  * `blocked` (precondition-skipped) and `optional` (n/a-skipped) replace `skipped`.
  * `worstSeverity` is the highest-severity failed bucket (`null` when nothing failed).
+ *
+ * This is the runner's internal tally, shared by the human report and the combined-summary table.
+ * The JSON layer nests the six numeric fields under `counts` and carries `worstSeverity` beside
+ * them; see `schemas/common.ts`, which is the source of truth for the wire shape.
  */
 export interface SummaryCounts {
   passed: number;
@@ -341,63 +343,4 @@ export interface ResolvedRdyConfig {
     dir: string;
     infix: string | undefined;
   };
-}
-
-// -- JSON output --
-
-/**
- * Serialize a RdyResult for JSON output.
- *
- * All fields are non-optional with explicit `null` for absent values. `skipReason` is
- * present on every entry (not just skipped results) so JSON consumers see a uniform shape.
- */
-export interface JsonCheckEntry {
-  name: string;
-  status: 'passed' | 'failed' | 'skipped';
-  ok: true | false | null;
-  severity: Severity;
-  skipReason: 'n/a' | 'precondition' | null;
-  detail: string | null;
-  fix: string | null;
-  error: string | null;
-  progress: Progress | null;
-  durationMs: number;
-  checks: JsonCheckEntry[];
-}
-
-/** Shape of a single checklist entry in `--json` output. */
-export interface JsonChecklistEntry extends SummaryCounts {
-  name: string;
-  durationMs: number;
-  checks: JsonCheckEntry[];
-}
-
-/** Entry for a kit that ran, grouping its checklists with per-kit summary counts. */
-export interface JsonKitResultEntry extends SummaryCounts {
-  name: string;
-  durationMs: number;
-  checklists: JsonChecklistEntry[];
-}
-
-/**
- * Entry for a kit that produced no results, carrying the same object as the error envelope.
- *
- * Deliberately counts-free: a kit that never ran has no `errors: 0` to report, and emitting
- * zeroes would misstate the run.
- */
-export interface JsonKitErrorEntry {
-  name: string;
-  error: {
-    code: RdyErrorCode;
-    message: string;
-  };
-}
-
-/** Per-kit entry in JSON output, discriminated by the presence of `error`. */
-export type JsonKitEntry = JsonKitErrorEntry | JsonKitResultEntry;
-
-/** Top-level shape of `--json` output. */
-export interface JsonReport extends SummaryCounts {
-  durationMs: number;
-  kits: JsonKitEntry[];
 }

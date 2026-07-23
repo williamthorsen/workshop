@@ -403,6 +403,33 @@ describe(parseRunArgs, () => {
     expect(result).not.toHaveProperty('failOn');
     expect(result).not.toHaveProperty('reportOn');
   });
+
+  // --detail flag
+  it.each(['summary', 'full'])('parses --detail %s', (projection) => {
+    expect(parseRunArgs(['--json', '--detail', projection])).toMatchObject({ detail: projection });
+  });
+
+  it('parses --detail= syntax', () => {
+    expect(parseRunArgs(['--json', '--detail=summary'])).toMatchObject({ detail: 'summary' });
+  });
+
+  it('throws when --detail has an invalid value', () => {
+    expect(() => parseRunArgs(['--json', '--detail', 'terse'])).toThrow(
+      '--detail must be one of: summary, full (got "terse")',
+    );
+  });
+
+  it('throws when --detail has no value', () => {
+    expect(() => parseRunArgs(['--json', '--detail'])).toThrow('--detail requires a projection');
+  });
+
+  it('rejects --detail without --json rather than ignoring it', () => {
+    expect(() => parseRunArgs(['--detail', 'summary'])).toThrow('--detail requires --json');
+  });
+
+  it('omits detail when not specified', () => {
+    expect(parseRunArgs(['--json'])).not.toHaveProperty('detail');
+  });
 });
 
 describe(resolveKitSources, () => {
@@ -1207,9 +1234,39 @@ describe(runCommand, () => {
               { name: 'deploy', report: report1 },
               { name: 'infra', report: report2 },
             ],
+            failOn: 'error',
+            reportOn: 'recommend',
           },
         ],
-        expect.objectContaining({ reportOn: 'recommend' }),
+        // A bare invocation requested no threshold, so the run-level options name none: the resolved
+        // values reach the serializer on the kit that they governed.
+        { detail: 'full' },
+      );
+    });
+
+    it('sends a kit its own declared thresholds while the run level stays silent', async () => {
+      const kit = makeKit({ failOn: 'warn', reportOn: 'error' });
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(), json: true });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [expect.objectContaining({ failOn: 'warn', reportOn: 'error' })],
+        { detail: 'full' },
+      );
+    });
+
+    it('echoes a threshold the invocation requested, which overrides what the kit declares', async () => {
+      const kit = makeKit({ failOn: 'warn' });
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(), json: true, failOn: 'recommend' });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [expect.objectContaining({ failOn: 'recommend' })],
+        expect.objectContaining({ failOn: 'recommend' }),
       );
     });
 

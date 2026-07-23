@@ -14,6 +14,7 @@ import { extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
+import { writeHuman } from '../writeHuman.ts';
 
 const SUBCOMMANDS = ['compile', 'init', 'list', 'verify'];
 const MIN_PREFIX_LENGTH = 3;
@@ -37,6 +38,7 @@ Run options:
   --internal                         Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists within the selected kit
   --json                             Output results as JSON
+  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
@@ -53,9 +55,21 @@ Exit codes:
 
   list and init use only 0 and 2; neither can find problems to report.
 
-With --json, stdout carries exactly one JSON document: the report when a run produced
-one, otherwise {"error": {"code", "message"}}. Prose goes to stderr. --help and --version
-have no JSON form: their text goes to stderr and stdout stays empty.
+run, compile, list, and verify accept --json; init does not, since scaffolding is
+interactive. With --json, stdout carries exactly one JSON document and all prose goes to
+stderr. For run that document is the report when a run produced one, otherwise the error
+envelope {"schemaVersion", "error": {"code", "message"}}. --help and --version have no
+JSON form: their text goes to stderr and stdout stays empty.
+
+Every payload carries an integer schemaVersion and is specified by a JSON Schema shipped
+with the package, importable as readyup/schemas/<name>.v1.json. Adding an optional field
+does not bump a payload's schemaVersion; removing, renaming, or re-typing one does.
+Warning codes are an open set, so a new advisory never bumps the version and a consumer
+must tolerate a code it does not recognize.
+
+In the report, failOn and reportOn appear at the top level only when the matching flag was
+given, naming what the invocation requested. Each kit that ran carries the thresholds that
+governed it, so a kit declaring its own is readable from its entry rather than inferred.
 
 A kit that fails once the run has reached its kits does not discard the kits that ran.
 Under --json it becomes a kits entry carrying "error" in place of results; otherwise it
@@ -84,6 +98,9 @@ Options:
   --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
   --json                             Output results as JSON
+  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json.
+                                     "summary" drops the detail tree to the failed checks and their fixes,
+                                     keeping counts, verdicts, and worst severity intact
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
@@ -108,6 +125,7 @@ Options:
   --output, -o <path>  Output file path (single-file mode only)
   --manifest <path>    Manifest file path (default: .readyup/manifest.json)
   --force              Overwrite compiled kits even if they have drifted from the manifest
+  --json               Report each kit's status as JSON
   --skip-manifest      Do not read or write the manifest
   --help, -h           Show this help message
 
@@ -115,6 +133,13 @@ Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
   manifest's recorded targetHash (e.g. someone edited the compiled file directly).
   Drifted kits are reported and skipped; use --force to overwrite anyway.
+
+A sweep runs to completion: a kit that fails to compile is reported and the next kit is
+tried, so every kit's status is known after one run. A kit that failed is never recorded as
+though it had compiled, and one that had compiled before keeps the entry it already had.
+
+Each kit's checklist names are recorded in the manifest so rdy list can report them
+without running the kit. The field is optional, so the manifest format stays at version 1.
 
 Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
 manifest cannot be read or written.
@@ -136,6 +161,7 @@ manifest exits 2.
 
 Options:
   --manifest <path>  Manifest file path (default: .readyup/manifest.json)
+  --json             Report each kit's verification status as JSON
   --help, -h         Show this help message
 `;
 
@@ -153,8 +179,15 @@ Modes:
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>  Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
-  --help, -h       Show this help message
+  --from <source>    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
+  --manifest <path>  List the kits a manifest file declares
+  --json             Output the kit list as JSON
+  --help, -h         Show this help message
+
+A local --from source with no manifest beside its kits falls back to listing the compiled
+kits on disk, which are the same kits rdy run --from would resolve. Those rows carry only
+a name and a path; descriptions, checklist names, and versions live in the absent manifest.
+A remote source still requires a manifest.
 
 Examples:
   rdy list                                         Show kits in the current project
@@ -290,6 +323,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     {
       kitEntries,
       json: parsed.json,
+      ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
       ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
     },
@@ -323,12 +357,6 @@ function wantsHelp(flags: string[]): boolean {
 function writeHelp(text: string, json: boolean): number {
   writeHuman(`${text}\n`, json);
   return EXIT_OK;
-}
-
-/** Writes human-readable prose, diverting it to stderr when JSON mode owns stdout. */
-function writeHuman(text: string, json: boolean): void {
-  const stream = json ? process.stderr : process.stdout;
-  stream.write(text);
 }
 
 /** Checks whether a positional arg is a close prefix of a known subcommand. */

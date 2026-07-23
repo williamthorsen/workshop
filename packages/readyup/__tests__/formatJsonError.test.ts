@@ -4,11 +4,14 @@ import { configError, internalError, kitLoadError, usageError } from '../src/err
 import { formatJsonError } from '../src/formatJsonError.ts';
 
 describe(formatJsonError, () => {
-  it('wraps the code and message in an envelope carrying nothing else', () => {
+  it('wraps the code and message in a versioned envelope carrying nothing else', () => {
     const output = formatJsonError(usageError('something went wrong'));
     const parsed: unknown = JSON.parse(output);
 
-    expect(parsed).toStrictEqual({ error: { code: 'usage', message: 'something went wrong' } });
+    expect(parsed).toStrictEqual({
+      schemaVersion: 1,
+      error: { code: 'usage', message: 'something went wrong' },
+    });
   });
 
   it.each([

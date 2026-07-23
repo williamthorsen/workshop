@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
-import { formatJsonReport } from '../src/formatJsonReport.ts';
 import { countResults, formatSummaryCounts, formatSummaryCountsPlain, reportRdy } from '../src/reportRdy.ts';
 import { runRdy } from '../src/runRdy.ts';
 import type { RdyChecklist, SummaryCounts } from '../src/types.ts';
+import { formatReport } from './helpers/formatReport.ts';
 
 /**
  * A checklist exercising every count-divergence hazard at once: a nested n/a parent, an
@@ -74,18 +74,19 @@ describe('count agreement across views', () => {
     const table = formatCombinedSummary([{ name: 'deploy', ...counts, durationMs: report.durationMs }]);
     expect(table).toContain(formatSummaryCountsPlain(expectedCounts));
 
-    // JSON payload.
+    // JSON payload: the same tally, nested under `counts` with the verdict beside it.
+    const { worstSeverity, ...numericCounts } = expectedCounts;
     const parsed: unknown = JSON.parse(
-      formatJsonReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' }),
+      formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' }),
     );
-    expect(parsed).toMatchObject(expectedCounts);
+    expect(parsed).toMatchObject({ counts: numericCounts, worstSeverity });
   });
 
   it('prunes below-threshold results from the detail tree without altering the counts', async () => {
     const report = await runRdy(checklist);
 
     const human = reportRdy(report, { reportOn: 'error' });
-    const json = formatJsonReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' });
+    const json = formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' });
 
     expect(human).not.toContain('warn-fail');
     expect(json).not.toContain('warn-fail');
@@ -98,7 +99,7 @@ describe('count agreement across views', () => {
 
     const human = reportRdy(report, { reportOn: 'error' });
     const parsed: unknown = JSON.parse(
-      formatJsonReport([{ name: 'kit', entries: [{ name: 'nested', report }] }], { reportOn: 'error' }),
+      formatReport([{ name: 'kit', entries: [{ name: 'nested', report }] }], { reportOn: 'error' }),
     );
 
     expect(human).toContain('context-parent');
@@ -112,7 +113,7 @@ describe('count agreement across views', () => {
     const report = await runRdy(checklist);
 
     const human = reportRdy(report);
-    const json = formatJsonReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }]);
+    const json = formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }]);
 
     for (const name of ['na-child', 'na-grandchild']) {
       expect(human).not.toContain(name);

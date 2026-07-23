@@ -13,17 +13,22 @@ import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
+import { SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
+import type { JsonCompileKitEntry, JsonCompileOutput } from '../schemas/index.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
+import { pluralizeWithCount } from '../utils/pluralize.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import { VERSION } from '../version.ts';
+import { writeHuman } from '../writeHuman.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
 const compileOptions = {
   force: { type: 'boolean' },
+  json: { type: 'boolean' },
   manifest: { type: 'string' },
   output: { type: 'string', short: 'o' },
   'skip-manifest': { type: 'boolean' },
@@ -57,6 +62,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   }
 
   const force = values.force === true;
+  const json = values.json === true;
   const outputPath = values.output;
   const skipManifest = values['skip-manifest'] === true;
   const manifestPath = resolveManifestPath(values.manifest);
@@ -69,7 +75,7 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
-    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath });
+    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json });
   }
 
   // No input file -- compile all sources from config
@@ -77,7 +83,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('--output requires an input file');
   }
 
-  return compileBatch({ skipManifest, force, manifestPath });
+  return compileBatch({ skipManifest, force, manifestPath, json });
 }
 
 /** Arguments for the single-file compile path. */
@@ -87,26 +93,27 @@ interface CompileSingleArgs {
   skipManifest: boolean;
   force: boolean;
   manifestPath: string;
+  json: boolean;
 }
 
 /** Compile a single explicit input file, applying the drift gate before overwriting. */
 async function compileSingle(args: CompileSingleArgs): Promise<number> {
-  const { inputPath, outputPath, skipManifest, force, manifestPath } = args;
+  const { inputPath, outputPath, skipManifest, force, manifestPath, json } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const resolvedInputPath = path.resolve(inputPath);
   const resolvedOutputPath = path.resolve(outputPath ?? deriveJsPath(resolvedInputPath));
   const kitName = path.basename(resolvedOutputPath, '.js');
+  const relInput = path.relative(process.cwd(), resolvedInputPath);
 
-  process.stdout.write('Compiling kit:\n');
+  writeHuman('Compiling kit:\n', json);
 
   const existingKit = skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName);
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
   if (drift !== undefined) {
-    const relInput = path.relative(process.cwd(), resolvedInputPath);
-    process.stdout.write(formatDriftLine(relInput, drift.status));
-    process.stdout.write('\nRe-run with --force to overwrite, or move edits into the source.\n');
-    return EXIT_PROBLEMS_FOUND;
+    writeHuman(formatDriftLine(relInput, drift.status), json);
+    writeHuman('\nRe-run with --force to overwrite, or move edits into the source.\n', json);
+    return finishCompile([{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }], json);
   }
 
   let result;
@@ -116,13 +123,13 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     metadata = await validateCompiledOutput(result.outputPath);
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
-    process.stderr.write(`Error: ${extractMessage(error)}\n`);
-    return EXIT_PROBLEMS_FOUND;
+    const message = extractMessage(error);
+    process.stderr.write(`Error: ${message}\n`);
+    return finishCompile([{ name: kitName, status: 'failed', error: message }], json);
   }
 
-  const relInput = path.relative(process.cwd(), resolvedInputPath);
   const relOutput = path.relative(process.cwd(), result.outputPath);
-  process.stdout.write(formatResultLine(relInput, relOutput, result.changed));
+  writeHuman(formatResultLine(relInput, relOutput, result.changed), json);
 
   if (!skipManifest) {
     try {
@@ -138,7 +145,29 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     }
   }
 
-  return EXIT_OK;
+  return finishCompile([{ name: kitName, status: 'compiled' }], json);
+}
+
+/**
+ * Emit the compile payload under `--json` and reduce the run's per-kit statuses to an exit code.
+ *
+ * A kit left alone because it drifted counts against the run just as a failed one does: both mean
+ * the compiled output on disk is not what the source says it should be.
+ */
+function finishCompile(kits: JsonCompileKitEntry[], json: boolean): number {
+  const passed = kits.every((kit) => kit.status === 'compiled');
+
+  if (json) {
+    const output: JsonCompileOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
+    process.stdout.write(JSON.stringify(output) + '\n');
+  }
+
+  return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/** Describe a drift skip for the JSON payload, where there is no formatted line to read. */
+function formatDriftReason(status: Extract<DriftStatus, { kind: 'drift' }>): string {
+  return `Compiled output has drifted from the manifest (expected ${status.expected}, got ${status.actual})`;
 }
 
 /** Resolve the manifest output path from the optional `--manifest` flag. */
@@ -158,11 +187,19 @@ interface CompileBatchArgs {
   skipManifest: boolean;
   force: boolean;
   manifestPath: string;
+  json: boolean;
 }
 
-/** Compile all matching `.ts` files from the config-driven source directory. */
+/**
+ * Compile all matching `.ts` files from the config-driven source directory.
+ *
+ * The sweep runs to completion: a kit that fails to compile is reported and the next one is tried,
+ * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
+ * the sweep — an unreadable config, an unwritable manifest — still throw, because they say nothing
+ * about any individual kit.
+ */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
-  const { skipManifest, force, manifestPath } = args;
+  const { skipManifest, force, manifestPath, json } = args;
   let config;
   try {
     config = await loadConfig();
@@ -191,7 +228,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     const reason = srcDirExists
       ? `No .ts files found in ${relSrc}`
       : `Source directory not found: ${relSrc} — treating as empty`;
-    process.stdout.write(`${reason}\n`);
+    writeHuman(`${reason}\n`, json);
     if (!skipManifest) {
       try {
         writeManifest(manifestPath, { version: 1, kits: [] });
@@ -199,19 +236,21 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
         throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
       }
     }
-    return EXIT_OK;
+    return finishCompile([], json);
   }
 
   const relSrcDir = path.relative(process.cwd(), srcDir);
   const relOutDir = path.relative(process.cwd(), outDir);
   const header =
     srcDir === outDir ? `Compiling kits in ${relSrcDir}:\n` : `Compiling kits from ${relSrcDir} to ${relOutDir}:\n`;
-  process.stdout.write(header);
+  writeHuman(header, json);
 
   const manifestDir = path.dirname(manifestPath);
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
   const kitEntries: RdyManifestKit[] = [];
+  const kitResults: JsonCompileKitEntry[] = [];
   let skippedCount = 0;
+  let failedCount = 0;
 
   for (const fileName of tsFiles) {
     const srcFile = path.join(srcDir, fileName);
@@ -220,8 +259,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
 
     const drift = detectDrift({ skipManifest, force, existingKit: existingKitsByName.get(kitName), manifestDir });
     if (drift !== undefined) {
-      process.stdout.write(formatDriftLine(fileName, drift.status));
+      writeHuman(formatDriftLine(fileName, drift.status), json);
       kitEntries.push(drift.existingKit);
+      kitResults.push({ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) });
       skippedCount += 1;
       continue;
     }
@@ -230,7 +270,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       const result = await compileConfig(srcFile, outFile);
       const metadata = await validateCompiledOutput(result.outputPath);
       const outName = fileName.replace(/\.ts$/, '.js');
-      process.stdout.write(formatResultLine(fileName, outName, result.changed));
+      writeHuman(formatResultLine(fileName, outName, result.changed), json);
 
       const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
       const relSourcePath = path.relative(manifestDir, srcFile);
@@ -240,20 +280,35 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
         readyupVersion: VERSION,
         source: relSourcePath,
         targetHash: result.targetHash,
+        ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
         ...(metadata.description !== undefined && { description: metadata.description }),
       });
+      kitResults.push({ name: kitName, status: 'compiled' });
     } catch (error: unknown) {
-      // A kit that fails to compile is a problem with the kit, not with the invocation.
-      process.stderr.write(`Error compiling ${fileName}: ${extractMessage(error)}\n`);
-      return EXIT_PROBLEMS_FOUND;
+      // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
+      // carries on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
+      // survive, and it still describes the tree: an esbuild failure leaves the previous output and
+      // its hash intact, and a validation failure deletes the output for `verify` to report missing.
+      const existingKit = existingKitsByName.get(kitName);
+      if (existingKit !== undefined) kitEntries.push(existingKit);
+
+      const message = extractMessage(error);
+      process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
+      kitResults.push({ name: kitName, status: 'failed', error: message });
+      failedCount += 1;
     }
   }
 
   if (skippedCount > 0) {
-    process.stdout.write(
-      `\n${skippedCount} of ${tsFiles.length} kit${tsFiles.length === 1 ? '' : 's'} skipped due to drift.` +
+    writeHuman(
+      `\n${skippedCount} of ${pluralizeWithCount(tsFiles.length, 'kit')} skipped due to drift.` +
         ` Re-run with --force to overwrite, or move edits into the source.\n`,
+      json,
     );
+  }
+
+  if (failedCount > 0) {
+    writeHuman(`\n${failedCount} of ${pluralizeWithCount(tsFiles.length, 'kit')} failed to compile.\n`, json);
   }
 
   if (!skipManifest) {
@@ -265,7 +320,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     }
   }
 
-  return skippedCount > 0 ? EXIT_PROBLEMS_FOUND : EXIT_OK;
+  return finishCompile(kitResults, json);
 }
 
 /** Location fields for a manifest kit entry. */
@@ -300,6 +355,7 @@ function upsertManifest(
     readyupVersion: VERSION,
     source: location.source,
     targetHash: location.targetHash,
+    ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
     ...(metadata.description !== undefined && { description: metadata.description }),
   };
 

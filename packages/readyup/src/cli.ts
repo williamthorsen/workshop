@@ -8,6 +8,7 @@ import { kitLoadError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
+import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
@@ -16,6 +17,7 @@ import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
+import type { JsonDetail, JsonWarning, RaisedWarning } from './schemas/index.ts';
 import type {
   ChecklistSummary,
   FixLocation,
@@ -45,6 +47,7 @@ export interface ResolvedKitEntry {
 
 export interface ParsedRunArgs {
   checklists: string[] | undefined;
+  detail?: JsonDetail;
   failOn?: Severity;
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -66,6 +69,7 @@ export interface ParsedRunArgs {
  */
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
+  detail: { type: 'string' },
   'fail-on': { type: 'string' },
   file: { type: 'string', short: 'f' },
   from: { type: 'string' },
@@ -86,8 +90,11 @@ function parseSeverityFlag(flagName: string, value: string): Severity {
   return 'recommend';
 }
 
-/** Convention path for internal kits, relative to the repo root. */
-const KITS_DIR = '.readyup/kits';
+/** Validate and narrow a string to a detail projection. */
+function parseDetailFlag(value: string): JsonDetail {
+  if (value === 'full' || value === 'summary') return value;
+  throw usageError(`--detail must be one of: summary, full (got "${value}")`);
+}
 
 /** Build the GitHub raw content URL for a kit. */
 function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {
@@ -105,6 +112,7 @@ const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checkli
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
+  '--detail': '--detail requires a projection (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
   '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
@@ -115,15 +123,23 @@ const flagErrorHints: Record<string, string> = {
 /** The subset of parsed run flags whose combinations are constrained. */
 interface RunFlagConstraints {
   checklists: string | undefined;
+  detail: string | undefined;
   file: string | undefined;
   from: string | undefined;
   internal: boolean;
   jit: boolean;
+  json: boolean;
   url: string | undefined;
 }
 
 /** Collects the active source flags and enforces mutual exclusivity, mode-flag, and selection constraints. */
 function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
+  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human
+  // report. Erroring beats ignoring it: a caller that passed it meant to change the output.
+  if (parsed.detail !== undefined && !parsed.json) {
+    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
+  }
+
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
   if (parsed.from !== undefined) sourceFlags.push('--from');
@@ -199,6 +215,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 
   const parsed = {
     checklists: values.checklists,
+    detail: values.detail,
     file: values.file,
     from: values.from,
     internal: values.internal === true,
@@ -227,9 +244,10 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     throw usageError(CHECKLISTS_HINT);
   }
 
-  // Validate severity flags.
+  // Validate severity and projection flags.
   const failOn = parsed.failOn !== undefined ? parseSeverityFlag('--fail-on', parsed.failOn) : undefined;
   const reportOn = parsed.reportOn !== undefined ? parseSeverityFlag('--report-on', parsed.reportOn) : undefined;
+  const detail = parsed.detail !== undefined ? parseDetailFlag(parsed.detail) : undefined;
 
   const parsedArgs: ParsedRunArgs = {
     checklists,
@@ -241,6 +259,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     kitSpecifiers,
     urlValue: parsed.url,
   };
+  if (detail !== undefined) parsedArgs.detail = detail;
   if (failOn !== undefined) parsedArgs.failOn = failOn;
   if (reportOn !== undefined) parsedArgs.reportOn = reportOn;
   return parsedArgs;
@@ -328,7 +347,7 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
       }));
 
     case 'global': {
-      const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+      const homeDir = resolveHomeDir();
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(homeDir, KITS_DIR, `${spec.kitName}${extension}`) },
@@ -380,6 +399,7 @@ function resolveThresholds(
 interface RunCommandOptions {
   kitEntries: ResolvedKitEntry[];
   json: boolean;
+  detail?: JsonDetail;
   failOn?: Severity;
   reportOn?: Severity;
 }
@@ -428,15 +448,18 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
  *
  * Silent when the compile-time version is absent (older kit, third-party `--url` source, or
  * uncompiled `.ts` source via `--jit`) and when the comparator returns no-skew.
+ *
+ * The stderr line is written in both modes; the returned entry is what JSON mode captures into the
+ * report, so a consumer that owns only stdout still learns the run was advised of something.
  */
-function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): void {
-  if (compileTimeVersion === undefined) return;
+function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): RaisedWarning | undefined {
+  if (compileTimeVersion === undefined) return undefined;
   const result = compareVersionsForSkew(compileTimeVersion, VERSION);
-  if (result.kind === 'no-skew') return;
+  if (result.kind === 'no-skew') return undefined;
   const remedy = result.direction === 'runner-newer' ? 'Run `rdy compile` to refresh.' : 'Upgrade readyup to match.';
-  process.stderr.write(
-    `Warning: kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}. ${remedy}\n`,
-  );
+  const message = `kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}.`;
+  process.stderr.write(`Warning: ${message} ${remedy}\n`);
+  return { code: 'version-skew', message, remedy };
 }
 
 /** Detect module-not-found errors that mention a specific package name. */
@@ -449,11 +472,11 @@ function isModuleNotFoundError(error: unknown, packageName: string): boolean {
 
 /** Run rdy checklists across one or more kits. Returns a numeric exit code. */
 export async function runCommand(
-  { kitEntries, json, failOn, reportOn }: RunCommandOptions,
+  { kitEntries, json, detail, failOn, reportOn }: RunCommandOptions,
   isJit = false,
 ): Promise<number> {
   if (json) {
-    return runMultiKitJsonMode(kitEntries, failOn, reportOn, isJit);
+    return runMultiKitJsonMode(kitEntries, { detail: detail ?? 'full', failOn, reportOn }, isJit);
   }
   return runMultiKitHumanMode(kitEntries, failOn, reportOn, isJit);
 }
@@ -468,11 +491,12 @@ export async function runCommand(
  */
 async function runMultiKitJsonMode(
   kitEntries: ResolvedKitEntry[],
-  failOn: Severity | undefined,
-  reportOn: Severity | undefined,
+  runSettings: { detail: JsonDetail; failOn: Severity | undefined; reportOn: Severity | undefined },
   isJit: boolean,
 ): Promise<number> {
+  const { detail, failOn, reportOn } = runSettings;
   const kitInputs: KitInput[] = [];
+  const warnings: JsonWarning[] = [];
   let allPassed = true;
   let anyKitFailed = false;
 
@@ -480,7 +504,8 @@ async function runMultiKitJsonMode(
     try {
       const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
 
-      warnOnVersionSkew(entry.name, compileTimeVersion);
+      const warning = warnOnVersionSkew(entry.name, compileTimeVersion);
+      if (warning !== undefined) warnings.push(warning);
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
       const checklists = selectChecklists(kit, entry.checklists);
@@ -496,7 +521,12 @@ async function runMultiKitJsonMode(
         if (!report.passed) allPassed = false;
       }
 
-      kitInputs.push({ name: entry.name, entries });
+      kitInputs.push({
+        name: entry.name,
+        entries,
+        failOn: thresholds.failOn,
+        reportOn: thresholds.reportOn,
+      });
     } catch (error: unknown) {
       const { code, message } = toRdyError(error);
       kitInputs.push({ name: entry.name, error: { code, message } });
@@ -504,8 +534,16 @@ async function runMultiKitJsonMode(
     }
   }
 
-  const resolvedReportOn = reportOn ?? 'recommend';
-  process.stdout.write(formatJsonReport(kitInputs, { reportOn: resolvedReportOn }) + '\n');
+  // The top-level thresholds say what the invocation asked for, so an absent flag stays absent
+  // rather than being reported as a default nobody requested. What governed each kit, including a
+  // threshold the kit declared for itself, travels on that kit's entry.
+  const output = formatJsonReport(kitInputs, {
+    detail,
+    ...(failOn !== undefined && { failOn }),
+    ...(reportOn !== undefined && { reportOn }),
+    ...(warnings.length > 0 && { warnings }),
+  });
+  process.stdout.write(output + '\n');
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }

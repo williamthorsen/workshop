@@ -7,12 +7,16 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
+import type { JsonVerifyKitEntry, JsonVerifyOutput } from '../schemas/index.ts';
+import { SCHEMA_VERSION } from '../schemas/verifyOutputSchema.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
+import { writeHuman } from '../writeHuman.ts';
 import type { DriftStatus } from './checkDrift.ts';
 import { checkDrift } from './checkDrift.ts';
 
 const verifyOptions = {
+  json: { type: 'boolean' },
   manifest: { type: 'string' },
 } as const;
 
@@ -41,6 +45,7 @@ export function verifyCommand(args: string[]): number {
     }
   }
 
+  const json = values.json === true;
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
   const manifestDir = path.dirname(manifestPath);
 
@@ -52,27 +57,54 @@ export function verifyCommand(args: string[]): number {
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
-  process.stdout.write(`Verifying kits against ${relManifestPath}:\n`);
+  writeHuman(`Verifying kits against ${relManifestPath}:\n`, json);
 
   if (manifest.kits.length === 0) {
-    process.stdout.write('  (no kits in manifest)\n');
-    return EXIT_OK;
+    writeHuman('  (no kits in manifest)\n', json);
+    return finishVerify([], json);
   }
 
+  const entries: JsonVerifyKitEntry[] = [];
   let failed = 0;
   for (const kit of manifest.kits) {
     const status = checkDrift(kit, manifestDir);
-    process.stdout.write(formatStatusLine(kit, status));
+    writeHuman(formatStatusLine(kit, status), json);
+    entries.push(buildVerifyEntry(kit.name, status));
     if (status.kind === 'drift' || status.kind === 'missing') {
       failed += 1;
     }
   }
 
   if (failed > 0) {
-    process.stdout.write(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`);
+    writeHuman(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`, json);
   }
 
-  return failed > 0 ? EXIT_PROBLEMS_FOUND : EXIT_OK;
+  return finishVerify(entries, json);
+}
+
+/**
+ * Emit the verify payload under `--json` and reduce the per-kit verdicts to an exit code.
+ *
+ * `unverified` does not fail the run: a manifest entry with no recorded hash predates the feature
+ * or was written with `--skip-manifest`, which says nothing about whether the kit has drifted.
+ */
+function finishVerify(kits: JsonVerifyKitEntry[], json: boolean): number {
+  const passed = kits.every((kit) => kit.status === 'ok' || kit.status === 'unverified');
+
+  if (json) {
+    const output: JsonVerifyOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
+    process.stdout.write(JSON.stringify(output) + '\n');
+  }
+
+  return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/** Build a kit's JSON entry, carrying the two hashes only on a verdict that compared them. */
+function buildVerifyEntry(name: string, status: DriftStatus): JsonVerifyKitEntry {
+  if (status.kind === 'drift') {
+    return { name, status: 'drift', expected: status.expected, actual: status.actual };
+  }
+  return { name, status: status.kind };
 }
 
 /** Format a single per-kit status line for the verify report. */
