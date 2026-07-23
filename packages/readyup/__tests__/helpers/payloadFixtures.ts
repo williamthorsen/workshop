@@ -6,7 +6,12 @@
  * divergence the generation step could introduce.
  */
 
-/** A report exercising every optional field, three levels of nesting, and both kit-entry shapes. */
+/**
+ * A report exercising every optional field, three levels of nesting, and both kit-entry shapes.
+ *
+ * The kit's effective `failOn` differs from the requested one, which is the case the split exists
+ * for: a kit declaring its own threshold cannot be described by the run-level value.
+ */
 export const reportPayload = {
   schemaVersion: 1,
   readyupVersion: '0.21.2',
@@ -24,6 +29,8 @@ export const reportPayload = {
       passed: false,
       counts: { passed: 2, errors: 1, warnings: 0, recommendations: 0, blocked: 1, optional: 0 },
       worstSeverity: 'error',
+      failOn: 'warn',
+      reportOn: 'recommend',
       durationMs: 42,
       checklists: [
         {
@@ -63,14 +70,16 @@ export const reportPayload = {
   ],
 };
 
-/** The smallest report the schema accepts: every optional field absent. */
+/**
+ * The smallest report the schema accepts: every optional field absent.
+ *
+ * The thresholds are among them, since a bare invocation requests neither.
+ */
 export const minimalReportPayload = {
   schemaVersion: 1,
   readyupVersion: '0.21.2',
   passed: true,
   counts: { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0 },
-  failOn: 'error',
-  reportOn: 'recommend',
   detail: 'summary',
   durationMs: 0,
   kits: [],

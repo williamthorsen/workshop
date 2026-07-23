@@ -1234,9 +1234,39 @@ describe(runCommand, () => {
               { name: 'deploy', report: report1 },
               { name: 'infra', report: report2 },
             ],
+            failOn: 'error',
+            reportOn: 'recommend',
           },
         ],
-        expect.objectContaining({ reportOn: 'recommend' }),
+        // A bare invocation requested no threshold, so the run-level options name none: the resolved
+        // values reach the serializer on the kit that they governed.
+        { detail: 'full' },
+      );
+    });
+
+    it('sends a kit its own declared thresholds while the run level stays silent', async () => {
+      const kit = makeKit({ failOn: 'warn', reportOn: 'error' });
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(), json: true });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [expect.objectContaining({ failOn: 'warn', reportOn: 'error' })],
+        { detail: 'full' },
+      );
+    });
+
+    it('echoes a threshold the invocation requested, which overrides what the kit declares', async () => {
+      const kit = makeKit({ failOn: 'warn' });
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(), json: true, failOn: 'recommend' });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [expect.objectContaining({ failOn: 'recommend' })],
+        expect.objectContaining({ failOn: 'recommend' }),
       );
     });
 

@@ -19,10 +19,18 @@ interface ChecklistEntry {
   report: RdyReport;
 }
 
-/** Input for a kit that ran, carrying the reports its checklists produced. */
-interface KitResultInput {
+/**
+ * Input for a kit that ran, carrying the reports its checklists produced and the thresholds that
+ * governed them.
+ *
+ * The thresholds travel with the kit rather than with the run, because a kit may declare its own and
+ * the caller has already resolved the cascade by the time it gets here.
+ */
+export interface KitResultInput {
   name: string;
   entries: ChecklistEntry[];
+  failOn: Severity;
+  reportOn: Severity;
 }
 
 /**
@@ -34,15 +42,15 @@ interface KitResultInput {
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 
 /**
- * The resolved run settings the report echoes back, plus anything it must carry alongside results.
+ * The run settings the report echoes back, plus anything it must carry alongside results.
  *
- * These are resolved rather than optional: by serialization time every threshold has a value, and a
- * consumer holding only the payload needs them to tell a clean run from one whose failures were
- * filtered out of view.
+ * `failOn` and `reportOn` are what the invocation requested, so each is absent when its flag was not
+ * given: a default echoed as though it had been asked for is what made a kit's own threshold
+ * impossible to recover from the payload. `detail` has no per-kit form, so it is always resolved.
  */
 export interface FormatJsonReportOptions {
-  failOn: Severity;
-  reportOn: Severity;
+  failOn?: Severity;
+  reportOn?: Severity;
   detail: JsonDetail;
   warnings?: JsonWarning[];
 }
@@ -71,7 +79,7 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
       kits.push(input);
       continue;
     }
-    const aggregate = aggregateKit(input, reportOn, detail);
+    const aggregate = aggregateKit(input, detail);
     kits.push(aggregate.entry);
     aggregates.push(aggregate);
   }
@@ -92,8 +100,8 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
     readyupVersion: VERSION,
     passed: everyKitRan && aggregates.every(({ entry }) => entry.passed),
     ...splitCounts(totals),
-    failOn,
-    reportOn,
+    ...(failOn !== undefined && { failOn }),
+    ...(reportOn !== undefined && { reportOn }),
     detail,
     durationMs: Math.round(totalDurationMs),
     ...(warnings !== undefined && warnings.length > 0 && { warnings }),
@@ -104,7 +112,7 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
 }
 
 /** Build one kit's entry and the raw figures the report aggregates from it. */
-function aggregateKit(input: KitResultInput, reportOn: Severity, detail: JsonDetail): AggregatedKit {
+function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit {
   const counts = emptyCounts();
   let durationMs = 0;
 
@@ -118,7 +126,7 @@ function aggregateKit(input: KitResultInput, reportOn: Severity, detail: JsonDet
       passed: report.passed,
       ...splitCounts(checklistCounts),
       durationMs: Math.round(report.durationMs),
-      ...buildDetailTree(report.results, reportOn, detail),
+      ...buildDetailTree(report.results, input.reportOn, detail),
     };
   });
 
@@ -126,6 +134,8 @@ function aggregateKit(input: KitResultInput, reportOn: Severity, detail: JsonDet
     name: input.name,
     passed: checklists.every((checklist) => checklist.passed),
     ...splitCounts(counts),
+    failOn: input.failOn,
+    reportOn: input.reportOn,
     durationMs: Math.round(durationMs),
     checklists,
   };

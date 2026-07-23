@@ -103,8 +103,6 @@ describe(formatJsonReport, () => {
       readyupVersion: VERSION,
       passed: true,
       counts,
-      failOn: 'error',
-      reportOn: 'recommend',
       detail: 'full',
       durationMs: 10,
       kits: [
@@ -112,6 +110,8 @@ describe(formatJsonReport, () => {
           name: 'deploy',
           passed: true,
           counts,
+          failOn: 'error',
+          reportOn: 'recommend',
           durationMs: 10,
           checklists: [
             {
@@ -135,8 +135,6 @@ describe(formatJsonReport, () => {
       readyupVersion: VERSION,
       passed: true,
       counts: NO_COUNTS,
-      failOn: 'error',
-      reportOn: 'recommend',
       detail: 'full',
       durationMs: 0,
       kits: [
@@ -144,6 +142,8 @@ describe(formatJsonReport, () => {
           name: 'deploy',
           passed: true,
           counts: NO_COUNTS,
+          failOn: 'error',
+          reportOn: 'recommend',
           durationMs: 0,
           checklists: [{ name: 'deploy', passed: true, counts: NO_COUNTS, durationMs: 0 }],
         },
@@ -158,12 +158,21 @@ describe(formatJsonReport, () => {
       expect(parsed).toMatchObject({ schemaVersion: 1, readyupVersion: VERSION });
     });
 
-    it('echoes the resolved thresholds and detail projection', () => {
+    it('echoes the requested thresholds and detail projection', () => {
       const parsed: unknown = JSON.parse(
         formatReport(singleKit('deploy', makeReport()), { failOn: 'warn', reportOn: 'error', detail: 'summary' }),
       );
 
       expect(parsed).toMatchObject({ failOn: 'warn', reportOn: 'error', detail: 'summary' });
+    });
+
+    it('names no run-level threshold when the invocation requested none', () => {
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+
+      expect(parsed).not.toHaveProperty('failOn');
+      expect(parsed).not.toHaveProperty('reportOn');
+      // `detail` has no per-kit form, so it is always resolved and always present.
+      expect(parsed).toHaveProperty('detail', 'full');
     });
 
     it('carries collected warnings alongside the results', () => {
@@ -180,6 +189,42 @@ describe(formatJsonReport, () => {
       // The `warnings` count survives under `counts`; only the top-level advisory array goes away.
       expect(parsed).not.toHaveProperty('warnings');
       expect(parsed).toHaveProperty('counts.warnings', 0);
+    });
+  });
+
+  describe('per-kit thresholds', () => {
+    /** Two kits under one invocation, the second declaring thresholds of its own. */
+    function mixedThresholdKits() {
+      const report = makeReport({
+        results: [makeFailedResult({ name: 'warn-fail', severity: 'warn' })],
+        passed: false,
+        durationMs: 5,
+      });
+
+      return [
+        { name: 'inherits', entries: [{ name: 'c', report }] },
+        { name: 'declares', entries: [{ name: 'c', report }], failOn: 'warn' as const, reportOn: 'error' as const },
+      ];
+    }
+
+    it('carries the threshold that governed each kit rather than one value for the run', () => {
+      const parsed: unknown = JSON.parse(formatReport(mixedThresholdKits()));
+
+      expect(parsed).toMatchObject({
+        kits: [
+          { name: 'inherits', failOn: 'error', reportOn: 'recommend' },
+          { name: 'declares', failOn: 'warn', reportOn: 'error' },
+        ],
+      });
+    });
+
+    it('prunes each kit detail tree with that kit own reporting threshold', () => {
+      const parsed: unknown = JSON.parse(formatReport(mixedThresholdKits()));
+
+      // The warn-severity failure clears `recommend` but not `error`, so it survives in the kit that
+      // inherited the default and is pruned from the kit that raised the bar.
+      expect(parsed).toHaveProperty('kits.0.checklists.0.checks.0.name', 'warn-fail');
+      expect(parsed).not.toHaveProperty('kits.1.checklists.0.checks');
     });
   });
 
@@ -699,8 +744,6 @@ describe(formatJsonReport, () => {
         passed: false,
         counts,
         worstSeverity: 'error',
-        failOn: 'error',
-        reportOn: 'recommend',
         detail: 'summary',
         durationMs: 20,
         kits: [
@@ -709,6 +752,8 @@ describe(formatJsonReport, () => {
             passed: false,
             counts,
             worstSeverity: 'error',
+            failOn: 'error',
+            reportOn: 'recommend',
             durationMs: 20,
             checklists: [
               {

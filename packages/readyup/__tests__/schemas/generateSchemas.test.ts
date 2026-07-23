@@ -73,12 +73,15 @@ describe('generated JSON Schemas', () => {
         'readyupVersion',
         'passed',
         'counts',
-        'failOn',
-        'reportOn',
         'detail',
         'durationMs',
         'kits',
       ]);
+    });
+
+    it('requires the effective thresholds on a kit that ran, where the top level leaves them optional', () => {
+      expect(objectAt(report, '$defs', 'KitResultEntry').required).toContain('failOn');
+      expect(objectAt(report, '$defs', 'KitResultEntry').required).toContain('reportOn');
     });
 
     it('requires all six buckets of the counts object', () => {

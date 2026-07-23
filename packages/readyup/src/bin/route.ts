@@ -65,6 +65,10 @@ Every payload carries an integer schemaVersion and is specified by a JSON Schema
 with the package, importable as readyup/schemas/<name>.v1.json. Adding an optional field
 does not bump a payload's schemaVersion; removing, renaming, or re-typing one does.
 
+In the report, failOn and reportOn appear at the top level only when the matching flag was
+given, naming what the invocation requested. Each kit that ran carries the thresholds that
+governed it, so a kit declaring its own is readable from its entry rather than inferred.
+
 A kit that fails once the run has reached its kits does not discard the kits that ran.
 Under --json it becomes a kits entry carrying "error" in place of results; otherwise it
 is reported on stderr, prefixed with the kit's name when more than one kit was

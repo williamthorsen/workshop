@@ -34,7 +34,7 @@ describe('JSON payload schemas', () => {
   });
 
   describe('required fields', () => {
-    it.each(['schemaVersion', 'readyupVersion', 'passed', 'counts', 'failOn', 'reportOn', 'detail', 'kits'])(
+    it.each(['schemaVersion', 'readyupVersion', 'passed', 'counts', 'detail', 'kits'])(
       'rejects a report missing %s',
       (field) => {
         const incomplete = Object.fromEntries(Object.entries(minimalReportPayload).filter(([key]) => key !== field));
@@ -42,6 +42,18 @@ describe('JSON payload schemas', () => {
         expect(() => ReportSchema.parse(incomplete)).toThrow();
       },
     );
+
+    it.each(['failOn', 'reportOn'])('accepts a report whose invocation requested no %s', (field) => {
+      expect(minimalReportPayload).not.toHaveProperty(field);
+      expect(() => ReportSchema.parse(minimalReportPayload)).not.toThrow();
+    });
+
+    it.each(['failOn', 'reportOn'])('rejects a kit that ran without its effective %s', (field) => {
+      const kit = reportPayload.kits[0];
+      const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== field));
+
+      expect(() => ReportSchema.parse({ ...reportPayload, kits: [stripped] })).toThrow();
+    });
 
     it('rejects a counts object missing one of its six buckets', () => {
       const counts = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0 };
@@ -73,6 +85,17 @@ describe('JSON payload schemas', () => {
 
     it('rejects a numeric `warnings` at the top level, where the old flat shape put the count', () => {
       expect(() => ReportSchema.parse({ ...minimalReportPayload, warnings: 3 })).toThrow();
+    });
+  });
+
+  describe('thresholds', () => {
+    it('carries the kit-declared threshold that governed a kit, not the one the run requested', () => {
+      const parsed = ReportSchema.parse(reportPayload);
+      const kit = parsed.kits[0];
+      if (kit === undefined || 'error' in kit) throw new Error('expected a kit that ran');
+
+      expect(parsed.failOn).toBe('error');
+      expect(kit.failOn).toBe('warn');
     });
   });
 

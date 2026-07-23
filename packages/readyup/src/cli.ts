@@ -521,7 +521,12 @@ async function runMultiKitJsonMode(
         if (!report.passed) allPassed = false;
       }
 
-      kitInputs.push({ name: entry.name, entries });
+      kitInputs.push({
+        name: entry.name,
+        entries,
+        failOn: thresholds.failOn,
+        reportOn: thresholds.reportOn,
+      });
     } catch (error: unknown) {
       const { code, message } = toRdyError(error);
       kitInputs.push({ name: entry.name, error: { code, message } });
@@ -529,12 +534,13 @@ async function runMultiKitJsonMode(
     }
   }
 
-  // The echoed thresholds are the run-level resolution: the CLI flag when given, otherwise the
-  // default. A kit that declares its own `failOn` overrides this for its own checks.
+  // The top-level thresholds say what the invocation asked for, so an absent flag stays absent
+  // rather than being reported as a default nobody requested. What governed each kit, including a
+  // threshold the kit declared for itself, travels on that kit's entry.
   const output = formatJsonReport(kitInputs, {
     detail,
-    failOn: failOn ?? 'error',
-    reportOn: reportOn ?? 'recommend',
+    ...(failOn !== undefined && { failOn }),
+    ...(reportOn !== undefined && { reportOn }),
     ...(warnings.length > 0 && { warnings }),
   });
   process.stdout.write(output + '\n');

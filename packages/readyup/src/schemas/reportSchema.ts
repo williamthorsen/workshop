@@ -65,13 +65,23 @@ export const ChecklistEntrySchema = z
   })
   .meta({ id: 'ChecklistEntry' });
 
-/** A kit that ran, grouping its checklists under a kit-level verdict and tallies. */
+/**
+ * A kit that ran, grouping its checklists under a kit-level verdict and tallies.
+ *
+ * `failOn` and `reportOn` are the thresholds that actually governed this kit, resolved as
+ * `CLI flag > kit field > default`. Both are emitted unconditionally rather than only when they
+ * differ from the run level: `passed` is meaningless without the threshold it was decided against,
+ * and an absent-means-inherit rule would send a consumer elsewhere in the document to read a
+ * six-byte enum.
+ */
 export const KitResultEntrySchema = z
   .object({
     name: z.string(),
     passed: z.boolean(),
     counts: CountsSchema,
     worstSeverity: SeveritySchema.optional(),
+    failOn: SeveritySchema,
+    reportOn: SeveritySchema,
     durationMs: z.int().min(0),
     checklists: z.array(ChecklistEntrySchema),
   })
@@ -96,13 +106,16 @@ export const KitEntrySchema = z.union([KitErrorEntrySchema, KitResultEntrySchema
 /**
  * Top-level shape of `rdy run --json`.
  *
- * `passed` is the run verdict: true when every requested kit produced results and no result at or
- * above `failOn` failed, which makes it agree with exit code 0 in every case. A report is only ever
- * emitted once the run reaches its kits, so `passed: false` means "ran, but incompletely or with
- * failures" and never "could not start" — that failure produces the error envelope instead.
+ * `passed` is the run verdict: true when every requested kit produced results and every kit passed
+ * under its own effective `failOn`, which makes it agree with exit code 0 in every case. A report is
+ * only ever emitted once the run reaches its kits, so `passed: false` means "ran, but incompletely
+ * or with failures" and never "could not start": that failure produces the error envelope instead.
  *
- * `failOn`, `reportOn`, and `detail` echo the thresholds the run resolved, so a consumer holding
- * only the payload can tell a clean run from one whose failures were filtered out of view.
+ * `failOn` and `reportOn` here are what the invocation requested, so each is present only when its
+ * flag was given and absence means "not requested" rather than "defaulted". The thresholds that
+ * governed a kit live on that kit's entry, because a kit may declare its own and one run-level value
+ * cannot describe kits that differ. `detail` has no per-kit resolution, so requested and effective
+ * are the same value and it is always present.
  */
 export const ReportSchema = z
   .object({
@@ -111,8 +124,8 @@ export const ReportSchema = z
     passed: z.boolean(),
     counts: CountsSchema,
     worstSeverity: SeveritySchema.optional(),
-    failOn: SeveritySchema,
-    reportOn: SeveritySchema,
+    failOn: SeveritySchema.optional(),
+    reportOn: SeveritySchema.optional(),
     detail: DetailSchema,
     durationMs: z.int().min(0),
     warnings: z.array(WarningSchema).optional(),

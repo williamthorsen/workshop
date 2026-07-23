@@ -165,18 +165,28 @@ An error entry carries no counts and no verdict, because a kit that never ran ha
   "passed": false,
   "counts": { "passed": 4, "errors": 1, "warnings": 0, "recommendations": 0, "blocked": 2, "optional": 1 },
   "worstSeverity": "error",
-  "failOn": "error",
-  "reportOn": "recommend",
   "detail": "full",
   "durationMs": 68,
-  "kits": [{ "name": "deploy", "passed": false, "counts": {}, "durationMs": 68, "checklists": [] }]
+  "kits": [
+    {
+      "name": "deploy",
+      "passed": false,
+      "counts": {},
+      "worstSeverity": "error",
+      "failOn": "error",
+      "reportOn": "recommend",
+      "durationMs": 68,
+      "checklists": []
+    }
+  ]
 }
 ```
 
-- **`passed`** is the run verdict: true when every requested kit produced results and no result at or above `failOn` failed, so it agrees with exit code 0 in every case. Kit and checklist entries carry their own `passed`, which means the narrower "nothing here failed".
+- **`passed`** is the run verdict: true when every requested kit produced results and every kit passed under its own `failOn`, so it agrees with exit code 0 in every case. Kit and checklist entries carry their own `passed`, which means the narrower "nothing at or above this kit's `failOn` failed here".
 - **`counts`** holds the six result tallies at the report, kit, and checklist levels. They nest rather than sitting flat so the count names and the verdict names share no namespace, which is what makes the additive-evolution rule above sound rather than merely conventional.
 - **`worstSeverity`** sits beside `counts` — it is derived verdict data, not a count — and is omitted when nothing failed.
-- **`failOn`**, **`reportOn`**, and **`detail`** echo the settings the run resolved, so a consumer holding only the payload can tell a clean run from one whose failures were filtered out of view. A kit that declares its own `failOn` overrides the run-level value for its own checks.
+- **`failOn`** and **`reportOn`** appear in two places, answering two different questions. At the top level they report what the invocation _requested_, so each is present only when you passed the flag: absence means "not requested", never "defaulted". On each kit that ran they report the threshold that _governed_ it, resolved as CLI flag, then the kit's own declaration, then the default, and both are always present there. The two differ whenever a kit declares its own, which is also why a kit's verdict cannot be recomputed from a run-level value and why a multi-kit run needs one threshold per kit rather than one for the report.
+- **`detail`** has no per-kit form, so requested and effective are the same value and it is always present at the top level.
 - **`warnings`** carries any advisory the run raised, as `{ code, message, remedy? }`. Warnings keep their stderr line in both modes; under `--json` they are captured here as well, because a consumer that owns only stdout would otherwise never see them. The field is absent when the run raised none.
 
 Payloads are slim by construction: a field carrying nothing is omitted rather than emitted as `null`, empty `checks` arrays are dropped, durations are whole milliseconds, and `fix` appears only on checks that failed.
