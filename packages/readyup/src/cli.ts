@@ -197,7 +197,7 @@ function parseRunFlags(flags: string[]) {
   try {
     return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, flagErrorHints), { cause: error });
+    throw usageError(translateParseArgsError(error, 'run', flagErrorHints), { cause: error });
   }
 }
 

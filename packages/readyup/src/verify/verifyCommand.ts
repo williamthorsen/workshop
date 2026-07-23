@@ -31,7 +31,7 @@ export function verifyCommand(args: string[]): number {
   try {
     parsed = nodeParseArgs({ args, options: verifyOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error), { cause: error });
+    throw usageError(translateParseArgsError(error, 'verify'), { cause: error });
   }
   const { values, positionals } = parsed;
 

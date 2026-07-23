@@ -353,7 +353,7 @@ function handleInit(flags: string[]): number {
   try {
     parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error), { cause: error });
+    throw usageError(translateParseArgsError(error, 'init'), { cause: error });
   }
 
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });

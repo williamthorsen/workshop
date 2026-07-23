@@ -43,7 +43,7 @@ export async function listCommand(args: string[]): Promise<number> {
   try {
     parsed = nodeParseArgs({ args, options: listOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error), { cause: error });
+    throw usageError(translateParseArgsError(error, 'list'), { cause: error });
   }
   const { values } = parsed;
 
