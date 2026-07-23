@@ -5,7 +5,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
-import { KITS_DIR } from '../kitsDir.ts';
+import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -15,8 +15,8 @@ import type { DirectorySource, GlobalSource, LocalSource } from '../parseFromVal
 import { parseFromValue } from '../parseFromValue.ts';
 import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
 import { resolveGitHubToken } from '../resolveGitHubToken.ts';
-import { SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import type { JsonListKitEntry, JsonListOutput } from '../schemas/index.ts';
+import { SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
@@ -329,11 +329,6 @@ function resolveFromKitsDir(source: LocalFromSource): string {
 
   // local path
   return path.join(path.resolve(source.path), KITS_DIR);
-}
-
-/** Resolve the home directory across platforms, matching how `run --from global` resolves it. */
-function resolveHomeDir(): string {
-  return process.env.HOME ?? process.env.USERPROFILE ?? '~';
 }
 
 /** Determine the compiled-section display style based on the outDir setting. */

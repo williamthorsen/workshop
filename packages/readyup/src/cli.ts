@@ -8,7 +8,7 @@ import { kitLoadError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
-import { KITS_DIR } from './kitsDir.ts';
+import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { type FromSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
@@ -347,7 +347,7 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
       }));
 
     case 'global': {
-      const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+      const homeDir = resolveHomeDir();
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(homeDir, KITS_DIR, `${spec.kitName}${extension}`) },
