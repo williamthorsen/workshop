@@ -241,6 +241,8 @@ A local `--from` source with no manifest beside its kits falls back to listing t
 
 Under `--json`, each row reports `name`, `kind` (`internal` for a TypeScript source, `compiled` for a bundle), `path`, and — for kits a manifest describes — `checklists`, `description`, and `readyupVersion`. Checklist names are read from the manifest, so listing kits never imports a compiled bundle and never runs kit code.
 
+Rows are keyed by `name` and `kind` together, not by `name` alone. Under the default configuration both the internal source directory and the compile output directory resolve to `.readyup/kits`, so a compiled source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as `compiled`, which `rdy run <name>` runs. Both rows are meaningful, so a consumer indexing on `name` alone silently drops one of them.
+
 ### Compile
 
 ```

@@ -28,7 +28,15 @@ export const ListKitEntrySchema = z
   })
   .meta({ id: 'ListKitEntry' });
 
-/** Top-level shape of `rdy list --json`. */
+/**
+ * Top-level shape of `rdy list --json`.
+ *
+ * Rows are keyed by `name` and `kind` together, never by `name` alone. Under the default
+ * configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a compiled
+ * source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as
+ * `compiled`, which `rdy run <name>` runs. Both rows are meaningful, and a consumer indexing on
+ * `name` alone silently drops one of them.
+ */
 export const ListOutputSchema = z
   .object({
     schemaVersion: z.int().min(1),
