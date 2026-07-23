@@ -30,7 +30,7 @@ export async function jitiImport(
       'code' in error &&
       (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND')
     ) {
-      throw new Error(describeUnresolvedModule(error, resolvedPath, moduleErrorDetail));
+      throw new Error(describeUnresolvedModule(error, resolvedPath, moduleErrorDetail), { cause: error });
     }
     throw error;
   }
