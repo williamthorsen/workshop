@@ -1,3 +1,6 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockRunCommand = vi.hoisted(() => vi.fn());
@@ -37,6 +40,9 @@ vi.mock('../src/version.ts', () => ({
 import { routeCommand } from '../src/bin/route.ts';
 import { usageError } from '../src/errors.ts';
 
+/** Scratch project root for the tests that need a kit file on disk. */
+const TYPO_TEST_DIR = join(import.meta.dirname, '../.test-tmp-route');
+
 describe(routeCommand, () => {
   let stdoutSpy: MockInstance;
   let stderrSpy: MockInstance;
@@ -54,6 +60,7 @@ describe(routeCommand, () => {
   });
 
   afterEach(() => {
+    rmSync(TYPO_TEST_DIR, { recursive: true, force: true });
     vi.restoreAllMocks();
     mockRunCommand.mockReset();
     mockCompileCommand.mockReset();
@@ -616,11 +623,15 @@ describe(routeCommand, () => {
 
   describe('typo detection', () => {
     it.each([
-      ['compil', 'compile'],
-      ['compi', 'compile'],
+      ['co', 'compile'],
       ['comp', 'compile'],
+      ['comple', 'compile'],
+      ['compil', 'compile'],
       ['ini', 'init'],
       ['lis', 'list'],
+      ['lst', 'list'],
+      ['runn', 'run'],
+      ['verfy', 'verify'],
     ])('suggests "%s" -> "%s"', async (input, expected) => {
       const exitCode = await routeCommand([input]);
 
@@ -628,36 +639,41 @@ describe(routeCommand, () => {
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(`Did you mean 'rdy ${expected}'?`));
     });
 
-    it('does not suggest for prefixes shorter than 3 characters', async () => {
-      mockParseRunArgs.mockReturnValue({
-        kitSpecifiers: [{ kitName: 'co', checklists: [] }],
-        checklists: undefined,
-        filePath: undefined,
-        fromValue: undefined,
-        urlValue: undefined,
-        jit: false,
-        internal: false,
-        json: false,
-      });
+    it('does not suggest for a word no command is close to', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const exitCode = await routeCommand(['co']);
+      const exitCode = await routeCommand(['onboarding']);
 
       expect(exitCode).toBe(0);
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
+    it('runs a bare word as a kit when a kit by that name exists', async () => {
+      mkdirSync(join(TYPO_TEST_DIR, '.readyup/kits'), { recursive: true });
+      writeFileSync(join(TYPO_TEST_DIR, '.readyup/kits/lst.js'), 'export const checklists = [];', 'utf8');
+      vi.spyOn(process, 'cwd').mockReturnValue(TYPO_TEST_DIR);
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['lst']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
+    });
+
+    it('does not suggest after an explicit run subcommand', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['run', 'lst']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
+    });
+
     it('does not suggest when input matches a subcommand exactly', async () => {
-      mockParseRunArgs.mockReturnValue({
-        kitSpecifiers: [],
-        checklists: undefined,
-        filePath: undefined,
-        fromValue: undefined,
-        urlValue: undefined,
-        jit: false,
-        internal: false,
-        json: false,
-      });
+      mockParseRunArgs.mockReturnValue(parsedRunArgs());
       mockRunCommand.mockResolvedValue(0);
 
       // 'run' is handled before typo detection, so this verifies
