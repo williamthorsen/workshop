@@ -383,6 +383,40 @@ describe(compileCommand, () => {
         kits: [expect.objectContaining({ name: 'beta' })],
       });
     });
+
+    it('keeps the manifest entry a failed kit already had', async () => {
+      arrangeMixedBatch();
+      const recordedAlpha = {
+        name: 'alpha',
+        path: 'alpha.js',
+        readyupVersion: VERSION,
+        source: 'alpha.ts',
+        targetHash: 'aaaa1111',
+      };
+      mockReadManifest.mockReturnValue({ version: 1, kits: [recordedAlpha] });
+
+      await compileCommand([]);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [recordedAlpha, expect.objectContaining({ name: 'beta' })],
+      });
+    });
+
+    it('reports the failure even though the kit keeps its entry', async () => {
+      arrangeMixedBatch();
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [
+          { name: 'alpha', path: 'alpha.js', readyupVersion: VERSION, source: 'alpha.ts', targetHash: 'aaaa1111' },
+        ],
+      });
+
+      const exitCode = await compileCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error compiling alpha.ts'));
+    });
   });
 
   describe('manifest checklist names', () => {

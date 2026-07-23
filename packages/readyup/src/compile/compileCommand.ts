@@ -286,7 +286,12 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitResults.push({ name: kitName, status: 'compiled' });
     } catch (error: unknown) {
       // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
-      // carries on and the kit is left out of the manifest rather than recorded as if it had compiled.
+      // carries on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
+      // survive, and it still describes the tree: an esbuild failure leaves the previous output and
+      // its hash intact, and a validation failure deletes the output for `verify` to report missing.
+      const existingKit = existingKitsByName.get(kitName);
+      if (existingKit !== undefined) kitEntries.push(existingKit);
+
       const message = extractMessage(error);
       process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
       kitResults.push({ name: kitName, status: 'failed', error: message });

@@ -135,8 +135,8 @@ Drift detection:
   Drifted kits are reported and skipped; use --force to overwrite anyway.
 
 A sweep runs to completion: a kit that fails to compile is reported and the next kit is
-tried, so every kit's status is known after one run. A kit that failed is left out of the
-manifest rather than recorded as though it had compiled.
+tried, so every kit's status is known after one run. A kit that failed is never recorded as
+though it had compiled, and one that had compiled before keeps the entry it already had.
 
 Each kit's checklist names are recorded in the manifest so rdy list can report them
 without running the kit. The field is optional, so the manifest format stays at version 1.

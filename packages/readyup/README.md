@@ -248,7 +248,7 @@ rdy compile                    Compile every source in the config's srcDir
 rdy compile <file>             Compile a single file
 ```
 
-A sweep runs to completion: a kit that fails to compile is reported and the next kit is tried, so one broken kit cannot hide the state of the kits that sort after it. A kit that failed is left out of the manifest rather than recorded as though it had compiled, and the run exits 1.
+A sweep runs to completion: a kit that fails to compile is reported and the next kit is tried, so one broken kit cannot hide the state of the kits that sort after it. A kit that failed is never recorded as though it had compiled, and the run exits 1. A kit that had been compiled before keeps the entry it already had, because that entry still describes the tree: a bundling failure leaves the previous output and its recorded hash untouched, and a validation failure deletes the output, which `rdy verify` then reports as missing. Dropping the entry would hide both, and would leave the next successful compile with no record to check drift against.
 
 `rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` — someone edited the compiled file directly. Drifted kits are reported and skipped; `--force` overwrites them anyway.
 
