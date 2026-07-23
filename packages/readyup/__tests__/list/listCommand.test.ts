@@ -14,9 +14,13 @@ vi.mock('../../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
-vi.mock('../../src/loadConfig.ts', () => ({
-  loadConfig: mockLoadConfig,
-}));
+vi.mock('../../src/loadConfig.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/loadConfig.ts')>();
+  return {
+    DEFAULT_CONFIG: actual.DEFAULT_CONFIG,
+    loadConfig: mockLoadConfig,
+  };
+});
 
 vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/manifest/readManifest.ts')>();

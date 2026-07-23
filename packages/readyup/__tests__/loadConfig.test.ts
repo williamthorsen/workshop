@@ -122,6 +122,18 @@ describe(loadConfig, () => {
     },
   );
 
+  it('names the config file and the install command in a module-resolution failure', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockRejectedValue(
+      Object.assign(new Error("Cannot find package 'some-lib'"), { code: 'ERR_MODULE_NOT_FOUND' }),
+    );
+
+    await expect(loadConfig('config.ts')).rejects.toThrow(
+      "Cannot resolve 'some-lib' while evaluating config.ts. External packages imported by the config file " +
+        'must be installed in the project. Install it with: pnpm add --save-dev some-lib',
+    );
+  });
+
   it('falls back to "unknown module" when the error message does not match the expected pattern', async () => {
     mockExistsSync.mockReturnValue(true);
     const moduleError = Object.assign(new Error('Module load failed'), { code: 'MODULE_NOT_FOUND' });
