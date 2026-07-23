@@ -25,14 +25,24 @@ interface OwnerViewOptions {
   internalKits: string[];
   compiledKits: string[];
   compiledStyle: CompiledStyle;
+  needsInternalFlag?: boolean;
 }
 
 /**
  * Format the owner-mode output showing internal and compiled kit sections.
  *
  * Empty sections are omitted. Returns the empty-owner message when both lists are empty.
+ *
+ * `needsInternalFlag` adds `--internal` to the internal-section hint. The flag is what makes a
+ * configured internal directory or infix reachable, so the hint would name a failing command
+ * without it; the default config needs neither, and omitting it keeps the shorter form.
  */
-export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: OwnerViewOptions): string {
+export function formatOwnerView({
+  internalKits,
+  compiledKits,
+  compiledStyle,
+  needsInternalFlag = false,
+}: OwnerViewOptions): string {
   if (internalKits.length === 0 && compiledKits.length === 0) {
     return formatEmpty('owner');
   }
@@ -40,7 +50,8 @@ export function formatOwnerView({ internalKits, compiledKits, compiledStyle }: O
   const sections: string[] = [];
 
   if (internalKits.length > 0) {
-    const hint = `rdy run --jit ${buildKitHint(internalKits)}`;
+    const internalFlag = needsInternalFlag ? ' --internal' : '';
+    const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
     sections.push(formatSection('Internal', hint, internalKits, ICON_INTERNAL));
   }
 

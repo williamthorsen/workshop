@@ -206,7 +206,8 @@ async function runOwnerMode(json: boolean): Promise<number> {
 
   const compiledKits = manifestKits.map((kit) => kit.name);
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
-  writeHuman(formatOwnerView({ internalKits, compiledKits, compiledStyle }) + '\n', json);
+  const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
+  writeHuman(formatOwnerView({ internalKits, compiledKits, compiledStyle, needsInternalFlag }) + '\n', json);
 
   const entries: JsonListKitEntry[] = [
     ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),

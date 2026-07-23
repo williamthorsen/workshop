@@ -176,6 +176,31 @@ describe(listCommand, () => {
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['dir', { dir: 'internal', infix: undefined }],
+      ['infix', { dir: '.', infix: 'internal' }],
+    ])('adds --internal to the internal hint when internal.%s is configured', async (_label, internal) => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        internal,
+      });
+      mockEnumerateKits.mockReturnValue(['default']);
+
+      await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal: rdy run --jit --internal [<name>]');
+    });
+
+    it('leaves --internal out of the internal hint under the default config', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+
+      await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal: rdy run --jit [<name>]');
+    });
+
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
       mockEnumerateKits.mockReturnValue(['default']);
       mockReadManifest.mockImplementation(() => {
