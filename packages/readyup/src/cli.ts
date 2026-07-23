@@ -17,7 +17,7 @@ import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
-import type { JsonDetail, JsonWarning } from './schemas/index.ts';
+import type { JsonDetail, JsonWarning, RaisedWarning } from './schemas/index.ts';
 import type {
   ChecklistSummary,
   FixLocation,
@@ -452,7 +452,7 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
  * The stderr line is written in both modes; the returned entry is what JSON mode captures into the
  * report, so a consumer that owns only stdout still learns the run was advised of something.
  */
-function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): JsonWarning | undefined {
+function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): RaisedWarning | undefined {
   if (compileTimeVersion === undefined) return undefined;
   const result = compareVersionsForSkew(compileTimeVersion, VERSION);
   if (result.kind === 'no-skew') return undefined;

@@ -42,8 +42,20 @@ export const CountsSchema = z
   })
   .meta({ id: 'Counts' });
 
-/** Conditions a run reports as advisory rather than as a failure. */
-export const WarningCodeSchema = z.enum(['version-skew']).meta({ id: 'WarningCode' });
+/** The advisory vocabulary this version raises. `RaisedWarning` binds producers to it. */
+export const WarningCodeSchema = z.enum(['version-skew']);
+
+/**
+ * The wire form of a warning code: a known value, or any other string.
+ *
+ * Open where `ErrorCodeSchema` is closed, because the two vocabularies do different jobs. An error
+ * code selects a consumer's branch, so an unknown one leaves the consumer with nothing to dispatch
+ * on and earns its version bump. A warning labels an advisory whose `message` and `remedy` a
+ * consumer can display verbatim, so a code it has never heard of must still validate: closing this
+ * set would make the first new advisory a breaking change. The union keeps the known values visible
+ * in the generated schema's `anyOf` rather than trading them for a bare `string`.
+ */
+const WarningCodeWireSchema = WarningCodeSchema.or(z.string()).meta({ id: 'WarningCode' });
 
 /**
  * An advisory condition observed during a run.
@@ -54,7 +66,7 @@ export const WarningCodeSchema = z.enum(['version-skew']).meta({ id: 'WarningCod
  */
 export const WarningSchema = z
   .object({
-    code: WarningCodeSchema,
+    code: WarningCodeWireSchema,
     message: z.string(),
     remedy: z.string().optional(),
   })
@@ -64,5 +76,20 @@ export type JsonSeverity = z.infer<typeof SeveritySchema>;
 export type JsonErrorCode = z.infer<typeof ErrorCodeSchema>;
 export type JsonErrorBody = z.infer<typeof ErrorBodySchema>;
 export type JsonCounts = z.infer<typeof CountsSchema>;
-export type JsonWarningCode = z.infer<typeof WarningCodeSchema>;
+/**
+ * A warning code: one of the known values, or any other string.
+ *
+ * Assembled rather than inferred from the wire schema, because `z.infer` on a `literal | string`
+ * union collapses to plain `string`, which would drop the known values from the published type.
+ */
+export type JsonWarningCode = z.infer<typeof WarningCodeSchema> | (string & {});
 export type JsonWarning = z.infer<typeof WarningSchema>;
+
+/**
+ * A warning as this version raises it, narrower than `JsonWarning` on `code`.
+ *
+ * The wire type accepts any string so a consumer tolerates an advisory from a later readyup. A
+ * producer may only emit a code this version declares, so a mistyped one fails to compile rather
+ * than entering the published vocabulary.
+ */
+export type RaisedWarning = JsonWarning & { code: z.infer<typeof WarningCodeSchema> };

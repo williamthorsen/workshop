@@ -85,6 +85,17 @@ export const minimalReportPayload = {
   kits: [],
 };
 
+/**
+ * A report carrying an advisory this readyup does not know about.
+ *
+ * Stands in for a payload from a later version: the open warning-code set is what keeps a consumer
+ * pinned to `report.v1.json` validating it rather than rejecting it.
+ */
+export const unknownWarningReportPayload = {
+  ...minimalReportPayload,
+  warnings: [{ code: 'kit-deprecated', message: 'kit uses a retired API', remedy: 'Regenerate the kit.' }],
+};
+
 export const errorEnvelopePayload = {
   schemaVersion: 1,
   error: { code: 'usage', message: "Unknown option '--bogus'" },

@@ -1,7 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { RdyErrorCode } from '../../src/errors.ts';
-import type { JsonErrorCode, JsonSeverity } from '../../src/schemas/index.ts';
+import type {
+  JsonErrorCode,
+  JsonSeverity,
+  JsonWarning,
+  JsonWarningCode,
+  RaisedWarning,
+} from '../../src/schemas/index.ts';
 import {
   CompileOutputSchema,
   ErrorEnvelopeSchema,
@@ -16,6 +22,7 @@ import {
   listPayload,
   minimalReportPayload,
   reportPayload,
+  unknownWarningReportPayload,
   verifyPayload,
 } from '../helpers/payloadFixtures.ts';
 
@@ -99,6 +106,18 @@ describe('JSON payload schemas', () => {
     });
   });
 
+  describe('warning codes', () => {
+    it('accepts an advisory code this version does not know', () => {
+      expect(() => ReportSchema.parse(unknownWarningReportPayload)).not.toThrow();
+    });
+
+    it('rejects an error code this version does not know, which selects a consumer branch', () => {
+      const kits = [{ name: 'release', error: { code: 'kit-retired', message: 'boom' } }];
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow();
+    });
+  });
+
   describe('kit entries', () => {
     it('accepts a counts-free error entry', () => {
       const kits = [{ name: 'release', error: { code: 'config', message: 'boom' } }];
@@ -118,6 +137,19 @@ describe('JSON payload schemas', () => {
 
     it('keeps the wire error taxonomy in step with RdyErrorCode', () => {
       expectTypeOf<JsonErrorCode>().toEqualTypeOf<RdyErrorCode>();
+    });
+
+    it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'version-skew'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'version-skew'>();
+    });
+
+    it('publishes the known warning codes as distinguishable members of an open set', () => {
+      // A union of a literal and `string` collapses to `string`, which would still accept both
+      // assignments below while offering a consumer no vocabulary at all.
+      expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
+      expectTypeOf<'version-skew'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
     });
   });
 });

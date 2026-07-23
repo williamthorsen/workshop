@@ -1,5 +1,13 @@
 // Shared building blocks
-export type { JsonCounts, JsonErrorBody, JsonErrorCode, JsonSeverity, JsonWarning, JsonWarningCode } from './common.ts';
+export type {
+  JsonCounts,
+  JsonErrorBody,
+  JsonErrorCode,
+  JsonSeverity,
+  JsonWarning,
+  JsonWarningCode,
+  RaisedWarning,
+} from './common.ts';
 export {
   CountsSchema,
   ErrorBodySchema,

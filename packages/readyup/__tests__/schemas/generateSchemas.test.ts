@@ -13,6 +13,7 @@ import {
   listPayload,
   minimalReportPayload,
   reportPayload,
+  unknownWarningReportPayload,
   verifyPayload,
 } from '../helpers/payloadFixtures.ts';
 
@@ -84,6 +85,12 @@ describe('generated JSON Schemas', () => {
       expect(objectAt(report, '$defs', 'KitResultEntry').required).toContain('reportOn');
     });
 
+    it('publishes the warning vocabulary as an open set that still names its known codes', () => {
+      const warningCode = objectAt(report, '$defs', 'WarningCode');
+
+      expect(warningCode.anyOf).toStrictEqual([{ type: 'string', enum: ['version-skew'] }, { type: 'string' }]);
+    });
+
     it('requires all six buckets of the counts object', () => {
       expect(objectAt(report, '$defs', 'Counts').required).toStrictEqual([
         'passed',
@@ -116,6 +123,9 @@ describe('generated JSON Schemas', () => {
     it.each([
       ['report.v1.json', reportPayload],
       ['report.v1.json', minimalReportPayload],
+      // The forward-compatibility promise is made to a consumer running a JSON Schema validator, so
+      // it has to be checked through one rather than through zod alone.
+      ['report.v1.json', unknownWarningReportPayload],
       ['error-envelope.v1.json', errorEnvelopePayload],
       ['list.v1.json', listPayload],
       ['verify.v1.json', verifyPayload],

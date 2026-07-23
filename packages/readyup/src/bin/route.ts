@@ -64,6 +64,8 @@ JSON form: their text goes to stderr and stdout stays empty.
 Every payload carries an integer schemaVersion and is specified by a JSON Schema shipped
 with the package, importable as readyup/schemas/<name>.v1.json. Adding an optional field
 does not bump a payload's schemaVersion; removing, renaming, or re-typing one does.
+Warning codes are an open set, so a new advisory never bumps the version and a consumer
+must tolerate a code it does not recognize.
 
 In the report, failOn and reportOn appear at the top level only when the matching flag was
 given, naming what the invocation requested. Each kit that ran carries the thresholds that

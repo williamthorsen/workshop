@@ -137,6 +137,7 @@ The five payloads version independently: reshaping the report leaves a consumer 
 - **Adding an optional field does not bump `schemaVersion`.** The schemas do not constrain properties they have not heard of, so a validator pinned to `v1` keeps accepting payloads from a later readyup that added one.
 - **Removing, renaming, or re-typing a field does bump it**, and publishes a new `vN` file beside the old one. Widening a closed set of values — an error `code`, a check `status` — counts as re-typing.
 - **A field is `required` only when every payload carries it.** Omission is reserved for genuinely absent or empty data, so a present field never means "nothing here".
+- **`warnings[].code` is an open set**, exempt from the widening rule above: the schema accepts a known code or any other string, so a newly raised advisory never bumps the version. Consumers must tolerate a code they have not heard of, displaying its `message` and `remedy` as they would any other. `error.code` stays closed, because an unknown error code leaves a consumer with no branch to select, and that is a break worth announcing.
 
 #### Error envelope
 
