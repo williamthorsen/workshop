@@ -163,7 +163,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
   const cwd = process.cwd();
 
   // Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather
-  // than the answer — the same warn-and-continue the corrupt-manifest path below takes. `run` still
+  // than the answer, taking the same warn-and-continue the corrupt-manifest path below takes. `run` still
   // fails hard on the same failure: it would otherwise execute against settings nobody chose.
   let config;
   try {

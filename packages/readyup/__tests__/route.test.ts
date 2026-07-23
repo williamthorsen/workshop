@@ -141,6 +141,31 @@ describe(routeCommand, () => {
     expect(output).toContain('(default)');
   });
 
+  it('points at per-command help from top-level help', async () => {
+    await routeCommand(['--help']);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain("Run 'rdy <command> --help' for command-specific options.");
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+    { label: 'list', args: ['list', '--help'] },
+  ])('shows examples in $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('Examples:');
+  });
+
+  it('explains how to escape a positional starting with a dash in run help', async () => {
+    await routeCommand(['run', '--help']);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('rdy run -- "--odd-kit-name"');
+  });
+
   it('shows run help and returns 0 for run --help', async () => {
     const exitCode = await routeCommand(['run', '--help']);
 

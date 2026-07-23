@@ -22,7 +22,7 @@ import { writeHuman } from '../writeHuman.ts';
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
 const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];
 
-/** Edits — insertions, deletions, or substitutions — a word may be from a command and still match it. */
+/** Edits (insertions, deletions, or substitutions) a word may be from a command and still match it. */
 const MAX_TYPO_DISTANCE = 2;
 
 /** Extensions a kit file can carry, in the order `run` would resolve them. */
@@ -56,6 +56,17 @@ Run options:
 Global options:
   --help, -h           Show this help message
   --version, -V        Show version number
+
+Run 'rdy <command> --help' for command-specific options.
+
+Examples:
+  rdy                                              Run every checklist in the default kit
+  rdy deploy                                       Run the compiled deploy kit
+  rdy deploy:build,test                            Run two checklists from the deploy kit
+  rdy run --jit deploy                             Run the deploy kit from its TypeScript source
+  rdy init                                         Scaffold a starter config and kit
+  rdy compile                                      Compile every kit source into a bundle
+  rdy list --from github:williamthorsen/workshop   List kits published by a repository
 
 Exit codes:
   0  Ran and found no problems
@@ -118,6 +129,18 @@ Options:
 
 Positional args accept relative paths (e.g., shared/deploy).
 Defaults to .readyup/kits/default.js when no source is given.
+
+To pass a positional argument that starts with a '-', place it at the end of the command
+after '--', as in: rdy run -- "--odd-kit-name"
+
+Examples:
+  rdy run                                Run every checklist in the default kit
+  rdy run deploy                         Run the compiled deploy kit
+  rdy run deploy:build,test              Run two checklists from the deploy kit
+  rdy run --jit deploy                   Run the deploy kit from its TypeScript source
+  rdy run --from global deploy           Run the deploy kit from the global directory
+  rdy run --fail-on warn                 Fail the run on warnings as well as errors
+  rdy run --json --detail summary        Emit a JSON report carrying only failed checks
 `;
 
 const COMPILE_HELP = `

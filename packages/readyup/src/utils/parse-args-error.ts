@@ -6,7 +6,7 @@ import { extractMessage } from './error-handling.ts';
  * An unknown option is reported against `command`, pointing at the help that lists what the command
  * accepts. For a string flag missing its value (`--flag`, `--flag=`, or `--flag --other`), returns
  * the matching per-flag hint keyed by long flag, or a generic `<flag> requires a value`.
- * Everything else — a boolean given a value, say — passes through to Node's own text, which is
+ * Everything else, such as a boolean given a value, passes through to Node's own text, which is
  * already clear.
  */
 export function translateParseArgsError(error: unknown, command: string, hints: Record<string, string> = {}): string {
