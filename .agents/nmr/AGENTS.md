@@ -1,5 +1,5 @@
 ---
-source: '@williamthorsen/nmr@0.17.0'
+source: '@williamthorsen/nmr@0.19.0'
 ---
 
 # nmr: agent guidance
@@ -38,7 +38,19 @@ Some root scripts (e.g. `lint`, `typecheck`, `test`) expand to `nmr root:X && pn
 
 ## Managed build
 
-The default `compile` script runs `nmr-compile`, a standalone bin that uses the TypeScript compiler API to emit a package's `src` to `dist/esm` as `.js` and `.d.ts` in one pass, rewriting relative `.ts`→`.js` specifiers and tsconfig `paths` aliases in both outputs, and skipping work when inputs are unchanged. `typescript` is a peer dependency (`>=5.7.0`). There is no repo-local build script to maintain, and no separate typings step; `nmr build` runs `compile` alone. To find or debug the build, look to `nmr-compile`, not a `config/build.ts` in the consuming repo.
+The default `compile` script runs `nmr-compile`, a standalone bin that uses the TypeScript compiler API to emit a package's `src` to `dist/esm` as `.js` and `.d.ts` in one pass, rewriting relative `.ts`→`.js` specifiers and tsconfig `paths` aliases in both outputs, and skipping work when inputs are unchanged. `typescript` is a peer dependency (`>=5.7.0 <7`; TypeScript 7 ships no compiler API). There is no repo-local build script to maintain, and no separate typings step; `nmr build` runs `compile` alone. To find or debug the build, look to `nmr-compile`, not a `config/build.ts` in the consuming repo.
+
+## Dependency upgrades
+
+`nmr upgrade` reports available dependency upgrades, honoring the version ceilings the repo declares in its root `taze.config.ts`. Scope follows context: from the root it covers the root `package.json` and every workspace in one pass; from inside a package, or under `nmr -F <package> upgrade`, it covers that package. `nmr root:upgrade` covers the root `package.json` alone. Run the root-context commands from the monorepo root.
+
+There are no `outdated` or `update` commands; `upgrade` replaced them. Reach for `pnpm outdated` or `pnpm update` directly if you need a report that ignores the ceilings.
+
+Arguments pass through to the underlying tool, including the range mode: `nmr upgrade major` proposes major upgrades, still inside the ceilings. Every form above is report-only until you add `--write`.
+
+**`-w` is not the same on both sides of the command.** `nmr upgrade -w` passes `--write` through and rewrites `package.json`; `nmr -w upgrade` is nmr's own `--workspace-root` and writes nothing. Use the long forms.
+
+To change what a repo holds back, edit its `taze.config.ts`. It imports `defineConfig` from `@williamthorsen/nmr/taze`, which supplies the shared upgrade policy — so that file should carry only the ceilings specific to that repo, and the repo needs no dependency on the upgrade tool itself.
 
 ## Override behaviors
 
