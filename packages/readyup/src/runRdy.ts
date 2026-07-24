@@ -45,9 +45,10 @@ const AUTHORING_ERROR_SEVERITY: Severity = 'error';
 /**
  * Return true if `severity` is at or above (more severe than or equal to) `threshold`.
  *
- * Throws on a value outside the severity enum. Kits are validated at load, so this is the backstop
- * for one that bypassed validation, such as a third-party `--url` source: an unranked value would
- * compare as `undefined <= n`, which is false, silently excluding the check from every threshold.
+ * Throws on a value outside the severity enum. Supplying a validated severity is the caller's
+ * responsibility, and the throw is what makes that a contract rather than an assumption: an unranked
+ * value compares as `undefined <= n`, which is false, so it would silently exclude the check from
+ * both the failure and the reporting thresholds instead of failing loudly.
  */
 export function meetsThreshold(severity: Severity, threshold: Severity): boolean {
   assertRankedSeverity(severity, 'severity');

@@ -60,13 +60,19 @@ const ChecklistShapeSchema = z.looseObject({
   fixLocation: FixLocationSchema.optional(),
 });
 
+/**
+ * A checklist carrying exactly one of `checks` and `groups`.
+ *
+ * The two clauses test different things, and each has to. `isFlatChecklist` discriminates on key
+ * presence, so the exclusivity clause does too: a checklist whose `checks` is present but explicitly
+ * `undefined`, beside a populated `groups`, would otherwise validate, classify as flat, and hand the
+ * runner an array that is not there. The requirement clause tests the value instead, so a key set to
+ * `undefined` cannot satisfy the collection it names.
+ */
 const ChecklistSchema = ChecklistShapeSchema.refine(
   (val) => val.checks !== undefined || val.groups !== undefined,
   "Checklist must have either 'checks' or 'groups'",
-).refine(
-  (val) => !(val.checks !== undefined && val.groups !== undefined),
-  "Checklist cannot have both 'checks' and 'groups'",
-);
+).refine((val) => !('checks' in val && 'groups' in val), "Checklist cannot have both 'checks' and 'groups'");
 
 /** Structural schema for an RdyKit. */
 const RdyKitSchema = z.looseObject({

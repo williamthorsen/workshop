@@ -105,7 +105,7 @@ rdy <command> [options]
 
 ### Advisory warnings
 
-`rdy run` compares each local kit it is about to run against the manifest, and says so when the two disagree. Warnings go to stderr in both output modes and appear under `warnings` in the JSON report; none of them affects the exit code.
+`rdy run` compares the kits it is about to run against `.readyup/manifest.json` in the current working directory, and says so when the two disagree. Warnings go to stderr in both output modes and appear under `warnings` in the JSON report; none of them affects the exit code.
 
 | Code           | Raised when                                                                   |
 | -------------- | ----------------------------------------------------------------------------- |
@@ -113,7 +113,7 @@ rdy <command> [options]
 | `target-drift` | The compiled bundle no longer matches the hash the manifest recorded for it   |
 | `version-skew` | The kit was compiled against a readyup version that differs from the runner's |
 
-The staleness warnings are silent when there is no manifest, when no entry describes the kit being run, or when the entry records no hashes. They do not apply to `--url` sources, which no local manifest describes, or to `--jit`, which runs the source directly. `rdy verify` is the enforcing gate; see [the staleness model](#the-staleness-model).
+The staleness warnings are silent when that manifest is absent, when no entry in it describes the kit being run, or when the entry records no hashes. That one manifest is the only one consulted, so a kit reached through `--from` is outside their scope: it resolves under another root, whose own manifest `rdy run` never reads. Run `rdy verify` in that root to check those kits. The warnings also do not apply to `--url` sources, which no local manifest describes, or to `--jit`, which runs the source directly. `rdy verify` is the enforcing gate; see [the staleness model](#the-staleness-model).
 
 ### Exit codes
 

@@ -72,7 +72,7 @@ export function verifyCommand(args: string[]): number {
 
   if (manifest.kits.length === 0) {
     writeHuman('  (no kits in manifest)\n', json);
-    return finishVerify([], json);
+    return finishVerify([], true, json);
   }
 
   const entries: JsonVerifyKitEntry[] = [];
@@ -81,9 +81,8 @@ export function verifyCommand(args: string[]): number {
     const status = checkDrift(kit, manifestDir);
     const sourceStatus = checkSourceDrift(kit, manifestDir);
     writeHuman(formatStatusLine(kit, status, sourceStatus), json);
-    const entry = buildVerifyEntry(kit.name, status, sourceStatus);
-    entries.push(entry);
-    if (!isPassingEntry(entry)) {
+    entries.push(buildVerifyEntry(kit.name, status, sourceStatus));
+    if (!isPassingVerdict(status, sourceStatus)) {
       failed += 1;
     }
   }
@@ -92,13 +91,11 @@ export function verifyCommand(args: string[]): number {
     writeHuman(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`, json);
   }
 
-  return finishVerify(entries, json);
+  return finishVerify(entries, failed === 0, json);
 }
 
-/** Emit the verify payload under `--json` and reduce the per-kit verdicts to an exit code. */
-function finishVerify(kits: JsonVerifyKitEntry[], json: boolean): number {
-  const passed = kits.every(isPassingEntry);
-
+/** Emit the verify payload under `--json` and turn the run's verdict into an exit code. */
+function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean): number {
   if (json) {
     const output: JsonVerifyOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
     process.stdout.write(JSON.stringify(output) + '\n');
@@ -110,12 +107,16 @@ function finishVerify(kits: JsonVerifyKitEntry[], json: boolean): number {
 /**
  * Return true when neither of a kit's verdicts reports a mismatch or a missing file.
  *
+ * Reads the verdicts themselves rather than the entry serialized from them. Both are total unions,
+ * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
+ * predate it, and a verdict derived from an optional field has an absent case to get wrong.
+ *
  * `unverified` passes on either axis: a manifest entry with no recorded hash predates the feature
  * or was written with `--skip-manifest`, which says nothing about whether the kit has changed.
  */
-function isPassingEntry(kit: JsonVerifyKitEntry): boolean {
-  const targetPasses = kit.status === 'ok' || kit.status === 'unverified';
-  const sourcePasses = kit.sourceStatus === 'ok' || kit.sourceStatus === 'unverified';
+function isPassingVerdict(status: DriftStatus, sourceStatus: SourceStatus): boolean {
+  const targetPasses = status.kind === 'ok' || status.kind === 'unverified';
+  const sourcePasses = sourceStatus.kind === 'ok' || sourceStatus.kind === 'unverified';
   return targetPasses && sourcePasses;
 }
 

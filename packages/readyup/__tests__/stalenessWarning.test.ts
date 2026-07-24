@@ -260,6 +260,19 @@ describe('staleness warnings', () => {
       expect(mockCheckDrift).not.toHaveBeenCalled();
     });
 
+    // A `--from` source resolves under another root, whose manifest this run never reads.
+    it('stays silent for a kit resolved outside the working directory', async () => {
+      arrangeTargetDrift();
+
+      await runCommand({
+        kitEntries: [{ name: 'default', source: { path: '/elsewhere/.readyup/kits/default.js' }, checklists: [] }],
+        json: false,
+      });
+
+      expect(stderrText()).not.toContain('Warning:');
+      expect(mockCheckDrift).not.toHaveBeenCalled();
+    });
+
     it('stays silent for an entry that records no path to match on', async () => {
       arrangeTargetDrift();
       arrangeManifest([{ name: 'default', source: 'kits/default.ts' }]);

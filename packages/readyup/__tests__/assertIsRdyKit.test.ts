@@ -39,6 +39,24 @@ describe(assertIsRdyKit, () => {
       );
     });
 
+    // `isFlatChecklist` discriminates on key presence, so a checklist carrying either key explicitly
+    // set to `undefined` is classified by that key whatever its value, and the collection the runner
+    // then iterates is not there.
+    it.each([
+      ['checks is undefined beside a populated groups', { name: 'bad', checks: undefined, groups: [[]] }],
+      ['groups is undefined beside a populated checks', { name: 'bad', checks: [], groups: undefined }],
+    ])('rejects a checklist where %s', (_label, checklist) => {
+      expect(messageFrom({ checklists: [checklist] })).toContain(
+        "checklists[0]: Checklist cannot have both 'checks' and 'groups'",
+      );
+    });
+
+    it('throws when the only collection a checklist declares is undefined', () => {
+      expect(messageFrom({ checklists: [{ name: 'bad', checks: undefined }] })).toContain(
+        "checklists[0]: Checklist must have either 'checks' or 'groups'",
+      );
+    });
+
     it('throws when a checklist entry is not an object', () => {
       expect(messageFrom({ checklists: ['not-an-object'] })).toContain('checklists[0]:');
     });
