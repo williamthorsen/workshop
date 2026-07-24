@@ -31,6 +31,8 @@ describe(buildInstallCommand, () => {
   it.each([
     ['pnpm-lock.yaml', 'pnpm add --save-dev readyup'],
     ['yarn.lock', 'yarn add --dev readyup'],
+    ['bun.lock', 'bun add --dev readyup'],
+    ['bun.lockb', 'bun add --dev readyup'],
     ['package-lock.json', 'npm install --save-dev readyup'],
   ])('reads the package manager from %s in the current directory', (lockfile, expected) => {
     presentFiles(path.join(PACKAGE_DIR, lockfile));
@@ -51,6 +53,13 @@ describe(buildInstallCommand, () => {
     expect(buildInstallCommand('readyup')).toBe('pnpm add --save-dev readyup');
   });
 
+  it('resolves bun from a packageManager declaration', () => {
+    presentFiles(path.join(REPO_ROOT, 'package.json'));
+    mockReadFileSync.mockReturnValue(JSON.stringify({ packageManager: 'bun@1.2.0' }));
+
+    expect(buildInstallCommand('readyup')).toBe('bun add --dev readyup');
+  });
+
   it('prefers a declared packageManager over a lockfile in the same directory', () => {
     presentFiles(path.join(REPO_ROOT, 'package.json'), path.join(REPO_ROOT, 'package-lock.json'));
     mockReadFileSync.mockReturnValue(JSON.stringify({ packageManager: 'yarn@4.1.0' }));
@@ -62,6 +71,18 @@ describe(buildInstallCommand, () => {
     presentFiles(path.join(PACKAGE_DIR, 'yarn.lock'), path.join(REPO_ROOT, 'pnpm-lock.yaml'));
 
     expect(buildInstallCommand('readyup')).toBe('yarn add --dev readyup');
+  });
+
+  it('prefers a bun lockfile over a package-lock.json left behind by a migration', () => {
+    presentFiles(path.join(PACKAGE_DIR, 'bun.lock'), path.join(PACKAGE_DIR, 'package-lock.json'));
+
+    expect(buildInstallCommand('readyup')).toBe('bun add --dev readyup');
+  });
+
+  it('prefers a bun lockfile over a yarn.lock in the same directory', () => {
+    presentFiles(path.join(PACKAGE_DIR, 'bun.lock'), path.join(PACKAGE_DIR, 'yarn.lock'));
+
+    expect(buildInstallCommand('readyup')).toBe('bun add --dev readyup');
   });
 
   it('falls back to npm when no directory names a package manager', () => {

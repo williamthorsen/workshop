@@ -6,6 +6,7 @@ import { isRecord } from '../isRecord.ts';
 
 /** Dev-dependency install commands, keyed by the package manager that runs them. */
 const INSTALL_COMMANDS = new Map([
+  ['bun', 'bun add --dev'],
   ['npm', 'npm install --save-dev'],
   ['pnpm', 'pnpm add --save-dev'],
   ['yarn', 'yarn add --dev'],
@@ -14,9 +15,19 @@ const INSTALL_COMMANDS = new Map([
 /** Install command used when nothing in the directory chain identifies a package manager. */
 const DEFAULT_COMMAND = 'npm install --save-dev';
 
-/** Lockfiles that identify a package manager, in the order they are probed within one directory. */
+/**
+ * Lockfiles that identify a package manager, in the order they are probed within one directory.
+ *
+ * Order follows how exclusively each file names its own manager. A `bun.lock` or `bun.lockb` is written only by bun,
+ * whereas bun itself can write a `yarn.lock` beside its own (`bun install --yarn`), so a `yarn.lock` does not
+ * establish yarn and the bun entries outrank it. `package-lock.json` is probed last, as the likeliest leftover of a
+ * migration away from npm. Bun takes two entries because it writes `bun.lock` from 1.2 onward and `bun.lockb` before
+ * that.
+ */
 const LOCKFILE_MANAGERS = [
   ['pnpm-lock.yaml', 'pnpm'],
+  ['bun.lock', 'bun'],
+  ['bun.lockb', 'bun'],
   ['yarn.lock', 'yarn'],
   ['package-lock.json', 'npm'],
 ] as const;
