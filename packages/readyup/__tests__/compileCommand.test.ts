@@ -13,6 +13,7 @@ const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
+const mockHashFile = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/compile/compileConfig.ts', () => ({
   compileConfig: mockCompileConfig,
@@ -51,6 +52,10 @@ vi.mock('../src/verify/checkDrift.ts', () => ({
   checkDrift: mockCheckDrift,
 }));
 
+vi.mock('../src/verify/targetHash.ts', () => ({
+  hashFile: mockHashFile,
+}));
+
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
@@ -72,6 +77,7 @@ describe(compileCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+    mockHashFile.mockReturnValue('5c0urce1');
   });
 
   afterEach(() => {
@@ -85,6 +91,7 @@ describe(compileCommand, () => {
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
     mockCheckDrift.mockReset();
+    mockHashFile.mockReset();
   });
 
   // Explicit input file tests
@@ -549,8 +556,8 @@ describe(compileCommand, () => {
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
   });
 
-  // Manifest generation tests
-  it('writes manifest after batch compile with kit entries including location fields', async () => {
+  /** A two-kit batch in which both kits compile successfully. */
+  function arrangeTwoKitBatch(): void {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
     });
@@ -559,6 +566,11 @@ describe(compileCommand, () => {
     mockCompileConfig
       .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' })
       .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+  }
+
+  // Manifest generation tests
+  it('writes manifest after batch compile with kit entries including location fields', async () => {
+    arrangeTwoKitBatch();
     mockValidateCompiledOutput
       .mockResolvedValueOnce(kitMetadata({ description: 'Alpha checks' }))
       .mockResolvedValueOnce(kitMetadata());
@@ -574,6 +586,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('alpha.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('alpha.ts'),
+          sourceHash: '5c0urce1',
           targetHash: 'aaaa1111',
         },
         {
@@ -581,6 +594,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('beta.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('beta.ts'),
+          sourceHash: '5c0urce1',
           targetHash: 'bbbb2222',
         },
       ],
@@ -644,6 +658,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('deploy.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
+          sourceHash: '5c0urce1',
           targetHash: 'deadbeef',
         },
       ],
@@ -667,6 +682,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('deploy.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
+          sourceHash: '5c0urce1',
           targetHash: 'deadbeef',
         },
       ],
@@ -692,9 +708,58 @@ describe(compileCommand, () => {
           path: expect.stringContaining('deploy.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('deploy.ts'),
+          sourceHash: '5c0urce1',
           targetHash: 'deadbeef',
         },
       ],
+    });
+  });
+
+  it('hashes the source that a single-file compile was given', async () => {
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockHashFile).toHaveBeenCalledWith(expect.stringContaining('deploy.ts'));
+  });
+
+  it('records a distinct source hash per kit in a batch compile', async () => {
+    arrangeTwoKitBatch();
+    mockHashFile.mockReturnValueOnce('a1a1a1a1').mockReturnValueOnce('b2b2b2b2');
+
+    await compileCommand([]);
+
+    const [writeManifestCall] = mockWriteManifest.mock.calls;
+    assert.ok(writeManifestCall);
+    const writtenManifest: RdyManifest = writeManifestCall[1];
+    expect(writtenManifest.kits.map((kit) => kit.sourceHash)).toStrictEqual(['a1a1a1a1', 'b2b2b2b2']);
+  });
+
+  it('leaves a drift-skipped kit its prior entry, source hash included', async () => {
+    arrangeTwoKitBatch();
+    const recordedAlpha = {
+      name: 'alpha',
+      path: 'alpha.js',
+      readyupVersion: VERSION,
+      source: 'alpha.ts',
+      sourceHash: '0ld50urc',
+      targetHash: 'aaaa1111',
+    };
+    mockReadManifest.mockReturnValue({ version: 1, kits: [recordedAlpha] });
+    mockCheckDrift.mockImplementation((kit: { name: string }) =>
+      kit.name === 'alpha'
+        ? { kind: 'drift', expected: 'aaaa1111', actual: 'ffff9999', resolvedPath: '/abs/alpha.js' }
+        : { kind: 'unverified' },
+    );
+
+    await compileCommand([]);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [recordedAlpha, expect.objectContaining({ name: 'beta' })],
     });
   });
 
