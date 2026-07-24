@@ -1,5 +1,121 @@
 [
   {
+    "version": "0.22.0",
+    "date": "2026-07-24",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Use the skip emoji for skipped compilations and checks (#107)",
+            "body": "Changes the icon for a skipped kit compilation, and for a check skipped as optional, from a magnifying glass (🔍) to a skip-forward symbol (⏭️).",
+            "hash": "922e1a4504a7aeacbdb33a7a0081000199190bdd"
+          },
+          {
+            "description": "Unify n/a semantics and make all report views agree (#130)",
+            "body": "Marking a check not applicable now takes that check and all checks nested beneath it out of the run entirely; they neither execute nor appear in the report. A checklist whose gating precondition was not applicable used to report a clean pass with nothing run; it now runs its checks and can surface real failures. A check whose code crashes now fails the run at error severity, whatever severity it declared. The run summary now describes the whole run: counts, worst severity, and exit code cover everything that happened, not only the severities selected with `--report-on`. Terminal and JSON output now report the same counts, and a check that survives the severity filter stays nested under the checks it sits beneath rather than appearing on its own.",
+            "breaking": true,
+            "hash": "0e2c8d6be57f50d86d1ab3d5cdc3444cf6e734db"
+          },
+          {
+            "description": "Differentiate exit codes and route failures through JSON (#133)",
+            "body": "`rdy` now distinguishes kinds of failure by exit code. A run that completes but finds problems in the repo or its kits exits 1; an invocation that `rdy` cannot complete at all -- such as a bad flag, an unreadable configuration, or a kit that will not load -- exits 2. Under `--json`, every failure that produces no report now arrives as a parseable JSON error on stdout; previously some printed prose to stderr, leaving stdout empty.",
+            "breaking": true,
+            "hash": "35893d003698b2ee0c134c818f159a74a5605b65"
+          },
+          {
+            "description": "Keep partial results when a kit fails after dispatch (#135)",
+            "body": "A run that names several kits no longer discards everything it collected when one of those kits fails: results from every kit that ran are now reported alongside the failure, which names the failed kit and why it failed. Failures are reported this way however many kits a run names, including a run whose only kit fails. A run that exits with code 2 can now carry results rather than none at all, and reading the `--json` output now requires checking whether a kit failed before reading its results.",
+            "hash": "d89b10fb34c7cc02125413bb1e2ea1e36cd7d044"
+          },
+          {
+            "description": "Add runtime-alignment primitives to check-utils (#136)",
+            "body": "`readyup/check-utils` now exports functions for checking that a repo's runtime declarations agree with each other. The functions check for the ECMAScript year supported by a Node major version, the minimum Node version required by `engines.node`, the Node version pinned in `.tool-versions`, and the `lib` and `target` values set for TypeScript.",
+            "hash": "db40100c8531d9c8edfc16a5413916b404b51c7f"
+          },
+          {
+            "description": "Formalize and slim the JSON contract (#137)",
+            "body": "The JSON emitted by `readyup` can now be validated against JSON schemas shipped with the package. JSON output now covers `list`, `verify`, and `compile` as well as `run`, and each command puts exactly one document on standard output, with all prose on standard error. Reports are also substantially smaller, and a consumer can now ask for a compact view carrying only the failures and the fixes for them.\n\nExisting consumers of `rdy run --json` must migrate. The result tallies are now grouped under a single object, the pass indicator is now a verdict rather than a tally, and fields carrying nothing are omitted rather than emitted as null.",
+            "breaking": true,
+            "hash": "f3455cdf34b8d48aed85417e689b0491b48ab4a5"
+          },
+          {
+            "description": "Name bun's install command in a bun-managed project (#141)",
+            "body": "ReadyUp now recognizes bun-managed projects and names bun in the installation instructions. A project that installs with bun is recognized as bun even when it also carries a yarn-format lockfile.",
+            "hash": "61c4c59881119278e1f5b41d70d37e2a855884c2"
+          },
+          {
+            "description": "Validate kits, detect staleness, and settle precondition semantics (#142)",
+            "body": "Kits are now validated when they load, and a malformed check fails the whole kit at both compile and run. Previously such a kit ran, with the bad check silently disabled and unable to fail anything.\n\nreadyup now tracks each compiled kit back to the TypeScript source it was built from. `rdy verify` now fails a kit whose source has been edited without a recompile, and `rdy run` warns when the two have parted.",
+            "hash": "090b6795087a6d3e6b2869f83b7ddfa63abf901d"
+          }
+        ]
+      },
+      {
+        "title": "🪦 Removed",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Require Node 24 and compile at ES2025 (#129)",
+            "body": "`readyup` and `@williamthorsen/overlay` now require Node 24 or later; neither installs or runs on Node 20 or Node 22, which they previously supported. Node 22 is dropped ahead of its April 2027 end of maintenance. Kit authors should rerun `rdy compile` after upgrading, and the resulting kits require Node 24 as well.",
+            "breaking": true,
+            "hash": "2625261a577062782ca59c0626b77d5baa902e4e"
+          },
+          {
+            "description": "Retire case-colliding short flags (#134)",
+            "body": "Removes most short flags from `rdy run` and the `-f` flag from `rdy init`; scripts and aliases using them must switch to the long forms. `--checklists` now filters within whichever single kit is selected, not just when that kit comes from a file or URL.",
+            "breaking": true,
+            "hash": "7c6c89c21d49add8430c79582888d5d21f657be9"
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Write an empty manifest for a missing source directory (#114)",
+            "body": "Fixes an issue where `rdy compile` failed when its kit source directory had been removed, such as after deleting all of a project's kits. It now regenerates the manifest with an empty kit list instead of leaving behind one that still lists the removed kits, and recreating the directory as a workaround is no longer required.",
+            "hash": "660b980734052a011edcce673a17830c0640d207"
+          },
+          {
+            "description": "Add remediation hints and improve the first-run experience (#140)",
+            "body": "Fixes a set of `rdy` errors that named the wrong problem or the wrong remedy. A kit that has not been compiled is now reported as needing compilation rather than as missing, and a mistyped command is recognized as a typo instead of a missing kit. When a kit genuinely cannot be found, the error now names the directory searched and the kits that are there. A missing dependency is now reported with the file that needed it and the install command for the project's own package manager, and an unknown-option error now points at the command's help. Listing kits no longer fails when the config file cannot be evaluated, and `rdy --help` now shows examples and points to `rdy <command> --help` for per-command detail.",
+            "hash": "a158c396ef80359d6c3de108b44b0d147b9d4b17"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Migrate build to nmr-compile and drop config/build.ts (#105)",
+            "body": "Build maintenance for the monorepo's packages now comes from the shared `@williamthorsen/nmr` toolchain instead of a build script kept inside this repo. The build output and the published packages are unchanged.",
+            "hash": "2abce85206307c422280d33697aa21fd012693a3"
+          },
+          {
+            "description": "Adopt nmr devBin to run rdy from source (#110)",
+            "body": "Developers can now run `rdy`, and the build that relies on it, from a clean checkout: No prior build of the readyup package is required. Previously both failed on a fresh checkout.",
+            "hash": "2a86b2c325dcf385e2d344775e6fafd276fa3209"
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade to TypeScript 6 and migrate to typed ESLint configs (#117)",
+            "body": "Upgrades to the TypeScript 6 and ESLint 10 toolchain.",
+            "hash": "8ac2f87a79aa86bb7cb76b5d1920e3f576652075"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.21.1",
     "date": "2026-06-04",
     "sections": [

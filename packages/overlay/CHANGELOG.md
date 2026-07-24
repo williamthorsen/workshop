@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 — 2026-07-24
+
+### 🪦 Removed
+
+- 🚨 **Breaking:** Require Node 24 and compile at ES2025 (#129)
+
+  `readyup` and `@williamthorsen/overlay` now require Node 24 or later; neither installs or runs on Node 20 or Node 22, which they previously supported. Node 22 is dropped ahead of its April 2027 end of maintenance. Kit authors should rerun `rdy compile` after upgrading, and the resulting kits require Node 24 as well.
+
+### ⚙️ Tooling
+
+- Migrate build to nmr-compile and drop config/build.ts (#105)
+
+  Build maintenance for the monorepo's packages now comes from the shared `@williamthorsen/nmr` toolchain instead of a build script kept inside this repo. The build output and the published packages are unchanged.
+
+### 📦 Dependencies
+
+- Upgrade to TypeScript 6 and migrate to typed ESLint configs (#117)
+
+  Upgrades to the TypeScript 6 and ESLint 10 toolchain.
+
 ## 0.2.0 — 2026-06-04
 
 ### 🎉 Features

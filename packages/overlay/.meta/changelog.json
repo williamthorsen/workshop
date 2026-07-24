@@ -1,5 +1,45 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-07-24",
+    "sections": [
+      {
+        "title": "🪦 Removed",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Require Node 24 and compile at ES2025 (#129)",
+            "body": "`readyup` and `@williamthorsen/overlay` now require Node 24 or later; neither installs or runs on Node 20 or Node 22, which they previously supported. Node 22 is dropped ahead of its April 2027 end of maintenance. Kit authors should rerun `rdy compile` after upgrading, and the resulting kits require Node 24 as well.",
+            "breaking": true,
+            "hash": "2625261a577062782ca59c0626b77d5baa902e4e"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Migrate build to nmr-compile and drop config/build.ts (#105)",
+            "body": "Build maintenance for the monorepo's packages now comes from the shared `@williamthorsen/nmr` toolchain instead of a build script kept inside this repo. The build output and the published packages are unchanged.",
+            "hash": "2abce85206307c422280d33697aa21fd012693a3"
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade to TypeScript 6 and migrate to typed ESLint configs (#117)",
+            "body": "Upgrades to the TypeScript 6 and ESLint 10 toolchain.",
+            "hash": "8ac2f87a79aa86bb7cb76b5d1920e3f576652075"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-06-04",
     "sections": [
