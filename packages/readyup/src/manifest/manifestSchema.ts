@@ -7,6 +7,10 @@ import { z } from 'zod';
  * without importing and executing the compiled bundle. It is optional because a manifest written by
  * an older readyup has no such record; readers strip what they do not recognize, so the field's
  * arrival leaves `version` at 1.
+ *
+ * `sourceHash` and `targetHash` are the two ends of the compile: the hash of the `.ts` the kit was
+ * built from and the hash of the `.js` it produced. Comparing each against the file on disk is what
+ * separates a source edited without recompiling from a compiled bundle edited by hand.
  */
 const ManifestKitSchema = z.object({
   checklists: z.array(z.string()).optional(),
@@ -15,6 +19,7 @@ const ManifestKitSchema = z.object({
   path: z.string().optional(),
   readyupVersion: z.string().optional(),
   source: z.string().optional(),
+  sourceHash: z.string().optional(),
   targetHash: z.string().optional(),
 });
 

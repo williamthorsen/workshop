@@ -103,6 +103,18 @@ rdy <command> [options]
 
 `--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
 
+### Advisory warnings
+
+`rdy run` compares the kits it is about to run against `.readyup/manifest.json` in the current working directory, and says so when the two disagree. Warnings go to stderr in both output modes and appear under `warnings` in the JSON report; none of them affects the exit code.
+
+| Code           | Raised when                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| `source-stale` | The kit's TypeScript has changed since the compiled bundle was built from it  |
+| `target-drift` | The compiled bundle no longer matches the hash the manifest recorded for it   |
+| `version-skew` | The kit was compiled against a readyup version that differs from the runner's |
+
+The staleness warnings are silent when that manifest is absent, when no entry in it describes the kit being run, when the entry records no hashes, or when a file they would hash cannot be read. That one manifest is the only one consulted, so a kit reached through `--from` is outside their scope: it resolves under another root, whose own manifest `rdy run` never reads. Run `rdy verify` in that root to check those kits. The warnings also do not apply to `--url` sources, which no local manifest describes, or to `--jit`, which runs the source directly. `rdy verify` is the enforcing gate; see [the staleness model](#the-staleness-model).
+
 ### Exit codes
 
 | Code | Meaning                                                                                                                       |
@@ -269,7 +281,20 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 rdy verify                     Check compiled kits against the manifest's hashes
 ```
 
-Each kit is reported as `ok`, `drift`, `missing`, or `unverified`. Drift and missing fail the run; `unverified` — a manifest entry with no recorded hash — does not, since it says nothing about whether the kit has changed. Under `--json`, a `drift` entry carries the `expected` and `actual` hashes alongside an overall verdict.
+Each kit carries two independent verdicts, because a kit is two artifacts: the TypeScript source and the bundle compiled from it.
+
+The compiled output is reported as `ok`, `drift`, `missing`, or `unverified`. The source is reported as `ok`, `stale`, `missing`, or `unverified`. Both axes are checked for every kit, and a kit can be stale at the source and drifted at the target at once: `drift` means someone edited the bundle by hand, while `stale` means the source moved on and nobody recompiled.
+
+Anything other than `ok` or `unverified` on either axis fails the run. `unverified` does not, since a manifest entry with no recorded hash says nothing about whether the kit has changed; a manifest written before source hashes existed reports `unverified` for the source and still passes.
+
+Under `--json`, each kit reports `status` for the compiled output and `sourceStatus` for the source. A `drift` verdict carries `expected` and `actual`; a `stale` verdict carries `sourceExpected` and `sourceActual`. `sourceStatus` is optional in the published schema, so a consumer pinned to `verify.v1.json` still validates payloads from an earlier readyup.
+
+### The staleness model
+
+Editing a kit's `.ts` without recompiling leaves `rdy run` executing the bundle it was compiled from, which is no longer what the source says. The two commands treat that differently on purpose:
+
+- **`rdy verify` enforces.** A stale source fails the run and exits 1. This is the gate to put in CI.
+- **`rdy run` advises.** It emits a warning and runs anyway, leaving the exit code alone. A verification tool that refused to run because its own bookkeeping was out of date would be worse than one that ran and said so.
 
 ## Authoring API
 
@@ -282,6 +307,33 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 | `defineRdyChecklist`       | Flat checklist                       |
 | `defineRdyStagedChecklist` | Staged checklist (sequential groups) |
 | `defineChecklists`         | Array of checklists                  |
+
+### Preconditions
+
+A checklist's `preconditions` gate the checks that follow it. If any precondition fails, every check in the checklist is skipped, and each skipped result records `precondition` as its reason.
+
+Two rules govern the gate:
+
+- **A failed precondition gates regardless of its severity.** A precondition declared `recommend` gates exactly as one declared `error` does. Severity decides whether the run _fails_; the gate decides whether the checks are worth _running_, and those are separate questions. A `recommend` precondition that fails under the default `--fail-on error` therefore skips the whole checklist and still exits 0.
+- **A precondition skipped `n/a` does not gate.** "The gate does not apply" is not "the gate failed", so the checklist runs in full. To make a whole checklist inapplicable instead, nest its checks under a single parent check whose `skip` returns a reason: an `n/a` skip terminates its own subtree, and nothing beneath it produces a result.
+
+Precondition results and the checks they skip follow the same reporting threshold as everything else: a result appears in the output only when its own severity is at or above `--report-on`.
+
+### Kit validation
+
+The authoring helpers are type-level only, and neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both commands validate the kit's structure at load time. Validation is the same in both, which means `rdy compile` refuses to publish a kit that `rdy run` would reject.
+
+Every check is validated wherever it appears: in a checklist's `checks`, in a staged checklist's `groups`, in its `preconditions`, and in the `checks` nested under another check. A check must carry a non-empty `name` and a `check` function; `severity` must be one of `error`, `warn`, or `recommend`; `skip` must be a function and `fix` a string when present. Unknown extra keys are allowed, so a kit written for a later readyup still loads.
+
+A typo'd `severity` is the mistake this catches that matters most: before validation reached individual checks, an unrecognized value silently excluded the check from both the failure and the reporting thresholds, and the run passed.
+
+Failures name the kit and the location of each offending value:
+
+```
+Invalid kit at .readyup/kits/default.js:
+  checklists[0].checks[1].severity: expected one of "error", "warn", "recommend", got "info"
+  checklists[0].checks[2].check: expected a function, got string
+```
 
 ## Check utilities
 

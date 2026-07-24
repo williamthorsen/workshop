@@ -1,6 +1,8 @@
 import { performance } from 'node:perf_hooks';
 
+import { isRecord } from './isRecord.ts';
 import type {
+  CheckOutcome,
   FailedResult,
   PassedResult,
   RdyCheck,
@@ -12,6 +14,7 @@ import type {
   SkippedResult,
 } from './types.ts';
 import { isFlatChecklist } from './types.ts';
+import { describeValue } from './utils/describe-value.ts';
 
 /** Options controlling failure and severity defaults for a run. */
 export interface RunRdyOptions {
@@ -31,15 +34,25 @@ const SEVERITY_RANK: Record<Severity, number> = {
 };
 
 /**
- * Severity assigned to a check whose `check` or `skip` function throws.
+ * Severity assigned to a check that is broken rather than failing.
  *
- * An exception is a defect in the check itself, not a soft finding, so it overrides
- * whatever severity the check declares.
+ * A `check` or `skip` function that throws, or that returns a value the runner cannot interpret, is
+ * a defect in the check itself and not a soft finding, so it overrides whatever severity the check
+ * declares.
  */
-const THROWN_SEVERITY: Severity = 'error';
+const AUTHORING_ERROR_SEVERITY: Severity = 'error';
 
-/** Return true if `severity` is at or above (more severe than or equal to) `threshold`. */
+/**
+ * Return true if `severity` is at or above (more severe than or equal to) `threshold`.
+ *
+ * Throws on a value outside the severity enum. Supplying a validated severity is the caller's
+ * responsibility, and the throw is what makes that a contract rather than an assumption: an unranked
+ * value compares as `undefined <= n`, which is false, so it would silently exclude the check from
+ * both the failure and the reporting thresholds instead of failing loudly.
+ */
 export function meetsThreshold(severity: Severity, threshold: Severity): boolean {
+  assertRankedSeverity(severity, 'severity');
+  assertRankedSeverity(threshold, 'severity threshold');
   return SEVERITY_RANK[severity] <= SEVERITY_RANK[threshold];
 }
 
@@ -113,15 +126,35 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
   if (check.skip !== undefined) {
     const start = performance.now();
     try {
-      const skipResult = await check.skip();
+      // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their
+      // author wrote, whatever the declared type promised.
+      const skipResult: unknown = await check.skip();
       if (typeof skipResult === 'string') {
         // An `n/a` skip terminates its subtree: descendants produce no results at all.
         return [buildSkippedResult(check.name, severity, 'n/a', skipResult, fix, depth)];
       }
+      if (skipResult !== false) {
+        const durationMs = performance.now() - start;
+        const error = new Error(
+          `skip() returned ${describeValue(skipResult)}; expected false to run the check, or a reason string to skip it.`,
+        );
+        const result = buildFailedResult(
+          check.name,
+          AUTHORING_ERROR_SEVERITY,
+          durationMs,
+          null,
+          fix,
+          error,
+          null,
+          depth,
+        );
+        const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
+        return [result, ...childResults];
+      }
     } catch (error_: unknown) {
       const durationMs = performance.now() - start;
       const error = error_ instanceof Error ? error_ : new Error(String(error_));
-      const result = buildFailedResult(check.name, THROWN_SEVERITY, durationMs, null, fix, error, null, depth);
+      const result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
       const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
       return [result, ...childResults];
     }
@@ -129,19 +162,26 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
 
   const start = performance.now();
   try {
-    const raw = await check.check();
+    const raw: unknown = await check.check();
     const durationMs = performance.now() - start;
     let result: PassedResult | FailedResult;
     if (typeof raw === 'boolean') {
       result = raw
         ? buildPassedResult(check.name, severity, durationMs, null, fix, null, depth)
         : buildFailedResult(check.name, severity, durationMs, null, fix, null, null, depth);
-    } else {
+    } else if (isCheckOutcome(raw)) {
       const detail = raw.detail ?? null;
       const progress = raw.progress ?? null;
       result = raw.ok
         ? buildPassedResult(check.name, severity, durationMs, detail, fix, progress, depth)
         : buildFailedResult(check.name, severity, durationMs, detail, fix, null, progress, depth);
+    } else {
+      // Reported as a defect rather than as an ordinary failure: the check never expressed a
+      // verdict, so the severity it declared for its subject says nothing about this outcome.
+      const error = new Error(
+        `check() returned ${describeValue(raw)}; expected a boolean or an object with a boolean "ok" property.`,
+      );
+      result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
     }
 
     const childResults = await collectChildResults(result, children, defaultSeverity, depth + 1);
@@ -149,7 +189,7 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
   } catch (error_: unknown) {
     const durationMs = performance.now() - start;
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
-    const result = buildFailedResult(check.name, THROWN_SEVERITY, durationMs, null, fix, error, null, depth);
+    const result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
     const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   }
@@ -310,4 +350,21 @@ export async function runRdy(
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   return { results, passed, durationMs };
+}
+
+/** Throw when a severity carries no rank, naming the role it was supplied in. */
+function assertRankedSeverity(severity: Severity, role: string): void {
+  if (!Object.hasOwn(SEVERITY_RANK, severity)) {
+    throw new Error(`Unknown ${role} "${severity}". Expected one of: error, warn, recommend.`);
+  }
+}
+
+/**
+ * Return true if a check's return value is a structured outcome.
+ *
+ * `ok` must be a boolean: a truthy value of any other type is an authoring mistake, not a pass, and
+ * treating it as one is how a broken check reports success.
+ */
+function isCheckOutcome(raw: unknown): raw is CheckOutcome {
+  return isRecord(raw) && typeof raw.ok === 'boolean';
 }

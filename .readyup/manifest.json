@@ -12,6 +12,7 @@
       "path": "kits/demo.js",
       "readyupVersion": "0.21.2",
       "source": "kits/demo.ts",
+      "sourceHash": "3d21db74",
       "targetHash": "687967f1"
     }
   ]

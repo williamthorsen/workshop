@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
+const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/manifest/readManifest.ts')>();
@@ -15,6 +16,10 @@ vi.mock('../../src/verify/checkDrift.ts', () => ({
   checkDrift: mockCheckDrift,
 }));
 
+vi.mock('../../src/verify/checkSourceDrift.ts', () => ({
+  checkSourceDrift: mockCheckSourceDrift,
+}));
+
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 import { captureRdyError } from '../helpers/captureRdyError.ts';
 
@@ -24,12 +29,14 @@ describe(verifyCommand, () => {
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    mockCheckSourceDrift.mockReturnValue({ kind: 'unverified' });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockReadManifest.mockReset();
     mockCheckDrift.mockReset();
+    mockCheckSourceDrift.mockReset();
   });
 
   it('returns 0 when every kit is ok', () => {
@@ -109,6 +116,90 @@ describe(verifyCommand, () => {
     expect(exitCode).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('(no kits in manifest)'));
     expect(mockCheckDrift).not.toHaveBeenCalled();
+  });
+
+  describe('source verdict', () => {
+    /** A manifest naming one kit, with whatever hashes the caller wants to imply. */
+    function arrangeSingleKit(): void {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts', targetHash: 'aaaa1111' }],
+      });
+      mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+    }
+
+    it('fails a kit whose source changed without a recompile', () => {
+      arrangeSingleKit();
+      mockCheckSourceDrift.mockReturnValue({
+        kind: 'stale',
+        expected: '5555aaaa',
+        actual: '6666bbbb',
+        resolvedPath: '/abs/alpha.ts',
+      });
+
+      const exitCode = verifyCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining('⚠️  alpha — ok; source stale (expected 5555aaaa, got 6666bbbb)'),
+      );
+    });
+
+    it('fails a kit whose recorded source file is gone', () => {
+      arrangeSingleKit();
+      mockCheckSourceDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/alpha.ts' });
+
+      const exitCode = verifyCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining('❓ alpha — ok; source file missing (expected alpha.ts)'),
+      );
+    });
+
+    it('passes a kit whose source matches, leaving the line unchanged', () => {
+      arrangeSingleKit();
+      mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
+
+      const exitCode = verifyCommand([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ alpha — ok\n'));
+    });
+
+    it('passes a manifest that records no source hash, leaving the line unchanged', () => {
+      arrangeSingleKit();
+
+      const exitCode = verifyCommand([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ alpha — ok\n'));
+    });
+
+    it('reports both verdicts when the source is stale and the target has drifted', () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({
+        kind: 'drift',
+        expected: 'aaaa1111',
+        actual: 'aaaa9999',
+        resolvedPath: '/abs/alpha.js',
+      });
+      mockCheckSourceDrift.mockReturnValue({
+        kind: 'stale',
+        expected: '5555aaaa',
+        actual: '6666bbbb',
+        resolvedPath: '/abs/alpha.ts',
+      });
+
+      const exitCode = verifyCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'alpha — drift (expected aaaa1111, got aaaa9999); source stale (expected 5555aaaa, got 6666bbbb)',
+        ),
+      );
+    });
   });
 
   it('reports a config error when the manifest cannot be read', async () => {

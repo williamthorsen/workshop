@@ -14,17 +14,28 @@ import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
 import type { DriftStatus } from './checkDrift.ts';
 import { checkDrift } from './checkDrift.ts';
+import type { SourceStatus } from './checkSourceDrift.ts';
+import { checkSourceDrift } from './checkSourceDrift.ts';
 
 const verifyOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
 } as const;
 
+// A line's icon is the worse of the kit's two verdicts. The mismatch icon carries a trailing space
+// because its variation selector renders one column narrower than the others.
+const ICON_OK = '✅';
+const ICON_MISMATCH = '⚠️ ';
+const ICON_MISSING = '❓';
+const ICON_UNVERIFIED = '➖';
+
 /**
- * Handle the `verify` subcommand: read the manifest, hash each compiled kit, and report drift.
+ * Handle the `verify` subcommand: read the manifest, hash each kit's source and compiled output,
+ * and report what no longer matches.
  *
- * Returns 0 when every kit is `ok` or `unverified`; 1 when any kit has `drift` or `missing`.
- * An unreadable manifest is a config failure and is thrown rather than reported as drift.
+ * Each kit carries two independent verdicts. Returns 0 when both are `ok` or `unverified` for every
+ * kit; 1 when any kit has drifted, gone stale, or lost a file. An unreadable manifest is a config
+ * failure and is thrown rather than reported as drift.
  */
 export function verifyCommand(args: string[]): number {
   let parsed;
@@ -61,16 +72,17 @@ export function verifyCommand(args: string[]): number {
 
   if (manifest.kits.length === 0) {
     writeHuman('  (no kits in manifest)\n', json);
-    return finishVerify([], json);
+    return finishVerify([], true, json);
   }
 
   const entries: JsonVerifyKitEntry[] = [];
   let failed = 0;
   for (const kit of manifest.kits) {
     const status = checkDrift(kit, manifestDir);
-    writeHuman(formatStatusLine(kit, status), json);
-    entries.push(buildVerifyEntry(kit.name, status));
-    if (status.kind === 'drift' || status.kind === 'missing') {
+    const sourceStatus = checkSourceDrift(kit, manifestDir);
+    writeHuman(formatStatusLine(kit, status, sourceStatus), json);
+    entries.push(buildVerifyEntry(kit.name, status, sourceStatus));
+    if (!isPassingVerdict(status, sourceStatus)) {
       failed += 1;
     }
   }
@@ -79,18 +91,11 @@ export function verifyCommand(args: string[]): number {
     writeHuman(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`, json);
   }
 
-  return finishVerify(entries, json);
+  return finishVerify(entries, failed === 0, json);
 }
 
-/**
- * Emit the verify payload under `--json` and reduce the per-kit verdicts to an exit code.
- *
- * `unverified` does not fail the run: a manifest entry with no recorded hash predates the feature
- * or was written with `--skip-manifest`, which says nothing about whether the kit has drifted.
- */
-function finishVerify(kits: JsonVerifyKitEntry[], json: boolean): number {
-  const passed = kits.every((kit) => kit.status === 'ok' || kit.status === 'unverified');
-
+/** Emit the verify payload under `--json` and turn the run's verdict into an exit code. */
+function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean): number {
   if (json) {
     const output: JsonVerifyOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
     process.stdout.write(JSON.stringify(output) + '\n');
@@ -99,24 +104,86 @@ function finishVerify(kits: JsonVerifyKitEntry[], json: boolean): number {
   return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
-/** Build a kit's JSON entry, carrying the two hashes only on a verdict that compared them. */
-function buildVerifyEntry(name: string, status: DriftStatus): JsonVerifyKitEntry {
-  if (status.kind === 'drift') {
-    return { name, status: 'drift', expected: status.expected, actual: status.actual };
-  }
-  return { name, status: status.kind };
+/**
+ * Return true when neither of a kit's verdicts reports a mismatch or a missing file.
+ *
+ * Reads the verdicts themselves rather than the entry serialized from them. Both are total unions,
+ * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
+ * predate it, and a verdict derived from an optional field has an absent case to get wrong.
+ *
+ * `unverified` passes on either axis: a manifest entry with no recorded hash predates the feature
+ * or was written with `--skip-manifest`, which says nothing about whether the kit has changed.
+ */
+function isPassingVerdict(status: DriftStatus, sourceStatus: SourceStatus): boolean {
+  const targetPasses = status.kind === 'ok' || status.kind === 'unverified';
+  const sourcePasses = sourceStatus.kind === 'ok' || sourceStatus.kind === 'unverified';
+  return targetPasses && sourcePasses;
 }
 
-/** Format a single per-kit status line for the verify report. */
-function formatStatusLine(kit: RdyManifestKit, status: DriftStatus): string {
+/** Build a kit's JSON entry, carrying a pair of hashes only on a verdict that compared them. */
+function buildVerifyEntry(name: string, status: DriftStatus, sourceStatus: SourceStatus): JsonVerifyKitEntry {
+  return {
+    name,
+    status: status.kind,
+    ...(status.kind === 'drift' && { expected: status.expected, actual: status.actual }),
+    sourceStatus: sourceStatus.kind,
+    ...(sourceStatus.kind === 'stale' && {
+      sourceExpected: sourceStatus.expected,
+      sourceActual: sourceStatus.actual,
+    }),
+  };
+}
+
+/**
+ * Format a single per-kit line, appending the source verdict only when it has news.
+ *
+ * A source that is `ok`, or that no manifest entry describes, leaves the line saying exactly what it
+ * said before the source verdict existed: the reader's attention belongs on whatever changed.
+ */
+function formatStatusLine(kit: RdyManifestKit, status: DriftStatus, sourceStatus: SourceStatus): string {
+  const clauses = [describeDriftStatus(kit, status)];
+  const sourceClause = describeSourceStatus(kit, sourceStatus);
+  if (sourceClause !== undefined) clauses.push(sourceClause);
+  return `  ${resolveIcon(status, sourceStatus)} ${kit.name} — ${clauses.join('; ')}\n`;
+}
+
+/**
+ * Pick the icon for a kit's line from the worse of its two verdicts.
+ *
+ * A missing file outranks a hash mismatch: one of the artifacts the manifest describes is not there
+ * at all. `unverified` shows only when it is the whole story, since a target verified against its
+ * hash is not made less verified by a source the manifest never recorded.
+ */
+function resolveIcon(status: DriftStatus, sourceStatus: SourceStatus): string {
+  if (status.kind === 'missing' || sourceStatus.kind === 'missing') return ICON_MISSING;
+  if (status.kind === 'drift' || sourceStatus.kind === 'stale') return ICON_MISMATCH;
+  if (status.kind === 'unverified') return ICON_UNVERIFIED;
+  return ICON_OK;
+}
+
+/** Describe the compiled-output verdict, the clause every line carries. */
+function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string {
   switch (status.kind) {
     case 'ok':
-      return `  ✅ ${kit.name} — ok\n`;
+      return 'ok';
     case 'drift':
-      return `  ⚠️  ${kit.name} — drift (expected ${status.expected}, got ${status.actual})\n`;
+      return `drift (expected ${status.expected}, got ${status.actual})`;
     case 'missing':
-      return `  ❓ ${kit.name} — compiled file missing (expected ${kit.path ?? '<no path>'})\n`;
+      return `compiled file missing (expected ${kit.path ?? '<no path>'})`;
     case 'unverified':
-      return `  ➖ ${kit.name} — unverified (no targetHash in manifest)\n`;
+      return 'unverified (no targetHash in manifest)';
+  }
+}
+
+/** Describe the source verdict, or nothing when it has no news to add. */
+function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string | undefined {
+  switch (status.kind) {
+    case 'stale':
+      return `source stale (expected ${status.expected}, got ${status.actual})`;
+    case 'missing':
+      return `source file missing (expected ${kit.source ?? '<no source>'})`;
+    case 'ok':
+    case 'unverified':
+      return undefined;
   }
 }

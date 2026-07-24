@@ -81,7 +81,7 @@ describe('ManifestSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('strips legacy sourceHash field from kit entries on parse while preserving targetHash', () => {
+  it('preserves both hashes on parse', () => {
     const input = {
       version: 1,
       kits: [
@@ -101,8 +101,29 @@ describe('ManifestSchema', () => {
     assert.ok(result.success);
     const [firstKit] = result.data.kits;
     assert.ok(firstKit);
-    expect(firstKit).not.toHaveProperty('sourceHash');
+    expect(firstKit.sourceHash).toBe('a1b2c3d4');
     expect(firstKit.targetHash).toBe('e5f6a7b8');
+  });
+
+  it('accepts an entry carrying a targetHash but no sourceHash', () => {
+    const input = {
+      version: 1,
+      kits: [{ name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts', targetHash: 'e5f6a7b8' }],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+    assert.ok(result.success);
+    expect(result.data.kits[0]?.sourceHash).toBeUndefined();
+  });
+
+  it('rejects a kit whose sourceHash is not a string', () => {
+    const input = { version: 1, kits: [{ name: 'deploy', sourceHash: 42 }] };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
   });
 
   it('accepts a manifest with readyupVersion as an optional string and preserves it on parse', () => {

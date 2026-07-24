@@ -160,6 +160,26 @@ describe(loadRdyKit, () => {
     await expect(loadRdyKit(KIT_PATH)).rejects.toThrow('Kit file must export checklists');
   });
 
+  it('rejects a kit whose check declares an unknown severity', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({
+      checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, severity: 'info' }] }],
+    });
+
+    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(
+      'checklists[0].checks[0].severity: expected one of "error", "warn", "recommend", got "info"',
+    );
+  });
+
+  it('names the kit path in a validation failure', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({
+      checklists: [{ name: 'test', checks: [{ name: 'a', check: 'not-a-function' }] }],
+    });
+
+    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(`Invalid kit at ${KIT_PATH}:`);
+  });
+
   it('loads a kit from a default export', async () => {
     const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
     mockExistsSync.mockReturnValue(true);

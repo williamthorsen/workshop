@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -70,5 +70,37 @@ describe(validateCompiledOutput, () => {
     });
 
     await expect(validateCompiledOutput(outputPath)).rejects.toThrow();
+    expect(existsSync(outputPath)).toBe(false);
+  });
+
+  // A check is serialized to JSON here, so `check` arrives as a string rather than a function: the
+  // same authoring mistake a hand-edited bundle would carry, and one compile must not let through.
+  it('rejects a kit whose check is not a function, naming the offending location', async () => {
+    const outputPath = writeTempKit(testDir, 'bad-check.mjs', {
+      checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope' }] }],
+    });
+
+    await expect(validateCompiledOutput(outputPath)).rejects.toThrow(
+      'checklists[0].checks[0].check: expected a function, got string',
+    );
+    expect(existsSync(outputPath)).toBe(false);
+  });
+
+  it('rejects a kit whose check declares an unknown severity', async () => {
+    const outputPath = writeTempKit(testDir, 'bad-severity.mjs', {
+      checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope', severity: 'info' }] }],
+    });
+
+    await expect(validateCompiledOutput(outputPath)).rejects.toThrow(
+      'checklists[0].checks[0].severity: expected one of "error", "warn", "recommend", got "info"',
+    );
+  });
+
+  it('names the compiled kit path in a validation failure', async () => {
+    const outputPath = writeTempKit(testDir, 'unnamed-check.mjs', {
+      checklists: [{ name: 'test', checks: [{ check: 'nope' }] }],
+    });
+
+    await expect(validateCompiledOutput(outputPath)).rejects.toThrow(`Invalid kit at ${outputPath}:`);
   });
 });

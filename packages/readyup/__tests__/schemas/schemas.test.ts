@@ -19,6 +19,7 @@ import type { Severity } from '../../src/types.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
+  legacyVerifyPayload,
   listPayload,
   minimalReportPayload,
   reportPayload,
@@ -118,6 +119,24 @@ describe('JSON payload schemas', () => {
     });
   });
 
+  describe('verify entries', () => {
+    it('accepts a payload from a readyup that predates the source verdict', () => {
+      expect(() => VerifyOutputSchema.parse(legacyVerifyPayload)).not.toThrow();
+    });
+
+    it('rejects a source verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'drift' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+    });
+
+    it('keeps the source vocabulary distinct from the target vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'stale', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+    });
+  });
+
   describe('kit entries', () => {
     it('accepts a counts-free error entry', () => {
       const kits = [{ name: 'release', error: { code: 'config', message: 'boom' } }];
@@ -140,8 +159,8 @@ describe('JSON payload schemas', () => {
     });
 
     it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
-      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'version-skew'>();
-      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'version-skew'>();
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'source-stale' | 'target-drift' | 'version-skew'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'source-stale' | 'target-drift' | 'version-skew'>();
     });
 
     it('publishes the known warning codes as distinguishable members of an open set', () => {
@@ -149,6 +168,7 @@ describe('JSON payload schemas', () => {
       // assignments below while offering a consumer no vocabulary at all.
       expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
       expectTypeOf<'version-skew'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'source-stale'>().toExtend<JsonWarningCode>();
       expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
     });
   });

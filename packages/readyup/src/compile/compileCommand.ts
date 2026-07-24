@@ -20,6 +20,7 @@ import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { pluralizeWithCount } from '../utils/pluralize.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
+import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { compileConfig } from './compileConfig.ts';
@@ -138,6 +139,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
       upsertManifest(manifestPath, kitName, metadata, {
         path: relOutputPath,
         source: relSourcePath,
+        sourceHash: hashFile(resolvedInputPath),
         targetHash: result.targetHash,
       });
     } catch (error: unknown) {
@@ -279,6 +281,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
         path: relOutputPath,
         readyupVersion: VERSION,
         source: relSourcePath,
+        sourceHash: hashFile(srcFile),
         targetHash: result.targetHash,
         ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
         ...(metadata.description !== undefined && { description: metadata.description }),
@@ -327,6 +330,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
 interface KitLocationFields {
   path: string;
   source: string;
+  sourceHash: string;
   targetHash: string;
 }
 
@@ -354,6 +358,7 @@ function upsertManifest(
     path: location.path,
     readyupVersion: VERSION,
     source: location.source,
+    sourceHash: location.sourceHash,
     targetHash: location.targetHash,
     ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
     ...(metadata.description !== undefined && { description: metadata.description }),

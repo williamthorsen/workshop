@@ -5,6 +5,7 @@ import { assertIsRdyKit } from '../assertIsRdyKit.ts';
 import { isRecord } from '../isRecord.ts';
 import { resolveKitExports } from '../resolveKitExports.ts';
 import type { RdyKit } from '../types.ts';
+import { toDisplayPath } from '../utils/display-path.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { validateKit } from '../validateKit.ts';
 
@@ -36,7 +37,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
   let kit: RdyKit;
   try {
     const resolved = resolveKitExports(moduleRecord);
-    assertIsRdyKit(resolved);
+    assertIsRdyKit(resolved, toDisplayPath(outputPath));
     validateKit(resolved);
     kit = resolved;
   } catch (error: unknown) {
