@@ -79,6 +79,12 @@ describe(buildInstallCommand, () => {
     expect(buildInstallCommand('readyup')).toBe('bun add --dev readyup');
   });
 
+  it('prefers a bun lockfile over a yarn.lock in the same directory', () => {
+    presentFiles(path.join(PACKAGE_DIR, 'bun.lock'), path.join(PACKAGE_DIR, 'yarn.lock'));
+
+    expect(buildInstallCommand('readyup')).toBe('bun add --dev readyup');
+  });
+
   it('falls back to npm when no directory names a package manager', () => {
     expect(buildInstallCommand('readyup')).toBe('npm install --save-dev readyup');
   });
