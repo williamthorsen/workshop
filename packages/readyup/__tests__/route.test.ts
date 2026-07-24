@@ -687,6 +687,39 @@ describe(routeCommand, () => {
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
     });
 
+    it.each([
+      ['--from', ['lst', '--from', 'global']],
+      ['--from with an inline value', ['lst', '--from=global']],
+      ['--file', ['lst', '--file', 'kit.js']],
+      ['--url', ['lst', '--url', 'https://example.test/kit.js']],
+      ['--internal', ['runn', '--internal']],
+    ])('runs the bare word as a kit when %s names its source', async (_label, args) => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: args[0], checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(args);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(args);
+    });
+
+    it('runs a bare word carrying a checklist filter as a kit', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lis', checklists: ['t'] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['lis:t']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lis:t']);
+    });
+
+    it('still suggests a command when a source flag follows the -- terminator', async () => {
+      const exitCode = await routeCommand(['lst', '--', '--from']);
+
+      expect(exitCode).toBe(2);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Did you mean 'rdy list'?"));
+    });
+
     it('does not suggest after an explicit run subcommand', async () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);

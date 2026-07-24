@@ -43,13 +43,25 @@ describe(loadRdyKit, () => {
     );
   });
 
-  it("suggests 'rdy init' when the default kit has neither a compiled bundle nor a source", async () => {
+  it("suggests 'rdy init' when the kit directory holds no kits at all", async () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockReturnValue([]);
 
     await expect(loadRdyKit('.readyup/kits/default.js')).rejects.toThrow(
       'Kit "default" not found at .readyup/kits/default.js. Run \'rdy init\' to create one.',
     );
+  });
+
+  it('names the available kits rather than suggesting init when the default kit is missing but others exist', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue(buildDirents('deploy.js', 'release.js'));
+
+    const error = await loadRdyKit('.readyup/kits/default.js').catch((error_: unknown) => error_);
+
+    expect(String(error)).toContain(
+      'Kit "default" not found at .readyup/kits/default.js. Available kits: deploy, release.',
+    );
+    expect(String(error)).not.toContain('rdy init');
   });
 
   it('names the searched path and the available kits for any other missing kit', async () => {

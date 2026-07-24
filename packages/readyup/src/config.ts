@@ -70,11 +70,14 @@ function diagnoseMissingKit(resolvedPath: string): string {
           "Run 'rdy run' without --jit to use it.";
   }
 
-  if (name === 'default' && dir === path.resolve(process.cwd(), KITS_DIR)) {
+  const available = listAvailableKits(dir, extension);
+
+  // Scaffolding is the remedy only for a project that has no kits at all. A directory holding kits
+  // under other names is answered with those names, whichever kit was asked for.
+  if (available.length === 0 && name === 'default' && dir === path.resolve(process.cwd(), KITS_DIR)) {
     return `Kit "default" not found at ${toDisplayPath(resolvedPath)}. Run 'rdy init' to create one.`;
   }
 
-  const available = listAvailableKits(dir, extension);
   const availability =
     available.length > 0 ? `Available kits: ${available.join(', ')}.` : `No kits found in ${toDisplayPath(dir)}.`;
   return `Kit "${name}" not found at ${toDisplayPath(resolvedPath)}. ${availability}`;

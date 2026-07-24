@@ -28,6 +28,9 @@ const MAX_TYPO_DISTANCE = 2;
 /** Extensions a kit file can carry, in the order `run` would resolve them. */
 const KIT_EXTENSIONS = ['.js', '.ts'];
 
+/** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
+const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
+
 const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
        rdy <command> [options]
@@ -313,7 +316,7 @@ async function dispatchCommand(args: string[], json: boolean): Promise<number> {
   // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
   // never reaches it: naming the subcommand says the word is a kit.
   const typoMatch = findTypoMatch(command);
-  if (typoMatch !== undefined && !hasLocalKit(command)) {
+  if (typoMatch !== undefined && !namesAKit(command, args)) {
     throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
   }
 
@@ -416,14 +419,34 @@ function findTypoMatch(input: string): string | undefined {
 }
 
 /**
- * Report whether a bare word names a kit in the conventional kit directory.
+ * Report whether a bare word is a kit rather than a candidate command typo.
  *
- * Only the conventional local paths are probed, so a kit reachable solely through `--from` or an
- * `--internal` directory is invisible here and a near-command name under those sources is still
- * reported as a typo. That invocation was already failing before the check existed.
+ * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
+ * settles the question outright: under them the word is a kit by construction, and the kit it names
+ * lives wherever that source resolves rather than on a path worth probing.
+ *
+ * Everything else is a bare word with no source, which `run` resolves against the conventional kit
+ * directory alone. Probing exactly that directory is what makes the answer match what would run.
  */
-function hasLocalKit(name: string): boolean {
-  return KIT_EXTENSIONS.some((extension) => existsSync(path.join(process.cwd(), KITS_DIR, `${name}${extension}`)));
+function namesAKit(word: string, args: string[]): boolean {
+  if (word.includes(':') || hasSourceFlag(args)) return true;
+
+  return KIT_EXTENSIONS.some((extension) => existsSync(path.join(process.cwd(), KITS_DIR, `${word}${extension}`)));
+}
+
+/**
+ * Detect a kit-source flag by scanning raw argv.
+ *
+ * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
+ * stops at the `--` terminator, after which arguments are positional rather than flags.
+ */
+function hasSourceFlag(args: string[]): boolean {
+  for (const arg of args) {
+    if (arg === '--') return false;
+    const flag = arg.includes('=') ? arg.slice(0, arg.indexOf('=')) : arg;
+    if (SOURCE_FLAGS.has(flag)) return true;
+  }
+  return false;
 }
 
 /** Compute the Levenshtein edit distance between two words. */

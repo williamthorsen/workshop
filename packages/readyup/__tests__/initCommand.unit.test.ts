@@ -17,14 +17,14 @@ vi.mock('../src/terminal.ts', () => ({
 }));
 
 const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
-const mockIsPackageResolvable = vi.hoisted(() => vi.fn());
+const mockIsPackageInstalled = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/utils/install-command.ts', () => ({
   buildInstallCommand: mockBuildInstallCommand,
 }));
 
 vi.mock('../src/utils/resolve-package.ts', () => ({
-  isPackageResolvable: mockIsPackageResolvable,
+  isPackageInstalled: mockIsPackageInstalled,
 }));
 
 import { initCommand } from '../src/init/initCommand.ts';
@@ -49,7 +49,7 @@ describe(`${initCommand.name} error handling`, () => {
     mockScaffoldConfig.mockReset();
     mockReportWriteResult.mockReset();
     mockBuildInstallCommand.mockReset();
-    mockIsPackageResolvable.mockReset();
+    mockIsPackageInstalled.mockReset();
   });
 
   it('throws a config error when scaffoldConfig throws', () => {
@@ -119,14 +119,14 @@ describe(`${initCommand.name} next steps`, () => {
     infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
     mockBuildInstallCommand.mockReturnValue('pnpm add --save-dev readyup');
-    mockIsPackageResolvable.mockReturnValue(true);
+    mockIsPackageInstalled.mockReturnValue(true);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockScaffoldConfig.mockReset();
     mockBuildInstallCommand.mockReset();
-    mockIsPackageResolvable.mockReset();
+    mockIsPackageInstalled.mockReset();
   });
 
   it('names only rdy commands, never npx readyup', () => {
@@ -137,7 +137,7 @@ describe(`${initCommand.name} next steps`, () => {
     expect(printedSteps(infoSpy)).toContain('rdy run');
   });
 
-  it('omits the install step when readyup already resolves', () => {
+  it('omits the install step when readyup is already installed', () => {
     initCommand({ dryRun: false, force: false });
 
     const steps = printedSteps(infoSpy);
@@ -146,8 +146,8 @@ describe(`${initCommand.name} next steps`, () => {
     expect(steps).toContain('5. Commit the generated files.');
   });
 
-  it('leads with the install step when readyup does not resolve', () => {
-    mockIsPackageResolvable.mockReturnValue(false);
+  it('leads with the install step when readyup is not installed', () => {
+    mockIsPackageInstalled.mockReturnValue(false);
 
     initCommand({ dryRun: false, force: false });
 

@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPackageResolvable } from '../../src/utils/resolve-package.ts';
+import { isPackageInstalled } from '../../src/utils/resolve-package.ts';
 
-describe(isPackageResolvable, () => {
-  it('reports a package the project depends on as resolvable', () => {
-    expect(isPackageResolvable('zod')).toBe(true);
+describe(isPackageInstalled, () => {
+  it('reports a package the project depends on as installed', () => {
+    expect(isPackageInstalled('zod')).toBe(true);
   });
 
-  it('reports an uninstalled package as unresolvable', () => {
-    expect(isPackageResolvable('readyup-package-that-does-not-exist')).toBe(false);
+  // `readyup` publishes only `import` and `types` conditions, so a require-based resolver reaches its
+  // package.json and then fails on conditions. An ESM-only package is installed all the same.
+  it('reports an import-only package as installed', () => {
+    expect(isPackageInstalled('readyup')).toBe(true);
+  });
+
+  it('reports an uninstalled package as not installed', () => {
+    expect(isPackageInstalled('readyup-package-that-does-not-exist')).toBe(false);
   });
 });

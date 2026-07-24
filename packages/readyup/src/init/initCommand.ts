@@ -3,7 +3,7 @@ import { EXIT_OK } from '../exitCodes.ts';
 import { printStep, reportWriteResult } from '../terminal.ts';
 import { extractMessage } from '../utils/error-handling.ts';
 import { buildInstallCommand } from '../utils/install-command.ts';
-import { isPackageResolvable } from '../utils/resolve-package.ts';
+import { isPackageInstalled } from '../utils/resolve-package.ts';
 import { scaffoldConfig } from './scaffold.ts';
 
 /** Steps that follow scaffolding regardless of whether readyup is already installed. */
@@ -64,7 +64,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
  * Numbering is computed so the conditional step leaves no gap.
  */
 function buildNextSteps(): string {
-  const steps = isPackageResolvable('readyup')
+  const steps = isPackageInstalled('readyup')
     ? STANDARD_NEXT_STEPS
     : [`Install readyup as a dev dependency: ${buildInstallCommand('readyup')}`, ...STANDARD_NEXT_STEPS];
 
