@@ -269,7 +269,20 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 rdy verify                     Check compiled kits against the manifest's hashes
 ```
 
-Each kit is reported as `ok`, `drift`, `missing`, or `unverified`. Drift and missing fail the run; `unverified` — a manifest entry with no recorded hash — does not, since it says nothing about whether the kit has changed. Under `--json`, a `drift` entry carries the `expected` and `actual` hashes alongside an overall verdict.
+Each kit carries two independent verdicts, because a kit is two artifacts: the TypeScript source and the bundle compiled from it.
+
+The compiled output is reported as `ok`, `drift`, `missing`, or `unverified`. The source is reported as `ok`, `stale`, `missing`, or `unverified`. Both axes are checked for every kit, and a kit can be stale at the source and drifted at the target at once: `drift` means someone edited the bundle by hand, while `stale` means the source moved on and nobody recompiled.
+
+Anything other than `ok` or `unverified` on either axis fails the run. `unverified` does not, since a manifest entry with no recorded hash says nothing about whether the kit has changed; a manifest written before source hashes existed reports `unverified` for the source and still passes.
+
+Under `--json`, each kit reports `status` for the compiled output and `sourceStatus` for the source. A `drift` verdict carries `expected` and `actual`; a `stale` verdict carries `sourceExpected` and `sourceActual`. `sourceStatus` is optional in the published schema, so a consumer pinned to `verify.v1.json` still validates payloads from an earlier readyup.
+
+### The staleness model
+
+Editing a kit's `.ts` without recompiling leaves `rdy run` executing the bundle it was compiled from, which is no longer what the source says. The two commands treat that differently on purpose:
+
+- **`rdy verify` enforces.** A stale source fails the run and exits 1. This is the gate to put in CI.
+- **`rdy run` advises.** It emits a warning and runs anyway, leaving the exit code alone. A verification tool that refused to run because its own bookkeeping was out of date would be worse than one that ran and said so.
 
 ## Authoring API
 

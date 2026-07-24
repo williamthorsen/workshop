@@ -74,6 +74,87 @@ describe('verifyCommand (integration)', () => {
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected deadbeef'));
   });
 
+  describe('source staleness', () => {
+    /**
+     * Write a matching source/output pair and a manifest recording both hashes.
+     *
+     * Returns the source path so a test can edit it, which is the whole scenario: a kit whose
+     * TypeScript moved on while the compiled bundle it was built from stayed put.
+     */
+    function writeCompiledPair(): string {
+      const compiled = Buffer.from('export default { checklists: [] };\n');
+      const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
+      const sourcePath = path.join(tempDir, 'demo.ts');
+      writeFileSync(path.join(tempDir, 'demo.js'), compiled);
+      writeFileSync(sourcePath, source);
+      writeFileSync(
+        path.join(tempDir, 'manifest.json'),
+        JSON.stringify({
+          version: 1,
+          kits: [
+            {
+              name: 'demo',
+              path: 'demo.js',
+              source: 'demo.ts',
+              sourceHash: hashBytes(source),
+              targetHash: hashBytes(compiled),
+            },
+          ],
+        }),
+      );
+      return sourcePath;
+    }
+
+    it('returns 0 when both the source and the compiled kit match the manifest', () => {
+      writeCompiledPair();
+
+      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ demo — ok'));
+    });
+
+    it('returns 1 when the source was edited without a recompile', () => {
+      const sourcePath = writeCompiledPair();
+      writeFileSync(sourcePath, 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
+
+      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('demo — ok; source stale'));
+    });
+
+    it('returns 1 when the recorded source was deleted', () => {
+      const sourcePath = writeCompiledPair();
+      rmSync(sourcePath);
+
+      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('demo — ok; source file missing'));
+    });
+
+    it('carries both source hashes in the JSON entry for a stale kit', () => {
+      const sourcePath = writeCompiledPair();
+      const edited = Buffer.from('export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
+      writeFileSync(sourcePath, edited);
+
+      verifyCommand(['--manifest', 'manifest.json', '--json']);
+
+      expect(JSON.parse(stdout.join(''))).toMatchObject({
+        passed: false,
+        kits: [
+          {
+            name: 'demo',
+            status: 'ok',
+            sourceStatus: 'stale',
+            sourceActual: hashBytes(edited),
+          },
+        ],
+      });
+    });
+  });
+
   describe('--json', () => {
     /** Write a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
     function writeMixedManifest(): void {
@@ -104,10 +185,16 @@ describe('verifyCommand (integration)', () => {
         schemaVersion: 1,
         passed: false,
         kits: [
-          { name: 'clean', status: 'ok' },
-          { name: 'edited', status: 'drift', expected: 'deadbeef', actual: expect.any(String) },
-          { name: 'gone', status: 'missing' },
-          { name: 'unhashed', status: 'unverified' },
+          { name: 'clean', status: 'ok', sourceStatus: 'unverified' },
+          {
+            name: 'edited',
+            status: 'drift',
+            expected: 'deadbeef',
+            actual: expect.any(String),
+            sourceStatus: 'unverified',
+          },
+          { name: 'gone', status: 'missing', sourceStatus: 'unverified' },
+          { name: 'unhashed', status: 'unverified', sourceStatus: 'unverified' },
         ],
       });
     });

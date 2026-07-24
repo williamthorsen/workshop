@@ -113,9 +113,17 @@ export const verifyPayload = {
   schemaVersion: 1,
   passed: false,
   kits: [
-    { name: 'deploy', status: 'ok' },
-    { name: 'release', status: 'drift', expected: 'abc123', actual: 'def456' },
+    { name: 'deploy', status: 'ok', sourceStatus: 'ok' },
+    { name: 'release', status: 'drift', expected: 'abc123', actual: 'def456', sourceStatus: 'unverified' },
+    { name: 'preflight', status: 'ok', sourceStatus: 'stale', sourceExpected: '111aaa', sourceActual: '222bbb' },
   ],
+};
+
+/** A verify payload from a readyup that predates the source verdict, which a v1 consumer still accepts. */
+export const legacyVerifyPayload = {
+  schemaVersion: 1,
+  passed: true,
+  kits: [{ name: 'deploy', status: 'ok' }],
 };
 
 export const compilePayload = {

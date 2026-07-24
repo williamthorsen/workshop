@@ -49,6 +49,7 @@ export type {
   JsonListOutput,
   JsonProgress,
   JsonReport,
+  JsonSourceStatus,
   JsonVerifyKitEntry,
   JsonVerifyOutput,
   JsonWarning,

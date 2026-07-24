@@ -19,6 +19,7 @@ import type { Severity } from '../../src/types.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
+  legacyVerifyPayload,
   listPayload,
   minimalReportPayload,
   reportPayload,
@@ -115,6 +116,24 @@ describe('JSON payload schemas', () => {
       const kits = [{ name: 'release', error: { code: 'kit-retired', message: 'boom' } }];
 
       expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow();
+    });
+  });
+
+  describe('verify entries', () => {
+    it('accepts a payload from a readyup that predates the source verdict', () => {
+      expect(() => VerifyOutputSchema.parse(legacyVerifyPayload)).not.toThrow();
+    });
+
+    it('rejects a source verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'drift' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+    });
+
+    it('keeps the source vocabulary distinct from the target vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'stale', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
     });
   });
 
