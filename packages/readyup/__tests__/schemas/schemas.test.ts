@@ -159,8 +159,8 @@ describe('JSON payload schemas', () => {
     });
 
     it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
-      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'version-skew'>();
-      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'version-skew'>();
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'source-stale' | 'target-drift' | 'version-skew'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'source-stale' | 'target-drift' | 'version-skew'>();
     });
 
     it('publishes the known warning codes as distinguishable members of an open set', () => {
@@ -168,6 +168,7 @@ describe('JSON payload schemas', () => {
       // assignments below while offering a consumer no vocabulary at all.
       expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
       expectTypeOf<'version-skew'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'source-stale'>().toExtend<JsonWarningCode>();
       expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
     });
   });

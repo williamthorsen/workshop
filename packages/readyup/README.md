@@ -103,6 +103,18 @@ rdy <command> [options]
 
 `--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
 
+### Advisory warnings
+
+`rdy run` compares each local kit it is about to run against the manifest, and says so when the two disagree. Warnings go to stderr in both output modes and appear under `warnings` in the JSON report; none of them affects the exit code.
+
+| Code           | Raised when                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| `source-stale` | The kit's TypeScript has changed since the compiled bundle was built from it  |
+| `target-drift` | The compiled bundle no longer matches the hash the manifest recorded for it   |
+| `version-skew` | The kit was compiled against a readyup version that differs from the runner's |
+
+The staleness warnings are silent when there is no manifest, when no entry describes the kit being run, or when the entry records no hashes. They do not apply to `--url` sources, which no local manifest describes, or to `--jit`, which runs the source directly. `rdy verify` is the enforcing gate; see [the staleness model](#the-staleness-model).
+
 ### Exit codes
 
 | Code | Meaning                                                                                                                       |

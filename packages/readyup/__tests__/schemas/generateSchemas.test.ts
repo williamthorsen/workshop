@@ -88,7 +88,10 @@ describe('generated JSON Schemas', () => {
     it('publishes the warning vocabulary as an open set that still names its known codes', () => {
       const warningCode = objectAt(report, '$defs', 'WarningCode');
 
-      expect(warningCode.anyOf).toStrictEqual([{ type: 'string', enum: ['version-skew'] }, { type: 'string' }]);
+      expect(warningCode.anyOf).toStrictEqual([
+        { type: 'string', enum: ['source-stale', 'target-drift', 'version-skew'] },
+        { type: 'string' },
+      ]);
     });
 
     it('requires all six buckets of the counts object', () => {
