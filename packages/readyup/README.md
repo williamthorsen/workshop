@@ -308,6 +308,17 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 | `defineRdyStagedChecklist` | Staged checklist (sequential groups) |
 | `defineChecklists`         | Array of checklists                  |
 
+### Preconditions
+
+A checklist's `preconditions` gate the checks that follow it. If any precondition fails, every check in the checklist is skipped, and each skipped result records `precondition` as its reason.
+
+Two rules govern the gate:
+
+- **A failed precondition gates regardless of its severity.** A precondition declared `recommend` gates exactly as one declared `error` does. Severity decides whether the run _fails_; the gate decides whether the checks are worth _running_, and those are separate questions. A `recommend` precondition that fails under the default `--fail-on error` therefore skips the whole checklist and still exits 0.
+- **A precondition skipped `n/a` does not gate.** "The gate does not apply" is not "the gate failed", so the checklist runs in full. To make a whole checklist inapplicable instead, nest its checks under a single parent check whose `skip` returns a reason: an `n/a` skip terminates its own subtree, and nothing beneath it produces a result.
+
+Precondition results and the checks they skip follow the same reporting threshold as everything else: a result appears in the output only when its own severity is at or above `--report-on`.
+
 ### Kit validation
 
 The authoring helpers are type-level only, and neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both commands validate the kit's structure at load time. Validation is the same in both, which means `rdy compile` refuses to publish a kit that `rdy run` would reject.

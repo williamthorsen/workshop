@@ -269,6 +269,89 @@ describe(runRdy, () => {
       assert.ok(target?.status === 'skipped');
       expect(target.skipReason).toBe('precondition');
     });
+
+    describe('gating semantics', () => {
+      it.each(['error', 'warn', 'recommend'] as const)(
+        'gates the checklist when a %s-severity precondition fails',
+        async (severity) => {
+          const checklist: RdyChecklist = {
+            name: 'gated',
+            preconditions: [{ name: 'pre-fail', check: () => false, severity }],
+            checks: [{ name: 'should-skip', check: () => true }],
+          };
+
+          const report = await runRdy(checklist);
+
+          const target = report.results.find((r) => r.name === 'should-skip');
+          assert.ok(target?.status === 'skipped');
+          expect(target.skipReason).toBe('precondition');
+        },
+      );
+
+      // Gating and run failure are separate questions: the gate asks whether the checks are worth
+      // running at all, and the threshold asks whether what happened is worth failing over.
+      it('gates on a precondition whose failure is below the failure threshold, and still passes', async () => {
+        const checklist: RdyChecklist = {
+          name: 'gated',
+          preconditions: [{ name: 'pre-fail', check: () => false, severity: 'recommend' }],
+          checks: [{ name: 'should-skip', check: () => false }],
+        };
+
+        const report = await runRdy(checklist, { failOn: 'error' });
+
+        expect(report.results[1]?.status).toBe('skipped');
+        expect(report.passed).toBe(true);
+      });
+
+      it.each(['error', 'warn', 'recommend'] as const)(
+        'does not gate when a %s-severity precondition is skipped n/a',
+        async (severity) => {
+          const checklist: RdyChecklist = {
+            name: 'gated',
+            preconditions: [{ name: 'pre-na', check: () => false, severity, skip: () => 'not applicable here' }],
+            checks: [{ name: 'runs-anyway', check: () => true }],
+          };
+
+          const report = await runRdy(checklist);
+
+          expect(report.results.find((r) => r.name === 'runs-anyway')?.status).toBe('passed');
+        },
+      );
+
+      it('produces no results for checks nested under an n/a-skipped precondition', async () => {
+        const checklist: RdyChecklist = {
+          name: 'gated',
+          preconditions: [
+            {
+              name: 'pre-na',
+              check: () => true,
+              skip: () => 'not applicable here',
+              checks: [{ name: 'dependent', check: () => true }],
+            },
+          ],
+          checks: [{ name: 'runs-anyway', check: () => true }],
+        };
+
+        const report = await runRdy(checklist);
+
+        expect(report.results.map((r) => r.name)).toStrictEqual(['pre-na', 'runs-anyway']);
+      });
+
+      it('gates a staged checklist the same way a flat one is gated', async () => {
+        const checklist: RdyStagedChecklist = {
+          name: 'gated-stages',
+          preconditions: [{ name: 'pre-fail', check: () => false, severity: 'recommend' }],
+          groups: [[{ name: 'first', check: () => true }], [{ name: 'second', check: () => true }]],
+        };
+
+        const report = await runRdy(checklist);
+
+        expect(report.results.filter((r) => r.status === 'skipped').map((r) => r.name)).toStrictEqual([
+          'first',
+          'second',
+        ]);
+      });
+    });
   });
 
   describe('thrown checks', () => {
