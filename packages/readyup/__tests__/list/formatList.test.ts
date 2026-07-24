@@ -15,6 +15,27 @@ describe(formatOwnerView, () => {
     expect(result).toContain('deploy');
   });
 
+  it('omits --internal from the internal hint by default', () => {
+    const result = formatOwnerView({
+      internalKits: ['default'],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+    });
+
+    expect(result).toContain('Internal: rdy run --jit [<name>]');
+  });
+
+  it('adds --internal to the internal hint when the config makes it necessary', () => {
+    const result = formatOwnerView({
+      internalKits: ['default'],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+      needsInternalFlag: true,
+    });
+
+    expect(result).toContain('Internal: rdy run --jit --internal [<name>]');
+  });
+
   it('renders only the Compiled section when internal kits are empty', () => {
     const result = formatOwnerView({
       internalKits: [],

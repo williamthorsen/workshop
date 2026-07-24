@@ -7,14 +7,14 @@ Run pre-deployment verification checks against your environment and configuratio
 ## Installation
 
 ```bash
-pnpm add -D readyup
+pnpm add --save-dev readyup
 ```
 
 Node 24 or later is required, for the runner and for the kits it compiles.
 
 ## Quick start
 
-Scaffold a starter config and kit:
+Install readyup as shown above, then scaffold a starter config and kit:
 
 ```bash
 rdy init
@@ -56,11 +56,16 @@ export default defineRdyKit({
 });
 ```
 
-Run the checks:
+Compile the kit, then run the checks:
 
 ```bash
+rdy compile
 rdy run
 ```
+
+`rdy compile` bundles `.readyup/kits/default.ts` into `.readyup/kits/default.js`, and `rdy run` loads that compiled kit. Recompile whenever the source changes.
+
+To skip compiling and run straight from the TypeScript source, use `rdy run --jit`. It reads the same `.readyup/kits/default.ts` and needs no compiled bundle, which makes it the faster loop while you are still writing checks. Compiled kits stay the vetted artifact: they are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
 
 ## CLI reference
 

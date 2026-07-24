@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockScaffoldConfig = vi.hoisted(() => vi.fn());
 
@@ -14,6 +14,17 @@ vi.mock('../src/terminal.ts', () => ({
   printStep: vi.fn(),
   printSuccess: vi.fn(),
   reportWriteResult: mockReportWriteResult,
+}));
+
+const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
+const mockIsPackageInstalled = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/utils/install-command.ts', () => ({
+  buildInstallCommand: mockBuildInstallCommand,
+}));
+
+vi.mock('../src/utils/resolve-package.ts', () => ({
+  isPackageInstalled: mockIsPackageInstalled,
 }));
 
 import { initCommand } from '../src/init/initCommand.ts';
@@ -37,6 +48,8 @@ describe(`${initCommand.name} error handling`, () => {
     vi.restoreAllMocks();
     mockScaffoldConfig.mockReset();
     mockReportWriteResult.mockReset();
+    mockBuildInstallCommand.mockReset();
+    mockIsPackageInstalled.mockReset();
   });
 
   it('throws a config error when scaffoldConfig throws', () => {
@@ -98,3 +111,60 @@ describe(`${initCommand.name} error handling`, () => {
     expect(mockReportWriteResult).toHaveBeenCalledWith(result.kitResult, dryRun);
   });
 });
+
+describe(`${initCommand.name} next steps`, () => {
+  let infoSpy: MockInstance;
+
+  beforeEach(() => {
+    infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
+    mockBuildInstallCommand.mockReturnValue('pnpm add --save-dev readyup');
+    mockIsPackageInstalled.mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    mockScaffoldConfig.mockReset();
+    mockBuildInstallCommand.mockReset();
+    mockIsPackageInstalled.mockReset();
+  });
+
+  it('names only rdy commands, never npx readyup', () => {
+    initCommand({ dryRun: false, force: false });
+
+    expect(printedSteps(infoSpy)).not.toContain('npx readyup');
+    expect(printedSteps(infoSpy)).toContain('rdy compile');
+    expect(printedSteps(infoSpy)).toContain('rdy run');
+  });
+
+  it('omits the install step when readyup is already installed', () => {
+    initCommand({ dryRun: false, force: false });
+
+    const steps = printedSteps(infoSpy);
+    expect(steps).not.toContain('Install readyup');
+    expect(steps).toContain('1. Customize .config/readyup.config.ts');
+    expect(steps).toContain('5. Commit the generated files.');
+  });
+
+  it('leads with the install step when readyup is not installed', () => {
+    mockIsPackageInstalled.mockReturnValue(false);
+
+    initCommand({ dryRun: false, force: false });
+
+    const steps = printedSteps(infoSpy);
+    expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup');
+    expect(steps).toContain('2. Customize .config/readyup.config.ts');
+    expect(steps).toContain('6. Commit the generated files.');
+  });
+
+  it('prints no next steps in dry-run mode', () => {
+    initCommand({ dryRun: true, force: false });
+
+    expect(printedSteps(infoSpy)).not.toContain('Customize');
+  });
+});
+
+/** Join everything written to `console.info` into one string. */
+function printedSteps(infoSpy: MockInstance): string {
+  return infoSpy.mock.calls.map((call) => String(call[0])).join('\n');
+}

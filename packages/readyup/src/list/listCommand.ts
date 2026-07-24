@@ -6,7 +6,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
-import { loadConfig } from '../loadConfig.ts';
+import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -43,7 +43,7 @@ export async function listCommand(args: string[]): Promise<number> {
   try {
     parsed = nodeParseArgs({ args, options: listOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error), { cause: error });
+    throw usageError(translateParseArgsError(error, 'list'), { cause: error });
   }
   const { values } = parsed;
 
@@ -162,11 +162,16 @@ async function runRemoteFromMode({
 async function runOwnerMode(json: boolean): Promise<number> {
   const cwd = process.cwd();
 
+  // Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather
+  // than the answer, taking the same warn-and-continue the corrupt-manifest path below takes. `run` still
+  // fails hard on the same failure: it would otherwise execute against settings nobody chose.
   let config;
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    const detail = extractMessage(error).replace(/\.$/, '');
+    process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
+    config = { ...DEFAULT_CONFIG };
   }
 
   const internalDir = path.join(cwd, KITS_DIR, config.internal.dir);
@@ -201,7 +206,8 @@ async function runOwnerMode(json: boolean): Promise<number> {
 
   const compiledKits = manifestKits.map((kit) => kit.name);
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
-  writeHuman(formatOwnerView({ internalKits, compiledKits, compiledStyle }) + '\n', json);
+  const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
+  writeHuman(formatOwnerView({ internalKits, compiledKits, compiledStyle, needsInternalFlag }) + '\n', json);
 
   const entries: JsonListKitEntry[] = [
     ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),

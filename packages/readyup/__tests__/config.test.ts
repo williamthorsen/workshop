@@ -4,9 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockJitiImport = vi.hoisted(() => vi.fn());
+const mockReaddirSync = vi.hoisted(() => vi.fn());
 
 vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
+  readdirSync: mockReaddirSync,
 }));
 
 vi.mock('jiti', () => ({
@@ -21,32 +23,74 @@ describe(loadRdyKit, () => {
   afterEach(() => {
     mockExistsSync.mockReset();
     mockJitiImport.mockReset();
+    mockReaddirSync.mockReset();
   });
 
-  it('throws when the kit file does not exist', async () => {
-    mockExistsSync.mockReturnValue(false);
+  it('reports an uncompiled kit when only the TypeScript source exists', async () => {
+    mockExistsSync.mockImplementation((target: string) => target.endsWith('.ts'));
 
-    await expect(loadRdyKit('missing/kit.ts')).rejects.toThrow('Kit not found');
-  });
-
-  it('throws with a rdy init hint when a convention-path kit is missing', async () => {
-    mockExistsSync.mockReturnValue(false);
-
-    await expect(loadRdyKit('.readyup/kits/default.ts')).rejects.toThrow(
-      'Kit "default" not found. Run \'rdy init\' to create one.',
+    await expect(loadRdyKit('.readyup/kits/deploy.js')).rejects.toThrow(
+      "Kit \"deploy\" is not compiled. Run 'rdy compile' to compile it, or 'rdy run --jit' to run it from source.",
     );
   });
 
-  it('shows the user-provided path in file-not-found errors', async () => {
-    mockExistsSync.mockReturnValue(false);
+  it('reports a compiled-only kit when its source is requested', async () => {
+    mockExistsSync.mockImplementation((target: string) => target.endsWith('.js'));
 
-    await expect(loadRdyKit('custom/path.ts')).rejects.toThrow('Kit not found: custom/path.ts');
+    await expect(loadRdyKit('.readyup/kits/deploy.ts')).rejects.toThrow(
+      'Kit "deploy" has no source at .readyup/kits/deploy.ts, but a compiled kit exists. ' +
+        "Run 'rdy run' without --jit to use it.",
+    );
   });
 
-  it('includes the path in file-not-found errors for non-convention paths', async () => {
+  it("suggests 'rdy init' when the kit directory holds no kits at all", async () => {
     mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue([]);
 
-    await expect(loadRdyKit('some/other.ts')).rejects.toThrow('Kit not found: some/other.ts');
+    await expect(loadRdyKit('.readyup/kits/default.js')).rejects.toThrow(
+      'Kit "default" not found at .readyup/kits/default.js. Run \'rdy init\' to create one.',
+    );
+  });
+
+  it('names the available kits rather than suggesting init when the default kit is missing but others exist', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue(buildDirents('deploy.js', 'release.js'));
+
+    const error = await loadRdyKit('.readyup/kits/default.js').catch((error_: unknown) => error_);
+
+    expect(String(error)).toContain(
+      'Kit "default" not found at .readyup/kits/default.js. Available kits: deploy, release.',
+    );
+    expect(String(error)).not.toContain('rdy init');
+  });
+
+  it('names the searched path and the available kits for any other missing kit', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue(buildDirents('deploy.js', 'release.js'));
+
+    await expect(loadRdyKit('.readyup/kits/deply.js')).rejects.toThrow(
+      'Kit "deply" not found at .readyup/kits/deply.js. Available kits: deploy, release.',
+    );
+  });
+
+  it('names the searched directory when no kits sit beside the missing one', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue([]);
+
+    await expect(loadRdyKit('custom/path.ts')).rejects.toThrow(
+      'Kit "path" not found at custom/path.ts. No kits found in custom.',
+    );
+  });
+
+  it('treats an unreadable kit directory as holding no kits', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockImplementation(() => {
+      throw Object.assign(new Error('permission denied'), { code: 'EACCES' });
+    });
+
+    await expect(loadRdyKit('custom/path.ts')).rejects.toThrow(
+      'Kit "path" not found at custom/path.ts. No kits found in custom.',
+    );
   });
 
   it.each(['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'])(
@@ -198,3 +242,8 @@ describe(loadRdyKit, () => {
     expect(compileTimeVersion).toBeUndefined();
   });
 });
+
+/** Build the `withFileTypes` entries `readdirSync` returns for a set of regular files. */
+function buildDirents(...names: string[]): Array<{ name: string; isFile: () => boolean }> {
+  return names.map((name) => ({ name, isFile: () => true }));
+}

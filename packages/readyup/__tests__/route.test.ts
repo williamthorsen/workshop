@@ -1,3 +1,6 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockRunCommand = vi.hoisted(() => vi.fn());
@@ -37,6 +40,9 @@ vi.mock('../src/version.ts', () => ({
 import { routeCommand } from '../src/bin/route.ts';
 import { usageError } from '../src/errors.ts';
 
+/** Scratch project root for the tests that need a kit file on disk. */
+const TYPO_TEST_DIR = join(import.meta.dirname, '../.test-tmp-route');
+
 describe(routeCommand, () => {
   let stdoutSpy: MockInstance;
   let stderrSpy: MockInstance;
@@ -54,6 +60,7 @@ describe(routeCommand, () => {
   });
 
   afterEach(() => {
+    rmSync(TYPO_TEST_DIR, { recursive: true, force: true });
     vi.restoreAllMocks();
     mockRunCommand.mockReset();
     mockCompileCommand.mockReset();
@@ -132,6 +139,31 @@ describe(routeCommand, () => {
 
     const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(output).toContain('(default)');
+  });
+
+  it('points at per-command help from top-level help', async () => {
+    await routeCommand(['--help']);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain("Run 'rdy <command> --help' for command-specific options.");
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+    { label: 'list', args: ['list', '--help'] },
+  ])('shows examples in $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('Examples:');
+  });
+
+  it('explains how to escape a positional starting with a dash in run help', async () => {
+    await routeCommand(['run', '--help']);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('rdy run -- "--odd-kit-name"');
   });
 
   it('shows run help and returns 0 for run --help', async () => {
@@ -616,11 +648,15 @@ describe(routeCommand, () => {
 
   describe('typo detection', () => {
     it.each([
-      ['compil', 'compile'],
-      ['compi', 'compile'],
+      ['co', 'compile'],
       ['comp', 'compile'],
+      ['comple', 'compile'],
+      ['compil', 'compile'],
       ['ini', 'init'],
       ['lis', 'list'],
+      ['lst', 'list'],
+      ['runn', 'run'],
+      ['verfy', 'verify'],
     ])('suggests "%s" -> "%s"', async (input, expected) => {
       const exitCode = await routeCommand([input]);
 
@@ -628,36 +664,74 @@ describe(routeCommand, () => {
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(`Did you mean 'rdy ${expected}'?`));
     });
 
-    it('does not suggest for prefixes shorter than 3 characters', async () => {
-      mockParseRunArgs.mockReturnValue({
-        kitSpecifiers: [{ kitName: 'co', checklists: [] }],
-        checklists: undefined,
-        filePath: undefined,
-        fromValue: undefined,
-        urlValue: undefined,
-        jit: false,
-        internal: false,
-        json: false,
-      });
+    it('does not suggest for a word no command is close to', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const exitCode = await routeCommand(['co']);
+      const exitCode = await routeCommand(['onboarding']);
 
       expect(exitCode).toBe(0);
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
+    it('runs a bare word as a kit when a kit by that name exists', async () => {
+      mkdirSync(join(TYPO_TEST_DIR, '.readyup/kits'), { recursive: true });
+      writeFileSync(join(TYPO_TEST_DIR, '.readyup/kits/lst.js'), 'export const checklists = [];', 'utf8');
+      vi.spyOn(process, 'cwd').mockReturnValue(TYPO_TEST_DIR);
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['lst']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
+    });
+
+    it.each([
+      ['--from', ['lst', '--from', 'global']],
+      ['--from with an inline value', ['lst', '--from=global']],
+      ['--file', ['lst', '--file', 'kit.js']],
+      ['--url', ['lst', '--url', 'https://example.test/kit.js']],
+      ['--internal', ['runn', '--internal']],
+    ])('runs the bare word as a kit when %s names its source', async (_label, args) => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: args[0], checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(args);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(args);
+    });
+
+    it('runs a bare word carrying a checklist filter as a kit', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lis', checklists: ['t'] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['lis:t']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lis:t']);
+    });
+
+    it('still suggests a command when a source flag follows the -- terminator', async () => {
+      const exitCode = await routeCommand(['lst', '--', '--from']);
+
+      expect(exitCode).toBe(2);
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("Did you mean 'rdy list'?"));
+    });
+
+    it('does not suggest after an explicit run subcommand', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const exitCode = await routeCommand(['run', 'lst']);
+
+      expect(exitCode).toBe(0);
+      expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
+    });
+
     it('does not suggest when input matches a subcommand exactly', async () => {
-      mockParseRunArgs.mockReturnValue({
-        kitSpecifiers: [],
-        checklists: undefined,
-        filePath: undefined,
-        fromValue: undefined,
-        urlValue: undefined,
-        jit: false,
-        internal: false,
-        json: false,
-      });
+      mockParseRunArgs.mockReturnValue(parsedRunArgs());
       mockRunCommand.mockResolvedValue(0);
 
       // 'run' is handled before typo detection, so this verifies

@@ -7,8 +7,8 @@ import { isRecord } from './isRecord.ts';
 import { jitiImport } from './jitiImport.ts';
 import type { RdyConfig, ResolvedRdyConfig } from './types.ts';
 
-/** Default config values when no config file is found. */
-const DEFAULT_CONFIG: ResolvedRdyConfig = {
+/** Default config values when no config file is found, or when one cannot be evaluated. */
+export const DEFAULT_CONFIG: ResolvedRdyConfig = {
   compile: {
     srcDir: '.readyup/kits',
     outDir: '.readyup/kits',

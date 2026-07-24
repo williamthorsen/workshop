@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
@@ -8,6 +10,7 @@ import { EXIT_OK, EXIT_TOOL_FAILURE } from '../exitCodes.ts';
 import { formatJsonError } from '../formatJsonError.ts';
 import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
+import { KITS_DIR } from '../kitsDir.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -16,8 +19,17 @@ import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 import { writeHuman } from '../writeHuman.ts';
 
-const SUBCOMMANDS = ['compile', 'init', 'list', 'verify'];
-const MIN_PREFIX_LENGTH = 3;
+/** Command names a mistyped bare word is matched against, including the implicit `run`. */
+const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];
+
+/** Edits (insertions, deletions, or substitutions) a word may be from a command and still match it. */
+const MAX_TYPO_DISTANCE = 2;
+
+/** Extensions a kit file can carry, in the order `run` would resolve them. */
+const KIT_EXTENSIONS = ['.js', '.ts'];
+
+/** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
+const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
 const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
@@ -47,6 +59,17 @@ Run options:
 Global options:
   --help, -h           Show this help message
   --version, -V        Show version number
+
+Run 'rdy <command> --help' for command-specific options.
+
+Examples:
+  rdy                                              Run every checklist in the default kit
+  rdy deploy                                       Run the compiled deploy kit
+  rdy deploy:build,test                            Run two checklists from the deploy kit
+  rdy run --jit deploy                             Run the deploy kit from its TypeScript source
+  rdy init                                         Scaffold a starter config and kit
+  rdy compile                                      Compile every kit source into a bundle
+  rdy list --from github:williamthorsen/workshop   List kits published by a repository
 
 Exit codes:
   0  Ran and found no problems
@@ -109,6 +132,18 @@ Options:
 
 Positional args accept relative paths (e.g., shared/deploy).
 Defaults to .readyup/kits/default.js when no source is given.
+
+To pass a positional argument that starts with a '-', place it at the end of the command
+after '--', as in: rdy run -- "--odd-kit-name"
+
+Examples:
+  rdy run                                Run every checklist in the default kit
+  rdy run deploy                         Run the compiled deploy kit
+  rdy run deploy:build,test              Run two checklists from the deploy kit
+  rdy run --jit deploy                   Run the deploy kit from its TypeScript source
+  rdy run --from global deploy           Run the deploy kit from the global directory
+  rdy run --fail-on warn                 Fail the run on warnings as well as errors
+  rdy run --json --detail summary        Emit a JSON report carrying only failed checks
 `;
 
 const COMPILE_HELP = `
@@ -277,9 +312,11 @@ async function dispatchCommand(args: string[], json: boolean): Promise<number> {
     return wantsHelp(flags) ? writeHelp(VERIFY_HELP, json) : verifyCommand(flags);
   }
 
-  // Check for typos before falling through to the default command.
+  // A bare word that names a kit is always run as that kit; only one that names none can be a
+  // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
+  // never reaches it: naming the subcommand says the word is a kit.
   const typoMatch = findTypoMatch(command);
-  if (typoMatch !== undefined) {
+  if (typoMatch !== undefined && !namesAKit(command, args)) {
     throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
   }
 
@@ -342,7 +379,7 @@ function handleInit(flags: string[]): number {
   try {
     parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error), { cause: error });
+    throw usageError(translateParseArgsError(error, 'init'), { cause: error });
   }
 
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
@@ -359,15 +396,84 @@ function writeHelp(text: string, json: boolean): number {
   return EXIT_OK;
 }
 
-/** Checks whether a positional arg is a close prefix of a known subcommand. */
+/**
+ * Find the command a bare word most likely misspells, or `undefined` when none is close enough.
+ *
+ * A word qualifies by abbreviating a command or by sitting within a couple of edits of one, so a
+ * transposed or wrong letter is caught alongside a truncation. Ties go to the nearest command and
+ * then to the first in alphabetical order. Words starting with `-` are flags, which the argument
+ * parser reports on its own.
+ */
 function findTypoMatch(input: string): string | undefined {
-  if (input.length < MIN_PREFIX_LENGTH || input.startsWith('-')) {
-    return undefined;
-  }
-  for (const cmd of SUBCOMMANDS) {
-    if (cmd !== input && cmd.startsWith(input)) {
-      return cmd;
+  if (input === '' || input.startsWith('-')) return undefined;
+
+  let best: { command: string; distance: number } | undefined;
+  for (const command of COMMAND_NAMES) {
+    const distance = measureEditDistance(input, command);
+    const isCandidate = distance <= MAX_TYPO_DISTANCE || command.startsWith(input);
+    if (isCandidate && (best === undefined || distance < best.distance)) {
+      best = { command, distance };
     }
   }
-  return undefined;
+  return best?.command;
+}
+
+/**
+ * Report whether a bare word is a kit rather than a candidate command typo.
+ *
+ * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
+ * settles the question outright: under them the word is a kit by construction, and the kit it names
+ * lives wherever that source resolves rather than on a path worth probing.
+ *
+ * Everything else is a bare word with no source, which `run` resolves against the conventional kit
+ * directory alone. Probing exactly that directory is what makes the answer match what would run.
+ */
+function namesAKit(word: string, args: string[]): boolean {
+  if (word.includes(':') || hasSourceFlag(args)) return true;
+
+  return KIT_EXTENSIONS.some((extension) => existsSync(path.join(process.cwd(), KITS_DIR, `${word}${extension}`)));
+}
+
+/**
+ * Detect a kit-source flag by scanning raw argv.
+ *
+ * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
+ * stops at the `--` terminator, after which arguments are positional rather than flags.
+ */
+function hasSourceFlag(args: string[]): boolean {
+  for (const arg of args) {
+    if (arg === '--') return false;
+    const flag = arg.includes('=') ? arg.slice(0, arg.indexOf('=')) : arg;
+    if (SOURCE_FLAGS.has(flag)) return true;
+  }
+  return false;
+}
+
+/** Compute the Levenshtein edit distance between two words. */
+function measureEditDistance(source: string, target: string): number {
+  const targetCharacters = Array.from(target);
+
+  // Each row holds the distance from one prefix of the source to every non-empty prefix of the
+  // target. Column zero is held in a scalar rather than the row because its value is always the
+  // row's own index, which keeps every read a plain iteration.
+  let previousRow = targetCharacters.map((character, index) => ({ character, distance: index + 1 }));
+
+  for (const [rowIndex, sourceCharacter] of Array.from(source).entries()) {
+    let diagonal = rowIndex;
+    let left = rowIndex + 1;
+    const currentRow: typeof previousRow = [];
+
+    for (const { character, distance: above } of previousRow) {
+      const substitution = diagonal + (sourceCharacter === character ? 0 : 1);
+      const distance = Math.min(above + 1, left + 1, substitution);
+      currentRow.push({ character, distance });
+      diagonal = above;
+      left = distance;
+    }
+
+    previousRow = currentRow;
+  }
+
+  // An empty target leaves every row empty, and the distance is then the source's length alone.
+  return previousRow.at(-1)?.distance ?? source.length;
 }

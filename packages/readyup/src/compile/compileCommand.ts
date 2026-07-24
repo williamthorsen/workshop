@@ -49,7 +49,7 @@ export async function compileCommand(args: string[]): Promise<number> {
   try {
     parsed = nodeParseArgs({ args, options: compileOptions, strict: true, allowPositionals: true });
   } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, compileHints), { cause: error });
+    throw usageError(translateParseArgsError(error, 'compile', compileHints), { cause: error });
   }
   const { values, positionals } = parsed;
 

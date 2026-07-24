@@ -4,9 +4,13 @@ const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/loadConfig.ts', () => ({
-  loadConfig: mockLoadConfig,
-}));
+vi.mock('../src/loadConfig.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/loadConfig.ts')>();
+  return {
+    DEFAULT_CONFIG: actual.DEFAULT_CONFIG,
+    loadConfig: mockLoadConfig,
+  };
+});
 
 vi.mock('../src/list/enumerateKits.ts', () => ({
   enumerateKits: mockEnumerateKits,
@@ -125,13 +129,24 @@ describe(listCommand, () => {
       expect(output).toContain('No kits found.');
     });
 
-    it('reports a config error when config load fails', async () => {
+    it('warns and lists with default settings when config load fails', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
+      mockEnumerateKits.mockReturnValue(['default']);
 
-      const error = await captureRdyError(() => listCommand([]));
+      const exitCode = await listCommand([]);
 
-      expect(error.code).toBe('config');
-      expect(error.message).toContain('bad config');
+      expect(exitCode).toBe(0);
+      expect(stderrSpy).toHaveBeenCalledWith('Warning: bad config. Listing with default settings.\n');
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('default');
+    });
+
+    it('does not double the period when the config failure already ends in one', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config.'));
+
+      await listCommand([]);
+
+      expect(stderrSpy).toHaveBeenCalledWith('Warning: bad config. Listing with default settings.\n');
     });
 
     it('reports a config error when enumerateKits throws', async () => {
@@ -159,6 +174,31 @@ describe(listCommand, () => {
       expect(output).toContain('Internal:');
       expect(output).not.toContain('Compiled:');
       expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['dir', { dir: 'internal', infix: undefined }],
+      ['infix', { dir: '.', infix: 'internal' }],
+    ])('adds --internal to the internal hint when internal.%s is configured', async (_label, internal) => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        internal,
+      });
+      mockEnumerateKits.mockReturnValue(['default']);
+
+      await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal: rdy run --jit --internal [<name>]');
+    });
+
+    it('leaves --internal out of the internal hint under the default config', async () => {
+      mockEnumerateKits.mockReturnValue(['default']);
+
+      await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Internal: rdy run --jit [<name>]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
