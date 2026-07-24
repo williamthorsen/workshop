@@ -114,6 +114,11 @@ describe('staleness warnings', () => {
     return stderrSpy.mock.calls.map((c) => String(c[0])).join('');
   }
 
+  /** Concatenate every stdout write into a single string for substring assertions. */
+  function stdoutText(): string {
+    return stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+  }
+
   /** The warnings the JSON report was handed, or an empty array when it was handed none. */
   function reportedWarnings(): JsonWarning[] {
     const call = mockFormatJsonReport.mock.calls[0];
@@ -137,6 +142,13 @@ describe('staleness warnings', () => {
       expected: '5555bbbb',
       actual: '6666cccc',
       resolvedPath: '/abs/default.ts',
+    });
+  }
+
+  /** Report the source as present but impossible to hash. */
+  function arrangeUnreadableSource(): void {
+    mockCheckSourceDrift.mockImplementation(() => {
+      throw new Error('EACCES: permission denied, open /abs/default.ts');
     });
   }
 
@@ -179,6 +191,30 @@ describe('staleness warnings', () => {
       const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false });
 
       expect(exitCode).toBe(0);
+    });
+
+    it('still advises on the target when the source cannot be hashed', async () => {
+      arrangeTargetDrift();
+      arrangeUnreadableSource();
+
+      await runCommand({ kitEntries: singleKitEntry(), json: false });
+
+      const stderr = stderrText();
+      expect(stderr).toContain('does not match the hash the manifest recorded');
+      expect(stderr).not.toContain('compiled from an older source');
+    });
+
+    it('still advises on the source when the compiled bundle cannot be hashed', async () => {
+      arrangeSourceStale();
+      mockCheckDrift.mockImplementation(() => {
+        throw new Error('EISDIR: illegal operation on a directory, read');
+      });
+
+      await runCommand({ kitEntries: singleKitEntry(), json: false });
+
+      const stderr = stderrText();
+      expect(stderr).toContain('compiled from an older source');
+      expect(stderr).not.toContain('does not match the hash the manifest recorded');
     });
 
     it('stays silent when both artifacts match the manifest', async () => {
@@ -291,6 +327,16 @@ describe('staleness warnings', () => {
       expect(stderrText()).not.toContain('Warning:');
     });
 
+    it('runs the kit and stays silent when a file it would hash cannot be read', async () => {
+      arrangeUnreadableSource();
+
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false });
+
+      expect(exitCode).toBe(0);
+      expect(stdoutText()).toContain('report output');
+      expect(stderrText()).not.toContain('Warning:');
+    });
+
     it('stays silent when a compiled file the manifest names is gone', async () => {
       mockCheckDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.js' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.ts' });
@@ -336,7 +382,7 @@ describe('staleness warnings', () => {
       await runCommand({ kitEntries: singleKitEntry(), json: true });
 
       expect(reportedWarnings().map((warning) => warning.code)).toStrictEqual(['target-drift', 'source-stale']);
-      expect(stdoutSpy.mock.calls.map((c) => String(c[0])).join('')).toBe('{"kits":[]}\n');
+      expect(stdoutText()).toBe('{"kits":[]}\n');
     });
 
     it('writes the advisory to stderr in JSON mode as well', async () => {

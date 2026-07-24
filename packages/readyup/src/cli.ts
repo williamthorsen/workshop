@@ -500,8 +500,8 @@ function readManifestTracking(isJit: boolean): ManifestTracking | undefined {
  * about to execute checks that no longer match their source. Both can hold at once.
  *
  * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code. A
- * kit no entry describes, an entry recording no hash, and a remote or just-in-time source are all
- * silent, because none of them is evidence that anything is stale.
+ * kit no entry describes, an entry recording no hash, a remote or just-in-time source, and a file
+ * that cannot be hashed are all silent, because none of them is evidence that anything is stale.
  *
  * The stderr lines are written in both modes; the returned entries are what JSON mode captures into
  * the report, so a consumer that owns only stdout still learns the run was advised of something.
@@ -517,14 +517,14 @@ function warnOnKitStaleness(
   if (entry === undefined) return [];
 
   const warnings: RaisedWarning[] = [];
-  if (checkDrift(entry, tracking.manifestDir).kind === 'drift') {
+  if (hasVerdict(() => checkDrift(entry, tracking.manifestDir), 'drift')) {
     warnings.push({
       code: 'target-drift',
       message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
       remedy: 'Run `rdy compile --force` to rebuild it from source.',
     });
   }
-  if (checkSourceDrift(entry, tracking.manifestDir).kind === 'stale') {
+  if (hasVerdict(() => checkSourceDrift(entry, tracking.manifestDir), 'stale')) {
     warnings.push({
       code: 'source-stale',
       message: `kit "${kitName}" was compiled from an older source than the one on disk.`,
@@ -550,6 +550,15 @@ function findManifestEntry(kitPath: string, tracking: ManifestTracking): RdyMani
   return tracking.manifest.kits.find(
     (kit) => kit.path !== undefined && path.resolve(tracking.manifestDir, kit.path) === resolvedKitPath,
   );
+}
+
+/** Report whether a staleness predicate reaches the given verdict, treating a file it cannot hash as no. */
+function hasVerdict<TStatus extends { kind: string }>(check: () => TStatus, kind: TStatus['kind']): boolean {
+  try {
+    return check().kind === kind;
+  } catch {
+    return false;
+  }
 }
 
 /** Detect module-not-found errors that mention a specific package name. */
