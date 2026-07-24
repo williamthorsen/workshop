@@ -3,7 +3,39 @@ import assert from 'node:assert';
 import { describe, expect, it } from 'vitest';
 
 import { meetsThreshold, runRdy } from '../src/runRdy.ts';
-import type { RdyChecklist, RdyStagedChecklist } from '../src/types.ts';
+import type {
+  CheckReturnValue,
+  RdyCheck,
+  RdyChecklist,
+  RdyStagedChecklist,
+  Severity,
+  SkipResult,
+} from '../src/types.ts';
+
+/*
+ * A kit runs as JavaScript, so its functions return whatever their author wrote and its fields hold
+ * whatever they were assigned; neither jiti nor esbuild type-checks any of it. The authoring-error
+ * tests exercise exactly the values the declared types forbid, so the three wrappers below restate
+ * them as the types those declarations promise.
+ */
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
+
+/** Wrap a value as a check function that returns it. */
+function returning(value: unknown): RdyCheck['check'] {
+  return () => value as CheckReturnValue;
+}
+
+/** Wrap a value as a skip function that returns it. */
+function skipReturning(value: unknown): NonNullable<RdyCheck['skip']> {
+  return () => value as SkipResult;
+}
+
+/** Restate a string as a severity, standing in for a kit that declared one outside the enum. */
+function asSeverity(value: string): Severity {
+  return value as Severity;
+}
+
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
 
 describe(runRdy, () => {
   describe('flat checklists', () => {
@@ -736,6 +768,139 @@ describe(runRdy, () => {
     });
   });
 
+  describe('authoring errors', () => {
+    it.each([
+      ['a string', 'yes', 'check() returned string "yes"'],
+      ['a number', 1, 'check() returned number 1'],
+      ['an object whose ok is not a boolean', { ok: 'true' }, 'check() returned object {"ok":"true"}'],
+      ['undefined', undefined, 'check() returned undefined'],
+      ['null', null, 'check() returned null'],
+      ['an array', [true], 'check() returned array [true]'],
+    ])('fails a check returning %s, naming what came back', async (_label, value, expected) => {
+      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: returning(value) }] };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.status).toBe('failed');
+      expect(report.results[0]?.error?.message).toContain(expected);
+    });
+
+    it('names what a check was supposed to return', async () => {
+      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: returning('yes') }] };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.error?.message).toContain(
+        'expected a boolean or an object with a boolean "ok" property',
+      );
+    });
+
+    it('overrides a declared severity so an uninterpretable return cannot be a soft finding', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [{ name: 'broken', check: returning('yes'), severity: 'recommend' }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.passed).toBe(false);
+    });
+
+    it('skips descendants of a check that returned an uninterpretable value', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [{ name: 'broken', check: returning(1), checks: [{ name: 'child', check: () => true }] }],
+      };
+
+      const report = await runRdy(checklist);
+
+      const child = report.results[1];
+      assert.ok(child?.status === 'skipped');
+      expect(child.name).toBe('child');
+      expect(child.skipReason).toBe('precondition');
+    });
+
+    it.each([
+      ['true', true, 'skip() returned boolean true'],
+      ['a number', 0, 'skip() returned number 0'],
+      ['undefined', undefined, 'skip() returned undefined'],
+    ])('fails a check whose skip returns %s, naming what came back', async (_label, value, expected) => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [{ name: 'broken-skip', check: () => true, skip: skipReturning(value) }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.status).toBe('failed');
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.results[0]?.error?.message).toContain(expected);
+    });
+
+    it('names what a skip function was supposed to return', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [{ name: 'broken-skip', check: () => true, skip: skipReturning(true) }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.error?.message).toContain(
+        'expected false to run the check, or a reason string to skip it',
+      );
+    });
+
+    it('does not run the check when skip returned an uninterpretable value', async () => {
+      let checkCalled = false;
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [
+          {
+            name: 'broken-skip',
+            check: () => {
+              checkCalled = true;
+              return true;
+            },
+            skip: skipReturning(true),
+          },
+        ],
+      };
+
+      await runRdy(checklist);
+
+      expect(checkCalled).toBe(false);
+    });
+
+    it('skips descendants of a check whose skip returned an uninterpretable value', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [
+          {
+            name: 'broken-skip',
+            check: () => true,
+            skip: skipReturning(true),
+            checks: [{ name: 'child', check: () => true }],
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[1]?.name).toBe('child');
+      expect(report.results[1]?.status).toBe('skipped');
+    });
+
+    it('surfaces a severity outside the enum rather than dropping the check from every threshold', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [{ name: 'mistyped', check: () => false, severity: asSeverity('info') }],
+      };
+
+      await expect(runRdy(checklist)).rejects.toThrow('Unknown severity "info"');
+    });
+  });
+
   describe('result shape', () => {
     it('sets null for optional fields on passed results', async () => {
       const checklist: RdyChecklist = {
@@ -1058,5 +1223,15 @@ describe(meetsThreshold, () => {
     { severity: 'recommend', threshold: 'recommend', expected: true },
   ] as const)('returns $expected for severity=$severity, threshold=$threshold', ({ severity, threshold, expected }) => {
     expect(meetsThreshold(severity, threshold)).toBe(expected);
+  });
+
+  it('throws on a severity outside the enum', () => {
+    expect(() => meetsThreshold(asSeverity('info'), 'error')).toThrow(
+      'Unknown severity "info". Expected one of: error, warn, recommend.',
+    );
+  });
+
+  it('throws on a threshold outside the enum', () => {
+    expect(() => meetsThreshold('error', asSeverity('info'))).toThrow('Unknown severity threshold "info"');
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { describeType, previewValue } from '../../src/utils/describe-value.ts';
+import { describeType, describeValue, previewValue } from '../../src/utils/describe-value.ts';
 
 describe(describeType, () => {
   it.each([
@@ -39,7 +39,7 @@ describe(previewValue, () => {
   });
 
   it('names a function rather than rendering its source', () => {
-    expect(previewValue(() => true)).toBe('a function');
+    expect(previewValue(() => true)).toBe('function');
   });
 
   it('renders a bigint with its literal suffix', () => {
@@ -62,5 +62,25 @@ describe(previewValue, () => {
     circular.self = circular;
 
     expect(previewValue(circular)).toBe('object');
+  });
+});
+
+describe(describeValue, () => {
+  it.each([
+    ['string "yes"', 'yes'],
+    ['number 1', 1],
+    ['boolean true', true],
+    ['object {"ok":"true"}', { ok: 'true' }],
+    ['array []', []],
+  ])('describes %s', (expected, value) => {
+    expect(describeValue(value)).toBe(expected);
+  });
+
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['function', () => true],
+  ])('collapses the type and preview of %s into one word', (expected, value) => {
+    expect(describeValue(value)).toBe(expected);
   });
 });
