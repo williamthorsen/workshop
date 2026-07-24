@@ -283,6 +283,22 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 | `defineRdyStagedChecklist` | Staged checklist (sequential groups) |
 | `defineChecklists`         | Array of checklists                  |
 
+### Kit validation
+
+The authoring helpers are type-level only, and neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both commands validate the kit's structure at load time. Validation is the same in both, which means `rdy compile` refuses to publish a kit that `rdy run` would reject.
+
+Every check is validated wherever it appears: in a checklist's `checks`, in a staged checklist's `groups`, in its `preconditions`, and in the `checks` nested under another check. A check must carry a non-empty `name` and a `check` function; `severity` must be one of `error`, `warn`, or `recommend`; `skip` must be a function and `fix` a string when present. Unknown extra keys are allowed, so a kit written for a later readyup still loads.
+
+A typo'd `severity` is the mistake this catches that matters most: before validation reached individual checks, an unrecognized value silently excluded the check from both the failure and the reporting thresholds, and the run passed.
+
+Failures name the kit and the location of each offending value:
+
+```
+Invalid kit at .readyup/kits/default.js:
+  checklists[0].checks[1].severity: expected one of "error", "warn", "recommend", got "info"
+  checklists[0].checks[2].check: expected a function, got string
+```
+
 ## Check utilities
 
 Reusable check functions for common assertions:

@@ -45,7 +45,7 @@ export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
   const compileTimeVersion = readCompileTimeVersion(imported);
 
   const resolved = resolveKitExports(imported);
-  assertIsRdyKit(resolved);
+  assertIsRdyKit(resolved, toDisplayPath(resolvedPath));
   validateKit(resolved);
   return { kit: resolved, compileTimeVersion };
 }

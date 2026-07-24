@@ -53,7 +53,7 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
     const versionValue = moduleRecord.__readyupVersion;
     const compileTimeVersion = typeof versionValue === 'string' ? versionValue : undefined;
     const resolved = resolveKitExports(moduleRecord);
-    assertIsRdyKit(resolved);
+    assertIsRdyKit(resolved, url);
     validateKit(resolved);
     return { kit: resolved, compileTimeVersion };
   } finally {
