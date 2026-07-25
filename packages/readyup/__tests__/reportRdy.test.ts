@@ -652,7 +652,7 @@ describe(reportRdy, () => {
         { quiet: true },
       );
 
-      expect(output).toBe(`\n${PASSED} 2 passed (30ms)`);
+      expect(output).toBe(`${PASSED} 2 passed (30ms)`);
     });
   });
 

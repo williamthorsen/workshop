@@ -52,6 +52,7 @@ Run options:
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --quiet                            Hide passed checks from the report; incompatible with --json
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
@@ -125,6 +126,10 @@ Options:
                                      "summary" drops the detail tree to the failed checks and their fixes,
                                      keeping counts, verdicts, and worst severity intact
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --quiet                            Hide passed checks from the report, keeping failures, skips, the
+                                     fix recap, and every count line. Human output only, so it cannot
+                                     be combined with --json; counts and the exit code still cover the
+                                     whole run
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
@@ -143,6 +148,7 @@ Examples:
   rdy run --jit deploy                   Run the deploy kit from its TypeScript source
   rdy run --from global deploy           Run the deploy kit from the global directory
   rdy run --fail-on warn                 Fail the run on warnings as well as errors
+  rdy run --quiet                        Report only what is not passing
   rdy run --json --detail summary        Emit a JSON report carrying only failed checks
 `;
 
@@ -190,6 +196,8 @@ Each kit is reported as one of:
   drift       on-disk hash differs from the manifest's targetHash
   missing     compiled file is absent
   unverified  manifest entry has no targetHash (predates the feature)
+
+A failing kit carries its name alone, with each verdict on the line beneath it.
 
 Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unreadable
 manifest exits 2.

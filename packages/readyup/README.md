@@ -63,6 +63,29 @@ rdy compile
 rdy run
 ```
 
+Compiling reports what it rebuilt:
+
+```
+── Compiling kits in .readyup/kits
+
+🟢 default.ts -> 📦 default.js
+```
+
+Running reports what it found. With `NODE_ENV` unset, the starter check fails and its remediation is recapped at the end, attributed to the check that raised it:
+
+```
+🔴 environment variables set
+
+🔴 1 error (0ms)
+
+── Fixes
+
+💊 environment variables set
+   Set NODE_ENV before deploying
+```
+
+The failed line carries only its claim, because this check reports no reason of its own -- it returns a bare `false`. Returning a `detail` instead is what puts an explanation beneath the claim; see [the `detail` contract](#the-detail-contract).
+
 `rdy compile` bundles `.readyup/kits/default.ts` into `.readyup/kits/default.js`, and `rdy run` loads that compiled kit. Recompile whenever the source changes.
 
 To skip compiling and run straight from the TypeScript source, use `rdy run --jit`. It reads the same `.readyup/kits/default.ts` and needs no compiled bundle, which makes it the faster loop while you are still writing checks. Compiled kits stay the vetted artifact: they are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
@@ -86,22 +109,82 @@ rdy <command> [options]
 
 ### Run options
 
-| Option                        | Description                                                   |
-| ----------------------------- | ------------------------------------------------------------- |
-| `--from <source>`             | Kit source (see [kit sources](#kit-sources) below)            |
-| `--file, -f <path>`           | Path to a local kit file                                      |
-| `--url <url>`                 | Fetch kit from a URL                                          |
-| `--jit`                       | Run from TypeScript source instead of compiled JS             |
-| `--internal`                  | Use internal kit directory and infix from config              |
-| `--checklists, -c <name,...>` | Filter checklists within the selected kit                     |
-| `--json`                      | Output results as JSON                                        |
-| `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`)         |
-| `--fail-on <severity>`        | Fail on this severity or above (`error`, `warn`, `recommend`) |
-| `--report-on <severity>`      | Show this severity or above (`error`, `warn`, `recommend`)    |
+| Option                        | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `--from <source>`             | Kit source (see [kit sources](#kit-sources) below)             |
+| `--file, -f <path>`           | Path to a local kit file                                       |
+| `--url <url>`                 | Fetch kit from a URL                                           |
+| `--jit`                       | Run from TypeScript source instead of compiled JS              |
+| `--internal`                  | Use internal kit directory and infix from config               |
+| `--checklists, -c <name,...>` | Filter checklists within the selected kit                      |
+| `--json`                      | Output results as JSON                                         |
+| `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`)          |
+| `--fail-on <severity>`        | Fail on this severity or above (`error`, `warn`, `recommend`)  |
+| `--quiet`                     | Hide passed checks from the report; incompatible with `--json` |
+| `--report-on <severity>`      | Show this severity or above (`error`, `warn`, `recommend`)     |
 
 `--checklists` selects checklists within one kit. Pair it with a single positional kit, with `--file` or `--url`, or with no kit at all to filter the default kit. Naming two or more kits, or naming one that already carries a `:checklist` filter, is an error rather than a merge.
 
 `--report-on` prunes only the reported detail tree, and keeps the parent checks of anything it shows so nesting stays intact. Summary counts, worst severity, and the exit code always reflect the whole run.
+
+`--quiet` hides passed check lines from the human report, keeping failures, skips, blocks, the fix recap, and every count line. It filters by status where `--report-on` filters by severity, so the two compose rather than override, and both keep the parent checks of anything they show: a failure nested under passing parents stays reachable through them. Counts and the exit code still cover the whole run. Because it changes only the human report, pairing it with `--json` is a usage error rather than a silently ignored flag.
+
+### Reading the output
+
+Every command renders through one layout engine, so a line means the same thing wherever it appears.
+
+| Token | Meaning                                                         |
+| ----- | --------------------------------------------------------------- |
+| 🟢    | passed; `verify` ok; a file created, overwritten, or up to date |
+| 🔴    | failed at `error` severity; `verify` drift or missing           |
+| 🟠    | failed at `warn` severity; a compile drift-skip                 |
+| 🟡    | failed at `recommend` severity                                  |
+| ⚪    | skipped: not applicable, already present, or no work needed     |
+| 🚫    | blocked, because a precondition failed                          |
+| 💊    | a remediation hint                                              |
+
+📄 and 📦 are not statuses. They name a thing -- a TypeScript source and a compiled bundle -- and appear mid-line in `list` and in compile's transformation lines.
+
+A check line reads `token name · detail [progress] (duration)`. The middle dot is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
+
+**A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. A failure that derives from its children carries no reason at all, because the subtree beneath it is already the explanation. Passes and skips keep their detail inline.
+
+Tail and total lines lead with the run's worst severity rather than its passed count, then report the counts in a fixed order -- passed, errors, warnings, recommendations, blocked, skipped -- omitting any field that is zero.
+
+Headings come from one family whose rule weight encodes level: `━━` for a kit, `──` for a checklist, a step, or a summary. When more than one checklist runs, a table follows, its rules sized to the widest row:
+
+```
+── build
+
+🟢 typecheck (343ms)
+🟢 bundle size · 42kB of a 50kB budget [84%]
+
+🟢 2 passed (343ms)
+
+── integration
+
+🟢 database reachable
+🔴 migrations applied (151ms)
+   2 migrations pending: add_users, add_index
+⚪ seed data loaded · seeding is disabled outside CI
+
+🔴 1 passed | 1 error | 1 skipped (151ms)
+
+── Fixes
+
+💊 migrations applied
+   Run `pnpm migrate` against the target database
+
+── Summary
+
+─────────────────────────────────────────────────────
+🟢 build        343ms  2 passed
+🔴 integration  151ms  1 passed | 1 error | 1 skipped
+─────────────────────────────────────────────────────
+🔴 Total: 3 passed | 1 error | 1 skipped (494ms)
+```
+
+Under `--quiet`, that run keeps everything except `typecheck`, `bundle size`, and `database reachable`.
 
 ### Advisory warnings
 
@@ -254,6 +337,30 @@ rdy list --from bitbucket:ws/repo[@ref]    List kits from a Bitbucket manifest
 rdy list --manifest <path>     List the kits a manifest file declares
 ```
 
+Each section names the command that runs the kits beneath it, on its own line so it can be copied without the label:
+
+```
+── Internal
+   rdy run --jit <name>
+
+📄 deploy
+📄 smoke
+
+── Compiled
+   rdy run <name>
+
+📦 deploy
+📦 smoke
+```
+
+`--manifest` reads a manifest instead, reporting each kit's compile-time readyup version and its description:
+
+```
+── Manifest: .readyup/manifest.json
+📦 deploy (readyup v0.22.0) · Pre-deployment checks
+📦 smoke (readyup v0.22.0)
+```
+
 A local `--from` source with no manifest beside its kits falls back to listing the compiled kits on disk, which are the same kits `rdy run --from` would resolve. Those rows carry a name and a path only; descriptions, checklist names, and versions live in the manifest that is absent. A remote source still requires one.
 
 Under `--json`, each row reports `name`, `kind` (`internal` for a TypeScript source, `compiled` for a bundle), `path`, and — for kits a manifest describes — `checklists`, `description`, and `readyupVersion`. Checklist names are read from the manifest, so listing kits never imports a compiled bundle and never runs kit code.
@@ -267,9 +374,30 @@ rdy compile                    Compile every source in the config's srcDir
 rdy compile <file>             Compile a single file
 ```
 
+A rebuilt kit names its output; one whose bundle is already current says so instead:
+
+```
+── Compiling kits in .readyup/kits
+
+🟢 deploy.ts -> 📦 deploy.js
+⚪ smoke.ts · no changes
+```
+
 A sweep runs to completion: a kit that fails to compile is reported and the next kit is tried, so one broken kit cannot hide the state of the kits that sort after it. A kit that failed is never recorded as though it had compiled, and the run exits 1. A kit that had been compiled before keeps the entry it already had, because that entry still describes the tree: a bundling failure leaves the previous output and its recorded hash untouched, and a validation failure deletes the output, which `rdy verify` then reports as missing. Dropping the entry would hide both, and would leave the next successful compile with no record to check drift against.
 
-`rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` — someone edited the compiled file directly. Drifted kits are reported and skipped; `--force` overwrites them anyway.
+`rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash`; someone edited the compiled file directly. Drifted kits are reported and skipped, with the mismatch beneath the kit that carries it:
+
+```
+── Compiling kits in .readyup/kits
+
+🟠 deploy.ts
+   drift in deploy.js: expected 6f58905a, got eb104f57
+⚪ smoke.ts · no changes
+
+1 of 2 kits skipped due to drift. Re-run with --force to overwrite, or move edits into the source.
+```
+
+`--force` overwrites them anyway.
 
 Each kit's checklist names are recorded in the manifest so `rdy list` can report them without running the kit. The field is optional and absent from manifests written by earlier versions, so the manifest format stays at version 1.
 
@@ -279,6 +407,18 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 
 ```
 rdy verify                     Check compiled kits against the manifest's hashes
+```
+
+A verified kit carries nothing beyond its token; a failing one carries each verdict on the line beneath it:
+
+```
+── Verifying kits against .readyup/manifest.json
+
+🔴 deploy
+   drift (expected 6f58905a, got eb104f57)
+🟢 smoke
+
+1 of 2 kits failed verification.
 ```
 
 Each kit carries two independent verdicts, because a kit is two artifacts: the TypeScript source and the bundle compiled from it.
@@ -307,6 +447,91 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 | `defineRdyChecklist`       | Flat checklist                       |
 | `defineRdyStagedChecklist` | Staged checklist (sequential groups) |
 | `defineChecklists`         | Array of checklists                  |
+
+### The `detail` contract
+
+A check may return a `CheckOutcome` rather than a bare boolean, carrying a `detail` string and optional `progress`. One rule governs what belongs in `detail`:
+
+> **`detail` answers "why this status".**
+
+Not "what this check asserts" -- the check's `name` already says that, and repeating it in `detail` doubles the line's width without adding a fact. On a pass, `detail` reports the evidence. On a skip, it reports why the check did not apply. On a failure, it reports what went wrong, and it is the text that renders beneath the claim.
+
+Where the detail lands follows from the status, so an author writes one field and the report places it:
+
+| Status  | Where `detail` renders                                  |
+| ------- | ------------------------------------------------------- |
+| passed  | inline, after the middle dot                            |
+| skipped | inline, after the middle dot (return it from `skip`)    |
+| failed  | in a block beneath the claim, above any thrown `Error:` |
+
+Remediation is not detail. It belongs in `fix`, which is recapped at the end of the report against the check that raised it.
+
+This kit exercises all three placements at three levels of nesting:
+
+```ts
+import { defineRdyKit } from 'readyup';
+
+export default defineRdyKit({
+  checklists: [
+    {
+      name: 'release',
+      checks: [
+        {
+          name: 'working tree is clean',
+          check: () => ({ ok: true, detail: 'no uncommitted changes' }),
+        },
+        {
+          name: 'dependencies',
+          check: () => true,
+          checks: [
+            {
+              name: 'lockfile is current',
+              check: () => ({ ok: true, progress: { type: 'fraction', passedCount: 4, count: 4 } }),
+              checks: [
+                {
+                  name: 'no duplicated majors',
+                  check: () => ({ ok: false, detail: 'react resolves to both 18.3.1 and 19.0.0' }),
+                  fix: 'Run `pnpm dedupe`, then commit the lockfile',
+                },
+              ],
+            },
+            {
+              name: 'native modules rebuilt',
+              check: () => true,
+              skip: () => 'no native dependencies in this workspace',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
+```
+
+It produces:
+
+```
+🟢 working tree is clean · no uncommitted changes
+🟢 dependencies
+   🟢 lockfile is current [4 of 4]
+      🔴 no duplicated majors
+         react resolves to both 18.3.1 and 19.0.0
+   ⚪ native modules rebuilt · no native dependencies in this workspace
+
+🔴 3 passed | 1 error | 1 skipped (0ms)
+
+── Fixes
+
+💊 no duplicated majors
+   Run `pnpm dedupe`, then commit the lockfile
+```
+
+Four things to read off that output:
+
+- **`dependencies` carries no reason.** It failed only because a descendant did, and the subtree beneath it is the explanation. Authoring a `detail` on a derived failure would restate what the indentation already shows.
+- **`no duplicated majors` sits at the third level, and its reason lines up under its own name** -- one indent step per level, so a reason is never mistaken for a check.
+- **No check line carries a duration.** Every check here returns immediately, and durations appear only from 100 ms up, so a fast report is not littered with `(0ms)`. The tail line shows the run's total regardless.
+- **`progress` needs no `detail`.** `[4 of 4]` is the evidence; a detail restating it would spend the line's one separator to say the same thing twice.
 
 ### Preconditions
 

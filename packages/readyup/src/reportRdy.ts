@@ -40,8 +40,10 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
   const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
 
-  const counts = countResults(report.results);
-  lines.push('', layout.formatCountLine(counts, report.durationMs));
+  // The blank line separates the count line from the tree, so an empty tree needs none: the heading
+  // above already supplies one, and a second would open a gap under every fully-hidden checklist.
+  if (lines.length > 0) lines.push('');
+  lines.push(layout.formatCountLine(countResults(report.results), report.durationMs));
 
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
