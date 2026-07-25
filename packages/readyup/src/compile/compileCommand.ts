@@ -35,6 +35,14 @@ const compileOptions = {
   'skip-manifest': { type: 'boolean' },
 } as const;
 
+/**
+ * Separator between a compiled kit's source and its output.
+ *
+ * ASCII rather than U+2192: two fixed cells in every terminal, and ligature fonts still draw it as
+ * an arrow. The middle dot is reserved for detail, so a transformation line spends neither.
+ */
+const TRANSFORM_ARROW = '->';
+
 /** Domain-specific hints for compile flags that require a value. */
 const compileHints: Record<string, string> = {
   '--output': '--output requires a path argument',
@@ -107,7 +115,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const kitName = path.basename(resolvedOutputPath, '.js');
   const relInput = path.relative(process.cwd(), resolvedInputPath);
 
-  writeHuman('Compiling kit:\n', json);
+  writeHuman(formatSectionHeading('Compiling kit'), json);
 
   const existingKit = skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName);
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
@@ -229,7 +237,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     const relSrc = path.relative(process.cwd(), srcDir);
     const reason = srcDirExists
       ? `No .ts files found in ${relSrc}`
-      : `Source directory not found: ${relSrc} — treating as empty`;
+      : `Source directory not found: ${relSrc}; treating as empty`;
     writeHuman(`${reason}\n`, json);
     if (!skipManifest) {
       try {
@@ -243,9 +251,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
 
   const relSrcDir = path.relative(process.cwd(), srcDir);
   const relOutDir = path.relative(process.cwd(), outDir);
-  const header =
-    srcDir === outDir ? `Compiling kits in ${relSrcDir}:\n` : `Compiling kits from ${relSrcDir} to ${relOutDir}:\n`;
-  writeHuman(header, json);
+  const label =
+    srcDir === outDir ? `Compiling kits in ${relSrcDir}` : `Compiling kits from ${relSrcDir} to ${relOutDir}`;
+  writeHuman(formatSectionHeading(label), json);
 
   const manifestDir = path.dirname(manifestPath);
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
@@ -349,7 +357,7 @@ function upsertManifest(
     // Missing manifest is expected for first compile; other failures should surface.
     if (!(error instanceof ManifestNotFoundError)) {
       const message = extractMessage(error);
-      process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
+      process.stderr.write(`Warning: ${message}; starting with empty manifest\n`);
     }
   }
 
@@ -382,7 +390,7 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) {
       const message = extractMessage(error);
-      process.stderr.write(`Warning: ${message} — drift gate skipped\n`);
+      process.stderr.write(`Warning: ${message}; drift gate skipped\n`);
     }
   }
   return map;
@@ -423,13 +431,36 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   return { status, existingKit };
 }
 
-/** Format a single compile-result line with a change indicator. */
+/**
+ * Format a compile-result line.
+ *
+ * A rebuilt kit names its output after an ASCII arrow; an untouched one says so as inline detail. The
+ * leading tokens are what preserve the rebuilt-versus-untouched scan down the left edge, which frees
+ * the box glyph to name the output rather than report a status.
+ */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
-  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${layout.glyph('skippedOptional')} ${srcName} — no changes\n`;
+  if (!changed) {
+    return layout.formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
+  }
+
+  const claim = layout.formatCheckLine({ token: 'passed', name: srcName });
+  return `${claim} ${TRANSFORM_ARROW} ${layout.glyph('docCompiled')} ${outName}\n`;
 }
 
-/** Format a drift-skip status line. Requires a `drift` status; other statuses never produce this line. */
+/**
+ * Format a drift-skip line: a warning claim with the hash mismatch in a block beneath.
+ *
+ * Requires a `drift` status; other statuses never produce this line.
+ */
 function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
   const target = path.basename(status.resolvedPath);
-  return `  ⚠️  ${srcName} — skipped (drift in ${target}; expected ${status.expected}, got ${status.actual})\n`;
+  const claim = layout.formatCheckLine({ token: 'failedWarn', name: srcName });
+  const reason = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
+
+  return [claim, ...layout.formatReasonBlock([reason])].join('\n') + '\n';
+}
+
+/** Build a section heading together with the blank line that follows it, ready to write. */
+function formatSectionHeading(label: string): string {
+  return layout.formatHeading(label, 'section').join('\n') + '\n';
 }

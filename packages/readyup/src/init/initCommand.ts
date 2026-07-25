@@ -50,7 +50,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
 
   if (!dryRun) {
     printStep('Next steps');
-    console.info(`\n${buildNextSteps()}\n`);
+    console.info(`${buildNextSteps()}\n`);
   }
 
   return EXIT_OK;
