@@ -523,6 +523,139 @@ describe(reportRdy, () => {
     });
   });
 
+  describe('quiet', () => {
+    it('hides a passed check', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'quiet-pass' }), makeFailedResult({ name: 'loud-fail' })],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('quiet-pass');
+      expect(output).toContain('loud-fail');
+    });
+
+    it('keeps failures, skips, and blocks', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'hidden' }),
+            makeFailedResult({ name: 'failure' }),
+            makeSkippedResult({ name: 'optional-skip', skipReason: 'n/a' }),
+            makeSkippedResult({ name: 'blocked-skip', skipReason: 'precondition' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('hidden');
+      for (const name of ['failure', 'optional-skip', 'blocked-skip']) {
+        expect(output).toContain(name);
+      }
+    });
+
+    it('retains a passed ancestor so a deep failure stays reachable', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'passed-parent' }),
+            makePassedResult({ name: 'passed-child', depth: 1 }),
+            makeFailedResult({ name: 'deep-failure', depth: 2 }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output.split('\n').slice(0, 3)).toStrictEqual([
+        `${PASSED} passed-parent`,
+        `   ${PASSED} passed-child`,
+        `      ${FAILED_ERROR} deep-failure`,
+      ]);
+    });
+
+    it('drops a wholly passing subtree', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'clean-parent' }),
+            makePassedResult({ name: 'clean-child', depth: 1 }),
+            makeFailedResult({ name: 'failure' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('clean-parent');
+      expect(output).not.toContain('clean-child');
+      expect(output).toContain('failure');
+    });
+
+    it('counts hidden passes, so the tally still covers the whole run', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' }), makeFailedResult({ name: 'c' })],
+          passed: false,
+          durationMs: 90,
+        }),
+        { quiet: true },
+      );
+
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (90ms)`);
+    });
+
+    it('keeps the fix recap', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'hidden' }), makeFailedResult({ name: 'broken', fix: 'Run install' })],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).toContain(`${FIX} broken`);
+      expect(output).toContain('   Run install');
+    });
+
+    it('composes with the reporting threshold rather than overriding it', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'passed-error-sev', severity: 'error' }),
+            makeFailedResult({ name: 'warn-failure', severity: 'warn' }),
+            makeFailedResult({ name: 'error-failure', severity: 'error' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true, reportOn: 'error' },
+      );
+
+      // Hidden by quiet (passed), by the threshold (warn), and shown by both (error failure).
+      expect(output).not.toContain('passed-error-sev');
+      expect(output).not.toContain('warn-failure');
+      expect(output).toContain('error-failure');
+    });
+
+    it('shows every passed check when off', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'visible' })] }), { quiet: false });
+
+      expect(output).toContain('visible');
+    });
+
+    it('leaves an all-passing run with only its count line', () => {
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' })], durationMs: 30 }),
+        { quiet: true },
+      );
+
+      expect(output).toBe(`\n${PASSED} 2 passed (30ms)`);
+    });
+  });
+
   describe('reporting threshold', () => {
     it('excludes results below the reporting threshold', () => {
       const output = reportRdy(

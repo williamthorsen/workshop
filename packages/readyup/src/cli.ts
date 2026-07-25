@@ -60,6 +60,7 @@ export interface ParsedRunArgs {
   jit: boolean;
   json: boolean;
   kitSpecifiers: KitSpecifier[];
+  quiet: boolean;
   reportOn?: Severity;
   urlValue: string | undefined;
 }
@@ -81,6 +82,7 @@ const runOptions = {
   internal: { type: 'boolean' },
   jit: { type: 'boolean' },
   json: { type: 'boolean' },
+  quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
   url: { type: 'string' },
 } as const;
@@ -134,6 +136,7 @@ interface RunFlagConstraints {
   internal: boolean;
   jit: boolean;
   json: boolean;
+  quiet: boolean;
   url: string | undefined;
 }
 
@@ -143,6 +146,12 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
   // report. Erroring beats ignoring it: a caller that passed it meant to change the output.
   if (parsed.detail !== undefined && !parsed.json) {
     throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
+  }
+
+  // `--quiet` thins the human detail tree, which `--json` does not emit. Erroring beats ignoring it,
+  // for the same reason `--detail` errors without `--json`.
+  if (parsed.quiet && parsed.json) {
+    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
   }
 
   const sourceFlags: string[] = [];
@@ -226,6 +235,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     internal: values.internal === true,
     jit: values.jit === true,
     json: values.json === true,
+    quiet: values.quiet === true,
     url: values.url,
     failOn: values['fail-on'],
     reportOn: values['report-on'],
@@ -262,6 +272,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     jit: parsed.jit,
     json: parsed.json,
     kitSpecifiers,
+    quiet: parsed.quiet,
     urlValue: parsed.url,
   };
   if (detail !== undefined) parsedArgs.detail = detail;
@@ -406,7 +417,15 @@ interface RunCommandOptions {
   json: boolean;
   detail?: JsonDetail;
   failOn?: Severity;
+  quiet?: boolean;
   reportOn?: Severity;
+}
+
+/** Threshold and verbosity settings governing every kit in a human-mode run. */
+interface HumanRunSettings {
+  failOn: Severity | undefined;
+  quiet: boolean;
+  reportOn: Severity | undefined;
 }
 
 /** Load a rdy kit from a path or URL source. */
@@ -571,13 +590,13 @@ function isModuleNotFoundError(error: unknown, packageName: string): boolean {
 
 /** Run rdy checklists across one or more kits. Returns a numeric exit code. */
 export async function runCommand(
-  { kitEntries, json, detail, failOn, reportOn }: RunCommandOptions,
+  { kitEntries, json, detail, failOn, quiet, reportOn }: RunCommandOptions,
   isJit = false,
 ): Promise<number> {
   if (json) {
     return runMultiKitJsonMode(kitEntries, { detail: detail ?? 'full', failOn, reportOn }, isJit);
   }
-  return runMultiKitHumanMode(kitEntries, failOn, reportOn, isJit);
+  return runMultiKitHumanMode(kitEntries, { failOn, quiet: quiet === true, reportOn }, isJit);
 }
 
 /**
@@ -658,8 +677,7 @@ async function runMultiKitJsonMode(
  */
 async function runMultiKitHumanMode(
   kitEntries: ResolvedKitEntry[],
-  failOn: Severity | undefined,
-  reportOn: Severity | undefined,
+  settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
   const showKitHeader = kitEntries.length > 1;
@@ -679,7 +697,7 @@ async function runMultiKitHumanMode(
       warnOnVersionSkew(entry.name, compileTimeVersion);
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
-      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, failOn, reportOn, showKitHeader);
+      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, showKitHeader);
       if (exitCode !== EXIT_OK) allPassed = false;
     } catch (error: unknown) {
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
@@ -696,12 +714,11 @@ async function runMultiKitHumanMode(
 async function runSingleKitHumanMode(
   kit: RdyKit,
   checklistFilter: string[],
-  failOn: Severity | undefined,
-  reportOn: Severity | undefined,
+  settings: HumanRunSettings,
   isMultiKit: boolean,
 ): Promise<number> {
   const checklists = selectChecklists(kit, checklistFilter);
-  const thresholds = resolveThresholds(kit, failOn, reportOn);
+  const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistHeader = checklists.length > 1;
   let allPassed = true;
   const summaries: ChecklistSummary[] = [];
@@ -716,7 +733,7 @@ async function runSingleKitHumanMode(
       failOn: thresholds.failOn,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-    const output = reportRdy(report, { fixLocation, reportOn: thresholds.reportOn });
+    const output = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
     process.stdout.write(output + '\n');
 
     if (!report.passed) {

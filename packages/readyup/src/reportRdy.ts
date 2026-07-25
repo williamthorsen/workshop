@@ -18,6 +18,7 @@ interface AttributedFix {
 /** Options controlling how the report is formatted. */
 export interface ReportRdyOptions {
   fixLocation?: FixLocation;
+  quiet?: boolean;
   reportOn?: Severity;
 }
 
@@ -29,13 +30,14 @@ export interface ReportRdyOptions {
  * check that raised it; in `inline` mode the fix joins that check's reason block instead.
  *
  * Results below the reporting threshold are omitted from the detail tree unless they are an ancestor
- * of a result that is shown; the summary counts always reflect the whole run.
+ * of a result that is shown, and `quiet` drops passed checks from what survives that. The summary
+ * counts always reflect the whole run regardless of either.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
   const fixLocation = options?.fixLocation ?? 'end';
   const reportOn = options?.reportOn ?? 'recommend';
 
-  const visibleResults = selectVisibleResults(report.results, reportOn);
+  const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
   const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
 
   const counts = countResults(report.results);
@@ -83,24 +85,12 @@ export function countResults(results: RdyResult[]): SummaryCounts {
  * Selects the results a reporting threshold leaves visible, retaining the ancestors of every survivor.
  *
  * A result is visible when its own severity meets the threshold or when any of its descendants is visible, so a
- * surviving check is never rendered under a pruned parent. Assumes the contiguous depth-first ordering `runRdy`
- * produces: a result's descendants are exactly the run of deeper results that follows it.
+ * surviving check is never rendered under a pruned parent.
  *
  * Visible results are returned in their original order.
  */
 export function selectVisibleResults(results: RdyResult[], reportOn: Severity): RdyResult[] {
-  const visible: RdyResult[] = [];
-  // Scanning right to left, the nearest visible result is a descendant exactly when it is deeper, so its
-  // depth alone decides whether the current result must be retained as an ancestor.
-  let nearestVisibleDepth = -Infinity;
-
-  for (const result of results.toReversed()) {
-    if (!meetsThreshold(result.severity, reportOn) && nearestVisibleDepth <= result.depth) continue;
-    visible.push(result);
-    nearestVisibleDepth = result.depth;
-  }
-
-  return visible.toReversed();
+  return retainWithAncestors(results, (result) => meetsThreshold(result.severity, reportOn));
 }
 
 /** Aggregates `source` counts into `target` in place, propagating the worse severity. */
@@ -115,6 +105,41 @@ export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void 
 }
 
 // -- Helpers --
+
+/**
+ * Selects what the detail tree shows: the severity threshold first, then `quiet` over what survives.
+ *
+ * The two are orthogonal -- one filters by severity, the other by status -- so they compose rather
+ * than override. Both run through the same ancestor-retaining walk, which is what keeps a lone deep
+ * failure reachable through its passed parents under either.
+ */
+function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
+  const reported = selectVisibleResults(results, reportOn);
+  if (!quiet) return reported;
+  return retainWithAncestors(reported, (result) => result.status !== 'passed');
+}
+
+/**
+ * Filters results to those `isVisible` accepts, retaining the ancestors of every survivor.
+ *
+ * Assumes the contiguous depth-first ordering `runRdy` produces: a result's descendants are exactly
+ * the run of deeper results that follows it. Retaining whole ancestor chains preserves that property,
+ * so the output of one pass is valid input to the next.
+ */
+function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult) => boolean): RdyResult[] {
+  const visible: RdyResult[] = [];
+  // Scanning right to left, the nearest visible result is a descendant exactly when it is deeper, so its
+  // depth alone decides whether the current result must be retained as an ancestor.
+  let nearestVisibleDepth = -Infinity;
+
+  for (const result of results.toReversed()) {
+    if (!isVisible(result) && nearestVisibleDepth <= result.depth) continue;
+    visible.push(result);
+    nearestVisibleDepth = result.depth;
+  }
+
+  return visible.toReversed();
+}
 
 /** Render one result: its check line, plus the reason block a failure carries beneath it. */
 function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {

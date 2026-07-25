@@ -360,6 +360,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     {
       kitEntries,
       json: parsed.json,
+      quiet: parsed.quiet,
       ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
       ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),

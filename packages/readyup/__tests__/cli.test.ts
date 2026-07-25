@@ -432,6 +432,36 @@ describe(parseRunArgs, () => {
   });
 });
 
+describe('--quiet', () => {
+  it('parses as a boolean', () => {
+    expect(parseRunArgs(['--quiet']).quiet).toBe(true);
+  });
+
+  it('defaults to false', () => {
+    expect(parseRunArgs([]).quiet).toBe(false);
+  });
+
+  it('rejects --quiet with --json rather than ignoring it', () => {
+    expect(() => parseRunArgs(['--quiet', '--json'])).toThrow(
+      '--quiet cannot be combined with --json; it hides passed lines from human output only',
+    );
+  });
+
+  it('composes with --report-on, which filters on a different axis', () => {
+    const parsed = parseRunArgs(['--quiet', '--report-on', 'warn']);
+
+    expect(parsed.quiet).toBe(true);
+    expect(parsed.reportOn).toBe('warn');
+  });
+
+  it('composes with a kit selection', () => {
+    const parsed = parseRunArgs(['--quiet', 'deploy']);
+
+    expect(parsed.quiet).toBe(true);
+    expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+  });
+});
+
 describe(resolveKitSources, () => {
   /** Build args with defaults for internal config. */
   function resolve(
