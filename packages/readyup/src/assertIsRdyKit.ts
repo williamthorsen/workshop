@@ -110,7 +110,7 @@ function formatValidationError(error: ZodError, source: string | undefined): str
 }
 
 /**
- * Render an issue path in the notation an author would use to reach the value.
+ * Renders an issue path in the notation an author would use to reach the value.
  *
  * Array indices become brackets and keys become dotted segments, so `checklists[0].checks[1].check`
  * reads as the expression that selects the offending field.
@@ -118,8 +118,10 @@ function formatValidationError(error: ZodError, source: string | undefined): str
 function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
   if (path.length === 0) return '(kit root)';
 
-  return path.reduce<string>((rendered, segment) => {
-    if (typeof segment === 'number') return `${rendered}[${segment}]`;
-    return rendered === '' ? String(segment) : `${rendered}.${String(segment)}`;
-  }, '');
+  return path
+    .map((segment, index) => {
+      if (typeof segment === 'number') return `[${segment}]`;
+      return index === 0 ? String(segment) : `.${String(segment)}`;
+    })
+    .join('');
 }

@@ -1,1 +1,1 @@
-export { default } from './config/vitest.integration.config.js';
+export { default } from './.config/vitest/vitest.integration.config.ts';

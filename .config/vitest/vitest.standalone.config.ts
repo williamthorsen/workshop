@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import baseConfig from './vitest.config.js';
-import { integrationTestPatterns } from './vitest.integration.config.js';
+import baseConfig from './vitest.config.ts';
+import { integrationTestPatterns } from './vitest.integration.config.ts';
 
 const config = defineConfig({
   test: {

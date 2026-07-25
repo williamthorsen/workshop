@@ -17,7 +17,7 @@ Key files:
 - `.config/nmr.config.ts` — Per-repo nmr script overrides
 - `.config/readyup.config.ts` — Readyup compile settings
 - `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
-- `config/vitest.config.ts` — Shared Vitest base configuration
+- `../.config/vitest/vitest.config.ts` — Shared Vitest base configuration
 
 ## Commands
 
