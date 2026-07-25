@@ -7,12 +7,12 @@ import picomatch from 'picomatch';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
+import { layout } from '../layout/engine.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
-import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
 import type { JsonCompileKitEntry, JsonCompileOutput } from '../schemas/index.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -425,7 +425,7 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
 
 /** Format a single compile-result line with a change indicator. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
-  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${ICON_NO_CHANGES} ${srcName} — no changes\n`;
+  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${layout.glyph('skippedOptional')} ${srcName} — no changes\n`;
 }
 
 /** Format a drift-skip status line. Requires a `drift` status; other statuses never produce this line. */

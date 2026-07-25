@@ -729,7 +729,7 @@ async function runSingleKitHumanMode(
   }
 
   if (summaries.length > 1 && !isMultiKit) {
-    process.stdout.write('\n' + formatCombinedSummary(summaries) + '\n');
+    process.stdout.write(formatCombinedSummary(summaries) + '\n');
   }
 
   return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;

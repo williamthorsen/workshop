@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
-import {
-  ICON_ERROR_FAILED,
-  ICON_PASSED,
-  ICON_RECOMMEND_FAILED,
-  ICON_SKIPPED_PRECONDITION,
-  ICON_WARN_FAILED,
-} from '../src/reportRdy.ts';
+import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
 import type { ChecklistSummary } from '../src/types.ts';
+
+const PASSED = emojiFormatter.tokens.passed.glyph;
+const FAILED_ERROR = emojiFormatter.tokens.failedError.glyph;
+const FAILED_WARN = emojiFormatter.tokens.failedWarn.glyph;
+const FAILED_RECOMMEND = emojiFormatter.tokens.failedRecommend.glyph;
 
 function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
   return {
@@ -25,142 +24,125 @@ function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
   };
 }
 
+/** Return the rendered lines, dropping the leading blank the heading contributes. */
+function renderLines(summaries: ChecklistSummary[]): string[] {
+  return formatCombinedSummary(summaries).split('\n');
+}
+
 describe(formatCombinedSummary, () => {
-  it('renders the summary header and footer lines', () => {
-    const output = formatCombinedSummary([makeSummary()]);
-
-    expect(output).toContain('── Summary');
-    expect(output.split('\n').at(-2)).toMatch(/^─+$/);
+  it('leads with a blank line so a caller appends it directly to the report above', () => {
+    expect(renderLines([makeSummary()])[0]).toBe('');
   });
 
-  it('shows passed prefix when worstSeverity is null', () => {
-    const output = formatCombinedSummary([makeSummary({ name: 'deploy' })]);
+  it('renders a section heading rather than a full-width banner', () => {
+    const lines = renderLines([makeSummary()]);
 
-    expect(output).toContain(`${ICON_PASSED} deploy`);
+    expect(lines[1]).toBe('\u{2500}\u{2500} Summary');
   });
 
-  it('shows error prefix when worstSeverity is error', () => {
-    const output = formatCombinedSummary([makeSummary({ name: 'deploy', errors: 1, worstSeverity: 'error' })]);
+  it('encloses the rows in two equal rules', () => {
+    const lines = renderLines([makeSummary()]);
 
-    expect(output).toContain(`${ICON_ERROR_FAILED} deploy`);
+    expect(lines[3]).toMatch(/^\u{2500}+$/u);
+    expect(lines[5]).toBe(lines[3]);
   });
 
-  it('shows warn prefix when worstSeverity is warn', () => {
-    const output = formatCombinedSummary([makeSummary({ name: 'deploy', warnings: 1, worstSeverity: 'warn' })]);
+  it.each([
+    ['nothing failed', {}, PASSED],
+    ['an error failed', { errors: 1, worstSeverity: 'error' as const }, FAILED_ERROR],
+    ['a warning failed', { warnings: 1, worstSeverity: 'warn' as const }, FAILED_WARN],
+    ['a recommendation failed', { recommendations: 1, worstSeverity: 'recommend' as const }, FAILED_RECOMMEND],
+  ])('leads a row with the worst-severity token when %s', (_case, overrides, token) => {
+    const output = formatCombinedSummary([makeSummary({ name: 'deploy', ...overrides })]);
 
-    expect(output).toContain(`${ICON_WARN_FAILED} deploy`);
+    expect(output).toContain(`${token} deploy`);
   });
 
-  it('shows recommend prefix when worstSeverity is recommend', () => {
-    const output = formatCombinedSummary([
-      makeSummary({ name: 'deploy', recommendations: 1, worstSeverity: 'recommend' }),
-    ]);
-
-    expect(output).toContain(`${ICON_RECOMMEND_FAILED} deploy`);
-  });
-
-  it('includes duration and grouped counts in each row', () => {
+  it('renders each row as name, duration, then pipe counts', () => {
     const output = formatCombinedSummary([
       makeSummary({ name: 'infra', passed: 2, errors: 1, worstSeverity: 'error', durationMs: 45 }),
     ]);
 
-    expect(output).toContain(`${ICON_ERROR_FAILED} infra  45ms  2 passed. Failed: 1 error`);
-    expect(output).not.toContain('Skipped:');
+    expect(output).toContain(`${FAILED_ERROR} infra  45ms  2 passed | 1 error`);
   });
 
-  it('omits zero-count categories from row', () => {
+  it('omits zero-count fields from a row', () => {
     const output = formatCombinedSummary([makeSummary({ name: 'deploy', passed: 5, durationMs: 200 })]);
 
-    expect(output).toContain(`${ICON_PASSED} deploy  200ms  5 passed`);
+    expect(output).toContain(`${PASSED} deploy  200ms  5 passed`);
+    expect(output).not.toContain('|');
+  });
+
+  it('includes skip fields in a row when their counts are non-zero', () => {
+    const output = formatCombinedSummary([
+      makeSummary({ name: 'checks', passed: 1, errors: 1, blocked: 2, optional: 1, worstSeverity: 'error' }),
+    ]);
+
+    expect(output).toContain('1 passed | 1 error | 2 blocked | 1 skipped');
+  });
+
+  it('retires the prose count grammar', () => {
+    const output = formatCombinedSummary([
+      makeSummary({ name: 'infra', passed: 2, errors: 1, blocked: 1, worstSeverity: 'error' }),
+    ]);
+
     expect(output).not.toContain('Failed:');
     expect(output).not.toContain('Skipped:');
   });
 
-  it('renders the Total line with icon-prefixed grouped counts and total duration', () => {
-    const output = formatCombinedSummary([
-      makeSummary({ passed: 10, durationMs: 100 }),
-      makeSummary({
-        name: 'other',
-        passed: 5,
-        errors: 2,
-        blocked: 1,
-        worstSeverity: 'error',
-        durationMs: 200,
-      }),
-    ]);
+  describe('total line', () => {
+    it('leads with the aggregate worst severity and sums the durations', () => {
+      const output = formatCombinedSummary([
+        makeSummary({ passed: 10, durationMs: 100 }),
+        makeSummary({ name: 'other', passed: 5, errors: 2, blocked: 1, worstSeverity: 'error', durationMs: 200 }),
+      ]);
 
-    expect(output).toContain(
-      `Total: ${ICON_PASSED} 15 passed. Failed: ${ICON_ERROR_FAILED} 2 errors. Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked (300ms)`,
-    );
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 15 passed | 2 errors | 1 blocked (300ms)`);
+    });
+
+    it('leads with the passed token when no checklist failed', () => {
+      const output = formatCombinedSummary([
+        makeSummary({ passed: 3, durationMs: 50 }),
+        makeSummary({ name: 'other', passed: 7, durationMs: 150 }),
+      ]);
+
+      expect(output.split('\n').at(-1)).toBe(`${PASSED} Total: 10 passed (200ms)`);
+    });
+
+    it('escalates to the worst severity across checklists', () => {
+      const output = formatCombinedSummary([
+        makeSummary({ name: 'only-recommend', passed: 0, recommendations: 1, worstSeverity: 'recommend' }),
+        makeSummary({ name: 'has-warn', passed: 0, warnings: 1, worstSeverity: 'warn' }),
+      ]);
+      const totalLine = output.split('\n').at(-1);
+
+      expect(totalLine?.startsWith(FAILED_WARN)).toBe(true);
+      expect(totalLine).toContain('1 warning | 1 recommendation');
+      expect(totalLine).not.toContain('passed');
+    });
+
+    it('carries no per-field tokens', () => {
+      const output = formatCombinedSummary([makeSummary({ passed: 1, errors: 1, worstSeverity: 'error' })]);
+      const totalLine = output.split('\n').at(-1) ?? '';
+
+      expect(totalLine.slice(FAILED_ERROR.length)).not.toContain(PASSED);
+    });
   });
 
-  it('omits zero-count groups from the Total line', () => {
-    const output = formatCombinedSummary([
-      makeSummary({ passed: 3, durationMs: 50 }),
-      makeSummary({ name: 'other', passed: 7, durationMs: 150 }),
-    ]);
-
-    expect(output).toContain(`Total: ${ICON_PASSED} 10 passed (200ms)`);
-    expect(output).not.toContain('Failed:');
-    expect(output).not.toContain('Skipped:');
-  });
-
-  it('right-aligns durations and left-aligns names across rows', () => {
-    const output = formatCombinedSummary([
+  it('left-aligns names and right-aligns durations across rows', () => {
+    const lines = renderLines([
       makeSummary({ name: 'ab', durationMs: 5 }),
       makeSummary({ name: 'cdef', durationMs: 1200 }),
     ]);
 
-    const rows = output.split('\n').filter((l) => l.includes('passed'));
-    // "ab" padded to length of "cdef", "5ms" padded to length of "1200ms"
-    expect(rows[0]).toContain(`${ICON_PASSED} ab       5ms`);
-    expect(rows[1]).toContain(`${ICON_PASSED} cdef  1200ms`);
+    expect(lines[4]).toContain(`${PASSED} ab       5ms`);
+    expect(lines[5]).toContain(`${PASSED} cdef  1200ms`);
   });
 
-  it('includes skip groups in row when counts are non-zero', () => {
-    const output = formatCombinedSummary([
-      makeSummary({
-        name: 'checks',
-        passed: 1,
-        errors: 1,
-        blocked: 2,
-        worstSeverity: 'error',
-        durationMs: 80,
-      }),
-    ]);
+  it('sizes the rules to the widest line rather than a fixed width', () => {
+    const narrow = renderLines([makeSummary({ name: 'a', passed: 1, durationMs: 1 })]);
+    const wide = renderLines([makeSummary({ name: 'a-considerably-longer-checklist-name', passed: 1, durationMs: 1 })]);
 
-    expect(output).toContain('1 passed. Failed: 1 error. Skipped: 2 blocked');
-  });
-
-  it('renders per-row icons reflecting each checklist worst severity', () => {
-    const output = formatCombinedSummary([
-      makeSummary({ name: 'only-recommend', recommendations: 1, worstSeverity: 'recommend', durationMs: 10 }),
-      makeSummary({ name: 'has-warn', warnings: 1, worstSeverity: 'warn', durationMs: 10 }),
-    ]);
-
-    // Per-checklist rows get worst-severity icons; the Total row itself is always
-    // prefixed with "Total:" and uses per-category icons from `formatSummaryCounts`.
-    expect(output).toContain(`${ICON_RECOMMEND_FAILED} only-recommend`);
-    expect(output).toContain(`${ICON_WARN_FAILED} has-warn`);
-  });
-
-  it('aggregates mixed-severity checklists into a single Total line with per-category icons', () => {
-    const output = formatCombinedSummary([
-      makeSummary({
-        name: 'only-recommend',
-        passed: 0,
-        recommendations: 1,
-        worstSeverity: 'recommend',
-        durationMs: 10,
-      }),
-      makeSummary({ name: 'has-warn', passed: 0, warnings: 1, worstSeverity: 'warn', durationMs: 10 }),
-    ]);
-
-    const totalLine = output.split('\n').find((l) => l.startsWith('Total:'));
-    expect(totalLine).toBeDefined();
-    // Both failure categories are summed with their own per-category icons.
-    expect(totalLine).toContain(`Failed: ${ICON_WARN_FAILED} 1 warning, ${ICON_RECOMMEND_FAILED} 1 recommendation`);
-    expect(totalLine).toContain('(20ms)');
-    expect(totalLine).not.toContain('passed');
+    expect(wide[3]?.length).toBeGreaterThan(narrow[3]?.length ?? 0);
   });
 });

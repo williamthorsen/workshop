@@ -162,7 +162,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     const rule = formatter.rules.section.repeat(formatter.gutter + bodyWidth);
 
     return [
-      ...formatHeading(SUMMARY_HEADING, 'section').slice(0, 2),
+      ...formatHeading(SUMMARY_HEADING, 'section'),
       rule,
       ...entries.map((entry) => `${token(entry.token)}${entry.body}`),
       rule,

@@ -58,10 +58,12 @@ vi.mock('../src/verify/targetHash.ts', () => ({
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
+import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
-import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 import { VERSION } from '../src/version.ts';
 import { captureRdyError } from './helpers/captureRdyError.ts';
+
+const ICON_NO_CHANGES = emojiFormatter.tokens.skippedOptional.glyph;
 
 /** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {

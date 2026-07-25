@@ -296,24 +296,25 @@ describe('formatSummaryTable', () => {
 
     expect(lines[0]).toBe('');
     expect(lines[1]).toBe('\u{2500}\u{2500} Summary');
-    expect(lines[3]).toMatch(/^\S build\s+410ms {2}2 passed$/u);
-    expect(lines[4]).toMatch(/^\S integration {2}1400ms {2}1 passed \| 1 error$/u);
+    expect(lines[2]).toBe('');
+    expect(lines[4]).toMatch(/^\S build\s+410ms {2}2 passed$/u);
+    expect(lines[5]).toMatch(/^\S integration {2}1400ms {2}1 passed \| 1 error$/u);
     expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 3 passed | 1 error (1810ms)`);
-    expect(lines).toHaveLength(7);
+    expect(lines).toHaveLength(8);
   });
 
   it('sizes both rules equally', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[2]).toBe(lines[5]);
-    expect(lines[2]).toMatch(/^\u{2500}+$/u);
+    expect(lines[3]).toBe(lines[6]);
+    expect(lines[3]).toMatch(/^\u{2500}+$/u);
   });
 
   it('sizes the rules to the widest line they enclose', () => {
     const lines = engine.formatSummaryTable(input);
-    const widest = Math.max(...[lines[3], lines[4], lines[6]].map((line) => measureWidth(line ?? '')));
+    const widest = Math.max(...[lines[4], lines[5], lines[7]].map((line) => measureWidth(line ?? '')));
 
-    expect(lines[2]?.length).toBe(widest);
+    expect(lines[3]?.length).toBe(widest);
   });
 
   it('sizes the rules to the total line when it is the widest', () => {
@@ -323,20 +324,20 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 9,
     });
 
-    expect(lines[2]?.length).toBe(measureWidth(lines.at(-1) ?? ''));
+    expect(lines[3]?.length).toBe(measureWidth(lines.at(-1) ?? ''));
   });
 
   it('pads names so the counts column starts at one place in every row', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[3]?.indexOf('2 passed')).toBe(lines[4]?.indexOf('1 passed'));
+    expect(lines[4]?.indexOf('2 passed')).toBe(lines[5]?.indexOf('1 passed'));
   });
 
   it('right-aligns durations', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[3]).toContain(' 410ms');
-    expect(lines[4]).toContain('1400ms');
+    expect(lines[4]).toContain(' 410ms');
+    expect(lines[5]).toContain('1400ms');
   });
 
   it('leads each row with the worst severity of that checklist alone', () => {
@@ -349,8 +350,8 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 200,
     });
 
-    expect(lines[3]?.startsWith(FAILED_WARN)).toBe(true);
-    expect(lines[4]?.startsWith(PASSED)).toBe(true);
+    expect(lines[4]?.startsWith(FAILED_WARN)).toBe(true);
+    expect(lines[5]?.startsWith(PASSED)).toBe(true);
   });
 
   it('handles a single row', () => {
@@ -360,7 +361,7 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 100,
     });
 
-    expect(lines).toHaveLength(6);
+    expect(lines).toHaveLength(7);
   });
 });
 
