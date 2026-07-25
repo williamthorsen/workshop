@@ -114,7 +114,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     return ['', formatHeadingLine(name, level), ''];
   }
 
-  /** Returns `name` behind a two-character rule whose weight comes from `level`. */
+  /** Returns `name` behind a two-character rule whose weight comes from `level`, with no surrounding blanks. */
   function formatHeadingLine(name: string, level: HeadingLevel): string {
     return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
   }

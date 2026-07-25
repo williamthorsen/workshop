@@ -71,10 +71,27 @@ describe(formatOwnerView, () => {
     });
     const lines = result.split('\n');
 
-    expect(lines[0]).toBe('\u{2500}\u{2500} Internal');
-    expect(lines[1]).toBe('   rdy run --jit <name>');
-    expect(lines[2]).toBe('');
-    expect(lines[3]).toBe(`${INTERNAL} deploy`);
+    expect(lines[0]).toBe('');
+    expect(lines[1]).toBe('\u{2500}\u{2500} Internal');
+    expect(lines[2]).toBe('   rdy run --jit <name>');
+    expect(lines[3]).toBe('');
+    expect(lines[4]).toBe(`${INTERNAL} deploy`);
+  });
+
+  it('sets every section off with a blank line above its title', () => {
+    const lines = formatOwnerView({
+      internalKits: ['deploy'],
+      compiledKits: ['monitor'],
+      compiledStyle: { kind: 'local-convention' },
+    }).split('\n');
+    const titleIndexes = lines
+      .map((line, index) => (line.startsWith('\u{2500}\u{2500} ') ? index : -1))
+      .filter((index) => index !== -1);
+
+    expect(titleIndexes).toHaveLength(2);
+    for (const index of titleIndexes) {
+      expect(lines[index - 1]).toBe('');
+    }
   });
 
   it('fuses neither the command into the title nor the title into the command', () => {

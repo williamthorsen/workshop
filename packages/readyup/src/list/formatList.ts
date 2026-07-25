@@ -66,7 +66,7 @@ export function formatOwnerView({
     }
   }
 
-  return sections.join('\n\n');
+  return sections.join('\n');
 }
 
 // -- Consumer view --
@@ -129,13 +129,17 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
     });
   });
 
-  return [layout.formatHeadingLine(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
+  return [...layout.formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
 // -- Helpers --
 
-/** Returns a titled section: the title, `hint` indented beneath it on its own line, then one line per kit. */
+/**
+ * Returns a titled section, opening with a blank line: the title, `hint` indented beneath it, then the kits.
+ *
+ * `hint` sits against the title with no blank between them, so the command reads as part of the heading.
+ */
 function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => layout.formatCheckLine({ token, name }));
-  return [layout.formatHeadingLine(title, 'section'), ...layout.formatReasonBlock([hint]), '', ...items].join('\n');
+  return ['', layout.formatHeadingLine(title, 'section'), `${layout.indent(1)}${hint}`, '', ...items].join('\n');
 }

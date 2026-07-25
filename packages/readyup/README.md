@@ -22,7 +22,7 @@ rdy init
 
 This creates two files:
 
-**`.config/readyup.config.ts`** — repo-level settings:
+**`.config/readyup.config.ts`** -- repo-level settings:
 
 ```ts
 import { defineRdyConfig } from 'readyup';
@@ -35,7 +35,7 @@ export default defineRdyConfig({
 });
 ```
 
-**`.readyup/kits/default.ts`** — starter kit:
+**`.readyup/kits/default.ts`** -- starter kit:
 
 ```ts
 import { defineRdyKit } from 'readyup';
@@ -143,11 +143,11 @@ Every command renders through one layout engine, so a line means the same thing 
 | 🚫    | blocked, because a precondition failed                          |
 | 💊    | a remediation hint                                              |
 
-📄 and 📦 are not statuses. They name a thing -- a TypeScript source and a compiled bundle -- and appear mid-line in `list` and in compile's transformation lines.
+📄 and 📦 are noun glyphs, not statuses: they name a TypeScript source and a compiled bundle. They lead the line in `list`, where a row names a kit instead of reporting an outcome, and sit mid-line in compile's transformation lines. Both declare the same width as every status token, which is what makes the leading position safe.
 
 A check line reads `token name · detail [progress] (duration)`. The middle dot is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
 
-**A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. A failure that derives from its children carries no reason at all, because the subtree beneath it is already the explanation. Passes and skips keep their detail inline.
+**A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. A failed check that authored neither renders no reason block at all. Passes and skips keep their detail inline.
 
 Tail and total lines lead with the run's worst severity rather than its passed count, then report the counts in a fixed order -- passed, errors, warnings, recommendations, blocked, skipped -- omitting any field that is zero.
 
@@ -206,7 +206,7 @@ The staleness warnings are silent when that manifest is absent, when no entry in
 | `1`  | Ran and found problems with the repo or its kits: failed checks, a `verify` drift or missing kit, a kit that fails to compile |
 | `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error                                               |
 
-The distinction is between "fix the repo" (`1`) and "fix the invocation" (`2`), so a pipeline can branch on which is which. `rdy list` and `rdy init` produce only `0` and `2` — neither can find problems to report.
+The distinction is between "fix the repo" (`1`) and "fix the invocation" (`2`), so a pipeline can branch on which is which. `rdy list` and `rdy init` produce only `0` and `2` -- neither can find problems to report.
 
 A run that loses a kit part-way exits `2` even when the kits that ran also found problems, since part of the invocation did not complete. It still reports what it collected.
 
@@ -214,7 +214,7 @@ A run that loses a kit part-way exits `2` even when the kits that ran also found
 
 `run`, `compile`, `list`, and `verify` all accept `--json`. `init` does not: scaffolding is interactive and stays human-only.
 
-With `--json`, stdout carries exactly one JSON document and every human-readable line — headers, progress, warnings, errors — goes to stderr. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
+With `--json`, stdout carries exactly one JSON document and every human-readable line -- headers, progress, warnings, errors -- goes to stderr. The exceptions are `--help` and `--version`, which have no JSON form: their text goes to stderr and stdout stays empty.
 
 #### Published schemas
 
@@ -235,7 +235,7 @@ The schemas are generated from the same definitions the exported `Json*` TypeScr
 The five payloads version independently: reshaping the report leaves a consumer pinned to `list.v1.json` untouched.
 
 - **Adding an optional field does not bump `schemaVersion`.** The schemas do not constrain properties they have not heard of, so a validator pinned to `v1` keeps accepting payloads from a later readyup that added one.
-- **Removing, renaming, or re-typing a field does bump it**, and publishes a new `vN` file beside the old one. Widening a closed set of values — an error `code`, a check `status` — counts as re-typing.
+- **Removing, renaming, or re-typing a field does bump it**, and publishes a new `vN` file beside the old one. Widening a closed set of values -- an error `code`, a check `status` -- counts as re-typing.
 - **A field is `required` only when every payload carries it.** Omission is reserved for genuinely absent or empty data, so a present field never means "nothing here".
 - **`warnings[].code` is an open set**, exempt from the widening rule above: the schema accepts a known code or any other string, so a newly raised advisory never bumps the version. Consumers must tolerate a code they have not heard of, displaying its `message` and `remedy` as they would any other. `error.code` stays closed, because an unknown error code leaves a consumer with no branch to select, and that is a break worth announcing.
 
@@ -285,7 +285,7 @@ An error entry carries no counts and no verdict, because a kit that never ran ha
 
 - **`passed`** is the run verdict: true when every requested kit produced results and every kit passed under its own `failOn`, so it agrees with exit code 0 in every case. Kit and checklist entries carry their own `passed`, which means the narrower "nothing at or above this kit's `failOn` failed here".
 - **`counts`** holds the six result tallies at the report, kit, and checklist levels. They nest rather than sitting flat so the count names and the verdict names share no namespace, which is what makes the additive-evolution rule above sound rather than merely conventional.
-- **`worstSeverity`** sits beside `counts` — it is derived verdict data, not a count — and is omitted when nothing failed.
+- **`worstSeverity`** sits beside `counts` -- it is derived verdict data, not a count -- and is omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear in two places, answering two different questions. At the top level they report what the invocation _requested_, so each is present only when you passed the flag: absence means "not requested", never "defaulted". On each kit that ran they report the threshold that _governed_ it, resolved as CLI flag, then the kit's own declaration, then the default, and both are always present there. The two differ whenever a kit declares its own, which is also why a kit's verdict cannot be recomputed from a run-level value and why a multi-kit run needs one threshold per kit rather than one for the report.
 - **`detail`** has no per-kit form, so requested and effective are the same value and it is always present at the top level.
 - **`warnings`** carries any advisory the run raised, as `{ code, message, remedy? }`. Warnings keep their stderr line in both modes; under `--json` they are captured here as well, because a consumer that owns only stdout would otherwise never see them. The field is absent when the run raised none.
@@ -294,7 +294,7 @@ Payloads are slim by construction: a field carrying nothing is omitted rather th
 
 #### Choosing how much detail to receive
 
-`--detail summary` keeps the counts, verdicts, and worst severity but reduces the detail tree to the checks that failed and the fixes they carry — the shape an agent needs to decide what to do next, at a fraction of the tokens. `--detail full` is the default and keeps every reported check.
+`--detail summary` keeps the counts, verdicts, and worst severity but reduces the detail tree to the checks that failed and the fixes they carry -- the shape an agent needs to decide what to do next, at a fraction of the tokens. `--detail full` is the default and keeps every reported check.
 
 ```bash
 rdy run --json --detail summary
@@ -363,7 +363,7 @@ Each section names the command that runs the kits beneath it, on its own line so
 
 A local `--from` source with no manifest beside its kits falls back to listing the compiled kits on disk, which are the same kits `rdy run --from` would resolve. Those rows carry a name and a path only; descriptions, checklist names, and versions live in the manifest that is absent. A remote source still requires one.
 
-Under `--json`, each row reports `name`, `kind` (`internal` for a TypeScript source, `compiled` for a bundle), `path`, and — for kits a manifest describes — `checklists`, `description`, and `readyupVersion`. Checklist names are read from the manifest, so listing kits never imports a compiled bundle and never runs kit code.
+Under `--json`, each row reports `name`, `kind` (`internal` for a TypeScript source, `compiled` for a bundle), `path`, and -- for kits a manifest describes -- `checklists`, `description`, and `readyupVersion`. Checklist names are read from the manifest, so listing kits never imports a compiled bundle and never runs kit code.
 
 Rows are keyed by `name` and `kind` together, not by `name` alone. Under the default configuration both the internal source directory and the compile output directory resolve to `.readyup/kits`, so a compiled source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as `compiled`, which `rdy run <name>` runs. Both rows are meaningful, so a consumer indexing on `name` alone silently drops one of them.
 
@@ -528,7 +528,7 @@ It produces:
 
 Four things to read off that output:
 
-- **`dependencies` carries no reason.** It failed only because a descendant did, and the subtree beneath it is the explanation. Authoring a `detail` on a derived failure would restate what the indentation already shows.
+- **`dependencies` passed, which is why anything beneath it ran at all.** A check that fails blocks its descendants, so they report 🚫 without running. The 🔴 on `no duplicated majors` is reachable only because both checks above it passed, and a failing descendant is what turns the tail line red while every ancestor stays green.
 - **`no duplicated majors` sits at the third level, and its reason lines up under its own name** -- one indent step per level, so a reason is never mistaken for a check.
 - **No check line carries a duration.** Every check here returns immediately, and durations appear only from 100 ms up, so a fast report is not littered with `(0ms)`. The tail line shows the run's total regardless.
 - **`progress` needs no `detail`.** `[4 of 4]` is the evidence; a detail restating it would spend the line's one separator to say the same thing twice.
@@ -596,9 +596,9 @@ import { fileExists, fileContains, hasPackageJsonField } from 'readyup/check-uti
 
 ### Discovering workspaces
 
-`discoverWorkspaces()` returns a uniform `Workspace[]` that collapses pnpm, npm, and yarn monorepo conventions — and single-workspace repos — into one iteration shape. Every entry includes `dir` (relative to `cwd`; `'.'` for a single-workspace repo), `absolutePath`, `name`, `isPackage` (true when `package.json.private !== true`), and the parsed `packageJson`.
+`discoverWorkspaces()` returns a uniform `Workspace[]` that collapses pnpm, npm, and yarn monorepo conventions -- and single-workspace repos -- into one iteration shape. Every entry includes `dir` (relative to `cwd`; `'.'` for a single-workspace repo), `absolutePath`, `name`, `isPackage` (true when `package.json.private !== true`), and the parsed `packageJson`.
 
-Common filter pattern — get all publishable workspaces:
+Common filter pattern -- get all publishable workspaces:
 
 ```ts
 import { discoverWorkspaces } from 'readyup/check-utils';
@@ -610,9 +610,9 @@ Note: `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs 
 
 ### Reading runtime alignment
 
-`readTsconfigLanguageLevel(path)` reports what language level a tsconfig actually declares, which may be several `extends` hops away. Alongside `lib` and `target` — lowercased, so comparisons are string equality — it returns `chain`, the configs it read with the entry file first, and `unresolvedExtends`, the references it could not follow. Bare package specifiers such as `@tsconfig/node24/tsconfig.json` are never followed, and a missing or unparseable parent ends that branch of the walk; both land in `unresolvedExtends`, so a check can tell an incomplete answer from a genuinely undeclared setting. A missing or unparseable entry file returns `undefined`. Configs are read as JSONC, so comments and trailing commas are fine.
+`readTsconfigLanguageLevel(path)` reports what language level a tsconfig actually declares, which may be several `extends` hops away. Alongside `lib` and `target` -- lowercased, so comparisons are string equality -- it returns `chain`, the configs it read with the entry file first, and `unresolvedExtends`, the references it could not follow. Bare package specifiers such as `@tsconfig/node24/tsconfig.json` are never followed, and a missing or unparseable parent ends that branch of the walk; both land in `unresolvedExtends`, so a check can tell an incomplete answer from a genuinely undeclared setting. A missing or unparseable entry file returns `undefined`. Configs are read as JSONC, so comments and trailing commas are fine.
 
-`readEnginesNodeFloor(manifest)` recognizes only the range forms from which a single floor follows: `>=24`, `^22.1`, and a bare `24.1.0`. Anything else — a union such as `^20 || ^22`, a hyphen range, a wildcard — comes back as `{ kind: 'unparseable' }` rather than an invented floor. It takes an already-parsed manifest, so it composes with `discoverWorkspaces` without re-reading files.
+`readEnginesNodeFloor(manifest)` recognizes only the range forms from which a single floor follows: `>=24`, `^22.1`, and a bare `24.1.0`. Anything else -- a union such as `^20 || ^22`, a hyphen range, a wildcard -- comes back as `{ kind: 'unparseable' }` rather than an invented floor. It takes an already-parsed manifest, so it composes with `discoverWorkspaces` without re-reading files.
 
 `satisfiesNodeFloor(version, floor)` compares two dotted numeric versions and returns `undefined` for anything else. That matters because `readToolVersionsNode` reports whatever the file names, and `lts`, `latest`, `system`, and `ref:<git ref>` are all valid pins: without the `undefined`, an unreadable pin would be indistinguishable from a runtime that genuinely sits below the floor.
 
@@ -643,7 +643,7 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 
 `readyup/check-utils` is the stable, versioned surface for kit-author imports of check utilities. It follows semver: no breaking changes within a major version.
 
-Compiled kits embed nothing of readyup itself — the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when you upgrade readyup across a major, recompile your kits with `rdy compile` so any newly-shipped or changed check utilities are picked up.
+Compiled kits embed nothing of readyup itself -- the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when you upgrade readyup across a major, recompile your kits with `rdy compile` so any newly-shipped or changed check utilities are picked up.
 
 ## License
 
