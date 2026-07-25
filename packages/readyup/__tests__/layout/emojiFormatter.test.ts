@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
 import { TOKEN_NAMES } from '../../src/layout/formatter.ts';
 
-/** The variation selector whose presence makes a glyph's rendered width terminal-dependent. */
 const VARIATION_SELECTOR_16 = '\u{FE0F}';
 
-/** Glyphs the unified vocabulary retired, each stripped of any variation selector. */
+/** Glyphs no token may use, each stripped of any variation selector. */
 const RETIRED_GLYPHS = ['\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}'];
 
 const entries = TOKEN_NAMES.map((name) => ({ name, ...emojiFormatter.tokens[name] }));
@@ -43,9 +42,8 @@ describe('emojiFormatter', () => {
       expect(glyph).not.toContain(VARIATION_SELECTOR_16);
     });
 
-    // `Emoji_Presentation` is precisely the property that makes a code point render as a two-cell
-    // emoji unaided, so matching it proves the declared width rather than merely restating it. The
-    // anchored single-property pattern also rejects any multi-code-point sequence.
+    // `Emoji_Presentation` is the property that makes a code point occupy two cells unaided, so the
+    // match verifies the declared width. Anchoring to one property also rejects multi-code-point sequences.
     it('is one code point that renders wide unaided', () => {
       expect(glyph).toMatch(/^\p{Emoji_Presentation}$/u);
     });

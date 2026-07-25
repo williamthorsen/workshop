@@ -234,7 +234,7 @@ describe(verifyCommand, () => {
   });
 
   describe('unified vocabulary', () => {
-    /** Every verdict pairing, so one sweep covers each line the command can produce. */
+    /** Every verdict the command can report, so one sweep covers each line it produces. */
     const verdicts = [
       { kind: 'ok', targetHash: 'aaaa1111' },
       { kind: 'drift', expected: 'aaaa1111', actual: 'aaaa9999', resolvedPath: '/abs/alpha.js' },

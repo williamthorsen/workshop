@@ -1,7 +1,7 @@
 import { layout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
-/** Build the positional name hint, bracketed when a default kit exists. */
+/** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
 function buildKitHint(kits: string[]): string {
   return kits.includes('default') ? '[<name>]' : '<name>';
 }
@@ -109,12 +109,11 @@ interface ManifestViewOptions {
 }
 
 /**
- * Format a view of kits loaded from a manifest file.
+ * Returns a heading naming the manifest, then one line per kit.
  *
- * Kit names carry the compiled-output glyph. When a kit's `readyupVersion` is present, it appears as
- * a parenthetical between the name and the description, which follows the middle dot. The literal
- * `readyup` label is load-bearing: it disambiguates the version from a hypothetical kit-own version.
- * Descriptions appear inline when present; both fields are omitted independently.
+ * A kit's line carries its version as a parenthetical and its description as inline detail, each present
+ * only when the manifest records it. The `readyup` label distinguishes the runner's version from a
+ * version the kit might declare for itself.
  */
 export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
   if (kits.length === 0) {
@@ -135,13 +134,7 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
 
 // -- Helpers --
 
-/**
- * Build a titled section: the title, the copy-pasteable command beneath it, then the kits.
- *
- * Splitting the command onto its own line is what makes it copy-pasteable. Fused to the title, it
- * could not be selected without also taking the label, and the title could not be scanned without
- * reading past the command.
- */
+/** Returns a titled section: the title, `hint` indented beneath it on its own line, then one line per kit. */
 function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => layout.formatCheckLine({ token, name }));
   return [layout.formatHeadingLine(title, 'section'), ...layout.formatReasonBlock([hint]), '', ...items].join('\n');

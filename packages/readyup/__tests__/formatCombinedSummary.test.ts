@@ -24,7 +24,7 @@ function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
   };
 }
 
-/** Return the rendered lines, dropping the leading blank the heading contributes. */
+/** Returns the table's lines, the leading blank included. */
 function renderLines(summaries: ChecklistSummary[]): string[] {
   return formatCombinedSummary(summaries).split('\n');
 }

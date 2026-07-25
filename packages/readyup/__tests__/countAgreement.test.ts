@@ -67,7 +67,6 @@ describe('count agreement across views', () => {
 
     expect(counts).toStrictEqual(expectedCounts);
 
-    // One rendering of the tally now serves both views, so each must carry it verbatim.
     const expectedFields = layout.formatCounts(expectedCounts);
 
     // Human tail line.

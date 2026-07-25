@@ -12,7 +12,7 @@ const SKIPPED_OPTIONAL = emojiFormatter.tokens.skippedOptional.glyph;
 const BLOCKED = emojiFormatter.tokens.blockedPrecondition.glyph;
 const FIX = emojiFormatter.tokens.fix.glyph;
 
-/** A duration at or above the engine's floor, so a line that may carry one does. */
+/** A duration above the engine's floor, so lines eligible for one show it. */
 const SLOW_MS = 250;
 
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
@@ -73,14 +73,14 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
   };
 }
 
-/** Return the line that names `needle`, for assertions about a specific check's rendering. */
+/** Returns the first output line containing `needle`, throwing when no line does. */
 function lineNaming(output: string, needle: string): string {
   const line = output.split('\n').find((candidate) => candidate.includes(needle));
   if (line === undefined) throw new Error(`No line naming ${JSON.stringify(needle)} in:\n${output}`);
   return line;
 }
 
-/** Return the line index that names `needle`. */
+/** Returns the index of the first output line containing `needle`, or -1. */
 function indexNaming(output: string, needle: string): number {
   return output.split('\n').findIndex((candidate) => candidate.includes(needle));
 }
@@ -488,8 +488,7 @@ describe(reportRdy, () => {
     });
 
     it('renders every result it is given, applying no suppression of its own', () => {
-      // `runRdy` no longer emits descendants of an n/a result, so the renderer must not
-      // second-guess its input: whatever arrives is displayed and counted.
+      // The renderer displays and counts whatever it is given, applying no suppression of its own.
       const output = reportRdy(
         makeReport({
           results: [

@@ -5,7 +5,7 @@ import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
 /** Milliseconds below which a line omits its duration, leaving only timings worth reading. */
 const DURATION_FLOOR_MS = 100;
 
-/** The one separator a line may carry between a name and its inline detail (U+00B7). */
+/** Middle dot, U+00B7. */
 const DETAIL_SEPARATOR = '\u{00B7}';
 
 /** Rule characters in a heading's leading sigil. */
@@ -23,7 +23,7 @@ const SUMMARY_HEADING = 'Summary';
 /** Statement a count line makes when there is nothing at all to report. */
 const EMPTY_COUNTS = '0 passed';
 
-/** Tokens naming a check that never ran, so no elapsed time describes it. */
+/** Tokens naming a check that did not run. */
 const SKIPPED_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>(['blockedPrecondition', 'skippedOptional']);
 
 /** One tallied field of a count line, with the labels its count selects between. */
@@ -72,7 +72,7 @@ export interface SummaryTableInput {
   totals: SummaryCounts;
 }
 
-/** Pure string builders composing a formatter's vocabulary into laid-out lines. */
+/** String builders that lay out a formatter's tokens. */
 export interface LayoutEngine {
   formatCheckLine(input: CheckLineInput): string;
   formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string;
@@ -86,21 +86,9 @@ export interface LayoutEngine {
   token(token: TokenName): string;
 }
 
-/**
- * Build the layout engine for a formatter.
- *
- * Every function it returns is a pure string builder: no I/O, no `process`, no ambient state. Stream
- * selection and the decision of what to render stay with the caller, so one geometry serves the run
- * report, the summary table, and every other command's lines.
- */
+/** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
-  /**
-   * Compose a check line as `token name · detail [progress] (duration)`.
-   *
-   * The middle dot is the only detail separator, so progress takes brackets rather than a second one.
-   * A failed check passes no `detail`: its reason belongs in the block beneath, where a multi-clause
-   * explanation has room an inline tail does not.
-   */
+  /** Returns one line, `token name · detail [progress] (duration)`, dropping the segments it lacks. */
   function formatCheckLine(input: CheckLineInput): string {
     const segments = [`${indent(input.depth ?? 0)}${token(input.token)}${input.name}`];
     if (input.detail !== undefined) segments.push(`${DETAIL_SEPARATOR} ${input.detail}`);
@@ -113,47 +101,34 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Compose a tail or total line: the worst severity's token, the pipe counts, then the duration.
+   * Returns `token label counts (duration)`, led by the token for `counts.worstSeverity`.
    *
-   * Leading with the worst severity is what makes a failed run legible at a glance; the counts say
-   * how much of each kind. The duration is unconditional here, unlike on a check line -- how long a
-   * whole run took is worth reading however small it is.
+   * The duration always appears, whatever its magnitude.
    */
   function formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string {
     return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs, label);
   }
 
-  /** Build a heading and the blank lines setting it off, as separate lines for the caller to join. */
+  /** Returns the heading line preceded and followed by a blank line. */
   function formatHeading(name: string, level: HeadingLevel): string[] {
     return ['', formatHeadingLine(name, level), ''];
   }
 
-  /**
-   * Build a heading line alone, for a caller that attaches its own content directly beneath.
-   *
-   * `list` needs this: its copy-pasteable command belongs against the title it qualifies, so the
-   * blank line `formatHeading` supplies would separate the two.
-   */
+  /** Returns `name` behind a two-character rule whose weight comes from `level`. */
   function formatHeadingLine(name: string, level: HeadingLevel): string {
     return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
   }
 
-  /**
-   * Indent reason lines to the name column of a check at `depth`.
-   *
-   * The indent unit is the gutter, so one further level of indent is exactly where the name above
-   * starts -- the reason then reads as continuation of that name rather than as a check of its own.
-   */
+  /** Returns each reason indented to the name column of a check at `depth`, one gutter further in. */
   function formatReasonBlock(reasons: string[], depth = 0): string[] {
     return reasons.map((reason) => `${indent(depth + 1)}${reason}`);
   }
 
   /**
-   * Build the combined summary table: heading, rules, one row per checklist, then the total line.
+   * Returns the summary table's lines: a heading, a rule, one line per row, a closing rule, and a total.
    *
-   * Names are padded and durations right-aligned so every row's counts start at one column, and both
-   * rules are sized to the widest line they enclose -- including the total, which a rule stopping
-   * short of would read as unrelated to the table above it.
+   * Names are padded and durations right-aligned, so every row's counts begin at the same column. Both
+   * rules span the widest line they enclose, the total included.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
     const nameWidth = Math.max(...rows.map((row) => row.name.length));
@@ -181,17 +156,17 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     ];
   }
 
-  /** Return a token's bare glyph, for mid-line placement where it names a thing rather than a status. */
+  /** Returns a token's glyph unpadded. */
   function glyph(name: TokenName): string {
     return formatter.tokens[name].glyph;
   }
 
-  /** Build the leading whitespace for a given nesting depth. */
+  /** Returns `depth` gutters' worth of spaces. */
   function indent(depth: number): string {
     return ' '.repeat(formatter.gutter * depth);
   }
 
-  /** Return a token padded to the gutter, so the name beside it starts at one column every time. */
+  /** Returns a token's glyph padded to the gutter, so what follows starts at a fixed column. */
   function token(name: TokenName): string {
     const { glyph: character, width } = formatter.tokens[name];
     return character + ' '.repeat(formatter.gutter - width);
@@ -199,7 +174,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   // -- Helpers --
 
-  /** Build everything a count line carries after its leading token. */
+  /** Returns everything a count line carries after its leading token. */
   function buildCountBody(counts: SummaryCounts, durationMs: number, label?: string): string {
     const prefix = label === undefined ? '' : `${label} `;
     return `${prefix}${formatCounts(counts)} (${formatDuration(durationMs)})`;
@@ -219,7 +194,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   };
 }
 
-/** Map the worst failed severity to its token, falling back to `passed` when nothing failed. */
+/** Returns the token for a severity, or the `passed` token for `null`. */
 export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   if (worstSeverity === 'error') return 'failedError';
   if (worstSeverity === 'warn') return 'failedWarn';
@@ -227,12 +202,7 @@ export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   return 'passed';
 }
 
-/**
- * Join the non-zero counts with pipes, in the fixed field order.
- *
- * A run with nothing to report still says `0 passed` rather than collapsing to an empty segment,
- * which would leave a bare token and duration with no statement between them.
- */
+/** Returns the non-zero counts pipe-joined in field order, or `0 passed` when every count is zero. */
 function formatCounts(counts: SummaryCounts): string {
   const fields = COUNT_FIELDS.filter((field) => counts[field.key] > 0).map((field) =>
     pluralizeWithCount(counts[field.key], field.singular, field.plural),
@@ -240,18 +210,13 @@ function formatCounts(counts: SummaryCounts): string {
   return fields.length > 0 ? fields.join(' | ') : EMPTY_COUNTS;
 }
 
-/**
- * Resolve a line's duration text, or nothing when the timing is not worth a reader's attention.
- *
- * A skipped check carries none however long its skip predicate took: the check itself never ran.
- * Below the floor, a duration is noise on every line of a healthy report.
- */
+/** Returns the formatted duration, or nothing for a skipped token or a duration under the floor. */
 function resolveDuration(token: TokenName, durationMs: number | undefined): string | undefined {
   if (durationMs === undefined || SKIPPED_TOKENS.has(token)) return undefined;
   return durationMs >= DURATION_FLOOR_MS ? formatDuration(durationMs) : undefined;
 }
 
-/** Format a duration in milliseconds for display. */
+/** Returns a whole number of milliseconds with its unit. */
 function formatDuration(ms: number): string {
   return `${Math.round(ms)}ms`;
 }

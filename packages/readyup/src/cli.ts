@@ -149,8 +149,7 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
   }
 
-  // `--quiet` thins the human detail tree, which `--json` does not emit. Erroring beats ignoring it,
-  // for the same reason `--detail` errors without `--json`.
+  // `--quiet` thins the human detail tree, which `--json` does not emit.
   if (parsed.quiet && parsed.json) {
     throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
   }
@@ -422,7 +421,6 @@ interface RunCommandOptions {
   reportOn?: Severity;
 }
 
-/** Threshold and verbosity settings governing every kit in a human-mode run. */
 interface HumanRunSettings {
   failOn: Severity | undefined;
   quiet: boolean;

@@ -130,13 +130,10 @@ function buildVerifyEntry(name: string, status: DriftStatus, sourceStatus: Sourc
 }
 
 /**
- * Format a single per-kit line, reporting only the verdicts that have news.
+ * Returns a kit's line, carrying whichever of its two verdicts has something to report.
  *
- * A failing kit carries just its name, with each verdict on its own line beneath -- a kit whose
- * target drifted *and* whose source went stale has two things to say, and a block gives each room
- * that an inline tail joined by semicolons does not. A passing or unverified kit keeps its verdict
- * inline, and a wholly verified one says nothing beyond its token: the reader's attention belongs on
- * whatever changed.
+ * A failing kit carries each verdict on its own line beneath its name; any other kit carries them
+ * inline. A kit that passes both verdicts carries none, leaving its token to report the outcome.
  */
 function formatStatusLine(kit: RdyManifestKit, status: DriftStatus, sourceStatus: SourceStatus): string {
   const token = resolveToken(status, sourceStatus);
@@ -154,11 +151,10 @@ function formatStatusLine(kit: RdyManifestKit, status: DriftStatus, sourceStatus
 }
 
 /**
- * Pick the token for a kit's line from the worse of its two verdicts.
+ * Returns the token for the worse of a kit's two verdicts.
  *
- * A missing file and a hash mismatch both mean the tree does not match what the manifest describes,
- * so both read as failures. `unverified` shows only when it is the whole story, since a target
- * verified against its hash is not made less verified by a source the manifest never recorded.
+ * A mismatch or a missing file on either axis yields a failure. `unverified` yields the skip token only
+ * when the target itself is unverified.
  */
 function resolveToken(status: DriftStatus, sourceStatus: SourceStatus): TokenName {
   const targetFailed = status.kind === 'missing' || status.kind === 'drift';
@@ -168,7 +164,7 @@ function resolveToken(status: DriftStatus, sourceStatus: SourceStatus): TokenNam
   return 'passed';
 }
 
-/** Describe the compiled-output verdict, or nothing when the token already says it. */
+/** Returns a clause describing the compiled-output verdict, or nothing when the verdict is `ok`. */
 function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string | undefined {
   switch (status.kind) {
     case 'ok':
@@ -182,7 +178,7 @@ function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string |
   }
 }
 
-/** Describe the source verdict, or nothing when it has no news to add. */
+/** Returns a clause describing the source verdict, or nothing when it is `ok` or `unverified`. */
 function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string | undefined {
   switch (status.kind) {
     case 'stale':

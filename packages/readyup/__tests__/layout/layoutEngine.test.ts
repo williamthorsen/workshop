@@ -5,7 +5,7 @@ import { TOKEN_NAMES, type TokenName } from '../../src/layout/formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
 import type { SummaryCounts } from '../../src/types.ts';
 
-/** Tokens naming a check that never ran, which therefore never carry a duration. */
+/** Tokens naming a check that did not run. */
 const SKIPPED_TOKENS: TokenName[] = ['blockedPrecondition', 'skippedOptional'];
 
 const engine = createLayoutEngine(emojiFormatter);
@@ -33,11 +33,9 @@ function makeRow(overrides?: Partial<SummaryRow>): SummaryRow {
 }
 
 /**
- * Measure the display column at which a rendered line's name begins.
+ * Returns the display column at which a rendered line's name begins.
  *
- * Counts terminal cells rather than UTF-16 units, using the formatter's declared widths. An
- * index-based measurement would report the same number for a one-cell and a two-cell glyph and so
- * would prove nothing about alignment -- the very confusion the width declarations exist to settle.
+ * Counts terminal cells, taking each glyph's width from the formatter, so a two-cell glyph counts twice.
  */
 function measureNameColumn(line: string): number {
   const match = /^(?<indent> *)(?<glyph>\P{White_Space})(?<pad> +)/u.exec(line);
@@ -50,7 +48,7 @@ function measureNameColumn(line: string): number {
   return (groups.indent?.length ?? 0) + token.width + (groups.pad?.length ?? 0);
 }
 
-/** Measure a line's leading whitespace, which is already one column per character. */
+/** Returns a line's count of leading spaces, one per column. */
 function measureIndent(line: string): number {
   return line.length - line.trimStart().length;
 }
@@ -276,12 +274,7 @@ describe('formatSummaryTable', () => {
     totalDurationMs: 1810,
   };
 
-  /**
-   * Measure a rendered table line in display columns.
-   *
-   * The leading token and the space padding it out occupy the gutter between them, so the body's
-   * character count can be added to the gutter directly.
-   */
+  /** Returns a rendered table line's width in display columns, its leading token counted as one gutter. */
   function measureWidth(line: string): number {
     const glyph = String.fromCodePoint(line.codePointAt(0) ?? 0);
     const token = Object.values(emojiFormatter.tokens).find((entry) => entry.glyph === glyph);

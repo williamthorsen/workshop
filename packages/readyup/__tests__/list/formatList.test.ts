@@ -6,10 +6,10 @@ import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } 
 const INTERNAL = emojiFormatter.tokens.docInternal.glyph;
 
 /**
- * Return the copy-pasteable command a section publishes, which sits on the line beneath its title.
+ * Returns the line beneath a section's title, which is where its command sits.
  *
- * Reading the line after the title is the assertion: a command fused to the title would satisfy a
- * plain `toContain` on the whole output while defeating the point of splitting it out.
+ * Reading that line positionally is the assertion: a command fused into the title would still satisfy a
+ * `toContain` over the whole output.
  */
 function findSectionCommand(output: string, title: string): string | undefined {
   const lines = output.split('\n');

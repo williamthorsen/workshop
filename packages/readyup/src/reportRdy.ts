@@ -6,10 +6,8 @@ import type { FixLocation, Progress, RdyReport, RdyResult, Severity, SummaryCoun
 import { isPercentProgress } from './types.ts';
 import { worseSeverity } from './utils/severity.ts';
 
-/** Heading over the end-of-report fix recap. */
 const FIXES_HEADING = 'Fixes';
 
-/** A remediation message together with the check that raised it. */
 interface AttributedFix {
   fix: string;
   name: string;
@@ -23,15 +21,11 @@ export interface ReportRdyOptions {
 }
 
 /**
- * Format a readyup report as a human-readable string for terminal output.
+ * Returns a report rendered for a terminal: a tree of check lines, a count line, and any fix recap.
  *
- * A failed check's line carries only its claim; the reason renders in a block beneath, indented to
- * the name column. In `end` mode (default) fixes are recapped at the bottom, each attributed to the
- * check that raised it; in `inline` mode the fix joins that check's reason block instead.
- *
- * Results below the reporting threshold are omitted from the detail tree unless they are an ancestor
- * of a result that is shown, and `quiet` drops passed checks from what survives that. The summary
- * counts always reflect the whole run regardless of either.
+ * A failed check contributes its claim plus a reason block; every other status contributes one line.
+ * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
+ * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -55,7 +49,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   return lines.join('\n');
 }
 
-/** Create a zeroed `SummaryCounts` object. */
+/** Returns counts with every field at zero and no worst severity. */
 export function emptyCounts(): SummaryCounts {
   return {
     passed: 0,
@@ -69,11 +63,9 @@ export function emptyCounts(): SummaryCounts {
 }
 
 /**
- * Count results by severity and skip reason.
+ * Returns the tally of `results` by severity and skip reason.
  *
- * This is the only entry point for tallying a result list, and it expects the run's
- * complete results. The reporting threshold selects what is *displayed*; passing a
- * pre-filtered list here is what once made the human, table, and JSON counts disagree.
+ * Expects a run's complete results: a pre-filtered list yields counts that describe only the subset.
  */
 export function countResults(results: RdyResult[]): SummaryCounts {
   const counts = emptyCounts();
@@ -84,18 +76,15 @@ export function countResults(results: RdyResult[]): SummaryCounts {
 }
 
 /**
- * Selects the results a reporting threshold leaves visible, retaining the ancestors of every survivor.
+ * Returns the results whose severity meets `reportOn`, plus the ancestors of each, in their original order.
  *
- * A result is visible when its own severity meets the threshold or when any of its descendants is visible, so a
- * surviving check is never rendered under a pruned parent.
- *
- * Visible results are returned in their original order.
+ * A result also survives when one of its descendants does, so no survivor is left without its parents.
  */
 export function selectVisibleResults(results: RdyResult[], reportOn: Severity): RdyResult[] {
   return retainWithAncestors(results, (result) => meetsThreshold(result.severity, reportOn));
 }
 
-/** Aggregates `source` counts into `target` in place, propagating the worse severity. */
+/** Adds `source` into `target` in place, keeping the worse of their two severities. */
 export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void {
   target.passed += source.passed;
   target.errors += source.errors;
@@ -108,13 +97,7 @@ export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void 
 
 // -- Helpers --
 
-/**
- * Selects what the detail tree shows: the severity threshold first, then `quiet` over what survives.
- *
- * The two are orthogonal -- one filters by severity, the other by status -- so they compose rather
- * than override. Both run through the same ancestor-retaining walk, which is what keeps a lone deep
- * failure reachable through its passed parents under either.
- */
+/** Returns the results surviving `reportOn`, then those surviving `quiet`, each pass keeping ancestors. */
 function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
   const reported = selectVisibleResults(results, reportOn);
   if (!quiet) return reported;
@@ -122,11 +105,10 @@ function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: 
 }
 
 /**
- * Filters results to those `isVisible` accepts, retaining the ancestors of every survivor.
+ * Returns the results `isVisible` accepts, plus the ancestors of each, in their original order.
  *
- * Assumes the contiguous depth-first ordering `runRdy` produces: a result's descendants are exactly
- * the run of deeper results that follows it. Retaining whole ancestor chains preserves that property,
- * so the output of one pass is valid input to the next.
+ * Requires depth-first order, where a result's descendants are the run of deeper results following it.
+ * The returned list preserves that order, so it is valid input to a further pass.
  */
 function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult) => boolean): RdyResult[] {
   const visible: RdyResult[] = [];
@@ -143,7 +125,7 @@ function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult
   return visible.toReversed();
 }
 
-/** Render one result: its check line, plus the reason block a failure carries beneath it. */
+/** Returns a result's check line, followed by its reason block when the result failed. */
 function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
   const isFailed = result.status === 'failed';
   const checkLine = layout.formatCheckLine({
@@ -151,7 +133,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
     name: result.name,
     depth: result.depth,
     durationMs: result.durationMs,
-    // A failed check's detail is its reason, which belongs in the block beneath rather than inline.
+    // A failed check's detail is its reason, which the block beneath carries.
     ...(!isFailed && result.detail !== null && { detail: result.detail }),
     ...(result.progress !== null && { progress: formatProgress(result.progress) }),
   });
@@ -162,10 +144,9 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
 }
 
 /**
- * Collect the reason lines beneath a failed check: the authored detail, then the thrown exception.
+ * Returns a failed result's reasons in reading order: its detail, its error, then its fix.
  *
- * A failure deriving from its children has neither, and so contributes no block at all -- the subtree
- * beneath it is already the explanation, and a restatement would only push the checks further apart.
+ * Each is present only when the result carries it, so a result carrying none yields an empty list.
  */
 function collectReasons(result: RdyResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
@@ -175,19 +156,19 @@ function collectReasons(result: RdyResult, includeFix: boolean): string[] {
   return reasons;
 }
 
-/** Gather every fix a failed result carries, paired with the check name that attributes it. */
+/** Returns each failed result's fix paired with the name of the check carrying it. */
 function collectFixes(results: RdyResult[]): AttributedFix[] {
   return results.flatMap((result) =>
     result.status === 'failed' && result.fix !== null ? [{ name: result.name, fix: result.fix }] : [],
   );
 }
 
-/** Render the end-of-report recap: the check name on the token line, its fix indented beneath. */
+/** Returns two lines per fix: the check's name behind a token, then the fix indented beneath. */
 function renderFixRecap(fixes: AttributedFix[]): string[] {
   return fixes.flatMap((entry) => [`${layout.token('fix')}${entry.name}`, ...layout.formatReasonBlock([entry.fix])]);
 }
 
-/** Map a result's status, severity, and skip reason to the token that leads its line. */
+/** Returns the token for a result, chosen by its status and then by its severity or skip reason. */
 function resolveResultToken(result: RdyResult): TokenName {
   if (result.status === 'passed') return 'passed';
   if (result.status === 'skipped') {
@@ -197,7 +178,7 @@ function resolveResultToken(result: RdyResult): TokenName {
   return resolveWorstToken(result.severity);
 }
 
-/** Format a progress value for display. */
+/** Returns a progress value as a percentage or a passed-of-total fraction. */
 function formatProgress(progress: Progress): string {
   if (isPercentProgress(progress)) {
     return `${progress.percent}%`;
@@ -206,11 +187,10 @@ function formatProgress(progress: Progress): string {
 }
 
 /**
- * Update a `SummaryCounts` object in place with the contribution of a single result.
+ * Adds one result to `counts` in place.
  *
- * Passed results increment `passed`. Failed results are bucketed by severity, and
- * `worstSeverity` is updated if the failure is more severe than the current worst.
- * Skipped results increment `blocked` (precondition) or `optional` (n/a).
+ * A pass increments `passed`; a failure increments its severity's field and may raise `worstSeverity`;
+ * a skip increments `blocked` or `optional` according to its reason.
  */
 function tallyResult(counts: SummaryCounts, result: RdyResult): void {
   if (result.status === 'passed') {

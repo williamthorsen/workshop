@@ -2,11 +2,7 @@ import { layout } from './layout/engine.ts';
 import { emptyCounts, mergeCounts } from './reportRdy.ts';
 import type { ChecklistSummary, SummaryCounts } from './types.ts';
 
-/**
- * Format the combined summary table shown after multiple checklists run.
- *
- * Leads with the heading's own blank line, so a caller appends it directly to the report above.
- */
+/** Returns the summary table for `summaries`, one row each, opening with a blank line. */
 export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
   const rows = summaries.map((summary) => ({
     name: summary.name,
@@ -23,7 +19,7 @@ export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
     .join('\n');
 }
 
-/** Sum granular counts across multiple summaries, propagating the worst severity. */
+/** Returns the sum of every summary's counts, carrying the worst severity among them. */
 function aggregateCounts(summaries: ChecklistSummary[]): SummaryCounts {
   const totals = emptyCounts();
   for (const summary of summaries) {

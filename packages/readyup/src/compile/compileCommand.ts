@@ -35,12 +35,7 @@ const compileOptions = {
   'skip-manifest': { type: 'boolean' },
 } as const;
 
-/**
- * Separator between a compiled kit's source and its output.
- *
- * ASCII rather than U+2192: two fixed cells in every terminal, and ligature fonts still draw it as
- * an arrow. The middle dot is reserved for detail, so a transformation line spends neither.
- */
+/** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */
 const TRANSFORM_ARROW = '->';
 
 /** Domain-specific hints for compile flags that require a value. */
@@ -431,13 +426,7 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   return { status, existingKit };
 }
 
-/**
- * Format a compile-result line.
- *
- * A rebuilt kit names its output after an ASCII arrow; an untouched one says so as inline detail. The
- * leading tokens are what preserve the rebuilt-versus-untouched scan down the left edge, which frees
- * the box glyph to name the output rather than report a status.
- */
+/** Returns a line naming the output a rebuilt kit produced, or reporting an unchanged one as skipped. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
   if (!changed) {
     return layout.formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
@@ -447,11 +436,7 @@ function formatResultLine(srcName: string, outName: string, changed: boolean): s
   return `${claim} ${TRANSFORM_ARROW} ${layout.glyph('docCompiled')} ${outName}\n`;
 }
 
-/**
- * Format a drift-skip line: a warning claim with the hash mismatch in a block beneath.
- *
- * Requires a `drift` status; other statuses never produce this line.
- */
+/** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */
 function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
   const target = path.basename(status.resolvedPath);
   const claim = layout.formatCheckLine({ token: 'failedWarn', name: srcName });
@@ -460,7 +445,7 @@ function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: '
   return [claim, ...layout.formatReasonBlock([reason])].join('\n') + '\n';
 }
 
-/** Build a section heading together with the blank line that follows it, ready to write. */
+/** Returns a section heading as a single writable string, newline-terminated. */
 function formatSectionHeading(label: string): string {
   return layout.formatHeading(label, 'section').join('\n') + '\n';
 }

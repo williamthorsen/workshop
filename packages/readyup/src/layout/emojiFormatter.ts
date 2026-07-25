@@ -1,12 +1,11 @@
 import type { Formatter } from './formatter.ts';
 
 /**
- * The emoji vocabulary: nine glyphs that each occupy two terminal cells with no variation selector.
+ * A formatter whose tokens are emoji.
  *
- * Every glyph has `Emoji_Presentation=Yes`, so it renders wide on its own and the gutter is a fixed
- * three columns everywhere. A glyph needing U+FE0F to render as emoji is two cells in some terminals
- * and one in others, which is why the retired `⏭️` and `⚠️` tokens each needed a hand-placed
- * compensating space at their call site. Escapes rather than literals keep that property auditable.
+ * Every glyph carries `Emoji_Presentation=Yes`, so it occupies two terminal cells without a U+FE0F
+ * variation selector. A glyph lacking that property renders one cell wide in some terminals and two in
+ * others, so its declared width would be wrong somewhere.
  */
 export const emojiFormatter: Formatter = {
   gutter: 3,
