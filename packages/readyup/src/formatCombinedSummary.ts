@@ -1,4 +1,4 @@
-import { layout } from './layout/engine.ts';
+import { getLayout } from './layout/engine.ts';
 import { emptyCounts, mergeCounts } from './reportRdy.ts';
 import type { ChecklistSummary, SummaryCounts } from './types.ts';
 
@@ -10,7 +10,7 @@ export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
     durationMs: summary.durationMs,
   }));
 
-  return layout
+  return getLayout()
     .formatSummaryTable({
       rows,
       totals: aggregateCounts(summaries),

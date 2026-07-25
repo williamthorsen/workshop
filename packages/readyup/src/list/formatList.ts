@@ -1,4 +1,4 @@
-import { layout } from '../layout/engine.ts';
+import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
 /** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
@@ -122,14 +122,14 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
 
   const items = kits.map((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
-    return layout.formatCheckLine({
+    return getLayout().formatCheckLine({
       token: 'docCompiled',
       name: `${kit.name}${versionSegment}`,
       ...(kit.description !== undefined && { detail: kit.description }),
     });
   });
 
-  return [...layout.formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
+  return [...getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
 // -- Helpers --
@@ -140,6 +140,8 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
  * `hint` sits against the title with no blank between them, so the command reads as part of the heading.
  */
 function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
-  const items = kits.map((name) => layout.formatCheckLine({ token, name }));
-  return ['', layout.formatHeadingLine(title, 'section'), `${layout.indent(1)}${hint}`, '', ...items].join('\n');
+  const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
+  return ['', getLayout().formatHeadingLine(title, 'section'), `${getLayout().indent(1)}${hint}`, '', ...items].join(
+    '\n',
+  );
 }

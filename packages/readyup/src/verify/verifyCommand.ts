@@ -4,7 +4,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
-import { layout } from '../layout/engine.ts';
+import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -63,7 +63,7 @@ export function verifyCommand(args: string[]): number {
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(layout.formatHeading(`Verifying kits against ${relManifestPath}`, 'section').join('\n') + '\n', json);
+  writeHuman(getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section').join('\n') + '\n', json);
 
   if (manifest.kits.length === 0) {
     writeHuman('(no kits in manifest)\n', json);
@@ -142,12 +142,12 @@ function formatStatusLine(kit: RdyManifestKit, status: DriftStatus, sourceStatus
   );
 
   if (token === 'failedError') {
-    const claim = layout.formatCheckLine({ token, name: kit.name });
-    return [claim, ...layout.formatReasonBlock(clauses)].join('\n') + '\n';
+    const claim = getLayout().formatCheckLine({ token, name: kit.name });
+    return [claim, ...getLayout().formatReasonBlock(clauses)].join('\n') + '\n';
   }
 
   const detail = clauses.join('; ');
-  return layout.formatCheckLine({ token, name: kit.name, ...(detail !== '' && { detail }) }) + '\n';
+  return getLayout().formatCheckLine({ token, name: kit.name, ...(detail !== '' && { detail }) }) + '\n';
 }
 
 /**

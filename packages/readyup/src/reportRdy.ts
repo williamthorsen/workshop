@@ -1,4 +1,4 @@
-import { layout } from './layout/engine.ts';
+import { getLayout } from './layout/engine.ts';
 import type { TokenName } from './layout/formatter.ts';
 import { resolveWorstToken } from './layout/layoutEngine.ts';
 import { meetsThreshold } from './runRdy.ts';
@@ -37,12 +37,12 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   // The blank line separates the count line from the tree, so an empty tree needs none: the heading
   // above already supplies one, and a second would open a gap under every fully-hidden checklist.
   if (lines.length > 0) lines.push('');
-  lines.push(layout.formatCountLine(countResults(report.results), report.durationMs));
+  lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
 
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
     if (fixes.length > 0) {
-      lines.push(...layout.formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
+      lines.push(...getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
     }
   }
 
@@ -128,7 +128,7 @@ function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult
 /** Returns a result's check line, followed by its reason block when the result failed. */
 function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
   const isFailed = result.status === 'failed';
-  const checkLine = layout.formatCheckLine({
+  const checkLine = getLayout().formatCheckLine({
     token: resolveResultToken(result),
     name: result.name,
     depth: result.depth,
@@ -140,7 +140,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
 
   if (!isFailed) return [checkLine];
 
-  return [checkLine, ...layout.formatReasonBlock(collectReasons(result, fixLocation === 'inline'), result.depth)];
+  return [checkLine, ...getLayout().formatReasonBlock(collectReasons(result, fixLocation === 'inline'), result.depth)];
 }
 
 /**
@@ -152,7 +152,7 @@ function collectReasons(result: RdyResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (includeFix && result.fix !== null) reasons.push(`${layout.token('fix')}${result.fix}`);
+  if (includeFix && result.fix !== null) reasons.push(`${getLayout().token('fix')}${result.fix}`);
   return reasons;
 }
 
@@ -165,7 +165,10 @@ function collectFixes(results: RdyResult[]): AttributedFix[] {
 
 /** Returns two lines per fix: the check's name behind a token, then the fix indented beneath. */
 function renderFixRecap(fixes: AttributedFix[]): string[] {
-  return fixes.flatMap((entry) => [`${layout.token('fix')}${entry.name}`, ...layout.formatReasonBlock([entry.fix])]);
+  return fixes.flatMap((entry) => [
+    `${getLayout().token('fix')}${entry.name}`,
+    ...getLayout().formatReasonBlock([entry.fix]),
+  ]);
 }
 
 /** Returns the token for a result, chosen by its status and then by its severity or skip reason. */

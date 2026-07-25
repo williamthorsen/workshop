@@ -1,4 +1,4 @@
-import { layout } from './layout/engine.ts';
+import { getLayout } from './layout/engine.ts';
 import type { TokenName } from './layout/formatter.ts';
 import type { WriteResult } from './writeFileWithCheck.ts';
 
@@ -14,7 +14,7 @@ interface WriteLine {
 
 /** Writes `message` to stdout as a section heading. */
 export function printStep(message: string): void {
-  console.info(layout.formatHeading(message, 'section').join('\n'));
+  console.info(getLayout().formatHeading(message, 'section').join('\n'));
 }
 
 /**
@@ -26,8 +26,8 @@ export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
   const { claim, detail, reason, token } = describeWriteResult(result, dryRun);
 
   const lines = [
-    layout.formatCheckLine({ token, name: claim, ...(detail !== undefined && { detail }) }),
-    ...(reason === undefined ? [] : layout.formatReasonBlock([reason])),
+    getLayout().formatCheckLine({ token, name: claim, ...(detail !== undefined && { detail }) }),
+    ...(reason === undefined ? [] : getLayout().formatReasonBlock([reason])),
   ];
   const output = lines.join('\n');
 
