@@ -144,7 +144,7 @@ describe(listCommand, () => {
     expect(stdoutCalls).toContain(
       'Manifest: https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
     );
-    expect(stdoutCalls).toContain('default — General project health checks');
+    expect(stdoutCalls).toContain('default \u{00B7} General project health checks');
     expect(stdoutCalls).toContain('deploy');
   });
 
@@ -259,7 +259,7 @@ describe(listCommand, () => {
     expect(stdoutCalls).toContain(
       'Manifest: https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
     );
-    expect(stdoutCalls).toContain('default — General project health checks');
+    expect(stdoutCalls).toContain('default \u{00B7} General project health checks');
     expect(stdoutCalls).toContain('deploy');
   });
 

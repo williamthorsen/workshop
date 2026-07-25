@@ -67,7 +67,7 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
     async skip() {
       const result = await getProbe();
       if (result.status === 'unreachable') {
-        return `remote '${remote}' is unreachable — skipping network check`;
+        return `remote '${remote}' is unreachable; skipping network check`;
       }
       return false;
     },
@@ -107,7 +107,7 @@ function formatLocalResult(
     return `${refA} and ${refB} have diverged, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'} — run 'git merge ${refB}' in ${path}`;
+    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git merge ${refB}' in ${path}`;
   }
   return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
 }
@@ -136,7 +136,7 @@ function formatRemoteResult(
     return `${ref} and ${remote}/${ref} have diverged, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'} — run 'git pull' in ${path}`;
+    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git pull' in ${path}`;
   }
   return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
 }

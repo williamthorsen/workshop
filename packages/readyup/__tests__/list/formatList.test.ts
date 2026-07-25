@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
+import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
 import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
+
+const INTERNAL = emojiFormatter.tokens.docInternal.glyph;
+
+/**
+ * Return the copy-pasteable command a section publishes, which sits on the line beneath its title.
+ *
+ * Reading the line after the title is the assertion: a command fused to the title would satisfy a
+ * plain `toContain` on the whole output while defeating the point of splitting it out.
+ */
+function findSectionCommand(output: string, title: string): string | undefined {
+  const lines = output.split('\n');
+  const titleIndex = lines.indexOf(`\u{2500}\u{2500} ${title}`);
+  return titleIndex === -1 ? undefined : lines[titleIndex + 1];
+}
 
 describe(formatOwnerView, () => {
   it('renders only the Internal section when compiled kits are empty', () => {
@@ -10,8 +25,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('Internal:');
-    expect(result).not.toContain('Compiled:');
+    expect(result).toContain('\u{2500}\u{2500} Internal');
+    expect(result).not.toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
   });
 
@@ -22,7 +37,7 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('Internal: rdy run --jit [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe('   rdy run --jit [<name>]');
   });
 
   it('adds --internal to the internal hint when the config makes it necessary', () => {
@@ -33,7 +48,7 @@ describe(formatOwnerView, () => {
       needsInternalFlag: true,
     });
 
-    expect(result).toContain('Internal: rdy run --jit --internal [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe('   rdy run --jit --internal [<name>]');
   });
 
   it('renders only the Compiled section when internal kits are empty', () => {
@@ -43,9 +58,33 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).not.toContain('Internal:');
-    expect(result).toContain('Compiled:');
+    expect(result).not.toContain('\u{2500}\u{2500} Internal');
+    expect(result).toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
+  });
+
+  it('splits the section title from its command onto two lines', () => {
+    const result = formatOwnerView({
+      internalKits: ['deploy'],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+    });
+    const lines = result.split('\n');
+
+    expect(lines[0]).toBe('\u{2500}\u{2500} Internal');
+    expect(lines[1]).toBe('   rdy run --jit <name>');
+    expect(lines[2]).toBe('');
+    expect(lines[3]).toBe(`${INTERNAL} deploy`);
+  });
+
+  it('fuses neither the command into the title nor the title into the command', () => {
+    const result = formatOwnerView({
+      internalKits: ['deploy'],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+    });
+
+    expect(result).not.toContain('Internal: rdy run');
   });
 
   it('uses brackets around positional name in internal hint when default exists', () => {
@@ -55,12 +94,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    const lines = result.split('\n');
-    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
-    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
-
-    expect(internalHeader).toContain('rdy run --jit [<name>]');
-    expect(compiledHeader).toContain('rdy run <name>');
+    expect(findSectionCommand(result, 'Internal')).toBe('   rdy run --jit [<name>]');
+    expect(findSectionCommand(result, 'Compiled')).toBe('   rdy run <name>');
   });
 
   it('uses brackets in compiled hint when default is in compiled kits', () => {
@@ -70,12 +105,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    const lines = result.split('\n');
-    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
-    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
-
-    expect(internalHeader).toContain('rdy run --jit <name>');
-    expect(compiledHeader).toContain('rdy run [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe('   rdy run --jit <name>');
+    expect(findSectionCommand(result, 'Compiled')).toBe('   rdy run [<name>]');
   });
 
   it('omits brackets around positional name when no default kit exists', () => {
@@ -96,12 +127,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    const lines = result.split('\n');
-    const internalHeader = lines.find((l) => l.startsWith('Internal:'));
-    const compiledHeader = lines.find((l) => l.startsWith('Compiled:'));
-
-    expect(internalHeader).toContain('--jit');
-    expect(compiledHeader).not.toContain('--jit');
+    expect(findSectionCommand(result, 'Internal')).toContain('--jit');
+    expect(findSectionCommand(result, 'Compiled')).not.toContain('--jit');
   });
 
   it('renders custom outDir style with file paths', () => {
@@ -135,8 +162,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('Internal:');
-    expect(result).toContain('Compiled:');
+    expect(result).toContain('\u{2500}\u{2500} Internal');
+    expect(result).toContain('\u{2500}\u{2500} Compiled');
   });
 });
 
@@ -222,7 +249,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('Manifest: .readyup/manifest.json');
+    expect(result).toContain('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
     expect(result).toContain('📦 deploy');
     expect(result).toContain('📦 monitor');
   });
@@ -233,7 +260,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('📦 default — General project health checks');
+    expect(result).toContain('\u{1F4E6} default \u{00B7} General project health checks');
   });
 
   it('omits description suffix when description is absent', () => {
@@ -244,7 +271,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('deploy'));
-    expect(kitLine).toBe('  📦 deploy');
+    expect(kitLine).toBe('\u{1F4E6} deploy');
   });
 
   it('returns empty-manifest message when kits array is empty', () => {
@@ -262,7 +289,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('📦 default (readyup v0.20.0) — General project health checks');
+    expect(result).toContain('\u{1F4E6} default (readyup v0.20.0) \u{00B7} General project health checks');
   });
 
   it('renders version-only parenthetical when description is absent', () => {
@@ -273,7 +300,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('deploy'));
-    expect(kitLine).toBe('  📦 deploy (readyup v0.19.2)');
+    expect(kitLine).toBe('\u{1F4E6} deploy (readyup v0.19.2)');
   });
 
   it('omits the version parenthetical entirely when readyupVersion is absent', () => {
@@ -282,7 +309,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('📦 legacy — Older kit');
+    expect(result).toContain('\u{1F4E6} legacy \u{00B7} Older kit');
     expect(result).not.toContain('readyup v');
   });
 
@@ -294,7 +321,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('bare'));
-    expect(kitLine).toBe('  📦 bare');
+    expect(kitLine).toBe('\u{1F4E6} bare');
   });
 });
 

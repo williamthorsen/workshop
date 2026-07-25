@@ -1,5 +1,5 @@
-const ICON_INTERNAL = '📄';
-const ICON_COMPILED = '📦';
+import { layout } from '../layout/engine.ts';
+import type { TokenName } from '../layout/formatter.ts';
 
 /** Build the positional name hint, bracketed when a default kit exists. */
 function buildKitHint(kits: string[]): string {
@@ -52,17 +52,17 @@ export function formatOwnerView({
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
     const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, ICON_INTERNAL));
+    sections.push(formatSection('Internal', hint, internalKits, 'docInternal'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
       const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
+      sections.push(formatSection('Compiled', hint, compiledKits, 'docCompiled'));
     } else {
       const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, ICON_COMPILED));
+      sections.push(formatSection('Compiled', hint, pathItems, 'docCompiled'));
     }
   }
 
@@ -88,7 +88,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   }
 
   const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, ICON_COMPILED);
+  return formatSection('Compiled', hint, compiledKits, 'docCompiled');
 }
 
 // -- Empty messages --
@@ -111,10 +111,10 @@ interface ManifestViewOptions {
 /**
  * Format a view of kits loaded from a manifest file.
  *
- * Kit names are displayed with the compiled icon. When a kit's `readyupVersion` is present, it
- * appears as a parenthetical between the name and the description — `📦 <name> (readyup v<X>) — <description>`.
- * The literal `readyup` label is load-bearing: it disambiguates the version from a hypothetical
- * kit-own version. Descriptions appear inline when present; both fields are omitted independently.
+ * Kit names carry the compiled-output glyph. When a kit's `readyupVersion` is present, it appears as
+ * a parenthetical between the name and the description, which follows the middle dot. The literal
+ * `readyup` label is load-bearing: it disambiguates the version from a hypothetical kit-own version.
+ * Descriptions appear inline when present; both fields are omitted independently.
  */
 export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
   if (kits.length === 0) {
@@ -123,17 +123,26 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
 
   const items = kits.map((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
-    const descriptionSegment = kit.description !== undefined ? ` — ${kit.description}` : '';
-    return `  ${ICON_COMPILED} ${kit.name}${versionSegment}${descriptionSegment}`;
+    return layout.formatCheckLine({
+      token: 'docCompiled',
+      name: `${kit.name}${versionSegment}`,
+      ...(kit.description !== undefined && { detail: kit.description }),
+    });
   });
 
-  return `Manifest: ${manifestPath}\n${items.join('\n')}`;
+  return [layout.formatHeadingLine(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
 // -- Helpers --
 
-/** Build a titled section with a usage hint and indented item list. */
-function formatSection(title: string, hint: string, kits: string[], icon: string): string {
-  const items = kits.map((name) => `  ${icon} ${name}`);
-  return `${title}: ${hint}\n${items.join('\n')}`;
+/**
+ * Build a titled section: the title, the copy-pasteable command beneath it, then the kits.
+ *
+ * Splitting the command onto its own line is what makes it copy-pasteable. Fused to the title, it
+ * could not be selected without also taking the label, and the title could not be scanned without
+ * reading past the command.
+ */
+function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
+  const items = kits.map((name) => layout.formatCheckLine({ token, name }));
+  return [layout.formatHeadingLine(title, 'section'), ...layout.formatReasonBlock([hint]), '', ...items].join('\n');
 }

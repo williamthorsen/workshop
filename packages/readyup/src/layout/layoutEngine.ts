@@ -78,6 +78,7 @@ export interface LayoutEngine {
   formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string;
   formatCounts(counts: SummaryCounts): string;
   formatHeading(name: string, level: HeadingLevel): string[];
+  formatHeadingLine(name: string, level: HeadingLevel): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
   formatSummaryTable(input: SummaryTableInput): string[];
   glyph(token: TokenName): string;
@@ -124,7 +125,17 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   /** Build a heading and the blank lines setting it off, as separate lines for the caller to join. */
   function formatHeading(name: string, level: HeadingLevel): string[] {
-    return ['', `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`, ''];
+    return ['', formatHeadingLine(name, level), ''];
+  }
+
+  /**
+   * Build a heading line alone, for a caller that attaches its own content directly beneath.
+   *
+   * `list` needs this: its copy-pasteable command belongs against the title it qualifies, so the
+   * blank line `formatHeading` supplies would separate the two.
+   */
+  function formatHeadingLine(name: string, level: HeadingLevel): string {
+    return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
   }
 
   /**
@@ -199,6 +210,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     formatCountLine,
     formatCounts,
     formatHeading,
+    formatHeadingLine,
     formatReasonBlock,
     formatSummaryTable,
     glyph,
