@@ -7,8 +7,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { routeCommand } from '../src/bin/route.ts';
 import { plainFormatter } from '../src/layout/plainFormatter.ts';
-import { richFormatter } from '../src/layout/richFormatter.ts';
 import { STYLE_ENV_VAR } from '../src/layout/resolveStyle.ts';
+import { richFormatter } from '../src/layout/richFormatter.ts';
 import { hashBytes } from '../src/verify/targetHash.ts';
 
 /** A kit whose single check passes. */
@@ -90,7 +90,7 @@ describe('--style plain', () => {
 
     const rendered = [...stdout, ...stderr].join('');
     expect(rendered).not.toBe('');
-    expect(rendered).toMatch(/^[\x20-\x7E\n]*$/);
+    expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
   });
 
   it.each(RENDERING_COMMANDS)('spells $name status as a word rather than a glyph', async ({ args }) => {

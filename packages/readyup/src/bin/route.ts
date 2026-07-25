@@ -272,7 +272,7 @@ export async function routeCommand(args: string[]): Promise<number> {
   // Binding the style precedes the try because the catch renders through it: a style named in argv has
   // to govern the usage error that argv itself provokes. A value naming no style still yields one to
   // render with, and becomes the error raised inside.
-  const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY === true);
+  const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY);
   setStyle(style);
 
   try {

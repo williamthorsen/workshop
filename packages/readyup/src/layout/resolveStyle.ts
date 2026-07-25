@@ -14,6 +14,9 @@ export const STYLE_FLAG = '--style';
 /** Environment variable carrying a standing style preference. */
 export const STYLE_ENV_VAR = 'RDY_STYLE';
 
+/** The accepted settings widened to strings, so an arbitrary input can be tested for membership. */
+const ACCEPTED_SETTINGS: ReadonlySet<string> = new Set<string>(STYLE_SETTINGS);
+
 /** The source that named a style, and the value it named. */
 export interface InvalidStyle {
   source: string;
@@ -107,5 +110,5 @@ function detectStyle(env: Environment, isTty: boolean): Style {
 
 /** Reports whether a string names a style the flag accepts. */
 function isStyleSetting(value: string): value is StyleSetting {
-  return (STYLE_SETTINGS as readonly string[]).includes(value);
+  return ACCEPTED_SETTINGS.has(value);
 }

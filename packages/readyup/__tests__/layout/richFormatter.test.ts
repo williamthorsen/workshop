@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { TOKEN_NAMES } from '../../src/layout/formatter.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 
 const VARIATION_SELECTOR_16 = '\u{FE0F}';
 

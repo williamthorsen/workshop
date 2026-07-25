@@ -6,7 +6,7 @@ import { plainFormatter } from '../../src/layout/plainFormatter.ts';
 import type { SummaryCounts } from '../../src/types.ts';
 
 /** Every printable ASCII character, plus the newline that separates rendered lines. */
-const PRINTABLE_ASCII = /^[\x20-\x7E\n]*$/;
+const PRINTABLE_ASCII = /^[\u{20}-\u{7E}\n]*$/u;
 
 /** Tokens that name a kind of file rather than reporting an outcome. */
 const NOUN_TOKENS = ['docCompiled', 'docInternal'] as const;

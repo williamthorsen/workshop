@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { TOKEN_NAMES, type TokenName } from '../../src/layout/formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 import type { SummaryCounts } from '../../src/types.ts';
 
 /** Tokens naming a check that did not run. */
