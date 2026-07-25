@@ -129,23 +129,35 @@ rdy <command> [options]
 
 `--quiet` hides passed check lines from the human report, keeping failures, skips, blocks, the fix recap, and every count line. It filters by status where `--report-on` filters by severity, so the two compose rather than override, and both keep the parent checks of anything they show: a failure nested under passing parents stays reachable through them. Counts and the exit code still cover the whole run. Because it changes only the human report, pairing it with `--json` is a usage error rather than a silently ignored flag.
 
+### Global options
+
+| Option                        | Description                    |
+| ----------------------------- | ------------------------------ |
+| `--style <auto\|plain\|rich>` | Output style (default: `auto`) |
+| `--help, -h`                  | Show help for the command      |
+| `--version, -V`               | Show the version number        |
+
+Every command accepts `--style`. See [choosing an output style](#choosing-an-output-style).
+
 ### Reading the output
 
-Every command renders through one layout engine, so a line means the same thing wherever it appears.
+Every command renders through one layout engine, so a line means the same thing wherever it appears. Each status has two renderings: an emoji in the `rich` style, and a fixed-width word in the `plain` style.
 
-| Token | Meaning                                                         |
-| ----- | --------------------------------------------------------------- |
-| 🟢    | passed; `verify` ok; a file created, overwritten, or up to date |
-| 🔴    | failed at `error` severity; `verify` drift or missing           |
-| 🟠    | failed at `warn` severity; a compile drift-skip                 |
-| 🟡    | failed at `recommend` severity                                  |
-| ⚪    | skipped: not applicable, already present, or no work needed     |
-| 🚫    | blocked, because a precondition failed                          |
-| 💊    | a remediation hint                                              |
+| Rich | Plain   | Meaning                                                         |
+| ---- | ------- | --------------------------------------------------------------- |
+| 🟢   | `PASS`  | passed; `verify` ok; a file created, overwritten, or up to date |
+| 🔴   | `FAIL`  | failed at `error` severity; `verify` drift or missing           |
+| 🟠   | `WARN`  | failed at `warn` severity; a compile drift-skip                 |
+| 🟡   | `RECO`  | failed at `recommend` severity                                  |
+| ⚪   | `SKIP`  | skipped: not applicable, already present, or no work needed     |
+| 🚫   | `BLOCK` | blocked, because a precondition failed                          |
+| 💊   | `FIX`   | a remediation hint                                              |
 
-📄 and 📦 are noun glyphs, not statuses: they name a TypeScript source and a compiled bundle. They lead the line in `list`, where a row names a kit instead of reporting an outcome, and sit mid-line in compile's transformation lines. Both declare the same width as every status token, which is what makes the leading position safe.
+📄 and 📦 are noun glyphs, not statuses: they name a TypeScript source and a compiled bundle. They lead the line in `list`, where a row names a kit instead of reporting an outcome, and sit mid-line in compile's transformation lines. Both declare the same width as every status token, which is what makes the leading position safe. The `plain` style omits them rather than substituting a word, since an uppercase word in the status column would read as a status; it still reserves their column, so names stay aligned.
 
-A check line reads `token name · detail [progress] (duration)`. The middle dot is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
+In `plain`, every character is printable ASCII, heading rules and detail separators included.
+
+A check line reads `token name <separator> detail [progress] (duration)`, where the separator is the style's -- `·` in `rich`, `-` in `plain`. It is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
 
 **A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. A failed check that authored neither renders no reason block at all. Passes and skips keep their detail inline.
 
@@ -185,6 +197,55 @@ Headings come from one family whose rule weight encodes level: `━━` for a ki
 ```
 
 Under `--quiet`, that run keeps everything except `typecheck`, `bundle size`, and `database reachable`.
+
+### Choosing an output style
+
+`--style` selects how output is rendered, and `RDY_STYLE` carries a standing preference for a shell profile or a CI image. The flag outranks the environment variable, which outranks detection.
+
+| Value   | Renders                                                                       |
+| ------- | ----------------------------------------------------------------------------- |
+| `auto`  | `plain` under CI or when output is not a terminal, `rich` otherwise (default) |
+| `plain` | Fixed-width ASCII words                                                       |
+| `rich`  | Emoji tokens                                                                  |
+
+Both detection signals carry their own weight. `CI` catches a runner that attaches a pseudo-terminal, where a terminal check alone would put emoji into a log nobody can search; the terminal check catches an interactive `rdy | grep FAIL`, where `CI` is unset. An explicit `CI=false` is read as a denial.
+
+Naming a style that does not exist, from either the flag or the environment variable, fails the invocation and reports the values that are accepted.
+
+The same run renders in `plain` as:
+
+```
+-- build
+
+PASS  typecheck (343ms)
+PASS  bundle size - 42kB of a 50kB budget [84%]
+
+PASS  2 passed (343ms)
+
+-- integration
+
+PASS  database reachable
+FAIL  migrations applied (151ms)
+      2 migrations pending: add_users, add_index
+SKIP  seed data loaded - seeding is disabled outside CI
+
+FAIL  1 passed | 1 error | 1 skipped (151ms)
+
+-- Fixes
+
+FIX   migrations applied
+      Run `pnpm migrate` against the target database
+
+-- Summary
+
+--------------------------------------------------------
+PASS  build        343ms  2 passed
+FAIL  integration  151ms  1 passed | 1 error | 1 skipped
+--------------------------------------------------------
+FAIL  Total: 3 passed | 1 error | 1 skipped (494ms)
+```
+
+Once a style is named explicitly, output is byte-identical whether it goes to a terminal or a pipe, so `rdy --style rich > run.log` saves what the screen showed. `--style` is independent of `--json`: the JSON document never changes, and the style governs the prose that accompanies it on stderr.
 
 ### Advisory warnings
 
@@ -461,8 +522,8 @@ Where the detail lands follows from the status, so an author writes one field an
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
-| passed  | inline, after the middle dot                            |
-| skipped | inline, after the middle dot (return it from `skip`)    |
+| passed  | inline, after the separator                             |
+| skipped | inline, after the separator (return it from `skip`)     |
 | failed  | in a block beneath the claim, above any thrown `Error:` |
 
 Remediation is not detail. It belongs in `fix`, which is recapped at the end of the report against the check that raised it.

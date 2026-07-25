@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../src/layout/richFormatter.ts';
 import { countResults, reportRdy, selectVisibleResults } from '../src/reportRdy.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult, SummaryCounts } from '../src/types.ts';
 
-const PASSED = emojiFormatter.tokens.passed.glyph;
-const FAILED_ERROR = emojiFormatter.tokens.failedError.glyph;
-const FAILED_WARN = emojiFormatter.tokens.failedWarn.glyph;
-const FAILED_RECOMMEND = emojiFormatter.tokens.failedRecommend.glyph;
-const SKIPPED_OPTIONAL = emojiFormatter.tokens.skippedOptional.glyph;
-const BLOCKED = emojiFormatter.tokens.blockedPrecondition.glyph;
-const FIX = emojiFormatter.tokens.fix.glyph;
+const PASSED = richFormatter.tokens.passed.glyph;
+const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
+const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
+const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.glyph;
+const SKIPPED_OPTIONAL = richFormatter.tokens.skippedOptional.glyph;
+const BLOCKED = richFormatter.tokens.blockedPrecondition.glyph;
+const FIX = richFormatter.tokens.fix.glyph;
 
 /** A duration above the engine's floor, so lines eligible for one show it. */
 const SLOW_MS = 250;

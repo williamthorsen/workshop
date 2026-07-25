@@ -7,7 +7,7 @@ import picomatch from 'picomatch';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
-import { layout } from '../layout/engine.ts';
+import { getLayout } from '../layout/engine.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -33,6 +33,8 @@ const compileOptions = {
   manifest: { type: 'string' },
   output: { type: 'string', short: 'o' },
   'skip-manifest': { type: 'boolean' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
 } as const;
 
 /** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */
@@ -429,23 +431,23 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
 /** Returns a line naming the output a rebuilt kit produced, or reporting an unchanged one as skipped. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
   if (!changed) {
-    return layout.formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
+    return getLayout().formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
   }
 
-  const claim = layout.formatCheckLine({ token: 'passed', name: srcName });
-  return `${claim} ${TRANSFORM_ARROW} ${layout.glyph('docCompiled')} ${outName}\n`;
+  const claim = getLayout().formatCheckLine({ token: 'passed', name: srcName });
+  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('docCompiled')}${outName}\n`;
 }
 
 /** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */
 function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
   const target = path.basename(status.resolvedPath);
-  const claim = layout.formatCheckLine({ token: 'failedWarn', name: srcName });
+  const claim = getLayout().formatCheckLine({ token: 'failedWarn', name: srcName });
   const reason = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
 
-  return [claim, ...layout.formatReasonBlock([reason])].join('\n') + '\n';
+  return [claim, ...getLayout().formatReasonBlock([reason])].join('\n') + '\n';
 }
 
 /** Returns a section heading as a single writable string, newline-terminated. */
 function formatSectionHeading(label: string): string {
-  return layout.formatHeading(label, 'section').join('\n') + '\n';
+  return getLayout().formatHeading(label, 'section').join('\n') + '\n';
 }

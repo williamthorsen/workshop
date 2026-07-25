@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
-import { layout } from '../src/layout/engine.ts';
+import { getLayout } from '../src/layout/engine.ts';
 import { countResults, reportRdy } from '../src/reportRdy.ts';
 import { runRdy } from '../src/runRdy.ts';
 import type { RdyChecklist, SummaryCounts } from '../src/types.ts';
@@ -67,7 +67,7 @@ describe('count agreement across views', () => {
 
     expect(counts).toStrictEqual(expectedCounts);
 
-    const expectedFields = layout.formatCounts(expectedCounts);
+    const expectedFields = getLayout().formatCounts(expectedCounts);
 
     // Human tail line.
     const human = reportRdy(report, { reportOn: 'error' });

@@ -11,6 +11,8 @@ import { formatJsonError } from '../formatJsonError.ts';
 import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kitsDir.ts';
+import { setStyle } from '../layout/engine.ts';
+import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -58,8 +60,9 @@ Run options:
                                      cover the whole run
 
 Global options:
-  --help, -h           Show this help message
-  --version, -V        Show version number
+  --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected (default: auto)
+  --help, -h                 Show this help message
+  --version, -V              Show version number
 
 Run 'rdy <command> --help' for command-specific options.
 
@@ -133,6 +136,7 @@ Options:
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
+  --style <auto|plain|rich>          Output style (default: auto)
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
@@ -163,12 +167,13 @@ Modes:
   rdy compile <file>           Compile a single file
 
 Options:
-  --output, -o <path>  Output file path (single-file mode only)
-  --manifest <path>    Manifest file path (default: .readyup/manifest.json)
-  --force              Overwrite compiled kits even if they have drifted from the manifest
-  --json               Report each kit's status as JSON
-  --skip-manifest      Do not read or write the manifest
-  --help, -h           Show this help message
+  --output, -o <path>        Output file path (single-file mode only)
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --force                    Overwrite compiled kits even if they have drifted from the manifest
+  --json                     Report each kit's status as JSON
+  --skip-manifest            Do not read or write the manifest
+  --style <auto|plain|rich>  Output style (default: auto)
+  --help, -h                 Show this help message
 
 Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
@@ -203,9 +208,10 @@ Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unr
 manifest exits 2.
 
 Options:
-  --manifest <path>  Manifest file path (default: .readyup/manifest.json)
-  --json             Report each kit's verification status as JSON
-  --help, -h         Show this help message
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --json                     Report each kit's verification status as JSON
+  --style <auto|plain|rich>  Output style (default: auto)
+  --help, -h                 Show this help message
 `;
 
 const LIST_HELP = `
@@ -222,10 +228,11 @@ Modes:
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
-  --manifest <path>  List the kits a manifest file declares
-  --json             Output the kit list as JSON
-  --help, -h         Show this help message
+  --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
+  --manifest <path>          List the kits a manifest file declares
+  --json                     Output the kit list as JSON
+  --style <auto|plain|rich>  Output style (default: auto)
+  --help, -h                 Show this help message
 
 A local --from source with no manifest beside its kits falls back to listing the compiled
 kits on disk, which are the same kits rdy run --from would resolve. Those rows carry only
@@ -246,9 +253,10 @@ Usage: rdy init [options]
 Scaffold a starter config and kit file.
 
 Options:
-  --dry-run, -n   Preview changes without writing files
-  --force         Overwrite existing files
-  --help, -h      Show this help message
+  --dry-run, -n              Preview changes without writing files
+  --force                    Overwrite existing files
+  --style <auto|plain|rich>  Output style (default: auto)
+  --help, -h                 Show this help message
 `;
 
 /**
@@ -260,7 +268,15 @@ Options:
  */
 export async function routeCommand(args: string[]): Promise<number> {
   const json = hasJsonFlag(args);
+
+  // Binding the style precedes the try because the catch renders through it: a style named in argv has
+  // to govern the usage error that argv itself provokes. A value naming no style still yields one to
+  // render with, and becomes the error raised inside.
+  const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY);
+  setStyle(style);
+
   try {
+    if (invalid !== undefined) throw usageError(describeInvalidStyle(invalid));
     return await dispatchCommand(args, json);
   } catch (error: unknown) {
     return reportFailure(error, json);
@@ -284,7 +300,8 @@ export function reportFailure(error: unknown, json: boolean): number {
 }
 
 /** Selects and runs the subcommand named by the first argument. */
-async function dispatchCommand(args: string[], json: boolean): Promise<number> {
+async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
+  const args = dropLeadingStyleFlag(argv);
   const command = args[0];
 
   if (command === undefined || command === '--help' || command === '-h') {
@@ -382,6 +399,8 @@ function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
     force: { type: 'boolean' },
+    // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+    style: { type: 'string' },
   } as const;
 
   let parsed;
@@ -392,6 +411,29 @@ function handleInit(flags: string[]): number {
   }
 
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
+}
+
+/**
+ * Returns `argv` without a leading `--style` and the value it carries.
+ *
+ * Command selection reads the first argument, so a style named ahead of the command would otherwise be
+ * taken for a kit name. `routeCommand` has already read the value, so nothing downstream needs the
+ * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
+ * occurrence for the subcommand's own parser, and leaves a valueless trailing `--style` for it to
+ * reject.
+ */
+function dropLeadingStyleFlag(argv: string[]): string[] {
+  const assignment = `${STYLE_FLAG}=`;
+  let index = 0;
+
+  while (index < argv.length) {
+    const arg = argv[index];
+    if (arg?.startsWith(assignment) === true) index += 1;
+    else if (arg === STYLE_FLAG && index + 1 < argv.length) index += 2;
+    else break;
+  }
+
+  return argv.slice(index);
 }
 
 /** Returns true when the flags request help for the current subcommand. */

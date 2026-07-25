@@ -20,13 +20,13 @@ vi.mock('../../src/verify/checkSourceDrift.ts', () => ({
   checkSourceDrift: mockCheckSourceDrift,
 }));
 
-import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 import { captureRdyError } from '../helpers/captureRdyError.ts';
 
-const OK = emojiFormatter.tokens.passed.glyph;
-const FAILED = emojiFormatter.tokens.failedError.glyph;
-const UNVERIFIED = emojiFormatter.tokens.skippedOptional.glyph;
+const OK = richFormatter.tokens.passed.glyph;
+const FAILED = richFormatter.tokens.failedError.glyph;
+const UNVERIFIED = richFormatter.tokens.skippedOptional.glyph;
 
 describe(verifyCommand, () => {
   let stdoutSpy: MockInstance;

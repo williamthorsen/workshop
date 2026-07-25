@@ -9,7 +9,7 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts'
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
-import { layout } from './layout/engine.ts';
+import { getLayout } from './layout/engine.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
@@ -85,6 +85,8 @@ const runOptions = {
   json: { type: 'boolean' },
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
   url: { type: 'string' },
 } as const;
 
@@ -687,7 +689,7 @@ async function runMultiKitHumanMode(
   for (const entry of kitEntries) {
     // Precedes the load so stdout lists every requested kit, including one that never ran.
     if (showKitHeader) {
-      process.stdout.write(layout.formatHeading(entry.name, 'kit').join('\n') + '\n');
+      process.stdout.write(getLayout().formatHeading(entry.name, 'kit').join('\n') + '\n');
     }
 
     try {
@@ -724,7 +726,7 @@ async function runSingleKitHumanMode(
 
   for (const checklist of checklists) {
     if (showChecklistHeader) {
-      process.stdout.write(layout.formatHeading(checklist.name, 'section').join('\n') + '\n');
+      process.stdout.write(getLayout().formatHeading(checklist.name, 'section').join('\n') + '\n');
     }
 
     const report = await runRdy(checklist, {

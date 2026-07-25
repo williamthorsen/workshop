@@ -7,7 +7,8 @@ import type { Formatter } from './formatter.ts';
  * variation selector. A glyph lacking that property renders one cell wide in some terminals and two in
  * others, so its declared width would be wrong somewhere.
  */
-export const emojiFormatter: Formatter = {
+export const richFormatter: Formatter = {
+  detailSeparator: '\u{00B7}',
   gutter: 3,
   rules: {
     kit: '\u{2501}',

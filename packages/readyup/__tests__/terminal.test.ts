@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../src/layout/richFormatter.ts';
 import { printStep, reportWriteResult } from '../src/terminal.ts';
 import type { WriteResult } from '../src/writeFileWithCheck.ts';
 
-const PASSED = emojiFormatter.tokens.passed.glyph;
-const SKIPPED = emojiFormatter.tokens.skippedOptional.glyph;
-const WARNED = emojiFormatter.tokens.failedWarn.glyph;
-const FAILED = emojiFormatter.tokens.failedError.glyph;
+const PASSED = richFormatter.tokens.passed.glyph;
+const SKIPPED = richFormatter.tokens.skippedOptional.glyph;
+const WARNED = richFormatter.tokens.failedWarn.glyph;
+const FAILED = richFormatter.tokens.failedError.glyph;
 
 const PATH = '.config/readyup.config.ts';
 

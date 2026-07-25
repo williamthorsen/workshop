@@ -5,9 +5,6 @@ import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
 /** Milliseconds below which a line omits its duration, leaving only timings worth reading. */
 const DURATION_FLOOR_MS = 100;
 
-/** Middle dot, U+00B7. */
-const DETAIL_SEPARATOR = '\u{00B7}';
-
 /** Rule characters in a heading's leading sigil. */
 const HEADING_SIGIL_WIDTH = 2;
 
@@ -81,17 +78,21 @@ export interface LayoutEngine {
   formatHeadingLine(name: string, level: HeadingLevel): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
   formatSummaryTable(input: SummaryTableInput): string[];
-  glyph(token: TokenName): string;
   indent(depth: number): string;
+  inlineGlyph(token: TokenName): string;
   token(token: TokenName): string;
 }
 
 /** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
-  /** Returns one line, `token name · detail [progress] (duration)`, dropping the segments it lacks. */
+  /**
+   * Returns one line, `token name <separator> detail [progress] (duration)`, dropping the segments it lacks.
+   *
+   * The separator is the formatter's, so the shape holds across styles while the punctuation varies.
+   */
   function formatCheckLine(input: CheckLineInput): string {
     const segments = [`${indent(input.depth ?? 0)}${token(input.token)}${input.name}`];
-    if (input.detail !== undefined) segments.push(`${DETAIL_SEPARATOR} ${input.detail}`);
+    if (input.detail !== undefined) segments.push(`${formatter.detailSeparator} ${input.detail}`);
     if (input.progress !== undefined) segments.push(`[${input.progress}]`);
 
     const duration = resolveDuration(input.token, input.durationMs);
@@ -156,14 +157,20 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     ];
   }
 
-  /** Returns a token's glyph unpadded. */
-  function glyph(name: TokenName): string {
-    return formatter.tokens[name].glyph;
-  }
-
   /** Returns `depth` gutters' worth of spaces. */
   function indent(depth: number): string {
     return ' '.repeat(formatter.gutter * depth);
+  }
+
+  /**
+   * Returns a token's glyph and one trailing space, for placement mid-sentence rather than at a line's head.
+   *
+   * A formatter that gives the token no glyph returns nothing, so the sentence closes up instead of
+   * carrying the space that would have followed one.
+   */
+  function inlineGlyph(name: TokenName): string {
+    const { glyph } = formatter.tokens[name];
+    return glyph === '' ? '' : `${glyph} `;
   }
 
   /** Returns a token's glyph padded to the gutter, so what follows starts at a fixed column. */
@@ -188,8 +195,8 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     formatHeadingLine,
     formatReasonBlock,
     formatSummaryTable,
-    glyph,
     indent,
+    inlineGlyph,
     token,
   };
 }

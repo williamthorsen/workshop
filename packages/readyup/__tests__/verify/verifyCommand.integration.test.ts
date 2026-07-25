@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { hashBytes } from '../../src/verify/targetHash.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 
@@ -13,8 +13,8 @@ import { verifyCommand } from '../../src/verify/verifyCommand.ts';
  * against real files in a tempdir, without mocking the drift helper. Unit tests cover the branches;
  * this locks in the wiring (e.g., that `manifestDir` is threaded through correctly).
  */
-const OK = emojiFormatter.tokens.passed.glyph;
-const FAILED = emojiFormatter.tokens.failedError.glyph;
+const OK = richFormatter.tokens.passed.glyph;
+const FAILED = richFormatter.tokens.failedError.glyph;
 
 describe('verifyCommand (integration)', () => {
   let tempDir: string;
