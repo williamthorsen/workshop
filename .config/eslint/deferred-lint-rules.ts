@@ -1,7 +1,6 @@
 // `@williamthorsen/eslint-config-typescript` v6 added new unicorn rules, surfacing new violations in existing code.
 // Errors are downgraded to warnings here until a decision is made whether to remove the rule or fix the violations.
 export const deferredLintRules = {
-  'preserve-caught-error': 'warn',
   'unicorn/max-nested-calls': 'warn',
   'unicorn/no-computed-property-existence-check': 'warn',
   'unicorn/no-declarations-before-early-exit': 'warn',
@@ -13,5 +12,6 @@ export const deferredLintRules = {
   'unicorn/prefer-else-if': 'warn',
   'unicorn/prefer-includes-over-repeated-comparisons': 'warn',
   'unicorn/prefer-simple-condition-first': 'warn',
-  'unicorn/require-array-sort-compare': 'warn',
+  'unicorn/require-array-sort-compare': 'warn', // 🔴⚫ Disallows cases when the default sort is desired
+  'preserve-caught-error': 'warn',
 } as const;
