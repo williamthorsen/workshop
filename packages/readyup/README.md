@@ -357,6 +357,7 @@ Each section names the command that runs the kits beneath it, on its own line so
 
 ```
 ── Manifest: .readyup/manifest.json
+
 📦 deploy (readyup v0.22.0) · Pre-deployment checks
 📦 smoke (readyup v0.22.0)
 ```

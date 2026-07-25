@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
 import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
 
+const COMPILED = emojiFormatter.tokens.docCompiled.glyph;
 const INTERNAL = emojiFormatter.tokens.docInternal.glyph;
 
 /**
@@ -269,6 +270,18 @@ describe(formatManifestView, () => {
     expect(result).toContain('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
     expect(result).toContain('📦 deploy');
     expect(result).toContain('📦 monitor');
+  });
+
+  it('sets the heading off with a blank line above and below', () => {
+    const lines = formatManifestView({
+      kits: [{ name: 'deploy' }],
+      manifestPath: '.readyup/manifest.json',
+    }).split('\n');
+
+    expect(lines[0]).toBe('');
+    expect(lines[1]).toBe('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
+    expect(lines[2]).toBe('');
+    expect(lines[3]).toBe(`${COMPILED} deploy`);
   });
 
   it('renders description inline after kit name when present', () => {
