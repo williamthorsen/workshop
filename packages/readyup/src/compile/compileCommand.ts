@@ -33,6 +33,8 @@ const compileOptions = {
   manifest: { type: 'string' },
   output: { type: 'string', short: 'o' },
   'skip-manifest': { type: 'boolean' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
 } as const;
 
 /** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */

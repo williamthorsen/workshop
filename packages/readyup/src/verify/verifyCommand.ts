@@ -22,6 +22,8 @@ import { checkSourceDrift } from './checkSourceDrift.ts';
 const verifyOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
 } as const;
 
 /**

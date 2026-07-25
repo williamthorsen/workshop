@@ -11,6 +11,8 @@ import { formatJsonError } from '../formatJsonError.ts';
 import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kitsDir.ts';
+import { setStyle } from '../layout/engine.ts';
+import { describeInvalidStyle, resolveStyle } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -260,7 +262,15 @@ Options:
  */
 export async function routeCommand(args: string[]): Promise<number> {
   const json = hasJsonFlag(args);
+
+  // Binding the style precedes the try because the catch renders through it: a style named in argv has
+  // to govern the usage error that argv itself provokes. A value naming no style still yields one to
+  // render with, and becomes the error raised inside.
+  const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY === true);
+  setStyle(style);
+
   try {
+    if (invalid !== undefined) throw usageError(describeInvalidStyle(invalid));
     return await dispatchCommand(args, json);
   } catch (error: unknown) {
     return reportFailure(error, json);
@@ -382,6 +392,8 @@ function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
     force: { type: 'boolean' },
+    // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+    style: { type: 'string' },
   } as const;
 
   let parsed;

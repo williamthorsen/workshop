@@ -85,6 +85,8 @@ const runOptions = {
   json: { type: 'boolean' },
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
   url: { type: 'string' },
 } as const;
 

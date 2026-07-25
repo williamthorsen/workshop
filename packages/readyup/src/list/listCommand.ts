@@ -31,6 +31,8 @@ const listOptions = {
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
+  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  style: { type: 'string' },
 } as const;
 
 /**
