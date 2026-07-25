@@ -432,6 +432,36 @@ describe(parseRunArgs, () => {
   });
 });
 
+describe('--quiet', () => {
+  it('parses as a boolean', () => {
+    expect(parseRunArgs(['--quiet']).quiet).toBe(true);
+  });
+
+  it('defaults to false', () => {
+    expect(parseRunArgs([]).quiet).toBe(false);
+  });
+
+  it('rejects --quiet with --json rather than ignoring it', () => {
+    expect(() => parseRunArgs(['--quiet', '--json'])).toThrow(
+      '--quiet cannot be combined with --json; it hides passed lines from human output only',
+    );
+  });
+
+  it('composes with --report-on, which filters on a different axis', () => {
+    const parsed = parseRunArgs(['--quiet', '--report-on', 'warn']);
+
+    expect(parsed.quiet).toBe(true);
+    expect(parsed.reportOn).toBe('warn');
+  });
+
+  it('composes with a kit selection', () => {
+    const parsed = parseRunArgs(['--quiet', 'deploy']);
+
+    expect(parsed.quiet).toBe(true);
+    expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+  });
+});
+
 describe(resolveKitSources, () => {
   /** Build args with defaults for internal config. */
   function resolve(
@@ -895,8 +925,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).toContain('--- deploy ---');
-    expect(allOutput).toContain('--- infra ---');
+    expect(allOutput).toContain('\u{2500}\u{2500} deploy');
+    expect(allOutput).toContain('\u{2500}\u{2500} infra');
   });
 
   it('does not show checklist headers for a single checklist', async () => {
@@ -929,8 +959,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).toContain('=== kit1 ===');
-    expect(allOutput).toContain('=== kit2 ===');
+    expect(allOutput).toContain('\u{2501}\u{2501} kit1');
+    expect(allOutput).toContain('\u{2501}\u{2501} kit2');
   });
 
   it('does not print combined summary when running multiple kits', async () => {

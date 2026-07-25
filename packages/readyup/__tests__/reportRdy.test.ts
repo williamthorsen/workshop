@@ -1,20 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  countResults,
-  formatSummaryCounts,
-  formatSummaryCountsPlain,
-  ICON_ERROR_FAILED,
-  ICON_FIX,
-  ICON_PASSED,
-  ICON_RECOMMEND_FAILED,
-  ICON_SKIPPED_NA,
-  ICON_SKIPPED_PRECONDITION,
-  ICON_WARN_FAILED,
-  reportRdy,
-  selectVisibleResults,
-} from '../src/reportRdy.ts';
+import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
+import { countResults, reportRdy, selectVisibleResults } from '../src/reportRdy.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult, SummaryCounts } from '../src/types.ts';
+
+const PASSED = emojiFormatter.tokens.passed.glyph;
+const FAILED_ERROR = emojiFormatter.tokens.failedError.glyph;
+const FAILED_WARN = emojiFormatter.tokens.failedWarn.glyph;
+const FAILED_RECOMMEND = emojiFormatter.tokens.failedRecommend.glyph;
+const SKIPPED_OPTIONAL = emojiFormatter.tokens.skippedOptional.glyph;
+const BLOCKED = emojiFormatter.tokens.blockedPrecondition.glyph;
+const FIX = emojiFormatter.tokens.fix.glyph;
+
+/** A duration above the engine's floor, so lines eligible for one show it. */
+const SLOW_MS = 250;
 
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
   return {
@@ -74,512 +73,656 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
   };
 }
 
+/** Returns the first output line containing `needle`, throwing when no line does. */
+function lineNaming(output: string, needle: string): string {
+  const line = output.split('\n').find((candidate) => candidate.includes(needle));
+  if (line === undefined) throw new Error(`No line naming ${JSON.stringify(needle)} in:\n${output}`);
+  return line;
+}
+
+/** Returns the index of the first output line containing `needle`, or -1. */
+function indexNaming(output: string, needle: string): number {
+  return output.split('\n').findIndex((candidate) => candidate.includes(needle));
+}
+
 describe(reportRdy, () => {
-  it('shows passed checks with green circle icon', () => {
-    const report = makeReport({
-      results: [makePassedResult({ name: 'check-a', durationMs: 10 })],
+  describe('status tokens', () => {
+    it.each([
+      ['passed', makePassedResult({ name: 'target' }), PASSED],
+      ['error-failed', makeFailedResult({ name: 'target', severity: 'error' }), FAILED_ERROR],
+      ['warn-failed', makeFailedResult({ name: 'target', severity: 'warn' }), FAILED_WARN],
+      ['recommend-failed', makeFailedResult({ name: 'target', severity: 'recommend' }), FAILED_RECOMMEND],
+      ['n/a-skipped', makeSkippedResult({ name: 'target', skipReason: 'n/a' }), SKIPPED_OPTIONAL],
+      ['precondition-skipped', makeSkippedResult({ name: 'target', skipReason: 'precondition' }), BLOCKED],
+    ])('leads a %s check with its token', (_case, result, token) => {
+      const output = reportRdy(makeReport({ results: [result], passed: false }));
+
+      expect(lineNaming(output, 'target')).toBe(`${token} target`);
     });
 
-    const output = reportRdy(report);
+    it.each(['\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}', '\u{FE0F}'])(
+      'renders no %s anywhere in the report',
+      (retired) => {
+        const output = reportRdy(
+          makeReport({
+            results: [
+              makePassedResult({ name: 'a' }),
+              makeFailedResult({ name: 'b', detail: 'why', fix: 'do it' }),
+              makeSkippedResult({ name: 'c', skipReason: 'n/a' }),
+              makeSkippedResult({ name: 'd', skipReason: 'precondition' }),
+            ],
+            passed: false,
+          }),
+        );
 
-    expect(output).toContain(`${ICON_PASSED} check-a (10ms)`);
-  });
-
-  it('shows error-failed checks with red circle icon', () => {
-    const report = makeReport({
-      results: [makeFailedResult({ name: 'check-b', severity: 'error' })],
-      passed: false,
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms)`);
-  });
-
-  it('shows warn-failed checks with orange circle icon', () => {
-    const report = makeReport({
-      results: [makeFailedResult({ name: 'check-warn', severity: 'warn' })],
-      passed: false,
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(`${ICON_WARN_FAILED} check-warn (5ms)`);
-  });
-
-  it('shows recommend-failed checks with yellow circle icon', () => {
-    const report = makeReport({
-      results: [makeFailedResult({ name: 'check-rec', severity: 'recommend' })],
-      passed: false,
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(`${ICON_RECOMMEND_FAILED} check-rec (5ms)`);
-  });
-
-  it('shows n/a-skipped checks with magnifying glass icon', () => {
-    const report = makeReport({
-      results: [makeSkippedResult({ name: 'check-na', skipReason: 'n/a' })],
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(`${ICON_SKIPPED_NA} check-na (0ms)`);
-  });
-
-  it('shows precondition-skipped checks with prohibition icon', () => {
-    const report = makeReport({
-      results: [makeSkippedResult({ name: 'check-pre', skipReason: 'precondition' })],
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(`${ICON_SKIPPED_PRECONDITION} check-pre (0ms)`);
-  });
-
-  it('renders the summary line with granular failure and skip groups', () => {
-    const report = makeReport({
-      results: [
-        makePassedResult({ name: 'a', durationMs: 10 }),
-        makeFailedResult({ name: 'b', durationMs: 20 }),
-        makeSkippedResult({ name: 'c' }),
-      ],
-      passed: false,
-      durationMs: 142,
-    });
-
-    const output = reportRdy(report);
-
-    expect(output).toContain(
-      `${ICON_PASSED} 1 passed. Failed: ${ICON_ERROR_FAILED} 1 error. Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked (142ms)`,
+        expect(output).not.toContain(retired);
+      },
     );
   });
 
-  it('omits zero counts from the summary line', () => {
-    const report = makeReport({
-      results: [makePassedResult({ name: 'a', durationMs: 10 }), makePassedResult({ name: 'b', durationMs: 15 })],
-      durationMs: 25,
+  describe('inline detail', () => {
+    it('separates a passed check detail with a middle dot', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }));
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target \u{00B7} up to date`);
     });
 
-    const output = reportRdy(report);
+    it('separates a skip reason with a middle dot', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeSkippedResult({ name: 'target', skipReason: 'n/a', detail: 'no lockfile' })] }),
+      );
 
-    expect(output).toContain(`${ICON_PASSED} 2 passed (25ms)`);
-    expect(output).not.toContain('failed');
-    expect(output).not.toContain('skipped');
-  });
-
-  describe('inline mode', () => {
-    it('shows error and fix below failed check', () => {
-      const report = makeReport({
-        results: [
-          makeFailedResult({
-            name: 'broken',
-            error: new Error('Something went wrong'),
-            fix: 'Run npm install',
-          }),
-        ],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { fixLocation: 'inline' });
-      const lines = output.split('\n');
-
-      expect(output).toContain('Error: Something went wrong');
-      expect(output).toContain(`${ICON_FIX} Fix: Run npm install`);
-
-      const checkLineIndex = lines.findIndex((l) => l.includes('broken'));
-      const errorLineIndex = lines.findIndex((l) => l.includes('Error: Something went wrong'));
-      expect(errorLineIndex).toBe(checkLineIndex + 1);
+      expect(lineNaming(output, 'target')).toBe(`${SKIPPED_OPTIONAL} target \u{00B7} no lockfile`);
     });
 
-    it('shows fix without error when error is null', () => {
-      const report = makeReport({
-        results: [makeFailedResult({ name: 'broken', fix: 'Run npm install' })],
-        passed: false,
-      });
+    it('brackets progress', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'target', progress: { type: 'fraction', passedCount: 7, count: 10 } })],
+        }),
+      );
 
-      const output = reportRdy(report, { fixLocation: 'inline' });
-
-      expect(output).toContain(`${ICON_FIX} Fix: Run npm install`);
-      expect(output).not.toContain('Error:');
-    });
-
-    it('shows error without fix when fix is null', () => {
-      const report = makeReport({
-        results: [makeFailedResult({ name: 'broken', error: new Error('Missing file') })],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { fixLocation: 'inline' });
-
-      expect(output).toContain('Error: Missing file');
-      expect(output).not.toContain(ICON_FIX);
-    });
-  });
-
-  describe('end mode', () => {
-    it('shows error inline and collects fixes at the bottom', () => {
-      const report = makeReport({
-        results: [
-          makeFailedResult({
-            name: 'broken',
-            error: new Error('Bad config'),
-            fix: 'Update config file',
-          }),
-        ],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { fixLocation: 'end' });
-
-      const lines = output.split('\n');
-      const errorLineIndex = lines.findIndex((l) => l.includes('Error: Bad config'));
-      const checkLineIndex = lines.findIndex((l) => l.includes('broken'));
-      expect(errorLineIndex).toBe(checkLineIndex + 1);
-
-      expect(output).toContain('Fixes:');
-      expect(output).toContain(`  ${ICON_FIX} Update config file`);
-    });
-
-    it('omits Fixes section when no fixes are present', () => {
-      const report = makeReport({
-        results: [makeFailedResult({ name: 'broken', error: new Error('Unknown error') })],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { fixLocation: 'end' });
-
-      expect(output).toContain('Error: Unknown error');
-      expect(output).not.toContain('Fixes:');
-    });
-  });
-
-  describe('detail and progress rendering', () => {
-    it('renders detail inline after duration', () => {
-      const report = makeReport({
-        results: [makePassedResult({ name: 'check-a', durationMs: 10, detail: 'some info' })],
-      });
-
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_PASSED} check-a (10ms) \u{2014} some info`);
-    });
-
-    it('renders fraction progress', () => {
-      const report = makeReport({
-        results: [
-          makeFailedResult({
-            name: 'check-b',
-            progress: { type: 'fraction', passedCount: 7, count: 10 },
-          }),
-        ],
-        passed: false,
-      });
-
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-b (5ms) \u{2014} 7 of 10`);
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target [7 of 10]`);
     });
 
     it('renders percent progress', () => {
-      const report = makeReport({
-        results: [makeFailedResult({ name: 'check-c', durationMs: 3, progress: { type: 'percent', percent: 85 } })],
-        passed: false,
-      });
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'target', progress: { type: 'percent', percent: 85 } })] }),
+      );
 
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-c (3ms) \u{2014} 85%`);
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target [85%]`);
     });
 
-    it('renders both detail and progress as separate segments', () => {
-      const report = makeReport({
-        results: [
-          makeFailedResult({
-            name: 'check-d',
-            detail: 'some detail',
-            progress: { type: 'fraction', passedCount: 7, count: 10 },
-          }),
-        ],
-        passed: false,
-      });
+    it('renders detail and progress together with one separator', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({
+              name: 'target',
+              detail: 'all good',
+              progress: { type: 'percent', percent: 100 },
+            }),
+          ],
+        }),
+      );
 
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_ERROR_FAILED} check-d (5ms) \u{2014} some detail \u{2014} 7 of 10`);
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target \u{00B7} all good [100%]`);
     });
 
-    it('renders detail and progress on passing checks', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({
-            name: 'check-e',
-            durationMs: 2,
-            detail: 'all good',
-            progress: { type: 'percent', percent: 100 },
-          }),
-        ],
-      });
+    it('retires the em-dash separator', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }));
 
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_PASSED} check-e (2ms) \u{2014} all good \u{2014} 100%`);
-    });
-
-    it('omits detail segment when detail is null', () => {
-      const report = makeReport({
-        results: [makePassedResult({ name: 'check-f', durationMs: 1 })],
-      });
-
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_PASSED} check-f (1ms)`);
       expect(output).not.toContain('\u{2014}');
     });
   });
 
-  it('defaults to end mode when no options are provided', () => {
-    const report = makeReport({
-      results: [
-        makeFailedResult({
-          name: 'broken',
-          error: new Error('Oops'),
-          fix: 'Fix it',
-        }),
-      ],
-      passed: false,
+  describe('duration', () => {
+    it('omits a duration below the floor', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', durationMs: 10 })] }));
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target`);
     });
 
-    const output = reportRdy(report);
+    it('shows a duration at or above the floor', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', durationMs: SLOW_MS })] }));
 
-    expect(output).toContain('Fixes:');
-    expect(output).toContain(`  ${ICON_FIX} Fix it`);
-    expect(output).not.toContain('Fix: Fix it');
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target (250ms)`);
+    });
+
+    it.each(['n/a', 'precondition'] as const)('omits the duration on a %s-skipped check', (skipReason) => {
+      const output = reportRdy(
+        makeReport({ results: [makeSkippedResult({ name: 'target', skipReason, durationMs: SLOW_MS })] }),
+      );
+
+      expect(lineNaming(output, 'target')).not.toContain('ms');
+    });
+
+    it('always shows the total duration on the count line', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult()], durationMs: 4 }));
+
+      expect(output.split('\n').at(-1)).toBe(`${PASSED} 1 passed (4ms)`);
+    });
   });
 
-  describe('nested checks', () => {
-    it('indents nested results by depth', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'parent', depth: 0, durationMs: 10 }),
-          makePassedResult({ name: 'child', depth: 1, durationMs: 5 }),
-          makePassedResult({ name: 'grandchild', depth: 2, durationMs: 3 }),
-        ],
-      });
+  describe('failure reasons', () => {
+    it('leaves the failed line carrying only its claim', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale' })], passed: false }),
+      );
 
-      const output = reportRdy(report);
+      expect(lineNaming(output, 'target')).toBe(`${FAILED_ERROR} target`);
+    });
+
+    it('renders the authored detail beneath, indented to the name column', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale' })], passed: false }),
+      );
       const lines = output.split('\n');
 
-      expect(lines[0]).toBe(`${ICON_PASSED} parent (10ms)`);
-      expect(lines[1]).toBe(`   ${ICON_PASSED} child (5ms)`);
-      expect(lines[2]).toBe(`      ${ICON_PASSED} grandchild (3ms)`);
+      expect(lines[1]).toBe('   lockfile is stale');
     });
 
-    it('renders top-level result at depth 0 with no indentation', () => {
-      const report = makeReport({
-        results: [makePassedResult({ name: 'top-check', depth: 0, durationMs: 7 })],
-      });
-
-      const output = reportRdy(report);
+    it('renders the authored detail before the labeled exception', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale', error: new Error('ENOENT') })],
+          passed: false,
+        }),
+      );
       const lines = output.split('\n');
 
-      expect(lines[0]).toBe(`${ICON_PASSED} top-check (7ms)`);
+      expect(lines[1]).toBe('   lockfile is stale');
+      expect(lines[2]).toBe('   Error: ENOENT');
     });
 
-    it('renders an n/a result and the results that follow it', () => {
-      const report = makeReport({
-        results: [
-          makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makePassedResult({ name: 'next-sibling', depth: 0, durationMs: 10 }),
-        ],
-      });
+    it('renders an exception alone when no detail was authored', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'target', error: new Error('boom') })], passed: false }),
+      );
 
-      const output = reportRdy(report);
-
-      expect(output).toContain('na-parent');
-      expect(output).toContain('next-sibling');
+      expect(output.split('\n', 2)[1]).toBe('   Error: boom');
     });
 
-    it('indents inline detail lines at parent depth', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'parent', depth: 0 }),
-          makeFailedResult({
-            name: 'child',
-            depth: 1,
-            error: new Error('child error'),
-            fix: 'fix child',
-          }),
-        ],
-        passed: false,
-      });
+    it('renders no block for a failure deriving from its children', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'parent' }), makeFailedResult({ name: 'child', depth: 1 })],
+          passed: false,
+        }),
+      );
 
-      const output = reportRdy(report, { fixLocation: 'inline' });
+      expect(output.split('\n').slice(0, 2)).toStrictEqual([`${FAILED_ERROR} parent`, `   ${FAILED_ERROR} child`]);
+    });
+
+    it('indents a nested failure reason to that check\u{2019}s own name column', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'parent' }),
+            makePassedResult({ name: 'child', depth: 1 }),
+            makeFailedResult({ name: 'grandchild', depth: 2, detail: 'went wrong' }),
+          ],
+          passed: false,
+        }),
+      );
+
+      expect(output.split('\n', 4)[3]).toBe('         went wrong');
+    });
+  });
+
+  describe('count line', () => {
+    it('leads with the worst severity rather than the passed count', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'a' }), makeFailedResult({ name: 'b', severity: 'warn' })],
+          passed: false,
+          durationMs: 142,
+        }),
+      );
+
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} 1 passed | 1 warning (142ms)`);
+    });
+
+    it('orders the fields by decreasing severity and omits zeros', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'a' }),
+            makeFailedResult({ name: 'b', severity: 'error' }),
+            makeFailedResult({ name: 'c', severity: 'recommend' }),
+            makeSkippedResult({ name: 'd', skipReason: 'precondition' }),
+            makeSkippedResult({ name: 'e', skipReason: 'n/a' }),
+          ],
+          passed: false,
+          durationMs: 500,
+        }),
+      );
+
+      expect(output.split('\n').at(-1)).toBe(
+        `${FAILED_ERROR} 1 passed | 1 error | 1 recommendation | 1 blocked | 1 skipped (500ms)`,
+      );
+    });
+
+    it('counts results pruned from the tree by the reporting threshold', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'shown', severity: 'error' }),
+            makePassedResult({ name: 'pruned', severity: 'recommend' }),
+          ],
+        }),
+        { reportOn: 'error' },
+      );
+
+      expect(output).not.toContain('pruned');
+      expect(output.split('\n').at(-1)).toContain('2 passed');
+    });
+
+    it('separates the count line from the tree with a blank line', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }));
+
+      expect(output.split('\n', 2)[1]).toBe('');
+    });
+  });
+
+  describe('fix recap in end mode', () => {
+    it('attributes each fix to the check that raised it', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run pnpm install' })], passed: false }),
+      );
+      const lines = output.split('\n');
+      const heading = indexNaming(output, 'Fixes');
+
+      expect(lines[heading]).toBe('\u{2500}\u{2500} Fixes');
+      expect(lines[heading + 2]).toBe(`${FIX} broken`);
+      expect(lines[heading + 3]).toBe('   Run pnpm install');
+    });
+
+    it('recaps a fix from each failed check', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeFailedResult({ name: 'first', fix: 'fix one' }),
+            makeFailedResult({ name: 'second', fix: 'fix two' }),
+          ],
+          passed: false,
+        }),
+      );
+
+      expect(output).toContain(`${FIX} first`);
+      expect(output).toContain(`${FIX} second`);
+    });
+
+    it('keeps the fix out of the reason block', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'broken', error: new Error('bad'), fix: 'Update config' })],
+          passed: false,
+        }),
+      );
+      const checkLine = indexNaming(output, 'broken');
+
+      expect(output.split('\n')[checkLine + 1]).toBe('   Error: bad');
+      expect(output.split('\n')[checkLine + 2]).not.toContain('Update config');
+    });
+
+    it('omits the recap when no failed check carries a fix', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', error: new Error('bad') })], passed: false }),
+      );
+
+      expect(output).not.toContain('Fixes');
+      expect(output).not.toContain(FIX);
+    });
+
+    it('recaps a nested check by name', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'parent' }),
+            makeFailedResult({ name: 'child', depth: 1, fix: 'fix child' }),
+          ],
+          passed: false,
+        }),
+      );
+
+      expect(output).toContain(`${FIX} child`);
+      expect(output).toContain('   fix child');
+    });
+
+    it('is the default when no options are given', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Fix it' })], passed: false }),
+      );
+
+      expect(output).toContain('\u{2500}\u{2500} Fixes');
+    });
+  });
+
+  describe('fix in inline mode', () => {
+    it('joins the fix to the reason block beneath the check', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'broken', error: new Error('Something went wrong'), fix: 'Run install' })],
+          passed: false,
+        }),
+        { fixLocation: 'inline' },
+      );
+
+      expect(output.split('\n').slice(0, 3)).toStrictEqual([
+        `${FAILED_ERROR} broken`,
+        '   Error: Something went wrong',
+        `   ${FIX} Run install`,
+      ]);
+    });
+
+    it('renders a fix without an exception', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run install' })], passed: false }),
+        { fixLocation: 'inline' },
+      );
+
+      expect(output.split('\n', 2)[1]).toBe(`   ${FIX} Run install`);
+      expect(output).not.toContain('Error:');
+    });
+
+    it('renders an exception without a fix', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'broken', error: new Error('Missing file') })],
+          passed: false,
+        }),
+        { fixLocation: 'inline' },
+      );
+
+      expect(output).toContain('Error: Missing file');
+      expect(output).not.toContain(FIX);
+    });
+
+    it('adds no end-of-report recap', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run install' })], passed: false }),
+        { fixLocation: 'inline' },
+      );
+
+      expect(output).not.toContain('Fixes');
+    });
+
+    it('indents a nested fix to that check\u{2019}s own name column', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'parent' }),
+            makeFailedResult({ name: 'child', depth: 1, error: new Error('child error'), fix: 'fix child' }),
+          ],
+          passed: false,
+        }),
+        { fixLocation: 'inline' },
+      );
       const lines = output.split('\n');
 
-      const childLine = lines.findIndex((l) => l.includes('child'));
-      expect(lines[childLine]).toMatch(/^ {3}/);
-      expect(lines[childLine + 1]).toBe('      Error: child error');
-      expect(lines[childLine + 2]).toBe(`      ${ICON_FIX} Fix: fix child`);
+      expect(lines[2]).toBe('      Error: child error');
+      expect(lines[3]).toBe(`      ${FIX} fix child`);
     });
+  });
 
-    it('collects fixes from nested failed checks in end mode', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'parent', depth: 0 }),
-          makeFailedResult({
-            name: 'child',
-            depth: 1,
-            error: new Error('child error'),
-            fix: 'fix the child',
-          }),
-        ],
-        passed: false,
-      });
+  describe('nesting', () => {
+    it('indents each level by one gutter', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'parent', depth: 0 }),
+            makePassedResult({ name: 'child', depth: 1 }),
+            makePassedResult({ name: 'grandchild', depth: 2 }),
+            makePassedResult({ name: 'great-grandchild', depth: 3 }),
+          ],
+        }),
+      );
 
-      const output = reportRdy(report, { fixLocation: 'end' });
-      const lines = output.split('\n');
-
-      const childLine = lines.findIndex((l) => l.includes('child'));
-      expect(lines[childLine + 1]).toBe('      Error: child error');
-      expect(output).toContain('Fixes:');
-      expect(output).toContain(`  ${ICON_FIX} fix the child`);
-      // Fix should not appear inline after the error line.
-      expect(lines[childLine + 2]).not.toContain('fix the child');
-    });
-
-    it('includes nested results in summary counts', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'parent', depth: 0 }),
-          makePassedResult({ name: 'child', depth: 1 }),
-          makeFailedResult({ name: 'child-fail', depth: 1 }),
-        ],
-        passed: false,
-        durationMs: 50,
-      });
-
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_PASSED} 2 passed. Failed: ${ICON_ERROR_FAILED} 1 error`);
-    });
-
-    it('counts an n/a result as an optional skip', () => {
-      const report = makeReport({
-        results: [
-          makeSkippedResult({ name: 'na-parent', skipReason: 'n/a', depth: 0 }),
-          makePassedResult({ name: 'sibling', depth: 0, durationMs: 10 }),
-        ],
-        durationMs: 50,
-      });
-
-      const output = reportRdy(report);
-
-      expect(output).toContain(`${ICON_PASSED} 1 passed`);
-      expect(output).toContain(`${ICON_SKIPPED_NA} 1 optional`);
+      expect(output.split('\n').slice(0, 4)).toStrictEqual([
+        `${PASSED} parent`,
+        `   ${PASSED} child`,
+        `      ${PASSED} grandchild`,
+        `         ${PASSED} great-grandchild`,
+      ]);
     });
 
     it('renders every result it is given, applying no suppression of its own', () => {
-      // `runRdy` no longer emits descendants of an n/a result, so the renderer must not
-      // second-guess its input: whatever arrives is displayed and counted.
-      const report = makeReport({
-        results: [
-          makeSkippedResult({ name: 'na-check', skipReason: 'n/a', depth: 1 }),
-          makeSkippedResult({ name: 'deeper', skipReason: 'precondition', depth: 2 }),
-          makePassedResult({ name: 'sibling', depth: 1, durationMs: 5 }),
-        ],
-      });
-
-      const output = reportRdy(report);
+      // The renderer displays and counts whatever it is given, applying no suppression of its own.
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeSkippedResult({ name: 'na-check', skipReason: 'n/a', depth: 1 }),
+            makeSkippedResult({ name: 'deeper', skipReason: 'precondition', depth: 2 }),
+            makePassedResult({ name: 'sibling', depth: 1 }),
+          ],
+        }),
+      );
 
       expect(output).toContain('na-check');
       expect(output).toContain('deeper');
       expect(output).toContain('sibling');
-      expect(output).toContain(`${ICON_SKIPPED_PRECONDITION} 1 blocked`);
+      expect(output.split('\n').at(-1)).toContain('1 blocked');
+    });
+
+    it('includes nested results in the counts', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'parent', depth: 0 }),
+            makePassedResult({ name: 'child', depth: 1 }),
+            makeFailedResult({ name: 'child-fail', depth: 1 }),
+          ],
+          passed: false,
+          durationMs: 50,
+        }),
+      );
+
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (50ms)`);
+    });
+  });
+
+  describe('quiet', () => {
+    it('hides a passed check', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'quiet-pass' }), makeFailedResult({ name: 'loud-fail' })],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('quiet-pass');
+      expect(output).toContain('loud-fail');
+    });
+
+    it('keeps failures, skips, and blocks', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'hidden' }),
+            makeFailedResult({ name: 'failure' }),
+            makeSkippedResult({ name: 'optional-skip', skipReason: 'n/a' }),
+            makeSkippedResult({ name: 'blocked-skip', skipReason: 'precondition' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('hidden');
+      for (const name of ['failure', 'optional-skip', 'blocked-skip']) {
+        expect(output).toContain(name);
+      }
+    });
+
+    it('retains a passed ancestor so a deep failure stays reachable', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'passed-parent' }),
+            makePassedResult({ name: 'passed-child', depth: 1 }),
+            makeFailedResult({ name: 'deep-failure', depth: 2 }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output.split('\n').slice(0, 3)).toStrictEqual([
+        `${PASSED} passed-parent`,
+        `   ${PASSED} passed-child`,
+        `      ${FAILED_ERROR} deep-failure`,
+      ]);
+    });
+
+    it('drops a wholly passing subtree', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'clean-parent' }),
+            makePassedResult({ name: 'clean-child', depth: 1 }),
+            makeFailedResult({ name: 'failure' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).not.toContain('clean-parent');
+      expect(output).not.toContain('clean-child');
+      expect(output).toContain('failure');
+    });
+
+    it('counts hidden passes, so the tally still covers the whole run', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' }), makeFailedResult({ name: 'c' })],
+          passed: false,
+          durationMs: 90,
+        }),
+        { quiet: true },
+      );
+
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (90ms)`);
+    });
+
+    it('keeps the fix recap', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'hidden' }), makeFailedResult({ name: 'broken', fix: 'Run install' })],
+          passed: false,
+        }),
+        { quiet: true },
+      );
+
+      expect(output).toContain(`${FIX} broken`);
+      expect(output).toContain('   Run install');
+    });
+
+    it('composes with the reporting threshold rather than overriding it', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'passed-error-sev', severity: 'error' }),
+            makeFailedResult({ name: 'warn-failure', severity: 'warn' }),
+            makeFailedResult({ name: 'error-failure', severity: 'error' }),
+          ],
+          passed: false,
+        }),
+        { quiet: true, reportOn: 'error' },
+      );
+
+      // Hidden by quiet (passed), by the threshold (warn), and shown by both (error failure).
+      expect(output).not.toContain('passed-error-sev');
+      expect(output).not.toContain('warn-failure');
+      expect(output).toContain('error-failure');
+    });
+
+    it('shows every passed check when off', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'visible' })] }), { quiet: false });
+
+      expect(output).toContain('visible');
+    });
+
+    it('leaves an all-passing run with only its count line', () => {
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' })], durationMs: 30 }),
+        { quiet: true },
+      );
+
+      expect(output).toBe(`${PASSED} 2 passed (30ms)`);
     });
   });
 
   describe('reporting threshold', () => {
     it('excludes results below the reporting threshold', () => {
-      const report = makeReport({
-        results: [
-          makeFailedResult({ name: 'error-check', severity: 'error' }),
-          makeFailedResult({ name: 'recommend-check', severity: 'recommend' }),
-        ],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { reportOn: 'error' });
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeFailedResult({ name: 'error-check', severity: 'error' }),
+            makeFailedResult({ name: 'recommend-check', severity: 'recommend' }),
+          ],
+          passed: false,
+        }),
+        { reportOn: 'error' },
+      );
 
       expect(output).toContain('error-check');
       expect(output).not.toContain('recommend-check');
     });
 
-    it('counts every result in the summary, including results pruned from the tree', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'error-pass', severity: 'error' }),
-          makePassedResult({ name: 'recommend-pass', severity: 'recommend' }),
-        ],
-      });
-
-      const output = reportRdy(report, { reportOn: 'error' });
-
-      expect(output).toContain(`${ICON_PASSED} 2 passed`);
-      expect(output).not.toContain('recommend-pass');
-    });
-
     it('reports a below-threshold failure in the counts and worst severity', () => {
-      const report = makeReport({
-        results: [
-          makePassedResult({ name: 'error-pass', severity: 'error' }),
-          makeFailedResult({ name: 'warn-fail', severity: 'warn' }),
-        ],
-        passed: false,
-      });
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'error-pass', severity: 'error' }),
+            makeFailedResult({ name: 'warn-fail', severity: 'warn' }),
+          ],
+          passed: false,
+        }),
+        { reportOn: 'error' },
+      );
 
-      const output = reportRdy(report, { reportOn: 'error' });
-
-      expect(output).toContain(`${ICON_WARN_FAILED} 1 warning`);
+      expect(output.split('\n').at(-1)).toContain(`${FAILED_WARN} 1 passed | 1 warning`);
       expect(output).not.toContain('warn-fail');
     });
 
-    it('hides precondition result when its severity is below the reporting threshold', () => {
-      const report = makeReport({
-        results: [
-          makeSkippedResult({ name: 'precond', severity: 'recommend', skipReason: 'precondition' }),
-          makeFailedResult({ name: 'error-check', severity: 'error' }),
-        ],
-        passed: false,
-      });
-
-      const output = reportRdy(report, { reportOn: 'error' });
+    it('hides a precondition result whose severity is below the threshold', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeSkippedResult({ name: 'precond', severity: 'recommend', skipReason: 'precondition' }),
+            makeFailedResult({ name: 'error-check', severity: 'error' }),
+          ],
+          passed: false,
+        }),
+        { reportOn: 'error' },
+      );
 
       expect(output).toContain('error-check');
       expect(output).not.toContain('precond');
     });
 
-    it('shows only skipped dependents whose severity meets the reporting threshold', () => {
-      const report = makeReport({
-        results: [
-          makeSkippedResult({ name: 'high-sev-dep', severity: 'error', skipReason: 'precondition' }),
-          makeSkippedResult({ name: 'low-sev-dep', severity: 'recommend', skipReason: 'precondition' }),
-        ],
-      });
-
-      const output = reportRdy(report, { reportOn: 'warn' });
+    it('shows only skipped dependents whose severity meets the threshold', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeSkippedResult({ name: 'high-sev-dep', severity: 'error', skipReason: 'precondition' }),
+            makeSkippedResult({ name: 'low-sev-dep', severity: 'recommend', skipReason: 'precondition' }),
+          ],
+        }),
+        { reportOn: 'warn' },
+      );
 
       expect(output).toContain('high-sev-dep');
       expect(output).not.toContain('low-sev-dep');
     });
 
-    it('defaults reportOn to recommend (show all)', () => {
-      const report = makeReport({
-        results: [makePassedResult({ name: 'recommend-check', severity: 'recommend' })],
-      });
-
-      const output = reportRdy(report);
+    it('defaults reportOn to recommend, showing everything', () => {
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'recommend-check', severity: 'recommend' })] }),
+      );
 
       expect(output).toContain('recommend-check');
     });
@@ -598,159 +741,6 @@ function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
     ...overrides,
   };
 }
-
-describe(formatSummaryCounts, () => {
-  it('includes all non-zero counts with icons across all three groups', () => {
-    const counts = makeCounts({
-      passed: 14,
-      errors: 1,
-      warnings: 1,
-      recommendations: 2,
-      blocked: 5,
-      optional: 2,
-      worstSeverity: 'error',
-    });
-
-    expect(formatSummaryCounts(counts)).toBe(
-      `${ICON_PASSED} 14 passed. Failed: ${ICON_ERROR_FAILED} 1 error, ${ICON_WARN_FAILED} 1 warning, ${ICON_RECOMMEND_FAILED} 2 recommendations. Skipped: ${ICON_SKIPPED_PRECONDITION} 5 blocked, ${ICON_SKIPPED_NA} 2 optional`,
-    );
-  });
-
-  it('pluralizes errors correctly for counts of 1 and 2', () => {
-    expect(formatSummaryCounts(makeCounts({ errors: 1, worstSeverity: 'error' }))).toBe(
-      `Failed: ${ICON_ERROR_FAILED} 1 error`,
-    );
-    expect(formatSummaryCounts(makeCounts({ errors: 2, worstSeverity: 'error' }))).toBe(
-      `Failed: ${ICON_ERROR_FAILED} 2 errors`,
-    );
-  });
-
-  it('pluralizes warnings correctly for counts of 1 and 2', () => {
-    expect(formatSummaryCounts(makeCounts({ warnings: 1, worstSeverity: 'warn' }))).toBe(
-      `Failed: ${ICON_WARN_FAILED} 1 warning`,
-    );
-    expect(formatSummaryCounts(makeCounts({ warnings: 2, worstSeverity: 'warn' }))).toBe(
-      `Failed: ${ICON_WARN_FAILED} 2 warnings`,
-    );
-  });
-
-  it('pluralizes recommendations correctly for counts of 1 and 2', () => {
-    expect(formatSummaryCounts(makeCounts({ recommendations: 1, worstSeverity: 'recommend' }))).toBe(
-      `Failed: ${ICON_RECOMMEND_FAILED} 1 recommendation`,
-    );
-    expect(formatSummaryCounts(makeCounts({ recommendations: 2, worstSeverity: 'recommend' }))).toBe(
-      `Failed: ${ICON_RECOMMEND_FAILED} 2 recommendations`,
-    );
-  });
-
-  it('keeps `blocked` and `optional` labels unchanged for any count', () => {
-    expect(formatSummaryCounts(makeCounts({ blocked: 1, optional: 1 }))).toBe(
-      `Skipped: ${ICON_SKIPPED_PRECONDITION} 1 blocked, ${ICON_SKIPPED_NA} 1 optional`,
-    );
-    expect(formatSummaryCounts(makeCounts({ blocked: 3, optional: 4 }))).toBe(
-      `Skipped: ${ICON_SKIPPED_PRECONDITION} 3 blocked, ${ICON_SKIPPED_NA} 4 optional`,
-    );
-  });
-
-  it('omits the Failed group when no failure categories have counts', () => {
-    expect(formatSummaryCounts(makeCounts({ passed: 5 }))).toBe(`${ICON_PASSED} 5 passed`);
-  });
-
-  it('omits the Skipped group when no skip categories have counts', () => {
-    expect(formatSummaryCounts(makeCounts({ passed: 5, errors: 1, worstSeverity: 'error' }))).toBe(
-      `${ICON_PASSED} 5 passed. Failed: ${ICON_ERROR_FAILED} 1 error`,
-    );
-  });
-
-  it('omits zero-count categories within an otherwise non-empty group', () => {
-    expect(formatSummaryCounts(makeCounts({ errors: 2, recommendations: 1, worstSeverity: 'error' }))).toBe(
-      `Failed: ${ICON_ERROR_FAILED} 2 errors, ${ICON_RECOMMEND_FAILED} 1 recommendation`,
-    );
-  });
-
-  it('returns empty string when all counts are zero', () => {
-    expect(formatSummaryCounts(makeCounts())).toBe('');
-  });
-});
-
-describe(formatSummaryCountsPlain, () => {
-  it('formats passed count without inline icons', () => {
-    expect(formatSummaryCountsPlain(makeCounts({ passed: 3 }))).toBe('3 passed');
-  });
-
-  it('formats Failed segment without per-count severity icons', () => {
-    const counts = makeCounts({
-      errors: 1,
-      warnings: 2,
-      recommendations: 3,
-      worstSeverity: 'error',
-    });
-
-    const output = formatSummaryCountsPlain(counts);
-
-    expect(output).toBe('Failed: 1 error, 2 warnings, 3 recommendations');
-    expect(output).not.toContain(ICON_ERROR_FAILED);
-    expect(output).not.toContain(ICON_WARN_FAILED);
-    expect(output).not.toContain(ICON_RECOMMEND_FAILED);
-  });
-
-  it('formats Skipped segment without per-count reason icons', () => {
-    const counts = makeCounts({ blocked: 2, optional: 3 });
-
-    const output = formatSummaryCountsPlain(counts);
-
-    expect(output).toBe('Skipped: 2 blocked, 3 optional');
-    expect(output).not.toContain(ICON_SKIPPED_PRECONDITION);
-    expect(output).not.toContain(ICON_SKIPPED_NA);
-  });
-
-  it('joins all three groups with icon-free counts', () => {
-    const counts = makeCounts({
-      passed: 14,
-      errors: 1,
-      warnings: 1,
-      recommendations: 2,
-      blocked: 5,
-      optional: 2,
-      worstSeverity: 'error',
-    });
-
-    expect(formatSummaryCountsPlain(counts)).toBe(
-      '14 passed. Failed: 1 error, 1 warning, 2 recommendations. Skipped: 5 blocked, 2 optional',
-    );
-  });
-
-  it('omits the 🟢 prefix from the passed count', () => {
-    expect(formatSummaryCountsPlain(makeCounts({ passed: 5 }))).not.toContain(ICON_PASSED);
-  });
-
-  it('returns empty string when all counts are zero', () => {
-    expect(formatSummaryCountsPlain(makeCounts())).toBe('');
-  });
-
-  it('matches formatSummaryCounts except for the absence of per-count icon prefixes', () => {
-    const counts = makeCounts({
-      passed: 2,
-      errors: 1,
-      warnings: 1,
-      recommendations: 1,
-      blocked: 1,
-      optional: 1,
-      worstSeverity: 'error',
-    });
-
-    // Strip every known severity/skip icon (and the trailing space) from the iconed output.
-    const iconStripped = formatSummaryCounts(counts)
-      .replaceAll(`${ICON_PASSED} `, '')
-      .replaceAll(`${ICON_ERROR_FAILED} `, '')
-      .replaceAll(`${ICON_WARN_FAILED} `, '')
-      .replaceAll(`${ICON_RECOMMEND_FAILED} `, '')
-      .replaceAll(`${ICON_SKIPPED_PRECONDITION} `, '')
-      .replaceAll(`${ICON_SKIPPED_NA} `, '');
-
-    expect(formatSummaryCountsPlain(counts)).toBe(iconStripped);
-  });
-});
 
 describe(countResults, () => {
   it('returns zeroed counts for an empty result list', () => {
@@ -813,12 +803,6 @@ describe(countResults, () => {
     expect(counts.optional).toBe(1);
     expect(counts.blocked).toBe(0);
     expect(counts.worstSeverity).toBeNull();
-  });
-
-  it('escalates worstSeverity from null to recommend on first recommend failure', () => {
-    const counts = countResults([makeFailedResult({ severity: 'recommend' })]);
-
-    expect(counts.worstSeverity).toBe('recommend');
   });
 
   it('escalates worstSeverity from recommend to warn', () => {
@@ -952,11 +936,5 @@ describe(selectVisibleResults, () => {
     selectVisibleResults(results, 'error');
 
     expect(results.map((r) => r.name)).toStrictEqual(['parent', 'child']);
-  });
-});
-
-describe('status icons', () => {
-  it('marks skipped-N/A outcomes with the skip-forward emoji, not the magnifying glass', () => {
-    expect(ICON_SKIPPED_NA).toBe('\u{23ED}\u{FE0F}');
   });
 });

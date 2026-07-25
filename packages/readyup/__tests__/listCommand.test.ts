@@ -69,8 +69,8 @@ describe(listCommand, () => {
         expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
       );
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal:');
-      expect(output).toContain('Compiled:');
+      expect(output).toContain('\u{2500}\u{2500} Internal');
+      expect(output).toContain('\u{2500}\u{2500} Compiled');
     });
 
     it('uses infix-based extension for internal kits when configured', async () => {
@@ -94,8 +94,8 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal:');
-      expect(output).not.toContain('Compiled:');
+      expect(output).toContain('\u{2500}\u{2500} Internal');
+      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
     it('uses custom-outDir style when outDir differs from default', async () => {
@@ -171,8 +171,8 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal:');
-      expect(output).not.toContain('Compiled:');
+      expect(output).toContain('\u{2500}\u{2500} Internal');
+      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
@@ -189,7 +189,7 @@ describe(listCommand, () => {
       await listCommand([]);
 
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal: rdy run --jit --internal [<name>]');
+      expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit --internal [<name>]');
     });
 
     it('leaves --internal out of the internal hint under the default config', async () => {
@@ -198,7 +198,7 @@ describe(listCommand, () => {
       await listCommand([]);
 
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal: rdy run --jit [<name>]');
+      expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit [<name>]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
@@ -211,8 +211,8 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Internal:');
-      expect(output).not.toContain('Compiled:');
+      expect(output).toContain('\u{2500}\u{2500} Internal');
+      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'));
     });
@@ -239,7 +239,7 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('.readyup/manifest.json'));
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Compiled:');
+      expect(output).toContain('\u{2500}\u{2500} Compiled');
       expect(output).toContain('deploy');
     });
 
@@ -277,7 +277,7 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).not.toHaveBeenCalled();
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Manifest:');
+      expect(output).toContain('\u{2500}\u{2500} Manifest:');
       expect(output).toContain('default');
       expect(output).toContain('Health checks');
       expect(output).toContain('deploy');
@@ -334,7 +334,7 @@ describe(listCommand, () => {
       await listCommand(['--json']);
 
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Internal:'));
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('\u{2500}\u{2500} Internal'));
     });
 
     it('reports an empty kit list rather than the empty-owner prose', async () => {

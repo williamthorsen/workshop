@@ -7,12 +7,12 @@ import picomatch from 'picomatch';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
+import { layout } from '../layout/engine.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
-import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../reportRdy.ts';
 import { SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
 import type { JsonCompileKitEntry, JsonCompileOutput } from '../schemas/index.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -34,6 +34,9 @@ const compileOptions = {
   output: { type: 'string', short: 'o' },
   'skip-manifest': { type: 'boolean' },
 } as const;
+
+/** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */
+const TRANSFORM_ARROW = '->';
 
 /** Domain-specific hints for compile flags that require a value. */
 const compileHints: Record<string, string> = {
@@ -107,7 +110,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const kitName = path.basename(resolvedOutputPath, '.js');
   const relInput = path.relative(process.cwd(), resolvedInputPath);
 
-  writeHuman('Compiling kit:\n', json);
+  writeHuman(formatSectionHeading('Compiling kit'), json);
 
   const existingKit = skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName);
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
@@ -229,7 +232,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     const relSrc = path.relative(process.cwd(), srcDir);
     const reason = srcDirExists
       ? `No .ts files found in ${relSrc}`
-      : `Source directory not found: ${relSrc} — treating as empty`;
+      : `Source directory not found: ${relSrc}; treating as empty`;
     writeHuman(`${reason}\n`, json);
     if (!skipManifest) {
       try {
@@ -243,9 +246,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
 
   const relSrcDir = path.relative(process.cwd(), srcDir);
   const relOutDir = path.relative(process.cwd(), outDir);
-  const header =
-    srcDir === outDir ? `Compiling kits in ${relSrcDir}:\n` : `Compiling kits from ${relSrcDir} to ${relOutDir}:\n`;
-  writeHuman(header, json);
+  const label =
+    srcDir === outDir ? `Compiling kits in ${relSrcDir}` : `Compiling kits from ${relSrcDir} to ${relOutDir}`;
+  writeHuman(formatSectionHeading(label), json);
 
   const manifestDir = path.dirname(manifestPath);
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
@@ -349,7 +352,7 @@ function upsertManifest(
     // Missing manifest is expected for first compile; other failures should surface.
     if (!(error instanceof ManifestNotFoundError)) {
       const message = extractMessage(error);
-      process.stderr.write(`Warning: ${message} — starting with empty manifest\n`);
+      process.stderr.write(`Warning: ${message}; starting with empty manifest\n`);
     }
   }
 
@@ -382,7 +385,7 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) {
       const message = extractMessage(error);
-      process.stderr.write(`Warning: ${message} — drift gate skipped\n`);
+      process.stderr.write(`Warning: ${message}; drift gate skipped\n`);
     }
   }
   return map;
@@ -423,13 +426,26 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   return { status, existingKit };
 }
 
-/** Format a single compile-result line with a change indicator. */
+/** Returns a line naming the output a rebuilt kit produced, or reporting an unchanged one as skipped. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
-  return changed ? `  📦 ${srcName} → ${outName}\n` : `  ${ICON_NO_CHANGES} ${srcName} — no changes\n`;
+  if (!changed) {
+    return layout.formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
+  }
+
+  const claim = layout.formatCheckLine({ token: 'passed', name: srcName });
+  return `${claim} ${TRANSFORM_ARROW} ${layout.glyph('docCompiled')} ${outName}\n`;
 }
 
-/** Format a drift-skip status line. Requires a `drift` status; other statuses never produce this line. */
+/** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */
 function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
   const target = path.basename(status.resolvedPath);
-  return `  ⚠️  ${srcName} — skipped (drift in ${target}; expected ${status.expected}, got ${status.actual})\n`;
+  const claim = layout.formatCheckLine({ token: 'failedWarn', name: srcName });
+  const reason = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
+
+  return [claim, ...layout.formatReasonBlock([reason])].join('\n') + '\n';
+}
+
+/** Returns a section heading as a single writable string, newline-terminated. */
+function formatSectionHeading(label: string): string {
+  return layout.formatHeading(label, 'section').join('\n') + '\n';
 }

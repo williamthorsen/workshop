@@ -1,62 +1,29 @@
-import {
-  emptyCounts,
-  formatSummaryCounts,
-  formatSummaryCountsPlain,
-  ICON_ERROR_FAILED,
-  ICON_PASSED,
-  ICON_RECOMMEND_FAILED,
-  ICON_WARN_FAILED,
-  mergeCounts,
-} from './reportRdy.ts';
-import type { ChecklistSummary, Severity, SummaryCounts } from './types.ts';
+import { layout } from './layout/engine.ts';
+import { emptyCounts, mergeCounts } from './reportRdy.ts';
+import type { ChecklistSummary, SummaryCounts } from './types.ts';
 
-/** Format a duration in milliseconds for display. */
-function formatDuration(ms: number): string {
-  return `${Math.round(ms)}ms`;
+/** Returns the summary table for `summaries`, one row each, opening with a blank line. */
+export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
+  const rows = summaries.map((summary) => ({
+    name: summary.name,
+    counts: summary,
+    durationMs: summary.durationMs,
+  }));
+
+  return layout
+    .formatSummaryTable({
+      rows,
+      totals: aggregateCounts(summaries),
+      totalDurationMs: summaries.reduce((sum, summary) => sum + summary.durationMs, 0),
+    })
+    .join('\n');
 }
 
-/** Return the row-level icon reflecting the worst failed severity in a summary. */
-function getRowIcon(worstSeverity: Severity | null): string {
-  if (worstSeverity === 'error') return ICON_ERROR_FAILED;
-  if (worstSeverity === 'warn') return ICON_WARN_FAILED;
-  if (worstSeverity === 'recommend') return ICON_RECOMMEND_FAILED;
-  return ICON_PASSED;
-}
-
-/** Sum granular counts across multiple summaries, propagating the worst severity. */
+/** Returns the sum of every summary's counts, carrying the worst severity among them. */
 function aggregateCounts(summaries: ChecklistSummary[]): SummaryCounts {
   const totals = emptyCounts();
   for (const summary of summaries) {
     mergeCounts(totals, summary);
   }
   return totals;
-}
-
-/** Format the combined summary table shown after multiple checklists run. */
-export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
-  const HEADER =
-    '\u{2500}\u{2500} Summary \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}';
-  const lines: string[] = [HEADER];
-
-  const maxNameLen = Math.max(...summaries.map((s) => s.name.length));
-  const maxDurationLen = Math.max(...summaries.map((s) => formatDuration(s.durationMs).length));
-
-  for (const summary of summaries) {
-    const icon = getRowIcon(summary.worstSeverity);
-    const name = summary.name.padEnd(maxNameLen);
-    const duration = formatDuration(summary.durationMs).padStart(maxDurationLen);
-    const counts = formatSummaryCountsPlain(summary);
-    lines.push(`${icon} ${name}  ${duration}  ${counts}`);
-  }
-
-  lines.push(
-    '\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}',
-  );
-
-  const totals = aggregateCounts(summaries);
-  const totalDuration = summaries.reduce((sum, s) => sum + s.durationMs, 0);
-
-  lines.push(`Total: ${formatSummaryCounts(totals)} (${formatDuration(totalDuration)})`);
-
-  return lines.join('\n');
 }

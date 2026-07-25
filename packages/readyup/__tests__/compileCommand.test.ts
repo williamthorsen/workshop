@@ -58,10 +58,15 @@ vi.mock('../src/verify/targetHash.ts', () => ({
 
 import { compileCommand } from '../src/compile/compileCommand.ts';
 import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
+import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
-import { ICON_SKIPPED_NA as ICON_NO_CHANGES } from '../src/reportRdy.ts';
 import { VERSION } from '../src/version.ts';
 import { captureRdyError } from './helpers/captureRdyError.ts';
+
+const ICON_NO_CHANGES = emojiFormatter.tokens.skippedOptional.glyph;
+const ICON_COMPILED = emojiFormatter.tokens.passed.glyph;
+const ICON_DRIFT = emojiFormatter.tokens.failedWarn.glyph;
+const GLYPH_OUTPUT = emojiFormatter.tokens.docCompiled.glyph;
 
 /** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
@@ -95,14 +100,14 @@ describe(compileCommand, () => {
   });
 
   // Explicit input file tests
-  it('returns 0 and writes "Compiling kit:" header for single file', async () => {
+  it('returns 0 and writes a section heading for single file', async () => {
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' });
 
     const exitCode = await compileCommand(['input.ts']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', undefined);
-    expect(stdoutSpy).toHaveBeenCalledWith('Compiling kit:\n');
+    expect(stdoutSpy).toHaveBeenCalledWith('\n\u{2500}\u{2500} Compiling kit\n\n');
   });
 
   it('shows compiled indicator for a changed single file', async () => {
@@ -110,8 +115,8 @@ describe(compileCommand, () => {
 
     await compileCommand(['input.ts']);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('📦'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('→'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_COMPILED} input.ts -> ${GLYPH_OUTPUT} `));
+    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('\u{2192}'));
   });
 
   it('shows no-changes indicator for an unchanged single file', async () => {
@@ -232,8 +237,8 @@ describe(compileCommand, () => {
     expect(mockCompileConfig).toHaveBeenCalledTimes(2);
     // Header + 2 status lines
     expect(stdoutSpy).toHaveBeenCalledTimes(3);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('📦 a.ts → a.js'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_NO_CHANGES} b.ts — no changes`));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_COMPILED} a.ts -> ${GLYPH_OUTPUT} a.js`));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_NO_CHANGES} b.ts \u{00B7} no changes`));
   });
 
   it('reports a usage error when --output is given without an input file', async () => {
@@ -889,9 +894,9 @@ describe(compileCommand, () => {
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).not.toHaveBeenCalled();
     expect(mockWriteManifest).not.toHaveBeenCalled();
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('skipped (drift in deploy.js'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected aaaa1111, got bbbb2222'));
+    expect(stdoutSpy).toHaveBeenCalledWith(
+      `${ICON_DRIFT} deploy.ts\n   drift in deploy.js: expected aaaa1111, got bbbb2222\n`,
+    );
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Re-run with --force'));
   });
 
@@ -945,7 +950,7 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).toHaveBeenCalledTimes(1); // only beta compiled
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️  alpha.ts — skipped'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_DRIFT} alpha.ts\n   drift in alpha.js:`));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits skipped due to drift'));
 
     const [writeManifestCall] = mockWriteManifest.mock.calls;

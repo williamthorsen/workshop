@@ -108,8 +108,8 @@ describe('partial results when a kit fails after dispatch', () => {
     it('heads every requested kit on stdout, including one that never ran', async () => {
       await routeCommand(['passing', 'absent']);
 
-      expect(readStdout()).toContain('=== passing ===');
-      expect(readStdout()).toContain('=== absent ===');
+      expect(readStdout()).toContain('\u{2501}\u{2501} passing');
+      expect(readStdout()).toContain('\u{2501}\u{2501} absent');
     });
 
     it('keeps the failure off stdout, where a failed check would appear', async () => {

@@ -4,6 +4,8 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
+import { layout } from '../layout/engine.ts';
+import type { TokenName } from '../layout/formatter.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
@@ -21,13 +23,6 @@ const verifyOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
 } as const;
-
-// A line's icon is the worse of the kit's two verdicts. The mismatch icon carries a trailing space
-// because its variation selector renders one column narrower than the others.
-const ICON_OK = '✅';
-const ICON_MISMATCH = '⚠️ ';
-const ICON_MISSING = '❓';
-const ICON_UNVERIFIED = '➖';
 
 /**
  * Handle the `verify` subcommand: read the manifest, hash each kit's source and compiled output,
@@ -68,10 +63,10 @@ export function verifyCommand(args: string[]): number {
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(`Verifying kits against ${relManifestPath}:\n`, json);
+  writeHuman(layout.formatHeading(`Verifying kits against ${relManifestPath}`, 'section').join('\n') + '\n', json);
 
   if (manifest.kits.length === 0) {
-    writeHuman('  (no kits in manifest)\n', json);
+    writeHuman('(no kits in manifest)\n', json);
     return finishVerify([], true, json);
   }
 
@@ -135,37 +130,45 @@ function buildVerifyEntry(name: string, status: DriftStatus, sourceStatus: Sourc
 }
 
 /**
- * Format a single per-kit line, appending the source verdict only when it has news.
+ * Returns a kit's line, carrying whichever of its two verdicts has something to report.
  *
- * A source that is `ok`, or that no manifest entry describes, leaves the line saying exactly what it
- * said before the source verdict existed: the reader's attention belongs on whatever changed.
+ * A failing kit carries each verdict on its own line beneath its name; any other kit carries them
+ * inline. A kit that passes both verdicts carries none, leaving its token to report the outcome.
  */
 function formatStatusLine(kit: RdyManifestKit, status: DriftStatus, sourceStatus: SourceStatus): string {
-  const clauses = [describeDriftStatus(kit, status)];
-  const sourceClause = describeSourceStatus(kit, sourceStatus);
-  if (sourceClause !== undefined) clauses.push(sourceClause);
-  return `  ${resolveIcon(status, sourceStatus)} ${kit.name} — ${clauses.join('; ')}\n`;
+  const token = resolveToken(status, sourceStatus);
+  const clauses = [describeDriftStatus(kit, status), describeSourceStatus(kit, sourceStatus)].filter(
+    (clause): clause is string => clause !== undefined,
+  );
+
+  if (token === 'failedError') {
+    const claim = layout.formatCheckLine({ token, name: kit.name });
+    return [claim, ...layout.formatReasonBlock(clauses)].join('\n') + '\n';
+  }
+
+  const detail = clauses.join('; ');
+  return layout.formatCheckLine({ token, name: kit.name, ...(detail !== '' && { detail }) }) + '\n';
 }
 
 /**
- * Pick the icon for a kit's line from the worse of its two verdicts.
+ * Returns the token for the worse of a kit's two verdicts.
  *
- * A missing file outranks a hash mismatch: one of the artifacts the manifest describes is not there
- * at all. `unverified` shows only when it is the whole story, since a target verified against its
- * hash is not made less verified by a source the manifest never recorded.
+ * A mismatch or a missing file on either axis yields a failure. `unverified` yields the skip token only
+ * when the target itself is unverified.
  */
-function resolveIcon(status: DriftStatus, sourceStatus: SourceStatus): string {
-  if (status.kind === 'missing' || sourceStatus.kind === 'missing') return ICON_MISSING;
-  if (status.kind === 'drift' || sourceStatus.kind === 'stale') return ICON_MISMATCH;
-  if (status.kind === 'unverified') return ICON_UNVERIFIED;
-  return ICON_OK;
+function resolveToken(status: DriftStatus, sourceStatus: SourceStatus): TokenName {
+  const targetFailed = status.kind === 'missing' || status.kind === 'drift';
+  const sourceFailed = sourceStatus.kind === 'missing' || sourceStatus.kind === 'stale';
+  if (targetFailed || sourceFailed) return 'failedError';
+  if (status.kind === 'unverified') return 'skippedOptional';
+  return 'passed';
 }
 
-/** Describe the compiled-output verdict, the clause every line carries. */
-function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string {
+/** Returns a clause describing the compiled-output verdict, or nothing when the verdict is `ok`. */
+function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string | undefined {
   switch (status.kind) {
     case 'ok':
-      return 'ok';
+      return undefined;
     case 'drift':
       return `drift (expected ${status.expected}, got ${status.actual})`;
     case 'missing':
@@ -175,7 +178,7 @@ function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string {
   }
 }
 
-/** Describe the source verdict, or nothing when it has no news to add. */
+/** Returns a clause describing the source verdict, or nothing when it is `ok` or `unverified`. */
 function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string | undefined {
   switch (status.kind) {
     case 'stale':

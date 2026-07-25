@@ -1,58 +1,64 @@
+import { layout } from './layout/engine.ts';
+import type { TokenName } from './layout/formatter.ts';
 import type { WriteResult } from './writeFileWithCheck.ts';
 
-/** Print a step label with a right-arrow prefix. */
+/** Tokens whose lines are written to stderr. */
+const STDERR_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>(['failedError']);
+
+interface WriteLine {
+  claim: string;
+  token: TokenName;
+  detail?: string;
+  reason?: string;
+}
+
+/** Writes `message` to stdout as a section heading. */
 export function printStep(message: string): void {
-  console.info(`\n> ${message}`);
+  console.info(layout.formatHeading(message, 'section').join('\n'));
 }
 
-/** Print a success message with a checkmark emoji prefix. */
-export function printSuccess(message: string): void {
-  console.info(`  ✅ ${message}`);
-}
-
-/** Print a skip/warning message to stdout. */
-export function printSkip(message: string): void {
-  console.info(`  ⚠️ ${message}`);
-}
-
-/** Print an error message to stderr. */
-export function printError(message: string): void {
-  console.error(`  ❌ ${message}`);
-}
-
-/** Print a terminal message for a write result based on its outcome. */
+/**
+ * Writes a check line for `result`, naming the file and then its outcome.
+ *
+ * An outcome that failed carries its cause in a block beneath and goes to stderr; the rest go to stdout.
+ */
 export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
-  switch (result.outcome) {
+  const { claim, detail, reason, token } = describeWriteResult(result, dryRun);
+
+  const lines = [
+    layout.formatCheckLine({ token, name: claim, ...(detail !== undefined && { detail }) }),
+    ...(reason === undefined ? [] : layout.formatReasonBlock([reason])),
+  ];
+  const output = lines.join('\n');
+
+  if (STDERR_TOKENS.has(token)) console.error(output);
+  else console.info(output);
+}
+
+/**
+ * Returns the token and text for a write outcome, phrasing `dryRun` outcomes as what would happen.
+ *
+ * A skip carries a warning token only when an unreadable file left the outcome undetermined.
+ */
+function describeWriteResult(result: WriteResult, dryRun: boolean): WriteLine {
+  const { error, filePath, outcome } = result;
+
+  switch (outcome) {
     case 'created':
-      if (dryRun) {
-        printSuccess(`[dry-run] Would create ${result.filePath}`);
-      } else {
-        printSuccess(`Created ${result.filePath}`);
-      }
-      break;
+      return { token: 'passed', claim: filePath, detail: dryRun ? 'would create' : 'created' };
     case 'overwritten':
-      if (dryRun) {
-        printSuccess(`[dry-run] Would overwrite ${result.filePath}`);
-      } else {
-        printSuccess(`Overwrote ${result.filePath}`);
-      }
-      break;
+      return { token: 'passed', claim: filePath, detail: dryRun ? 'would overwrite' : 'overwrote' };
     case 'up-to-date':
-      printSuccess(`${result.filePath} (up to date)`);
-      break;
+      return { token: 'passed', claim: filePath, detail: 'up to date' };
     case 'skipped':
-      if (result.error) {
-        printSkip(`${result.filePath} (could not read for comparison: ${result.error})`);
-      } else {
-        printSkip(`${result.filePath} (already exists)`);
-      }
-      break;
+      return error === undefined
+        ? { token: 'skippedOptional', claim: filePath, detail: 'already exists' }
+        : { token: 'failedWarn', claim: filePath, reason: `could not read for comparison: ${error}` };
     case 'failed':
-      if (result.error) {
-        printError(`Failed to write ${result.filePath}: ${result.error}`);
-      } else {
-        printError(`Failed to write ${result.filePath}`);
-      }
-      break;
+      return {
+        token: 'failedError',
+        claim: filePath,
+        reason: error === undefined ? 'failed to write' : `failed to write: ${error}`,
+      };
   }
 }

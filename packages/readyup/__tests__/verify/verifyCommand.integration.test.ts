@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
 import { hashBytes } from '../../src/verify/targetHash.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 
@@ -12,6 +13,9 @@ import { verifyCommand } from '../../src/verify/verifyCommand.ts';
  * against real files in a tempdir, without mocking the drift helper. Unit tests cover the branches;
  * this locks in the wiring (e.g., that `manifestDir` is threaded through correctly).
  */
+const OK = emojiFormatter.tokens.passed.glyph;
+const FAILED = emojiFormatter.tokens.failedError.glyph;
+
 describe('verifyCommand (integration)', () => {
   let tempDir: string;
   let stdout: string[];
@@ -52,7 +56,7 @@ describe('verifyCommand (integration)', () => {
     const exitCode = verifyCommand(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ demo — ok'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
     expect(stderrSpy).not.toHaveBeenCalled();
   });
 
@@ -70,7 +74,7 @@ describe('verifyCommand (integration)', () => {
     const exitCode = verifyCommand(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️  demo — drift'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   drift`));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected deadbeef'));
   });
 
@@ -111,7 +115,7 @@ describe('verifyCommand (integration)', () => {
       const exitCode = verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ demo — ok'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
     });
 
     it('returns 1 when the source was edited without a recompile', () => {
@@ -121,7 +125,7 @@ describe('verifyCommand (integration)', () => {
       const exitCode = verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('demo — ok; source stale'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source stale`));
     });
 
     it('returns 1 when the recorded source was deleted', () => {
@@ -131,7 +135,7 @@ describe('verifyCommand (integration)', () => {
       const exitCode = verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('demo — ok; source file missing'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source file missing`));
     });
 
     it('carries both source hashes in the JSON entry for a stale kit', () => {
@@ -205,7 +209,7 @@ describe('verifyCommand (integration)', () => {
       verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('clean — ok'));
+      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} clean`));
     });
 
     it('passes when every kit is ok or unverified', () => {

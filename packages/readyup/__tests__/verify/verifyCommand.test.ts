@@ -20,8 +20,13 @@ vi.mock('../../src/verify/checkSourceDrift.ts', () => ({
   checkSourceDrift: mockCheckSourceDrift,
 }));
 
+import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 import { captureRdyError } from '../helpers/captureRdyError.ts';
+
+const OK = emojiFormatter.tokens.passed.glyph;
+const FAILED = emojiFormatter.tokens.failedError.glyph;
+const UNVERIFIED = emojiFormatter.tokens.skippedOptional.glyph;
 
 describe(verifyCommand, () => {
   let stdoutSpy: MockInstance;
@@ -52,8 +57,8 @@ describe(verifyCommand, () => {
     const exitCode = verifyCommand([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ alpha — ok'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ beta — ok'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha`));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} beta`));
     expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('failed verification'));
   });
 
@@ -77,7 +82,7 @@ describe(verifyCommand, () => {
     const exitCode = verifyCommand([]);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️  alpha — drift'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} alpha\n   drift`));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected aaaa1111, got aaaa9999'));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits failed verification'));
   });
@@ -92,7 +97,7 @@ describe(verifyCommand, () => {
     const exitCode = verifyCommand([]);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('❓ alpha — compiled file missing'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} alpha\n   compiled file missing`));
   });
 
   it('returns 0 when a kit is unverified (no targetHash)', () => {
@@ -105,7 +110,7 @@ describe(verifyCommand, () => {
     const exitCode = verifyCommand([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('➖ alpha — unverified'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${UNVERIFIED} alpha \u{00B7} unverified`));
   });
 
   it('returns 0 and reports no-kits message when the manifest is empty', () => {
@@ -141,7 +146,7 @@ describe(verifyCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('⚠️  alpha — ok; source stale (expected 5555aaaa, got 6666bbbb)'),
+        expect.stringContaining(`${FAILED} alpha\n   source stale (expected 5555aaaa, got 6666bbbb)`),
       );
     });
 
@@ -153,7 +158,7 @@ describe(verifyCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('❓ alpha — ok; source file missing (expected alpha.ts)'),
+        expect.stringContaining(`${FAILED} alpha\n   source file missing (expected alpha.ts)`),
       );
     });
 
@@ -164,7 +169,7 @@ describe(verifyCommand, () => {
       const exitCode = verifyCommand([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ alpha — ok\n'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha\n`));
     });
 
     it('passes a manifest that records no source hash, leaving the line unchanged', () => {
@@ -173,7 +178,7 @@ describe(verifyCommand, () => {
       const exitCode = verifyCommand([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('✅ alpha — ok\n'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha\n`));
     });
 
     it('reports both verdicts when the source is stale and the target has drifted', () => {
@@ -196,7 +201,7 @@ describe(verifyCommand, () => {
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(
         expect.stringContaining(
-          'alpha — drift (expected aaaa1111, got aaaa9999); source stale (expected 5555aaaa, got 6666bbbb)',
+          `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)\n   source stale (expected 5555aaaa, got 6666bbbb)`,
         ),
       );
     });
@@ -226,5 +231,53 @@ describe(verifyCommand, () => {
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('does not accept positional arguments');
+  });
+
+  describe('unified vocabulary', () => {
+    /** Every verdict the command can report, so one sweep covers each line it produces. */
+    const verdicts = [
+      { kind: 'ok', targetHash: 'aaaa1111' },
+      { kind: 'drift', expected: 'aaaa1111', actual: 'aaaa9999', resolvedPath: '/abs/alpha.js' },
+      { kind: 'missing', resolvedPath: '/abs/alpha.js' },
+      { kind: 'unverified' },
+    ];
+
+    it.each(['\u{2705}', '\u{26A0}', '\u{2753}', '\u{2796}', '\u{FE0F}', '\u{2014}'])(
+      'renders no %s for any verdict',
+      (retired) => {
+        for (const verdict of verdicts) {
+          mockReadManifest.mockReturnValue({
+            version: 1,
+            kits: [{ name: 'alpha', path: 'alpha.js', targetHash: 'aaaa1111', source: 'alpha.ts' }],
+          });
+          mockCheckDrift.mockReturnValue(verdict);
+          verifyCommand([]);
+        }
+
+        const written = stdoutSpy.mock.calls.flat().join('\n');
+        expect(written).not.toContain(retired);
+      },
+    );
+
+    it('renders a section heading rather than a colon-terminated header', () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      verifyCommand([]);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('\u{2500}\u{2500} Verifying kits against '));
+    });
+
+    it('leaves a wholly verified kit carrying nothing beyond its token', () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'alpha', path: 'alpha.js', targetHash: 'aaaa1111', source: 'alpha.ts', sourceHash: '5555aaaa' }],
+      });
+      mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+      mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
+
+      verifyCommand([]);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+    });
   });
 });

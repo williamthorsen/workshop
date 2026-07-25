@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
-import { countResults, formatSummaryCounts, formatSummaryCountsPlain, reportRdy } from '../src/reportRdy.ts';
+import { layout } from '../src/layout/engine.ts';
+import { countResults, reportRdy } from '../src/reportRdy.ts';
 import { runRdy } from '../src/runRdy.ts';
 import type { RdyChecklist, SummaryCounts } from '../src/types.ts';
 import { formatReport } from './helpers/formatReport.ts';
@@ -66,13 +67,15 @@ describe('count agreement across views', () => {
 
     expect(counts).toStrictEqual(expectedCounts);
 
+    const expectedFields = layout.formatCounts(expectedCounts);
+
     // Human tail line.
     const human = reportRdy(report, { reportOn: 'error' });
-    expect(human).toContain(formatSummaryCounts(expectedCounts));
+    expect(human).toContain(expectedFields);
 
     // Combined-summary table row.
     const table = formatCombinedSummary([{ name: 'deploy', ...counts, durationMs: report.durationMs }]);
-    expect(table).toContain(formatSummaryCountsPlain(expectedCounts));
+    expect(table).toContain(expectedFields);
 
     // JSON payload: the same tally, nested under `counts` with the verdict beside it.
     const { worstSeverity, ...numericCounts } = expectedCounts;

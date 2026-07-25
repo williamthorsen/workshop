@@ -1,7 +1,7 @@
-const ICON_INTERNAL = '📄';
-const ICON_COMPILED = '📦';
+import { layout } from '../layout/engine.ts';
+import type { TokenName } from '../layout/formatter.ts';
 
-/** Build the positional name hint, bracketed when a default kit exists. */
+/** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
 function buildKitHint(kits: string[]): string {
   return kits.includes('default') ? '[<name>]' : '<name>';
 }
@@ -52,21 +52,21 @@ export function formatOwnerView({
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
     const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, ICON_INTERNAL));
+    sections.push(formatSection('Internal', hint, internalKits, 'docInternal'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
       const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, ICON_COMPILED));
+      sections.push(formatSection('Compiled', hint, compiledKits, 'docCompiled'));
     } else {
       const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, ICON_COMPILED));
+      sections.push(formatSection('Compiled', hint, pathItems, 'docCompiled'));
     }
   }
 
-  return sections.join('\n\n');
+  return sections.join('\n');
 }
 
 // -- Consumer view --
@@ -88,7 +88,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   }
 
   const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, ICON_COMPILED);
+  return formatSection('Compiled', hint, compiledKits, 'docCompiled');
 }
 
 // -- Empty messages --
@@ -109,12 +109,11 @@ interface ManifestViewOptions {
 }
 
 /**
- * Format a view of kits loaded from a manifest file.
+ * Returns a heading naming the manifest, then one line per kit.
  *
- * Kit names are displayed with the compiled icon. When a kit's `readyupVersion` is present, it
- * appears as a parenthetical between the name and the description — `📦 <name> (readyup v<X>) — <description>`.
- * The literal `readyup` label is load-bearing: it disambiguates the version from a hypothetical
- * kit-own version. Descriptions appear inline when present; both fields are omitted independently.
+ * A kit's line carries its version as a parenthetical and its description as inline detail, each present
+ * only when the manifest records it. The `readyup` label distinguishes the runner's version from a
+ * version the kit might declare for itself.
  */
 export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
   if (kits.length === 0) {
@@ -123,17 +122,24 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
 
   const items = kits.map((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
-    const descriptionSegment = kit.description !== undefined ? ` — ${kit.description}` : '';
-    return `  ${ICON_COMPILED} ${kit.name}${versionSegment}${descriptionSegment}`;
+    return layout.formatCheckLine({
+      token: 'docCompiled',
+      name: `${kit.name}${versionSegment}`,
+      ...(kit.description !== undefined && { detail: kit.description }),
+    });
   });
 
-  return `Manifest: ${manifestPath}\n${items.join('\n')}`;
+  return [...layout.formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
 // -- Helpers --
 
-/** Build a titled section with a usage hint and indented item list. */
-function formatSection(title: string, hint: string, kits: string[], icon: string): string {
-  const items = kits.map((name) => `  ${icon} ${name}`);
-  return `${title}: ${hint}\n${items.join('\n')}`;
+/**
+ * Returns a titled section, opening with a blank line: the title, `hint` indented beneath it, then the kits.
+ *
+ * `hint` sits against the title with no blank between them, so the command reads as part of the heading.
+ */
+function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
+  const items = kits.map((name) => layout.formatCheckLine({ token, name }));
+  return ['', layout.formatHeadingLine(title, 'section'), `${layout.indent(1)}${hint}`, '', ...items].join('\n');
 }
