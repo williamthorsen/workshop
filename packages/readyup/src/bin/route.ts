@@ -60,8 +60,9 @@ Run options:
                                      cover the whole run
 
 Global options:
-  --help, -h           Show this help message
-  --version, -V        Show version number
+  --style <auto|rich|plain>  Output style: emoji, ASCII words, or detected (default: auto)
+  --help, -h                 Show this help message
+  --version, -V              Show version number
 
 Run 'rdy <command> --help' for command-specific options.
 
@@ -135,6 +136,7 @@ Options:
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
+  --style <auto|rich|plain>          Output style (default: auto)
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
@@ -165,12 +167,13 @@ Modes:
   rdy compile <file>           Compile a single file
 
 Options:
-  --output, -o <path>  Output file path (single-file mode only)
-  --manifest <path>    Manifest file path (default: .readyup/manifest.json)
-  --force              Overwrite compiled kits even if they have drifted from the manifest
-  --json               Report each kit's status as JSON
-  --skip-manifest      Do not read or write the manifest
-  --help, -h           Show this help message
+  --output, -o <path>        Output file path (single-file mode only)
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --force                    Overwrite compiled kits even if they have drifted from the manifest
+  --json                     Report each kit's status as JSON
+  --skip-manifest            Do not read or write the manifest
+  --style <auto|rich|plain>  Output style (default: auto)
+  --help, -h                 Show this help message
 
 Drift detection:
   rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
@@ -205,9 +208,10 @@ Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unr
 manifest exits 2.
 
 Options:
-  --manifest <path>  Manifest file path (default: .readyup/manifest.json)
-  --json             Report each kit's verification status as JSON
-  --help, -h         Show this help message
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --json                     Report each kit's verification status as JSON
+  --style <auto|rich|plain>  Output style (default: auto)
+  --help, -h                 Show this help message
 `;
 
 const LIST_HELP = `
@@ -224,10 +228,11 @@ Modes:
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
-  --manifest <path>  List the kits a manifest file declares
-  --json             Output the kit list as JSON
-  --help, -h         Show this help message
+  --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
+  --manifest <path>          List the kits a manifest file declares
+  --json                     Output the kit list as JSON
+  --style <auto|rich|plain>  Output style (default: auto)
+  --help, -h                 Show this help message
 
 A local --from source with no manifest beside its kits falls back to listing the compiled
 kits on disk, which are the same kits rdy run --from would resolve. Those rows carry only
@@ -248,9 +253,10 @@ Usage: rdy init [options]
 Scaffold a starter config and kit file.
 
 Options:
-  --dry-run, -n   Preview changes without writing files
-  --force         Overwrite existing files
-  --help, -h      Show this help message
+  --dry-run, -n              Preview changes without writing files
+  --force                    Overwrite existing files
+  --style <auto|rich|plain>  Output style (default: auto)
+  --help, -h                 Show this help message
 `;
 
 /**
