@@ -19,13 +19,20 @@ const COMPILED_BYTES = Buffer.from(PASSING_KIT);
 const PLAIN_PASS = plainFormatter.tokens.passed.glyph;
 const RICH_PASS = richFormatter.tokens.passed.glyph;
 
-/** Every command that renders output, with arguments that make it produce some against the fixture. */
+/**
+ * Every command that renders output, with arguments that make it produce some against the fixture.
+ *
+ * `expected` matches a line the command emits in plain style. `list` matches a bare column, since every
+ * row it renders leads with a noun token, whose plain rendering is the reserved space alone. `compile`
+ * accepts either status: the first invocation against the fixture builds the bundle and the rest find it
+ * unchanged, and both outcomes render through the vocabulary under test.
+ */
 const RENDERING_COMMANDS = [
-  { name: 'run', args: ['run', 'passing'] },
-  { name: 'list', args: ['list'] },
-  { name: 'verify', args: ['verify', '--manifest', 'manifest.json'] },
-  { name: 'compile', args: ['compile', '--skip-manifest', 'src/passing.ts'] },
-  { name: 'init', args: ['init', '--dry-run'] },
+  { name: 'run', args: ['run', 'passing'], expected: /^PASS {2}ok$/mu },
+  { name: 'list', args: ['list', '--manifest', 'manifest.json'], expected: /^ {6}passing$/mu },
+  { name: 'verify', args: ['verify', '--manifest', 'manifest.json'], expected: /^PASS {2}passing$/mu },
+  { name: 'compile', args: ['compile', '--skip-manifest', 'src/passing.ts'], expected: /^(?:PASS|SKIP) {2}src/mu },
+  { name: 'init', args: ['init', '--dry-run'], expected: /^PASS {2}\.config\/readyup\.config\.ts/mu },
 ] as const;
 
 let cwd: string;
@@ -93,17 +100,50 @@ describe('--style plain', () => {
     expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
   });
 
-  it.each(RENDERING_COMMANDS)('spells $name status as a word rather than a glyph', async ({ args }) => {
+  it.each(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }) => {
     await routeCommand([...args, '--style', 'plain']);
 
-    const rendered = [...stdout, ...stderr].join('');
-    expect(rendered).not.toContain(RICH_PASS);
+    expect([...stdout, ...stderr].join('')).toMatch(expected);
   });
 
   it('is accepted as an assigned value too', async () => {
     await routeCommand(['verify', '--manifest', 'manifest.json', '--style=plain']);
 
     expect(stdout.join('')).toContain(`${PLAIN_PASS}  passing`);
+  });
+});
+
+describe('a style named ahead of the command', () => {
+  it.each(RENDERING_COMMANDS)('reaches $name without being taken for a kit name', async ({ args }) => {
+    const exitCode = await routeCommand(['--style', 'plain', ...args]);
+
+    expect(stderr.join('')).not.toContain('not found');
+    expect(exitCode).not.toBe(2);
+  });
+
+  it('is accepted as an assigned value too', async () => {
+    const exitCode = await routeCommand(['--style=plain', 'verify', '--manifest', 'manifest.json']);
+
+    expect(exitCode).toBe(0);
+    expect(stdout.join('')).toContain(`${PLAIN_PASS}  passing`);
+  });
+
+  it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async () => {
+    await routeCommand(['--style', 'plain', '--help']);
+
+    expect(stdout.join('')).toContain('rdy <command> [options]');
+  });
+
+  it('leaves --version reporting the version', async () => {
+    await routeCommand(['--style', 'plain', '--version']);
+
+    expect(stdout.join('')).toMatch(/^\d+\.\d+\.\d+/u);
+  });
+
+  it('still rejects a trailing --style that carries no value', async () => {
+    const exitCode = await routeCommand(['--style']);
+
+    expect(exitCode).toBe(2);
   });
 });
 

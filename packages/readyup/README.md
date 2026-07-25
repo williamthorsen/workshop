@@ -133,7 +133,7 @@ rdy <command> [options]
 
 | Option                        | Description                    |
 | ----------------------------- | ------------------------------ |
-| `--style <auto\|rich\|plain>` | Output style (default: `auto`) |
+| `--style <auto\|plain\|rich>` | Output style (default: `auto`) |
 | `--help, -h`                  | Show help for the command      |
 | `--version, -V`               | Show the version number        |
 
@@ -155,9 +155,9 @@ Every command renders through one layout engine, so a line means the same thing 
 
 📄 and 📦 are noun glyphs, not statuses: they name a TypeScript source and a compiled bundle. They lead the line in `list`, where a row names a kit instead of reporting an outcome, and sit mid-line in compile's transformation lines. Both declare the same width as every status token, which is what makes the leading position safe. The `plain` style omits them rather than substituting a word, since an uppercase word in the status column would read as a status; it still reserves their column, so names stay aligned.
 
-In `plain`, every character is printable ASCII: headings rule with `==` and `--`, and a middle dot giving way to `-` parts a check's name from its detail.
+In `plain`, every character is printable ASCII, heading rules and detail separators included.
 
-A check line reads `token name · detail [progress] (duration)`. The middle dot is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
+A check line reads `token name <separator> detail [progress] (duration)`, where the separator is the style's -- `·` in `rich`, `-` in `plain`. It is the only detail separator, so progress takes brackets rather than a second one, and compile's transformation lines take an ASCII `->`. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
 
 **A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. A failed check that authored neither renders no reason block at all. Passes and skips keep their detail inline.
 
@@ -205,8 +205,8 @@ Under `--quiet`, that run keeps everything except `typecheck`, `bundle size`, an
 | Value   | Renders                                                                       |
 | ------- | ----------------------------------------------------------------------------- |
 | `auto`  | `plain` under CI or when output is not a terminal, `rich` otherwise (default) |
-| `rich`  | Emoji tokens                                                                  |
 | `plain` | Fixed-width ASCII words                                                       |
+| `rich`  | Emoji tokens                                                                  |
 
 Both detection signals carry their own weight. `CI` catches a runner that attaches a pseudo-terminal, where a terminal check alone would put emoji into a log nobody can search; the terminal check catches an interactive `rdy | grep FAIL`, where `CI` is unset. An explicit `CI=false` is read as a denial.
 
@@ -522,8 +522,8 @@ Where the detail lands follows from the status, so an author writes one field an
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
-| passed  | inline, after the middle dot                            |
-| skipped | inline, after the middle dot (return it from `skip`)    |
+| passed  | inline, after the separator                             |
+| skipped | inline, after the separator (return it from `skip`)     |
 | failed  | in a block beneath the claim, above any thrown `Error:` |
 
 Remediation is not detail. It belongs in `fix`, which is recapped at the end of the report against the check that raised it.

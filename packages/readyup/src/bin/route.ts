@@ -12,7 +12,7 @@ import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kitsDir.ts';
 import { setStyle } from '../layout/engine.ts';
-import { describeInvalidStyle, resolveStyle } from '../layout/resolveStyle.ts';
+import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -60,7 +60,7 @@ Run options:
                                      cover the whole run
 
 Global options:
-  --style <auto|rich|plain>  Output style: emoji, ASCII words, or detected (default: auto)
+  --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected (default: auto)
   --help, -h                 Show this help message
   --version, -V              Show version number
 
@@ -136,7 +136,7 @@ Options:
   --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
                                      plus the parent checks of anything shown; summary counts always
                                      cover the whole run
-  --style <auto|rich|plain>          Output style (default: auto)
+  --style <auto|plain|rich>          Output style (default: auto)
   --help, -h                         Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy).
@@ -172,7 +172,7 @@ Options:
   --force                    Overwrite compiled kits even if they have drifted from the manifest
   --json                     Report each kit's status as JSON
   --skip-manifest            Do not read or write the manifest
-  --style <auto|rich|plain>  Output style (default: auto)
+  --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
 Drift detection:
@@ -210,7 +210,7 @@ manifest exits 2.
 Options:
   --manifest <path>          Manifest file path (default: .readyup/manifest.json)
   --json                     Report each kit's verification status as JSON
-  --style <auto|rich|plain>  Output style (default: auto)
+  --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 `;
 
@@ -231,7 +231,7 @@ Options:
   --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
   --manifest <path>          List the kits a manifest file declares
   --json                     Output the kit list as JSON
-  --style <auto|rich|plain>  Output style (default: auto)
+  --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
 A local --from source with no manifest beside its kits falls back to listing the compiled
@@ -255,7 +255,7 @@ Scaffold a starter config and kit file.
 Options:
   --dry-run, -n              Preview changes without writing files
   --force                    Overwrite existing files
-  --style <auto|rich|plain>  Output style (default: auto)
+  --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 `;
 
@@ -300,7 +300,8 @@ export function reportFailure(error: unknown, json: boolean): number {
 }
 
 /** Selects and runs the subcommand named by the first argument. */
-async function dispatchCommand(args: string[], json: boolean): Promise<number> {
+async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
+  const args = dropLeadingStyleFlag(argv);
   const command = args[0];
 
   if (command === undefined || command === '--help' || command === '-h') {
@@ -410,6 +411,29 @@ function handleInit(flags: string[]): number {
   }
 
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
+}
+
+/**
+ * Returns `argv` without a leading `--style` and the value it carries.
+ *
+ * Command selection reads the first argument, so a style named ahead of the command would otherwise be
+ * taken for a kit name. `routeCommand` has already read the value, so nothing downstream needs the
+ * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
+ * occurrence for the subcommand's own parser, and leaves a valueless trailing `--style` for it to
+ * reject.
+ */
+function dropLeadingStyleFlag(argv: string[]): string[] {
+  const assignment = `${STYLE_FLAG}=`;
+  let index = 0;
+
+  while (index < argv.length) {
+    const arg = argv[index];
+    if (arg?.startsWith(assignment) === true) index += 1;
+    else if (arg === STYLE_FLAG && index + 1 < argv.length) index += 2;
+    else break;
+  }
+
+  return argv.slice(index);
 }
 
 /** Returns true when the flags request help for the current subcommand. */
