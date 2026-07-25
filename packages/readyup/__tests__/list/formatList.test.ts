@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
 
-const COMPILED = emojiFormatter.tokens.docCompiled.glyph;
-const INTERNAL = emojiFormatter.tokens.docInternal.glyph;
+const COMPILED = richFormatter.tokens.docCompiled.glyph;
+const INTERNAL = richFormatter.tokens.docInternal.glyph;
 
 /**
  * Returns the line beneath a section's title, which is where its command sits.

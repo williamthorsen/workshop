@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { emojiFormatter } from '../../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { TOKEN_NAMES, type TokenName } from '../../src/layout/formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
 import type { SummaryCounts } from '../../src/types.ts';
@@ -8,12 +8,12 @@ import type { SummaryCounts } from '../../src/types.ts';
 /** Tokens naming a check that did not run. */
 const SKIPPED_TOKENS: TokenName[] = ['blockedPrecondition', 'skippedOptional'];
 
-const engine = createLayoutEngine(emojiFormatter);
+const engine = createLayoutEngine(richFormatter);
 
-const PASSED = emojiFormatter.tokens.passed.glyph;
-const FAILED_ERROR = emojiFormatter.tokens.failedError.glyph;
-const FAILED_WARN = emojiFormatter.tokens.failedWarn.glyph;
-const SKIPPED = emojiFormatter.tokens.skippedOptional.glyph;
+const PASSED = richFormatter.tokens.passed.glyph;
+const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
+const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
+const SKIPPED = richFormatter.tokens.skippedOptional.glyph;
 
 function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
   return {
@@ -42,7 +42,7 @@ function measureNameColumn(line: string): number {
   const groups = match?.groups;
   if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
 
-  const token = Object.values(emojiFormatter.tokens).find((entry) => entry.glyph === groups.glyph);
+  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === groups.glyph);
   if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(groups.glyph)}`);
 
   return (groups.indent?.length ?? 0) + token.width + (groups.pad?.length ?? 0);
@@ -145,7 +145,7 @@ describe('formatCheckLine', () => {
         measureNameColumn(engine.formatCheckLine({ token, name: 'check', depth: 2 })),
       );
 
-      expect(new Set(columns)).toStrictEqual(new Set([emojiFormatter.gutter * 3]));
+      expect(new Set(columns)).toStrictEqual(new Set([richFormatter.gutter * 3]));
     });
   });
 });
@@ -230,7 +230,7 @@ describe('formatCounts', () => {
   it('carries no per-field tokens', () => {
     const counts = makeCounts({ passed: 1, errors: 1, blocked: 1, optional: 1, worstSeverity: 'error' });
 
-    for (const { glyph } of Object.values(emojiFormatter.tokens)) {
+    for (const { glyph } of Object.values(richFormatter.tokens)) {
       expect(engine.formatCounts(counts)).not.toContain(glyph);
     }
   });
@@ -277,11 +277,11 @@ describe('formatSummaryTable', () => {
   /** Returns a rendered table line's width in display columns, its leading token counted as one gutter. */
   function measureWidth(line: string): number {
     const glyph = String.fromCodePoint(line.codePointAt(0) ?? 0);
-    const token = Object.values(emojiFormatter.tokens).find((entry) => entry.glyph === glyph);
+    const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === glyph);
     if (token === undefined) return line.length;
 
-    const rendered = glyph + ' '.repeat(emojiFormatter.gutter - token.width);
-    return emojiFormatter.gutter + line.slice(rendered.length).length;
+    const rendered = glyph + ' '.repeat(richFormatter.gutter - token.width);
+    return richFormatter.gutter + line.slice(rendered.length).length;
   }
 
   it('renders a heading, two rules, one row per checklist, and a total', () => {
@@ -377,9 +377,18 @@ describe('token and glyph', () => {
     expect(engine.token('passed')).toBe(`${PASSED} `);
   });
 
-  it('returns a bare glyph for mid-line placement', () => {
-    expect(engine.glyph('docCompiled')).toBe(emojiFormatter.tokens.docCompiled.glyph);
-    expect(engine.glyph('skippedOptional')).toBe(SKIPPED);
+  it('returns a glyph and one space for mid-line placement', () => {
+    expect(engine.inlineGlyph('docCompiled')).toBe(`${richFormatter.tokens.docCompiled.glyph} `);
+    expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
+  });
+
+  it('returns nothing for a token the formatter gives no glyph, so no orphan space is left behind', () => {
+    const glyphless = createLayoutEngine({
+      ...richFormatter,
+      tokens: { ...richFormatter.tokens, docCompiled: { glyph: '', width: 0 } },
+    });
+
+    expect(glyphless.inlineGlyph('docCompiled')).toBe('');
   });
 
   it('indents by one gutter per level', () => {

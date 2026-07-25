@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatCombinedSummary } from '../src/formatCombinedSummary.ts';
-import { emojiFormatter } from '../src/layout/emojiFormatter.ts';
+import { richFormatter } from '../src/layout/richFormatter.ts';
 import type { ChecklistSummary } from '../src/types.ts';
 
-const PASSED = emojiFormatter.tokens.passed.glyph;
-const FAILED_ERROR = emojiFormatter.tokens.failedError.glyph;
-const FAILED_WARN = emojiFormatter.tokens.failedWarn.glyph;
-const FAILED_RECOMMEND = emojiFormatter.tokens.failedRecommend.glyph;
+const PASSED = richFormatter.tokens.passed.glyph;
+const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
+const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
+const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.glyph;
 
 function makeSummary(overrides?: Partial<ChecklistSummary>): ChecklistSummary {
   return {
