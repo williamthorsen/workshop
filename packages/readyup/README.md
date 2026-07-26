@@ -15,6 +15,7 @@ Run pre-deployment verification checks against your environment and configuratio
 - [Publishing kits](#publishing-kits)
 - [Check utilities](#check-utilities)
 - [Compatibility](#compatibility)
+- [License](#license)
 
 ## Installation
 
@@ -103,7 +104,7 @@ kit
 
 ### Severities
 
-Every check carries a severity. It decides whether a failure fails the run and whether the result is reported -- not whether the check runs.
+Every check carries a severity. It decides whether a failure fails the run and whether the result is reported, and it never decides whether that check itself runs. It reaches later work in one place only: a failed check at or above the failure threshold stops the remaining groups of a [staged checklist](#staged-checklists).
 
 | Severity    | Meaning           |
 | ----------- | ----------------- |
@@ -179,26 +180,26 @@ See [internal kits](#internal-kits) for what the `internal` keys select.
 
 ### Checklists
 
-| Field           | Type                | Meaning                                     |
-| --------------- | ------------------- | ------------------------------------------- |
-| `name`          | `string`            | Display name                                |
-| `checks`        | `RdyCheck[]`        | Checks, run concurrently (flat checklist)   |
-| `groups`        | `RdyCheck[][]`      | Groups, run sequentially (staged checklist) |
-| `preconditions` | `RdyCheck[]`        | Gating checks                               |
-| `fixLocation`   | `'inline' \| 'end'` | Overrides the kit's setting                 |
+| Field           | Type                | Default            | Meaning                                     |
+| --------------- | ------------------- | ------------------ | ------------------------------------------- |
+| `name`          | `string`            | required           | Display name                                |
+| `checks`        | `RdyCheck[]`        | required if flat   | Checks, run concurrently (flat checklist)   |
+| `groups`        | `RdyCheck[][]`      | required if staged | Groups, run sequentially (staged checklist) |
+| `preconditions` | `RdyCheck[]`        | --                 | Gating checks                               |
+| `fixLocation`   | `'inline' \| 'end'` | the kit's setting  | Overrides the kit's setting                 |
 
 A checklist carries either `checks` or `groups`, never both.
 
 ### Checks
 
-| Field      | Type                            | Meaning                                    |
-| ---------- | ------------------------------- | ------------------------------------------ |
-| `name`     | `string`                        | The claim being asserted                   |
-| `check`    | `() => boolean \| CheckOutcome` | The assertion; may be async                |
-| `severity` | `Severity`                      | Overrides the kit's `defaultSeverity`      |
-| `skip`     | `() => false \| string`         | Reason string to skip; `false` to run      |
-| `fix`      | `string`                        | Remediation, shown when the check fails    |
-| `checks`   | `RdyCheck[]`                    | Nested checks, run only if this one passes |
+| Field      | Type                            | Default                     | Meaning                                    |
+| ---------- | ------------------------------- | --------------------------- | ------------------------------------------ |
+| `name`     | `string`                        | required                    | The claim being asserted                   |
+| `check`    | `() => boolean \| CheckOutcome` | required                    | The assertion; may be async                |
+| `severity` | `Severity`                      | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`      |
+| `skip`     | `() => false \| string`         | --                          | Reason string to skip; `false` to run      |
+| `fix`      | `string`                        | --                          | Remediation, shown when the check fails    |
+| `checks`   | `RdyCheck[]`                    | --                          | Nested checks, run only if this one passes |
 
 A check returns a boolean or a `CheckOutcome`:
 
@@ -312,13 +313,15 @@ export default defineRdyStagedChecklist({
 });
 ```
 
-A failure in a group stops the groups after it. Only top-level results gate: a failing _nested_ check does not halt the next group.
+A failure at or above the [failure threshold](#thresholds) stops the groups after it; a below-threshold failure is reported and the next group still runs. Only top-level results gate: a failing _nested_ check does not halt the next group.
+
+This is the one gate that consults the threshold. A failed check blocks its own descendants, and a failed precondition gates its checklist, whatever the severity.
 
 ### Preconditions
 
 A checklist's `preconditions` gate the checks that follow. If any precondition fails, every check is skipped and each records `precondition` as its reason.
 
-- **A failed precondition gates regardless of severity.** Severity decides whether the run fails; the gate decides whether the checks are worth running.
+- **A failed precondition gates regardless of severity.** Severity decides whether the run fails; the gate decides whether the checks are worth running. Unlike a staged checklist's groups, the gate does not consult the [failure threshold](#thresholds).
 - **A precondition skipped `n/a` does not gate.** To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason.
 
 ### Suites

@@ -39,7 +39,8 @@ const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
  * Help lists the surface; the README explains it. A repository URL rather than a relative path, so the pointer
  * resolves from a global install as readily as from a local one.
  */
-const DOCS_POINTER = 'Full documentation: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme';
+export const DOCS_POINTER =
+  'Full documentation: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme';
 
 const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
@@ -63,9 +64,7 @@ Run options:
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --quiet                            Hide passed checks from the report; incompatible with --json
-  --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
-                                     plus the parent checks of anything shown; summary counts always
-                                     cover the whole run
+  --report-on <severity>             Show this severity or above (error, warn, recommend)
 
 Global options:
   --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected (default: auto)
