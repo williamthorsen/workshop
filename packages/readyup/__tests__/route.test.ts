@@ -151,6 +151,20 @@ describe(routeCommand, () => {
   it.each([
     { label: 'top-level', args: ['--help'] },
     { label: 'run', args: ['run', '--help'] },
+    { label: 'compile', args: ['compile', '--help'] },
+    { label: 'init', args: ['init', '--help'] },
+    { label: 'list', args: ['list', '--help'] },
+    { label: 'verify', args: ['verify', '--help'] },
+  ])('points at the documentation from $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain('Full documentation: https://github.com/williamthorsen/workshop');
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
     { label: 'list', args: ['list', '--help'] },
   ])('shows examples in $label help', async ({ args }) => {
     await routeCommand(args);

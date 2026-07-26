@@ -366,6 +366,12 @@ rdy deploy release         # two kits
 
 `--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already carries a `:checklist` filter, is an error rather than a merge.
 
+Kit names may contain `/`, as in `shared/deploy`. To name one that starts with `-`, place it last, after `--`:
+
+```bash
+rdy run -- "--odd-kit-name"
+```
+
 ### Run options
 
 | Option                        | Description                                           |
