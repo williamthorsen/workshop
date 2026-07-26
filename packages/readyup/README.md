@@ -151,6 +151,20 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 | `defineRdyStagedChecklist` | Staged checklist    |
 | `defineChecklists`         | Array of checklists |
 
+### Config
+
+Repo-level settings live in `.config/readyup.config.ts`.
+
+| Key               | Default         | Meaning                                                       |
+| ----------------- | --------------- | ------------------------------------------------------------- |
+| `compile.srcDir`  | `.readyup/kits` | Directory `rdy compile` reads sources from                    |
+| `compile.outDir`  | `.readyup/kits` | Directory it writes bundles to                                |
+| `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                  |
+| `internal.dir`    | `.`             | Directory holding internal sources, relative to the kits root |
+| `internal.infix`  | none            | Filename segment marking a file as internal                   |
+
+See [internal kits](#internal-kits) for what the `internal` keys select.
+
 ### Kit
 
 | Field             | Type                         | Default     | Meaning                                    |
@@ -680,12 +694,7 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 
 ### Internal kits
 
-Internal kits are TypeScript sources a repo runs on itself rather than publishing. Two config keys locate them:
-
-| Key              | Default | Meaning                                                       |
-| ---------------- | ------- | ------------------------------------------------------------- |
-| `internal.dir`   | `.`     | Directory holding internal sources, relative to the kits root |
-| `internal.infix` | none    | Filename segment marking a file as internal                   |
+Internal kits are TypeScript sources a repo runs on itself rather than publishing. The `internal.dir` and `internal.infix` [config keys](#config) locate them.
 
 An **infix** is a segment between the kit name and the extension. With `infix: 'internal'`, the kit `deploy` lives at `deploy.internal.ts`; with no infix configured -- the default -- it is simply `deploy.ts`.
 
