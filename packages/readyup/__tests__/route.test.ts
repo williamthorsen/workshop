@@ -37,7 +37,8 @@ vi.mock('../src/version.ts', () => ({
   VERSION: '1.2.3',
 }));
 
-import { routeCommand } from '../src/bin/route.ts';
+import packageJson from '../package.json' with { type: 'json' };
+import { DOCS_POINTER, routeCommand } from '../src/bin/route.ts';
 import { usageError } from '../src/errors.ts';
 
 /** Scratch project root for the tests that need a kit file on disk. */
@@ -146,6 +147,34 @@ describe(routeCommand, () => {
 
     const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(output).toContain("Run 'rdy <command> --help' for command-specific options.");
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+    { label: 'compile', args: ['compile', '--help'] },
+    { label: 'init', args: ['init', '--help'] },
+    { label: 'list', args: ['list', '--help'] },
+    { label: 'verify', args: ['verify', '--help'] },
+  ])('points at the documentation from $label help', async ({ args }) => {
+    await routeCommand(args);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).toContain(DOCS_POINTER);
+  });
+
+  it('points at the documented package homepage', () => {
+    expect(DOCS_POINTER.endsWith(packageJson.homepage)).toBe(true);
+  });
+
+  it.each([
+    { label: 'exit codes', text: 'Exit codes:' },
+    { label: 'schema evolution', text: 'schemaVersion' },
+  ])('leaves $label to the documentation rather than top-level help', async ({ text }) => {
+    await routeCommand(['--help']);
+
+    const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(output).not.toContain(text);
   });
 
   it.each([

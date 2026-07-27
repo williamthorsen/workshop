@@ -33,6 +33,15 @@ const KIT_EXTENSIONS = ['.js', '.ts'];
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
+/**
+ * Where help output sends a reader for anything it does not cover.
+ *
+ * Help lists the surface; the README explains it. A repository URL rather than a relative path, so the pointer
+ * resolves from a global install as readily as from a local one.
+ */
+export const DOCS_POINTER =
+  'Full documentation: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme';
+
 const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
        rdy <command> [options]
@@ -55,9 +64,7 @@ Run options:
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --quiet                            Hide passed checks from the report; incompatible with --json
-  --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
-                                     plus the parent checks of anything shown; summary counts always
-                                     cover the whole run
+  --report-on <severity>             Show this severity or above (error, warn, recommend)
 
 Global options:
   --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected (default: auto)
@@ -75,33 +82,7 @@ Examples:
   rdy compile                                      Compile every kit source into a bundle
   rdy list --from github:williamthorsen/workshop   List kits published by a repository
 
-Exit codes:
-  0  Ran and found no problems
-  1  Ran and found problems with the repo or its kits
-  2  Could not complete the invocation (usage, config, kit-load, or internal error)
-
-  list and init use only 0 and 2; neither can find problems to report.
-
-run, compile, list, and verify accept --json; init does not, since scaffolding is
-interactive. With --json, stdout carries exactly one JSON document and all prose goes to
-stderr. For run that document is the report when a run produced one, otherwise the error
-envelope {"schemaVersion", "error": {"code", "message"}}. --help and --version have no
-JSON form: their text goes to stderr and stdout stays empty.
-
-Every payload carries an integer schemaVersion and is specified by a JSON Schema shipped
-with the package, importable as readyup/schemas/<name>.v1.json. Adding an optional field
-does not bump a payload's schemaVersion; removing, renaming, or re-typing one does.
-Warning codes are an open set, so a new advisory never bumps the version and a consumer
-must tolerate a code it does not recognize.
-
-In the report, failOn and reportOn appear at the top level only when the matching flag was
-given, naming what the invocation requested. Each kit that ran carries the thresholds that
-governed it, so a kit declaring its own is readable from its entry rather than inferred.
-
-A kit that fails once the run has reached its kits does not discard the kits that ran.
-Under --json it becomes a kits entry carrying "error" in place of results; otherwise it
-is reported on stderr, prefixed with the kit's name when more than one kit was
-requested. Either way the run continues and exits 2.
+${DOCS_POINTER}
 `;
 
 const RUN_HELP = `
@@ -125,17 +106,10 @@ Options:
   --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
   --json                             Output results as JSON
-  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json.
-                                     "summary" drops the detail tree to the failed checks and their fixes,
-                                     keeping counts, verdicts, and worst severity intact
+  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
-  --quiet                            Hide passed checks from the report, keeping failures, skips, the
-                                     fix recap, and every count line. Human output only, so it cannot
-                                     be combined with --json; counts and the exit code still cover the
-                                     whole run
-  --report-on <severity>             Show this severity or above in the detail tree (error, warn, recommend),
-                                     plus the parent checks of anything shown; summary counts always
-                                     cover the whole run
+  --quiet                            Hide passed checks from the report; incompatible with --json
+  --report-on <severity>             Show this severity or above (error, warn, recommend)
   --style <auto|plain|rich>          Output style (default: auto)
   --help, -h                         Show this help message
 
@@ -154,6 +128,8 @@ Examples:
   rdy run --fail-on warn                 Fail the run on warnings as well as errors
   rdy run --quiet                        Report only what is not passing
   rdy run --json --detail summary        Emit a JSON report carrying only failed checks
+
+${DOCS_POINTER}
 `;
 
 const COMPILE_HELP = `
@@ -175,20 +151,7 @@ Options:
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
-Drift detection:
-  rdy compile refuses to overwrite a compiled kit whose on-disk hash differs from the
-  manifest's recorded targetHash (e.g. someone edited the compiled file directly).
-  Drifted kits are reported and skipped; use --force to overwrite anyway.
-
-A sweep runs to completion: a kit that fails to compile is reported and the next kit is
-tried, so every kit's status is known after one run. A kit that failed is never recorded as
-though it had compiled, and one that had compiled before keeps the entry it already had.
-
-Each kit's checklist names are recorded in the manifest so rdy list can report them
-without running the kit. The field is optional, so the manifest format stays at version 1.
-
-Exits 1 when a kit fails to compile or is skipped as drifted, and 2 when the config or
-manifest cannot be read or written.
+${DOCS_POINTER}
 `;
 
 const VERIFY_HELP = `
@@ -196,22 +159,13 @@ Usage: rdy verify [options]
 
 Check compiled kits against the hashes recorded in the manifest.
 
-Each kit is reported as one of:
-  ok          on-disk hash matches the manifest's targetHash
-  drift       on-disk hash differs from the manifest's targetHash
-  missing     compiled file is absent
-  unverified  manifest entry has no targetHash (predates the feature)
-
-A failing kit carries its name alone, with each verdict on the line beneath it.
-
-Exits 1 when any kit is in drift or missing; unverified kits do not fail. An unreadable
-manifest exits 2.
-
 Options:
   --manifest <path>          Manifest file path (default: .readyup/manifest.json)
   --json                     Report each kit's verification status as JSON
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
+
+${DOCS_POINTER}
 `;
 
 const LIST_HELP = `
@@ -234,17 +188,14 @@ Options:
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
-A local --from source with no manifest beside its kits falls back to listing the compiled
-kits on disk, which are the same kits rdy run --from would resolve. Those rows carry only
-a name and a path; descriptions, checklist names, and versions live in the absent manifest.
-A remote source still requires a manifest.
-
 Examples:
   rdy list                                         Show kits in the current project
   rdy list --from .                                Show compiled kits in the current directory
   rdy list --from global                           Show kits in the global directory
   rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
   rdy list --from bitbucket:tutorials/markdowndemo@master Show kits in a remote Bitbucket repository
+
+${DOCS_POINTER}
 `;
 
 const INIT_HELP = `
@@ -257,6 +208,8 @@ Options:
   --force                    Overwrite existing files
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
+
+${DOCS_POINTER}
 `;
 
 /**
