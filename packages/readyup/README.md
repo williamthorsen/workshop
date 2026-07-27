@@ -1,4 +1,4 @@
-# readyup
+# ReadyUp
 
 Run pre-deployment verification checks against your environment and configuration. Define checklists in TypeScript kits, run them locally or from a remote source, and get clear pass/fail reporting with remediation hints.
 
@@ -343,7 +343,7 @@ rdy deploy:fast
 
 Neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both validate structure at load time, identically -- `rdy compile` refuses to publish a kit that `rdy run` would reject.
 
-Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function and `fix` a string when present. Unknown keys are allowed, so a kit written for a later readyup still loads.
+Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function and `fix` a string when present. Unknown keys are allowed, so a kit written for a later ReadyUp still loads.
 
 ```
 Invalid kit at .readyup/kits/default.js:
@@ -505,7 +505,7 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 | -------------- | -------------------------------------------------------------------------- |
 | `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it   |
 | `target-drift` | The compiled bundle no longer matches the manifest's recorded hash         |
-| `version-skew` | The kit was compiled against a readyup version differing from the runner's |
+| `version-skew` | The kit was compiled against a ReadyUp version differing from the runner's |
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes, or when a file cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
@@ -543,7 +543,7 @@ Each section names the command that runs the kits beneath it:
 📦 smoke
 ```
 
-`--manifest` reports each kit's compile-time readyup version and description:
+`--manifest` reports each kit's compile-time ReadyUp version and description:
 
 ```
 ── Manifest: .readyup/manifest.json
@@ -589,7 +589,7 @@ Each `$id` is the same path under `https://unpkg.com/readyup/`. The schemas are 
 
 The five payloads version independently.
 
-- **Adding an optional field does not bump `schemaVersion`.** A validator pinned to `v1` keeps accepting payloads from a later readyup.
+- **Adding an optional field does not bump `schemaVersion`.** A validator pinned to `v1` keeps accepting payloads from a later ReadyUp.
 - **Removing, renaming, or re-typing a field does bump it**, publishing a new `vN` beside the old. Widening a closed set counts as re-typing.
 - **A field is `required` only when every payload carries it.** Omission is reserved for absent or empty data.
 - **`warnings[].code` is an open set**, exempt from the widening rule. Consumers must tolerate an unknown code, displaying its `message` and `remedy`. `error.code` stays closed.
@@ -848,7 +848,7 @@ const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 
 `readyup/check-utils` is the stable, versioned surface for kit-author imports. It follows semver: no breaking changes within a major version.
 
-Compiled kits embed nothing of readyup itself -- the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when upgrading across a major, recompile with `rdy compile`.
+Compiled kits embed nothing of ReadyUp itself -- the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when upgrading across a major, recompile with `rdy compile`.
 
 ## License
 
