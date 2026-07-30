@@ -4,22 +4,21 @@ name: Sync labels
 on:
   workflow_dispatch:
 
-  # Apply on merge, so a regenerated labels file cannot sit unapplied.
+  # Apply on merge, so that a regenerated labels file cannot sit unapplied.
   push:
     paths:
       - .github/labels.yaml
 
-  # Preview on review: the check's log carries the full computed diff,
-  # including deletions of labels the file does not declare.
+  # Preview on review: The check's log has a full computed diff, including deletions of labels not declared by the file.
   pull_request:
     paths:
       - .github/labels.yaml
 
 # Permissions are fixed when a run is created and cannot vary by trigger within a job,
-# so applying and previewing are separate jobs and the write token stays out of PR runs.
+# so applying and previewing are separate jobs.
 jobs:
-  # The push arm applies on the default branch alone. A `branches:` filter cannot name the
-  # default branch, so the gate lives on the job and this file stays identical across repos.
+  # The push arm applies on the default branch alone. A `branches:` filter cannot name the default branch,
+  # so that the gate lives on the job and this file stays identical across repos.
   sync:
     if: github.event_name != 'pull_request' && (github.event_name != 'push' || github.ref_name == github.event.repository.default_branch)
     permissions:

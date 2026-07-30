@@ -4,6 +4,8 @@ Overlay a canonical set of scaffolding files onto a target directory you do not 
 
 Overlay is built on [chezmoi](https://www.chezmoi.io/), whose source-state model fits exactly — `dot_`-encoded filenames, `executable_`/`run_` attributes, and `--source`/`--destination` to drive any source tree into any target. Overlay adds three modes (`--verify`, `--create`, `--force`) computed from a parsed `chezmoi status`, plus one guarantee chezmoi lacks natively: `--create` never overwrites a differing managed file.
 
+<!-- section:release-notes --><!-- /section:release-notes -->
+
 ## Installation
 
 Overlay shells out to the `chezmoi` binary, which must be on your `PATH`:
