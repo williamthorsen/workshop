@@ -17,8 +17,6 @@ on:
 
   workflow_dispatch: {}
 
-# Concurrency is caller-owned from @v6 onward. Declared at workflow level so a superseded run is
-# cancelled while the current run's legs stay intact.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
