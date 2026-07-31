@@ -1,26 +1,13 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { describe, expect } from 'vitest';
 
 import { readTsconfigLanguageLevel } from '../../src/check-utils/tsconfig.ts';
+import { createTempDirTest } from '../helpers/tempDir.ts';
 
-let tempDir: string;
-let cwdSpy: MockInstance;
+const it = createTempDirTest({ prefix: 'rdy-tsconfig-', cwd: 'mock' });
 
 describe(readTsconfigLanguageLevel, () => {
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'rdy-tsconfig-'));
-    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-  });
-
-  afterEach(() => {
-    cwdSpy.mockRestore();
-  });
-
-  it('reads lib and target from a single config', () => {
-    writeConfig('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
+  it('reads lib and target from a single config', ({ temp }) => {
+    temp.writeJson('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2025'],
@@ -30,8 +17,8 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('reports lib and target as undefined when no config declares them', () => {
-    writeConfig('tsconfig.json', { compilerOptions: { strict: true } });
+  it('reports lib and target as undefined when no config declares them', ({ temp }) => {
+    temp.writeJson('tsconfig.json', { compilerOptions: { strict: true } });
 
     const result = readTsconfigLanguageLevel('tsconfig.json');
 
@@ -39,10 +26,10 @@ describe(readTsconfigLanguageLevel, () => {
     expect(result?.target).toBeUndefined();
   });
 
-  it('resolves lib and target through a relative extends chain', () => {
-    writeConfig('base.json', { compilerOptions: { lib: ['ES2023'], target: 'ES2023' } });
-    writeConfig('middle.json', { extends: './base.json' });
-    writeConfig('tsconfig.json', { extends: './middle.json' });
+  it('resolves lib and target through a relative extends chain', ({ temp }) => {
+    temp.writeJson('base.json', { compilerOptions: { lib: ['ES2023'], target: 'ES2023' } });
+    temp.writeJson('middle.json', { extends: './base.json' });
+    temp.writeJson('tsconfig.json', { extends: './middle.json' });
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2023'],
@@ -52,9 +39,9 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('lets a package config override the root config it extends', () => {
-    writeConfig('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
-    writeConfig('packages/alpha/tsconfig.json', {
+  it('lets a package config override the root config it extends', ({ temp }) => {
+    temp.writeJson('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
+    temp.writeJson('packages/alpha/tsconfig.json', {
       extends: '../../tsconfig.json',
       compilerOptions: { lib: ['ES2022'] },
     });
@@ -68,9 +55,9 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('appends .json to an extends specifier written without an extension', () => {
-    writeConfig('base.json', { compilerOptions: { target: 'ES2022' } });
-    writeConfig('tsconfig.json', { extends: './base' });
+  it('appends .json to an extends specifier written without an extension', ({ temp }) => {
+    temp.writeJson('base.json', { compilerOptions: { target: 'ES2022' } });
+    temp.writeJson('tsconfig.json', { extends: './base' });
 
     const result = readTsconfigLanguageLevel('tsconfig.json');
 
@@ -78,10 +65,10 @@ describe(readTsconfigLanguageLevel, () => {
     expect(result?.chain).toStrictEqual(['tsconfig.json', 'base.json']);
   });
 
-  it('gives a later array-extends entry precedence over an earlier one', () => {
-    writeConfig('first.json', { compilerOptions: { lib: ['ES2021'], target: 'ES2021' } });
-    writeConfig('second.json', { compilerOptions: { lib: ['ES2024'] } });
-    writeConfig('tsconfig.json', { extends: ['./first.json', './second.json'] });
+  it('gives a later array-extends entry precedence over an earlier one', ({ temp }) => {
+    temp.writeJson('first.json', { compilerOptions: { lib: ['ES2021'], target: 'ES2021' } });
+    temp.writeJson('second.json', { compilerOptions: { lib: ['ES2024'] } });
+    temp.writeJson('tsconfig.json', { extends: ['./first.json', './second.json'] });
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2024'],
@@ -91,11 +78,11 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('reads a shared parent once, along the higher-priority branch', () => {
-    writeConfig('base.json', { compilerOptions: { lib: ['ES2021'], target: 'ES2021' } });
-    writeConfig('low.json', { extends: './base.json', compilerOptions: { target: 'ES2022' } });
-    writeConfig('high.json', { extends: './base.json', compilerOptions: { target: 'ES2024' } });
-    writeConfig('tsconfig.json', { extends: ['./low.json', './high.json'] });
+  it('reads a shared parent once, along the higher-priority branch', ({ temp }) => {
+    temp.writeJson('base.json', { compilerOptions: { lib: ['ES2021'], target: 'ES2021' } });
+    temp.writeJson('low.json', { extends: './base.json', compilerOptions: { target: 'ES2022' } });
+    temp.writeJson('high.json', { extends: './base.json', compilerOptions: { target: 'ES2024' } });
+    temp.writeJson('tsconfig.json', { extends: ['./low.json', './high.json'] });
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       // `high` outranks `low`, so `base` is reached through it; `low` is visited with both fields already resolved.
@@ -106,8 +93,8 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('parses JSONC comments and trailing commas', () => {
-    writeRawConfig(
+  it('parses JSONC comments and trailing commas', ({ temp }) => {
+    temp.write(
       'tsconfig.json',
       [
         '// TSConfig for monorepo root',
@@ -130,8 +117,8 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('reports a bare package specifier as unresolved without following it', () => {
-    writeConfig('tsconfig.json', {
+  it('reports a bare package specifier as unresolved without following it', ({ temp }) => {
+    temp.writeJson('tsconfig.json', {
       extends: '@tsconfig/node24/tsconfig.json',
       compilerOptions: { target: 'ES2025' },
     });
@@ -144,8 +131,8 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('reports a missing parent as unresolved', () => {
-    writeConfig('tsconfig.json', { extends: './absent.json', compilerOptions: { lib: ['ES2025'] } });
+  it('reports a missing parent as unresolved', ({ temp }) => {
+    temp.writeJson('tsconfig.json', { extends: './absent.json', compilerOptions: { lib: ['ES2025'] } });
 
     const result = readTsconfigLanguageLevel('tsconfig.json');
 
@@ -153,10 +140,10 @@ describe(readTsconfigLanguageLevel, () => {
     expect(result?.unresolvedExtends).toStrictEqual(['./absent.json']);
   });
 
-  it('reports a malformed parent as unresolved and keeps reading the rest of the chain', () => {
-    writeRawConfig('broken.json', 'this is not a config at all');
-    writeConfig('good.json', { compilerOptions: { target: 'ES2024' } });
-    writeConfig('tsconfig.json', { extends: ['./broken.json', './good.json'] });
+  it('reports a malformed parent as unresolved and keeps reading the rest of the chain', ({ temp }) => {
+    temp.write('broken.json', 'this is not a config at all');
+    temp.writeJson('good.json', { compilerOptions: { target: 'ES2024' } });
+    temp.writeJson('tsconfig.json', { extends: ['./broken.json', './good.json'] });
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: undefined,
@@ -166,9 +153,9 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('stops at a cycle in the extends chain', () => {
-    writeConfig('a.json', { extends: './b.json', compilerOptions: { target: 'ES2022' } });
-    writeConfig('b.json', { extends: './a.json', compilerOptions: { lib: ['ES2022'] } });
+  it('stops at a cycle in the extends chain', ({ temp }) => {
+    temp.writeJson('a.json', { extends: './b.json', compilerOptions: { target: 'ES2022' } });
+    temp.writeJson('b.json', { extends: './a.json', compilerOptions: { lib: ['ES2022'] } });
 
     expect(readTsconfigLanguageLevel('a.json')).toStrictEqual({
       lib: ['es2022'],
@@ -182,31 +169,15 @@ describe(readTsconfigLanguageLevel, () => {
     expect(readTsconfigLanguageLevel('tsconfig.json')).toBeUndefined();
   });
 
-  it('returns undefined when the entry file is malformed', () => {
-    writeRawConfig('tsconfig.json', '@@@ not json @@@');
+  it('returns undefined when the entry file is malformed', ({ temp }) => {
+    temp.write('tsconfig.json', '@@@ not json @@@');
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toBeUndefined();
   });
 
-  it('returns undefined when the entry file holds a non-object', () => {
-    writeRawConfig('tsconfig.json', '["ES2025"]');
+  it('returns undefined when the entry file holds a non-object', ({ temp }) => {
+    temp.write('tsconfig.json', '["ES2025"]');
 
     expect(readTsconfigLanguageLevel('tsconfig.json')).toBeUndefined();
   });
 });
-
-// region | Helpers
-
-/** Writes a config as JSON at a temp-dir-relative path, creating parent directories as needed. */
-function writeConfig(relativePath: string, content: Record<string, unknown>): void {
-  writeRawConfig(relativePath, JSON.stringify(content));
-}
-
-/** Writes verbatim config text at a temp-dir-relative path, creating parent directories as needed. */
-function writeRawConfig(relativePath: string, content: string): void {
-  const fullPath = join(tempDir, relativePath);
-  mkdirSync(dirname(fullPath), { recursive: true });
-  writeFileSync(fullPath, content);
-}
-
-// endregion | Helpers
