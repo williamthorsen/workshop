@@ -25,5 +25,6 @@ export function getLayout(): LayoutEngine {
 
 /** Binds every later render to `style`. */
 export function setStyle(style: Style): void {
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The engine is a process singleton.
   active = engines[style];
 }

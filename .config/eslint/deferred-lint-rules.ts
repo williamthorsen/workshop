@@ -4,7 +4,6 @@ export const deferredLintRules = {
   'unicorn/no-declarations-before-early-exit': 'warn',
   'unicorn/no-duplicate-if-branches': 'warn',
   'unicorn/no-return-array-push': 'warn',
-  'unicorn/no-top-level-assignment-in-function': 'warn',
   'unicorn/no-unreadable-for-of-expression': 'warn',
   'unicorn/prefer-await': 'warn',
   'unicorn/prefer-else-if': 'warn',
