@@ -155,24 +155,11 @@ interface RunFlagConstraints {
   url: string | undefined;
 }
 
-/** Collects the active source flags and enforces mutual exclusivity, mode-flag, and selection constraints. */
+/** Enforces output, exclusivity, mode-flag, and selection constraints, returning the active source flag. */
 function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
-  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human
-  // report. Erroring beats ignoring it: a caller that passed it meant to change the output.
-  if (parsed.detail !== undefined && !parsed.json) {
-    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
-  }
+  validateOutputFlags(parsed);
 
-  // `--quiet` thins the human detail tree, which `--json` does not emit.
-  if (parsed.quiet && parsed.json) {
-    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
-  }
-
-  const sourceFlags: string[] = [];
-  if (parsed.file !== undefined) sourceFlags.push('--file');
-  if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.packages) sourceFlags.push('--packages');
-  if (parsed.url !== undefined) sourceFlags.push('--url');
+  const sourceFlags = collectSourceFlags(parsed);
 
   if (sourceFlags.length > 1) {
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
@@ -205,6 +192,34 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
   }
 
   return sourceType;
+}
+
+/**
+ * Rejects an output flag that contradicts the report being emitted.
+ *
+ * Erroring beats ignoring: a caller that passed either flag meant to change the output, and dropping it
+ * silently would leave them reading a report they did not ask for.
+ */
+function validateOutputFlags(parsed: RunFlagConstraints): void {
+  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.
+  if (parsed.detail !== undefined && !parsed.json) {
+    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
+  }
+
+  // `--quiet` thins the human detail tree, which `--json` does not emit.
+  if (parsed.quiet && parsed.json) {
+    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
+  }
+}
+
+/** Names the source flags this invocation carries, alphabetically, as the exclusivity error lists them. */
+function collectSourceFlags(parsed: RunFlagConstraints): string[] {
+  const sourceFlags: string[] = [];
+  if (parsed.file !== undefined) sourceFlags.push('--file');
+  if (parsed.from !== undefined) sourceFlags.push('--from');
+  if (parsed.packages) sourceFlags.push('--packages');
+  if (parsed.url !== undefined) sourceFlags.push('--url');
+  return sourceFlags;
 }
 
 /**
