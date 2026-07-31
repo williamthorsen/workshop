@@ -29,7 +29,7 @@
     "@vitest/coverage-v8": "4.1.10",
     "@vitest/eslint-plugin": "1.6.23",
     "@williamthorsen/eslint-config-typescript": "8.1.0",
-    "@williamthorsen/nmr": "0.19.0",
+    "@williamthorsen/nmr": "0.21.0",
     "@williamthorsen/release-kit": "9.0.1",
     "@williamthorsen/strict-lint": "9.0.1",
     "esbuild": "0.28.1",
@@ -45,6 +45,6 @@
   },
   "packageManager": "pnpm@11.17.0",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.16.0"
   }
 }
