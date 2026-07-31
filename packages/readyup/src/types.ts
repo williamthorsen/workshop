@@ -330,6 +330,7 @@ export interface RdyConfig {
         infix?: string | undefined;
       }
     | undefined;
+  packages?: string[] | undefined;
 }
 
 /** Fully-resolved config with defaults applied, returned by `loadConfig`. */
@@ -343,4 +344,5 @@ export interface ResolvedRdyConfig {
     dir: string;
     infix: string | undefined;
   };
+  packages: string[];
 }

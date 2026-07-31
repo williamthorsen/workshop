@@ -66,6 +66,20 @@ export const ChecklistEntrySchema = z
   .meta({ id: 'ChecklistEntry' });
 
 /**
+ * The installed package a kit was resolved from.
+ *
+ * Present only for a kit reached through a package source: two packages may each publish a kit of the
+ * same name, so `name` alone does not identify what ran. `version` is what the project has installed,
+ * and is omitted when the package declares none readably.
+ */
+export const KitOriginSchema = z
+  .object({
+    package: z.string(),
+    version: z.string().optional(),
+  })
+  .meta({ id: 'KitOrigin' });
+
+/**
  * A kit that ran, grouping its checklists under a kit-level verdict and tallies.
  *
  * `failOn` and `reportOn` are the thresholds that actually governed this kit, resolved as
@@ -77,6 +91,7 @@ export const ChecklistEntrySchema = z
 export const KitResultEntrySchema = z
   .object({
     name: z.string(),
+    origin: KitOriginSchema.optional(),
     passed: z.boolean(),
     counts: CountsSchema,
     worstSeverity: SeveritySchema.optional(),
@@ -96,6 +111,7 @@ export const KitResultEntrySchema = z
 export const KitErrorEntrySchema = z
   .object({
     name: z.string(),
+    origin: KitOriginSchema.optional(),
     error: ErrorBodySchema,
   })
   .meta({ id: 'KitErrorEntry' });
@@ -137,6 +153,7 @@ export type JsonDetail = z.infer<typeof DetailSchema>;
 export type JsonProgress = z.infer<typeof ProgressSchema>;
 export type JsonCheckEntry = z.infer<typeof CheckEntrySchema>;
 export type JsonChecklistEntry = z.infer<typeof ChecklistEntrySchema>;
+export type JsonKitOrigin = z.infer<typeof KitOriginSchema>;
 export type JsonKitResultEntry = z.infer<typeof KitResultEntrySchema>;
 export type JsonKitErrorEntry = z.infer<typeof KitErrorEntrySchema>;
 export type JsonKitEntry = z.infer<typeof KitEntrySchema>;

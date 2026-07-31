@@ -65,6 +65,7 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
+import packageJson from '../package.json' with { type: 'json' };
 import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
 
 describe(parseRunArgs, () => {
@@ -315,6 +316,26 @@ describe(parseRunArgs, () => {
     );
   });
 
+  it('throws when --from and --packages are combined', () => {
+    expect(() => parseRunArgs(['--packages', '--from', '/path'])).toThrow('Cannot combine --from, --packages flags');
+  });
+
+  it('throws when --packages is combined with positional kit arguments', () => {
+    expect(() => parseRunArgs(['--packages', 'deploy'])).toThrow(
+      '--packages cannot be combined with positional kit arguments',
+    );
+  });
+
+  it('throws when --packages is combined with --checklists', () => {
+    expect(() => parseRunArgs(['--packages', '--checklists', 'build'])).toThrow(
+      '--packages cannot be combined with --checklists',
+    );
+  });
+
+  it('throws when --jit is combined with --packages', () => {
+    expect(() => parseRunArgs(['--jit', '--packages'])).toThrow('--jit cannot be combined with --packages');
+  });
+
   it('throws when --jit is combined with --from', () => {
     expect(() => parseRunArgs(['--jit', '--from', '/path'])).toThrow('--jit cannot be combined with --from');
   });
@@ -462,6 +483,9 @@ describe('--quiet', () => {
   });
 });
 
+/** Repo root, which is where the workspace link for `readyup` lives. */
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+
 describe(resolveKitSources, () => {
   /** Build args with defaults for internal config. */
   function resolve(
@@ -511,6 +535,45 @@ describe(resolveKitSources, () => {
     expect(resolve({ checklists: ['build'] })).toStrictEqual([
       { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: ['build'] },
     ]);
+  });
+
+  // -- npm: source --
+
+  // `readyup` is linked into this repo's node_modules as a workspace package, so it stands in for any
+  // installed dependency without needing a fixture.
+  it('resolves a kit inside an installed package', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup' });
+
+    expect(entry?.name).toBe('default');
+    expect(entry?.source).toStrictEqual({
+      path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'default.js'),
+    });
+  });
+
+  it('resolves a named kit inside an installed package', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup', kitSpecifiers: [{ kitName: 'drift', checklists: [] }] });
+
+    expect(entry?.source).toStrictEqual({
+      path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'drift.js'),
+    });
+  });
+
+  // The origin is what names the copy a check ran against, which is the whole point of resolving from an
+  // installed package. It reads from the same manifest the resolver reads, so a version bump leaves this alone.
+  it('carries the package and its installed version as the kit origin', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup' });
+
+    expect(entry?.origin).toStrictEqual({ packageName: 'readyup', version: packageJson.version });
+  });
+
+  it('rejects a version spec by naming the flag that reaches a published kit', () => {
+    expect(() => resolve({ fromValue: 'npm:readyup@0.22.0' })).toThrow(/not supported yet[\s\S]*--url/);
+  });
+
+  it('rejects an uninstalled package by naming the direct-dependency requirement', () => {
+    expect(() => resolve({ fromValue: 'npm:readyup-package-that-does-not-exist' })).toThrow(
+      /is not installed; it must be a direct dependency/,
+    );
   });
 
   // -- --jit flag --

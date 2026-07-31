@@ -14,14 +14,16 @@ import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
-import { type FromSource, parseFromValue } from './parseFromValue.ts';
+import { expandConfiguredPackages } from './packages/expandConfiguredPackages.ts';
+import { type FromSource, type NpmSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { countResults, reportRdy } from './reportRdy.ts';
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
+import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
-import type { JsonDetail, JsonWarning, RaisedWarning } from './schemas/index.ts';
+import type { JsonDetail, JsonKitOrigin, JsonWarning, RaisedWarning } from './schemas/index.ts';
 import type {
   ChecklistSummary,
   FixLocation,
@@ -44,11 +46,18 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 /** Discriminated union describing how to locate the rdy kit. */
 export type KitSource = { path: string } | { url: string };
 
+/** The installed package a kit was resolved from, present only for a package-hosted kit. */
+export interface KitOrigin {
+  packageName: string;
+  version: string | undefined;
+}
+
 /** A resolved kit entry with its source and checklist filter. */
 export interface ResolvedKitEntry {
   name: string;
   source: KitSource;
   checklists: string[];
+  origin?: KitOrigin;
 }
 
 export interface ParsedRunArgs {
@@ -61,6 +70,7 @@ export interface ParsedRunArgs {
   jit: boolean;
   json: boolean;
   kitSpecifiers: KitSpecifier[];
+  packages: boolean;
   quiet: boolean;
   reportOn?: Severity;
   urlValue: string | undefined;
@@ -83,6 +93,7 @@ const runOptions = {
   internal: { type: 'boolean' },
   jit: { type: 'boolean' },
   json: { type: 'boolean' },
+  packages: { type: 'boolean' },
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
@@ -125,7 +136,7 @@ const flagErrorHints: Record<string, string> = {
   '--detail': '--detail requires a projection (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
-  '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
+  '--from': '--from requires a source argument (path, github:org/repo, npm:package, global, dir:path)',
   '--report-on': '--report-on requires a severity level (error, warn, recommend)',
   '--url': '--url requires a URL argument',
 };
@@ -139,33 +150,31 @@ interface RunFlagConstraints {
   internal: boolean;
   jit: boolean;
   json: boolean;
+  packages: boolean;
   quiet: boolean;
   url: string | undefined;
 }
 
-/** Collects the active source flags and enforces mutual exclusivity, mode-flag, and selection constraints. */
+/** Enforces output, exclusivity, mode-flag, and selection constraints, returning the active source flag. */
 function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
-  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human
-  // report. Erroring beats ignoring it: a caller that passed it meant to change the output.
-  if (parsed.detail !== undefined && !parsed.json) {
-    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
-  }
+  validateOutputFlags(parsed);
 
-  // `--quiet` thins the human detail tree, which `--json` does not emit.
-  if (parsed.quiet && parsed.json) {
-    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
-  }
-
-  const sourceFlags: string[] = [];
-  if (parsed.file !== undefined) sourceFlags.push('--file');
-  if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.url !== undefined) sourceFlags.push('--url');
+  const sourceFlags = collectSourceFlags(parsed);
 
   if (sourceFlags.length > 1) {
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
 
   const sourceType = sourceFlags[0];
+
+  // `--packages` runs every kit its configured packages publish, so nothing it could be paired with
+  // narrows that set: a positional or a `--checklists` filter names kits in this project instead.
+  if (parsed.packages && kitSpecifiers.length > 0) {
+    throw usageError('--packages cannot be combined with positional kit arguments');
+  }
+  if (parsed.packages && parsed.checklists !== undefined) {
+    throw usageError('--packages cannot be combined with --checklists; it runs every kit each package publishes');
+  }
 
   if (parsed.jit && sourceType !== undefined) {
     throw usageError(`--jit cannot be combined with ${sourceType}`);
@@ -183,6 +192,34 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
   }
 
   return sourceType;
+}
+
+/**
+ * Rejects an output flag that contradicts the report being emitted.
+ *
+ * Erroring beats ignoring: a caller that passed either flag meant to change the output, and dropping it
+ * silently would leave them reading a report they did not ask for.
+ */
+function validateOutputFlags(parsed: RunFlagConstraints): void {
+  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.
+  if (parsed.detail !== undefined && !parsed.json) {
+    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
+  }
+
+  // `--quiet` thins the human detail tree, which `--json` does not emit.
+  if (parsed.quiet && parsed.json) {
+    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
+  }
+}
+
+/** Names the source flags this invocation carries, alphabetically, as the exclusivity error lists them. */
+function collectSourceFlags(parsed: RunFlagConstraints): string[] {
+  const sourceFlags: string[] = [];
+  if (parsed.file !== undefined) sourceFlags.push('--file');
+  if (parsed.from !== undefined) sourceFlags.push('--from');
+  if (parsed.packages) sourceFlags.push('--packages');
+  if (parsed.url !== undefined) sourceFlags.push('--url');
+  return sourceFlags;
 }
 
 /**
@@ -237,6 +274,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     internal: values.internal === true,
     jit: values.jit === true,
     json: values.json === true,
+    packages: values.packages === true,
     quiet: values.quiet === true,
     url: values.url,
     failOn: values['fail-on'],
@@ -274,6 +312,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     jit: parsed.jit,
     json: parsed.json,
     kitSpecifiers,
+    packages: parsed.packages,
     quiet: parsed.quiet,
     urlValue: parsed.url,
   };
@@ -294,6 +333,8 @@ export function resolveKitSources({
   internal,
   internalDir,
   internalInfix,
+  packages,
+  configuredPackages,
 }: {
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -304,6 +345,8 @@ export function resolveKitSources({
   internal: boolean;
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
+  packages?: boolean;
+  configuredPackages?: string[] | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
     return [{ name: filePath, source: { path: filePath }, checklists: checklists ?? [] }];
@@ -314,6 +357,10 @@ export function resolveKitSources({
 
   // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
+
+  if (packages === true) {
+    return resolveConfiguredPackages(configuredPackages ?? [], extension);
+  }
   const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
   // invocation where "one kit" is ambiguous, so this map never covers more than a single spec.
@@ -364,6 +411,17 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
         checklists: spec.checklists,
       }));
 
+    case 'npm': {
+      const root = resolveInstalledPackageRoot(source);
+      const origin = { packageName: source.name, version: readPackageVersion(root) };
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { path: path.join(root, KITS_DIR, `${spec.kitName}${extension}`) },
+        checklists: spec.checklists,
+        origin,
+      }));
+    }
+
     case 'global': {
       const homeDir = resolveHomeDir();
       return specs.map((spec) => ({
@@ -389,6 +447,51 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
       }));
     }
   }
+}
+
+/**
+ * Resolves every kit the configured packages publish into run entries.
+ *
+ * An empty list is a usage error rather than an empty run: `--packages` with nothing configured would
+ * otherwise report a clean pass having checked nothing, which is the one outcome a verification tool
+ * must never invent.
+ */
+function resolveConfiguredPackages(configuredPackages: string[], extension: string): ResolvedKitEntry[] {
+  if (configuredPackages.length === 0) {
+    throw usageError('--packages requires a "packages" list in the readyup config; none is configured.');
+  }
+
+  return expandConfiguredPackages(configuredPackages, extension).map((kit) => ({
+    name: kit.kitName,
+    source: { path: kit.path },
+    checklists: [],
+    origin: { packageName: kit.packageName, version: kit.version },
+  }));
+}
+
+/**
+ * Locates the root of a package named by `npm:`, rejecting the forms that are reserved but not yet served.
+ *
+ * A version spec is parsed rather than ignored so the syntax stays reserved for running a published
+ * version; until that lands, naming one is answered with the flag that reaches a published kit today.
+ *
+ * The not-installed message names the direct-dependency requirement because pnpm's layout links only
+ * direct dependencies into a project's `node_modules`. A transitive dependency is genuinely unreachable
+ * here, and a bare "not installed" would contradict the lockfile the reader is looking at.
+ */
+function resolveInstalledPackageRoot(source: NpmSource): string {
+  if (source.versionSpec !== undefined) {
+    throw usageError(
+      `Running a published version is not supported yet: "npm:${source.name}@${source.versionSpec}". ` +
+        'Use --url to name a published kit, or drop the version to run the installed copy.',
+    );
+  }
+
+  const root = resolvePackageRoot(source.name);
+  if (root === undefined) {
+    throw kitLoadError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
+  }
+  return root;
 }
 
 /** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */
@@ -644,13 +747,18 @@ async function runMultiKitJsonMode(
 
       kitInputs.push({
         name: entry.name,
+        ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
         entries,
         failOn: thresholds.failOn,
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
       const { code, message } = toRdyError(error);
-      kitInputs.push({ name: entry.name, error: { code, message } });
+      kitInputs.push({
+        name: entry.name,
+        ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
+        error: { code, message },
+      });
       anyKitFailed = true;
     }
   }
@@ -681,7 +789,10 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const showKitHeader = kitEntries.length > 1;
+  // A dependency-provided kit is headed even when it runs alone: its package and version appear nowhere
+  // else in human output, and confirming the kit matches the version in place is the point of running it
+  // from an installed package.
+  const showKitHeader = kitEntries.length > 1 || kitEntries.some((entry) => entry.origin !== undefined);
   const tracking = readManifestTracking(isJit);
   let allPassed = true;
   let anyKitFailed = false;
@@ -689,7 +800,7 @@ async function runMultiKitHumanMode(
   for (const entry of kitEntries) {
     // Precedes the load so stdout lists every requested kit, including one that never ran.
     if (showKitHeader) {
-      process.stdout.write(getLayout().formatHeading(entry.name, 'kit').join('\n') + '\n');
+      process.stdout.write(getLayout().formatHeading(describeKitEntry(entry), 'kit').join('\n') + '\n');
     }
 
     try {
@@ -702,7 +813,7 @@ async function runMultiKitHumanMode(
       if (exitCode !== EXIT_OK) allPassed = false;
     } catch (error: unknown) {
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-      const label = showKitHeader ? ` [${entry.name}]` : '';
+      const label = showKitHeader ? ` [${describeKitEntry(entry)}]` : '';
       process.stderr.write(`Error${label}: ${toRdyError(error).message}\n`);
       anyKitFailed = true;
     }
@@ -751,6 +862,26 @@ async function runSingleKitHumanMode(
   }
 
   return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/** Converts a kit's origin to the wire shape, omitting a version the package did not declare readably. */
+function toJsonOrigin(origin: KitOrigin): JsonKitOrigin {
+  return origin.version === undefined
+    ? { package: origin.packageName }
+    : { package: origin.packageName, version: origin.version };
+}
+
+/**
+ * Labels a kit for its heading, naming the package a dependency-provided kit came from.
+ *
+ * Two packages may each publish a kit of the same name, so the kit name alone does not identify what ran.
+ * The version comes along because the whole point of resolving from an installed package is that the kit
+ * matches the version in place, which the reader can only confirm if it is stated.
+ */
+function describeKitEntry(entry: ResolvedKitEntry): string {
+  if (entry.origin === undefined) return entry.name;
+  const version = entry.origin.version === undefined ? '' : `@${entry.origin.version}`;
+  return `${entry.name} (${entry.origin.packageName}${version})`;
 }
 
 /** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */

@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
     dir: '.',
     infix: undefined,
   },
+  packages: [],
 };
 
 /** Ordered lookup paths for the config file, resolved relative to `process.cwd()`. */
@@ -38,6 +39,7 @@ const RdyConfigSchema = z.looseObject({
       infix: z.string().optional(),
     })
     .optional(),
+  packages: z.array(z.string()).optional(),
 });
 
 /** Validate that a raw value has the expected RdyConfig shape. */
@@ -52,23 +54,7 @@ function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
  * An explicit override path skips the lookup chain.
  */
 export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConfig> {
-  let resolvedPath: string | undefined;
-
-  if (overridePath !== undefined) {
-    resolvedPath = path.resolve(process.cwd(), overridePath);
-    if (!existsSync(resolvedPath)) {
-      throw new Error(`Config not found: ${resolvedPath}`);
-    }
-  } else {
-    for (const lookupPath of LOOKUP_PATHS) {
-      const candidate = path.resolve(process.cwd(), lookupPath);
-      if (existsSync(candidate)) {
-        resolvedPath = candidate;
-        break;
-      }
-    }
-  }
-
+  const resolvedPath = resolveConfigPath(overridePath);
   if (resolvedPath === undefined) {
     return { ...DEFAULT_CONFIG };
   }
@@ -84,8 +70,38 @@ export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConf
 
   assertIsRdyConfig(raw);
 
-  // Guard is redundant at runtime (Zod already validated) but needed for type narrowing
-  // because `raw` is `Record<string, unknown> & RdyConfig` after the assertion.
+  return applyDefaults(raw);
+}
+
+/**
+ * Locates the config file, or `undefined` when no lookup path holds one.
+ *
+ * An override path skips the lookup chain, and a file missing at that path is an error rather than a
+ * fall-through to defaults: naming a config that is not there is a mistake, not a request for defaults.
+ */
+function resolveConfigPath(overridePath: string | undefined): string | undefined {
+  if (overridePath !== undefined) {
+    const resolvedPath = path.resolve(process.cwd(), overridePath);
+    if (!existsSync(resolvedPath)) {
+      throw new Error(`Config not found: ${resolvedPath}`);
+    }
+    return resolvedPath;
+  }
+
+  for (const lookupPath of LOOKUP_PATHS) {
+    const candidate = path.resolve(process.cwd(), lookupPath);
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+/**
+ * Fills every key the config file left out with its default.
+ *
+ * The guards are redundant at runtime — Zod validated the shape already — but they narrow `raw`, which
+ * is `Record<string, unknown> & RdyConfig` after the assertion.
+ */
+function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyConfig {
   const compile = isRecord(raw.compile) ? raw.compile : undefined;
   const internal = isRecord(raw.internal) ? raw.internal : undefined;
   return {
@@ -98,5 +114,6 @@ export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConf
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
       infix: typeof internal?.infix === 'string' ? internal.infix : DEFAULT_CONFIG.internal.infix,
     },
+    packages: Array.isArray(raw.packages) ? raw.packages.filter((name) => typeof name === 'string') : [],
   };
 }

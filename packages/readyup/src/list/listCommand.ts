@@ -3,7 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { configError, usageError } from '../errors.ts';
+import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
@@ -11,10 +11,13 @@ import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteMa
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
-import type { DirectorySource, GlobalSource, LocalSource } from '../parseFromValue.ts';
+import { discoverKitPackages } from '../packages/discoverKitPackages.ts';
+import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
+import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../parseFromValue.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
 import { resolveGitHubToken } from '../resolveGitHubToken.ts';
+import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 import type { JsonListKitEntry, JsonListOutput } from '../schemas/index.ts';
 import { SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -111,8 +114,37 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
     return runRemoteFromMode({ url, headers, json });
   }
 
-  const manifestPath = resolveFromManifestPath(source);
-  const kitsDir = resolveFromKitsDir(source);
+  if (source.type === 'npm') {
+    const root = resolveListedPackageRoot(source);
+    return listLocalDirectory(path.join(root, DEFAULT_MANIFEST_PATH), path.join(root, KITS_DIR), fromArg, json);
+  }
+
+  return listLocalDirectory(resolveFromManifestPath(source), resolveFromKitsDir(source), fromArg, json);
+}
+
+/**
+ * Locates the package a `list --from npm:` names, rejecting what `run` rejects for the same source.
+ *
+ * Listing and running answer about the same kits, so a spelling one accepts and the other refuses would
+ * send the reader looking for a difference that does not exist.
+ */
+function resolveListedPackageRoot(source: NpmSource): string {
+  if (source.versionSpec !== undefined) {
+    throw usageError(
+      `Listing a published version is not supported yet: "npm:${source.name}@${source.versionSpec}". ` +
+        'Drop the version to list the installed copy.',
+    );
+  }
+
+  const root = resolvePackageRoot(source.name);
+  if (root === undefined) {
+    throw kitLoadError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
+  }
+  return root;
+}
+
+/** Displays the kits a directory holds, preferring its manifest and falling back to the files on disk. */
+function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: string, json: boolean): number {
   const manifest = readLocalManifestIfPresent(manifestPath);
   const entries =
     manifest === undefined ? enumerateCompiledKits(kitsDir, manifestPath) : manifestEntries(manifest, manifestPath);
@@ -191,37 +223,82 @@ async function runOwnerMode(json: boolean): Promise<number> {
   try {
     manifestKits = readManifest(manifestPath).kits;
   } catch (error: unknown) {
-    if (error instanceof ManifestNotFoundError) {
-      // Missing manifest — show hint only when no internal kits exist either.
-      if (internalKits.length === 0) {
-        writeHuman(
-          'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.\n',
-          json,
-        );
-        return finishList([], json);
-      }
-    } else {
-      // Corrupt or unreadable manifest — warn and continue with empty compiled list.
+    // A missing manifest is the normal state of a project that never compiled, and says nothing on its
+    // own: the empty-listing hint belongs to the view, which sees the package sections too. Anything
+    // else is a manifest that exists and cannot be read, which the reader should hear about.
+    if (!(error instanceof ManifestNotFoundError)) {
       process.stderr.write(`Warning: ${extractMessage(error)}\n`);
     }
   }
 
+  const packageKits = collectConfiguredPackageKits(config.packages);
+  const availablePackages = discoverKitPackages(cwd).filter((name) => !config.packages.includes(name));
+
   const compiledKits = manifestKits.map((kit) => kit.name);
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
   const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
-  writeHuman(formatOwnerView({ internalKits, compiledKits, compiledStyle, needsInternalFlag }) + '\n', json);
+  writeHuman(
+    formatOwnerView({
+      internalKits,
+      compiledKits,
+      compiledStyle,
+      needsInternalFlag,
+      packageKits: packageKits.map(describePackageKit),
+      availablePackages,
+    }) + '\n',
+    json,
+  );
 
   const entries: JsonListKitEntry[] = [
     ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),
     ...manifestKits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath))),
+    ...packageKits.map(buildPackageEntry),
   ];
-  return finishList(entries, json);
+  return finishList(entries, json, availablePackages);
+}
+
+/**
+ * Collects the kits the configured packages publish, tolerating one that cannot be expanded.
+ *
+ * `run` fails hard on the same configuration, because it would otherwise execute against a package set
+ * nobody chose. Listing is read-only, so it takes the warn-and-continue the corrupt-manifest path above
+ * already takes: a reader asking what exists is better served by the rest of the answer than by none.
+ */
+function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
+  return packageNames.flatMap((packageName) => {
+    try {
+      return expandConfiguredPackages([packageName], '.js');
+    } catch (error: unknown) {
+      process.stderr.write(`Warning: ${extractMessage(error)}\n`);
+      return [];
+    }
+  });
+}
+
+/** Labels a package kit with the package and version it came from. */
+function describePackageKit(kit: PackageKit): string {
+  const version = kit.version === undefined ? '' : `@${kit.version}`;
+  return `${kit.kitName} (${kit.packageName}${version})`;
+}
+
+/** Builds the row for a kit a configured package publishes. */
+function buildPackageEntry(kit: PackageKit): JsonListKitEntry {
+  return {
+    name: kit.kitName,
+    kind: 'compiled',
+    origin: { package: kit.packageName, ...(kit.version !== undefined && { version: kit.version }) },
+    path: kit.path,
+  };
 }
 
 /** Emit the list payload under `--json`. Listing succeeds whenever its source could be read. */
-function finishList(kits: JsonListKitEntry[], json: boolean): number {
+function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: string[] = []): number {
   if (json) {
-    const output: JsonListOutput = { schemaVersion: SCHEMA_VERSION, kits };
+    const output: JsonListOutput = {
+      schemaVersion: SCHEMA_VERSION,
+      kits,
+      ...(availablePackages.length > 0 && { availablePackages }),
+    };
     process.stdout.write(JSON.stringify(output) + '\n');
   }
   return EXIT_OK;

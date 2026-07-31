@@ -163,8 +163,9 @@ Repo-level settings live in `.config/readyup.config.ts`.
 | `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                  |
 | `internal.dir`    | `.`             | Directory holding internal sources, relative to the kits root |
 | `internal.infix`  | none            | Filename segment marking a file as internal                   |
+| `packages`        | none            | Packages whose published kits `rdy run --packages` runs       |
 
-See [internal kits](#internal-kits) for what the `internal` keys select.
+See [internal kits](#internal-kits) for what the `internal` keys select, and [package-hosted kits](#package-hosted-kits) for `packages`.
 
 ### Kit
 
@@ -396,6 +397,7 @@ rdy run -- "--odd-kit-name"
 | `--from <source>`             | Kit source (see [kit sources](#kit-sources))          |
 | `--file, -f <path>`           | Path to a local kit file                              |
 | `--url <url>`                 | Fetch kit from a URL                                  |
+| `--packages`                  | Run every kit the config's `packages` list publishes  |
 | `--jit`                       | Run from TypeScript source instead of compiled JS     |
 | `--internal`                  | Use the internal kit directory and infix from config  |
 | `--checklists, -c <name,...>` | Filter checklists within the selected kit             |
@@ -417,15 +419,18 @@ rdy run -- "--odd-kit-name"
 
 ### Kit sources
 
-| Source     | Format                    | Example                     |
-| ---------- | ------------------------- | --------------------------- |
-| GitHub     | `github:org/repo[@ref]`   | `--from github:acme/ops@v2` |
-| Bitbucket  | `bitbucket:ws/repo[@ref]` | `--from bitbucket:team/ops` |
-| Local repo | `<path>`                  | `--from ../other-repo`      |
-| Directory  | `dir:<path>`              | `--from dir:/shared/kits`   |
-| Global     | `global`                  | `--from global`             |
+| Source     | Format                    | Example                       |
+| ---------- | ------------------------- | ----------------------------- |
+| GitHub     | `github:org/repo[@ref]`   | `--from github:acme/ops@v2`   |
+| Bitbucket  | `bitbucket:ws/repo[@ref]` | `--from bitbucket:team/ops`   |
+| npm        | `npm:<package>`           | `--from npm:@acme/eslint-cfg` |
+| Local repo | `<path>`                  | `--from ../other-repo`        |
+| Directory  | `dir:<path>`              | `--from dir:/shared/kits`     |
+| Global     | `global`                  | `--from global`               |
 
 `@ref` defaults to `main`. Local repo paths look for kits in `<path>/.readyup/kits/`; `dir:` paths are used directly.
+
+`npm:` resolves an installed dependency, so the kit that runs is the one shipped with the version the project has. See [package-hosted kits](#package-hosted-kits).
 
 Private repositories use ambient tokens: `GITHUB_TOKEN` (falling back to `gh auth token`) and `BITBUCKET_TOKEN`. Without a token, requests go anonymous and only public repositories succeed.
 
@@ -522,8 +527,8 @@ The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy 
 ### Listing kits
 
 ```
-rdy list                       List internal and compiled kits (owner view)
-rdy list --from <source>       List compiled kits at a local path or remote source
+rdy list                       List internal, compiled, and configured-package kits (owner view)
+rdy list --from <source>       List compiled kits at a local path, remote source, or installed package
 rdy list --manifest <path>     List the kits a manifest file declares
 ```
 
@@ -543,6 +548,20 @@ Each section names the command that runs the kits beneath it:
 📦 smoke
 ```
 
+Kits from configured packages get their own section, each labelled with the package and version behind it, and any installed dependency publishing kits the config omits is named as a candidate:
+
+```
+── Packages
+   rdy run --packages
+
+📦 drift (@acme/eslint-config@2.1.0)
+
+── Available
+   Add to "packages" in the readyup config
+
+📄 @acme/release-kit
+```
+
 `--manifest` reports each kit's compile-time ReadyUp version and description:
 
 ```
@@ -554,7 +573,7 @@ Each section names the command that runs the kits beneath it:
 
 A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
 
-Rows are keyed by `name` **and** `kind` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled` -- so a consumer indexing on `name` alone silently drops one.
+Rows are keyed by `name`, `kind`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name. A consumer indexing on less than the full key silently drops a row. Candidates from the **Available** section are not kits and appear separately.
 
 ### Scaffolding
 
@@ -660,6 +679,8 @@ The path from source to a consumer:
 4. Consumers run `rdy run --from github:org/repo`, which fetches the bundle the manifest describes.
 5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled.
 
+A published package can carry its kits instead, so consumers reach them through the dependency they already have rather than through a repository URL. See [package-hosted kits](#package-hosted-kits).
+
 ### Compiling
 
 ```
@@ -694,6 +715,52 @@ A sweep runs to completion: a kit that fails is reported, the next is tried, and
 ```
 
 Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed.
+
+### Package-hosted kits
+
+A package can publish the kit that checks its own configuration, which keeps the check with the thing it describes. The consumer then runs it against the version they actually have, rather than naming a ref and hoping it matches.
+
+Publishing takes one line. Compile as usual, then add the kit directory to the package's `files` allowlist:
+
+```json
+{
+  "files": ["bin", "dist", ".readyup"]
+}
+```
+
+`.readyup/manifest.json` ships alongside the bundles and is what `rdy list` reads, so publishing the whole directory is what makes a package's kits discoverable without running them.
+
+Consumers reach a single package directly:
+
+```bash
+rdy run --from npm:@acme/eslint-config          # the package's default kit
+rdy run --from npm:@acme/eslint-config drift    # a kit it publishes, by name
+rdy list --from npm:@acme/eslint-config         # what it publishes
+```
+
+Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is what runs every kit a package publishes.
+
+Naming several packages once is a config list, because running code a dependency ships is an opt-in worth writing down:
+
+```ts
+export default defineRdyConfig({
+  packages: ['@acme/eslint-config', '@acme/release-kit'],
+});
+```
+
+```bash
+rdy run --packages
+```
+
+`rdy run --packages` runs every kit each listed package publishes and reports each with the package and version it came from. A listed package that is absent, or that publishes no kits, fails the run and names itself; `rdy list` warns instead and reports the rest, then names any installed dependency publishing kits the list omits.
+
+Two limitations follow from resolving through `node_modules`. A package must be a **direct** dependency: a strict pnpm layout links nothing else into the project, so a transitive package is genuinely unreachable. And Yarn Plug'n'Play keeps no `node_modules` on disk, so package sources do not resolve under it.
+
+A published version other than the installed one is not yet reachable through `npm:` -- naming one says so. Use `--url` with the published address in the meantime:
+
+```bash
+rdy run --url https://unpkg.com/@acme/eslint-config@2.1.0/.readyup/kits/drift.js
+```
 
 ### Internal kits
 

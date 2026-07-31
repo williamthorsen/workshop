@@ -28,6 +28,7 @@ describe(loadConfig, () => {
     expect(config).toStrictEqual({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
+      packages: [],
     });
   });
 
@@ -171,6 +172,38 @@ describe(loadConfig, () => {
 
     expect(config.internal.dir).toBe('internal');
     expect(config.internal.infix).toBe('int');
+  });
+
+  it('resolves the packages list from config', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { packages: ['@williamthorsen/nmr', 'readyup'] } });
+
+    const config = await loadConfig('config.ts');
+
+    expect(config.packages).toStrictEqual(['@williamthorsen/nmr', 'readyup']);
+  });
+
+  it('resolves packages to an empty list when the key is absent', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: {} });
+
+    const config = await loadConfig('config.ts');
+
+    expect(config.packages).toStrictEqual([]);
+  });
+
+  it('throws when packages is not an array', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { packages: '@williamthorsen/nmr' } });
+
+    await expect(loadConfig('config.ts')).rejects.toThrow(ZodError);
+  });
+
+  it('throws when a packages entry is not a string', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { packages: ['readyup', 42] } });
+
+    await expect(loadConfig('config.ts')).rejects.toThrow(ZodError);
   });
 
   it('applies internal defaults when internal block is absent', async () => {
