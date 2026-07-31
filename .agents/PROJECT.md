@@ -4,12 +4,13 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI, and `overlay`, a chezmoi-backed scaffolding tool.
 
 ## Project structure
 
 Packages live under `packages/`:
 
+- **`overlay`** — Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
 - **`readyup`** — Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`).
 
 Key files:
@@ -17,7 +18,8 @@ Key files:
 - `.config/nmr.config.ts` — Per-repo nmr script overrides
 - `.config/readyup.config.ts` — Readyup compile settings
 - `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
-- `../.config/vitest/vitest.config.ts` — Shared Vitest base configuration
+- `vitest.config.ts` — Vitest projects for packages, built on `@williamthorsen/nmr/vitest`
+- `vitest.root.config.ts` — Vitest projects for root-level tests, which exclude every workspace package
 
 ## Commands
 
@@ -50,6 +52,8 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 - Vitest with v8 coverage provider
 - Typecheck uses `tsgo` (TypeScript native preview)
+- Suites are Vitest projects, selected by `--project`, not by naming a config file. `nmr test` runs `app` and `unit`; `nmr test:integration` runs `integration`; `nmr test:all` runs all three.
+- The project a test file lands in is decided by its suffix: `*.int.test.ts` is integration, `*.app.test.ts` is tooling and drift. `unit` is defined by subtracting those two rather than by an allow-list, so a file with any other suffix — or none — is a unit test and needs no rename.
 
 ### Code quality
 
