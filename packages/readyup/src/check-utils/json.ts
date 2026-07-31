@@ -17,9 +17,8 @@ export function readJsonFile(relativePath: string): Record<string, unknown> | un
 /** Check whether a JSON file has a field, optionally with a specific value. */
 export function hasJsonField(relativePath: string, field: string, expectedValue?: string): boolean {
   const data = readJsonFile(relativePath);
-  if (data === undefined) return false;
-  if (expectedValue !== undefined) return data[field] === expectedValue;
-  return field in data;
+  if (data === undefined || !Object.hasOwn(data, field)) return false;
+  return expectedValue === undefined || data[field] === expectedValue;
 }
 
 /** Read a JSON file and extract a nested value by traversing the key path. */
@@ -32,6 +31,6 @@ export function readJsonValue(relativeFilePath: string, ...keys: string[]): unkn
 /** Check whether a JSON file has all of the specified fields. */
 export function hasJsonFields(relativePath: string, fields: string[]): CheckOutcome {
   const data = readJsonFile(relativePath) ?? {};
-  const presentFields = fields.filter((field) => field in data);
+  const presentFields = fields.filter((field) => Object.hasOwn(data, field));
   return missingFrom('fields', fields, presentFields);
 }

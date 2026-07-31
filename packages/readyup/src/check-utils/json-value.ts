@@ -4,7 +4,7 @@ import { isRecord } from '../isRecord.ts';
 export function getJsonValue(obj: Record<string, unknown>, ...keys: string[]): unknown {
   let current: unknown = obj;
   for (const key of keys) {
-    if (!isRecord(current)) return undefined;
+    if (!isRecord(current) || !Object.hasOwn(current, key)) return undefined;
     current = current[key];
   }
   return current;
