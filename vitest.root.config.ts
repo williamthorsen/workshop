@@ -1,5 +1,5 @@
+// vitest.root.config.ts
 import { defineRootVitestConfig } from '@williamthorsen/nmr/vitest';
 
-// `startDir` pins the monorepo root to this file rather than the working directory, so the workspace exclusions hold
-// wherever the run is invoked from. No check enforces it.
-export default defineRootVitestConfig({ startDir: import.meta.dirname });
+// `Pin the monorepo root to this file's directory, so workspace exclusions hold wherever the run is invoked from.
+export default defineRootVitestConfig({ monorepoRoot: import.meta.dirname });

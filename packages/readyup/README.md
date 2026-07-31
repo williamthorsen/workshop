@@ -376,10 +376,10 @@ rdy <command> [options]
 A positional argument names a kit, optionally with checklists or suites after a colon:
 
 ```bash
-rdy deploy                 # every checklist in the deploy kit
-rdy deploy:build,test      # two checklists from it
-rdy deploy:fast            # a suite
-rdy deploy release         # two kits
+rdy deploy            # every checklist in the deploy kit
+rdy deploy:build,test # two checklists from it
+rdy deploy:fast       # a suite
+rdy deploy release    # two kits
 ```
 
 `--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already carries a `:checklist` filter, is an error rather than a merge.
@@ -733,9 +733,9 @@ Publishing takes one line. Compile as usual, then add the kit directory to the p
 Consumers reach a single package directly:
 
 ```bash
-rdy run --from npm:@acme/eslint-config          # the package's default kit
-rdy run --from npm:@acme/eslint-config drift    # a kit it publishes, by name
-rdy list --from npm:@acme/eslint-config         # what it publishes
+rdy run --from npm:@acme/eslint-config       # the package's default kit
+rdy run --from npm:@acme/eslint-config drift # a kit it publishes, by name
+rdy list --from npm:@acme/eslint-config      # what it publishes
 ```
 
 Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is what runs every kit a package publishes.
