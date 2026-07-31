@@ -11,7 +11,7 @@ export interface TempDir {
   /** Creates a directory-relative directory and its parents, and returns the absolute path. */
   mkdir(relativePath: string): string;
   /** Writes `contents` at a directory-relative path, creating parents, and returns the absolute path. */
-  write(relativePath: string, contents: string): string;
+  write(relativePath: string, contents: string | Uint8Array): string;
   /** Writes `value` as JSON at a directory-relative path, creating parents, and returns the absolute path. */
   writeJson(relativePath: string, value: unknown): string;
 }
@@ -75,7 +75,7 @@ function createTempDir(prefix: string): TempDir {
     return absolutePath;
   }
 
-  function write(relativePath: string, contents: string): string {
+  function write(relativePath: string, contents: string | Uint8Array): string {
     const absolutePath = path.join(dir, relativePath);
     mkdirSync(path.dirname(absolutePath), { recursive: true });
     writeFileSync(absolutePath, contents);
