@@ -1,67 +1,57 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect } from 'vitest';
 
 import { discoverKitPackages } from '../../src/packages/discoverKitPackages.ts';
+import { createTempDirFixture, createTempDirTest, type TempDir } from '../helpers/tempDir.ts';
 
-let projectRoot: string;
-let manifestlessRoot: string;
+const it = createTempDirTest({
+  prefix: 'discover-packages-',
+  scope: 'file',
+  setup: (temp) => {
+    temp.writeJson('package.json', {
+      name: 'consumer',
+      dependencies: { 'zebra-kit': '1.0.0' },
+      devDependencies: { '@acme/kits': '1.0.0', kitless: '1.0.0' },
+    });
+
+    installPackage(temp, 'zebra-kit', ['smoke']);
+    installPackage(temp, '@acme/kits', ['drift']);
+    installPackage(temp, 'kitless', []);
+    // Installed and publishing kits, but never declared as a dependency.
+    installPackage(temp, 'undeclared-kit', ['drift']);
+  },
+}).extend<{ manifestless: TempDir }>({
+  manifestless: createTempDirFixture({ prefix: 'discover-no-manifest-', scope: 'file' }),
+});
 
 describe(discoverKitPackages, () => {
-  beforeAll(() => {
-    projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'discover-packages-')));
-    writeFileSync(
-      path.join(projectRoot, 'package.json'),
-      JSON.stringify({
-        name: 'consumer',
-        dependencies: { 'zebra-kit': '1.0.0' },
-        devDependencies: { '@acme/kits': '1.0.0', kitless: '1.0.0' },
-      }),
-    );
-
-    installPackage(projectRoot, 'zebra-kit', ['smoke']);
-    installPackage(projectRoot, '@acme/kits', ['drift']);
-    installPackage(projectRoot, 'kitless', []);
-    // Installed and publishing kits, but never declared as a dependency.
-    installPackage(projectRoot, 'undeclared-kit', ['drift']);
-
-    manifestlessRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'discover-no-manifest-')));
+  it('names declared dependencies that publish kits, sorted, across both dependency fields', ({ temp }) => {
+    expect(discoverKitPackages(temp.dir)).toStrictEqual(['@acme/kits', 'zebra-kit']);
   });
 
-  afterAll(() => {
-    rmSync(projectRoot, { recursive: true, force: true });
-    rmSync(manifestlessRoot, { recursive: true, force: true });
-  });
-
-  it('names declared dependencies that publish kits, sorted, across both dependency fields', () => {
-    expect(discoverKitPackages(projectRoot)).toStrictEqual(['@acme/kits', 'zebra-kit']);
-  });
-
-  it('omits a declared dependency that publishes no kits', () => {
-    expect(discoverKitPackages(projectRoot)).not.toContain('kitless');
+  it('omits a declared dependency that publishes no kits', ({ temp }) => {
+    expect(discoverKitPackages(temp.dir)).not.toContain('kitless');
   });
 
   // Suggesting a package the reader never chose to depend on is not something they can act on.
-  it('omits an installed package that is not a declared dependency', () => {
-    expect(discoverKitPackages(projectRoot)).not.toContain('undeclared-kit');
+  it('omits an installed package that is not a declared dependency', ({ temp }) => {
+    expect(discoverKitPackages(temp.dir)).not.toContain('undeclared-kit');
   });
 
-  it('answers with nothing when the project manifest cannot be read', () => {
-    expect(discoverKitPackages(manifestlessRoot)).toStrictEqual([]);
+  it('answers with nothing when the project manifest cannot be read', ({ manifestless }) => {
+    expect(discoverKitPackages(manifestless.dir)).toStrictEqual([]);
   });
 });
 
 // region | Helpers
 
 /** Installs a package into a fixture project, optionally publishing kits. */
-function installPackage(root: string, name: string, kits: string[]): void {
-  const packageRoot = path.join(root, 'node_modules', name);
-  mkdirSync(path.join(packageRoot, '.readyup', 'kits'), { recursive: true });
-  writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ name, version: '1.0.0' }));
+function installPackage(temp: TempDir, name: string, kits: string[]): void {
+  temp.writeJson(path.join('node_modules', name, 'package.json'), { name, version: '1.0.0' });
+  temp.mkdir(path.join('node_modules', name, '.readyup', 'kits'));
   for (const kit of kits) {
-    writeFileSync(path.join(packageRoot, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
+    temp.write(path.join('node_modules', name, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
   }
 }
 

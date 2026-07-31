@@ -31,31 +31,40 @@ export interface TempDirOptions {
   setup?: (temp: TempDir) => void;
 }
 
+/** A fixture definition in the tuple form `test.extend` accepts, carrying its own scope. */
+type TempDirFixture = [
+  (context: object, use: (value: TempDir) => Promise<void>) => Promise<void>,
+  { scope: 'file' | 'test'; auto: boolean },
+];
+
+/** Returns a test API whose `temp` fixture is a scaffolded temporary directory, removed on teardown. */
+export function createTempDirTest(options: TempDirOptions): TestAPI<{ temp: TempDir }> {
+  return baseIt.extend<{ temp: TempDir }>({ temp: createTempDirFixture(options) });
+}
+
 /**
- * Returns a test API whose `temp` fixture is a scaffolded temporary directory, removed on teardown.
+ * Returns a temporary-directory fixture, for a suite that needs a second one alongside its `temp`.
  *
  * Any `cwd` redirection makes the fixture automatic. A test asserting that a file is absent never names
- * `temp`, and a lazily created fixture would leave it reading the real working directory.
+ * the fixture, and a lazily created one would leave it reading the real working directory.
  */
-export function createTempDirTest(options: TempDirOptions): TestAPI<{ temp: TempDir }> {
+export function createTempDirFixture(options: TempDirOptions): TempDirFixture {
   const { prefix, cwd = 'none', scope = 'test', setup } = options;
 
-  return baseIt.extend<{ temp: TempDir }>({
-    temp: [
-      // eslint-disable-next-line no-empty-pattern -- Vitest parses this pattern to detect fixture dependencies.
-      async ({}, use) => {
-        const temp = createTempDir(prefix);
-        const restoreCwd = pointCwdAt(temp.dir, cwd);
-        setup?.(temp);
+  return [
+    // eslint-disable-next-line no-empty-pattern -- Vitest parses this pattern to detect fixture dependencies.
+    async ({}, use) => {
+      const temp = createTempDir(prefix);
+      const restoreCwd = pointCwdAt(temp.dir, cwd);
+      setup?.(temp);
 
-        await use(temp);
+      await use(temp);
 
-        restoreCwd();
-        rmSync(temp.dir, { recursive: true, force: true });
-      },
-      { scope, auto: cwd !== 'none' },
-    ],
-  });
+      restoreCwd();
+      rmSync(temp.dir, { recursive: true, force: true });
+    },
+    { scope, auto: cwd !== 'none' },
+  ];
 }
 
 // region | Helpers
