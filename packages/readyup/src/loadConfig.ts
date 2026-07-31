@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
     dir: '.',
     infix: undefined,
   },
+  packages: [],
 };
 
 /** Ordered lookup paths for the config file, resolved relative to `process.cwd()`. */
@@ -38,6 +39,7 @@ const RdyConfigSchema = z.looseObject({
       infix: z.string().optional(),
     })
     .optional(),
+  packages: z.array(z.string()).optional(),
 });
 
 /** Validate that a raw value has the expected RdyConfig shape. */
@@ -98,5 +100,6 @@ export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConf
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
       infix: typeof internal?.infix === 'string' ? internal.infix : DEFAULT_CONFIG.internal.infix,
     },
+    packages: Array.isArray(raw.packages) ? raw.packages.filter((name) => typeof name === 'string') : [],
   };
 }

@@ -54,9 +54,10 @@ Commands:
   verify                        Check compiled kits against manifest hashes
 
 Run options:
-  --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, global, dir:path, or local path)
+  --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
+  --packages                         Run every kit the config's "packages" list publishes
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists within the selected kit
@@ -94,11 +95,13 @@ If no arguments are given, all checklists in the default kit are run.
 
 Kit source (mutually exclusive):
   --from <source>                    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref],
-                                     global, dir:path, or local repo path)
+                                     npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
+  --packages                         Run every kit published by the packages the config's
+                                     "packages" list names
 
-Mode flags (incompatible with --from, --file, --url):
+Mode flags (incompatible with --from, --file, --url, --packages):
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
 
@@ -309,10 +312,12 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const parsed = parseRunArgs(flags);
 
   // Skip config when an external source flag is active — external modes don't use config values.
+  // `--packages` is not one of them: the config is where the packages it runs are named.
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
-  let configFields: { internalDir: string; internalInfix: string | undefined } | undefined;
+  let configFields:
+    { internalDir: string; internalInfix: string | undefined; configuredPackages: string[] } | undefined;
   if (!hasExternalSource) {
     let config;
     try {
@@ -320,7 +325,11 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     } catch (error: unknown) {
       throw configError(extractMessage(error), { cause: error });
     }
-    configFields = { internalDir: config.internal.dir, internalInfix: config.internal.infix };
+    configFields = {
+      internalDir: config.internal.dir,
+      internalInfix: config.internal.infix,
+      configuredPackages: config.packages,
+    };
   }
 
   const kitEntries = resolveKitSources({
@@ -331,6 +340,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     checklists: parsed.checklists,
     jit: parsed.jit,
     internal: parsed.internal,
+    packages: parsed.packages,
     ...configFields,
   });
 

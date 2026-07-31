@@ -3,6 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
+const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
+const mockDiscoverKitPackages = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/packages/expandConfiguredPackages.ts', () => ({
+  expandConfiguredPackages: mockExpandConfiguredPackages,
+}));
+
+vi.mock('../src/packages/discoverKitPackages.ts', () => ({
+  discoverKitPackages: mockDiscoverKitPackages,
+}));
 
 vi.mock('../src/loadConfig.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/loadConfig.ts')>();
@@ -38,9 +48,12 @@ describe(listCommand, () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
+      packages: [],
     });
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+    mockExpandConfiguredPackages.mockReturnValue([]);
+    mockDiscoverKitPackages.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -48,6 +61,65 @@ describe(listCommand, () => {
     mockLoadConfig.mockReset();
     mockEnumerateKits.mockReset();
     mockReadManifest.mockReset();
+    mockExpandConfiguredPackages.mockReset();
+    mockDiscoverKitPackages.mockReset();
+  });
+
+  describe('owner mode, package sections', () => {
+    /** Configures one package and the kit it publishes. */
+    function configureOnePackage(): void {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        internal: { dir: '.', infix: undefined },
+        packages: ['@acme/kits'],
+      });
+      mockExpandConfiguredPackages.mockReturnValue([
+        { packageName: '@acme/kits', version: '2.1.0', kitName: 'drift', path: '/pkg/.readyup/kits/drift.js' },
+      ]);
+    }
+
+    // A project with no kits of its own still runs its dependencies' kits, so reporting "no kits found"
+    // and stopping would hide everything `rdy run --packages` would execute.
+    it('reports package kits when the project has no manifest and no internal kits of its own', async () => {
+      configureOnePackage();
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('.readyup/manifest.json');
+      });
+
+      const exitCode = await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(exitCode).toBe(0);
+      expect(output).toContain('Packages');
+      expect(output).toContain('drift (@acme/kits@2.1.0)');
+      expect(output).not.toContain('No kits found');
+    });
+
+    it('names installed packages that publish kits the config omits', async () => {
+      mockDiscoverKitPackages.mockReturnValue(['@acme/kits', 'plain-kit']);
+      configureOnePackage();
+
+      await listCommand([]);
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('Available');
+      expect(output).toContain('plain-kit');
+      // Already configured, so it belongs under Packages rather than as a candidate to add.
+      expect(output.slice(output.indexOf('Available'))).not.toContain('@acme/kits');
+    });
+
+    it('carries package provenance into the JSON payload, apart from the kits it lists', async () => {
+      mockDiscoverKitPackages.mockReturnValue(['plain-kit']);
+      configureOnePackage();
+
+      await listCommand(['--json']);
+
+      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      expect(payload).toMatchObject({
+        kits: [{ name: 'drift', kind: 'compiled', origin: { package: '@acme/kits', version: '2.1.0' } }],
+        availablePackages: ['plain-kit'],
+      });
+    });
   });
 
   describe('owner mode', () => {
@@ -63,6 +135,8 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalled();
       expect(mockReadManifest).toHaveBeenCalled();
+      // Internal kits are enumerated exactly once, from the internal directory. Other calls belong to
+      // package discovery, which probes each declared dependency for compiled kits.
       // enumerateKits is only called for internal kits
       expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
@@ -77,6 +151,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
         internal: { dir: '.', infix: 'int' },
+        packages: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
 
@@ -102,6 +177,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined },
         internal: { dir: '.', infix: undefined },
+        packages: [],
       });
       mockEnumerateKits.mockReturnValue([]);
       mockReadManifest.mockReturnValue({
@@ -183,6 +259,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
         internal,
+        packages: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
 

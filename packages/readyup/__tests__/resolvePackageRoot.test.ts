@@ -14,7 +14,7 @@ describe(resolvePackageRoot, () => {
       const root = resolvePackageRoot('zod', REPO_ROOT);
 
       expect(root).toBeDefined();
-      expect(path.basename(root as string)).toBe('zod');
+      expect(path.basename(root ?? '')).toBe('zod');
     });
 
     // The leading `@` of a scope must not be mistaken for a path or version delimiter.

@@ -1,6 +1,8 @@
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+
+import { isRecord } from './isRecord.ts';
 
 /**
  * Locates an installed package's root directory, or `undefined` when the package is not installed.
@@ -28,4 +30,20 @@ export function resolvePackageRoot(packageName: string, fromDir: string = proces
     if (parent === dir) return undefined;
     dir = parent;
   }
+}
+
+/**
+ * Reads the version an installed package declares, or `undefined` when it declares none readably.
+ *
+ * Best effort by design: the version labels output rather than governing it, so a manifest that cannot
+ * be read or parsed costs a label and never the run.
+ */
+export function readPackageVersion(packageRoot: string): string | undefined {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
+    if (isRecord(parsed) && typeof parsed.version === 'string') return parsed.version;
+  } catch {
+    // A package whose manifest is unreadable is still a package; it simply goes unlabelled.
+  }
+  return undefined;
 }

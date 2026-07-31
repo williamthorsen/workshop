@@ -26,6 +26,8 @@ interface OwnerViewOptions {
   compiledKits: string[];
   compiledStyle: CompiledStyle;
   needsInternalFlag?: boolean;
+  packageKits?: string[];
+  availablePackages?: string[];
 }
 
 /**
@@ -42,9 +44,15 @@ export function formatOwnerView({
   compiledKits,
   compiledStyle,
   needsInternalFlag = false,
+  packageKits = [],
+  availablePackages = [],
 }: OwnerViewOptions): string {
-  if (internalKits.length === 0 && compiledKits.length === 0) {
-    return formatEmpty('owner');
+  if (internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
+    // A project with no kits of its own is still told what its dependencies offer, which is the one
+    // thing that turns an empty listing into a next step.
+    return availablePackages.length === 0
+      ? formatEmpty('owner')
+      : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join('\n');
   }
 
   const sections: string[] = [];
@@ -66,7 +74,20 @@ export function formatOwnerView({
     }
   }
 
+  if (packageKits.length > 0) {
+    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'docCompiled'));
+  }
+
+  if (availablePackages.length > 0) {
+    sections.push(formatAvailableSection(availablePackages));
+  }
+
   return sections.join('\n');
+}
+
+/** Returns the section naming installed packages that publish kits the config does not list. */
+function formatAvailableSection(availablePackages: string[]): string {
+  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'docInternal');
 }
 
 // -- Consumer view --
