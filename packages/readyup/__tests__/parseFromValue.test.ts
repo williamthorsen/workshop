@@ -55,6 +55,58 @@ describe(parseFromValue, () => {
     expect(() => parseFromValue('bitbucket:myteam')).toThrow('expected "owner/repo" format');
   });
 
+  // -- npm scheme --
+
+  it('parses npm: with an unscoped name and no version', () => {
+    expect(parseFromValue('npm:readyup')).toStrictEqual({ type: 'npm', name: 'readyup', versionSpec: undefined });
+  });
+
+  // The leading `@` of a scope is not a version delimiter; splitting on it would yield a package
+  // named `@williamthorsen` at version `nmr`.
+  it('parses npm: with a scoped name and no version', () => {
+    expect(parseFromValue('npm:@williamthorsen/nmr')).toStrictEqual({
+      type: 'npm',
+      name: '@williamthorsen/nmr',
+      versionSpec: undefined,
+    });
+  });
+
+  it('parses npm: with an unscoped name and a version', () => {
+    expect(parseFromValue('npm:readyup@0.22.0')).toStrictEqual({
+      type: 'npm',
+      name: 'readyup',
+      versionSpec: '0.22.0',
+    });
+  });
+
+  it('parses npm: with a scoped name and a version', () => {
+    expect(parseFromValue('npm:@williamthorsen/nmr@0.21.0')).toStrictEqual({
+      type: 'npm',
+      name: '@williamthorsen/nmr',
+      versionSpec: '0.21.0',
+    });
+  });
+
+  it('parses npm: with a dist-tag as the version spec', () => {
+    expect(parseFromValue('npm:@williamthorsen/nmr@latest')).toStrictEqual({
+      type: 'npm',
+      name: '@williamthorsen/nmr',
+      versionSpec: 'latest',
+    });
+  });
+
+  it('throws for npm: with an empty version', () => {
+    expect(() => parseFromValue('npm:readyup@')).toThrow("version after '@' must not be empty");
+  });
+
+  it('throws for npm: with no package name', () => {
+    expect(() => parseFromValue('npm:')).toThrow('requires a package name');
+  });
+
+  it('throws for npm: with a scope but no package name', () => {
+    expect(() => parseFromValue('npm:@williamthorsen')).toThrow('expected "@scope/name" format');
+  });
+
   // -- URL rejection --
 
   it('throws for https:// values with helpful message', () => {

@@ -14,11 +14,12 @@ import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
-import { type FromSource, parseFromValue } from './parseFromValue.ts';
+import { type FromSource, type NpmSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { countResults, reportRdy } from './reportRdy.ts';
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
+import { resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
 import type { JsonDetail, JsonWarning, RaisedWarning } from './schemas/index.ts';
@@ -125,7 +126,7 @@ const flagErrorHints: Record<string, string> = {
   '--detail': '--detail requires a projection (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
-  '--from': '--from requires a source argument (path, github:org/repo, global, dir:path)',
+  '--from': '--from requires a source argument (path, github:org/repo, npm:package, global, dir:path)',
   '--report-on': '--report-on requires a severity level (error, warn, recommend)',
   '--url': '--url requires a URL argument',
 };
@@ -364,6 +365,15 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
         checklists: spec.checklists,
       }));
 
+    case 'npm': {
+      const root = resolveInstalledPackageRoot(source);
+      return specs.map((spec) => ({
+        name: spec.kitName,
+        source: { path: path.join(root, KITS_DIR, `${spec.kitName}${extension}`) },
+        checklists: spec.checklists,
+      }));
+    }
+
     case 'global': {
       const homeDir = resolveHomeDir();
       return specs.map((spec) => ({
@@ -389,6 +399,31 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
       }));
     }
   }
+}
+
+/**
+ * Locates the root of a package named by `npm:`, rejecting the forms that are reserved but not yet served.
+ *
+ * A version spec is parsed rather than ignored so the syntax stays reserved for running a published
+ * version; until that lands, naming one is answered with the flag that reaches a published kit today.
+ *
+ * The not-installed message names the direct-dependency requirement because pnpm's layout links only
+ * direct dependencies into a project's `node_modules`. A transitive dependency is genuinely unreachable
+ * here, and a bare "not installed" would contradict the lockfile the reader is looking at.
+ */
+function resolveInstalledPackageRoot(source: NpmSource): string {
+  if (source.versionSpec !== undefined) {
+    throw usageError(
+      `Running a published version is not supported yet: "npm:${source.name}@${source.versionSpec}". ` +
+        'Use --url to name a published kit, or drop the version to run the installed copy.',
+    );
+  }
+
+  const root = resolvePackageRoot(source.name);
+  if (root === undefined) {
+    throw usageError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
+  }
+  return root;
 }
 
 /** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */

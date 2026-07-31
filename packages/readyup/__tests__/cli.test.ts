@@ -462,6 +462,9 @@ describe('--quiet', () => {
   });
 });
 
+/** Repo root, which is where the workspace link for `readyup` lives. */
+const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+
 describe(resolveKitSources, () => {
   /** Build args with defaults for internal config. */
   function resolve(
@@ -511,6 +514,37 @@ describe(resolveKitSources, () => {
     expect(resolve({ checklists: ['build'] })).toStrictEqual([
       { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: ['build'] },
     ]);
+  });
+
+  // -- npm: source --
+
+  // `readyup` is linked into this repo's node_modules as a workspace package, so it stands in for any
+  // installed dependency without needing a fixture.
+  it('resolves a kit inside an installed package', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup' });
+
+    expect(entry?.name).toBe('default');
+    expect(entry?.source).toStrictEqual({
+      path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'default.js'),
+    });
+  });
+
+  it('resolves a named kit inside an installed package', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup', kitSpecifiers: [{ kitName: 'drift', checklists: [] }] });
+
+    expect(entry?.source).toStrictEqual({
+      path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'drift.js'),
+    });
+  });
+
+  it('rejects a version spec by naming the flag that reaches a published kit', () => {
+    expect(() => resolve({ fromValue: 'npm:readyup@0.22.0' })).toThrow(/not supported yet[\s\S]*--url/);
+  });
+
+  it('rejects an uninstalled package by naming the direct-dependency requirement', () => {
+    expect(() => resolve({ fromValue: 'npm:readyup-package-that-does-not-exist' })).toThrow(
+      /is not installed; it must be a direct dependency/,
+    );
   });
 
   // -- --jit flag --
