@@ -14,6 +14,14 @@ const config = defineConfig([
     rules: deferredLintRules,
   },
   {
+    // `prefer-simple-condition-first` reorders conditions to save a property read, at the cost of the reading
+    // order the surrounding error messages use. Its own diagnostic concedes it cannot verify the reorder is safe.
+    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    rules: {
+      'unicorn/prefer-simple-condition-first': 'off',
+    },
+  },
+  {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs', '**/*.ts', '**/*.tsx'],
     rules: {
       'n/no-extraneous-import': 'off',
