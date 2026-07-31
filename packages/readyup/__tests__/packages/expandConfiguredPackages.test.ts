@@ -8,24 +8,6 @@ import { expandConfiguredPackages } from '../../src/packages/expandConfiguredPac
 
 let projectRoot: string;
 
-/** Installs a package into the fixture project, with the kit files and manifest it publishes. */
-function installPackage(
-  name: string,
-  version: string,
-  options: { kits?: string[]; manifest?: string | undefined } = {},
-): void {
-  const root = path.join(projectRoot, 'node_modules', name);
-  mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
-  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, version }));
-
-  for (const kit of options.kits ?? []) {
-    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
-  }
-  if (options.manifest !== undefined) {
-    writeFileSync(path.join(root, '.readyup', 'manifest.json'), options.manifest);
-  }
-}
-
 describe(expandConfiguredPackages, () => {
   beforeAll(() => {
     projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'expand-packages-')));
@@ -95,3 +77,25 @@ describe(expandConfiguredPackages, () => {
     expect(() => expandConfiguredPackages(['broken-manifest'], '.js', projectRoot)).toThrow(/invalid JSON/);
   });
 });
+
+// region | Helpers
+
+/** Installs a package into the fixture project, with the kit files and manifest it publishes. */
+function installPackage(
+  name: string,
+  version: string,
+  options: { kits?: string[]; manifest?: string | undefined } = {},
+): void {
+  const root = path.join(projectRoot, 'node_modules', name);
+  mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
+  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, version }));
+
+  for (const kit of options.kits ?? []) {
+    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
+  }
+  if (options.manifest !== undefined) {
+    writeFileSync(path.join(root, '.readyup', 'manifest.json'), options.manifest);
+  }
+}
+
+// endregion | Helpers

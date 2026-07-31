@@ -18,13 +18,15 @@ export interface PackageKit {
 /**
  * Expands configured package names into every kit those packages publish, in configured order.
  *
- * A package that is absent or publishes no kits fails the invocation rather than being skipped. The list
- * is hand-maintained, so a name in it states an intent, and skipping would hide exactly the drift between
- * that list and the project's dependencies that maintaining it by hand invites.
+ * A package that is absent or publishes no kits fails the invocation rather than being skipped.
+ * The list is hand-maintained, so a name in it states an intent, and skipping would hide exactly the drift
+ * between that list and the project's dependencies that maintaining it by hand invites.
  */
 export function expandConfiguredPackages(packageNames: string[], extension: string, fromDir?: string): PackageKit[] {
   return packageNames.flatMap((packageName) => expandOnePackage(packageName, extension, fromDir));
 }
+
+// region | Helpers
 
 /** Expands one configured package into the kits it publishes. */
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
@@ -65,3 +67,5 @@ function listPublishedKitNames(root: string, kitsDir: string, extension: string)
     return enumerateKits({ dir: kitsDir, extension });
   }
 }
+
+// endregion | Helpers

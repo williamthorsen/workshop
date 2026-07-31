@@ -9,16 +9,6 @@ import { discoverKitPackages } from '../../src/packages/discoverKitPackages.ts';
 let projectRoot: string;
 let manifestlessRoot: string;
 
-/** Installs a package into a fixture project, optionally publishing kits. */
-function installPackage(root: string, name: string, kits: string[]): void {
-  const packageRoot = path.join(root, 'node_modules', name);
-  mkdirSync(path.join(packageRoot, '.readyup', 'kits'), { recursive: true });
-  writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ name, version: '1.0.0' }));
-  for (const kit of kits) {
-    writeFileSync(path.join(packageRoot, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
-  }
-}
-
 describe(discoverKitPackages, () => {
   beforeAll(() => {
     projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'discover-packages-')));
@@ -62,3 +52,17 @@ describe(discoverKitPackages, () => {
     expect(discoverKitPackages(manifestlessRoot)).toStrictEqual([]);
   });
 });
+
+// region | Helpers
+
+/** Installs a package into a fixture project, optionally publishing kits. */
+function installPackage(root: string, name: string, kits: string[]): void {
+  const packageRoot = path.join(root, 'node_modules', name);
+  mkdirSync(path.join(packageRoot, '.readyup', 'kits'), { recursive: true });
+  writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ name, version: '1.0.0' }));
+  for (const kit of kits) {
+    writeFileSync(path.join(packageRoot, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
+  }
+}
+
+// endregion | Helpers

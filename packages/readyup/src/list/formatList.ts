@@ -48,8 +48,8 @@ export function formatOwnerView({
   availablePackages = [],
 }: OwnerViewOptions): string {
   if (internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
-    // A project with no kits of its own is still told what its dependencies offer, which is the one
-    // thing that turns an empty listing into a next step.
+    // A project with no kits of its own is still told what its dependencies offer, which is the one thing that
+    // turns an empty listing into a next step.
     return availablePackages.length === 0
       ? formatEmpty('owner')
       : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join('\n');

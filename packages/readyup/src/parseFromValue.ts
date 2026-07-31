@@ -41,7 +41,7 @@ export interface LocalSource {
 /** Discriminated union of all `--from` value interpretations. */
 export type FromSource = GitHubSource | BitbucketSource | NpmSource | GlobalSource | DirectorySource | LocalSource;
 
-/** Parse the `--from` flag value into a discriminated source union. */
+/** Parses the `--from` flag value into a discriminated source union. */
 export function parseFromValue(value: string): FromSource {
   if (value.startsWith('github:')) {
     const body = value.slice('github:'.length);
@@ -76,7 +76,7 @@ export function parseFromValue(value: string): FromSource {
 }
 
 /**
- * Parse `owner/name[@ref]` into owner, name, and ref components.
+ * Parses `owner/name[@ref]` into owner, name, and ref components.
  *
  * The `@ref` part is optional; defaults to `main`.
  */
@@ -98,7 +98,7 @@ function parseOrgRepo(value: string): { owner: string; name: string; ref: string
 }
 
 /**
- * Parse `name[@version]` into an npm package name and an optional version spec.
+ * Parses `name[@version]` into an npm package name and an optional version spec.
  *
  * A scoped name opens with `@`, which is not a version delimiter, so only an `@` past the first
  * character separates a version. That one-character difference from `parseOrgRepo` is why this cannot

@@ -26,6 +26,20 @@ export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
     .toSorted();
 }
 
+// region | Helpers
+
+/** Reports whether an installed package carries at least one compiled kit. */
+function publishesKits(packageName: string, fromDir: string): boolean {
+  const root = resolvePackageRoot(packageName, fromDir);
+  if (root === undefined) return false;
+
+  try {
+    return enumerateKits({ dir: path.join(root, KITS_DIR), extension: '.js' }).length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** Names every dependency the project's manifest declares, across both dependency fields. */
 function readDeclaredDependencies(fromDir: string): string[] {
   let parsed: unknown;
@@ -42,14 +56,4 @@ function readDeclaredDependencies(fromDir: string): string[] {
   });
 }
 
-/** Reports whether an installed package carries at least one compiled kit. */
-function publishesKits(packageName: string, fromDir: string): boolean {
-  const root = resolvePackageRoot(packageName, fromDir);
-  if (root === undefined) return false;
-
-  try {
-    return enumerateKits({ dir: path.join(root, KITS_DIR), extension: '.js' }).length > 0;
-  } catch {
-    return false;
-  }
-}
+// endregion | Helpers
