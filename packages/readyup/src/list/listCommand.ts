@@ -3,7 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { configError, usageError } from '../errors.ts';
+import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
@@ -138,7 +138,7 @@ function resolveListedPackageRoot(source: NpmSource): string {
 
   const root = resolvePackageRoot(source.name);
   if (root === undefined) {
-    throw configError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
+    throw kitLoadError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
   }
   return root;
 }

@@ -47,11 +47,13 @@ export const ListKitEntrySchema = z
 /**
  * Top-level shape of `rdy list --json`.
  *
- * Rows are keyed by `name` and `kind` together, never by `name` alone. Under the default
- * configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a compiled
- * source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as
- * `compiled`, which `rdy run <name>` runs. Both rows are meaningful, and a consumer indexing on
- * `name` alone silently drops one of them.
+ * Rows are keyed by `name`, `kind`, and `origin.package` together, never by any subset. Under the
+ * default configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a
+ * compiled source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as
+ * `compiled`, which `rdy run <name>` runs. A package's kit is `compiled` as well, so `name` and `kind`
+ * alone collide between a project's own kit and a package's kit of the same name, and between two
+ * packages publishing that name. Every such row is meaningful, and a consumer indexing on less than
+ * the full key silently drops one of them.
  *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits that would run. They are kept out of `kits` for exactly

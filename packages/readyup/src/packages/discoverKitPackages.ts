@@ -21,9 +21,10 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
  * never the listing that carries it.
  */
 export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
-  return readDeclaredDependencies(fromDir)
-    .filter((packageName) => publishesKits(packageName, fromDir))
-    .toSorted();
+  // A package may be declared in both dependency fields, which npm permits; the set collapses the pair
+  // so it is offered once.
+  const declared = new Set(readDeclaredDependencies(fromDir));
+  return [...declared].filter((packageName) => publishesKits(packageName, fromDir)).toSorted();
 }
 
 // region | Helpers

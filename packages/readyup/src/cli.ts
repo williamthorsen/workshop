@@ -20,7 +20,7 @@ import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { countResults, reportRdy } from './reportRdy.ts';
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
-import { resolvePackageRoot } from './resolvePackageRoot.ts';
+import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
 import type { JsonDetail, JsonKitOrigin, JsonWarning, RaisedWarning } from './schemas/index.ts';
@@ -398,10 +398,12 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
 
     case 'npm': {
       const root = resolveInstalledPackageRoot(source);
+      const origin = { packageName: source.name, version: readPackageVersion(root) };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(root, KITS_DIR, `${spec.kitName}${extension}`) },
         checklists: spec.checklists,
+        origin,
       }));
     }
 
@@ -472,7 +474,7 @@ function resolveInstalledPackageRoot(source: NpmSource): string {
 
   const root = resolvePackageRoot(source.name);
   if (root === undefined) {
-    throw usageError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
+    throw kitLoadError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
   }
   return root;
 }
@@ -772,7 +774,10 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const showKitHeader = kitEntries.length > 1;
+  // A dependency-provided kit is headed even when it runs alone: its package and version appear nowhere
+  // else in human output, and confirming the kit matches the version in place is the point of running it
+  // from an installed package.
+  const showKitHeader = kitEntries.length > 1 || kitEntries.some((entry) => entry.origin !== undefined);
   const tracking = readManifestTracking(isJit);
   let allPassed = true;
   let anyKitFailed = false;

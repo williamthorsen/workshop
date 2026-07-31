@@ -315,15 +315,27 @@ describe(parseRunArgs, () => {
     );
   });
 
-  it('throws when --jit is combined with --from', () => {
+  it('throws when --from and --packages are combined', () => {
     expect(() => parseRunArgs(['--packages', '--from', '/path'])).toThrow('Cannot combine --from, --packages flags');
+  });
+
+  it('throws when --packages is combined with positional kit arguments', () => {
     expect(() => parseRunArgs(['--packages', 'deploy'])).toThrow(
       '--packages cannot be combined with positional kit arguments',
     );
+  });
+
+  it('throws when --packages is combined with --checklists', () => {
     expect(() => parseRunArgs(['--packages', '--checklists', 'build'])).toThrow(
       '--packages cannot be combined with --checklists',
     );
+  });
+
+  it('throws when --jit is combined with --packages', () => {
     expect(() => parseRunArgs(['--jit', '--packages'])).toThrow('--jit cannot be combined with --packages');
+  });
+
+  it('throws when --jit is combined with --from', () => {
     expect(() => parseRunArgs(['--jit', '--from', '/path'])).toThrow('--jit cannot be combined with --from');
   });
 

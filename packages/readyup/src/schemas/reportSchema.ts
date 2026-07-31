@@ -66,15 +66,6 @@ export const ChecklistEntrySchema = z
   .meta({ id: 'ChecklistEntry' });
 
 /**
- * A kit that ran, grouping its checklists under a kit-level verdict and tallies.
- *
- * `failOn` and `reportOn` are the thresholds that actually governed this kit, resolved as
- * `CLI flag > kit field > default`. Both are emitted unconditionally rather than only when they
- * differ from the run level: `passed` is meaningless without the threshold it was decided against,
- * and an absent-means-inherit rule would send a consumer elsewhere in the document to read a
- * six-byte enum.
- */
-/**
  * The installed package a kit was resolved from.
  *
  * Present only for a kit reached through a package source: two packages may each publish a kit of the
@@ -88,6 +79,15 @@ export const KitOriginSchema = z
   })
   .meta({ id: 'KitOrigin' });
 
+/**
+ * A kit that ran, grouping its checklists under a kit-level verdict and tallies.
+ *
+ * `failOn` and `reportOn` are the thresholds that actually governed this kit, resolved as
+ * `CLI flag > kit field > default`. Both are emitted unconditionally rather than only when they
+ * differ from the run level: `passed` is meaningless without the threshold it was decided against,
+ * and an absent-means-inherit rule would send a consumer elsewhere in the document to read a
+ * six-byte enum.
+ */
 export const KitResultEntrySchema = z
   .object({
     name: z.string(),

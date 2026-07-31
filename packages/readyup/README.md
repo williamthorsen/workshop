@@ -573,7 +573,7 @@ Kits from configured packages get their own section, each labelled with the pack
 
 A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
 
-Rows are keyed by `name` **and** `kind` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled` -- so a consumer indexing on `name` alone silently drops one. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own; candidates from the **Available** section are not kits and appear separately.
+Rows are keyed by `name`, `kind`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name. A consumer indexing on less than the full key silently drops a row. Candidates from the **Available** section are not kits and appear separately.
 
 ### Scaffolding
 
@@ -733,10 +733,12 @@ Publishing takes one line. Compile as usual, then add the kit directory to the p
 Consumers reach a single package directly:
 
 ```bash
-rdy run --from npm:@acme/eslint-config          # every kit the package publishes
-rdy run --from npm:@acme/eslint-config drift    # one of them
+rdy run --from npm:@acme/eslint-config          # the package's default kit
+rdy run --from npm:@acme/eslint-config drift    # a kit it publishes, by name
 rdy list --from npm:@acme/eslint-config         # what it publishes
 ```
+
+Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is what runs every kit a package publishes.
 
 Naming several packages once is a config list, because running code a dependency ships is an opt-in worth writing down:
 

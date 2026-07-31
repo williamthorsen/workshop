@@ -135,9 +135,7 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalled();
       expect(mockReadManifest).toHaveBeenCalled();
-      // Internal kits are enumerated exactly once, from the internal directory. Other calls belong to
-      // package discovery, which probes each declared dependency for compiled kits.
-      // enumerateKits is only called for internal kits
+      // Package discovery is mocked out in this file, so the count covers internal kits alone.
       expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
       expect(mockEnumerateKits).toHaveBeenCalledWith(
         expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
