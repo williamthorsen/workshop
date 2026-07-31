@@ -22,7 +22,7 @@ export function resolveRequestedNames(requestedNames: string[], kit: RdyKit): st
   const seen = new Set<string>();
 
   for (const name of requestedNames) {
-    const suiteEntries = suites[name];
+    const suiteEntries = Object.hasOwn(suites, name) ? suites[name] : undefined;
     if (suiteEntries !== undefined) {
       for (const entry of suiteEntries) {
         if (seen.has(entry)) {

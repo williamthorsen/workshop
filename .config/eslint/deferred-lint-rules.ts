@@ -1,7 +1,6 @@
 // `@williamthorsen/eslint-config-typescript` added unicorn rules that surface violations in existing code.
-// Errors are downgraded to warnings here until the violations are fixed; #152 and #153 clear the remainder.
+// Errors are downgraded to warnings here until the violations are fixed; #153 clears the remainder.
 export const deferredLintRules = {
-  'unicorn/no-computed-property-existence-check': 'warn',
   'unicorn/no-declarations-before-early-exit': 'warn',
   'unicorn/no-duplicate-if-branches': 'warn',
   'unicorn/no-return-array-push': 'warn',

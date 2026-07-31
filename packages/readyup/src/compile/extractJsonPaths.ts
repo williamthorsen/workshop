@@ -21,7 +21,7 @@ export function extractJsonPaths(
     // Traverse the source object to verify the path exists.
     let current: unknown = obj;
     for (const key of keys) {
-      if (!isRecord(current) || !(key in current)) {
+      if (!isRecord(current) || !Object.hasOwn(current, key)) {
         throw new Error(`Path not found in JSON: ${keys.join('.')}`);
       }
       current = current[key];

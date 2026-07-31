@@ -85,6 +85,13 @@ describe(resolveRequestedNames, () => {
 
     expect(error.message).not.toContain('Suites');
   });
+
+  it('treats a name matching an Object.prototype member as unknown', () => {
+    const kit = makeKit({ suites: { ci: ['deploy'] } });
+
+    expect(() => resolveRequestedNames(['valueOf'], kit)).toThrow('Unknown name(s): valueOf');
+    expect(() => resolveRequestedNames(['toString'], kit)).toThrow('Unknown name(s): toString');
+  });
 });
 
 /** Extract the thrown error from a function call. */
