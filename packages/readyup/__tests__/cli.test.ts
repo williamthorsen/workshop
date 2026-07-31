@@ -65,6 +65,7 @@ vi.mock('../src/loadRemoteKit.ts', () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
+import packageJson from '../package.json' with { type: 'json' };
 import { parseRunArgs, resolveKitSources, runCommand } from '../src/cli.ts';
 
 describe(parseRunArgs, () => {
@@ -555,6 +556,14 @@ describe(resolveKitSources, () => {
     expect(entry?.source).toStrictEqual({
       path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'drift.js'),
     });
+  });
+
+  // The origin is what names the copy a check ran against, which is the whole point of resolving from an
+  // installed package. It reads from the same manifest the resolver reads, so a version bump leaves this alone.
+  it('carries the package and its installed version as the kit origin', () => {
+    const [entry] = resolve({ fromValue: 'npm:readyup' });
+
+    expect(entry?.origin).toStrictEqual({ packageName: 'readyup', version: packageJson.version });
   });
 
   it('rejects a version spec by naming the flag that reaches a published kit', () => {
