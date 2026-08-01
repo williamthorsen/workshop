@@ -6,15 +6,15 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
 const mockDiscoverKitPackages = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/packages/expandConfiguredPackages.ts', () => ({
+vi.mock(import('../src/packages/expandConfiguredPackages.ts'), () => ({
   expandConfiguredPackages: mockExpandConfiguredPackages,
 }));
 
-vi.mock('../src/packages/discoverKitPackages.ts', () => ({
+vi.mock(import('../src/packages/discoverKitPackages.ts'), () => ({
   discoverKitPackages: mockDiscoverKitPackages,
 }));
 
-vi.mock('../src/loadConfig.ts', async (importOriginal) => {
+vi.mock(import('../src/loadConfig.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/loadConfig.ts')>();
   return {
     DEFAULT_CONFIG: actual.DEFAULT_CONFIG,
@@ -22,11 +22,11 @@ vi.mock('../src/loadConfig.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../src/list/enumerateKits.ts', () => ({
+vi.mock(import('../src/list/enumerateKits.ts'), () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+vi.mock(import('../src/manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
   return {
     ManifestNotFoundError: actual.ManifestNotFoundError,
@@ -133,8 +133,8 @@ describe(listCommand, () => {
       const exitCode = await listCommand([]);
 
       expect(exitCode).toBe(0);
-      expect(mockLoadConfig).toHaveBeenCalled();
-      expect(mockReadManifest).toHaveBeenCalled();
+      expect(mockLoadConfig).toHaveBeenCalledWith();
+      expect(mockReadManifest).toHaveBeenCalledTimes(1);
       // Package discovery is mocked out in this file, so the count covers internal kits alone.
       expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
       expect(mockEnumerateKits).toHaveBeenCalledWith(

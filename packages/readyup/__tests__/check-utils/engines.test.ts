@@ -4,7 +4,7 @@ import { readEnginesNodeFloor, satisfiesNodeFloor } from '../../src/check-utils/
 
 describe(readEnginesNodeFloor, () => {
   it('reads a `>=` floor', () => {
-    expect(readEnginesNodeFloor({ engines: { node: '>=20.6.0' } })).toEqual({
+    expect(readEnginesNodeFloor({ engines: { node: '>=20.6.0' } })).toStrictEqual({
       kind: 'found',
       floor: '20.6.0',
       raw: '>=20.6.0',
@@ -12,7 +12,7 @@ describe(readEnginesNodeFloor, () => {
   });
 
   it('reads a caret floor', () => {
-    expect(readEnginesNodeFloor({ engines: { node: '^22.0.0' } })).toEqual({
+    expect(readEnginesNodeFloor({ engines: { node: '^22.0.0' } })).toStrictEqual({
       kind: 'found',
       floor: '22.0.0',
       raw: '^22.0.0',
@@ -20,7 +20,7 @@ describe(readEnginesNodeFloor, () => {
   });
 
   it('reads a bare version as its own floor', () => {
-    expect(readEnginesNodeFloor({ engines: { node: '24.1.0' } })).toEqual({
+    expect(readEnginesNodeFloor({ engines: { node: '24.1.0' } })).toStrictEqual({
       kind: 'found',
       floor: '24.1.0',
       raw: '24.1.0',
@@ -33,7 +33,7 @@ describe(readEnginesNodeFloor, () => {
   });
 
   it('tolerates whitespace around and after the operator', () => {
-    expect(readEnginesNodeFloor({ engines: { node: '  >= 24  ' } })).toEqual({
+    expect(readEnginesNodeFloor({ engines: { node: '  >= 24  ' } })).toStrictEqual({
       kind: 'found',
       floor: '24',
       raw: '  >= 24  ',
@@ -46,11 +46,11 @@ describe(readEnginesNodeFloor, () => {
     ['no engines.node field', { engines: { npm: '>=10' } }],
     ['a non-string engines.node field', { engines: { node: 24 } }],
   ])('reports absence for %s', (_label, manifest) => {
-    expect(readEnginesNodeFloor(manifest)).toEqual({ kind: 'absent' });
+    expect(readEnginesNodeFloor(manifest)).toStrictEqual({ kind: 'absent' });
   });
 
   it.each(['^20 || ^22', '20 - 22', '20.x', '*', '>24', '~20.1'])('reports %s as unparseable', (range) => {
-    expect(readEnginesNodeFloor({ engines: { node: range } })).toEqual({ kind: 'unparseable', raw: range });
+    expect(readEnginesNodeFloor({ engines: { node: range } })).toStrictEqual({ kind: 'unparseable', raw: range });
   });
 });
 

@@ -26,6 +26,6 @@ describe(formatJsonError, () => {
   it('produces a single-line string', () => {
     const output = formatJsonError(usageError('multi\nline\nmessage'));
 
-    expect(output.includes('\n')).toBe(false);
+    expect(output).not.toContain('\n');
   });
 });

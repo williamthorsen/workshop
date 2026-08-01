@@ -15,15 +15,15 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
 const mockHashFile = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/compile/compileConfig.ts', () => ({
+vi.mock(import('../src/compile/compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-vi.mock('../src/compile/validateCompiledOutput.ts', () => ({
+vi.mock(import('../src/compile/validateCompiledOutput.ts'), () => ({
   validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
-vi.mock('../src/loadConfig.ts', () => ({
+vi.mock(import('../src/loadConfig.ts'), () => ({
   loadConfig: mockLoadConfig,
 }));
 
@@ -36,11 +36,11 @@ vi.mock('picomatch', () => ({
   default: mockPicomatch,
 }));
 
-vi.mock('../src/manifest/writeManifest.ts', () => ({
+vi.mock(import('../src/manifest/writeManifest.ts'), () => ({
   writeManifest: mockWriteManifest,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+vi.mock(import('../src/manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
   return {
     ManifestNotFoundError: actual.ManifestNotFoundError,
@@ -48,11 +48,11 @@ vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../src/verify/checkDrift.ts', () => ({
+vi.mock(import('../src/verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
 }));
 
-vi.mock('../src/verify/targetHash.ts', () => ({
+vi.mock(import('../src/verify/targetHash.ts'), () => ({
   hashFile: mockHashFile,
 }));
 
@@ -918,8 +918,8 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(0);
     expect(mockCheckDrift).not.toHaveBeenCalled();
-    expect(mockCompileConfig).toHaveBeenCalled();
-    expect(mockWriteManifest).toHaveBeenCalled();
+    expect(mockCompileConfig).toHaveBeenCalledTimes(1);
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
   });
 
   it('skips drifted kits during batch compile and preserves their manifest entries', async () => {

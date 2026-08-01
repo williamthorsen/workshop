@@ -9,7 +9,7 @@ const options = {
   json: { type: 'boolean', short: 'j' },
 } as const;
 
-describe('translateParseArgsError', () => {
+describe(translateParseArgsError, () => {
   it('points an unknown option at the command help', () => {
     const message = translateParseArgsError(captureError(['--nope']), 'list');
 

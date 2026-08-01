@@ -11,25 +11,25 @@ const mockParseRunArgs = vi.hoisted(() => vi.fn());
 const mockResolveKitSources = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/cli.ts', () => ({
+vi.mock(import('../src/cli.ts'), () => ({
   parseRunArgs: mockParseRunArgs,
   resolveKitSources: mockResolveKitSources,
   runCommand: mockRunCommand,
 }));
 
-vi.mock('../src/loadConfig.ts', () => ({
+vi.mock(import('../src/loadConfig.ts'), () => ({
   loadConfig: mockLoadConfig,
 }));
 
-vi.mock('../src/compile/compileCommand.ts', () => ({
+vi.mock(import('../src/compile/compileCommand.ts'), () => ({
   compileCommand: mockCompileCommand,
 }));
 
-vi.mock('../src/init/initCommand.ts', () => ({
+vi.mock(import('../src/init/initCommand.ts'), () => ({
   initCommand: mockInitCommand,
 }));
 
-vi.mock('../src/list/listCommand.ts', () => ({
+vi.mock(import('../src/list/listCommand.ts'), () => ({
   listCommand: mockListCommand,
 }));
 

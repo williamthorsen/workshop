@@ -16,16 +16,16 @@ const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/config.ts', () => ({
+vi.mock(import('../src/config.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
 }));
 
-vi.mock('../src/runRdy.ts', () => ({
+vi.mock(import('../src/runRdy.ts'), () => ({
   meetsThreshold: () => true,
   runRdy: mockRunRdy,
 }));
 
-vi.mock('../src/reportRdy.ts', async () => {
+vi.mock(import('../src/reportRdy.ts'), async () => {
   const actual = await vi.importActual<typeof import('../src/reportRdy.ts')>('../src/reportRdy.ts');
   return {
     ...actual,
@@ -33,27 +33,27 @@ vi.mock('../src/reportRdy.ts', async () => {
   };
 });
 
-vi.mock('../src/formatCombinedSummary.ts', () => ({
+vi.mock(import('../src/formatCombinedSummary.ts'), () => ({
   formatCombinedSummary: mockFormatCombinedSummary,
 }));
 
-vi.mock('../src/formatJsonReport.ts', () => ({
+vi.mock(import('../src/formatJsonReport.ts'), () => ({
   formatJsonReport: mockFormatJsonReport,
 }));
 
-vi.mock('../src/formatJsonError.ts', () => ({
+vi.mock(import('../src/formatJsonError.ts'), () => ({
   formatJsonError: mockFormatJsonError,
 }));
 
-vi.mock('../src/resolveGitHubToken.ts', () => ({
+vi.mock(import('../src/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
-vi.mock('../src/resolveBitbucketToken.ts', () => ({
+vi.mock(import('../src/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-vi.mock('../src/loadRemoteKit.ts', () => ({
+vi.mock(import('../src/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 

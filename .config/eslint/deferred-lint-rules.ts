@@ -11,3 +11,12 @@ export const deferredLintRules = {
   'unicorn/prefer-includes-over-repeated-comparisons': 'warn',
   'preserve-caught-error': 'warn',
 } as const;
+
+export const deferredTestRules = {
+  'vitest/no-conditional-expect': 'warn',
+  'vitest/no-conditional-in-test': 'warn',
+  'vitest/prefer-import-in-mock': 'off', // fixer breaks test code
+  'vitest/require-mock-type-parameters': 'warn',
+  'vitest/require-to-throw-message': 'warn',
+  'vitest/require-top-level-describe': 'warn',
+} as const;

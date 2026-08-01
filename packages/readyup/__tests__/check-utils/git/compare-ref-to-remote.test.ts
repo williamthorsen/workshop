@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { compareRefToRemote } from '../../../src/check-utils/git/compare-ref-to-remote.ts';
 import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
-vi.mock('../../../src/check-utils/git/run-git.ts', async (importOriginal) => {
+vi.mock(import('../../../src/check-utils/git/run-git.ts'), async (importOriginal) => {
   const original = await importOriginal<typeof import('../../../src/check-utils/git/run-git.ts')>();
   return {
     ...original,
@@ -15,35 +15,14 @@ vi.mock('../../../src/check-utils/git/run-git.ts', async (importOriginal) => {
 
 const runGit = vi.mocked(runGitModule.runGit);
 
-beforeEach(() => {
-  vi.restoreAllMocks();
-});
-
-/** Stub `runGit` to route calls by git subcommand and arguments. */
-function stubRunGit(routes: Record<string, string | Error>): void {
-  runGit.mockImplementation((_path: string, ...args: string[]) => {
-    const key = args.join(' ');
-    for (const [pattern, value] of Object.entries(routes)) {
-      if (key.includes(pattern)) {
-        if (value instanceof Error) return Promise.reject(value);
-        return Promise.resolve(value);
-      }
-    }
-    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
-  });
-}
-
-function makeRefMissingError(ref: string): Error {
-  return Object.assign(new Error(`unknown revision: ${ref}`), {
-    code: 128,
-    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
-  });
-}
-
 const LOCAL_SHA = 'aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111';
 const REMOTE_SHA = 'bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222';
 
 describe(compareRefToRemote, () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns in-sync when local and remote SHAs match', async () => {
     stubRunGit({
       'rev-parse --verify main': LOCAL_SHA,
@@ -71,7 +50,7 @@ describe(compareRefToRemote, () => {
     assert.ok(result.status === 'out-of-sync');
     expect(result.localSha).toBe(LOCAL_SHA);
     expect(result.remoteSha).toBe(REMOTE_SHA);
-    expect(result.aheadBehind).toEqual({ ahead: 1, behind: 0 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 1, behind: 0 });
   });
 
   it('returns out-of-sync with behind count when local is behind', async () => {
@@ -85,7 +64,7 @@ describe(compareRefToRemote, () => {
 
     expect(result.status).toBe('out-of-sync');
     assert.ok(result.status === 'out-of-sync');
-    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 3 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 0, behind: 3 });
   });
 
   it('returns out-of-sync with both counts when diverged', async () => {
@@ -99,7 +78,7 @@ describe(compareRefToRemote, () => {
 
     expect(result.status).toBe('out-of-sync');
     assert.ok(result.status === 'out-of-sync');
-    expect(result.aheadBehind).toEqual({ ahead: 2, behind: 5 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 2, behind: 5 });
   });
 
   it('returns ref-missing when local ref does not exist', async () => {
@@ -109,7 +88,7 @@ describe(compareRefToRemote, () => {
 
     const result = await compareRefToRemote('/repo', 'nonexistent');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'nonexistent' });
+    expect(result).toStrictEqual({ status: 'ref-missing', ref: 'nonexistent' });
   });
 
   it('returns ref-missing when remote ref does not exist', async () => {
@@ -120,7 +99,7 @@ describe(compareRefToRemote, () => {
 
     const result = await compareRefToRemote('/repo', 'main');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'origin/main' });
+    expect(result).toStrictEqual({ status: 'ref-missing', ref: 'origin/main' });
   });
 
   it('returns unreachable when ls-remote throws', async () => {
@@ -174,3 +153,28 @@ describe(compareRefToRemote, () => {
     expect(result.aheadBehind).toBeUndefined();
   });
 });
+
+// region | Helpers
+
+/** Stub `runGit` to route calls by git subcommand and arguments. */
+function stubRunGit(routes: Record<string, string | Error>): void {
+  runGit.mockImplementation((_path: string, ...args: string[]) => {
+    const key = args.join(' ');
+    for (const [pattern, value] of Object.entries(routes)) {
+      if (key.includes(pattern)) {
+        if (value instanceof Error) return Promise.reject(value);
+        return Promise.resolve(value);
+      }
+    }
+    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
+  });
+}
+
+function makeRefMissingError(ref: string): Error {
+  return Object.assign(new Error(`unknown revision: ${ref}`), {
+    code: 128,
+    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
+  });
+}
+
+// endregion | Helpers

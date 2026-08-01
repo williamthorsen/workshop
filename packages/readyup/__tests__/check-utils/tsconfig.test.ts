@@ -9,20 +9,20 @@ import { readTsconfigLanguageLevel } from '../../src/check-utils/tsconfig.ts';
 let tempDir: string;
 let cwdSpy: MockInstance;
 
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-tsconfig-'));
-  cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-});
-
-afterEach(() => {
-  cwdSpy.mockRestore();
-});
-
 describe(readTsconfigLanguageLevel, () => {
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rdy-tsconfig-'));
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+  });
+
   it('reads lib and target from a single config', () => {
     writeConfig('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2025'],
       target: 'es2025',
       chain: ['tsconfig.json'],
@@ -44,7 +44,7 @@ describe(readTsconfigLanguageLevel, () => {
     writeConfig('middle.json', { extends: './base.json' });
     writeConfig('tsconfig.json', { extends: './middle.json' });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2023'],
       target: 'es2023',
       chain: ['tsconfig.json', 'middle.json', 'base.json'],
@@ -59,7 +59,7 @@ describe(readTsconfigLanguageLevel, () => {
       compilerOptions: { lib: ['ES2022'] },
     });
 
-    expect(readTsconfigLanguageLevel('packages/alpha/tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('packages/alpha/tsconfig.json')).toStrictEqual({
       // `target` is undeclared in the package config, so the root's value carries through.
       lib: ['es2022'],
       target: 'es2025',
@@ -75,7 +75,7 @@ describe(readTsconfigLanguageLevel, () => {
     const result = readTsconfigLanguageLevel('tsconfig.json');
 
     expect(result?.target).toBe('es2022');
-    expect(result?.chain).toEqual(['tsconfig.json', 'base.json']);
+    expect(result?.chain).toStrictEqual(['tsconfig.json', 'base.json']);
   });
 
   it('gives a later array-extends entry precedence over an earlier one', () => {
@@ -83,7 +83,7 @@ describe(readTsconfigLanguageLevel, () => {
     writeConfig('second.json', { compilerOptions: { lib: ['ES2024'] } });
     writeConfig('tsconfig.json', { extends: ['./first.json', './second.json'] });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2024'],
       target: 'es2021',
       chain: ['tsconfig.json', 'second.json', 'first.json'],
@@ -97,7 +97,7 @@ describe(readTsconfigLanguageLevel, () => {
     writeConfig('high.json', { extends: './base.json', compilerOptions: { target: 'ES2024' } });
     writeConfig('tsconfig.json', { extends: ['./low.json', './high.json'] });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       // `high` outranks `low`, so `base` is reached through it; `low` is visited with both fields already resolved.
       lib: ['es2021'],
       target: 'es2024',
@@ -122,7 +122,7 @@ describe(readTsconfigLanguageLevel, () => {
       ].join('\n'),
     );
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: ['es2025'],
       target: 'es2025',
       chain: ['tsconfig.json'],
@@ -136,7 +136,7 @@ describe(readTsconfigLanguageLevel, () => {
       compilerOptions: { target: 'ES2025' },
     });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: undefined,
       target: 'es2025',
       chain: ['tsconfig.json'],
@@ -149,8 +149,8 @@ describe(readTsconfigLanguageLevel, () => {
 
     const result = readTsconfigLanguageLevel('tsconfig.json');
 
-    expect(result?.lib).toEqual(['es2025']);
-    expect(result?.unresolvedExtends).toEqual(['./absent.json']);
+    expect(result?.lib).toStrictEqual(['es2025']);
+    expect(result?.unresolvedExtends).toStrictEqual(['./absent.json']);
   });
 
   it('reports a malformed parent as unresolved and keeps reading the rest of the chain', () => {
@@ -158,7 +158,7 @@ describe(readTsconfigLanguageLevel, () => {
     writeConfig('good.json', { compilerOptions: { target: 'ES2024' } });
     writeConfig('tsconfig.json', { extends: ['./broken.json', './good.json'] });
 
-    expect(readTsconfigLanguageLevel('tsconfig.json')).toEqual({
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
       lib: undefined,
       target: 'es2024',
       chain: ['tsconfig.json', 'good.json'],
@@ -170,7 +170,7 @@ describe(readTsconfigLanguageLevel, () => {
     writeConfig('a.json', { extends: './b.json', compilerOptions: { target: 'ES2022' } });
     writeConfig('b.json', { extends: './a.json', compilerOptions: { lib: ['ES2022'] } });
 
-    expect(readTsconfigLanguageLevel('a.json')).toEqual({
+    expect(readTsconfigLanguageLevel('a.json')).toStrictEqual({
       lib: ['es2022'],
       target: 'es2022',
       chain: ['a.json', 'b.json'],

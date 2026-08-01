@@ -17,42 +17,42 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/config.ts', () => ({
+vi.mock(import('../src/config.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
 }));
 
-vi.mock('../src/loadRemoteKit.ts', () => ({
+vi.mock(import('../src/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-vi.mock('../src/runRdy.ts', () => ({
+vi.mock(import('../src/runRdy.ts'), () => ({
   meetsThreshold: () => true,
   runRdy: mockRunRdy,
 }));
 
-vi.mock('../src/reportRdy.ts', async () => {
+vi.mock(import('../src/reportRdy.ts'), async () => {
   const actual = await vi.importActual<typeof import('../src/reportRdy.ts')>('../src/reportRdy.ts');
   return { ...actual, reportRdy: mockReportRdy };
 });
 
-vi.mock('../src/formatCombinedSummary.ts', () => ({
+vi.mock(import('../src/formatCombinedSummary.ts'), () => ({
   formatCombinedSummary: mockFormatCombinedSummary,
 }));
 
-vi.mock('../src/formatJsonReport.ts', () => ({
+vi.mock(import('../src/formatJsonReport.ts'), () => ({
   formatJsonReport: mockFormatJsonReport,
 }));
 
-vi.mock('../src/manifest/readManifest.ts', async (importOriginal) => {
+vi.mock(import('../src/manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/manifest/readManifest.ts')>();
   return { ManifestNotFoundError: actual.ManifestNotFoundError, readManifest: mockReadManifest };
 });
 
-vi.mock('../src/verify/checkDrift.ts', () => ({
+vi.mock(import('../src/verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
 }));
 
-vi.mock('../src/verify/checkSourceDrift.ts', () => ({
+vi.mock(import('../src/verify/checkSourceDrift.ts'), () => ({
   checkSourceDrift: mockCheckSourceDrift,
 }));
 

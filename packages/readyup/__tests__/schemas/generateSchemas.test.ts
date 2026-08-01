@@ -136,7 +136,7 @@ describe('generated JSON Schemas', () => {
     ])('accepts a representative payload for %s', (fileName, payload) => {
       const validate = validatorFor(fileName);
 
-      expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
+      expect(validate(payload)).toBe(true);
     });
 
     it('rejects a report whose counts are still flat', () => {

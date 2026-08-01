@@ -4,7 +4,7 @@ const mockMkdtempSync = vi.hoisted(() => vi.fn());
 const mockRmSync = vi.hoisted(() => vi.fn());
 const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('node:fs', () => ({
+vi.mock(import('node:fs'), () => ({
   mkdtempSync: mockMkdtempSync,
   rmSync: mockRmSync,
   writeFileSync: mockWriteFileSync,

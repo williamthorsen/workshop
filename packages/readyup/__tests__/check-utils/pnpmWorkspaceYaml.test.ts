@@ -9,48 +9,44 @@ import { readPnpmWorkspacePackages } from '../../src/check-utils/pnpmWorkspaceYa
 let tempDir: string;
 let yamlPath: string;
 
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-yaml-'));
-  yamlPath = join(tempDir, 'pnpm-workspace.yaml');
-});
-
-afterEach(() => {
-  // Temp directory is cleaned up by the OS; leaving it in place keeps the test fast.
-});
-
-function writeYaml(content: string): void {
-  writeFileSync(yamlPath, content);
-}
-
 describe(readPnpmWorkspacePackages, () => {
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rdy-yaml-'));
+    yamlPath = join(tempDir, 'pnpm-workspace.yaml');
+  });
+
+  afterEach(() => {
+    // Temp directory is cleaned up by the OS; leaving it in place keeps the test fast.
+  });
+
   it('returns a single unquoted item', () => {
     writeYaml(['packages:', '  - packages/*', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*']);
   });
 
   it('returns multiple unquoted items in order', () => {
     writeYaml(['packages:', '  - packages/*', '  - apps/*', '  - tools/*', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*', 'tools/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*', 'apps/*', 'tools/*']);
   });
 
   it('strips single quotes from items', () => {
     writeYaml(['packages:', "  - 'apps/*'", ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['apps/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['apps/*']);
   });
 
   it('strips double quotes from items', () => {
     writeYaml(['packages:', '  - "tools/*"', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['tools/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['tools/*']);
   });
 
   it('handles mixed quoting in one file', () => {
     writeYaml(['packages:', '  - packages/*', "  - 'apps/*'", '  - "tools/*"', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*', 'tools/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*', 'apps/*', 'tools/*']);
   });
 
   it('ignores full-line comments', () => {
@@ -66,31 +62,31 @@ describe(readPnpmWorkspacePackages, () => {
       ].join('\n'),
     );
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*', 'apps/*']);
   });
 
   it('strips inline trailing comments on items', () => {
     writeYaml(['packages:', '  - packages/* # primary packages', '  - apps/*    # apps', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*', 'apps/*']);
   });
 
   it('preserves `#` inside single-quoted items (not treated as an inline comment)', () => {
     writeYaml(['packages:', "  - 'packages/foo#bar'", ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/foo#bar']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/foo#bar']);
   });
 
   it('preserves `#` inside double-quoted items (not treated as an inline comment)', () => {
     writeYaml(['packages:', '  - "packages/foo#bar"', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/foo#bar']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/foo#bar']);
   });
 
   it('ignores blank lines between items', () => {
     writeYaml(['packages:', '  - packages/*', '', '  - apps/*', '', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*', 'apps/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*', 'apps/*']);
   });
 
   it('ignores other top-level keys', () => {
@@ -106,7 +102,7 @@ describe(readPnpmWorkspacePackages, () => {
       ].join('\n'),
     );
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual(['packages/*']);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*']);
   });
 
   it('returns null when the `packages` key is absent', () => {
@@ -118,13 +114,13 @@ describe(readPnpmWorkspacePackages, () => {
   it('returns an empty array when `packages` key has no sequence items', () => {
     writeYaml(['packages:', 'onlyBuiltDependencies:', '  - esbuild', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual([]);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual([]);
   });
 
   it('returns an empty array when `packages` is the only key and has no items', () => {
     writeYaml(['packages:', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toEqual([]);
+    expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual([]);
   });
 
   it('throws on a negation pattern with a message naming the pattern and file path', () => {
@@ -207,6 +203,10 @@ describe(readPnpmWorkspacePackages, () => {
 
     const attempt = (): string[] | null => readPnpmWorkspacePackages(yamlPath);
     expect(attempt).toThrow(/pnpm-workspace\.yaml:3/);
-    expect(attempt).toThrow(/\[flow, sequence\]/);
+    expect(attempt).toThrow(/\[flow, sequence]/);
   });
 });
+
+function writeYaml(content: string): void {
+  writeFileSync(yamlPath, content);
+}

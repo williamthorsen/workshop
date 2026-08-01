@@ -53,11 +53,6 @@ beforeAll(() => {
   process.chdir(cwd);
 });
 
-afterAll(() => {
-  process.chdir(originalCwd);
-  rmSync(cwd, { recursive: true, force: true });
-});
-
 beforeEach(() => {
   stdout = [];
   stderr = [];
@@ -74,6 +69,11 @@ beforeEach(() => {
 afterEach(() => {
   stdoutSpy.mockRestore();
   stderrSpy.mockRestore();
+});
+
+afterAll(() => {
+  process.chdir(originalCwd);
+  rmSync(cwd, { recursive: true, force: true });
 });
 
 describe('exit codes', () => {
@@ -154,7 +154,7 @@ describe('stdout purity under --json', () => {
     expect(() => {
       JSON.parse(written);
     }).not.toThrow();
-    expect(written.trimEnd().includes('\n')).toBe(false);
+    expect(written.trimEnd()).not.toContain('\n');
   });
 
   it('keeps stderr empty when an error is reported through the envelope', async () => {

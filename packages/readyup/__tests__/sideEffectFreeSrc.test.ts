@@ -48,7 +48,7 @@ describe('readyup source tree is side-effect-free', () => {
   it.each(checked)('%s contains only declarative top-level statements', (_rel, absolutePath) => {
     const offenders = findTopLevelSideEffects(absolutePath);
     const formatted = offenders.map((o) => `  line ${o.line}: ${o.kind} — ${o.snippet}`).join('\n');
-    expect(offenders, `Found non-declarative top-level statements:\n${formatted}`).toEqual([]);
+    expect(offenders, `Found non-declarative top-level statements:\n${formatted}`).toStrictEqual([]);
   });
 
   it('intentional side-effect files have matching entries in package.json sideEffects', () => {
@@ -60,7 +60,7 @@ describe('readyup source tree is side-effect-free', () => {
       const expectedCompiled = `./dist/esm/${srcPath.replace(/\.ts$/, '.js')}`;
       if (!listed.has(expectedCompiled)) missing.push(expectedCompiled);
     }
-    expect(missing, 'Missing from package.json sideEffects:\n  ' + missing.join('\n  ')).toEqual([]);
+    expect(missing).toStrictEqual([]);
   });
 });
 

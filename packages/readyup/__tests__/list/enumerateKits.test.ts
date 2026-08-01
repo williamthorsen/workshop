@@ -24,13 +24,13 @@ describe(enumerateKits, () => {
 
     const result = enumerateKits({ dir: tempDir, extension: '.ts' });
 
-    expect(result).toEqual(['a', 'b']);
+    expect(result).toStrictEqual(['a', 'b']);
   });
 
   it('returns empty array when directory does not exist', () => {
     const result = enumerateKits({ dir: path.join(tempDir, 'nonexistent'), extension: '.ts' });
 
-    expect(result).toEqual([]);
+    expect(result).toStrictEqual([]);
   });
 
   it('excludes hidden files', () => {
@@ -39,7 +39,7 @@ describe(enumerateKits, () => {
 
     const result = enumerateKits({ dir: tempDir, extension: '.ts' });
 
-    expect(result).toEqual(['visible']);
+    expect(result).toStrictEqual(['visible']);
   });
 
   it('excludes subdirectories even if their names match the extension', () => {
@@ -48,7 +48,7 @@ describe(enumerateKits, () => {
 
     const result = enumerateKits({ dir: tempDir, extension: '.ts' });
 
-    expect(result).toEqual(['file']);
+    expect(result).toStrictEqual(['file']);
   });
 
   it('returns empty array when no files match the extension', () => {
@@ -56,7 +56,7 @@ describe(enumerateKits, () => {
 
     const result = enumerateKits({ dir: tempDir, extension: '.ts' });
 
-    expect(result).toEqual([]);
+    expect(result).toStrictEqual([]);
   });
 
   it('strips the extension from results', () => {
@@ -64,7 +64,7 @@ describe(enumerateKits, () => {
 
     const result = enumerateKits({ dir: tempDir, extension: '.js' });
 
-    expect(result).toEqual(['default']);
+    expect(result).toStrictEqual(['default']);
   });
 
   it('rethrows non-ENOENT filesystem errors', () => {
