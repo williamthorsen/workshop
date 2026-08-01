@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "engineVersion": "0.0.0",
+  "contentAvailability": "complete",
+  "fingerprint": {
+    "config": "sha256:2b461c6b22dbed539c9cdd9ceeded5473a6af17b25b590a52efe878fc0ed8641",
+    "sources": [
+      {
+        "sourceId": "team",
+        "digest": "sha256:37794c323d11203728fa849706356b3270bb8a2e54731c86da20308a11f70c3a"
+      },
+      {
+        "sourceId": "packaged",
+        "digest": "sha256:ad580b5c2fd34ba17da84397e7b3b22486dc58885a4f0d21bfd0d05885cf639d"
+      },
+      {
+        "sourceId": "library",
+        "digest": "sha256:f4872938fe25fb9c37573c1ae3834978423d3e6d565aab8c9835d8e4a65bb68e"
+      }
+    ],
+    "targetState": [
+      {
+        "targetId": "claude",
+        "digest": "sha256:db5b0f2f57673e80bb1fc28ea6d68b99b45764d22ceadd5697ae75ae115d7d0f"
+      },
+      {
+        "targetId": "rovodev",
+        "digest": "sha256:4ec4e6fc0018a60b983e4254c5a549af47ae26949076da3f3ed325594c829626"
+      }
+    ],
+    "composite": "sha256:5dc8cb50d9df99052c9f7db1a1a1c17123740657f1690cfe91523d025c8af371"
+  },
+  "kinds": [
+    {
+      "id": "collection",
+      "label": "Collection",
+      "emitsFiles": false
+    },
+    {
+      "id": "rulebook",
+      "label": "Rulebook",
+      "emitsFiles": true
+    },
+    {
+      "id": "skill",
+      "label": "Skill",
+      "emitsFiles": true
+    },
+    {
+      "id": "subagent",
+      "label": "Subagent",
+      "emitsFiles": true
+    }
+  ],
+  "sources": [
+    {
+      "id": "team",
+      "name": "team",
+      "origin": {
+        "kind": "directory",
+        "location": "/srv/team-guidance"
+      }
+    },
+    {
+      "id": "packaged",
+      "name": "packaged",
+      "origin": {
+        "kind": "package",
+        "location": "@acme/guidance"
+      }
+    },
+    {
+      "id": "library",
+      "name": "library",
+      "origin": {
+        "kind": "directory",
+        "location": "/opt/compositor/library"
+      }
+    }
+  ],
+  "targets": [
+    {
+      "id": "claude",
+      "label": "Claude",
+      "root": "~/.claude",
+      "tokenMappings": [
+        {
+          "kindId": "tool",
+          "entries": [
+            {
+              "from": "Edit",
+              "to": "Edit"
+            },
+            {
+              "from": "Read",
+              "to": "Read"
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "name": "guidanceFile",
+          "value": "CLAUDE.md"
+        },
+        {
+          "name": "skillSigil",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "id": "rovodev",
+      "label": "Rovo Dev",
+      "root": "~/.rovodev",
+      "tokenMappings": [
+        {
+          "kindId": "tool",
+          "entries": [
+            {
+              "from": "Edit",
+              "to": "edit_file"
+            },
+            {
+              "from": "Read",
+              "to": "open_files"
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "name": "guidanceFile",
+          "value": "AGENTS.md"
+        },
+        {
+          "name": "skillSigil",
+          "value": "!"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "collection:core",
+      "kindId": "collection",
+      "slug": "core",
+      "status": "unchanged",
+      "seededBy": [
+        "declaration"
+      ],
+      "dependsOn": [
+        {
+          "to": "rulebook:style",
+          "via": "member"
+        },
+        {
+          "to": "skill:review",
+          "via": "member"
+        },
+        {
+          "to": "skill:lint",
+          "via": "member"
+        }
+      ],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "collections/core.md",
+          "hash": "sha256:5d34638a61e6f8d568c9175c7b4d2dcfc56d139ee4de7eb0dccea3a85c3ec868"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "rulebook:naming",
+      "kindId": "rulebook",
+      "slug": "naming",
+      "status": "added",
+      "seededBy": [
+        "package-catalog"
+      ],
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "packaged",
+          "path": "rulebooks/naming.md",
+          "hash": "sha256:35d9bb479b14b673b6bfb1c3830cc5fdf649b072b0395b8c0bcfd3bb079eb6dc"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "rulebook:style",
+      "kindId": "rulebook",
+      "slug": "style",
+      "status": "unchanged",
+      "seededBy": [],
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "rulebooks/style.md",
+          "hash": "sha256:23e840e27732c84bcf6c164fc3ec5d98c7d715fef9d379797e9f0f93a0c35737"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "rulebook:tests",
+      "kindId": "rulebook",
+      "slug": "tests",
+      "status": "added",
+      "seededBy": [
+        "package-catalog"
+      ],
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "packaged",
+          "path": "rulebooks/tests.md",
+          "hash": "sha256:1cb588ca7fa27f39eae135064174daf98ee3ae82b7de56986330dcdc04c02cf6"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "skill:lint",
+      "kindId": "skill",
+      "slug": "lint",
+      "status": "unchanged",
+      "seededBy": [],
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "library",
+          "path": "skills/lint/SKILL.md",
+          "hash": "sha256:0a9fab811587d3984897748ce2577aaa4c4b0a269324c28a87f3396392e17c06"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "skill:retired",
+      "kindId": "skill",
+      "slug": "retired",
+      "status": "removed",
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "skills/retired/SKILL.md",
+          "hash": "sha256:0a050ba5c9dadda273780550bed1866b554767a9694870006299983d463b3005"
+        },
+        "shadowed": []
+      }
+    },
+    {
+      "id": "skill:review",
+      "kindId": "skill",
+      "slug": "review",
+      "status": "changed",
+      "seededBy": [],
+      "dependsOn": [
+        {
+          "to": "skill:lint",
+          "via": "token",
+          "partialId": "team:_data/shared.md"
+        }
+      ],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "skills/review/SKILL.md",
+          "hash": "sha256:833862221c4dcd4a38c0f94bc661f669e56d3f385a52084a3bc0602e507031fe"
+        },
+        "shadowed": [
+          {
+            "sourceId": "packaged",
+            "path": "skills/review/SKILL.md",
+            "hash": "sha256:132e76fa823220f6c3bb045955177f72831192a3a26b3ea9d9836cbeee75ec0c"
+          },
+          {
+            "sourceId": "library",
+            "path": "skills/review/SKILL.md",
+            "hash": "sha256:388c40b379f9140e821cb40507424944c5ce781ddc019a9257dac468114edbc7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "subagent:auditor",
+      "kindId": "subagent",
+      "slug": "auditor",
+      "status": "changed",
+      "seededBy": [
+        "declaration"
+      ],
+      "dependsOn": [
+        {
+          "to": "skill:review",
+          "via": "injected"
+        }
+      ],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "subagents/auditor.md",
+          "hash": "sha256:75d10c8682f25618cf68c51714e3b6d4e7b7e9702d146706514c90bbe5682216"
+        },
+        "shadowed": []
+      }
+    }
+  ],
+  "partials": [
+    {
+      "id": "team:_data/shared.md",
+      "sourceId": "team",
+      "path": "_data/shared.md",
+      "hash": "sha256:7161d10d84a59fef22de1b5dc73e2396febe46df4cb52fbf34d5efef20b7cf6e"
+    }
+  ],
+  "files": [
+    {
+      "targetId": "claude",
+      "path": "CLAUDE.md",
+      "status": "changed",
+      "ownership": {
+        "kind": "region",
+        "open": "<!-- ambient:start -->",
+        "close": "<!-- ambient:end -->"
+      },
+      "current": {
+        "hash": "sha256:8b426986df2999cee78c9893f3397acf3a3db6df3412388b8fb92a8435288bd9"
+      },
+      "planned": {
+        "hash": "sha256:621607d9cbc6994d66671cef34fd3a635d9a067b696afcb9574e7c6615dc7798"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "rulebook:naming",
+            "marker": {
+              "open": "<!-- rulebook:naming -->",
+              "close": "<!-- /rulebook:naming -->"
+            }
+          },
+          {
+            "artifactId": "rulebook:style",
+            "marker": {
+              "open": "<!-- rulebook:style -->",
+              "close": "<!-- /rulebook:style -->"
+            }
+          },
+          {
+            "artifactId": "rulebook:tests",
+            "marker": {
+              "open": "<!-- rulebook:tests -->",
+              "close": "<!-- /rulebook:tests -->"
+            }
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "settings.json",
+      "status": "changed",
+      "ownership": {
+        "kind": "entries",
+        "sentinel": "codeassembly",
+        "format": "json"
+      },
+      "current": {
+        "hash": "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611"
+      },
+      "planned": {
+        "hash": "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:review"
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "skills/lint/SKILL.md",
+      "status": "unchanged",
+      "ownership": {
+        "kind": "full"
+      },
+      "current": {
+        "hash": "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2"
+      },
+      "planned": {
+        "hash": "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:lint"
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "skills/retired/SKILL.md",
+      "status": "removed",
+      "ownership": {
+        "kind": "full"
+      },
+      "current": {
+        "hash": "sha256:47f4e96573e30d30e0aa7338a36381f6c783220c19078dc3848b40ba59a28663"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:retired"
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "skills/review/SKILL.md",
+      "status": "changed",
+      "ownership": {
+        "kind": "full"
+      },
+      "current": {
+        "hash": "sha256:7f2382a25a1072b058208751673bdccb0269c5b19b7e4e70169f3f6e00c4cff6"
+      },
+      "planned": {
+        "hash": "sha256:023a89d4905ca9852344d46ff5701e14e9fb9efec4a8a3fee5e4dc3298d13a7e"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:review"
+          }
+        ],
+        "partials": [
+          "team:_data/shared.md"
+        ]
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "skills/review/diagram.png",
+      "status": "added",
+      "ownership": {
+        "kind": "full"
+      },
+      "planned": {
+        "hash": "sha256:218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:review"
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "rovodev",
+      "path": "subagents/auditor.md",
+      "status": "changed",
+      "ownership": {
+        "kind": "full"
+      },
+      "blocked": {
+        "reason": "the destination is owned by another tool"
+      },
+      "current": {
+        "hash": "sha256:b17424857398d94ff93cd1456c99771b87ffbdced07ebdf23e6351e027afc076"
+      },
+      "planned": {
+        "hash": "sha256:9f8a0164340eaf6893304f3b2276a9ebf8f8ba471e53eb8a321baadd280c2aae"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "subagent:auditor"
+          }
+        ],
+        "partials": [
+          "team:_data/shared.md"
+        ]
+      }
+    }
+  ],
+  "blobs": {
+    "sha256:023a89d4905ca9852344d46ff5701e14e9fb9efec4a8a3fee5e4dc3298d13a7e": {
+      "encoding": "utf8",
+      "data": "# Review\n\nRead the diff, then the tests.\n"
+    },
+    "sha256:218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86": {
+      "encoding": "base64",
+      "data": "iVBORw0KGgoAAAAN"
+    },
+    "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2": {
+      "encoding": "utf8",
+      "data": "# Lint\n\nRun the linter.\n"
+    },
+    "sha256:47f4e96573e30d30e0aa7338a36381f6c783220c19078dc3848b40ba59a28663": {
+      "encoding": "utf8",
+      "data": "# Retired\n\nSuperseded.\n"
+    },
+    "sha256:621607d9cbc6994d66671cef34fd3a635d9a067b696afcb9574e7c6615dc7798": {
+      "encoding": "utf8",
+      "data": "# Guidance\n\n<!-- ambient:start -->\n<!-- rulebook:naming -->\nName functions with a leading verb.\n<!-- /rulebook:naming -->\n\n<!-- rulebook:style -->\nUse sentence case.\n<!-- /rulebook:style -->\n\n<!-- rulebook:tests -->\nName tests for the behavior they pin.\n<!-- /rulebook:tests -->\n<!-- ambient:end -->\n"
+    },
+    "sha256:7f2382a25a1072b058208751673bdccb0269c5b19b7e4e70169f3f6e00c4cff6": {
+      "encoding": "utf8",
+      "data": "# Review\n\nRead the diff.\n"
+    },
+    "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611": {
+      "encoding": "utf8",
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"vendor-tool sync\" },\n    { \"command\": \"relay --on=stop\", \"source\": \"codeassembly\" }\n  ]\n}\n"
+    },
+    "sha256:8b426986df2999cee78c9893f3397acf3a3db6df3412388b8fb92a8435288bd9": {
+      "encoding": "utf8",
+      "data": "# Guidance\n\n<!-- ambient:start -->\n<!-- rulebook:style -->\nUse sentence case.\n<!-- /rulebook:style -->\n<!-- ambient:end -->\n"
+    },
+    "sha256:9f8a0164340eaf6893304f3b2276a9ebf8f8ba471e53eb8a321baadd280c2aae": {
+      "encoding": "utf8",
+      "data": "# Auditor\n\nAudit the change against its ticket.\n"
+    },
+    "sha256:b17424857398d94ff93cd1456c99771b87ffbdced07ebdf23e6351e027afc076": {
+      "encoding": "utf8",
+      "data": "# Auditor\n\nAudit the change.\n"
+    },
+    "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c": {
+      "encoding": "utf8",
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"vendor-tool sync\" },\n    { \"command\": \"relay --on=stop\", \"source\": \"codeassembly\" },\n    { \"command\": \"relay --on=review\", \"source\": \"codeassembly\" }\n  ]\n}\n"
+    }
+  }
+}

@@ -1,2 +1,5 @@
-// The package's public surface, empty until the first module lands. An empty file would fail `unicorn/no-empty-file`.
-export {};
+export type { PlanViolation } from './assertPlanIsConsistent.ts';
+export { assertPlanIsConsistent, PlanConsistencyError } from './assertPlanIsConsistent.ts';
+export * from './schemas/index.ts';
+export type { TraversalIndex } from './traversal.ts';
+export { buildTraversalIndex, resolveInclusionPaths } from './traversal.ts';
