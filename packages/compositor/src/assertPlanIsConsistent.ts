@@ -1,3 +1,4 @@
+import { findResolutionOrderViolations } from './findResolutionOrderViolations.ts';
 import type { DiffStatus } from './schemas/common.ts';
 import type { FileEntry } from './schemas/fileSchemas.ts';
 import type { Plan } from './schemas/planSchema.ts';
@@ -36,7 +37,7 @@ export function assertPlanIsConsistent(plan: Plan): void {
     ...findDanglingReferences(plan),
     ...findMisplacedPartialReferences(plan),
     ...findMissingBlobs(plan),
-    ...findResolutionOrderViolations(plan),
+    ...findPlanResolutionOrderViolations(plan),
     ...findStatusDisagreements(plan),
   ];
 
@@ -197,54 +198,13 @@ function findMissingBlobs(plan: Plan): Array<PlanViolation> {
   return violations;
 }
 
-/**
- * Violations for each resolution whose candidates contradict source precedence.
- *
- * `sources` runs highest precedence first, so a winner must outrank every candidate it shadowed and the losers must
- * descend from there. Nothing else validates this: the schema cannot express an ordering, and a plan listing losers
- * arbitrarily would otherwise render "shadowing Z" from data no check had looked at.
- *
- * A candidate naming an unknown source is skipped here, because the dangling reference is already reported. A repeated
- * source id ranks at its first occurrence, which is the one that would win resolution; the repeat itself is reported by
- * the duplicate check rather than cascading into every resolution that names it.
- */
-function findResolutionOrderViolations(plan: Plan): Array<PlanViolation> {
-  const precedence = new Map<string, number>();
-  for (const [index, source] of plan.sources.entries()) {
-    if (!precedence.has(source.id)) {
-      precedence.set(source.id, index);
-    }
-  }
-  const violations: Array<PlanViolation> = [];
-
-  for (const [index, artifact] of plan.artifacts.entries()) {
-    const { resolution } = artifact;
-    if (resolution === undefined) {
-      continue;
-    }
-
-    // The pair always names one source: `outrankedBy` is the source at `outrankingIndex`, so a violation reports the
-    // source it was actually compared against.
-    let outrankedBy = resolution.winner.sourceId;
-    let outrankingIndex = precedence.get(outrankedBy);
-    for (const [loserIndex, loser] of resolution.shadowed.entries()) {
-      const loserIndexInSources = precedence.get(loser.sourceId);
-      if (loserIndexInSources === undefined || outrankingIndex === undefined) {
-        continue;
-      }
-      if (loserIndexInSources > outrankingIndex) {
-        outrankedBy = loser.sourceId;
-        outrankingIndex = loserIndexInSources;
-        continue;
-      }
-      violations.push({
-        path: `artifacts[${index}].resolution.shadowed[${loserIndex}].sourceId`,
-        message: `names "${loser.sourceId}", which does not follow "${outrankedBy}" in source precedence order`,
-      });
-    }
-  }
-
-  return violations;
+/** Violations for each artifact whose shadowed candidates contradict source precedence. */
+function findPlanResolutionOrderViolations(plan: Plan): Array<PlanViolation> {
+  const entries = plan.artifacts.map((artifact, index) => ({
+    basePath: `artifacts[${index}].resolution`,
+    resolution: artifact.resolution,
+  }));
+  return findResolutionOrderViolations(entries, plan.sources);
 }
 
 /** Violations for each file whose recorded status disagrees with the sides it carries. */
