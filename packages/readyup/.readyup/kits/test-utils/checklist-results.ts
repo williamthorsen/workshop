@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 
-import { runRdy } from '../../src/runRdy.ts';
-import type { RdyKit, RdyResult } from '../../src/types.ts';
+import { runRdy } from '../../../src/runRdy.ts';
+import type { RdyKit, RdyResult } from '../../../src/types.ts';
 
 /**
  * The result whose claim contains `fragment`.

@@ -5,10 +5,10 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { RdyResult } from '../../src/types.ts';
-import { pickResult, runChecklist } from '../../test-utils/kits/checklist-results.ts';
-import { loadOwnKit } from '../../test-utils/kits/loadOwnKit.ts';
-import { FIXTURE_KITS_DIR, writeKit, writeKitManifest, writeRdyConfig } from '../../test-utils/kits/project-fixture.ts';
+import type { RdyResult } from '../../../src/types.ts';
+import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
+import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
+import { FIXTURE_KITS_DIR, writeKit, writeKitManifest, writeRdyConfig } from '../test-utils/project-fixture.ts';
 
 /**
  * Covers the `default` kit readyup publishes, against fixture projects in a temp directory.

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { hashFile } from '../../src/verify/targetHash.ts';
+import { hashFile } from '../../../src/verify/targetHash.ts';
 
 /** Kit directory a fixture project holds, relative to its root. */
 export const FIXTURE_KITS_DIR = path.join('.readyup', 'kits');

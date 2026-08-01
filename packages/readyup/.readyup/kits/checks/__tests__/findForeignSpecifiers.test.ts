@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { findForeignSpecifiers } from '../../.readyup/kits/checks/buildSelfContainmentChecks.ts';
+import { findForeignSpecifiers } from '../buildSelfContainmentChecks.ts';
 
 describe(findForeignSpecifiers, () => {
   it('accepts the specifiers rdy compile leaves external', () => {

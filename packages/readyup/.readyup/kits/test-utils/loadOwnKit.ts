@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import type { RdyKit } from '../../src/types.ts';
+import type { RdyKit } from '../../../src/types.ts';
 
 /** Names of the kits this package publishes. */
 export type OwnKitName = 'default' | 'publishing';
@@ -14,9 +14,6 @@ export type OwnKitName = 'default' | 'publishing';
  */
 export async function loadOwnKit(name: OwnKitName): Promise<RdyKit> {
   vi.resetModules();
-  const imported =
-    name === 'default'
-      ? await import('../../.readyup/kits/default.ts')
-      : await import('../../.readyup/kits/publishing.ts');
+  const imported = name === 'default' ? await import('../default.ts') : await import('../publishing.ts');
   return imported.default;
 }

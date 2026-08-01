@@ -6,17 +6,17 @@ import process from 'node:process';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveKitSources, runCommand } from '../../src/cli.ts';
-import { compileConfig } from '../../src/compile/compileConfig.ts';
-import { validateCompiledOutput } from '../../src/compile/validateCompiledOutput.ts';
-import { listCommand } from '../../src/list/listCommand.ts';
-import type { RdyManifestKit } from '../../src/manifest/manifestSchema.ts';
-import type { JsonKitResultEntry, JsonReport } from '../../src/schemas/index.ts';
-import { ListOutputSchema, ReportSchema } from '../../src/schemas/index.ts';
-import { hashFile } from '../../src/verify/targetHash.ts';
+import { resolveKitSources, runCommand } from '../../../src/cli.ts';
+import { compileConfig } from '../../../src/compile/compileConfig.ts';
+import { validateCompiledOutput } from '../../../src/compile/validateCompiledOutput.ts';
+import { listCommand } from '../../../src/list/listCommand.ts';
+import type { RdyManifestKit } from '../../../src/manifest/manifestSchema.ts';
+import type { JsonKitResultEntry, JsonReport } from '../../../src/schemas/index.ts';
+import { ListOutputSchema, ReportSchema } from '../../../src/schemas/index.ts';
+import { hashFile } from '../../../src/verify/targetHash.ts';
 
-const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..');
-const KIT_SOURCE_DIR = path.join(PACKAGE_ROOT, '.readyup', 'kits');
+const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
+const KIT_SOURCE_DIR = path.resolve(import.meta.dirname, '..');
 const KIT_NAMES = ['default', 'publishing'];
 
 /** Flags a `--from` invocation leaves at their defaults. */

@@ -1,0 +1,8 @@
+# Keeps the kits' own tests and helpers out of the tarball.
+#
+# The `files` allowlist ships `.readyup` wholesale, because the publishing kit's `describeFilesCoverage`
+# accepts only an entry naming the directory or the package root -- a narrower glob would fail the check
+# readyup runs on itself. An ignore file nested inside an included directory is the one lever that still
+# prunes: a package-root `.npmignore` is overridden by `files`, this is not.
+__tests__/
+test-utils/
