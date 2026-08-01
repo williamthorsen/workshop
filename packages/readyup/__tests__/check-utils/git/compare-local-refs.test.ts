@@ -73,7 +73,7 @@ describe(compareLocalRefs, () => {
     assert.ok(result.status === 'mismatch');
     expect(result.shaA).toBe('aaa111');
     expect(result.shaB).toBe('bbb222');
-    expect(result.aheadBehind).toEqual({ ahead: 3, behind: 0 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 3, behind: 0 });
   });
 
   it('returns mismatch with behind count when refA is behind', async () => {
@@ -89,7 +89,7 @@ describe(compareLocalRefs, () => {
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
-    expect(result.aheadBehind).toEqual({ ahead: 0, behind: 2 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 0, behind: 2 });
   });
 
   it('returns mismatch with both counts when refs have diverged', async () => {
@@ -105,7 +105,7 @@ describe(compareLocalRefs, () => {
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
-    expect(result.aheadBehind).toEqual({ ahead: 2, behind: 3 });
+    expect(result.aheadBehind).toStrictEqual({ ahead: 2, behind: 3 });
   });
 
   it('returns ref-missing when refA does not exist', async () => {
@@ -116,7 +116,7 @@ describe(compareLocalRefs, () => {
 
     const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'refA' });
+    expect(result).toStrictEqual({ status: 'ref-missing', ref: 'refA' });
   });
 
   it('returns ref-missing when refB does not exist', async () => {
@@ -127,7 +127,7 @@ describe(compareLocalRefs, () => {
 
     const result = await compareLocalRefs('/repo', 'refA', 'refB');
 
-    expect(result).toEqual({ status: 'ref-missing', ref: 'refB' });
+    expect(result).toStrictEqual({ status: 'ref-missing', ref: 'refB' });
   });
 
   it('rethrows non-ref-missing errors', async () => {

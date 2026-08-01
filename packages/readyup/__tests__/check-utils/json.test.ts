@@ -18,19 +18,11 @@ afterEach(() => {
   cwdSpy.mockRestore();
 });
 
-function writeJson(filename: string, content: unknown): void {
-  writeFileSync(join(tempDir, filename), JSON.stringify(content));
-}
-
-function writeRaw(filename: string, content: string): void {
-  writeFileSync(join(tempDir, filename), content);
-}
-
 describe(readJsonFile, () => {
   it('returns the parsed object from a JSON file', () => {
     writeJson('config.json', { key: 'value' });
 
-    expect(readJsonFile('config.json')).toEqual({ key: 'value' });
+    expect(readJsonFile('config.json')).toStrictEqual({ key: 'value' });
   });
 
   it('returns undefined when the file does not exist', () => {
@@ -76,7 +68,7 @@ describe(readJsonValue, () => {
   it('returns the full object when no keys are provided', () => {
     writeJson('config.json', { name: 'test' });
 
-    expect(readJsonValue('config.json')).toEqual({ name: 'test' });
+    expect(readJsonValue('config.json')).toStrictEqual({ name: 'test' });
   });
 });
 
@@ -116,7 +108,7 @@ describe(hasJsonFields, () => {
 
     const result = hasJsonFields('data.json', ['name', 'version']);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: true,
       progress: { type: 'fraction', passedCount: 2, count: 2 },
     });
@@ -127,7 +119,7 @@ describe(hasJsonFields, () => {
 
     const result = hasJsonFields('data.json', ['name', 'version', 'type']);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: false,
       detail: 'Missing fields: version, type',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
@@ -139,7 +131,7 @@ describe(hasJsonFields, () => {
 
     const result = hasJsonFields('data.json', []);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: true,
       progress: { type: 'fraction', passedCount: 0, count: 0 },
     });
@@ -148,10 +140,22 @@ describe(hasJsonFields, () => {
   it('returns not ok with all fields missing when file does not exist', () => {
     const result = hasJsonFields('missing.json', ['name', 'version']);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: false,
       detail: 'Missing fields: name, version',
       progress: { type: 'fraction', passedCount: 0, count: 2 },
     });
   });
 });
+
+// region | Helpers
+
+function writeJson(filename: string, content: unknown): void {
+  writeFileSync(join(tempDir, filename), JSON.stringify(content));
+}
+
+function writeRaw(filename: string, content: string): void {
+  writeFileSync(join(tempDir, filename), content);
+}
+
+// endregion | Helpers

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const execFileMock = vi.fn();
 const spawnMock = vi.fn();
 
-vi.mock(import('node:child_process'), () => ({
+vi.mock('node:child_process', () => ({
   execFile: execFileMock,
   spawn: spawnMock,
 }));

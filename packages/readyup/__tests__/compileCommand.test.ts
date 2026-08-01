@@ -32,7 +32,7 @@ vi.mock(import('node:fs'), () => ({
   readdirSync: mockReaddirSync,
 }));
 
-vi.mock(import('picomatch'), () => ({
+vi.mock('picomatch', () => ({
   default: mockPicomatch,
 }));
 
@@ -918,8 +918,8 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(0);
     expect(mockCheckDrift).not.toHaveBeenCalled();
-    expect(mockCompileConfig).toHaveBeenCalledWith();
-    expect(mockWriteManifest).toHaveBeenCalledWith();
+    expect(mockCompileConfig).toHaveBeenCalledTimes(1);
+    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
   });
 
   it('skips drifted kits during batch compile and preserves their manifest entries', async () => {

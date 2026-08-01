@@ -134,7 +134,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalledWith();
-      expect(mockReadManifest).toHaveBeenCalledWith();
+      expect(mockReadManifest).toHaveBeenCalledTimes(1);
       // Package discovery is mocked out in this file, so the count covers internal kits alone.
       expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
       expect(mockEnumerateKits).toHaveBeenCalledWith(

@@ -16,11 +16,11 @@ vi.mock(import('../../../src/check-utils/git/compare-ref-to-remote.ts'), () => (
 const mockCompareLocalRefs = vi.mocked(compareLocalRefsModule.compareLocalRefs);
 const mockCompareRefToRemote = vi.mocked(compareRefToRemoteModule.compareRefToRemote);
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe(makeLocalRefSyncCheck, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('passes when refs match', async () => {
     const result: LocalRefsCompareResult = { status: 'match', shaA: 'aaa', shaB: 'aaa' };
     mockCompareLocalRefs.mockResolvedValue(result);
@@ -42,7 +42,7 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('ahead') });
   });
 
   it('reports behind detail when refA is behind', async () => {
@@ -57,8 +57,8 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
-    expect(outcome).toEqual(expect.objectContaining({ detail: expect.stringContaining('git merge') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
+    expect(outcome).toMatchObject({ detail: expect.stringContaining('git merge') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -73,7 +73,7 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
   });
 
   it('reports diverged detail when aheadBehind is unavailable', async () => {
@@ -83,7 +83,7 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
   });
 
   it('reports ref-missing detail for a nonexistent ref', async () => {
@@ -93,7 +93,7 @@ describe(makeLocalRefSyncCheck, () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'nonexistent', refB: 'HEAD' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('nonexistent') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('nonexistent') });
   });
 
   it('uses custom fix when provided', () => {
@@ -122,6 +122,10 @@ describe(makeLocalRefSyncCheck, () => {
 });
 
 describe(makeRemoteRefSyncCheck, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('passes when in-sync', async () => {
     const result: RemoteRefCompareResult = { status: 'in-sync', localSha: 'aaa', remoteSha: 'aaa' };
     mockCompareRefToRemote.mockResolvedValue(result);
@@ -145,7 +149,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('ahead') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('ahead') });
   });
 
   it('reports behind detail when local is behind', async () => {
@@ -160,8 +164,8 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('behind') }));
-    expect(outcome).toEqual(expect.objectContaining({ detail: expect.stringContaining('git pull') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
+    expect(outcome).toMatchObject({ detail: expect.stringContaining('git pull') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -176,7 +180,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('diverged') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
   });
 
   it('reports ref-missing detail when remote ref does not exist', async () => {
@@ -186,7 +190,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toEqual(expect.objectContaining({ ok: false, detail: expect.stringContaining('origin/feature') }));
+    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('origin/feature') });
   });
 
   it('returns skip reason when remote is unreachable', async () => {

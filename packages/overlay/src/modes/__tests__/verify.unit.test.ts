@@ -5,11 +5,11 @@ import { runVerify } from '../verify.ts';
 
 const context = { source: '/src', target: '/target' };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(runVerify, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('exits 0 with no entries when status is clean', async () => {
     mockStatus('');
 

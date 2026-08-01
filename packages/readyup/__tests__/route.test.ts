@@ -33,7 +33,7 @@ vi.mock(import('../src/list/listCommand.ts'), () => ({
   listCommand: mockListCommand,
 }));
 
-vi.mock(import('../src/version.ts'), () => ({
+vi.mock('../src/version.ts', () => ({
   VERSION: '1.2.3',
 }));
 
@@ -422,7 +422,7 @@ describe(routeCommand, () => {
 
     await routeCommand(['run']);
 
-    expect(mockLoadConfig).toHaveBeenCalledWith();
+    expect(mockLoadConfig).toHaveBeenCalled();
   });
 
   it('calls loadConfig when --internal is used', async () => {
@@ -440,7 +440,7 @@ describe(routeCommand, () => {
 
     await routeCommand(['run', '--internal']);
 
-    expect(mockLoadConfig).toHaveBeenCalledWith();
+    expect(mockLoadConfig).toHaveBeenCalled();
   });
 
   it('shows compile help and returns 0 for compile --help', async () => {

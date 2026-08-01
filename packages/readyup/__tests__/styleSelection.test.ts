@@ -59,11 +59,6 @@ beforeAll(() => {
   process.chdir(cwd);
 });
 
-afterAll(() => {
-  process.chdir(originalCwd);
-  rmSync(cwd, { recursive: true, force: true });
-});
-
 beforeEach(() => {
   stdout = [];
   stderr = [];
@@ -89,6 +84,11 @@ afterEach(() => {
   process.stdout.isTTY = originalIsTty;
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
+});
+
+afterAll(() => {
+  process.chdir(originalCwd);
+  rmSync(cwd, { recursive: true, force: true });
 });
 
 describe('--style plain', () => {

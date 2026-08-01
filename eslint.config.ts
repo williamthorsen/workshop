@@ -1,7 +1,7 @@
 import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
-import { deferredLintRules } from './.config/eslint/deferred-lint-rules.ts';
+import { deferredLintRules, deferredTestRules } from './.config/eslint/deferred-lint-rules.ts';
 
 const config = defineConfig([
   ...baseConfig,
@@ -59,7 +59,7 @@ const config = defineConfig([
     files: ['**/*.test.ts', '**/*.test.tsx'],
     extends: [await createConfig.vitest()],
     rules: {
-      '@typescript-eslint/no-unsafe-assignment': 'off',
+      ...deferredTestRules,
     },
   }),
   {

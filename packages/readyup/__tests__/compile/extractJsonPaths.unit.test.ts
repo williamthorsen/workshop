@@ -6,13 +6,13 @@ describe(extractJsonPaths, () => {
   it('extracts a top-level key by string', () => {
     const obj = { name: 'my-pkg', version: '1.0.0' };
 
-    expect(extractJsonPaths(obj, ['name'])).toEqual({ name: 'my-pkg' });
+    expect(extractJsonPaths(obj, ['name'])).toStrictEqual({ name: 'my-pkg' });
   });
 
   it('extracts multiple top-level keys', () => {
     const obj = { name: 'my-pkg', version: '1.0.0', license: 'MIT' };
 
-    expect(extractJsonPaths(obj, ['name', 'version'])).toEqual({
+    expect(extractJsonPaths(obj, ['name', 'version'])).toStrictEqual({
       name: 'my-pkg',
       version: '1.0.0',
     });
@@ -21,7 +21,7 @@ describe(extractJsonPaths, () => {
   it('extracts a nested key by array path', () => {
     const obj = { publishConfig: { access: 'public', registry: 'https://npm.pkg.github.com' } };
 
-    expect(extractJsonPaths(obj, [['publishConfig', 'access']])).toEqual({
+    expect(extractJsonPaths(obj, [['publishConfig', 'access']])).toStrictEqual({
       publishConfig: { access: 'public' },
     });
   });
@@ -33,7 +33,7 @@ describe(extractJsonPaths, () => {
       repository: { type: 'git', url: 'https://example.com' },
     };
 
-    expect(extractJsonPaths(obj, ['name', ['repository', 'url']])).toEqual({
+    expect(extractJsonPaths(obj, ['name', ['repository', 'url']])).toStrictEqual({
       name: 'my-pkg',
       repository: { url: 'https://example.com' },
     });
@@ -47,7 +47,7 @@ describe(extractJsonPaths, () => {
         ['a', 'b'],
         ['a', 'c'],
       ]),
-    ).toEqual({
+    ).toStrictEqual({
       a: { b: 1, c: 2 },
     });
   });
@@ -55,7 +55,7 @@ describe(extractJsonPaths, () => {
   it('preserves deeply nested values', () => {
     const obj = { a: { b: { c: { d: 42 } } } };
 
-    expect(extractJsonPaths(obj, [['a', 'b', 'c', 'd']])).toEqual({
+    expect(extractJsonPaths(obj, [['a', 'b', 'c', 'd']])).toStrictEqual({
       a: { b: { c: { d: 42 } } },
     });
   });
@@ -81,15 +81,15 @@ describe(extractJsonPaths, () => {
   it('extracts null values without throwing', () => {
     const obj = { key: null };
 
-    expect(extractJsonPaths(obj, ['key'])).toEqual({ key: null });
+    expect(extractJsonPaths(obj, ['key'])).toStrictEqual({ key: null });
   });
 
   it('returns an empty object when given no paths', () => {
-    expect(extractJsonPaths({ a: 1 }, [])).toEqual({});
+    expect(extractJsonPaths({ a: 1 }, [])).toStrictEqual({});
   });
 
   it('skips empty array paths', () => {
-    expect(extractJsonPaths({ a: 1 }, [[], 'a'])).toEqual({ a: 1 });
+    expect(extractJsonPaths({ a: 1 }, [[], 'a'])).toStrictEqual({ a: 1 });
   });
 
   it('handles duplicate path requests by deduplicating', () => {
@@ -97,7 +97,7 @@ describe(extractJsonPaths, () => {
 
     const result = extractJsonPaths(obj, ['name', 'name']);
 
-    expect(result).toEqual({ name: 'my-pkg' });
-    expect(Object.keys(result)).toEqual(['name']);
+    expect(result).toStrictEqual({ name: 'my-pkg' });
+    expect(Object.keys(result)).toStrictEqual(['name']);
   });
 });

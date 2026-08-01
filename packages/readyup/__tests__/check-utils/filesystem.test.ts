@@ -25,6 +25,22 @@ afterEach(() => {
   cwdSpy.mockRestore();
 });
 
+describe(commandExists, () => {
+  it('returns true for a command that exists', () => {
+    expect(commandExists('node')).toBe(true);
+  });
+
+  it('returns false for a command that does not exist', () => {
+    expect(commandExists('nonexistent-command-xyz-99')).toBe(false);
+  });
+
+  it('returns false for names with shell metacharacters', () => {
+    expect(commandExists('node; echo hacked')).toBe(false);
+    expect(commandExists('node$(whoami)')).toBe(false);
+    expect(commandExists('node|cat')).toBe(false);
+  });
+});
+
 describe(fileExists, () => {
   it('returns true when the file exists', () => {
     writeFileSync(join(tempDir, 'found.txt'), 'content');
@@ -34,18 +50,6 @@ describe(fileExists, () => {
 
   it('returns false when the file does not exist', () => {
     expect(fileExists('missing.txt')).toBe(false);
-  });
-});
-
-describe(readFile, () => {
-  it('returns the file content as a string', () => {
-    writeFileSync(join(tempDir, 'hello.txt'), 'hello world');
-
-    expect(readFile('hello.txt')).toBe('hello world');
-  });
-
-  it('returns undefined when the file does not exist', () => {
-    expect(readFile('missing.txt')).toBeUndefined();
   });
 });
 
@@ -89,7 +93,7 @@ describe(filesExist, () => {
   it('returns ok with zero counts when paths array is empty', () => {
     const result = filesExist([]);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: true,
       progress: { type: 'fraction', passedCount: 0, count: 0 },
     });
@@ -101,7 +105,7 @@ describe(filesExist, () => {
 
     const result = filesExist(['a.txt', 'b.txt']);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: true,
       progress: { type: 'fraction', passedCount: 2, count: 2 },
     });
@@ -112,7 +116,7 @@ describe(filesExist, () => {
 
     const result = filesExist(['a.txt', 'b.txt', 'c.txt']);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: false,
       detail: 'Missing files: b.txt, c.txt',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
@@ -125,7 +129,7 @@ describe(filesExist, () => {
 
     const result = filesExist(['found.txt', 'missing.txt'], { baseDir: 'sub' });
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       ok: false,
       detail: 'Missing files: missing.txt',
       progress: { type: 'fraction', passedCount: 1, count: 2 },
@@ -133,18 +137,14 @@ describe(filesExist, () => {
   });
 });
 
-describe(commandExists, () => {
-  it('returns true for a command that exists', () => {
-    expect(commandExists('node')).toBe(true);
+describe(readFile, () => {
+  it('returns the file content as a string', () => {
+    writeFileSync(join(tempDir, 'hello.txt'), 'hello world');
+
+    expect(readFile('hello.txt')).toBe('hello world');
   });
 
-  it('returns false for a command that does not exist', () => {
-    expect(commandExists('nonexistent-command-xyz-99')).toBe(false);
-  });
-
-  it('returns false for names with shell metacharacters', () => {
-    expect(commandExists('node; echo hacked')).toBe(false);
-    expect(commandExists('node$(whoami)')).toBe(false);
-    expect(commandExists('node|cat')).toBe(false);
+  it('returns undefined when the file does not exist', () => {
+    expect(readFile('missing.txt')).toBeUndefined();
   });
 });

@@ -53,11 +53,6 @@ beforeAll(() => {
   process.chdir(cwd);
 });
 
-afterAll(() => {
-  process.chdir(originalCwd);
-  rmSync(cwd, { recursive: true, force: true });
-});
-
 beforeEach(() => {
   stdout = [];
   stderr = [];
@@ -74,6 +69,11 @@ beforeEach(() => {
 afterEach(() => {
   stdoutSpy.mockRestore();
   stderrSpy.mockRestore();
+});
+
+afterAll(() => {
+  process.chdir(originalCwd);
+  rmSync(cwd, { recursive: true, force: true });
 });
 
 describe('exit codes', () => {

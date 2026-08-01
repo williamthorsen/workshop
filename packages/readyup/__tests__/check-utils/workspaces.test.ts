@@ -9,29 +9,16 @@ import { discoverWorkspaces } from '../../src/check-utils/workspaces.ts';
 let tempDir: string;
 let cwdSpy: MockInstance;
 
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-ws-'));
-  cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-});
-
-afterEach(() => {
-  cwdSpy.mockRestore();
-});
-
-function writeRootPackageJson(content: Record<string, unknown>): void {
-  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
-}
-
-function writeWorkspacePackage(relDir: string, content: Record<string, unknown>): void {
-  mkdirSync(join(tempDir, relDir), { recursive: true });
-  writeFileSync(join(tempDir, relDir, 'package.json'), JSON.stringify(content));
-}
-
-function writePnpmWorkspaceYaml(content: string): void {
-  writeFileSync(join(tempDir, 'pnpm-workspace.yaml'), content);
-}
-
 describe(discoverWorkspaces, () => {
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rdy-ws-'));
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
+  });
+
   describe('pnpm workspaces', () => {
     it('discovers workspaces listed via `packages` block sequence', () => {
       writeRootPackageJson({ name: 'root', private: true });
@@ -42,15 +29,15 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['apps/web', 'packages/alpha', 'packages/beta']);
-      expect(workspaces.map((w) => w.name)).toEqual(['web', 'alpha', 'beta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['apps/web', 'packages/alpha', 'packages/beta']);
+      expect(workspaces.map((w) => w.name)).toStrictEqual(['web', 'alpha', 'beta']);
     });
 
     it('returns an empty array when a pattern expands to zero directories', () => {
       writeRootPackageJson({ name: 'root', private: true });
       writePnpmWorkspaceYaml(['packages:', '  - packages/*', ''].join('\n'));
 
-      expect(discoverWorkspaces()).toEqual([]);
+      expect(discoverWorkspaces()).toStrictEqual([]);
     });
 
     it('falls through to npm/single detection when `packages` key is absent', () => {
@@ -59,7 +46,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces).toEqual([
+      expect(workspaces).toStrictEqual([
         {
           dir: '.',
           absolutePath: tempDir,
@@ -86,7 +73,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['packages/alpha', 'packages/beta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
     });
 
     it('discovers workspaces when `workspaces.packages` is a string array', () => {
@@ -100,7 +87,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['apps/web', 'packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['apps/web', 'packages/alpha']);
     });
 
     it('returns isPackage: false for a discovered workspace with `private: true`', () => {
@@ -111,7 +98,7 @@ describe(discoverWorkspaces, () => {
       const workspaces = discoverWorkspaces();
       const byDir = Object.fromEntries(workspaces.map((w) => [w.dir, w.isPackage]));
 
-      expect(byDir).toEqual({ 'packages/alpha': true, 'packages/internal': false });
+      expect(byDir).toStrictEqual({ 'packages/alpha': true, 'packages/internal': false });
     });
   });
 
@@ -121,7 +108,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces).toEqual([
+      expect(workspaces).toStrictEqual([
         {
           dir: '.',
           absolutePath: tempDir,
@@ -171,7 +158,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces({ filter: (w) => w.isPackage });
 
-      expect(workspaces.map((w) => w.name)).toEqual(['alpha']);
+      expect(workspaces.map((w) => w.name)).toStrictEqual(['alpha']);
     });
   });
 
@@ -183,7 +170,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
     });
 
     it('skips a matched directory with an unparseable package.json', () => {
@@ -194,7 +181,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
     });
 
     it('does not traverse into node_modules', () => {
@@ -241,7 +228,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toEqual(['packages/alpha', 'packages/mu', 'packages/zeta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/mu', 'packages/zeta']);
     });
   });
 
@@ -252,7 +239,7 @@ describe(discoverWorkspaces, () => {
 
       const [workspace] = discoverWorkspaces();
 
-      expect(workspace).toEqual({
+      expect(workspace).toStrictEqual({
         dir: 'packages/alpha',
         absolutePath: join(tempDir, 'packages/alpha'),
         name: 'alpha',
@@ -284,3 +271,20 @@ describe(discoverWorkspaces, () => {
     });
   });
 });
+
+// region | Helpers
+
+function writeRootPackageJson(content: Record<string, unknown>): void {
+  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
+}
+
+function writeWorkspacePackage(relDir: string, content: Record<string, unknown>): void {
+  mkdirSync(join(tempDir, relDir), { recursive: true });
+  writeFileSync(join(tempDir, relDir, 'package.json'), JSON.stringify(content));
+}
+
+function writePnpmWorkspaceYaml(content: string): void {
+  writeFileSync(join(tempDir, 'pnpm-workspace.yaml'), content);
+}
+
+// endregion | Helpers

@@ -2,6 +2,9 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { compileConfig, KIT_COMPILE_TARGET } from '../src/compile/compileConfig.ts';
+import { VERSION } from '../src/version.ts';
+
 const mockBuild = vi.hoisted(() => vi.fn());
 const mockLoadEsbuild = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -19,9 +22,6 @@ vi.mock(import('node:fs'), () => ({
   readFileSync: mockReadFileSync,
   writeFileSync: mockWriteFileSync,
 }));
-
-import { compileConfig, KIT_COMPILE_TARGET } from '../src/compile/compileConfig.ts';
-import { VERSION } from '../src/version.ts';
 
 describe(compileConfig, () => {
   beforeEach(() => {
@@ -122,7 +122,7 @@ describe(compileConfig, () => {
     const result = await compileConfig('input.ts');
 
     expect(result.changed).toBe(true);
-    expect(mockWriteFileSync).toHaveBeenCalledWith();
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
   });
 
   it('skips writing and returns changed: false when existing file is identical', async () => {

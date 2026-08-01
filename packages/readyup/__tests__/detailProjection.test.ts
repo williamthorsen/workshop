@@ -28,11 +28,6 @@ beforeAll(() => {
   process.chdir(cwd);
 });
 
-afterAll(() => {
-  process.chdir(originalCwd);
-  rmSync(cwd, { recursive: true, force: true });
-});
-
 beforeEach(() => {
   stdout = [];
   stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
@@ -47,9 +42,10 @@ afterEach(() => {
   stderrSpy.mockRestore();
 });
 
-function readStdout(): string {
-  return stdout.join('');
-}
+afterAll(() => {
+  process.chdir(originalCwd);
+  rmSync(cwd, { recursive: true, force: true });
+});
 
 describe('--detail projection', () => {
   it('defaults to the full tree, echoing the projection it used', async () => {
@@ -88,3 +84,7 @@ describe('--detail projection', () => {
     expect(JSON.parse(readStdout())).toMatchObject({ error: { code: 'usage' } });
   });
 });
+
+function readStdout(): string {
+  return stdout.join('');
+}

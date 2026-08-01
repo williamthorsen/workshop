@@ -4,11 +4,11 @@ import { safeJsonParse } from '../src/safeJsonParse.ts';
 
 describe(safeJsonParse, () => {
   it('parses a valid JSON object', () => {
-    expect(safeJsonParse('{"key":"value"}')).toEqual({ key: 'value' });
+    expect(safeJsonParse('{"key":"value"}')).toStrictEqual({ key: 'value' });
   });
 
   it('parses a valid JSON array', () => {
-    expect(safeJsonParse('[1,2,3]')).toEqual([1, 2, 3]);
+    expect(safeJsonParse('[1,2,3]')).toStrictEqual([1, 2, 3]);
   });
 
   it('parses a JSON number', () => {

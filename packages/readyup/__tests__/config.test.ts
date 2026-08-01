@@ -11,7 +11,7 @@ vi.mock(import('node:fs'), () => ({
   readdirSync: mockReaddirSync,
 }));
 
-vi.mock(import('jiti'), () => ({
+vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockJitiImport }),
 }));
 

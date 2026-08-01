@@ -23,17 +23,13 @@ afterEach(() => {
   cwdSpy.mockRestore();
 });
 
-function writePackageJson(content: Record<string, unknown>): void {
-  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
-}
-
 describe(readPackageJson, () => {
   it('returns the parsed package.json', () => {
     writePackageJson({ name: 'test-pkg', version: '1.0.0' });
 
     const result = readPackageJson();
 
-    expect(result).toEqual({ name: 'test-pkg', version: '1.0.0' });
+    expect(result).toStrictEqual({ name: 'test-pkg', version: '1.0.0' });
   });
 
   it('returns undefined when package.json does not exist', () => {
@@ -132,3 +128,7 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
   });
 });
+
+function writePackageJson(content: Record<string, unknown>): void {
+  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
+}

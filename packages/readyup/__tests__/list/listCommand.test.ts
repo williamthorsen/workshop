@@ -84,7 +84,7 @@ describe(listCommand, () => {
     assert.ok(firstCall, 'expected readManifest to have been called');
     const calledPath = String(firstCall[0]);
     expect(calledPath).toMatch(/\/.readyup\/manifest\.json$/);
-    expect(stdoutSpy).toHaveBeenCalledWith();
+    expect(stdoutSpy).toHaveBeenCalledTimes(1);
   });
 
   it('with --from dir:/some/path, reads manifest from the resolved directory', async () => {

@@ -8,7 +8,7 @@ const execFileAsync = vi.hoisted(() =>
 );
 const existsSyncMock = vi.hoisted(() => vi.fn<(path: import('node:fs').PathLike) => boolean>());
 
-vi.mock(import('node:child_process'), () => {
+vi.mock('node:child_process', () => {
   const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
   return { execFile: stub };
 });

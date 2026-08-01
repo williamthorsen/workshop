@@ -57,7 +57,7 @@ vi.mock(import('../src/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-vi.mock(import('../src/version.ts'), () => ({
+vi.mock('../src/version.ts', () => ({
   VERSION: RUNNER_VERSION,
 }));
 

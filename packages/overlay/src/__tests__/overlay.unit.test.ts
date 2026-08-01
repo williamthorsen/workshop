@@ -18,18 +18,18 @@ const stubResult: OverlayResult = {
   exitCode: 0,
 };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(overlay, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('runs the version preflight before dispatching', async () => {
     const preflight = vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
     vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
 
     await overlay({ source: '/src' });
 
-    expect(preflight).toHaveBeenCalledExactlyOnceWith();
+    expect(preflight).toHaveBeenCalledTimes(1);
   });
 
   it('propagates a failed preflight as a thrown error', async () => {
@@ -62,7 +62,7 @@ describe(overlay, () => {
 
     await overlay({ source: '/src', mode: 'create' });
 
-    expect(create).toHaveBeenCalledExactlyOnceWith();
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('dispatches to force mode', async () => {
@@ -71,6 +71,6 @@ describe(overlay, () => {
 
     await overlay({ source: '/src', mode: 'force' });
 
-    expect(force).toHaveBeenCalledExactlyOnceWith();
+    expect(force).toHaveBeenCalledTimes(1);
   });
 });
