@@ -10,11 +10,11 @@ const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockFetch = vi.hoisted(() => vi.fn());
 
-vi.mock('../../src/list/enumerateKits.ts', () => ({
+vi.mock(import('../../src/list/enumerateKits.ts'), () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
-vi.mock('../../src/loadConfig.ts', async (importOriginal) => {
+vi.mock(import('../../src/loadConfig.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/loadConfig.ts')>();
   return {
     DEFAULT_CONFIG: actual.DEFAULT_CONFIG,
@@ -22,7 +22,7 @@ vi.mock('../../src/loadConfig.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
+vi.mock(import('../../src/manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/manifest/readManifest.ts')>();
   return {
     ManifestNotFoundError: actual.ManifestNotFoundError,
@@ -30,11 +30,11 @@ vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/resolveBitbucketToken.ts', () => ({
+vi.mock(import('../../src/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-vi.mock('../../src/resolveGitHubToken.ts', () => ({
+vi.mock(import('../../src/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
@@ -84,7 +84,7 @@ describe(listCommand, () => {
     assert.ok(firstCall, 'expected readManifest to have been called');
     const calledPath = String(firstCall[0]);
     expect(calledPath).toMatch(/\/.readyup\/manifest\.json$/);
-    expect(stdoutSpy).toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalledWith();
   });
 
   it('with --from dir:/some/path, reads manifest from the resolved directory', async () => {

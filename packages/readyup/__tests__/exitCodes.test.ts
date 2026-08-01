@@ -154,7 +154,7 @@ describe('stdout purity under --json', () => {
     expect(() => {
       JSON.parse(written);
     }).not.toThrow();
-    expect(written.trimEnd().includes('\n')).toBe(false);
+    expect(written.trimEnd()).not.toContain('\n');
   });
 
   it('keeps stderr empty when an error is reported through the envelope', async () => {

@@ -29,7 +29,7 @@ describe(overlay, () => {
 
     await overlay({ source: '/src' });
 
-    expect(preflight).toHaveBeenCalledOnce();
+    expect(preflight).toHaveBeenCalledExactlyOnceWith();
   });
 
   it('propagates a failed preflight as a thrown error', async () => {
@@ -62,7 +62,7 @@ describe(overlay, () => {
 
     await overlay({ source: '/src', mode: 'create' });
 
-    expect(create).toHaveBeenCalledOnce();
+    expect(create).toHaveBeenCalledExactlyOnceWith();
   });
 
   it('dispatches to force mode', async () => {
@@ -71,6 +71,6 @@ describe(overlay, () => {
 
     await overlay({ source: '/src', mode: 'force' });
 
-    expect(force).toHaveBeenCalledOnce();
+    expect(force).toHaveBeenCalledExactlyOnceWith();
   });
 });

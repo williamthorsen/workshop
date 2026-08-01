@@ -8,7 +8,7 @@ const execFileAsync = vi.hoisted(() =>
 );
 const existsSyncMock = vi.hoisted(() => vi.fn<(path: import('node:fs').PathLike) => boolean>());
 
-vi.mock('node:child_process', () => {
+vi.mock(import('node:child_process'), () => {
   const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
   return { execFile: stub };
 });
@@ -28,33 +28,33 @@ describe(isGitRepo, () => {
   it('returns false when the path does not exist', async () => {
     existsSyncMock.mockReturnValue(false);
 
-    expect(await isGitRepo('/missing')).toBe(false);
+    await expect(isGitRepo('/missing')).resolves.toBe(false);
     expect(execFileAsync).not.toHaveBeenCalled();
   });
 
   it('returns true when `rev-parse --git-dir` succeeds at a repo root', async () => {
     execFileAsync.mockResolvedValue({ stdout: '.git\n', stderr: '' });
 
-    expect(await isGitRepo('/repo')).toBe(true);
+    await expect(isGitRepo('/repo')).resolves.toBe(true);
     expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'rev-parse', '--git-dir']);
   });
 
   it('returns true inside a subdirectory of a repo', async () => {
     execFileAsync.mockResolvedValue({ stdout: '/repo/.git\n', stderr: '' });
 
-    expect(await isGitRepo('/repo/src/sub')).toBe(true);
+    await expect(isGitRepo('/repo/src/sub')).resolves.toBe(true);
   });
 
   it('returns true for a worktree root (git resolves worktrees natively)', async () => {
     execFileAsync.mockResolvedValue({ stdout: '/repo/.git/worktrees/feature\n', stderr: '' });
 
-    expect(await isGitRepo('/repo.wt-feature')).toBe(true);
+    await expect(isGitRepo('/repo.wt-feature')).resolves.toBe(true);
   });
 
   it('returns false when `rev-parse --git-dir` fails on a non-repo directory', async () => {
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
 
-    expect(await isGitRepo('/not-a-repo')).toBe(false);
+    await expect(isGitRepo('/not-a-repo')).resolves.toBe(false);
   });
 
   it('expands `~/` in the path before checking existence and invoking git', async () => {
@@ -72,33 +72,33 @@ describe(isAtRepoRoot, () => {
   it('returns false when the path does not exist', async () => {
     existsSyncMock.mockReturnValue(false);
 
-    expect(await isAtRepoRoot('/missing')).toBe(false);
+    await expect(isAtRepoRoot('/missing')).resolves.toBe(false);
     expect(execFileAsync).not.toHaveBeenCalled();
   });
 
   it('returns true when `rev-parse --show-cdup` returns empty string', async () => {
     execFileAsync.mockResolvedValue({ stdout: '\n', stderr: '' });
 
-    expect(await isAtRepoRoot('/repo')).toBe(true);
+    await expect(isAtRepoRoot('/repo')).resolves.toBe(true);
     expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'rev-parse', '--show-cdup']);
   });
 
   it('returns true for a worktree root', async () => {
     execFileAsync.mockResolvedValue({ stdout: '\n', stderr: '' });
 
-    expect(await isAtRepoRoot('/repo.wt-feature')).toBe(true);
+    await expect(isAtRepoRoot('/repo.wt-feature')).resolves.toBe(true);
   });
 
   it('returns false inside a subdirectory of a repo (cdup is non-empty)', async () => {
     execFileAsync.mockResolvedValue({ stdout: '../\n', stderr: '' });
 
-    expect(await isAtRepoRoot('/repo/sub')).toBe(false);
+    await expect(isAtRepoRoot('/repo/sub')).resolves.toBe(false);
   });
 
   it('returns false on a non-repo directory', async () => {
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
 
-    expect(await isAtRepoRoot('/not-a-repo')).toBe(false);
+    await expect(isAtRepoRoot('/not-a-repo')).resolves.toBe(false);
   });
 
   it('expands `~/` in the path before checking existence and invoking git', async () => {

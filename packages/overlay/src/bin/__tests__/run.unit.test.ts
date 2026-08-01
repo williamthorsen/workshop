@@ -43,7 +43,7 @@ describe(run, () => {
     vi.spyOn(overlayModule, 'overlay').mockResolvedValue({ ...stubResult, exitCode: 1 });
     vi.spyOn(process.stdout, 'write').mockReturnValue(true);
 
-    expect(await run(['/src', '--create'])).toBe(1);
+    await expect(run(['/src', '--create'])).resolves.toBe(1);
   });
 
   it('writes a JSON error to stderr and returns exit 2 when overlay throws', async () => {

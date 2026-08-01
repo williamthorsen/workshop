@@ -9,7 +9,7 @@ const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockReadFileSync = vi.hoisted(() => vi.fn());
 const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/compile/loadEsbuild.ts', () => ({
+vi.mock(import('../src/compile/loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
 }));
 
@@ -122,7 +122,7 @@ describe(compileConfig, () => {
     const result = await compileConfig('input.ts');
 
     expect(result.changed).toBe(true);
-    expect(mockWriteFileSync).toHaveBeenCalled();
+    expect(mockWriteFileSync).toHaveBeenCalledWith();
   });
 
   it('skips writing and returns changed: false when existing file is identical', async () => {

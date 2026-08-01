@@ -5,11 +5,11 @@ import * as compareRefToRemoteModule from '../../../src/check-utils/git/compare-
 import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../../../src/check-utils/git/factories.ts';
 import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../src/types.ts';
 
-vi.mock('../../../src/check-utils/git/compare-local-refs.ts', () => ({
+vi.mock(import('../../../src/check-utils/git/compare-local-refs.ts'), () => ({
   compareLocalRefs: vi.fn(),
 }));
 
-vi.mock('../../../src/check-utils/git/compare-ref-to-remote.ts', () => ({
+vi.mock(import('../../../src/check-utils/git/compare-ref-to-remote.ts'), () => ({
   compareRefToRemote: vi.fn(),
 }));
 
@@ -27,7 +27,7 @@ describe(makeLocalRefSyncCheck, () => {
 
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
 
-    expect(await check.check()).toBe(true);
+    await expect(check.check()).resolves.toBe(true);
   });
 
   it('reports ahead detail when refA is ahead', async () => {
@@ -130,7 +130,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const skipResult = await check.skip?.();
     expect(skipResult).toBe(false);
 
-    expect(await check.check()).toBe(true);
+    await expect(check.check()).resolves.toBe(true);
   });
 
   it('reports ahead detail when local is ahead', async () => {
@@ -196,7 +196,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const skipResult = await check.skip?.();
 
-    expect(typeof skipResult).toBe('string');
+    expect(skipResult).toBeTypeOf('string');
     expect(skipResult).toContain('unreachable');
   });
 
@@ -206,7 +206,7 @@ describe(makeRemoteRefSyncCheck, () => {
 
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
 
-    expect(await check.check()).toBe(true);
+    await expect(check.check()).resolves.toBe(true);
   });
 
   it('invokes the probe at most once when both skip and check are called', async () => {

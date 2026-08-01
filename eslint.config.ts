@@ -1,4 +1,4 @@
-import baseConfig from '@williamthorsen/eslint-config-typescript';
+import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
 import { deferredLintRules } from './.config/eslint/deferred-lint-rules.ts';
@@ -55,12 +55,13 @@ const config = defineConfig([
       ],
     },
   },
-  {
+  defineConfig({
     files: ['**/*.test.ts', '**/*.test.tsx'],
+    extends: [await createConfig.vitest()],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
     },
-  },
+  }),
   {
     // Config files legitimately mutate and compose configuration objects at module top level.
     files: ['**/*.config.{cjs,js,mjs,ts}', '**/config/**'],

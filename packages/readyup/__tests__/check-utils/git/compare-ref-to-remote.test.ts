@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { compareRefToRemote } from '../../../src/check-utils/git/compare-ref-to-remote.ts';
 import * as runGitModule from '../../../src/check-utils/git/run-git.ts';
 
-vi.mock('../../../src/check-utils/git/run-git.ts', async (importOriginal) => {
+vi.mock(import('../../../src/check-utils/git/run-git.ts'), async (importOriginal) => {
   const original = await importOriginal<typeof import('../../../src/check-utils/git/run-git.ts')>();
   return {
     ...original,

@@ -4,7 +4,7 @@ import { worseSeverity } from '../../src/utils/severity.ts';
 
 describe(worseSeverity, () => {
   it('returns null when both arguments are null', () => {
-    expect(worseSeverity(null, null)).toBe(null);
+    expect(worseSeverity(null, null)).toBeNull();
   });
 
   it('returns the non-null value when one argument is null', () => {

@@ -61,9 +61,9 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
 
     const result = await overlay({ source, target, mode: 'create' });
 
-    expect(await readFile(path.join(target, '.newfile'), 'utf8')).toBe(NEW_CONTENT);
+    await expect(readFile(path.join(target, '.newfile'), 'utf8')).resolves.toBe(NEW_CONTENT);
     expect(existsSync(path.join(target, '.removeme'))).toBe(false);
-    expect(await readFile(path.join(target, '.difffile'), 'utf8')).toBe(LOCAL_CONTENT);
+    await expect(readFile(path.join(target, '.difffile'), 'utf8')).resolves.toBe(LOCAL_CONTENT);
     expect(existsSync(path.join(target, '.sentinel'))).toBe(true);
     expect(existsSync(path.join(target, '.planted'))).toBe(false);
     expect(result.counts.conflicts).toBe(1);
@@ -75,7 +75,7 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
 
     const result = await overlay({ source, target, mode: 'force' });
 
-    expect(await readFile(path.join(target, '.difffile'), 'utf8')).toBe(CANONICAL_CONTENT);
+    await expect(readFile(path.join(target, '.difffile'), 'utf8')).resolves.toBe(CANONICAL_CONTENT);
     expect(existsSync(path.join(target, '.sentinel'))).toBe(true);
     expect(existsSync(path.join(target, '.planted'))).toBe(false);
     expect(result.scripts.ran).toBeGreaterThan(0);

@@ -4,7 +4,7 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
-vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
+vi.mock(import('../../src/manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/manifest/readManifest.ts')>();
   return {
     ManifestNotFoundError: actual.ManifestNotFoundError,
@@ -12,11 +12,11 @@ vi.mock('../../src/manifest/readManifest.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../../src/verify/checkDrift.ts', () => ({
+vi.mock(import('../../src/verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
 }));
 
-vi.mock('../../src/verify/checkSourceDrift.ts', () => ({
+vi.mock(import('../../src/verify/checkSourceDrift.ts'), () => ({
   checkSourceDrift: mockCheckSourceDrift,
 }));
 

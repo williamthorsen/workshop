@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { extractMessage } from '../../src/utils/error-handling.ts';
 
-describe('extractMessage', () => {
+describe(extractMessage, () => {
   it('returns the message from an Error instance', () => {
     expect(extractMessage(new Error('something broke'))).toBe('something broke');
   });

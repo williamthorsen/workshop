@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 const mockScaffoldConfig = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/init/scaffold.ts', () => ({
+vi.mock(import('../src/init/scaffold.ts'), () => ({
   scaffoldConfig: mockScaffoldConfig,
 }));
 
 const mockReportWriteResult = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/terminal.ts', () => ({
+vi.mock(import('../src/terminal.ts'), () => ({
   printError: vi.fn(),
   printSkip: vi.fn(),
   printStep: vi.fn(),
@@ -19,11 +19,11 @@ vi.mock('../src/terminal.ts', () => ({
 const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
 const mockIsPackageInstalled = vi.hoisted(() => vi.fn());
 
-vi.mock('../src/utils/install-command.ts', () => ({
+vi.mock(import('../src/utils/install-command.ts'), () => ({
   buildInstallCommand: mockBuildInstallCommand,
 }));
 
-vi.mock('../src/utils/resolve-package.ts', () => ({
+vi.mock(import('../src/utils/resolve-package.ts'), () => ({
   isPackageInstalled: mockIsPackageInstalled,
 }));
 

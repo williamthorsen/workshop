@@ -8,7 +8,7 @@ vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
 }));
 
-vi.mock('jiti', () => ({
+vi.mock(import('jiti'), () => ({
   createJiti: () => ({ import: mockJitiImport }),
 }));
 

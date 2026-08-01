@@ -9,7 +9,7 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-vi.mock('node:child_process', () => {
+vi.mock(import('node:child_process'), () => {
   const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
   return { execFile: stub };
 });

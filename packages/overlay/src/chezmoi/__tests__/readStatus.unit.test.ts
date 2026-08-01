@@ -14,7 +14,7 @@ describe(readStatus, () => {
   it('returns stdout when chezmoi status exits 0', async () => {
     vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout: 'A  .newfile', stderr: '', code: 0 });
 
-    expect(await readStatus(context)).toBe('A  .newfile');
+    await expect(readStatus(context)).resolves.toBe('A  .newfile');
   });
 
   it('throws with the stderr detail when chezmoi status exits non-zero', async () => {
