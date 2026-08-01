@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "engineVersion": "0.0.0",
+  "contentAvailability": "complete",
+  "fingerprint": {
+    "config": "sha256:2b461c6b22dbed539c9cdd9ceeded5473a6af17b25b590a52efe878fc0ed8641",
+    "sources": [
+      {
+        "sourceId": "team",
+        "digest": "sha256:37794c323d11203728fa849706356b3270bb8a2e54731c86da20308a11f70c3a"
+      }
+    ],
+    "targetState": [
+      {
+        "targetId": "claude",
+        "digest": "sha256:db5b0f2f57673e80bb1fc28ea6d68b99b45764d22ceadd5697ae75ae115d7d0f"
+      }
+    ],
+    "composite": "sha256:66b1a8de992b5bc89ac9be0d26697e6c91d269faf4abec27fe8be3b879119f5f"
+  },
+  "kinds": [
+    {
+      "id": "skill",
+      "label": "Skill",
+      "emitsFiles": true
+    }
+  ],
+  "sources": [
+    {
+      "id": "team",
+      "name": "team",
+      "origin": {
+        "kind": "directory",
+        "location": "/srv/team-guidance"
+      }
+    }
+  ],
+  "targets": [
+    {
+      "id": "claude",
+      "label": "Claude",
+      "root": "~/.claude",
+      "tokenMappings": [],
+      "variables": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "skill:review",
+      "kindId": "skill",
+      "slug": "review",
+      "status": "added",
+      "seededBy": [
+        "declaration"
+      ],
+      "dependsOn": [],
+      "resolution": {
+        "winner": {
+          "sourceId": "team",
+          "path": "skills/review/SKILL.md",
+          "hash": "sha256:833862221c4dcd4a38c0f94bc661f669e56d3f385a52084a3bc0602e507031fe"
+        },
+        "shadowed": []
+      }
+    }
+  ],
+  "partials": [],
+  "files": [
+    {
+      "targetId": "claude",
+      "path": "skills/review/SKILL.md",
+      "status": "added",
+      "ownership": {
+        "kind": "full"
+      },
+      "planned": {
+        "hash": "sha256:7f2382a25a1072b058208751673bdccb0269c5b19b7e4e70169f3f6e00c4cff6"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:review"
+          }
+        ],
+        "partials": []
+      }
+    }
+  ],
+  "blobs": {
+    "sha256:7f2382a25a1072b058208751673bdccb0269c5b19b7e4e70169f3f6e00c4cff6": {
+      "encoding": "utf8",
+      "data": "# Review\n\nRead the diff.\n"
+    }
+  }
+}

@@ -19,10 +19,15 @@
     ".": {
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
-    }
+    },
+    "./samples/*.json": "./samples/*.json"
   },
+  "files": [
+    "dist",
+    "samples"
+  ],
   "scripts": {
-    "prepare": "nmr-compile"
+    "prepare": "tsx config/generateSamples.ts && nmr-compile"
   },
   "dependencies": {
     "zod": "4.4.3"
