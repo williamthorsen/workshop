@@ -27,14 +27,14 @@ importers:
         specifier: 1.6.24
         version: 1.6.24(@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/eslint-config-typescript':
-        specifier: 8.1.1
-        version: 8.1.1(@types/estree@1.0.9)(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: 8.2.0
+        version: 8.2.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
-        specifier: 0.22.0
-        version: 0.22.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
+        specifier: 0.23.0
+        version: 0.23.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/release-kit':
-        specifier: 9.1.0
-        version: 9.1.0
+        specifier: 9.1.1
+        version: 9.1.1
       '@williamthorsen/strict-lint':
         specifier: 9.1.0
         version: 9.1.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -60,8 +60,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       v11y-check:
-        specifier: 0.11.3
-        version: 0.11.3
+        specifier: 0.11.4
+        version: 0.11.4
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -742,8 +742,8 @@ packages:
   '@vitest/utils@4.1.10':
     resolution: {integrity: sha512-fy9am/HWxbaGt/Sawrp90vt6Y6jQwf1RX77cz3uwoJwJVMli/e1IEwRPnMNJ7vKfPTwo0diXifkpPvwH9v7nGA==}
 
-  '@williamthorsen/eslint-config-typescript@8.1.1':
-    resolution: {integrity: sha512-LGd2mXcgaQkMwI9EngGV/J1XAvi5/QO4b5d1CJL0DrfkCydteM3zX5/ZAHnS0NgZhGzrjwXzOrGxqfRN4GiEjA==}
+  '@williamthorsen/eslint-config-typescript@8.2.0':
+    resolution: {integrity: sha512-cmpgZhFKAlkjEcg8Eg/KQjRKpmGIZWB5/cZnqpnvcNo3X7/mJhuYGtwSeohrfjw3bF8w+3ERFSlNbVR3sLaeqQ==}
     engines: {node: '>=24'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.59.1
@@ -754,8 +754,8 @@ packages:
     resolution: {integrity: sha512-NhQqRBDQRPx+AQmPjgPvOE1DL3Ob8AkYSkr9DFxdrODnTJfNdFVJcIwiBF8kR74Ui+YXGAtwx6Rw87+T5zjsRw==}
     engines: {node: '>=24'}
 
-  '@williamthorsen/nmr@0.22.0':
-    resolution: {integrity: sha512-wHjGC3xJdonOcUkt7BfzBz0xyVwExSF7KuT4s6HMA8kpzogQtSLJpO6Ve8JHL6HlePi8sWWp0dV5Dru31SfnqQ==}
+  '@williamthorsen/nmr@0.23.0':
+    resolution: {integrity: sha512-5JX2AJ3Kwe6/+l2BHGjYlra9F+zJHqSjcXwSI61oqQPpv1TgnUfhN6fInU2lbxPoq0a9FzQyYD6Yy+NTBNhh9g==}
     engines: {node: '>=24.16.0'}
     hasBin: true
     peerDependencies:
@@ -768,8 +768,8 @@ packages:
       vitest:
         optional: true
 
-  '@williamthorsen/release-kit@9.1.0':
-    resolution: {integrity: sha512-YAnIBVP3QCe08QwvGbW33kYd0w5FnGi81/uWRVYdjgFAy07BTGt261Cms82iSaG0N98NUf1duNGWRzIERptUTg==}
+  '@williamthorsen/release-kit@9.1.1':
+    resolution: {integrity: sha512-z/ZEJTjsxTouAvwxV7Sfqp/PFDElfoivmZt6EjCR6uJG2V0WH2Te+pYRRnHGnclXIOG8R0O7IuahBA/TFGx6Lw==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -1212,17 +1212,14 @@ packages:
       typescript:
         optional: true
 
-  eslint-plugin-package-json@1.6.1:
-    resolution: {integrity: sha512-iKcIfIYZXXb20vghnigDUemIISW9D2dMPuDZ+IGRnIOPa53+ZwU1HnsvsbSB7zGq4MAo1V9ZYfL0uTEVpCFEiQ==}
+  eslint-plugin-package-json@1.6.2:
+    resolution: {integrity: sha512-Zp0CdqXKQqB9luUYa/TOwnGq3VlLotx1UDflZOzEt3D5A5kxu3Lj1VFJ087jKudEhc+K3kF20XV/aKZAlDuslw==}
     engines: {node: ^22.22.2 || >=24.15.0}
     peerDependencies:
       '@eslint/json': '>=1.0.0'
-      '@types/estree': '>=1.0.0'
       eslint: '>=9.0.0'
     peerDependenciesMeta:
       '@eslint/json':
-        optional: true
-      '@types/estree':
         optional: true
 
   eslint-plugin-promise@7.3.0:
@@ -2406,8 +2403,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  v11y-check@0.11.3:
-    resolution: {integrity: sha512-njRxEhWVLJuM7yfpEUisK0PclkvG+HEZD7Is3VssyZIBPWCDPgaEYYZ5OTpu7CNnBWfE5ESktmb2wAKOIjF5BQ==}
+  v11y-check@0.11.4:
+    resolution: {integrity: sha512-llmkn6LGH2JAfEi/Lv0mW2Ibge/EB85Pc/1JvXY2Zh0AdrOMNQiMSlQ9RN8P5m+F5tj2yFTiRT1Ur9lpsntLlw==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3115,7 +3112,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@williamthorsen/eslint-config-typescript@8.1.1(@types/estree@1.0.9)(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@williamthorsen/eslint-config-typescript@8.2.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.7.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/js': 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3124,7 +3121,7 @@ snapshots:
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
       eslint-plugin-jsonc: 3.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-n: 18.2.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(typescript@6.0.3)
-      eslint-plugin-package-json: 1.6.1(@types/estree@1.0.9)(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
+      eslint-plugin-package-json: 1.6.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-promise: 7.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-simple-import-sort: 14.0.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-unicorn: 72.0.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3136,7 +3133,6 @@ snapshots:
       yaml-eslint-parser: 2.1.0
     transitivePeerDependencies:
       - '@eslint/json'
-      - '@types/estree'
       - '@typescript-eslint/parser'
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
@@ -3145,7 +3141,7 @@ snapshots:
 
   '@williamthorsen/nmr-core@0.7.3': {}
 
-  '@williamthorsen/nmr@0.22.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)':
+  '@williamthorsen/nmr@0.23.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)':
     dependencies:
       '@williamthorsen/nmr-core': 0.7.3
       glob: 13.0.6
@@ -3158,7 +3154,7 @@ snapshots:
       prettier: 3.9.6
       vitest: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
-  '@williamthorsen/release-kit@9.1.0':
+  '@williamthorsen/release-kit@9.1.1':
     dependencies:
       '@williamthorsen/nmr-core': 0.7.3
       glob: 13.0.6
@@ -3711,9 +3707,10 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
-  eslint-plugin-package-json@1.6.1(@types/estree@1.0.9)(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0)):
+  eslint-plugin-package-json@1.6.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0)):
     dependencies:
       '@altano/repository-tools': 2.0.3
+      '@types/estree': 1.0.9
       change-case: 5.4.4
       detect-indent: 7.0.2
       detect-newline: 4.0.1
@@ -3725,8 +3722,6 @@ snapshots:
       semver: 7.8.5
       sort-object-keys: 2.1.0
       sort-package-json: 4.0.0
-    optionalDependencies:
-      '@types/estree': 1.0.9
 
   eslint-plugin-promise@7.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0)):
     dependencies:
@@ -4986,7 +4981,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v11y-check@0.11.3:
+  v11y-check@0.11.4:
     dependencies:
       '@williamthorsen/nmr-core': 0.7.3
       audit-ci: 7.1.0

@@ -15,7 +15,6 @@ export const deferredLintRules = {
 export const deferredTestRules = {
   'vitest/no-conditional-expect': 'warn',
   'vitest/no-conditional-in-test': 'warn',
-  'vitest/prefer-import-in-mock': 'off', // fixer breaks test code
   'vitest/require-mock-type-parameters': 'warn',
   'vitest/require-to-throw-message': 'warn',
   'vitest/require-top-level-describe': 'warn',
