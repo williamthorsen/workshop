@@ -4,17 +4,16 @@ export const __readyupVersion = "0.23.0";
 
 
 // .readyup/kits/demo.ts
-import { execFileSync } from "node:child_process";
 import { defineRdyKit } from "readyup";
-import { fileContains, fileExists, hasDevDependency, hasPackageJsonField } from "readyup/check-utils";
-function commandExists(name) {
-  try {
-    execFileSync("which", [name], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
+import {
+  commandExists,
+  fileContains,
+  fileExists,
+  filesExist,
+  getJsonValue,
+  hasDevDependency,
+  readPackageJson
+} from "readyup/check-utils";
 var projectFoundations = {
   name: "project-foundations",
   preconditions: [
@@ -24,14 +23,22 @@ var projectFoundations = {
     }
   ],
   checks: [
+    // The claim goes in the name, the evidence in the detail: `🔴 project is ESM` says what
+    // is wrong on its own, and the "type" it found explains why.
     {
-      name: 'ESM project ("type": "module")',
-      check: () => hasPackageJsonField("type", "module"),
+      name: "project is ESM",
+      check: () => {
+        const type = getJsonValue(readPackageJson() ?? {}, "type");
+        return { ok: type === "module", detail: `"type": ${JSON.stringify(type ?? null)}` };
+      },
       fix: 'Add "type": "module" to package.json'
     },
     {
       name: "packageManager field is set",
-      check: () => hasPackageJsonField("packageManager"),
+      check: () => {
+        const value = getJsonValue(readPackageJson() ?? {}, "packageManager");
+        return typeof value === "string" ? { ok: true, detail: value } : { ok: false };
+      },
       fix: 'Add "packageManager" to package.json (e.g., "pnpm@10.x.x")'
     },
     {
@@ -51,7 +58,7 @@ var optionalIntegrations = {
   name: "optional-integrations",
   checks: [
     {
-      name: "Docker",
+      name: "Docker is configured",
       skip: () => !fileExists("Dockerfile") ? "no Dockerfile" : false,
       check: () => true,
       checks: [
@@ -62,18 +69,18 @@ var optionalIntegrations = {
       ]
     },
     {
-      name: "Renovate",
+      name: "Renovate is configured",
       skip: () => !fileExists("renovate.json") ? "no renovate.json" : false,
       check: () => true,
       checks: [
         {
-          name: "extends recommended preset",
+          name: "renovate.json extends config:recommended",
           check: () => fileContains("renovate.json", /extends.*config:recommended/)
         }
       ]
     },
     {
-      name: "lefthook in devDependencies",
+      name: "lefthook is a devDependency",
       check: () => hasDevDependency("lefthook"),
       fix: "pnpm add --save-dev lefthook",
       checks: [
@@ -93,6 +100,12 @@ var codeQuality = {
       name: ".editorconfig exists",
       check: () => fileExists(".editorconfig"),
       fix: "Add .editorconfig to repo root"
+    },
+    // A fraction is its own evidence, so this check needs no detail on a pass.
+    {
+      name: "root configs are present",
+      check: () => filesExist(["eslint.config.ts", "tsconfig.json", "vitest.config.ts"]),
+      fix: "Add the missing config to the repo root"
     },
     {
       name: "bitbucket-pipelines.yml exists",
