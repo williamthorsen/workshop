@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.1 — 2026-08-01
+
+### ⚙️ Tooling
+
+- Migrate to nmr 0.21.0 and the Vitest projects model (#150)
+
+  `nmr test` no longer runs integration tests, and `nmr test:integration` now runs them on their own. Which suite a test file belongs to is decided by its filename suffix: integration tests carry `.int.test.ts`, and a file with any other suffix, or none, is a unit test. Working in this repo now requires Node 24.16.0 or later.
+
+- Enable the Vitest lint plugin and absorb its autofix fallout (#160)
+
+  Adds Vitest-aware lint rules for test files. Errors surfaced by the new rules but not yet addressed have been downgraded to warnings until they can be fixed.
+
 ## 0.3.0 — 2026-07-24
 
 ### 🪦 Removed

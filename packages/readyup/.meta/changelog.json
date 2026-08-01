@@ -1,5 +1,70 @@
 [
   {
+    "version": "0.23.0",
+    "date": "2026-08-01",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Unify command output under one layout engine and vocabulary (#145)",
+            "body": "Improves the output of `rdy` commands, giving them one shared vocabulary of statuses and headings. A run summary with failures now leads with the worst failure rather than a count of passing checks. The reason for a failing check is given on its own line, and nested checks stay aligned. A fix hint now names the check that raised it. Timings are given only for slow checks. A new `--quiet` flag filters out passing checks, keeping skipped and blocked ones, and counts still cover the whole run.",
+            "hash": "d86ebe645a9eda7b013b7dcc9ef218bb9fab9b9f"
+          },
+          {
+            "description": "Add a plain output style and style selection (#146)",
+            "body": "Status in `rdy` output can now be words instead of emoji, readable on a terminal with no emoji font or through a screen reader. Every command now takes `--style auto|plain|rich`, and `RDY_STYLE` carries a standing preference the flag outranks. If `CI` is set or output is not directed to a terminal (a pipe or a redirect), output defaults to plain style.",
+            "hash": "3c7053caa5a9e335e884ba6d684939f9bd3a0c8a"
+          },
+          {
+            "description": "Publish kits inside packages and run them from dependencies (#151)",
+            "body": "Allows installed npm packages to serve as the source of a ReadyUp kit. Consumers can call `rdy run --from npm:<package>` and `rdy list --from npm:<package>` to run and list kits in the package. `rdy run --packages` runs the kits of all packages listed in the ReadyUp config. `rdy list` also reports the kits configured packages publish and names installed dependencies that publish kits not listed in the config. Publishing is a one-line change: a package adds its kit directory to the files it ships.",
+            "hash": "76a848c22fd0faa87675faec550993354a11d61c"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Fix computed-property-access lint violations (#155)",
+            "body": "Improves the safety of JSON lookups using computed properties in ReadyUp kit operations.",
+            "hash": "d6da8109c8c2aa249b87d7891d70ba55537aa476"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Migrate to nmr 0.21.0 and the Vitest projects model (#150)",
+            "body": "`nmr test` no longer runs integration tests, and `nmr test:integration` now runs them on their own. Which suite a test file belongs to is decided by its filename suffix: integration tests carry `.int.test.ts`, and a file with any other suffix, or none, is a unit test. Working in this repo now requires Node 24.16.0 or later.",
+            "hash": "876a048bfe2c282fcc98d0cacb7b71298c287d38"
+          },
+          {
+            "description": "Enable the Vitest lint plugin and absorb its autofix fallout (#160)",
+            "body": "Adds Vitest-aware lint rules for test files. Errors surfaced by the new rules but not yet addressed have been downgraded to warnings until they can be fixed.",
+            "hash": "460d15ca79f3b93bcc753ea0781b08780d111421"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Rewrite the README as a complete reference and trim --help (#147)",
+            "body": "Adds comprehensive documentation to ReadyUp's README, covering every command, flag, and authoring field. The `--help` output has been trimmed to concise help on command options and points the reader to the README for details.",
+            "hash": "c38022aa1fdeaac84d2b5b039959c452724dbdaf"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.22.0",
     "date": "2026-07-24",
     "sections": [

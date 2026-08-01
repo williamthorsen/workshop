@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.23.0 — 2026-08-01
+
+### 🎉 Features
+
+- Unify command output under one layout engine and vocabulary (#145)
+
+  Improves the output of `rdy` commands, giving them one shared vocabulary of statuses and headings. A run summary with failures now leads with the worst failure rather than a count of passing checks. The reason for a failing check is given on its own line, and nested checks stay aligned. A fix hint now names the check that raised it. Timings are given only for slow checks. A new `--quiet` flag filters out passing checks, keeping skipped and blocked ones, and counts still cover the whole run.
+
+- Add a plain output style and style selection (#146)
+
+  Status in `rdy` output can now be words instead of emoji, readable on a terminal with no emoji font or through a screen reader. Every command now takes `--style auto|plain|rich`, and `RDY_STYLE` carries a standing preference the flag outranks. If `CI` is set or output is not directed to a terminal (a pipe or a redirect), output defaults to plain style.
+
+- Publish kits inside packages and run them from dependencies (#151)
+
+  Allows installed npm packages to serve as the source of a ReadyUp kit. Consumers can call `rdy run --from npm:<package>` and `rdy list --from npm:<package>` to run and list kits in the package. `rdy run --packages` runs the kits of all packages listed in the ReadyUp config. `rdy list` also reports the kits configured packages publish and names installed dependencies that publish kits not listed in the config. Publishing is a one-line change: a package adds its kit directory to the files it ships.
+
+### ♻️ Refactoring
+
+- Fix computed-property-access lint violations (#155)
+
+  Improves the safety of JSON lookups using computed properties in ReadyUp kit operations.
+
+### ⚙️ Tooling
+
+- Migrate to nmr 0.21.0 and the Vitest projects model (#150)
+
+  `nmr test` no longer runs integration tests, and `nmr test:integration` now runs them on their own. Which suite a test file belongs to is decided by its filename suffix: integration tests carry `.int.test.ts`, and a file with any other suffix, or none, is a unit test. Working in this repo now requires Node 24.16.0 or later.
+
+- Enable the Vitest lint plugin and absorb its autofix fallout (#160)
+
+  Adds Vitest-aware lint rules for test files. Errors surfaced by the new rules but not yet addressed have been downgraded to warnings until they can be fixed.
+
+### 📚 Documentation
+
+- Rewrite the README as a complete reference and trim --help (#147)
+
+  Adds comprehensive documentation to ReadyUp's README, covering every command, flag, and authoring field. The `--help` output has been trimmed to concise help on command options and points the reader to the README for details.
+
 ## 0.22.0 — 2026-07-24
 
 ### 🎉 Features
