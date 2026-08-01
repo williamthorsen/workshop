@@ -58,7 +58,10 @@ export default defineRdyKit({
       checks: [
         {
           name: 'NODE_ENV is set',
-          check: () => Boolean(process.env['NODE_ENV']),
+          check: () => {
+            const value = process.env['NODE_ENV'];
+            return { ok: Boolean(value), detail: value ?? 'no value in the environment' };
+          },
           fix: 'Set NODE_ENV before deploying',
         },
       ],
@@ -78,6 +81,7 @@ With `NODE_ENV` unset:
 
 ```
 🔴 NODE_ENV is set
+   no value in the environment
 
 🔴 1 error (0ms)
 
@@ -218,14 +222,18 @@ Three fields, three questions:
 
 A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: the operator leaves the reader to infer which direction is the violation.
 
-| Poor                    | Better                     | Why                                                 |
-| ----------------------- | -------------------------- | --------------------------------------------------- |
-| `Node >= 24`            | `Node 24 or later`         | words fix the direction without moving the boundary |
-| `outdated dependencies` | `dependencies are current` | a name true on _failure_ inverts the status token   |
-| `check git status`      | `working tree is clean`    | names the action, not the condition                 |
-| `env vars`              | `NODE_ENV is set`          | names the subject, not the claim                    |
+| Poor                         | Better                                     | Why                                                 |
+| ---------------------------- | ------------------------------------------ | --------------------------------------------------- |
+| `Node >= 24`                 | `Node 24 or later`                         | words fix the direction without moving the boundary |
+| `outdated dependencies`      | `dependencies are current`                 | a name true on _failure_ inverts the status token   |
+| `check git status`           | `working tree is clean`                    | names the action, not the condition                 |
+| `env vars`                   | `NODE_ENV is set`                          | names the subject, not the claim                    |
+| `Docker`                     | `Docker is configured`                     | a bare noun asserts nothing to be true or false     |
+| `extends recommended preset` | `renovate.json extends config:recommended` | a verb with no subject leaves the claim half-stated |
 
 Rewriting a name often exposes an ambiguous predicate: an author writing "newer than 24" frequently discovers they meant a floor of 24.
+
+A check that exists only to gate the checks nested beneath it is no exception. It still reports a status of its own, so it still needs a claim.
 
 ### The detail contract
 
@@ -862,6 +870,14 @@ Reusable check functions for common assertions:
 ```ts
 import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 ```
+
+### Outcomes
+
+| Function                                  | Returns                                                   |
+| ----------------------------------------- | --------------------------------------------------------- |
+| `missingFrom(category, expected, actual)` | `CheckOutcome` with fraction progress over any collection |
+
+`missingFrom` is what `filesExist` and `hasJsonFields` are built from. Reach for it directly to count anything else: it passes when nothing is missing, and otherwise names what was, under a fraction of how many were found.
 
 ### Filesystem
 
