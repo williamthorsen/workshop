@@ -3,6 +3,7 @@ import type { z } from 'zod';
 
 import { KindDescriptorSchema, SourceEntrySchema, SourceOriginSchema, TargetEntrySchema } from '../catalogSchemas.ts';
 import { IdSchema } from '../common.ts';
+import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };
 const source = { id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team' } };
@@ -60,9 +61,3 @@ describe('IdSchema', () => {
     expect(findIssuePaths(IdSchema, '')).toStrictEqual([[]]);
   });
 });
-
-/** The path of each validation issue `value` raises against `schema`, or `undefined` when it validates. */
-function findIssuePaths(schema: z.ZodType, value: unknown): Array<ReadonlyArray<PropertyKey>> | undefined {
-  const result = schema.safeParse(value);
-  return result.success ? undefined : result.error.issues.map((issue) => issue.path);
-}
