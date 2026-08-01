@@ -1,1 +1,5 @@
+# Written by `rdy compile` during `prepare`. The `files` allowlist ships them regardless, the way it
+# already does for the generated `schemas/`.
+.readyup/kits/*.js
+.readyup/manifest.json
 schemas/
