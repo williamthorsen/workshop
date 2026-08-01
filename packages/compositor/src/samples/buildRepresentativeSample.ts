@@ -26,9 +26,12 @@ const DIAGRAM_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
  * A plan exercising every shape the contract has to carry.
  *
  * Modelled on a guidance-distribution run: three precedence-ordered sources feeding two targets, with an artifact
- * reached by two routes, an artifact shadowing two losers beside one the lowest-precedence source wins, three rulebooks
- * aggregated into one region with per-artifact markers, entry-level ownership of a structured config, a byte-copied
- * asset, a file apply will skip, and all four diff statuses.
+ * reached by three routes, an artifact shadowing two losers beside one the lowest-precedence source wins, three
+ * rulebooks aggregated into one region with per-artifact markers, entry-level ownership of a structured config, a
+ * byte-copied asset, a file apply will skip, and all four diff statuses.
+ *
+ * Tables are authored in the order the contract documents: id-keyed tables lexicographically, files by target then
+ * path, and `sources` and each `shadowed` list in precedence order, where the order is the meaning.
  */
 export function buildRepresentativeSample(): Plan {
   const blobs = new Map<Hash, Blob>();
@@ -61,6 +64,23 @@ export function buildRepresentativeSample(): Plan {
     },
     {
       targetId: 'claude',
+      path: 'settings.json',
+      status: 'unchanged' as const,
+      ownership: { kind: 'entries' as const, sentinel: 'codeassembly', format: 'json' as const },
+      current: addUtf8(blobs, SETTINGS_JSON),
+      planned: addUtf8(blobs, SETTINGS_JSON),
+      contributors: { artifacts: [], partials: [] },
+    },
+    {
+      targetId: 'claude',
+      path: 'skills/retired/SKILL.md',
+      status: 'removed' as const,
+      ownership: { kind: 'full' as const },
+      current: addUtf8(blobs, RETIRED_SKILL_CURRENT),
+      contributors: { artifacts: [{ artifactId: 'skill:retired' }], partials: [] },
+    },
+    {
+      targetId: 'claude',
       path: 'skills/review/SKILL.md',
       status: 'changed' as const,
       ownership: { kind: 'full' as const },
@@ -75,23 +95,6 @@ export function buildRepresentativeSample(): Plan {
       ownership: { kind: 'full' as const },
       planned: addBytes(blobs, DIAGRAM_BYTES),
       contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
-    },
-    {
-      targetId: 'claude',
-      path: 'skills/retired/SKILL.md',
-      status: 'removed' as const,
-      ownership: { kind: 'full' as const },
-      current: addUtf8(blobs, RETIRED_SKILL_CURRENT),
-      contributors: { artifacts: [{ artifactId: 'skill:retired' }], partials: [] },
-    },
-    {
-      targetId: 'claude',
-      path: 'settings.json',
-      status: 'unchanged' as const,
-      ownership: { kind: 'entries' as const, sentinel: 'codeassembly', format: 'json' as const },
-      current: addUtf8(blobs, SETTINGS_JSON),
-      planned: addUtf8(blobs, SETTINGS_JSON),
-      contributors: { artifacts: [], partials: [] },
     },
     {
       targetId: 'rovodev',
@@ -231,6 +234,29 @@ export function buildRepresentativeSample(): Plan {
         },
       },
       {
+        id: 'skill:lint',
+        kindId: 'skill',
+        slug: 'lint',
+        status: 'unchanged',
+        seededBy: [],
+        dependsOn: [],
+        resolution: {
+          winner: { sourceId: 'library', path: 'skills/lint/SKILL.md', hash: hashUtf8('library/skills/lint') },
+          shadowed: [],
+        },
+      },
+      {
+        id: 'skill:retired',
+        kindId: 'skill',
+        slug: 'retired',
+        status: 'removed',
+        dependsOn: [],
+        resolution: {
+          winner: { sourceId: 'team', path: 'skills/retired/SKILL.md', hash: hashUtf8('team/skills/retired') },
+          shadowed: [],
+        },
+      },
+      {
         id: 'skill:review',
         kindId: 'skill',
         slug: 'review',
@@ -246,18 +272,6 @@ export function buildRepresentativeSample(): Plan {
         },
       },
       {
-        id: 'skill:lint',
-        kindId: 'skill',
-        slug: 'lint',
-        status: 'unchanged',
-        seededBy: [],
-        dependsOn: [],
-        resolution: {
-          winner: { sourceId: 'library', path: 'skills/lint/SKILL.md', hash: hashUtf8('library/skills/lint') },
-          shadowed: [],
-        },
-      },
-      {
         id: 'subagent:auditor',
         kindId: 'subagent',
         slug: 'auditor',
@@ -266,17 +280,6 @@ export function buildRepresentativeSample(): Plan {
         dependsOn: [{ to: 'skill:review', via: 'injected' }],
         resolution: {
           winner: { sourceId: 'team', path: 'subagents/auditor.md', hash: hashUtf8('subagents/auditor.md') },
-          shadowed: [],
-        },
-      },
-      {
-        id: 'skill:retired',
-        kindId: 'skill',
-        slug: 'retired',
-        status: 'removed',
-        dependsOn: [],
-        resolution: {
-          winner: { sourceId: 'team', path: 'skills/retired/SKILL.md', hash: hashUtf8('team/skills/retired') },
           shadowed: [],
         },
       },
@@ -290,7 +293,7 @@ export function buildRepresentativeSample(): Plan {
       },
     ],
     files,
-    blobs: Object.fromEntries(blobs),
+    blobs: Object.fromEntries([...blobs].toSorted(([left], [right]) => (left < right ? -1 : 1))),
   };
 }
 
