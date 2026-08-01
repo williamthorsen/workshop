@@ -105,8 +105,19 @@ export function isPercentProgress(progress: Progress): progress is PercentProgre
 
 /** Structured outcome from a check, carrying diagnostic data alongside the pass/fail status. */
 export interface CheckOutcome {
+  /** Whether the check's claim holds. */
   ok: boolean;
+
+  /**
+   * Why this status: the evidence on a pass, what went wrong on a failure. Not what the check
+   * asserts, which the name already states, and not how to fix it, which belongs in `fix`.
+   */
   detail?: string | undefined;
+
+  /**
+   * Quantitative progress toward the claim, rendered alongside the name. Needs no `detail`:
+   * the fraction is already the evidence.
+   */
   progress?: Progress | undefined;
 }
 
@@ -117,10 +128,13 @@ export type CheckReturnValue = boolean | CheckOutcome;
 
 /** A single readyup check. */
 export interface RdyCheck {
-  /** Display name shown in output. */
+  /**
+   * The claim being asserted, phrased to read true on a pass and false on a failure:
+   * `Node 24 or later`, not `Node >= 24`.
+   */
   name: string;
 
-  /** Assert a condition. Return true/false or a CheckOutcome. */
+  /** Assert the claim. Return true/false or a CheckOutcome. */
   check: () => CheckReturnValue | Promise<CheckReturnValue>;
 
   /**
@@ -135,7 +149,7 @@ export interface RdyCheck {
    */
   skip?: (() => SkipResult | Promise<SkipResult>) | undefined;
 
-  /** Remediation message shown when the check fails. */
+  /** What to do about a failure. Remediation belongs here rather than in a `CheckOutcome`'s `detail`. */
   fix?: string | undefined;
 
   /** Dependent checks that run only if this check passes. */
