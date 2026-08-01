@@ -12,10 +12,10 @@ import path from 'node:path';
 import { DEFAULT_MANIFEST_PATH, defineRdyKit } from 'readyup';
 import { fileExists } from 'readyup/check-utils';
 
-import { buildFreshnessChecks } from './lib/buildFreshnessChecks.ts';
-import { buildSelfContainmentChecks } from './lib/buildSelfContainmentChecks.ts';
-import { describeFilesCoverage } from './lib/describeFilesCoverage.ts';
-import { KITS_DIR, MANIFEST_DIR } from './lib/kit-layout.ts';
+import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
+import { buildSelfContainmentChecks } from './checks/buildSelfContainmentChecks.ts';
+import { describeFilesCoverage } from './checks/describeFilesCoverage.ts';
+import { KITS_DIR, MANIFEST_DIR } from './checks/kit-layout.ts';
 
 /** Bundle a bare `rdy run --from npm:<package>` resolves to. */
 const DEFAULT_BUNDLE_PATH = path.join(KITS_DIR, 'default.js');

@@ -6,9 +6,14 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { RdyResult } from '../../src/types.ts';
-import { pickResult, runChecklist } from '../helpers/kitChecklistResults.ts';
-import { FIXTURE_KITS_DIR, writeKit, writeKitManifest, writePackageJson } from '../helpers/kitProjectFixture.ts';
-import { loadOwnKit } from '../helpers/loadOwnKit.ts';
+import { pickResult, runChecklist } from '../../test-utils/kits/checklist-results.ts';
+import { loadOwnKit } from '../../test-utils/kits/loadOwnKit.ts';
+import {
+  FIXTURE_KITS_DIR,
+  writeKit,
+  writeKitManifest,
+  writePackageJson,
+} from '../../test-utils/kits/project-fixture.ts';
 
 /** Bundle reaching for a package that only the publishing project has installed. */
 const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { checklists: [] };\n';

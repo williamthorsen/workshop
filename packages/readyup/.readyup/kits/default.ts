@@ -9,8 +9,8 @@
 import { DEFAULT_MANIFEST_PATH, defineRdyKit } from 'readyup';
 import { fileExists } from 'readyup/check-utils';
 
-import { buildFreshnessChecks } from './lib/buildFreshnessChecks.ts';
-import { KITS_DIR, listCompiledBundlePaths } from './lib/kit-layout.ts';
+import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
+import { KITS_DIR, listCompiledBundlePaths } from './checks/kit-layout.ts';
 
 /** The one path `loadConfig` looks in; see `src/loadConfig.ts`. */
 const CONFIG_PATH = '.config/readyup.config.ts';

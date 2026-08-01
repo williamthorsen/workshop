@@ -13,15 +13,6 @@ export const MANIFEST_DIR = path.dirname(DEFAULT_MANIFEST_PATH);
 /** Directory holding kit sources and the bundles compiled from them. */
 export const KITS_DIR = path.join(MANIFEST_DIR, 'kits');
 
-/** A manifest kit entry, narrowed to the fields these kits read. */
-export interface ManifestEntry {
-  name: string;
-  path: string | undefined;
-  source: string | undefined;
-  sourceHash: string | undefined;
-  targetHash: string | undefined;
-}
-
 /**
  * Paths of the compiled bundles in the kit directory, relative to the working directory.
  *
@@ -40,6 +31,15 @@ export function listCompiledBundlePaths(): string[] {
     .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
     .map((entry) => path.join(KITS_DIR, entry.name))
     .toSorted();
+}
+
+/** A manifest kit entry, narrowed to the fields these kits read. */
+export interface ManifestEntry {
+  name: string;
+  path: string | undefined;
+  source: string | undefined;
+  sourceHash: string | undefined;
+  targetHash: string | undefined;
 }
 
 /**
