@@ -8,5 +8,8 @@ export default defineConfig({
   },
   rootScripts: {
     'build:post': 'rdy compile',
+    // Checks are cwd-relative, so the kit has to run from the package it audits. A root
+    // `rdy run --from npm:readyup publishing` would audit the repo root instead.
+    'ci:post': 'pnpm --filter readyup run verify:kits',
   },
 });
