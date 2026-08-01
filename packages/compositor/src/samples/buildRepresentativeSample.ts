@@ -1,10 +1,10 @@
 import { Buffer } from 'node:buffer';
 
+import { hashBytes, hashUtf8 } from '../hashContent.ts';
 import type { Hash } from '../schemas/common.ts';
 import type { Blob, FileSide } from '../schemas/fileSchemas.ts';
 import type { Plan } from '../schemas/planSchema.ts';
-import { SCHEMA_VERSION } from '../schemas/planSchema.ts';
-import { hashBytes, hashUtf8 } from './hashContent.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/planSchema.ts';
 
 const REGION_OPEN = '<!-- ambient:start -->';
 const REGION_CLOSE = '<!-- ambient:end -->';
@@ -134,7 +134,7 @@ export function buildRepresentativeSample(): Plan {
   ];
 
   return {
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: PLAN_SCHEMA_VERSION,
     engineVersion: '0.0.0',
     contentAvailability: 'complete',
     fingerprint: {

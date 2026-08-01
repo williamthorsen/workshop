@@ -1,6 +1,6 @@
+import { hashUtf8 } from '../hashContent.ts';
 import type { Plan } from '../schemas/planSchema.ts';
-import { SCHEMA_VERSION } from '../schemas/planSchema.ts';
-import { hashUtf8 } from './hashContent.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/planSchema.ts';
 
 const SKILL_BODY = '# Review\n\nRead the diff.\n';
 
@@ -16,7 +16,7 @@ export function buildMinimalSample(): Plan {
   const targetDigest = hashUtf8('target:claude');
 
   return {
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: PLAN_SCHEMA_VERSION,
     engineVersion: '0.0.0',
     contentAvailability: 'complete',
     fingerprint: {

@@ -2,7 +2,7 @@
 export type { ArtifactId, DiffStatus, Hash, Id, KindId, PartialId, SourceId, TargetId } from './common.ts';
 export { DiffStatusSchema, HashSchema, IdSchema } from './common.ts';
 
-// Catalog: the world a plan is computed over
+// Descriptors: the kinds, sources, and targets a plan is computed over
 export type {
   KindDescriptor,
   SourceEntry,
@@ -11,7 +11,7 @@ export type {
   TargetVariable,
   TokenMapping,
   TokenMappingEntry,
-} from './catalogSchemas.ts';
+} from './descriptorSchemas.ts';
 export {
   KindDescriptorSchema,
   SourceEntrySchema,
@@ -20,7 +20,7 @@ export {
   TargetVariableSchema,
   TokenMappingEntrySchema,
   TokenMappingSchema,
-} from './catalogSchemas.ts';
+} from './descriptorSchemas.ts';
 
 // Graph: artifacts, partials, and the edges between them
 export type {
@@ -69,9 +69,9 @@ export {
 // Plan envelope
 export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './planSchema.ts';
 export {
+  PLAN_SCHEMA_VERSION,
   PlanFingerprintSchema,
   PlanSchema,
-  SCHEMA_VERSION,
   SourceDigestSchema,
   TargetDigestSchema,
 } from './planSchema.ts';

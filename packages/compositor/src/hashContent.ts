@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 
-import type { Hash } from '../schemas/common.ts';
+import type { Hash } from './schemas/common.ts';
 
 /** A digest of `data`, prefixed with the algorithm that produced it. */
 export function hashBytes(data: Uint8Array): Hash {
