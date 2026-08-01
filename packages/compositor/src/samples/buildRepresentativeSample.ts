@@ -15,7 +15,10 @@ const CLAUDE_MD_PLANNED = `# Guidance\n\n${REGION_OPEN}\n<!-- rulebook:naming --
 const REVIEW_SKILL_CURRENT = '# Review\n\nRead the diff.\n';
 const REVIEW_SKILL_PLANNED = '# Review\n\nRead the diff, then the tests.\n';
 const RETIRED_SKILL_CURRENT = '# Retired\n\nSuperseded.\n';
-const SETTINGS_JSON = '{\n  "hooks": [\n    { "command": "codeassembly relay" }\n  ]\n}\n';
+const LINT_SKILL = '# Lint\n\nRun the linter.\n';
+const SETTINGS_JSON_CURRENT = '{\n  "hooks": [\n    { "command": "relay --on=stop" }\n  ]\n}\n';
+const SETTINGS_JSON_PLANNED =
+  '{\n  "hooks": [\n    { "command": "relay --on=stop" },\n    { "command": "relay --on=review" }\n  ]\n}\n';
 const AUDITOR_CURRENT = '# Auditor\n\nAudit the change.\n';
 const AUDITOR_PLANNED = '# Auditor\n\nAudit the change against its ticket.\n';
 
@@ -65,11 +68,20 @@ export function buildRepresentativeSample(): Plan {
     {
       targetId: 'claude',
       path: 'settings.json',
-      status: 'unchanged' as const,
+      status: 'changed' as const,
       ownership: { kind: 'entries' as const, sentinel: 'codeassembly', format: 'json' as const },
-      current: addUtf8(blobs, SETTINGS_JSON),
-      planned: addUtf8(blobs, SETTINGS_JSON),
-      contributors: { artifacts: [], partials: [] },
+      current: addUtf8(blobs, SETTINGS_JSON_CURRENT),
+      planned: addUtf8(blobs, SETTINGS_JSON_PLANNED),
+      contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
+    },
+    {
+      targetId: 'claude',
+      path: 'skills/lint/SKILL.md',
+      status: 'unchanged' as const,
+      ownership: { kind: 'full' as const },
+      current: addUtf8(blobs, LINT_SKILL),
+      planned: addUtf8(blobs, LINT_SKILL),
+      contributors: { artifacts: [{ artifactId: 'skill:lint' }], partials: [] },
     },
     {
       targetId: 'claude',

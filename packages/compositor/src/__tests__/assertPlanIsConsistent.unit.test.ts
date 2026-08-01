@@ -43,6 +43,93 @@ describe(assertPlanIsConsistent, () => {
     expect(findViolations(plan)).toStrictEqual([{ path: 'sources', message: 'carries "team" more than once' }]);
   });
 
+  it('if two file entries claim one destination, names the repeated path', () => {
+    const plan = buildPlan();
+    plan.files = [...plan.files, { ...requireEntry(plan.files, 0) }];
+
+    expect(findViolations(plan)).toStrictEqual([
+      { path: 'files[1]', message: 'repeats the destination "skills/review/SKILL.md" within target "claude"' },
+    ]);
+  });
+
+  it('tolerates one path claimed once per target', () => {
+    const plan = buildPlan();
+    plan.targets = [
+      ...plan.targets,
+      { id: 'rovodev', label: 'Rovo Dev', root: '~/.rovodev', tokenMappings: [], variables: [] },
+    ];
+    plan.files = [...plan.files, { ...requireEntry(plan.files, 0), targetId: 'rovodev' }];
+
+    expect(() => {
+      assertPlanIsConsistent(plan);
+    }).not.toThrow();
+  });
+
+  it('if a shadowed candidate outranks its winner, rejects the resolution order', () => {
+    const plan = buildPlan();
+    // `team` outranks `library`, so a resolution won by `library` cannot shadow `team`.
+    requireEntry(plan.artifacts, 2).resolution = {
+      winner: { sourceId: 'library', path: 'skills/lint/SKILL.md', hash: 'hash:lint' },
+      shadowed: [{ sourceId: 'team', path: 'skills/lint/SKILL.md', hash: 'hash:lint-team' }],
+    };
+
+    expect(findViolations(plan)).toStrictEqual([
+      {
+        path: 'artifacts[2].resolution.shadowed[0].sourceId',
+        message: 'names "team", which does not follow "library" in source precedence order',
+      },
+    ]);
+  });
+
+  it('if shadowed candidates run against precedence, rejects the one out of order', () => {
+    const plan = buildPlan();
+    plan.sources = [
+      ...plan.sources,
+      { id: 'packaged', name: 'packaged', origin: { kind: 'package', location: '@acme/guidance' } },
+    ];
+    const review = requireEntry(plan.artifacts, 1);
+    review.resolution = {
+      winner: { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'hash:review' },
+      shadowed: [
+        { sourceId: 'packaged', path: 'skills/review/SKILL.md', hash: 'hash:review-packaged' },
+        { sourceId: 'library', path: 'skills/review/SKILL.md', hash: 'hash:review-library' },
+      ],
+    };
+
+    expect(findViolations(plan)).toStrictEqual([
+      {
+        path: 'artifacts[1].resolution.shadowed[1].sourceId',
+        message: 'names "library", which does not follow "packaged" in source precedence order',
+      },
+    ]);
+  });
+
+  it('if a shadowed candidate names an unknown source, reports only the dangling reference', () => {
+    const plan = buildPlan();
+    requireEntry(plan.artifacts, 1).resolution = {
+      winner: { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'hash:review' },
+      shadowed: [{ sourceId: 'absent', path: 'skills/review/SKILL.md', hash: 'hash:review-absent' }],
+    };
+
+    expect(findViolations(plan)).toStrictEqual([
+      {
+        path: 'artifacts[1].resolution.shadowed[0].sourceId',
+        message: 'references "absent", which is not an entry in sources',
+      },
+    ]);
+  });
+
+  it('tolerates a removed artifact that no longer resolves from any source', () => {
+    const plan = buildPlan();
+    const retired = requireEntry(plan.artifacts, 2);
+    plan.artifacts = [...plan.artifacts, { id: retired.id, kindId: 'skill', slug: 'retired', status: 'removed' }];
+    plan.artifacts = plan.artifacts.filter((artifact) => artifact !== retired);
+
+    expect(() => {
+      assertPlanIsConsistent(plan);
+    }).not.toThrow();
+  });
+
   it('if a non-token edge names a partial, rejects the edge it could not have been read from', () => {
     const plan = buildPlan();
     requireEntry(plan.artifacts, 0).dependsOn = [

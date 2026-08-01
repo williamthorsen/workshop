@@ -23,7 +23,9 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 
 Three invariants therefore live outside it, in `assertPlanIsConsistent`:
 
-- every cross-table id reference resolves, and no table carries one id twice;
+- every cross-table id reference resolves; no table carries one id twice, and no two file entries claim one destination;
+- a `partialId` appears only on a `token` edge, the only origin read from a partial;
+- shadowed candidates follow their winner in source precedence order;
 - a plan declaring `contentAvailability: 'complete'` carries every body it references;
 - each file's recorded status agrees with the two sides beside it.
 

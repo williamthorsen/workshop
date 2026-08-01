@@ -6,6 +6,7 @@ import * as commonSchemas from '../common.ts';
 import * as fileSchemas from '../fileSchemas.ts';
 import * as graphSchemas from '../graphSchemas.ts';
 import * as barrel from '../index.ts';
+import * as planSchema from '../planSchema.ts';
 import { PlanSchema, SCHEMA_VERSION } from '../planSchema.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
@@ -16,6 +17,7 @@ const modules: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
   ['common', commonSchemas],
   ['fileSchemas', fileSchemas],
   ['graphSchemas', graphSchemas],
+  ['planSchema', planSchema],
 ];
 
 describe('PlanSchema', () => {

@@ -32,9 +32,11 @@ export class PlanConsistencyError extends Error {
 export function assertPlanIsConsistent(plan: Plan): void {
   const violations = [
     ...findDuplicateIds(plan),
+    ...findDuplicateFileKeys(plan),
     ...findDanglingReferences(plan),
     ...findMisplacedPartialReferences(plan),
     ...findMissingBlobs(plan),
+    ...findResolutionOrderViolations(plan),
     ...findStatusDisagreements(plan),
   ];
 
@@ -107,6 +109,32 @@ function findDanglingReferences(plan: Plan): Array<PlanViolation> {
   return violations;
 }
 
+/**
+ * Violations for each destination two file entries both claim.
+ *
+ * `files` carries no id because `(targetId, path)` is its natural key, so this is the id check applied to that pair: a
+ * consumer keying files by destination silently drops one of a repeated pair, and the two can disagree on status,
+ * ownership, and contributors.
+ */
+function findDuplicateFileKeys(plan: Plan): Array<PlanViolation> {
+  const claimed = new Map<string, Set<string>>();
+  const violations: Array<PlanViolation> = [];
+
+  for (const [index, file] of plan.files.entries()) {
+    const paths = claimed.get(file.targetId) ?? new Set<string>();
+    if (paths.has(file.path)) {
+      violations.push({
+        path: `files[${index}]`,
+        message: `repeats the destination "${file.path}" within target "${file.targetId}"`,
+      });
+    }
+    paths.add(file.path);
+    claimed.set(file.targetId, paths);
+  }
+
+  return violations;
+}
+
 /** Violations for each table carrying the same id twice, which would make every reference to it ambiguous. */
 function findDuplicateIds(plan: Plan): Array<PlanViolation> {
   const tables = [
@@ -166,6 +194,53 @@ function findMissingBlobs(plan: Plan): Array<PlanViolation> {
       }
     }
   }
+  return violations;
+}
+
+/**
+ * Violations for each resolution whose candidates contradict source precedence.
+ *
+ * `sources` runs highest precedence first, so a winner must outrank every candidate it shadowed and the losers must
+ * descend from there. Nothing else validates this: the schema cannot express an ordering, and a plan listing losers
+ * arbitrarily would otherwise render "shadowing Z" from data no check had looked at.
+ *
+ * A candidate naming an unknown source is skipped here, because the dangling reference is already reported. A repeated
+ * source id ranks at its first occurrence, which is the one that would win resolution; the repeat itself is reported by
+ * the duplicate check rather than cascading into every resolution that names it.
+ */
+function findResolutionOrderViolations(plan: Plan): Array<PlanViolation> {
+  const precedence = new Map<string, number>();
+  for (const [index, source] of plan.sources.entries()) {
+    if (!precedence.has(source.id)) {
+      precedence.set(source.id, index);
+    }
+  }
+  const violations: Array<PlanViolation> = [];
+
+  for (const [index, artifact] of plan.artifacts.entries()) {
+    const { resolution } = artifact;
+    if (resolution === undefined) {
+      continue;
+    }
+
+    let outrankedBy = resolution.winner.sourceId;
+    let outrankingIndex = precedence.get(outrankedBy);
+    for (const [loserIndex, loser] of resolution.shadowed.entries()) {
+      const loserIndexInSources = precedence.get(loser.sourceId);
+      if (loserIndexInSources === undefined || outrankingIndex === undefined) {
+        continue;
+      }
+      if (loserIndexInSources <= outrankingIndex) {
+        violations.push({
+          path: `artifacts[${index}].resolution.shadowed[${loserIndex}].sourceId`,
+          message: `names "${loser.sourceId}", which does not follow "${outrankedBy}" in source precedence order`,
+        });
+      }
+      outrankedBy = loser.sourceId;
+      outrankingIndex = Math.max(outrankingIndex, loserIndexInSources);
+    }
+  }
+
   return violations;
 }
 

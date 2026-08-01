@@ -366,20 +366,46 @@
     {
       "targetId": "claude",
       "path": "settings.json",
-      "status": "unchanged",
+      "status": "changed",
       "ownership": {
         "kind": "entries",
         "sentinel": "codeassembly",
         "format": "json"
       },
       "current": {
-        "hash": "sha256:21f1249d03fd24df37189c1f93991d8fa2b4d50a896d11400d861a59517c06c5"
+        "hash": "sha256:b36444c9ea238a7463cf924143178da437d9f6d990e1b826a52d719572f968a5"
       },
       "planned": {
-        "hash": "sha256:21f1249d03fd24df37189c1f93991d8fa2b4d50a896d11400d861a59517c06c5"
+        "hash": "sha256:33818bc4446c1f270e806c4524c8bf7575a2c0fce417685c1bc39127dc7e3352"
       },
       "contributors": {
-        "artifacts": [],
+        "artifacts": [
+          {
+            "artifactId": "skill:review"
+          }
+        ],
+        "partials": []
+      }
+    },
+    {
+      "targetId": "claude",
+      "path": "skills/lint/SKILL.md",
+      "status": "unchanged",
+      "ownership": {
+        "kind": "full"
+      },
+      "current": {
+        "hash": "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2"
+      },
+      "planned": {
+        "hash": "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2"
+      },
+      "contributors": {
+        "artifacts": [
+          {
+            "artifactId": "skill:lint"
+          }
+        ],
         "partials": []
       }
     },
@@ -482,9 +508,13 @@
       "encoding": "base64",
       "data": "iVBORw0KGgoAAAAN"
     },
-    "sha256:21f1249d03fd24df37189c1f93991d8fa2b4d50a896d11400d861a59517c06c5": {
+    "sha256:33818bc4446c1f270e806c4524c8bf7575a2c0fce417685c1bc39127dc7e3352": {
       "encoding": "utf8",
-      "data": "{\n  \"hooks\": [\n    { \"command\": \"codeassembly relay\" }\n  ]\n}\n"
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"relay --on=stop\" },\n    { \"command\": \"relay --on=review\" }\n  ]\n}\n"
+    },
+    "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2": {
+      "encoding": "utf8",
+      "data": "# Lint\n\nRun the linter.\n"
     },
     "sha256:47f4e96573e30d30e0aa7338a36381f6c783220c19078dc3848b40ba59a28663": {
       "encoding": "utf8",
@@ -509,6 +539,10 @@
     "sha256:b17424857398d94ff93cd1456c99771b87ffbdced07ebdf23e6351e027afc076": {
       "encoding": "utf8",
       "data": "# Auditor\n\nAudit the change.\n"
+    },
+    "sha256:b36444c9ea238a7463cf924143178da437d9f6d990e1b826a52d719572f968a5": {
+      "encoding": "utf8",
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"relay --on=stop\" }\n  ]\n}\n"
     }
   }
 }
