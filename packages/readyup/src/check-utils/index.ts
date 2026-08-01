@@ -17,6 +17,7 @@ export {
 export { computeHash, fileMatchesHash } from './hashing.ts';
 export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json.ts';
 export { getJsonValue, hasJsonValue } from './json-value.ts';
+export { missingFrom } from './missingFrom.ts';
 export { hasDevDependency, hasMinDevDependencyVersion, hasPackageJsonField, readPackageJson } from './package-json.ts';
 export { compareVersions } from './semver.ts';
 export { readToolVersionsNode } from './tool-versions.ts';

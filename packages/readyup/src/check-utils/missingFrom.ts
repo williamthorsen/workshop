@@ -18,7 +18,7 @@ export function missingFrom(category: string, expected: string[], actual: string
 
   return {
     ok: false,
-    detail: `Missing ${category}: ${missing.join(', ')}`,
+    detail: `missing ${category}: ${missing.join(', ')}`,
     progress,
   };
 }

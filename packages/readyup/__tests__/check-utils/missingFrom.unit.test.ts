@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { missingFrom as missingFromBarrel } from '../../src/check-utils/index.ts';
 import { missingFrom } from '../../src/check-utils/missingFrom.ts';
 
 describe(missingFrom, () => {
@@ -17,7 +18,7 @@ describe(missingFrom, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'Missing fields: a, c',
+      detail: 'missing fields: a, c',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
     });
   });
@@ -27,7 +28,7 @@ describe(missingFrom, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'Missing deps: x, y',
+      detail: 'missing deps: x, y',
       progress: { type: 'fraction', passedCount: 0, count: 2 },
     });
   });
@@ -39,5 +40,9 @@ describe(missingFrom, () => {
       ok: true,
       progress: { type: 'fraction', passedCount: 0, count: 0 },
     });
+  });
+
+  it('is reachable from the check-utils barrel', () => {
+    expect(missingFromBarrel).toBe(missingFrom);
   });
 });
