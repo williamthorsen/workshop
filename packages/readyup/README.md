@@ -762,6 +762,35 @@ A published version other than the installed one is not yet reachable through `n
 rdy run --url https://unpkg.com/@acme/eslint-config@2.1.0/.readyup/kits/drift.js
 ```
 
+### ReadyUp's own kits
+
+ReadyUp publishes two kits of its own, about readyup projects themselves. Any project with readyup as a direct dependency can reach them:
+
+```bash
+rdy run --from npm:readyup            # default: authoring hygiene, advisory
+rdy run --from npm:readyup publishing # publication readiness, blocking
+rdy list --from npm:readyup           # both, with the checklists each one carries
+```
+
+`default` reports at `warn` and below, so it is safe to run mid-edit:
+
+| Checklist   | What it asserts                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `setup`     | The kit directory exists, a config file is present (at `recommend`), and a manifest records what has been compiled. |
+| `freshness` | Every kit the manifest records still matches the hashes recorded for it, on the source side and the bundle side.    |
+
+The manifest check stands down when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit.
+
+`publishing` reports at `error`, for a package that distributes its kits:
+
+| Checklist          | What it asserts                                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `packaging`        | `files` ships the kit directory, the manifest is present, and a kit named `default` exists (at `warn`).                                   |
+| `freshness`        | The comparisons `default` makes, at blocking severity: a stale kit publishes checks that no longer describe the package they travel with. |
+| `self-containment` | Every bundle imports only `node:*`, `readyup`, and `readyup/*` -- the specifiers [`rdy compile`](#compiling) leaves external.             |
+
+A package declaring no `files` field passes the first check, because everything ships. That check is a containment test rather than an npm-packlist emulation: a `files` list built from globs or negations needs a `.readyup` entry beside them to satisfy it.
+
 ### Internal kits
 
 Internal kits are TypeScript sources a repo runs on itself rather than publishing. The `internal.dir` and `internal.infix` [config keys](#config) locate them.
