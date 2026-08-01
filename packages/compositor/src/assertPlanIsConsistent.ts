@@ -223,6 +223,8 @@ function findResolutionOrderViolations(plan: Plan): Array<PlanViolation> {
       continue;
     }
 
+    // The pair always names one source: `outrankedBy` is the source at `outrankingIndex`, so a violation reports the
+    // source it was actually compared against.
     let outrankedBy = resolution.winner.sourceId;
     let outrankingIndex = precedence.get(outrankedBy);
     for (const [loserIndex, loser] of resolution.shadowed.entries()) {
@@ -230,14 +232,15 @@ function findResolutionOrderViolations(plan: Plan): Array<PlanViolation> {
       if (loserIndexInSources === undefined || outrankingIndex === undefined) {
         continue;
       }
-      if (loserIndexInSources <= outrankingIndex) {
-        violations.push({
-          path: `artifacts[${index}].resolution.shadowed[${loserIndex}].sourceId`,
-          message: `names "${loser.sourceId}", which does not follow "${outrankedBy}" in source precedence order`,
-        });
+      if (loserIndexInSources > outrankingIndex) {
+        outrankedBy = loser.sourceId;
+        outrankingIndex = loserIndexInSources;
+        continue;
       }
-      outrankedBy = loser.sourceId;
-      outrankingIndex = Math.max(outrankingIndex, loserIndexInSources);
+      violations.push({
+        path: `artifacts[${index}].resolution.shadowed[${loserIndex}].sourceId`,
+        message: `names "${loser.sourceId}", which does not follow "${outrankedBy}" in source precedence order`,
+      });
     }
   }
 

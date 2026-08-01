@@ -16,9 +16,11 @@ const REVIEW_SKILL_CURRENT = '# Review\n\nRead the diff.\n';
 const REVIEW_SKILL_PLANNED = '# Review\n\nRead the diff, then the tests.\n';
 const RETIRED_SKILL_CURRENT = '# Retired\n\nSuperseded.\n';
 const LINT_SKILL = '# Lint\n\nRun the linter.\n';
-const SETTINGS_JSON_CURRENT = '{\n  "hooks": [\n    { "command": "relay --on=stop" }\n  ]\n}\n';
+// The first hook belongs to another tool and carries no sentinel; the engine owns only the entries marked with one.
+const SETTINGS_JSON_CURRENT =
+  '{\n  "hooks": [\n    { "command": "vendor-tool sync" },\n    { "command": "relay --on=stop", "source": "codeassembly" }\n  ]\n}\n';
 const SETTINGS_JSON_PLANNED =
-  '{\n  "hooks": [\n    { "command": "relay --on=stop" },\n    { "command": "relay --on=review" }\n  ]\n}\n';
+  '{\n  "hooks": [\n    { "command": "vendor-tool sync" },\n    { "command": "relay --on=stop", "source": "codeassembly" },\n    { "command": "relay --on=review", "source": "codeassembly" }\n  ]\n}\n';
 const AUDITOR_CURRENT = '# Auditor\n\nAudit the change.\n';
 const AUDITOR_PLANNED = '# Auditor\n\nAudit the change against its ticket.\n';
 

@@ -373,10 +373,10 @@
         "format": "json"
       },
       "current": {
-        "hash": "sha256:b36444c9ea238a7463cf924143178da437d9f6d990e1b826a52d719572f968a5"
+        "hash": "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611"
       },
       "planned": {
-        "hash": "sha256:33818bc4446c1f270e806c4524c8bf7575a2c0fce417685c1bc39127dc7e3352"
+        "hash": "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c"
       },
       "contributors": {
         "artifacts": [
@@ -508,10 +508,6 @@
       "encoding": "base64",
       "data": "iVBORw0KGgoAAAAN"
     },
-    "sha256:33818bc4446c1f270e806c4524c8bf7575a2c0fce417685c1bc39127dc7e3352": {
-      "encoding": "utf8",
-      "data": "{\n  \"hooks\": [\n    { \"command\": \"relay --on=stop\" },\n    { \"command\": \"relay --on=review\" }\n  ]\n}\n"
-    },
     "sha256:45f7efcbad781312304de23bfe2a91f164701000d236fae6a5647333ba5424e2": {
       "encoding": "utf8",
       "data": "# Lint\n\nRun the linter.\n"
@@ -528,6 +524,10 @@
       "encoding": "utf8",
       "data": "# Review\n\nRead the diff.\n"
     },
+    "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611": {
+      "encoding": "utf8",
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"vendor-tool sync\" },\n    { \"command\": \"relay --on=stop\", \"source\": \"codeassembly\" }\n  ]\n}\n"
+    },
     "sha256:8b426986df2999cee78c9893f3397acf3a3db6df3412388b8fb92a8435288bd9": {
       "encoding": "utf8",
       "data": "# Guidance\n\n<!-- ambient:start -->\n<!-- rulebook:style -->\nUse sentence case.\n<!-- /rulebook:style -->\n<!-- ambient:end -->\n"
@@ -540,9 +540,9 @@
       "encoding": "utf8",
       "data": "# Auditor\n\nAudit the change.\n"
     },
-    "sha256:b36444c9ea238a7463cf924143178da437d9f6d990e1b826a52d719572f968a5": {
+    "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c": {
       "encoding": "utf8",
-      "data": "{\n  \"hooks\": [\n    { \"command\": \"relay --on=stop\" }\n  ]\n}\n"
+      "data": "{\n  \"hooks\": [\n    { \"command\": \"vendor-tool sync\" },\n    { \"command\": \"relay --on=stop\", \"source\": \"codeassembly\" },\n    { \"command\": \"relay --on=review\", \"source\": \"codeassembly\" }\n  ]\n}\n"
     }
   }
 }

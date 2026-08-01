@@ -122,12 +122,41 @@ describe(assertPlanIsConsistent, () => {
   it('tolerates a removed artifact that no longer resolves from any source', () => {
     const plan = buildPlan();
     const retired = requireEntry(plan.artifacts, 2);
-    plan.artifacts = [...plan.artifacts, { id: retired.id, kindId: 'skill', slug: 'retired', status: 'removed' }];
+    plan.artifacts = [...plan.artifacts, { id: retired.id, kindId: 'skill', slug: 'lint', status: 'removed' }];
     plan.artifacts = plan.artifacts.filter((artifact) => artifact !== retired);
 
     expect(() => {
       assertPlanIsConsistent(plan);
     }).not.toThrow();
+  });
+
+  it('blames each out-of-order candidate on the source it was compared against', () => {
+    const plan = buildPlan();
+    plan.sources = [
+      ...plan.sources,
+      { id: 'packaged', name: 'packaged', origin: { kind: 'package', location: '@acme/guidance' } },
+      { id: 'vendored', name: 'vendored', origin: { kind: 'directory', location: '/srv/vendored' } },
+    ];
+    // `vendored` is lowest, so both candidates after it are out of order against it, not against each other.
+    requireEntry(plan.artifacts, 1).resolution = {
+      winner: { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'hash:review' },
+      shadowed: [
+        { sourceId: 'vendored', path: 'skills/review/SKILL.md', hash: 'hash:review-vendored' },
+        { sourceId: 'packaged', path: 'skills/review/SKILL.md', hash: 'hash:review-packaged' },
+        { sourceId: 'library', path: 'skills/review/SKILL.md', hash: 'hash:review-library' },
+      ],
+    };
+
+    expect(findViolations(plan)).toStrictEqual([
+      {
+        path: 'artifacts[1].resolution.shadowed[1].sourceId',
+        message: 'names "packaged", which does not follow "vendored" in source precedence order',
+      },
+      {
+        path: 'artifacts[1].resolution.shadowed[2].sourceId',
+        message: 'names "library", which does not follow "vendored" in source precedence order',
+      },
+    ]);
   });
 
   it('if a non-token edge names a partial, rejects the edge it could not have been read from', () => {

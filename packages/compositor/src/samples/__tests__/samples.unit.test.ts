@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { assertPlanIsConsistent } from '../../assertPlanIsConsistent.ts';
+import type { FileEntry } from '../../schemas/fileSchemas.ts';
 import type { ArtifactEntry } from '../../schemas/graphSchemas.ts';
 import { PlanSchema } from '../../schemas/planSchema.ts';
 import { resolveInclusionPaths } from '../../traversal.ts';
@@ -62,6 +63,15 @@ describe(buildRepresentativeSample, () => {
     });
   });
 
+  it('marks each owned entry with the sentinel it declares, beside an item it must not touch', () => {
+    const config = findFile('settings.json');
+    const sentinel = readEntriesSentinel(config);
+    const parsed: { hooks: Array<{ command: string; source?: string }> } = JSON.parse(readPlannedBody(config));
+
+    expect(parsed.hooks.filter((hook) => hook.source === sentinel)).toHaveLength(2);
+    expect(parsed.hooks.filter((hook) => hook.source === undefined)).toHaveLength(1);
+  });
+
   it('carries a byte-encoded body for an asset copied verbatim', () => {
     const asset = findFile('skills/review/diagram.png');
     const blob = asset.planned === undefined ? undefined : representative.blobs[asset.planned.hash];
@@ -94,6 +104,23 @@ function findArtifact(id: string): ArtifactEntry {
     throw new Error(`The representative sample carries no artifact "${id}".`);
   }
   return artifact;
+}
+
+/** The sentinel `file` declares for the entries it owns, failing the test when it is not entry-owned. */
+function readEntriesSentinel(file: FileEntry): string {
+  if (file.ownership.kind !== 'entries') {
+    throw new Error(`The sample file "${file.path}" does not declare entry ownership.`);
+  }
+  return file.ownership.sentinel;
+}
+
+/** The body the representative sample plans to write for `file`, failing the test when it carries none. */
+function readPlannedBody(file: FileEntry): string {
+  const blob = file.planned === undefined ? undefined : representative.blobs[file.planned.hash];
+  if (blob === undefined) {
+    throw new Error(`The representative sample carries no planned body for "${file.path}".`);
+  }
+  return blob.data;
 }
 
 /** The representative sample's file at the given path, failing the test when it carries none. */

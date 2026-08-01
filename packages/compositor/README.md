@@ -21,7 +21,7 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 
 `PlanSchema` is purely structural. It validates shapes and nothing else, which keeps it renderable to JSON Schema; a validation refinement would be invisible to `z.toJSONSchema` and would leave a generated document accepting plans this package rejects.
 
-Three invariants therefore live outside it, in `assertPlanIsConsistent`:
+The invariants therefore live outside it, in `assertPlanIsConsistent`:
 
 - every cross-table id reference resolves; no table carries one id twice, and no two file entries claim one destination;
 - a `partialId` appears only on a `token` edge, the only origin read from a partial;
