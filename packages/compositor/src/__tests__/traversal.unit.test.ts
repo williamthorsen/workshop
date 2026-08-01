@@ -44,6 +44,15 @@ describe(resolveInclusionPaths, () => {
     const plan = buildPlan();
     requireEntry(plan.artifacts, 2).dependsOn = [{ to: 'skill:review', via: 'declared' }];
 
+    // Searching for an artifact the cycle does not reach forces the walk through the back edge rather than stopping at
+    // the target, which is the only way the guard is exercised.
+    expect(resolveInclusionPaths(plan, 'skill:absent')).toStrictEqual([]);
+  });
+
+  it('still finds the paths that exist on a plan whose edges form a cycle', () => {
+    const plan = buildPlan();
+    requireEntry(plan.artifacts, 2).dependsOn = [{ to: 'skill:review', via: 'declared' }];
+
     expect(resolveInclusionPaths(plan, 'skill:lint')).toStrictEqual([
       ['collection:core', 'skill:review', 'skill:lint'],
     ]);
