@@ -58,7 +58,7 @@ describe(makeLocalRefSyncCheck, () => {
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
-    expect(outcome).toMatchObject({ detail: expect.stringContaining('git merge') });
+    expect(outcome).toMatchObject({ detail: expect.not.stringContaining('git merge') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -102,10 +102,10 @@ describe(makeLocalRefSyncCheck, () => {
     expect(check.fix).toBe('custom fix');
   });
 
-  it('has no fix when not provided', () => {
+  it('falls back to a default fix naming the refs to reconcile', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
 
-    expect(check.fix).toBeUndefined();
+    expect(check.fix).toBe('Reconcile a with b in /repo');
   });
 
   it('forwards severity to the check', () => {
@@ -165,7 +165,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
-    expect(outcome).toMatchObject({ detail: expect.stringContaining('git pull') });
+    expect(outcome).toMatchObject({ detail: expect.not.stringContaining('git pull') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -200,8 +200,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const skipResult = await check.skip?.();
 
-    expect(skipResult).toBeTypeOf('string');
-    expect(skipResult).toContain('unreachable');
+    expect(skipResult).toBe("remote 'origin' is unreachable");
   });
 
   it('returns pass from check() when remote is unreachable', async () => {
@@ -230,10 +229,10 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(check.fix).toBe('run git pull');
   });
 
-  it('has no fix when not provided', () => {
+  it('falls back to a default fix naming the local and remote refs', () => {
     const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
 
-    expect(check.fix).toBeUndefined();
+    expect(check.fix).toBe('Reconcile main with origin/main in /repo');
   });
 
   it('forwards severity to the check', () => {

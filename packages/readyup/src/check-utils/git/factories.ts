@@ -11,7 +11,7 @@ interface LocalRefSyncCheckOptions {
   refA: string;
   /** Second local ref to compare against. */
   refB: string;
-  /** Custom remediation message. Overrides the default. */
+  /** Remediation message. Overrides the default, which names the refs to reconcile. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
@@ -26,7 +26,7 @@ interface RemoteRefSyncCheckOptions {
   ref: string;
   /** Remote name. Default: `origin`. */
   remote?: string;
-  /** Custom remediation message. Overrides the default. */
+  /** Remediation message. Overrides the default, which names the refs to reconcile. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
@@ -43,8 +43,8 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
       if (result.status === 'match') return true;
       return { ok: false, detail: formatLocalResult(result, refA, refB, path) };
     },
+    fix: customFix ?? `Reconcile ${refA} with ${refB} in ${path}`,
   };
-  if (customFix !== undefined) check.fix = customFix;
   if (severity !== undefined) check.severity = severity;
   return check;
 }
@@ -67,7 +67,7 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
     async skip() {
       const result = await getProbe();
       if (result.status === 'unreachable') {
-        return `remote '${remote}' is unreachable; skipping network check`;
+        return `remote '${remote}' is unreachable`;
       }
       return false;
     },
@@ -80,8 +80,8 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
       if (result.status === 'unreachable') return true;
       return { ok: false, detail: formatRemoteResult(result, ref, remote, path) };
     },
+    fix: customFix ?? `Reconcile ${ref} with ${remote}/${ref} in ${path}`,
   };
-  if (customFix !== undefined) rdyCheck.fix = customFix;
   if (severity !== undefined) rdyCheck.severity = severity;
   return rdyCheck;
 }
@@ -107,7 +107,7 @@ function formatLocalResult(
     return `${refA} and ${refB} have diverged, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git merge ${refB}' in ${path}`;
+    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'}`;
   }
   return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
 }
@@ -136,7 +136,7 @@ function formatRemoteResult(
     return `${ref} and ${remote}/${ref} have diverged, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git pull' in ${path}`;
+    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'}`;
   }
   return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
 }
