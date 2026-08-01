@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/williamthorsen/workshop.git"
   },
-  "license": "MIT",
+  "license": "ISC",
   "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
   "type": "module",
   "workspaces": [

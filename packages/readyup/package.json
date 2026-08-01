@@ -18,7 +18,7 @@
     "url": "https://github.com/williamthorsen/workshop.git",
     "directory": "packages/readyup"
   },
-  "license": "MIT",
+  "license": "ISC",
   "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
   "sideEffects": [
     "./dist/esm/bin/rdy.js"
