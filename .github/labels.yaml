@@ -64,6 +64,9 @@
 - name: refactoring
   color: edc287
   description: Improvement to code without change in functionality
+- name: scope:compositor
+  color: 00ff96
+  description: ''
 - name: scope:overlay
   color: 00ff96
   description: ''
