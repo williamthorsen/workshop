@@ -8,6 +8,7 @@ const config = defineConfig({
     extends: ['common'],
     labels: {
       'scope:root': { color: '00ff96', description: '' },
+      'scope:compositor': { color: '00ff96', description: '' },
       'scope:overlay': { color: '00ff96', description: '' },
       'scope:readyup': { color: '00ff96', description: '' },
     },

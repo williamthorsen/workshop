@@ -17,6 +17,7 @@
     "tooling": "tooling"
   },
   "scopes": {
+    "compositor": "scope:compositor",
     "overlay": "scope:overlay",
     "readyup": "scope:readyup",
     "root": "scope:root"

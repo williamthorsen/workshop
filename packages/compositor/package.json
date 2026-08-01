@@ -1,0 +1,33 @@
+{
+  "name": "@williamthorsen/compositor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Resolve declared content across precedence-ordered sources and plan idempotent writes to targets",
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/compositor#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/compositor"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
