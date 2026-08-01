@@ -22,6 +22,17 @@ export {
   TokenMappingSchema,
 } from './descriptorSchemas.ts';
 
+// Resolution: what the sources carry, and which one won each artifact
+export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './resolutionSchemas.ts';
+export {
+  CATALOG_SCHEMA_VERSION,
+  CatalogEntrySchema,
+  CatalogSchema,
+  KindLayoutSchema,
+  ResolveKindSchema,
+  SourceSpecSchema,
+} from './resolutionSchemas.ts';
+
 // Graph: artifacts, partials, and the edges between them
 export type {
   ArtifactEntry,

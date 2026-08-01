@@ -8,6 +8,7 @@ import * as graphSchemas from '../graphSchemas.ts';
 import * as barrel from '../index.ts';
 import * as planSchema from '../planSchema.ts';
 import { PLAN_SCHEMA_VERSION, PlanSchema } from '../planSchema.ts';
+import * as resolutionSchemas from '../resolutionSchemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const tables = ['artifacts', 'blobs', 'files', 'fingerprint', 'kinds', 'partials', 'sources', 'targets'] as const;
@@ -18,6 +19,7 @@ const modules: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
   ['fileSchemas', fileSchemas],
   ['graphSchemas', graphSchemas],
   ['planSchema', planSchema],
+  ['resolutionSchemas', resolutionSchemas],
 ];
 
 describe('PlanSchema', () => {
