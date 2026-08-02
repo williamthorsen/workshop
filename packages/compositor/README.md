@@ -2,7 +2,17 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and source resolution, the first flow built against it. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, and selection. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+
+## Config
+
+A config is a list of tiers, lowest precedence first, the order a fold applies them. Each tier declares the sources it adds or drops, and per artifact kind the artifacts it uses or drops. `loadConfig` reads one file per tier, but files are one way to obtain a config rather than the only one: what it returns is the same shape a caller can build in memory and hand straight to the flows downstream, which is what lets an edited config be evaluated without touching disk.
+
+Tier identity -- an id, a label, and the directory a relative path resolves against -- is the consumer's to supply. A file does not know which tier it is; that follows from where the consumer looked for it, which is what keeps any particular project layout out of the package. A tier whose file is absent contributes nothing, while one whose file is present and empty contributes a tier declaring nothing, so an absent tier stays distinguishable from a silent one.
+
+Parsing normalizes: a bare slug becomes an entry, `path` or `package` becomes a source origin, and a kind-keyed mapping becomes an array ordered by kind. Every schema also accepts its own output, so a config already parsed can be modified and re-parsed without being converted back first. These schemas therefore carry transforms and do not render to JSON Schema, unlike the plan and catalog contracts; config is authored input rather than an emitted payload, which is also why it carries no version.
+
+Sources and packages are one declaration list: a package is a source whose location is a package name, which the plan schema's source origin already allows. `resolveSources` folds the tiers into the ordered list resolution reads, locating each package by walking the `node_modules` chain from the tier that declared it and reading the content directory that package declares under a key the consumer names. Precedence runs higher tier first, and author order within a tier, so a config reads with precedence descending down the page. The names a tier dropped and no higher tier re-adopted come back beside the sources, which is what distinguishes a source a consumer turned down from one it never mentioned.
 
 ## Resolution
 
@@ -19,6 +29,18 @@ An entry's id composes its kind and slug, the same way a plan names the artifact
 `assertCatalogIsConsistent` is to a catalog what `assertPlanIsConsistent` is to a plan, and for the same reason: the schema is purely structural, so id references, entry-id composition, and shadowed-candidate ordering are checked outside it. A catalog `resolveCatalog` produced satisfies all of it by construction, so resolution does not pay for the checks; call the assertion on a catalog that arrived as data.
 
 No sample catalogs ship. The plan schema needed them because no engine existed to produce a plan; a catalog comes from calling the resolver.
+
+## Selection
+
+`selectArtifacts` folds a config against a catalog and answers which artifacts were asked for. It is pure: the catalog is the only view of the filesystem, so re-running it over a changed config reads nothing, which is what makes a toggle-and-recompute loop free.
+
+An entry names one artifact or takes everything a source carries, and either form is valid in `use` and in `drop`, so "all of this source except that one" is expressible. Taking a source whole selects the artifacts that source carries, including those a higher-precedence source shadows: shadowing settles which copy an artifact resolves from, and selection settles which artifacts are in play. Indexing winners alone would make a source's contribution shrink as higher-precedence sources were declared above it.
+
+Seeds and declines stay disjoint per artifact. A `drop` clears the seeds beneath it and records the tier that dropped it; a later `use` clears the decline and seeds afresh. What survives to the end is what decided the final state, which is what tells a project-level opt-in from an inherited one, and it is recorded in the plan schema's own seed shape rather than a parallel one.
+
+A selection is a plain value, not a versioned document like a catalog. A document earns its cost when re-deriving the payload is expensive or impossible; a selection is a cheap pure function of two documents that already exist, so nothing can hold one it cannot recompute. A declined artifact has no plan representation yet -- `removed` means deployed and no longer selected, which is a different fact.
+
+A selector matching nothing yields a diagnostic naming the tier, kind, list, and position that produced it, rather than throwing, so validation reports every mistake in a config at once and a reader can attach each to the line an author wrote. A block naming a kind the catalog does not carry faults the whole block, so its diagnostic names the tier and kind alone.
 
 ## The plan
 

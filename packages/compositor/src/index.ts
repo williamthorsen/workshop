@@ -1,3 +1,9 @@
+export type { TierFile } from './config/loadConfig.ts';
+export { loadConfig, TierFileSchema } from './config/loadConfig.ts';
+export type { LocatePackageOptions } from './config/locatePackage.ts';
+export { locatePackage } from './config/locatePackage.ts';
+export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
+export { resolveSources } from './config/resolveSources.ts';
 export type { DependencyGraphView, DependentsIndex, TraversableArtifact } from './graph/traversal.ts';
 export { buildDependentsIndex, resolveInclusionPaths } from './graph/traversal.ts';
 export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
@@ -13,6 +19,25 @@ export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
 export { resolveCatalog } from './resolution/resolveCatalog.ts';
 export type { ArtifactId, DiffStatus, Hash, Id, KindId, PartialId, SourceId, TargetId } from './schemas/common.ts';
 export { DiffStatusSchema, HashSchema, IdSchema } from './schemas/common.ts';
+export type {
+  CompositorConfig,
+  ConfigTier,
+  DeclaredSource,
+  KindSelection,
+  Selector,
+  SourceDeclaration,
+  TierBody,
+} from './schemas/config-schemas.ts';
+export {
+  CompositorConfigSchema,
+  ConfigTierSchema,
+  DeclaredSourceSchema,
+  KindSelectionSchema,
+  SelectorSchema,
+  SelectSchema,
+  SourceDeclarationSchema,
+  TierBodySchema,
+} from './schemas/config-schemas.ts';
 export type {
   KindDescriptor,
   SourceEntry,
@@ -92,3 +117,11 @@ export {
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/resolution-schemas.ts';
+export type {
+  ConfigEntryRef,
+  DeclinedArtifact,
+  SeededArtifact,
+  Selection,
+  SelectionDiagnostic,
+} from './selection/selectArtifacts.ts';
+export { selectArtifacts } from './selection/selectArtifacts.ts';
