@@ -4,6 +4,7 @@ export type { LocatePackageOptions } from './config/locatePackage.ts';
 export { locatePackage } from './config/locatePackage.ts';
 export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
 export { resolveSources } from './config/resolveSources.ts';
+export { ConsistencyError } from './consistency/ConsistencyError.ts';
 export type { DependencyGraphView, DependentsIndex, TraversableArtifact } from './graph/traversal.ts';
 export { buildDependentsIndex, resolveInclusionPaths } from './graph/traversal.ts';
 export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
