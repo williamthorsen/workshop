@@ -143,6 +143,13 @@ describe(selectArtifacts, () => {
     });
   });
 
+  // The fixture declares only `drop`, so naming a list here could only name one the author never wrote.
+  it('locates a block-level diagnostic at the block, naming no list or position', () => {
+    const selection = select([{ id: 'project', select: { partial: { drop: ['x'] } } }]);
+
+    expect(selection.diagnostics.at(0)?.at).toStrictEqual({ tierId: 'project', kindId: 'partial' });
+  });
+
   it('collects every diagnostic, rather than stopping at the first', () => {
     const selection = select([{ id: 'project', select: { skill: { use: ['absent', 'missing'] } } }]);
 

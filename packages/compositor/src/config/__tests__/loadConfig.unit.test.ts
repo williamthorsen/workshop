@@ -88,6 +88,15 @@ describe(loadConfig, () => {
     await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
   });
 
+  // Both files are absent, so a check running after the load would see no tiers at all and never notice the repeat.
+  it('fails on two tiers sharing an id, naming the id', async () => {
+    const dir = await buildConfigDir({});
+
+    await expect(loadConfig([buildTierFile(dir, 'project'), buildTierFile(dir, 'project')])).rejects.toThrow(
+      /Tier "project" is declared more than once/,
+    );
+  });
+
   it('fails on a tier whose identity is incomplete', async () => {
     const dir = await buildConfigDir({ 'project.yaml': projectTier });
 

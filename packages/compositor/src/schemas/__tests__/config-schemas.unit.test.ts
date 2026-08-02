@@ -175,6 +175,12 @@ describe('CompositorConfigSchema', () => {
     expect(CompositorConfigSchema.parse(config)).toStrictEqual(config);
   });
 
+  it('rejects two tiers sharing an id', () => {
+    const tiers = [authoredTier, { ...authoredTier, baseDir: '/srv/other' }];
+
+    expect(findIssuePaths(CompositorConfigSchema, { tiers })).toStrictEqual([['tiers']]);
+  });
+
   it('rejects an unrecognized top-level key, naming it', () => {
     const result = CompositorConfigSchema.safeParse({ tiers: [], targets: [] });
 

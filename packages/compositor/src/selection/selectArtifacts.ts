@@ -5,12 +5,15 @@ import type { CompositorConfig, Selector } from '../schemas/config-schemas.ts';
 import type { Seed, SeedOrigin } from '../schemas/graph-schemas.ts';
 import type { Catalog } from '../schemas/resolution-schemas.ts';
 
-/** Where in a config something was declared, so a diagnostic reaches the entry an author wrote. */
+/**
+ * Where in a config something was declared, so a diagnostic reaches the entry an author wrote.
+ *
+ * `list` and `index` are absent together when the whole block is at fault rather than one entry in it.
+ */
 export interface ConfigEntryRef {
   readonly tierId: Id;
   readonly kindId: KindId;
-  readonly list: 'use' | 'drop';
-  /** Absent when the whole block is at fault rather than one entry in it. */
+  readonly list?: 'use' | 'drop';
   readonly index?: number;
 }
 
@@ -77,7 +80,7 @@ export function selectArtifacts(config: CompositorConfig, catalog: Catalog): Sel
         diagnostics.push({
           code: 'unknown-kind',
           message: `Kind "${block.kindId}" is not one the catalog carries.`,
-          at: { tierId: tier.id, kindId: block.kindId, list: 'use' },
+          at: { tierId: tier.id, kindId: block.kindId },
         });
         continue;
       }

@@ -99,6 +99,21 @@ describe(resolveSources, () => {
     expect(sources.at(0)?.dir).toBe(expected);
   });
 
+  // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two answers.
+  it('anchors a relative path at the tier that declared it, not at the last tier', async () => {
+    const config = buildConfig([
+      { id: 'global', baseDir: '/srv/global', sources: { use: [{ name: 'shared', path: './content' }] } },
+      { id: 'project', baseDir: '/srv/project', sources: { use: [{ name: 'local', path: './content' }] } },
+    ]);
+
+    const { sources } = await resolveSources(config, options);
+
+    expect(sources.map(({ name, dir }) => [name, dir])).toStrictEqual([
+      ['local', path.join('/srv/project', 'content')],
+      ['shared', path.join('/srv/global', 'content')],
+    ]);
+  });
+
   // The declaration a consumer wrote is what a plan reports, so resolving must not overwrite it.
   it('keeps the origin as declared beside the directory it resolved to', async () => {
     const config = buildConfig([{ baseDir: '/srv/tier', sources: { use: [{ name: 'x', path: './content' }] } }]);
@@ -120,6 +135,40 @@ describe(resolveSources, () => {
     const { sources } = await resolveSources(config, options);
 
     expect(sources.at(0)?.dir).toBe(path.join(baseDir, 'node_modules/@acme/guidance/dist/content'));
+  });
+
+  // Each tier installs its own copy under the same package name, so a walk anchored at one base directory finds the
+  // wrong copy for the other tier.
+  it('locates a declared package from the tier that declared it, not from the last tier', async () => {
+    const root = await buildConfigDir({
+      'global/node_modules/@acme/guidance/package.json': JSON.stringify({
+        name: '@acme/guidance',
+        compositor: { content: 'global-content' },
+      }),
+      'project/node_modules/@acme/guidance/package.json': JSON.stringify({
+        name: '@acme/guidance',
+        compositor: { content: 'project-content' },
+      }),
+    });
+    const config = buildConfig([
+      {
+        id: 'global',
+        baseDir: path.join(root, 'global'),
+        sources: { use: [{ name: 'inherited', package: '@acme/guidance' }] },
+      },
+      {
+        id: 'project',
+        baseDir: path.join(root, 'project'),
+        sources: { use: [{ name: 'own', package: '@acme/guidance' }] },
+      },
+    ]);
+
+    const { sources } = await resolveSources(config, options);
+
+    expect(sources.map(({ dir }) => dir)).toStrictEqual([
+      path.join(root, 'project/node_modules/@acme/guidance/project-content'),
+      path.join(root, 'global/node_modules/@acme/guidance/global-content'),
+    ]);
   });
 
   it('fails on a package it cannot locate, naming the source and the tier', async () => {

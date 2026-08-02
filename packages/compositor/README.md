@@ -40,7 +40,7 @@ Seeds and declines stay disjoint per artifact. A `drop` clears the seeds beneath
 
 A selection is a plain value, not a versioned document like a catalog. A document earns its cost when re-deriving the payload is expensive or impossible; a selection is a cheap pure function of two documents that already exist, so nothing can hold one it cannot recompute. A declined artifact has no plan representation yet -- `removed` means deployed and no longer selected, which is a different fact.
 
-A selector matching nothing yields a diagnostic naming the tier, kind, list, and position that produced it, rather than throwing, so validation reports every mistake in a config at once and a reader can attach each to the line an author wrote.
+A selector matching nothing yields a diagnostic naming the tier, kind, list, and position that produced it, rather than throwing, so validation reports every mistake in a config at once and a reader can attach each to the line an author wrote. A block naming a kind the catalog does not carry faults the whole block, so its diagnostic names the tier and kind alone.
 
 ## The plan
 

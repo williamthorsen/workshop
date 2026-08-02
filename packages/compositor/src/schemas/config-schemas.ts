@@ -136,10 +136,17 @@ export const ConfigTierSchema = TierBodySchema.extend({
  * A whole tiered config, the value every flow downstream reads.
  *
  * `tiers` runs lowest precedence first, the order a fold applies them and the order a plan's `tiers` table carries. An
- * empty array is a config declaring nothing, which is the only sentinel that case needs.
+ * empty array is a config declaring nothing, which is the only sentinel that case needs. Ids are unique: a tier id is
+ * the identity that leaves this package, naming the tier in every seed and diagnostic, so a repeat makes each of those
+ * references ambiguous.
  */
 export const CompositorConfigSchema = z.strictObject({
-  tiers: z.array(ConfigTierSchema).default([]),
+  tiers: z
+    .array(ConfigTierSchema)
+    .refine((tiers) => new Set(tiers.map(({ id }) => id)).size === tiers.length, {
+      error: 'names a tier more than once',
+    })
+    .default([]),
 });
 
 export type CompositorConfig = z.infer<typeof CompositorConfigSchema>;
