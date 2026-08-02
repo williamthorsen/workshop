@@ -118,11 +118,6 @@ export {
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/resolution-schemas.ts';
-export type {
-  ConfigEntryRef,
-  DeclinedArtifact,
-  SeededArtifact,
-  Selection,
-  SelectionDiagnostic,
-} from './selection/selectArtifacts.ts';
+export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
+export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
