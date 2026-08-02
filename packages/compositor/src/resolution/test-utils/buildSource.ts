@@ -11,9 +11,12 @@ import type { SourceSpec } from '../../schemas/resolution-schemas.ts';
  *
  * Writes a real tree rather than mocking the filesystem, because what enumeration and readability checking answer is
  * how Node reports directories, extensions, and absences -- the very layer a mock would replace with an assumption.
+ *
+ * `name` becomes the source's id, its name, and its temp-directory prefix, so a test resolving several sources can
+ * tell which directory belongs to which.
  */
-export async function buildSource(files: Record<string, string>): Promise<SourceSpec> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'compositor-source-'));
+export async function buildSource(files: Record<string, string>, name = 'fixture'): Promise<SourceSpec> {
+  const dir = await mkdtemp(path.join(tmpdir(), `compositor-${name}-`));
   onTestFinished(async () => {
     await rm(dir, { recursive: true, force: true });
   });
@@ -24,5 +27,5 @@ export async function buildSource(files: Record<string, string>): Promise<Source
     await writeFile(filePath, content, 'utf8');
   }
 
-  return { id: 'fixture', name: 'fixture', origin: { kind: 'directory', location: dir }, dir };
+  return { id: name, name, origin: { kind: 'directory', location: dir }, dir };
 }

@@ -1,10 +1,5 @@
 import type { ArtifactResolution } from '../schemas/graph-schemas.ts';
-
-/** One way a payload contradicts itself, located by a path into it. */
-export interface Violation {
-  readonly path: string;
-  readonly message: string;
-}
+import type { Violation } from '../types.ts';
 
 /** One resolution to check, with the path prefix a violation against it is reported under. */
 export interface ResolutionAt {

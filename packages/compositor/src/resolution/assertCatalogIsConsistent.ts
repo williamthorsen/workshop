@@ -1,6 +1,6 @@
 import type { Catalog } from '../schemas/resolution-schemas.ts';
+import type { Violation } from '../types.ts';
 import { composeArtifactId } from './composeArtifactId.ts';
-import type { Violation } from './findResolutionOrderViolations.ts';
 import { findResolutionOrderViolations } from './findResolutionOrderViolations.ts';
 
 /** One way a catalog contradicts itself, located by a path into the payload. */

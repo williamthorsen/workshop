@@ -1,8 +1,8 @@
-import type { Violation } from '../resolution/findResolutionOrderViolations.ts';
 import { findResolutionOrderViolations } from '../resolution/findResolutionOrderViolations.ts';
 import type { DiffStatus } from '../schemas/common.ts';
 import type { FileEntry } from '../schemas/file-schemas.ts';
 import type { Plan } from '../schemas/plan-schema.ts';
+import type { Violation } from '../types.ts';
 
 /** One way a plan contradicts itself, located by a path into the payload. */
 export type PlanViolation = Violation;

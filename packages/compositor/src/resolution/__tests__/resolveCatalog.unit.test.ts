@@ -1,13 +1,13 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { describe, expect, it, onTestFinished } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { CatalogEntry, ResolveKind, SourceSpec } from '../../schemas/resolution-schemas.ts';
 import { CATALOG_SCHEMA_VERSION, CatalogSchema } from '../../schemas/resolution-schemas.ts';
 import { assertCatalogIsConsistent } from '../assertCatalogIsConsistent.ts';
 import { resolveCatalog } from '../resolveCatalog.ts';
+import { buildSource } from '../test-utils/buildSource.ts';
 
 const kinds: ReadonlyArray<ResolveKind> = [
   {
@@ -176,18 +176,8 @@ describe(resolveCatalog, () => {
 async function buildSources(byName: Record<string, Record<string, string>>): Promise<ReadonlyArray<SourceSpec>> {
   const sources: Array<SourceSpec> = [];
   for (const [name, files] of Object.entries(byName)) {
-    const dir = await mkdtemp(path.join(tmpdir(), `compositor-${name}-`));
-    onTestFinished(async () => {
-      await rm(dir, { recursive: true, force: true });
-    });
-
-    for (const [relativePath, content] of Object.entries(files)) {
-      const filePath = path.join(dir, relativePath);
-      await mkdir(path.dirname(filePath), { recursive: true });
-      await writeFile(filePath, content, 'utf8');
-    }
-
-    sources.push({ id: name, name, origin: { kind: 'directory', location: dir }, dir });
+    // Built in sequence, since the array's order is the precedence the resolver reads.
+    sources.push(await buildSource(files, name));
   }
   return sources;
 }
