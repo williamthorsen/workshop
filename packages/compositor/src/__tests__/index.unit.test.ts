@@ -1,46 +1,48 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import * as consistencyError from '../consistency/ConsistencyError.ts';
-import * as graphTraversal from '../graph/traversal.ts';
 import * as entry from '../index.ts';
-import * as assertPlanIsConsistent from '../plan/assertPlanIsConsistent.ts';
-import * as planTraversal from '../plan/traversal.ts';
-import * as assertCatalogIsConsistent from '../resolution/assertCatalogIsConsistent.ts';
-import * as composeArtifactId from '../resolution/composeArtifactId.ts';
-import * as enumerateSource from '../resolution/enumerateSource.ts';
-import * as resolveCatalog from '../resolution/resolveCatalog.ts';
-import * as commonSchemas from '../schemas/common.ts';
-import * as descriptorSchemas from '../schemas/descriptor-schemas.ts';
-import * as fileSchemas from '../schemas/file-schemas.ts';
-import * as graphSchemas from '../schemas/graph-schemas.ts';
-import * as planSchema from '../schemas/plan-schema.ts';
-import * as resolutionSchemas from '../schemas/resolution-schemas.ts';
 
-// Every module the entry publishes in full. `portable/`, `plan/checks/`, `resolution/checks/`,
-// `resolution/assertSourceIsReadable.ts`, and every `consistency/` module but `ConsistencyError` are engine internals
-// the entry publishes nothing from, so they are absent rather than overlooked.
-const publishedModules: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
-  ['common', commonSchemas],
-  ['descriptor-schemas', descriptorSchemas],
-  ['file-schemas', fileSchemas],
-  ['graph-schemas', graphSchemas],
-  ['plan-schema', planSchema],
-  ['resolution-schemas', resolutionSchemas],
-  ['assertCatalogIsConsistent', assertCatalogIsConsistent],
-  ['assertPlanIsConsistent', assertPlanIsConsistent],
-  ['composeArtifactId', composeArtifactId],
-  ['ConsistencyError', consistencyError],
-  ['enumerateSource', enumerateSource],
-  ['graph/traversal', graphTraversal],
-  ['plan/traversal', planTraversal],
-  ['resolveCatalog', resolveCatalog],
-];
+const entryPath = path.join(import.meta.dirname, '../index.ts');
+
+// The entry's own re-export specifiers name every module it publishes from, so the list is read from the source. A
+// module declaring only types contributes no runtime member and passes trivially.
+const publishedModules = await readPublishedModules();
 
 describe('package entry', () => {
-  it.each(publishedModules)('re-exports every runtime member of %s', (_label, module) => {
+  it.each(publishedModules)('re-exports every runtime member of %s', (_specifier, module) => {
     const exported = new Set(Object.keys(entry));
     const missing = Object.keys(module).filter((name) => !exported.has(name));
 
     expect(missing).toStrictEqual([]);
   });
+
+  // An empty list would make every case above vanish, leaving the suite green having checked nothing.
+  it('finds modules to check', () => {
+    expect(publishedModules.length).toBeGreaterThan(0);
+  });
 });
+
+// region | Helpers
+
+/** Every module the entry re-exports from, paired with its namespace, ordered by specifier. */
+async function readPublishedModules(): Promise<Array<readonly [string, Record<string, unknown>]>> {
+  const source = await readFile(entryPath, 'utf8');
+  const matched = source
+    .matchAll(/ from '(\.\/[^']+)'/g)
+    .map((match) => match.at(1))
+    .filter((specifier) => specifier !== undefined)
+    .toArray();
+  const specifiers = [...new Set(matched)];
+
+  return Promise.all(
+    specifiers.toSorted().map(async (specifier) => {
+      const module: Record<string, unknown> = await import(specifier.replace(/^\.\//, '../'));
+      return [specifier, module] as const;
+    }),
+  );
+}
+
+// endregion | Helpers

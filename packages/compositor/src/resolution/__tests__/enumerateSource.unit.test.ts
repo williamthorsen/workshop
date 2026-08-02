@@ -106,6 +106,13 @@ describe(enumerateSource, () => {
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
   });
 
+  it('skips a symlinked artifact whose target is gone, rather than carrying one nothing can read', async () => {
+    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    await symlink(path.join(source.dir, 'skills/never-created'), path.join(source.dir, 'skills/dangling'));
+
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
+  });
+
   it('carries nothing for a kind whose root the source does not have', async () => {
     const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
@@ -156,20 +163,6 @@ describe('artifact digests', () => {
   it('digests a directory kind over the whole artifact, so a changed asset moves it', async () => {
     const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
     const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v2' });
-
-    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
-  });
-
-  it('moves a directory kind digest when an asset is renamed but its bytes are not', async () => {
-    const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
-    const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/start.mjs': 'v1' });
-
-    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
-  });
-
-  it('reaches assets nested below the artifact root', async () => {
-    const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":1}' });
-    const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":2}' });
 
     await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });

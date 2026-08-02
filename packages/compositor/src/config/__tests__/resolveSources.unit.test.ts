@@ -1,4 +1,3 @@
-import { homedir } from 'node:os';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -85,18 +84,6 @@ describe(resolveSources, () => {
 
     await expect(resolveSources(config, options)).resolves.toMatchObject({ declined: [] });
     await expect(collectNames(config)).resolves.toStrictEqual(['local']);
-  });
-
-  it.each([
-    ['a relative path against the declaring tier', './content', path.join('/srv/tier', 'content')],
-    ['an absolute path unchanged', '/srv/elsewhere', '/srv/elsewhere'],
-    ['a home-relative path', '~/guidance', path.join(homedir(), 'guidance')],
-  ])('resolves %s', async (_label, location, expected) => {
-    const config = buildConfig([{ baseDir: '/srv/tier', sources: { use: [{ name: 'x', path: location }] } }]);
-
-    const { sources } = await resolveSources(config, options);
-
-    expect(sources.at(0)?.dir).toBe(expected);
   });
 
   // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two answers.

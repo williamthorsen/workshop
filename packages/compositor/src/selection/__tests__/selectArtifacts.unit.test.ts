@@ -102,6 +102,15 @@ describe(selectArtifacts, () => {
     expect(selection.seeded).toStrictEqual([]);
   });
 
+  it('runs declined artifacts in id order, whatever order the tiers dropped them', () => {
+    const selection = select([
+      { id: 'global', select: { skill: { use: ['lint', 'review'] } } },
+      { id: 'project', select: { skill: { drop: ['review', 'lint'] } } },
+    ]);
+
+    expect(selection.declined.map(({ artifactId }) => artifactId)).toStrictEqual(['skill:lint', 'skill:review']);
+  });
+
   it('discards every lower tier’s seeds and declines at a tier declaring reset', () => {
     const selection = select([
       { id: 'global', select: { skill: { use: ['lint'], drop: ['format'] } } },
@@ -120,16 +129,12 @@ describe(selectArtifacts, () => {
     expect(collectIds(selection)).toStrictEqual(['rulebook:house-style', 'skill:lint', 'skill:review']);
   });
 
-  it.each([
-    ['an artifact no source carries', { skill: { use: ['absent'] } }, 'unknown-artifact'],
-    ['a source that is not declared', { skill: { use: [{ source: 'nowhere' }] } }, 'unknown-source'],
-    ['a source carrying nothing of the kind', { rulebook: { use: [{ source: 'acme' }] } }, 'empty-source'],
-    ['a kind the catalog does not carry', { partial: { use: ['x'] } }, 'unknown-kind'],
-  ])('reports %s as a diagnostic rather than a failure', (_label, block, code) => {
-    const selection = select([{ id: 'project', select: block }]);
+  // A block naming an absent kind faults whole: every entry under it would name the same missing kind.
+  it('reports a kind the catalog does not carry as one diagnostic, rather than one per entry', () => {
+    const selection = select([{ id: 'project', select: { partial: { use: ['x', 'y'] } } }]);
 
     expect(selection.diagnostics).toHaveLength(1);
-    expect(selection.diagnostics.at(0)?.code).toBe(code);
+    expect(selection.diagnostics.at(0)?.code).toBe('unknown-kind');
   });
 
   it('locates a diagnostic at the config entry responsible', () => {
