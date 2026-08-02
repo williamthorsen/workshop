@@ -17,10 +17,8 @@ import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 // The coverage entry extends the inherited `src`-only glob, which would otherwise leave the kit tree unmeasured. Kits
 // are authored under `.readyup/` rather than `src/` because that is the directory readyup itself reads. One glob
 // covers the checks and the helpers alike, since `test-utils/` sits inside the tree it serves; the inherited exclude
-// drops the `__tests__/` directories the same glob would otherwise sweep in. Helpers are measured on purpose: an
-// uncovered helper is why they sit outside `__tests__/` at all. The text reporter prints no `test-utils` group even
-// so; the files are in the coverage data, as the json and html reporters show, so this is a reporter display gap
-// rather than a glob that failed to match.
+// drops the `__tests__/` directories the same glob would otherwise sweep in. The text reporter shows no `test-utils`
+// group; those files are in the coverage data regardless.
 export default defineVitestConfig({
   project: { env: { RDY_STYLE: 'rich' } },
   root: {
