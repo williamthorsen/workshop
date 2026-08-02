@@ -1,7 +1,5 @@
-import { homedir } from 'node:os';
-import path from 'node:path';
-
 import { compareStrings } from '../portable/compareStrings.ts';
+import { expandPath } from '../portable/expandPath.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { SourceOrigin } from '../schemas/descriptor-schemas.ts';
 import type { SourceSpec } from '../schemas/resolution-schemas.ts';
@@ -87,7 +85,7 @@ async function buildSpec(name: string, folded: FoldedSource, options: ResolveSou
     const dir =
       origin.kind === 'package'
         ? await locatePackage(origin.location, { baseDir, contentKeyPath: options.contentKeyPath })
-        : resolveDirectory(origin.location, baseDir);
+        : expandPath(origin.location, baseDir);
     return { id: name, name, origin, dir };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -98,22 +96,6 @@ async function buildSpec(name: string, folded: FoldedSource, options: ResolveSou
 /** Orders two sources higher tier first, then by author order, which is precedence descending. */
 function comparePrecedence(left: FoldedSource, right: FoldedSource): number {
   return left.tierIndex === right.tierIndex ? left.order - right.order : right.tierIndex - left.tierIndex;
-}
-
-/**
- * Resolves an authored directory location to an absolute path.
- *
- * A leading `~` expands to the home directory, an already-absolute path stands, and a relative path resolves against
- * the tier that declared it rather than against wherever the process happens to be running.
- */
-function resolveDirectory(location: string, baseDir: string): string {
-  if (location === '~' || location.startsWith('~/')) {
-    return path.join(homedir(), location.slice(1));
-  }
-  if (path.isAbsolute(location)) {
-    return location;
-  }
-  return path.resolve(baseDir, location);
 }
 
 // endregion | Helpers
