@@ -25,6 +25,29 @@ describe(assertPlanIsConsistent, () => {
     ]);
   });
 
+  it('if two file entries claim one destination, names the repeated path', () => {
+    const plan = buildPlan();
+    plan.files = [...plan.files, { ...requireEntry(plan.files, 0) }];
+
+    expect(captureFailure(plan).violations).toStrictEqual([
+      { path: 'files[1]', message: 'repeats the destination "skills/review/SKILL.md" within target "claude"' },
+    ]);
+  });
+
+  it('if a non-token edge names a partial, rejects the edge', () => {
+    const plan = buildPlan();
+    requireEntry(plan.artifacts, 0).dependsOn = [
+      { to: 'skill:review', via: 'member', partialId: 'team:_data/shared.md' },
+    ];
+
+    expect(captureFailure(plan).violations).toStrictEqual([
+      {
+        path: 'artifacts[0].dependsOn[0].partialId',
+        message: 'is set on a "member" edge, and only a token edge is read from a partial',
+      },
+    ]);
+  });
+
   it('if a shadowed candidate outranks its winner, rejects the resolution order', () => {
     const plan = buildPlan();
     // `team` outranks `library`, so a resolution won by `library` cannot shadow `team`.

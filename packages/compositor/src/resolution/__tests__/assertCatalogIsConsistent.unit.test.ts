@@ -45,6 +45,18 @@ describe(assertCatalogIsConsistent, () => {
     ]);
   });
 
+  it('if one source appears twice among an entry candidates, names the repeat', () => {
+    const catalog = buildCatalog();
+    requireEntry(catalog.entries, 2).resolution.shadowed = [
+      { sourceId: 'local', path: 'skills/review/SKILL.md', hash: 'hash:review-again' },
+    ];
+
+    expect(captureFailure(catalog).violations).toContainEqual({
+      path: 'entries[2].resolution.shadowed[0].sourceId',
+      message: 'repeats "local", which already carries this artifact',
+    });
+  });
+
   it('collects every violation before throwing, rather than stopping at the first', () => {
     const catalog = buildCatalog();
     // Three independent breaks, one per check: a change to `kindId` alone would also move the composed id and report
