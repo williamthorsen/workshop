@@ -783,13 +783,17 @@ The manifest check stands down when nothing is compiled, since a project running
 
 `publishing` reports at `error`, for a package that distributes its kits:
 
-| Checklist          | What it asserts                                                                                                                           |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `packaging`        | `files` ships the kit directory, the manifest is present, and a kit named `default` exists (at `warn`).                                   |
-| `freshness`        | The comparisons `default` makes, at blocking severity: a stale kit publishes checks that no longer describe the package they travel with. |
-| `self-containment` | Every bundle imports only `node:*`, `readyup`, and `readyup/*` -- the specifiers [`rdy compile`](#compiling) leaves external.             |
+| Checklist          | What it asserts                                                                                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packaging`        | `files` ships the kit directory, the manifest is present, a kit named `default` exists (at `warn`), and every recorded kit sits in `.readyup/kits` under its own name. |
+| `freshness`        | The comparisons `default` makes, at blocking severity: a stale kit publishes checks that no longer describe the package they travel with.                              |
+| `self-containment` | Every bundle imports only `node:*`, `readyup`, and `readyup/*` -- the specifiers [`rdy compile`](#compiling) leaves external.                                          |
 
 A package declaring no `files` field passes the first check, because everything ships. That check is a containment test rather than an npm-packlist emulation: a `files` list built from globs or negations needs a `.readyup` entry beside them to satisfy it.
+
+Both kits read the convention layout: `.readyup/manifest.json` and bundles directly under `.readyup/kits`. A project that compiles to a different `outDir` still gets its recorded kits checked for freshness, since those paths come from the manifest, but the checks that count compiled bundles report nothing to do. For a published package the layout is not a convention but a contract, which is what the last `packaging` check enforces: `--from npm:` composes a kit's path from its name, so a bundle recorded anywhere else is listed and then fails to load.
+
+Adding readyup to `packages` in the config is what makes `rdy run --packages` include the `default` kit. Until it is listed there, `rdy list` names readyup among the dependencies that publish kits.
 
 ### Internal kits
 

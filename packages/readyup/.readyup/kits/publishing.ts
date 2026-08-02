@@ -15,6 +15,7 @@ import { fileExists } from 'readyup/check-utils';
 import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
 import { buildSelfContainmentChecks } from './checks/buildSelfContainmentChecks.ts';
 import { describeFilesCoverage } from './checks/describeFilesCoverage.ts';
+import { describeLoadablePaths } from './checks/describeLoadablePaths.ts';
 import { KITS_DIR, MANIFEST_DIR } from './checks/kit-layout.ts';
 
 /** Bundle a bare `rdy run --from npm:<package>` resolves to. */
@@ -46,6 +47,11 @@ export default defineRdyKit({
           severity: 'warn',
           check: () => fileExists(DEFAULT_BUNDLE_PATH),
           fix: `Name a kit "default" so a bare 'rdy run --from npm:<package>' resolves to it`,
+        },
+        {
+          name: `every recorded kit sits in ${KITS_DIR} under its own name`,
+          check: describeLoadablePaths,
+          fix: `Compile kits straight into ${KITS_DIR}; a consumer composes the path from the kit's name`,
         },
       ],
     },
