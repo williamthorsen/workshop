@@ -1,5 +1,5 @@
 import type { ArtifactResolution } from '../schemas/graph-schemas.ts';
-import type { Violation } from '../types.ts';
+import type { Violation } from './Violation.ts';
 
 /** One resolution to check, with the path prefix a violation against it is reported under. */
 export interface ResolutionAt {
