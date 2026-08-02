@@ -6,7 +6,7 @@ import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { ArtifactEntry } from '../../schemas/graph-schemas.ts';
 import { PlanSchema } from '../../schemas/plan-schema.ts';
 import { buildRepresentativeSample } from '../buildRepresentativeSample.ts';
-import { buildSampleDocuments } from '../index.ts';
+import { buildSampleDocuments } from '../sample-documents.ts';
 
 const documents = buildSampleDocuments().map((document) => [document.fileName, document] as const);
 const representative = buildRepresentativeSample();

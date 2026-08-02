@@ -1,3 +1,5 @@
+/** Descriptors: the kinds, sources, and targets a plan is computed over. */
+
 import { z } from 'zod';
 
 import { IdSchema } from './common.ts';

@@ -1,3 +1,5 @@
+/** Files: rendered output, ownership, and content. */
+
 import { z } from 'zod';
 
 import { DiffStatusSchema, HashSchema, IdSchema } from './common.ts';

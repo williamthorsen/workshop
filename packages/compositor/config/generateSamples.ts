@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { buildSampleDocuments, renderSampleJson } from '../src/samples/index.ts';
+import { buildSampleDocuments, renderSampleJson } from '../src/samples/sample-documents.ts';
 
 const outDir = path.join(process.cwd(), 'samples');
 mkdirSync(outDir, { recursive: true });

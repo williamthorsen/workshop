@@ -1,3 +1,5 @@
+/** Resolution: what the sources carry, and which one won each artifact. */
+
 import { z } from 'zod';
 
 import { IdSchema } from './common.ts';

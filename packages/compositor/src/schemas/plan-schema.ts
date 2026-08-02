@@ -1,3 +1,5 @@
+/** Plan envelope: the document the other tables assemble into. */
+
 import { z } from 'zod';
 
 import { HashSchema, IdSchema } from './common.ts';

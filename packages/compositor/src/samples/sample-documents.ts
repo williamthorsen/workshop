@@ -25,6 +25,3 @@ export function buildSampleDocuments(): ReadonlyArray<SampleDocument> {
 export function renderSampleJson(plan: Plan): string {
   return `${JSON.stringify(plan, undefined, 2)}\n`;
 }
-
-export { buildMinimalSample } from './buildMinimalSample.ts';
-export { buildRepresentativeSample } from './buildRepresentativeSample.ts';
