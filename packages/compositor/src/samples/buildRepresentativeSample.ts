@@ -195,8 +195,8 @@ export function buildRepresentativeSample(): Plan {
       },
     ],
     tiers: [
+      { id: 'user', label: 'User' },
       { id: 'project', label: 'Project' },
-      { id: 'project-local', label: 'Local override' },
     ],
     artifacts: [
       {
@@ -205,8 +205,8 @@ export function buildRepresentativeSample(): Plan {
         slug: 'core',
         status: 'unchanged',
         seededBy: [
+          { via: 'declaration', tierId: 'user' },
           { via: 'declaration', tierId: 'project' },
-          { via: 'declaration', tierId: 'project-local' },
         ],
         dependsOn: [
           { to: 'rulebook:style', via: 'member' },
@@ -297,7 +297,7 @@ export function buildRepresentativeSample(): Plan {
         kindId: 'subagent',
         slug: 'auditor',
         status: 'changed',
-        seededBy: [{ via: 'declaration', tierId: 'project-local' }],
+        seededBy: [{ via: 'declaration', tierId: 'user' }],
         dependsOn: [{ to: 'skill:review', via: 'injected' }],
         resolution: {
           winner: { sourceId: 'team', path: 'subagents/auditor.md', hash: hashUtf8('subagents/auditor.md') },

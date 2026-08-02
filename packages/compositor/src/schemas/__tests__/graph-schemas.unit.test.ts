@@ -114,7 +114,7 @@ describe('SeedSchema', () => {
     expect(findIssuePaths(SeedSchema, { via: 'declaration' })).toStrictEqual([['tierId']]);
   });
 
-  it('rejects the retired "package-catalog" origin, so taking a source whole is no longer a package privilege', () => {
-    expect(findIssuePaths(SeedSchema, { via: 'package-catalog', tierId: 'project' })).toStrictEqual([['via']]);
+  it('if the origin is outside the known set, rejects the seed for that field', () => {
+    expect(findIssuePaths(SeedSchema, { via: 'inherited', tierId: 'project' })).toStrictEqual([['via']]);
   });
 });

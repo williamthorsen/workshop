@@ -4,7 +4,17 @@ import { buildPlan } from '../../test-utils/buildPlan.ts';
 import { PLAN_SCHEMA_VERSION, PlanSchema } from '../plan-schema.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
-const tables = ['artifacts', 'blobs', 'files', 'fingerprint', 'kinds', 'partials', 'sources', 'targets'] as const;
+const tables = [
+  'artifacts',
+  'blobs',
+  'files',
+  'fingerprint',
+  'kinds',
+  'partials',
+  'sources',
+  'targets',
+  'tiers',
+] as const;
 
 describe('PlanSchema', () => {
   it('accepts a plan carrying every table', () => {

@@ -142,12 +142,12 @@
   ],
   "tiers": [
     {
-      "id": "project",
-      "label": "Project"
+      "id": "user",
+      "label": "User"
     },
     {
-      "id": "project-local",
-      "label": "Local override"
+      "id": "project",
+      "label": "Project"
     }
   ],
   "artifacts": [
@@ -159,11 +159,11 @@
       "seededBy": [
         {
           "via": "declaration",
-          "tierId": "project"
+          "tierId": "user"
         },
         {
           "via": "declaration",
-          "tierId": "project-local"
+          "tierId": "project"
         }
       ],
       "dependsOn": [
@@ -319,7 +319,7 @@
       "seededBy": [
         {
           "via": "declaration",
-          "tierId": "project-local"
+          "tierId": "user"
         }
       ],
       "dependsOn": [
