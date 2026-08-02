@@ -1,5 +1,88 @@
-export type { PlanViolation } from './assertPlanIsConsistent.ts';
-export { assertPlanIsConsistent, PlanConsistencyError } from './assertPlanIsConsistent.ts';
-export * from './schemas/index.ts';
-export type { TraversalIndex } from './traversal.ts';
-export { buildTraversalIndex, resolveInclusionPaths } from './traversal.ts';
+export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
+export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
+export type { TraversalIndex } from './plan/traversal.ts';
+export { buildTraversalIndex, resolveInclusionPaths } from './plan/traversal.ts';
+export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
+export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
+export { composeArtifactId } from './resolution/composeArtifactId.ts';
+export type { SourceArtifact } from './resolution/enumerateSource.ts';
+export { enumerateSource } from './resolution/enumerateSource.ts';
+export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
+export { resolveCatalog } from './resolution/resolveCatalog.ts';
+export type { ArtifactId, DiffStatus, Hash, Id, KindId, PartialId, SourceId, TargetId } from './schemas/common.ts';
+export { DiffStatusSchema, HashSchema, IdSchema } from './schemas/common.ts';
+export type {
+  KindDescriptor,
+  SourceEntry,
+  SourceOrigin,
+  TargetEntry,
+  TargetVariable,
+  TokenMapping,
+  TokenMappingEntry,
+} from './schemas/descriptor-schemas.ts';
+export {
+  KindDescriptorSchema,
+  SourceEntrySchema,
+  SourceOriginSchema,
+  TargetEntrySchema,
+  TargetVariableSchema,
+  TokenMappingEntrySchema,
+  TokenMappingSchema,
+} from './schemas/descriptor-schemas.ts';
+export type {
+  ArtifactContribution,
+  Blob,
+  FileBlock,
+  FileContributors,
+  FileEntry,
+  FileOwnership,
+  FileSide,
+} from './schemas/file-schemas.ts';
+export {
+  ArtifactContributionSchema,
+  BlobSchema,
+  FileBlockSchema,
+  FileContributorsSchema,
+  FileEntrySchema,
+  FileOwnershipSchema,
+  FileSideSchema,
+} from './schemas/file-schemas.ts';
+export type {
+  ArtifactEntry,
+  ArtifactResolution,
+  DependencyEdge,
+  EdgeOrigin,
+  PartialEntry,
+  PresentArtifact,
+  RemovedArtifact,
+  ResolutionCandidate,
+  SeedOrigin,
+} from './schemas/graph-schemas.ts';
+export {
+  ArtifactEntrySchema,
+  ArtifactResolutionSchema,
+  DependencyEdgeSchema,
+  EdgeOriginSchema,
+  PartialEntrySchema,
+  PresentArtifactSchema,
+  RemovedArtifactSchema,
+  ResolutionCandidateSchema,
+  SeedOriginSchema,
+} from './schemas/graph-schemas.ts';
+export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schema.ts';
+export {
+  PLAN_SCHEMA_VERSION,
+  PlanFingerprintSchema,
+  PlanSchema,
+  SourceDigestSchema,
+  TargetDigestSchema,
+} from './schemas/plan-schema.ts';
+export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/resolution-schemas.ts';
+export {
+  CATALOG_SCHEMA_VERSION,
+  CatalogEntrySchema,
+  CatalogSchema,
+  KindLayoutSchema,
+  ResolveKindSchema,
+  SourceSpecSchema,
+} from './schemas/resolution-schemas.ts';

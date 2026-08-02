@@ -1,3 +1,5 @@
+/** Graph: artifacts, partials, and the edges between them. */
+
 import { z } from 'zod';
 
 import { HashSchema, IdSchema } from './common.ts';

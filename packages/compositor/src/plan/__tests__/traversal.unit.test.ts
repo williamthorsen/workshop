@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Plan } from '../schemas/planSchema.ts';
-import { buildPlan } from '../test-utils/buildPlan.ts';
-import { requireEntry } from '../test-utils/requireEntry.ts';
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { buildPlan } from '../../test-utils/buildPlan.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { buildTraversalIndex, resolveInclusionPaths } from '../traversal.ts';
 
 describe(resolveInclusionPaths, () => {
@@ -88,6 +88,8 @@ describe(buildTraversalIndex, () => {
   });
 });
 
+// region | Helpers
+
 /** The fixture plan with a second route to `skill:lint`, so one artifact is reached by two paths. */
 function buildDiamond(): Plan {
   const plan = buildPlan();
@@ -95,3 +97,5 @@ function buildDiamond(): Plan {
   core.dependsOn = [...(core.dependsOn ?? []), { to: 'skill:lint', via: 'member' }];
   return plan;
 }
+
+// endregion | Helpers

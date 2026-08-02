@@ -1,6 +1,6 @@
-import type { ArtifactId } from './schemas/common.ts';
-import type { FileEntry } from './schemas/fileSchemas.ts';
-import type { Plan } from './schemas/planSchema.ts';
+import type { ArtifactId } from '../schemas/common.ts';
+import type { FileEntry } from '../schemas/file-schemas.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
 
 /** Reverse lookups over a plan's graph, answering the "used by" direction the payload stores only forwards. */
 export interface TraversalIndex {

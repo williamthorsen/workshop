@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
-import { KindDescriptorSchema, SourceEntrySchema, SourceOriginSchema, TargetEntrySchema } from '../catalogSchemas.ts';
 import { IdSchema } from '../common.ts';
+import {
+  KindDescriptorSchema,
+  SourceEntrySchema,
+  SourceOriginSchema,
+  TargetEntrySchema,
+} from '../descriptor-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };
@@ -15,7 +20,7 @@ const openCases: ReadonlyArray<readonly [string, z.ZodType, Record<string, unkno
   ['TargetEntrySchema', TargetEntrySchema, target],
 ];
 
-describe('catalog schema evolution', () => {
+describe('descriptor schema evolution', () => {
   // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
   it.each(openCases)('%s accepts an entry carrying an unrecognized key, and strips it', (_label, schema, value) => {
     expect(schema.parse({ ...value, addedLater: 'ignored' })).toStrictEqual(value);

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildSampleDocuments, renderSampleJson } from '../index.ts';
+import { buildSampleDocuments, renderSampleJson } from '../sample-documents.ts';
 
 const samplesDir = path.join(import.meta.dirname, '..', '..', '..', 'samples');
 

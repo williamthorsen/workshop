@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSampleDocuments } from '../samples/index.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { PlanSchema } from '../schemas/planSchema.ts';
+import { compareStrings } from '../../portable/compareStrings.ts';
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { PlanSchema } from '../../schemas/plan-schema.ts';
+import { buildSampleDocuments } from '../sample-documents.ts';
 
 const documents = buildSampleDocuments().map((document) => [document.fileName, document.plan] as const);
 
@@ -31,6 +32,8 @@ describe('determinism', () => {
   });
 });
 
+// region | Helpers
+
 /** The name of each id-keyed table whose entries are not in lexicographic id order. */
 function collectUnsortedTables(plan: Plan): Array<string> {
   const tables = [
@@ -54,10 +57,4 @@ function compareFileKeys(left: readonly [string, string], right: readonly [strin
   return compareStrings(left[0], right[0]) || compareStrings(left[1], right[1]);
 }
 
-/** Orders two strings by code point, which is what a consumer diffing two plans reproduces. */
-function compareStrings(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  return left < right ? -1 : 1;
-}
+// endregion | Helpers

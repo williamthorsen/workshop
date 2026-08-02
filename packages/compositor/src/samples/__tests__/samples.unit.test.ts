@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertPlanIsConsistent } from '../../assertPlanIsConsistent.ts';
-import type { FileEntry } from '../../schemas/fileSchemas.ts';
-import type { ArtifactEntry } from '../../schemas/graphSchemas.ts';
-import { PlanSchema } from '../../schemas/planSchema.ts';
-import { resolveInclusionPaths } from '../../traversal.ts';
+import { assertPlanIsConsistent } from '../../plan/assertPlanIsConsistent.ts';
+import { resolveInclusionPaths } from '../../plan/traversal.ts';
+import type { FileEntry } from '../../schemas/file-schemas.ts';
+import type { ArtifactEntry } from '../../schemas/graph-schemas.ts';
+import { PlanSchema } from '../../schemas/plan-schema.ts';
 import { buildRepresentativeSample } from '../buildRepresentativeSample.ts';
-import { buildSampleDocuments } from '../index.ts';
+import { buildSampleDocuments } from '../sample-documents.ts';
 
 const documents = buildSampleDocuments().map((document) => [document.fileName, document] as const);
 const representative = buildRepresentativeSample();
@@ -97,6 +97,8 @@ describe(buildRepresentativeSample, () => {
   });
 });
 
+// region | Helpers
+
 /** The representative sample's artifact with the given id, failing the test when it carries none. */
 function findArtifact(id: string): ArtifactEntry {
   const artifact = representative.artifacts.find((entry) => entry.id === id);
@@ -104,6 +106,15 @@ function findArtifact(id: string): ArtifactEntry {
     throw new Error(`The representative sample carries no artifact "${id}".`);
   }
   return artifact;
+}
+
+/** The representative sample's file at the given path, failing the test when it carries none. */
+function findFile(filePath: string): FileEntry {
+  const file = representative.files.find((entry) => entry.path === filePath);
+  if (file === undefined) {
+    throw new Error(`The representative sample carries no file "${filePath}".`);
+  }
+  return file;
 }
 
 /** The sentinel `file` declares for the entries it owns, failing the test when it is not entry-owned. */
@@ -123,11 +134,4 @@ function readPlannedBody(file: FileEntry): string {
   return blob.data;
 }
 
-/** The representative sample's file at the given path, failing the test when it carries none. */
-function findFile(filePath: string) {
-  const file = representative.files.find((entry) => entry.path === filePath);
-  if (file === undefined) {
-    throw new Error(`The representative sample carries no file "${filePath}".`);
-  }
-  return file;
-}
+// endregion | Helpers

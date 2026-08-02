@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { buildPlan } from '../../test-utils/buildPlan.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { assertPlanIsConsistent, PlanConsistencyError, type PlanViolation } from '../assertPlanIsConsistent.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { buildPlan } from '../test-utils/buildPlan.ts';
-import { requireEntry } from '../test-utils/requireEntry.ts';
 
 describe(assertPlanIsConsistent, () => {
   it('accepts a plan whose references, blobs, and statuses all agree', () => {
@@ -233,6 +233,8 @@ describe(assertPlanIsConsistent, () => {
   });
 });
 
+// region | Helpers
+
 /** The violations `plan` raises, failing the test when it is consistent. */
 function findViolations(plan: Plan): ReadonlyArray<PlanViolation> {
   try {
@@ -245,3 +247,5 @@ function findViolations(plan: Plan): ReadonlyArray<PlanViolation> {
   }
   throw new Error('Expected the plan to be inconsistent, but it passed every check.');
 }
+
+// endregion | Helpers

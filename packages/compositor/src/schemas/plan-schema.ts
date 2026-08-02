@@ -1,9 +1,11 @@
+/** Plan envelope: the document the other tables assemble into. */
+
 import { z } from 'zod';
 
-import { KindDescriptorSchema, SourceEntrySchema, TargetEntrySchema } from './catalogSchemas.ts';
 import { HashSchema, IdSchema } from './common.ts';
-import { BlobSchema, FileEntrySchema } from './fileSchemas.ts';
-import { ArtifactEntrySchema, PartialEntrySchema } from './graphSchemas.ts';
+import { KindDescriptorSchema, SourceEntrySchema, TargetEntrySchema } from './descriptor-schemas.ts';
+import { BlobSchema, FileEntrySchema } from './file-schemas.ts';
+import { ArtifactEntrySchema, PartialEntrySchema } from './graph-schemas.ts';
 
 /**
  * Version of the plan payload.
@@ -11,7 +13,7 @@ import { ArtifactEntrySchema, PartialEntrySchema } from './graphSchemas.ts';
  * Bumped when a field is removed, renamed, or re-typed, never when an optional field is added. Objects in this schema
  * are open, which is what lets an added field reach a consumer pinned to an earlier version without breaking it.
  */
-export const SCHEMA_VERSION = 1;
+export const PLAN_SCHEMA_VERSION = 1;
 
 /** One source's content digest, covering everything under it that could contribute to a plan. */
 export const SourceDigestSchema = z.object({ sourceId: IdSchema, digest: HashSchema }).meta({ id: 'SourceDigest' });

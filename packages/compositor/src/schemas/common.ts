@@ -1,3 +1,5 @@
+/** Shared building blocks: the scalar schemas every other table composes. */
+
 import { z } from 'zod';
 
 /**

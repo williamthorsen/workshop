@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 
 import { describe, expect, it } from 'vitest';
 
-import { BlobSchema, FileEntrySchema, FileOwnershipSchema } from '../fileSchemas.ts';
+import { BlobSchema, FileEntrySchema, FileOwnershipSchema } from '../file-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const contributors = { artifacts: [{ artifactId: 'rulebook:style' }], partials: [] };

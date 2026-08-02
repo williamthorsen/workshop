@@ -1,5 +1,5 @@
-import type { Plan } from '../schemas/planSchema.ts';
-import { SCHEMA_VERSION } from '../schemas/planSchema.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schema.ts';
 
 /**
  * A small plan that satisfies both the schema and every consistency invariant.
@@ -10,7 +10,7 @@ import { SCHEMA_VERSION } from '../schemas/planSchema.ts';
  */
 export function buildPlan(): Plan {
   return {
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: PLAN_SCHEMA_VERSION,
     engineVersion: '0.0.0',
     contentAvailability: 'complete',
     fingerprint: {

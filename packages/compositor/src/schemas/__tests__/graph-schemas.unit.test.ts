@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ArtifactEntrySchema, DependencyEdgeSchema, type EdgeOrigin, PartialEntrySchema } from '../graphSchemas.ts';
+import { ArtifactEntrySchema, DependencyEdgeSchema, type EdgeOrigin, PartialEntrySchema } from '../graph-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const winner = { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'h1' };

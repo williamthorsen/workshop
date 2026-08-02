@@ -1,4 +1,4 @@
-import type { Plan } from '../schemas/planSchema.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
 import { buildMinimalSample } from './buildMinimalSample.ts';
 import { buildRepresentativeSample } from './buildRepresentativeSample.ts';
 
@@ -25,6 +25,3 @@ export function buildSampleDocuments(): ReadonlyArray<SampleDocument> {
 export function renderSampleJson(plan: Plan): string {
   return `${JSON.stringify(plan, undefined, 2)}\n`;
 }
-
-export { buildMinimalSample } from './buildMinimalSample.ts';
-export { buildRepresentativeSample } from './buildRepresentativeSample.ts';
