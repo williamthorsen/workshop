@@ -102,6 +102,15 @@ describe(selectArtifacts, () => {
     expect(selection.seeded).toStrictEqual([]);
   });
 
+  it('runs declined artifacts in id order, whatever order the tiers dropped them', () => {
+    const selection = select([
+      { id: 'global', select: { skill: { use: ['lint', 'review'] } } },
+      { id: 'project', select: { skill: { drop: ['review', 'lint'] } } },
+    ]);
+
+    expect(selection.declined.map(({ artifactId }) => artifactId)).toStrictEqual(['skill:lint', 'skill:review']);
+  });
+
   it('discards every lower tier’s seeds and declines at a tier declaring reset', () => {
     const selection = select([
       { id: 'global', select: { skill: { use: ['lint'], drop: ['format'] } } },

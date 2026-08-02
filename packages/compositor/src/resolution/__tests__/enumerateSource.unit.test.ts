@@ -106,6 +106,13 @@ describe(enumerateSource, () => {
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
   });
 
+  it('skips a symlinked artifact whose target is gone, rather than carrying one nothing can read', async () => {
+    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    await symlink(path.join(source.dir, 'skills/never-created'), path.join(source.dir, 'skills/dangling'));
+
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
+  });
+
   it('carries nothing for a kind whose root the source does not have', async () => {
     const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
 

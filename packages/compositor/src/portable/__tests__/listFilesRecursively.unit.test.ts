@@ -1,3 +1,4 @@
+import { symlink } from 'node:fs/promises';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -47,6 +48,13 @@ describe(listFilesRecursively, () => {
     const dir = await buildTempTree({});
 
     await expect(sorted(path.join(dir, 'never-created'))).resolves.toStrictEqual([]);
+  });
+
+  it('leaves out a symlink whose target is gone, rather than naming a file nothing can read', async () => {
+    const dir = await buildTempTree({ 'notes.md': 'notes' });
+    await symlink(path.join(dir, 'never-created'), path.join(dir, 'dangling'));
+
+    await expect(sorted(dir)).resolves.toStrictEqual(['notes.md']);
   });
 });
 
