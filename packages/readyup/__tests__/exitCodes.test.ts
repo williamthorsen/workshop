@@ -3,11 +3,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { routeCommand } from '../src/bin/route.ts';
-import { type CapturedStdio, createStdioFixture } from './helpers/capturedStdio.ts';
-import { createTempDirTest } from './helpers/tempDir.ts';
+import { useCapturedStdio } from './helpers/capturedStdio.ts';
+import { useTempDir } from './helpers/tempDir.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -26,11 +26,11 @@ const MULTI_KIT =
   `  { name: 'lint', checks: [{ name: 'lint-ok', check: () => true }] },\n` +
   `] };\n`;
 
-const it = createTempDirTest({
+const temp = useTempDir({
   prefix: 'readyup-exit-codes-',
   cwd: 'chdir',
   scope: 'file',
-  setup: (temp) => {
+  setup: () => {
     temp.write('.readyup/kits/passing.js', PASSING_KIT);
     temp.write('.readyup/kits/failing.js', FAILING_KIT);
     temp.write('.readyup/kits/invalid.js', INVALID_KIT);
@@ -44,7 +44,9 @@ const it = createTempDirTest({
     // error banner that appears in an otherwise-passing test run belongs to this fixture.
     temp.write('broken.ts', 'export default { this is not valid TypeScript\n');
   },
-}).extend<{ io: CapturedStdio }>({ io: createStdioFixture() });
+});
+
+const io = useCapturedStdio();
 
 describe('exit codes', () => {
   it.for([
@@ -62,7 +64,7 @@ describe('exit codes', () => {
     await expect(routeCommand(args)).resolves.toBe(expected);
   });
 
-  it('reports a pre-dispatch failure through the error envelope', async ({ io }) => {
+  it('reports a pre-dispatch failure through the error envelope', async () => {
     const exitCode = await routeCommand(['--bogus', '--json']);
 
     expect(exitCode).toBe(2);
@@ -76,7 +78,7 @@ describe('exit codes', () => {
     { label: 'an unknown checklist', args: ['passing:absent'], kit: 'passing', code: 'usage' },
     { label: 'a missing kit', args: ['absent'], kit: 'absent', code: 'kit-load' },
     { label: 'an unloadable kit', args: ['invalid'], kit: 'invalid', code: 'kit-load' },
-  ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }, { io }) => {
+  ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }) => {
     const exitCode = await routeCommand([...args, '--json']);
 
     expect(exitCode).toBe(2);
@@ -85,7 +87,7 @@ describe('exit codes', () => {
     });
   });
 
-  it('reports code "config" for an unreadable config file', async ({ io, temp }) => {
+  it('reports code "config" for an unreadable config file', async () => {
     // A separate tree, so the broken config does not reach the other cases in this file.
     const brokenCwd = mkdtempSync(path.join(tmpdir(), 'readyup-bad-config-'));
     mkdirSync(path.join(brokenCwd, '.config'), { recursive: true });
@@ -117,7 +119,7 @@ describe('stdout purity under --json', () => {
     { label: 'a list failure', args: ['list', '--from', 'dir:/definitely/absent', '--json'] },
     { label: 'a verify failure', args: ['verify', '--manifest', 'absent.json', '--json'] },
     { label: 'an init usage error', args: ['init', '--json'] },
-  ])('writes exactly one JSON document to stdout for $label', async ({ args }, { io }) => {
+  ])('writes exactly one JSON document to stdout for $label', async ({ args }) => {
     await routeCommand(args);
 
     const written = io.stdout;
@@ -127,13 +129,13 @@ describe('stdout purity under --json', () => {
     expect(written.trimEnd()).not.toContain('\n');
   });
 
-  it('keeps stderr empty when an error is reported through the envelope', async ({ io }) => {
+  it('keeps stderr empty when an error is reported through the envelope', async () => {
     await routeCommand(['--bogus', '--json']);
 
     expect(io.stderr).toBe('');
   });
 
-  it('reports errors as prose on stderr when --json is absent', async ({ io }) => {
+  it('reports errors as prose on stderr when --json is absent', async () => {
     const exitCode = await routeCommand(['--bogus']);
 
     expect(exitCode).toBe(2);
@@ -144,7 +146,7 @@ describe('stdout purity under --json', () => {
   it.for([
     { label: 'the retired short flag', flag: '-j' },
     { label: 'a short cluster containing j', flag: '-jJ' },
-  ])('takes the prose path for a flag-parse failure spelled with $label', async ({ flag }, { io }) => {
+  ])('takes the prose path for a flag-parse failure spelled with $label', async ({ flag }) => {
     const exitCode = await routeCommand([flag]);
 
     expect(exitCode).toBe(2);
@@ -154,15 +156,12 @@ describe('stdout purity under --json', () => {
 });
 
 describe('flag surface', () => {
-  it.for(['-J', '-F', '-R', '-i', '-u', '-j'])(
-    'exits 2 with a usage error for the retired short %s',
-    async (short, { io }) => {
-      const exitCode = await routeCommand(['--json', short]);
+  it.for(['-J', '-F', '-R', '-i', '-u', '-j'])('exits 2 with a usage error for the retired short %s', async (short) => {
+    const exitCode = await routeCommand(['--json', short]);
 
-      expect(exitCode).toBe(2);
-      expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
-    },
-  );
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
+  });
 
   it.for([
     { long: '--jit', args: ['--jit'] },
@@ -170,7 +169,7 @@ describe('flag surface', () => {
     { long: '--url', args: ['--url', 'file://absent'] },
     { long: '--fail-on', args: ['passing', '--fail-on', 'warn'] },
     { long: '--report-on', args: ['passing', '--report-on', 'error'] },
-  ])('leaves $long accepted after its short is retired', async ({ args }, { io }) => {
+  ])('leaves $long accepted after its short is retired', async ({ args }) => {
     // The flag may still fail for want of a kit; what matters is that it is not a usage error.
     const exitCode = await routeCommand([...args, '--json']);
 
@@ -179,7 +178,7 @@ describe('flag surface', () => {
     }
   });
 
-  it('runs the named checklists from a single positional kit', async ({ io }) => {
+  it('runs the named checklists from a single positional kit', async () => {
     const exitCode = await routeCommand(['deploy', '--checklists', 'build,test', '--json']);
 
     expect(exitCode).toBe(0);
@@ -192,7 +191,7 @@ describe('flag surface', () => {
   it.for([
     { label: 'a ":" filter competing with --checklists', args: ['deploy:build', '--checklists', 'test'] },
     { label: 'more than one positional kit', args: ['deploy', 'passing', '--checklists', 'build'] },
-  ])('exits 2 with a usage error for $label', async ({ args }, { io }) => {
+  ])('exits 2 with a usage error for $label', async ({ args }) => {
     const exitCode = await routeCommand([...args, '--json']);
 
     expect(exitCode).toBe(2);
@@ -201,7 +200,7 @@ describe('flag surface', () => {
 
   // Asserted without `--json`, which `init` does not accept either; adding it would let this pass
   // on the wrong flag.
-  it('exits 2 for the retired init -f short', async ({ io }) => {
+  it('exits 2 for the retired init -f short', async () => {
     const exitCode = await routeCommand(['init', '-f']);
 
     expect(exitCode).toBe(2);
@@ -216,7 +215,7 @@ describe('subcommand error classification', () => {
     { command: 'verify', args: ['verify', '--bogus'] },
     { command: 'compile', args: ['compile', '--bogus'] },
     { command: 'init', args: ['init', '--bogus'] },
-  ])('exits 2 with a usage error for $command', async ({ args }, { io }) => {
+  ])('exits 2 with a usage error for $command', async ({ args }) => {
     const exitCode = await routeCommand([...args, '--json']);
 
     expect(exitCode).toBe(2);

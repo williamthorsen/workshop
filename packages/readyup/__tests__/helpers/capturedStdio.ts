@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { type MockInstance, vi } from 'vitest';
+import { afterEach, beforeEach, type MockInstance, vi } from 'vitest';
 
 /** The output a command wrote while a test ran. */
 export interface CapturedStdio {
@@ -10,31 +10,31 @@ export interface CapturedStdio {
   reset(): void;
 }
 
-/** Options for a captured-stdio fixture. */
+/** Options for captured stdio. */
 export interface CapturedStdioOptions {
   /** Captures `console.info` into stdout and `console.error` into stderr, for commands that report through them. */
   console?: boolean;
 }
 
-/** The fixture shape `test.extend` accepts: a setup that hands the value to `use` and resumes for teardown. */
-type StdioFixture = (context: object, use: (value: CapturedStdio) => Promise<void>) => Promise<void>;
-
 /**
- * Returns a fixture that buffers both output streams and exposes them as text.
+ * Registers stream capture for the enclosing suite and returns a handle exposing both streams as text.
  *
  * `process.stdout.isTTY` is saved and restored around every test, so a test may assign it directly to exercise
  * style detection without leaking the value into the tests that follow.
  */
-export function createStdioFixture(options: CapturedStdioOptions = {}): StdioFixture {
+export function useCapturedStdio(options: CapturedStdioOptions = {}): CapturedStdio {
   const { console: captureConsole = false } = options;
 
-  // eslint-disable-next-line no-empty-pattern -- Vitest parses this pattern to detect fixture dependencies.
-  return async ({}, use) => {
-    const outChunks: string[] = [];
-    const errChunks: string[] = [];
-    const originalIsTty = process.stdout.isTTY;
+  const outChunks: string[] = [];
+  const errChunks: string[] = [];
+  const spies: MockInstance[] = [];
+  const originalIsTty = process.stdout.isTTY;
 
-    const spies: MockInstance[] = [
+  beforeEach(() => {
+    outChunks.length = 0;
+    errChunks.length = 0;
+
+    spies.push(
       vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
         outChunks.push(String(chunk));
         return true;
@@ -43,7 +43,7 @@ export function createStdioFixture(options: CapturedStdioOptions = {}): StdioFix
         errChunks.push(String(chunk));
         return true;
       }),
-    ];
+    );
 
     if (captureConsole) {
       spies.push(
@@ -55,23 +55,26 @@ export function createStdioFixture(options: CapturedStdioOptions = {}): StdioFix
         }),
       );
     }
+  });
 
-    await use({
-      get stdout() {
-        return outChunks.join('');
-      },
-      get stderr() {
-        return errChunks.join('');
-      },
-      reset() {
-        outChunks.length = 0;
-        errChunks.length = 0;
-      },
-    });
-
+  afterEach(() => {
     process.stdout.isTTY = originalIsTty;
     for (const spy of spies) {
       spy.mockRestore();
     }
+    spies.length = 0;
+  });
+
+  return {
+    get stdout() {
+      return outChunks.join('');
+    },
+    get stderr() {
+      return errChunks.join('');
+    },
+    reset() {
+      outChunks.length = 0;
+      errChunks.length = 0;
+    },
   };
 }

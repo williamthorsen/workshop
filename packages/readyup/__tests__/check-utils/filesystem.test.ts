@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   commandExists,
@@ -8,9 +8,9 @@ import {
   filesExist,
   readFile,
 } from '../../src/check-utils/filesystem.ts';
-import { createTempDirTest } from '../helpers/tempDir.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-const it = createTempDirTest({ prefix: 'rdy-fs-', cwd: 'mock' });
+const temp = useTempDir({ prefix: 'rdy-fs-', cwd: 'mock' });
 
 describe(commandExists, () => {
   it('returns true for a command that exists', () => {
@@ -29,7 +29,7 @@ describe(commandExists, () => {
 });
 
 describe(fileExists, () => {
-  it('returns true when the file exists', ({ temp }) => {
+  it('returns true when the file exists', () => {
     temp.write('found.txt', 'content');
 
     expect(fileExists('found.txt')).toBe(true);
@@ -41,13 +41,13 @@ describe(fileExists, () => {
 });
 
 describe(fileContains, () => {
-  it('returns true when the file matches the pattern', ({ temp }) => {
+  it('returns true when the file matches the pattern', () => {
     temp.write('data.txt', 'version: 3.2.1');
 
     expect(fileContains('data.txt', /version:\s*\d+/)).toBe(true);
   });
 
-  it('returns false when the file does not match the pattern', ({ temp }) => {
+  it('returns false when the file does not match the pattern', () => {
     temp.write('data.txt', 'no match here');
 
     expect(fileContains('data.txt', /version:/)).toBe(false);
@@ -59,13 +59,13 @@ describe(fileContains, () => {
 });
 
 describe(fileDoesNotContain, () => {
-  it('returns true when the file does not match the pattern', ({ temp }) => {
+  it('returns true when the file does not match the pattern', () => {
     temp.write('clean.txt', 'all good');
 
     expect(fileDoesNotContain('clean.txt', /bad/)).toBe(true);
   });
 
-  it('returns false when the file matches the pattern', ({ temp }) => {
+  it('returns false when the file matches the pattern', () => {
     temp.write('dirty.txt', 'contains bad stuff');
 
     expect(fileDoesNotContain('dirty.txt', /bad/)).toBe(false);
@@ -86,7 +86,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('returns ok when all files exist', ({ temp }) => {
+  it('returns ok when all files exist', () => {
     temp.write('a.txt', '');
     temp.write('b.txt', '');
 
@@ -98,7 +98,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('returns not ok with missing files listed', ({ temp }) => {
+  it('returns not ok with missing files listed', () => {
     temp.write('a.txt', '');
 
     const result = filesExist(['a.txt', 'b.txt', 'c.txt']);
@@ -110,7 +110,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('resolves paths relative to baseDir when provided', ({ temp }) => {
+  it('resolves paths relative to baseDir when provided', () => {
     temp.write('sub/found.txt', '');
 
     const result = filesExist(['found.txt', 'missing.txt'], { baseDir: 'sub' });
@@ -124,7 +124,7 @@ describe(filesExist, () => {
 });
 
 describe(readFile, () => {
-  it('returns the file content as a string', ({ temp }) => {
+  it('returns the file content as a string', () => {
     temp.write('hello.txt', 'hello world');
 
     expect(readFile('hello.txt')).toBe('hello world');

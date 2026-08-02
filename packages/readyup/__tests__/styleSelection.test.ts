@@ -1,14 +1,14 @@
 import process from 'node:process';
 
-import { afterEach, describe, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { routeCommand } from '../src/bin/route.ts';
 import { plainFormatter } from '../src/layout/plainFormatter.ts';
 import { STYLE_ENV_VAR } from '../src/layout/resolveStyle.ts';
 import { richFormatter } from '../src/layout/richFormatter.ts';
 import { hashBytes } from '../src/verify/targetHash.ts';
-import { type CapturedStdio, createStdioFixture } from './helpers/capturedStdio.ts';
-import { createTempDirTest } from './helpers/tempDir.ts';
+import { useCapturedStdio } from './helpers/capturedStdio.ts';
+import { useTempDir } from './helpers/tempDir.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -34,11 +34,11 @@ const RENDERING_COMMANDS = [
   { name: 'init', args: ['init', '--dry-run'], expected: /^PASS {2}\.config\/readyup\.config\.ts/mu },
 ] as const;
 
-const it = createTempDirTest({
+const temp = useTempDir({
   prefix: 'readyup-style-',
   cwd: 'chdir',
   scope: 'file',
-  setup: (temp) => {
+  setup: () => {
     temp.write('.readyup/kits/passing.js', PASSING_KIT);
     temp.write('src/passing.ts', PASSING_KIT);
     temp.write('passing.js', COMPILED_BYTES);
@@ -47,15 +47,17 @@ const it = createTempDirTest({
       kits: [{ name: 'passing', path: 'passing.js', source: 'src/passing.ts', targetHash: hashBytes(COMPILED_BYTES) }],
     });
   },
-  // `init` reports through the console rather than the streams directly, so both channels are captured.
-}).extend<{ io: CapturedStdio }>({ io: createStdioFixture({ console: true }) });
+});
+
+// `init` reports through the console rather than the streams directly, so both channels are captured.
+const io = useCapturedStdio({ console: true });
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
 describe('--style plain', () => {
-  it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }, { io }) => {
+  it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }) => {
     await routeCommand([...args, '--style', 'plain']);
 
     const rendered = io.stdout + io.stderr;
@@ -63,13 +65,13 @@ describe('--style plain', () => {
     expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
   });
 
-  it.for(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }, { io }) => {
+  it.for(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }) => {
     await routeCommand([...args, '--style', 'plain']);
 
     expect(io.stdout + io.stderr).toMatch(expected);
   });
 
-  it('is accepted as an assigned value too', async ({ io }) => {
+  it('is accepted as an assigned value too', async () => {
     await routeCommand(['verify', '--manifest', 'manifest.json', '--style=plain']);
 
     expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
@@ -77,27 +79,27 @@ describe('--style plain', () => {
 });
 
 describe('a style named ahead of the command', () => {
-  it.for(RENDERING_COMMANDS)('reaches $name without being taken for a kit name', async ({ args }, { io }) => {
+  it.for(RENDERING_COMMANDS)('reaches $name without being taken for a kit name', async ({ args }) => {
     const exitCode = await routeCommand(['--style', 'plain', ...args]);
 
     expect(io.stderr).not.toContain('not found');
     expect(exitCode).not.toBe(2);
   });
 
-  it('is accepted as an assigned value too', async ({ io }) => {
+  it('is accepted as an assigned value too', async () => {
     const exitCode = await routeCommand(['--style=plain', 'verify', '--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(0);
     expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
-  it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async ({ io }) => {
+  it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async () => {
     await routeCommand(['--style', 'plain', '--help']);
 
     expect(io.stdout).toContain('rdy <command> [options]');
   });
 
-  it('leaves --version reporting the version', async ({ io }) => {
+  it('leaves --version reporting the version', async () => {
     await routeCommand(['--style', 'plain', '--version']);
 
     expect(io.stdout).toMatch(/^\d+\.\d+\.\d+/u);
@@ -111,7 +113,7 @@ describe('a style named ahead of the command', () => {
 });
 
 describe('--style rich', () => {
-  it('renders glyphs even when the environment would detect otherwise', async ({ io }) => {
+  it('renders glyphs even when the environment would detect otherwise', async () => {
     vi.stubEnv('CI', 'true');
     process.stdout.isTTY = false;
 
@@ -122,14 +124,14 @@ describe('--style rich', () => {
 });
 
 describe('an unrecognized style', () => {
-  it('fails the invocation and names the valid set', async ({ io }) => {
+  it('fails the invocation and names the valid set', async () => {
     const exitCode = await routeCommand(['verify', '--style', 'emoji']);
 
     expect(exitCode).toBe(2);
     expect(io.stderr).toContain('--style must be one of: auto, plain, rich (got "emoji")');
   });
 
-  it('is rejected from the environment variable as well', async ({ io }) => {
+  it('is rejected from the environment variable as well', async () => {
     vi.stubEnv(STYLE_ENV_VAR, 'text');
 
     const exitCode = await routeCommand(['verify', '--manifest', 'manifest.json']);
@@ -142,7 +144,7 @@ describe('an unrecognized style', () => {
 describe('detection', () => {
   // The suite pins RDY_STYLE so rendering never depends on the environment it runs in. These tests
   // deliberately unpin it: they are the only coverage of the wiring that reads CI and the terminal.
-  it('chooses plain under CI', async ({ io }) => {
+  it('chooses plain under CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', 'true');
     process.stdout.isTTY = true;
@@ -152,7 +154,7 @@ describe('detection', () => {
     expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
-  it('chooses plain when the output is not a terminal', async ({ io }) => {
+  it('chooses plain when the output is not a terminal', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
     process.stdout.isTTY = false;
@@ -162,7 +164,7 @@ describe('detection', () => {
     expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
-  it('chooses rich for a terminal outside CI', async ({ io }) => {
+  it('chooses rich for a terminal outside CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
     process.stdout.isTTY = true;
@@ -172,7 +174,7 @@ describe('detection', () => {
     expect(io.stdout).toContain(`${RICH_PASS} passing`);
   });
 
-  it('is outranked by the environment variable', async ({ io }) => {
+  it('is outranked by the environment variable', async () => {
     vi.stubEnv(STYLE_ENV_VAR, 'rich');
     vi.stubEnv('CI', 'true');
 
@@ -183,7 +185,7 @@ describe('detection', () => {
 });
 
 describe('an explicitly chosen style', () => {
-  it.for(['plain', 'rich'] as const)('renders %s identically with and without a terminal', async (style, { io }) => {
+  it.for(['plain', 'rich'] as const)('renders %s identically with and without a terminal', async (style) => {
     process.stdout.isTTY = true;
     await routeCommand(['verify', '--manifest', 'manifest.json', '--style', style]);
     const attached = io.stdout;
@@ -197,7 +199,7 @@ describe('an explicitly chosen style', () => {
 });
 
 describe('alongside --json', () => {
-  it('leaves the JSON document on stdout and styles the prose on stderr', async ({ io }) => {
+  it('leaves the JSON document on stdout and styles the prose on stderr', async () => {
     await routeCommand(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
 
     const document: unknown = JSON.parse(io.stdout);
@@ -206,7 +208,7 @@ describe('alongside --json', () => {
     expect(io.stderr).not.toContain(RICH_PASS);
   });
 
-  it('emits the same JSON whichever style is selected', async ({ io }) => {
+  it('emits the same JSON whichever style is selected', async () => {
     await routeCommand(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
     const plain = io.stdout;
 

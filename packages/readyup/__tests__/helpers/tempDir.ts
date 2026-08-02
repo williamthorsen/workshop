@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
-import { it as baseIt, type TestAPI, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
 /** A temporary directory and the writes a suite makes against it. */
 export interface TempDir {
@@ -19,7 +19,7 @@ export interface TempDir {
 /** How the code under test is pointed at the temporary directory. */
 export type CwdMode = 'chdir' | 'mock' | 'none';
 
-/** Options for a temp-directory test API. */
+/** Options for a temporary-directory handle. */
 export interface TempDirOptions {
   /** Prefix for the `mkdtemp` name, which identifies the suite among the temp directories it leaves behind. */
   prefix: string;
@@ -27,44 +27,58 @@ export interface TempDirOptions {
   cwd?: CwdMode;
   /** `file` builds one directory for the whole file; `test` builds one per test. */
   scope?: 'file' | 'test';
-  /** Scaffolds fixture files into the directory before the tests that use it run. */
-  setup?: (temp: TempDir) => void;
-}
-
-/** A fixture definition in the tuple form `test.extend` accepts, carrying its own scope. */
-type TempDirFixture = [
-  (context: object, use: (value: TempDir) => Promise<void>) => Promise<void>,
-  { scope: 'file' | 'test'; auto: boolean },
-];
-
-/** Returns a test API whose `temp` fixture is a scaffolded temporary directory, removed on teardown. */
-export function createTempDirTest(options: TempDirOptions): TestAPI<{ temp: TempDir }> {
-  return baseIt.extend<{ temp: TempDir }>({ temp: createTempDirFixture(options) });
+  /**
+   * Scaffolds fixture files into the directory before the tests that use it run.
+   *
+   * It runs from within a hook, so it may write through the handle the suite binds this call to.
+   */
+  setup?: () => void;
 }
 
 /**
- * Returns a temporary-directory fixture, for a suite that needs a second one alongside its `temp`.
+ * Registers a scaffolded temporary directory for the enclosing suite and returns a handle to it.
  *
- * Any `cwd` redirection makes the fixture automatic. A test asserting that a file is absent never names
- * the fixture, and a lazily created one would leave it reading the real working directory.
+ * The handle is bound once at module level and delegates to whichever directory the current scope built, so
+ * a test reads the directory belonging to its own run without naming it in its signature.
  */
-export function createTempDirFixture(options: TempDirOptions): TempDirFixture {
+export function useTempDir(options: TempDirOptions): TempDir {
   const { prefix, cwd = 'none', scope = 'test', setup } = options;
+  const [onSetup, onTeardown] = scope === 'file' ? [beforeAll, afterAll] : [beforeEach, afterEach];
 
-  return [
-    // eslint-disable-next-line no-empty-pattern -- Vitest parses this pattern to detect fixture dependencies.
-    async ({}, use) => {
-      const temp = createTempDir(prefix);
-      const restoreCwd = pointCwdAt(temp.dir, cwd);
-      setup?.(temp);
+  let current: TempDir | undefined;
+  let restoreCwd = restoreNothing;
 
-      await use(temp);
+  onSetup(() => {
+    current = createTempDir(prefix);
+    restoreCwd = pointCwdAt(current.dir, cwd);
+    setup?.();
+  });
 
-      restoreCwd();
-      rmSync(temp.dir, { recursive: true, force: true });
+  onTeardown(() => {
+    restoreCwd();
+    restoreCwd = restoreNothing;
+    if (current !== undefined) {
+      rmSync(current.dir, { recursive: true, force: true });
+      current = undefined;
+    }
+  });
+
+  /** Answers with the directory the current scope built, or reports a read that arrived outside it. */
+  function requireCurrent(): TempDir {
+    if (current === undefined) {
+      throw new Error(`The "${prefix}" temporary directory was read outside the scope that builds it.`);
+    }
+    return current;
+  }
+
+  return {
+    get dir() {
+      return requireCurrent().dir;
     },
-    { scope, auto: cwd !== 'none' },
-  ];
+    mkdir: (relativePath) => requireCurrent().mkdir(relativePath),
+    write: (relativePath, contents) => requireCurrent().write(relativePath, contents),
+    writeJson: (relativePath, value) => requireCurrent().writeJson(relativePath, value),
+  };
 }
 
 // region | Helpers

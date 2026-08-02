@@ -1,8 +1,8 @@
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { routeCommand } from '../src/bin/route.ts';
-import { type CapturedStdio, createStdioFixture } from './helpers/capturedStdio.ts';
-import { createTempDirTest } from './helpers/tempDir.ts';
+import { useCapturedStdio } from './helpers/capturedStdio.ts';
+import { useTempDir } from './helpers/tempDir.ts';
 
 /** A kit with one passing check and one failing check that carries a fix. */
 const MIXED_KIT =
@@ -11,15 +11,17 @@ const MIXED_KIT =
   `  { name: 'nope', check: () => false, fix: 'do the thing' },\n` +
   `] }] };\n`;
 
-const it = createTempDirTest({
+const temp = useTempDir({
   prefix: 'readyup-detail-',
   cwd: 'chdir',
   scope: 'file',
-  setup: (temp) => temp.write('.readyup/kits/default.js', MIXED_KIT),
-}).extend<{ io: CapturedStdio }>({ io: createStdioFixture() });
+  setup: () => temp.write('.readyup/kits/default.js', MIXED_KIT),
+});
+
+const io = useCapturedStdio();
 
 describe('--detail projection', () => {
-  it('defaults to the full tree, echoing the projection it used', async ({ io }) => {
+  it('defaults to the full tree, echoing the projection it used', async () => {
     await routeCommand(['--json']);
 
     expect(JSON.parse(io.stdout)).toMatchObject({
@@ -28,7 +30,7 @@ describe('--detail projection', () => {
     });
   });
 
-  it('reduces the tree to failed checks and their fixes under summary', async ({ io }) => {
+  it('reduces the tree to failed checks and their fixes under summary', async () => {
     await routeCommand(['--json', '--detail', 'summary']);
 
     expect(JSON.parse(io.stdout)).toMatchObject({
@@ -40,7 +42,7 @@ describe('--detail projection', () => {
     expect(io.stdout).not.toContain('clean');
   });
 
-  it('reports --detail without --json as a usage error rather than ignoring it', async ({ io }) => {
+  it('reports --detail without --json as a usage error rather than ignoring it', async () => {
     const exitCode = await routeCommand(['--detail', 'summary']);
 
     expect(exitCode).toBe(2);
@@ -48,7 +50,7 @@ describe('--detail projection', () => {
     expect(io.stderr).toContain('--detail requires --json');
   });
 
-  it.for(['compile', 'init', 'list', 'verify'])('reports --detail on %s as a usage error', async (command, { io }) => {
+  it.for(['compile', 'init', 'list', 'verify'])('reports --detail on %s as a usage error', async (command) => {
     const exitCode = await routeCommand([command, '--detail', 'summary', '--json']);
 
     expect(exitCode).toBe(2);

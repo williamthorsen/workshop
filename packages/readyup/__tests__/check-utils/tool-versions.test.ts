@@ -1,55 +1,55 @@
-import { describe, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { readToolVersionsNode } from '../../src/check-utils/tool-versions.ts';
-import { createTempDirTest, type TempDir } from '../helpers/tempDir.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-const it = createTempDirTest({ prefix: 'rdy-tool-versions-', cwd: 'mock' });
+const temp = useTempDir({ prefix: 'rdy-tool-versions-', cwd: 'mock' });
 
 describe(readToolVersionsNode, () => {
-  it('reads a plain nodejs entry', ({ temp }) => {
-    writeToolVersions(temp, ['nodejs 24.18.0', '']);
+  it('reads a plain nodejs entry', () => {
+    writeToolVersions(['nodejs 24.18.0', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('reads an entry written with the `node` tool name', ({ temp }) => {
-    writeToolVersions(temp, ['node 22.11.0', '']);
+  it('reads an entry written with the `node` tool name', () => {
+    writeToolVersions(['node 22.11.0', '']);
 
     expect(readToolVersionsNode()).toBe('22.11.0');
   });
 
-  it('ignores a trailing comment', ({ temp }) => {
-    writeToolVersions(temp, ['nodejs 24.18.0 # pinned to the engines floor', '']);
+  it('ignores a trailing comment', () => {
+    writeToolVersions(['nodejs 24.18.0 # pinned to the engines floor', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('takes the first of several fallback versions', ({ temp }) => {
-    writeToolVersions(temp, ['nodejs 24.18.0 22.11.0 20.19.0', '']);
+  it('takes the first of several fallback versions', () => {
+    writeToolVersions(['nodejs 24.18.0 22.11.0 20.19.0', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('skips other tools, comment lines, and blank lines', ({ temp }) => {
-    writeToolVersions(temp, ['# Managed by mise', '', 'pnpm 11.15.0', '\tnodejs\t24.18.0', 'python 3.13.0', '']);
+  it('skips other tools, comment lines, and blank lines', () => {
+    writeToolVersions(['# Managed by mise', '', 'pnpm 11.15.0', '\tnodejs\t24.18.0', 'python 3.13.0', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('takes the first Node declaration when several are present', ({ temp }) => {
-    writeToolVersions(temp, ['nodejs 24.18.0', 'nodejs 22.11.0', '']);
+  it('takes the first Node declaration when several are present', () => {
+    writeToolVersions(['nodejs 24.18.0', 'nodejs 22.11.0', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('skips a Node line that names no version', ({ temp }) => {
-    writeToolVersions(temp, ['nodejs', 'nodejs 24.18.0', '']);
+  it('skips a Node line that names no version', () => {
+    writeToolVersions(['nodejs', 'nodejs 24.18.0', '']);
 
     expect(readToolVersionsNode()).toBe('24.18.0');
   });
 
-  it('returns undefined when no Node entry is present', ({ temp }) => {
-    writeToolVersions(temp, ['pnpm 11.15.0', '']);
+  it('returns undefined when no Node entry is present', () => {
+    writeToolVersions(['pnpm 11.15.0', '']);
 
     expect(readToolVersionsNode()).toBeUndefined();
   });
@@ -58,7 +58,7 @@ describe(readToolVersionsNode, () => {
     expect(readToolVersionsNode()).toBeUndefined();
   });
 
-  it('reads a file at a caller-supplied path', ({ temp }) => {
+  it('reads a file at a caller-supplied path', () => {
     temp.write('.tool-versions.local', 'nodejs 20.19.0\n');
 
     expect(readToolVersionsNode('.tool-versions.local')).toBe('20.19.0');
@@ -68,7 +68,7 @@ describe(readToolVersionsNode, () => {
 // region | Helpers
 
 /** Writes the given lines to `.tool-versions`, the default path the check reads. */
-function writeToolVersions(temp: TempDir, lines: string[]): void {
+function writeToolVersions(lines: string[]): void {
   temp.write('.tool-versions', lines.join('\n'));
 }
 
