@@ -5,9 +5,6 @@ import { computeHash, readFile } from 'readyup/check-utils';
 import type { ManifestEntry } from './kit-layout.ts';
 import { listCompiledBundlePaths, readManifestEntries, resolveRecordedPath } from './kit-layout.ts';
 
-/** Number of hex characters `rdy compile` records for a source or bundle hash. */
-const HASH_PREFIX_LENGTH = 8;
-
 /**
  * Checks asserting that every kit the manifest records still matches the hashes recorded for it.
  *
@@ -59,7 +56,12 @@ function buildUnrecordedBundlesCheck(): RdyCheck {
   };
 }
 
-/** Compares a file the manifest names against the hash recorded for it. */
+/**
+ * Compares a file the manifest names against the hash recorded for it.
+ *
+ * The recorded value's own length decides how much of the digest to compare, so the kit reads whatever
+ * prefix `rdy compile` wrote rather than a length of its own that a later readyup could outgrow.
+ */
 function compareToRecordedHash(recordedPath: string | undefined, expected: string | undefined): CheckOutcome {
   if (recordedPath === undefined || expected === undefined) {
     return { ok: false, detail: 'the manifest records nothing to compare against' };
@@ -69,7 +71,7 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
   const content = readFile(filePath);
   if (content === undefined) return { ok: false, detail: `${filePath} is missing` };
 
-  const actual = computeHash(content).slice(0, HASH_PREFIX_LENGTH);
+  const actual = computeHash(content).slice(0, expected.length);
   if (actual !== expected) return { ok: false, detail: `${filePath}: expected ${expected}, got ${actual}` };
 
   return { ok: true, detail: filePath };
