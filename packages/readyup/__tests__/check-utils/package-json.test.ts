@@ -1,8 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   hasDevDependency,
@@ -10,18 +6,9 @@ import {
   hasPackageJsonField,
   readPackageJson,
 } from '../../src/check-utils/package-json.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-let tempDir: string;
-let cwdSpy: MockInstance;
-
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-pkg-'));
-  cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-});
-
-afterEach(() => {
-  cwdSpy.mockRestore();
-});
+const temp = useTempDir({ prefix: 'rdy-pkg-', cwd: 'mock' });
 
 describe(readPackageJson, () => {
   it('returns the parsed package.json', () => {
@@ -37,7 +24,7 @@ describe(readPackageJson, () => {
   });
 
   it('returns undefined when package.json is not an object', () => {
-    writeFileSync(join(tempDir, 'package.json'), '"not an object"');
+    temp.write('package.json', '"not an object"');
 
     expect(readPackageJson()).toBeUndefined();
   });
@@ -129,6 +116,11 @@ describe(hasMinDevDependencyVersion, () => {
   });
 });
 
+// region | Helpers
+
+/** Writes the project manifest the check-utils under test read from the working directory. */
 function writePackageJson(content: Record<string, unknown>): void {
-  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
+  temp.writeJson('package.json', content);
 }
+
+// endregion | Helpers

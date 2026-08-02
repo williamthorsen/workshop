@@ -1,17 +1,14 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { expandConfiguredPackages } from '../../src/packages/expandConfiguredPackages.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-let projectRoot: string;
-
-describe(expandConfiguredPackages, () => {
-  beforeAll(() => {
-    projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'expand-packages-')));
-
+const temp = useTempDir({
+  prefix: 'expand-packages-',
+  scope: 'file',
+  setup: () => {
     installPackage('@acme/kits', '2.1.0', {
       kits: ['drift', 'preflight'],
       manifest: JSON.stringify({ version: 1, kits: [{ name: 'drift' }, { name: 'preflight' }] }),
@@ -19,39 +16,37 @@ describe(expandConfiguredPackages, () => {
     installPackage('plain-kit', '0.4.0', { kits: ['smoke'] });
     installPackage('kitless', '1.0.0');
     installPackage('broken-manifest', '1.0.0', { kits: ['drift'], manifest: '{ not json' });
-  });
+  },
+});
 
-  afterAll(() => {
-    rmSync(projectRoot, { recursive: true, force: true });
-  });
-
+describe(expandConfiguredPackages, () => {
   it('expands a scoped package into the kits its manifest declares', () => {
-    expect(expandConfiguredPackages(['@acme/kits'], '.js', projectRoot)).toStrictEqual([
+    expect(expandConfiguredPackages(['@acme/kits'], '.js', temp.dir)).toStrictEqual([
       {
         packageName: '@acme/kits',
         version: '2.1.0',
         kitName: 'drift',
-        path: path.join(projectRoot, 'node_modules', '@acme/kits', '.readyup', 'kits', 'drift.js'),
+        path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'drift.js'),
       },
       {
         packageName: '@acme/kits',
         version: '2.1.0',
         kitName: 'preflight',
-        path: path.join(projectRoot, 'node_modules', '@acme/kits', '.readyup', 'kits', 'preflight.js'),
+        path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'preflight.js'),
       },
     ]);
   });
 
   // The same precedence a local `--from` source follows, so a package and a directory answer alike.
   it('falls back to the kit directory when a package ships no manifest', () => {
-    const [kit] = expandConfiguredPackages(['plain-kit'], '.js', projectRoot);
+    const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
 
     expect(kit?.kitName).toBe('smoke');
     expect(kit?.version).toBe('0.4.0');
   });
 
   it('expands every configured package, in configured order', () => {
-    const kits = expandConfiguredPackages(['plain-kit', '@acme/kits'], '.js', projectRoot);
+    const kits = expandConfiguredPackages(['plain-kit', '@acme/kits'], '.js', temp.dir);
 
     expect(kits.map((kit) => `${kit.packageName}:${kit.kitName}`)).toStrictEqual([
       'plain-kit:smoke',
@@ -61,20 +56,20 @@ describe(expandConfiguredPackages, () => {
   });
 
   it('names the package when it is not installed', () => {
-    expect(() => expandConfiguredPackages(['absent-package'], '.js', projectRoot)).toThrow(
+    expect(() => expandConfiguredPackages(['absent-package'], '.js', temp.dir)).toThrow(
       /Configured package "absent-package" is not installed/,
     );
   });
 
   it('names the package when it publishes no kits', () => {
-    expect(() => expandConfiguredPackages(['kitless'], '.js', projectRoot)).toThrow(
+    expect(() => expandConfiguredPackages(['kitless'], '.js', temp.dir)).toThrow(
       /Configured package "kitless" publishes no kits/,
     );
   });
 
   // Falling back here would report a kit list the publisher never declared.
   it('surfaces a malformed manifest instead of reading around it', () => {
-    expect(() => expandConfiguredPackages(['broken-manifest'], '.js', projectRoot)).toThrow(/invalid JSON/);
+    expect(() => expandConfiguredPackages(['broken-manifest'], '.js', temp.dir)).toThrow(/invalid JSON/);
   });
 });
 
@@ -86,15 +81,15 @@ function installPackage(
   version: string,
   options: { kits?: string[]; manifest?: string | undefined } = {},
 ): void {
-  const root = path.join(projectRoot, 'node_modules', name);
-  mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
-  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, version }));
+  const root = path.join('node_modules', name);
+  temp.mkdir(path.join(root, '.readyup', 'kits'));
+  temp.writeJson(path.join(root, 'package.json'), { name, version });
 
   for (const kit of options.kits ?? []) {
-    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
+    temp.write(path.join(root, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
   }
   if (options.manifest !== undefined) {
-    writeFileSync(path.join(root, '.readyup', 'manifest.json'), options.manifest);
+    temp.write(path.join(root, '.readyup', 'manifest.json'), options.manifest);
   }
 }
 

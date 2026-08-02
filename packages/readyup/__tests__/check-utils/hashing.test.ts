@@ -1,23 +1,11 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { computeHash, fileMatchesHash } from '../../src/check-utils/hashing.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-let tempDir: string;
-let cwdSpy: MockInstance;
-
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-hash-'));
-  cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-});
-
-afterEach(() => {
-  cwdSpy.mockRestore();
-});
+const temp = useTempDir({ prefix: 'rdy-hash-', cwd: 'mock' });
 
 describe(computeHash, () => {
   it('returns a SHA-256 hex digest of the given string', () => {
@@ -39,14 +27,14 @@ describe(computeHash, () => {
 describe(fileMatchesHash, () => {
   it('returns true when the file content matches the expected hash', () => {
     const content = 'exact content';
-    writeFileSync(join(tempDir, 'config.js'), content);
+    temp.write('config.js', content);
     const hash = createHash('sha256').update(content).digest('hex');
 
     expect(fileMatchesHash('config.js', hash)).toBe(true);
   });
 
   it('returns false when the file content does not match the expected hash', () => {
-    writeFileSync(join(tempDir, 'config.js'), 'actual content');
+    temp.write('config.js', 'actual content');
 
     expect(fileMatchesHash('config.js', 'wrong-hash')).toBe(false);
   });

@@ -52,6 +52,7 @@ function isReadyupSpecifier(specifier: string): boolean {
  * Called exactly once when the hook is registered.
  */
 export function initialize(data: ReadyupResolverHookData): void {
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- `module.register()` supplies this once.
   readyupParentURL = data.readyupParentURL;
 }
 

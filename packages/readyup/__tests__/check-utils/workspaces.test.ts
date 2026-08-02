@@ -1,24 +1,13 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { discoverWorkspaces } from '../../src/check-utils/workspaces.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-let tempDir: string;
-let cwdSpy: MockInstance;
+const temp = useTempDir({ prefix: 'rdy-ws-', cwd: 'mock' });
 
 describe(discoverWorkspaces, () => {
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'rdy-ws-'));
-    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-  });
-
-  afterEach(() => {
-    cwdSpy.mockRestore();
-  });
-
   describe('pnpm workspaces', () => {
     it('discovers workspaces listed via `packages` block sequence', () => {
       writeRootPackageJson({ name: 'root', private: true });
@@ -49,7 +38,7 @@ describe(discoverWorkspaces, () => {
       expect(workspaces).toStrictEqual([
         {
           dir: '.',
-          absolutePath: tempDir,
+          absolutePath: temp.dir,
           name: 'root',
           isPackage: true,
           packageJson: { name: 'root', version: '1.0.0' },
@@ -111,7 +100,7 @@ describe(discoverWorkspaces, () => {
       expect(workspaces).toStrictEqual([
         {
           dir: '.',
-          absolutePath: tempDir,
+          absolutePath: temp.dir,
           name: 'solo',
           isPackage: true,
           packageJson: { name: 'solo', version: '1.0.0' },
@@ -166,7 +155,7 @@ describe(discoverWorkspaces, () => {
     it('skips a matched directory without a package.json', () => {
       writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
       writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      mkdirSync(join(tempDir, 'packages/empty'), { recursive: true });
+      temp.mkdir('packages/empty');
 
       const workspaces = discoverWorkspaces();
 
@@ -176,8 +165,7 @@ describe(discoverWorkspaces, () => {
     it('skips a matched directory with an unparseable package.json', () => {
       writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
       writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      mkdirSync(join(tempDir, 'packages/broken'), { recursive: true });
-      writeFileSync(join(tempDir, 'packages/broken/package.json'), '{ not valid json');
+      temp.write('packages/broken/package.json', '{ not valid json');
 
       const workspaces = discoverWorkspaces();
 
@@ -209,7 +197,7 @@ describe(discoverWorkspaces, () => {
   describe('error: missing root package.json', () => {
     it('throws with a message that includes the resolved path', () => {
       expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
-      expect(() => discoverWorkspaces()).toThrow(tempDir);
+      expect(() => discoverWorkspaces()).toThrow(temp.dir);
     });
 
     it('throws even when pnpm-workspace.yaml is present', () => {
@@ -241,7 +229,7 @@ describe(discoverWorkspaces, () => {
 
       expect(workspace).toStrictEqual({
         dir: 'packages/alpha',
-        absolutePath: join(tempDir, 'packages/alpha'),
+        absolutePath: join(temp.dir, 'packages/alpha'),
         name: 'alpha',
         isPackage: true,
         packageJson: { name: 'alpha', version: '1.2.3' },
@@ -274,17 +262,19 @@ describe(discoverWorkspaces, () => {
 
 // region | Helpers
 
+/** Writes the root manifest that declares the workspace globs. */
 function writeRootPackageJson(content: Record<string, unknown>): void {
-  writeFileSync(join(tempDir, 'package.json'), JSON.stringify(content));
+  temp.writeJson('package.json', content);
 }
 
+/** Writes a workspace member's manifest at a root-relative directory. */
 function writeWorkspacePackage(relDir: string, content: Record<string, unknown>): void {
-  mkdirSync(join(tempDir, relDir), { recursive: true });
-  writeFileSync(join(tempDir, relDir, 'package.json'), JSON.stringify(content));
+  temp.writeJson(join(relDir, 'package.json'), content);
 }
 
+/** Writes the pnpm workspace manifest, which takes precedence over the `workspaces` field. */
 function writePnpmWorkspaceYaml(content: string): void {
-  writeFileSync(join(tempDir, 'pnpm-workspace.yaml'), content);
+  temp.write('pnpm-workspace.yaml', content);
 }
 
 // endregion | Helpers

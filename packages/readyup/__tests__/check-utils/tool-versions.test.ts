@@ -1,22 +1,9 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { readToolVersionsNode } from '../../src/check-utils/tool-versions.ts';
+import { useTempDir } from '../helpers/tempDir.ts';
 
-let tempDir: string;
-let cwdSpy: MockInstance;
-
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rdy-tool-versions-'));
-  cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-});
-
-afterEach(() => {
-  cwdSpy.mockRestore();
-});
+const temp = useTempDir({ prefix: 'rdy-tool-versions-', cwd: 'mock' });
 
 describe(readToolVersionsNode, () => {
   it('reads a plain nodejs entry', () => {
@@ -72,7 +59,7 @@ describe(readToolVersionsNode, () => {
   });
 
   it('reads a file at a caller-supplied path', () => {
-    writeFileSync(join(tempDir, '.tool-versions.local'), 'nodejs 20.19.0\n');
+    temp.write('.tool-versions.local', 'nodejs 20.19.0\n');
 
     expect(readToolVersionsNode('.tool-versions.local')).toBe('20.19.0');
   });
@@ -80,9 +67,9 @@ describe(readToolVersionsNode, () => {
 
 // region | Helpers
 
-/** Writes the given lines to `.tool-versions` in the temp directory. */
+/** Writes the given lines to `.tool-versions`, the default path the check reads. */
 function writeToolVersions(lines: string[]): void {
-  writeFileSync(join(tempDir, '.tool-versions'), lines.join('\n'));
+  temp.write('.tool-versions', lines.join('\n'));
 }
 
 // endregion | Helpers
