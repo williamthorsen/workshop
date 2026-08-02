@@ -1,7 +1,7 @@
 import type { ResolutionAt } from '../../consistency/findResolutionOrderViolations.ts';
 import type { Plan } from '../../schemas/plan-schema.ts';
 
-/** Each artifact's resolution, with the path prefix a violation against it is reported under. */
+/** Collects each artifact's resolution, with the path prefix a violation against it is reported under. */
 export function collectResolutions(plan: Plan): ReadonlyArray<ResolutionAt> {
   return plan.artifacts.map((artifact, index) => ({
     basePath: `artifacts[${index}].resolution`,

@@ -4,7 +4,7 @@ import type { Violation } from './Violation.ts';
 export type RequireKnown = (known: ReadonlySet<string>, id: string | undefined, path: string, table: string) => void;
 
 /**
- * A recorder appending to `violations` for each id reference that names no entry in the table it points at.
+ * Creates a recorder that appends to `violations` for each id reference naming no entry in the table it points at.
  *
  * Shared by the plan and catalog dangling-reference checks, which walk different documents but apply one rule. The
  * accumulator stays with the traversal so a check still returns its own violations; only the rule is shared.

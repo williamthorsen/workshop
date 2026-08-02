@@ -78,7 +78,7 @@ describe(assertPlanIsConsistent, () => {
 
 // region | Helpers
 
-/** The failure `plan` raises, failing the test when it passes every check. */
+/** Captures the failure `plan` raises, failing the test when it passes every check. */
 function captureFailure(plan: Plan): PlanConsistencyError {
   try {
     assertPlanIsConsistent(plan);

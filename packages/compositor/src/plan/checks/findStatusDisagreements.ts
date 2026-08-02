@@ -3,7 +3,7 @@ import type { DiffStatus } from '../../schemas/common.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { Plan } from '../../schemas/plan-schema.ts';
 
-/** Violations for each file whose recorded status disagrees with the sides it carries. */
+/** Reports each file whose recorded status disagrees with the sides it carries. */
 export function findStatusDisagreements(plan: Plan): Array<Violation> {
   const violations: Array<Violation> = [];
   for (const [index, file] of plan.files.entries()) {
@@ -28,7 +28,7 @@ export function findStatusDisagreements(plan: Plan): Array<Violation> {
 
 // region | Helpers
 
-/** The status a file's two sides describe, or `undefined` when it carries neither. */
+/** Derives the status a file's two sides describe, or `undefined` when it carries neither. */
 function implyStatus(file: FileEntry): DiffStatus | undefined {
   if (file.current === undefined) {
     return file.planned === undefined ? undefined : 'added';

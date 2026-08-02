@@ -2,7 +2,7 @@ import type { Violation } from '../../consistency/Violation.ts';
 import type { Catalog } from '../../schemas/resolution-schemas.ts';
 
 /**
- * Violations for each entry naming one source more than once among its candidates.
+ * Reports each entry naming one source more than once among its candidates.
  *
  * A source carries an artifact at one path, so it either wins resolution or loses it. Appearing twice would let one
  * source both shadow and be shadowed by itself, and would render a source explaining its own defeat.

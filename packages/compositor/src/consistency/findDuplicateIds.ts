@@ -4,7 +4,7 @@ import type { Violation } from './Violation.ts';
 export type IdTable = readonly [name: string, entries: ReadonlyArray<{ id: string }>];
 
 /**
- * Violations for each table carrying the same id twice, which would make every reference to it ambiguous.
+ * Reports each id a table carries twice, which would make every reference to it ambiguous.
  *
  * Shared by the plan and catalog assertions, which apply the same rule and differ only in which tables they carry.
  * Violations follow the order of `tables`, so the caller's list decides the order they are reported in.

@@ -72,7 +72,7 @@ describe(assertCatalogIsConsistent, () => {
 
 // region | Helpers
 
-/** The failure `catalog` raises, failing the test when it passes every check. */
+/** Captures the failure `catalog` raises, failing the test when it passes every check. */
 function captureFailure(catalog: Catalog): CatalogConsistencyError {
   try {
     assertCatalogIsConsistent(catalog);

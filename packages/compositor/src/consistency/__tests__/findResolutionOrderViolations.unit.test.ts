@@ -95,7 +95,7 @@ describe(findResolutionOrderViolations, () => {
 
 // region | Helpers
 
-/** A resolution won by `winner` over `shadowed`, each candidate carrying the path and hash the rule ignores. */
+/** Builds a resolution won by `winner` over `shadowed`, each candidate carrying the path and hash the rule ignores. */
 function buildResolution(
   winner: string,
   shadowed: ReadonlyArray<string>,
@@ -103,7 +103,7 @@ function buildResolution(
   return { winner: buildCandidate(winner), shadowed: shadowed.map(buildCandidate) };
 }
 
-/** A candidate carried by `sourceId`. */
+/** Builds a candidate carried by `sourceId`. */
 function buildCandidate(sourceId: string): ResolutionCandidate {
   return { sourceId, path: 'skills/review/SKILL.md', hash: `hash:review-${sourceId}` };
 }

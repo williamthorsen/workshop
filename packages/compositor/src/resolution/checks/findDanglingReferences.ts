@@ -3,7 +3,7 @@ import { createRequireKnown } from '../../consistency/createRequireKnown.ts';
 import type { Violation } from '../../consistency/Violation.ts';
 import type { Catalog } from '../../schemas/resolution-schemas.ts';
 
-/** Violations for each id reference that names no entry in the table it points at. */
+/** Reports each id reference that names no entry in the table it points at. */
 export function findDanglingReferences(catalog: Catalog): Array<Violation> {
   const kindIds = collectIds(catalog.kinds);
   const sourceIds = collectIds(catalog.sources);

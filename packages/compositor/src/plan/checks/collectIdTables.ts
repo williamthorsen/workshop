@@ -2,7 +2,7 @@ import type { IdTable } from '../../consistency/findDuplicateIds.ts';
 import type { Plan } from '../../schemas/plan-schema.ts';
 
 /**
- * The plan's id-keyed tables, in the order a violation against them is reported.
+ * Collects the plan's id-keyed tables, in the order a violation against them is reported.
  *
  * Reordering reorders the reported violations, and dropping a table stops the duplicate-id check from covering it.
  */

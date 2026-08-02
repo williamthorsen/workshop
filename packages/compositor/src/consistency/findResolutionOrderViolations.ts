@@ -8,7 +8,7 @@ export interface ResolutionAt {
 }
 
 /**
- * Violations for each resolution whose candidates contradict source precedence.
+ * Reports each resolution whose candidates contradict source precedence.
  *
  * `sources` runs highest precedence first, so a winner must outrank every candidate it shadowed and the losers must
  * descend from there. Nothing else validates this: the schema cannot express an ordering, and a payload listing losers
@@ -59,7 +59,7 @@ export function findResolutionOrderViolations(
 
 // region | Helpers
 
-/** Each source id mapped to its rank, a repeated id taking the rank of its first occurrence. */
+/** Maps each source id to its rank, a repeated id taking the rank of its first occurrence. */
 function buildSourcePrecedence(sources: ReadonlyArray<{ id: string }>): ReadonlyMap<string, number> {
   const precedence = new Map<string, number>();
   for (const [index, source] of sources.entries()) {
