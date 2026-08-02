@@ -4,8 +4,8 @@ import path from 'node:path';
 
 import { describe, expect, it, onTestFinished } from 'vitest';
 
+import type { ResolveKind, SourceSpec } from '../../schemas/resolution-schemas.ts';
 import { assertSourceIsReadable, enumerateSource, type SourceArtifact } from '../enumerateSource.ts';
-import type { ResolveKind, SourceSpec } from '../schemas/resolutionSchemas.ts';
 
 const rulebookKind: ResolveKind = {
   id: 'rulebook',

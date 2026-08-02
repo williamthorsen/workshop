@@ -1,4 +1,4 @@
-import type { Id, KindId } from './schemas/common.ts';
+import type { Id, KindId } from '../schemas/common.ts';
 
 /**
  * The id identifying one artifact, composed from its kind and slug.

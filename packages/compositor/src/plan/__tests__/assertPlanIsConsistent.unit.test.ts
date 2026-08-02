@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { buildPlan } from '../../test-utils/buildPlan.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { assertPlanIsConsistent, PlanConsistencyError, type PlanViolation } from '../assertPlanIsConsistent.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { buildPlan } from '../test-utils/buildPlan.ts';
-import { requireEntry } from '../test-utils/requireEntry.ts';
 
 describe(assertPlanIsConsistent, () => {
   it('accepts a plan whose references, blobs, and statuses all agree', () => {

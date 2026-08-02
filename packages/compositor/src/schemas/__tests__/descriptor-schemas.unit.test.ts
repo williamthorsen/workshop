@@ -7,7 +7,7 @@ import {
   SourceEntrySchema,
   SourceOriginSchema,
   TargetEntrySchema,
-} from '../descriptorSchemas.ts';
+} from '../descriptor-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Plan } from '../schemas/planSchema.ts';
-import { buildPlan } from '../test-utils/buildPlan.ts';
-import { requireEntry } from '../test-utils/requireEntry.ts';
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { buildPlan } from '../../test-utils/buildPlan.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { buildTraversalIndex, resolveInclusionPaths } from '../traversal.ts';
 
 describe(resolveInclusionPaths, () => {

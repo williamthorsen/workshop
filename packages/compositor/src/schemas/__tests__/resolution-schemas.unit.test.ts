@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
-import { KindDescriptorSchema, SourceEntrySchema } from '../descriptorSchemas.ts';
+import { KindDescriptorSchema, SourceEntrySchema } from '../descriptor-schemas.ts';
 import {
   CATALOG_SCHEMA_VERSION,
   CatalogEntrySchema,
@@ -9,7 +9,7 @@ import {
   KindLayoutSchema,
   ResolveKindSchema,
   SourceSpecSchema,
-} from '../resolutionSchemas.ts';
+} from '../resolution-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const fileKind = {

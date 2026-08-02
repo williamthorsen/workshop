@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { buildPlan } from '../../test-utils/buildPlan.ts';
 import * as commonSchemas from '../common.ts';
-import * as descriptorSchemas from '../descriptorSchemas.ts';
-import * as fileSchemas from '../fileSchemas.ts';
-import * as graphSchemas from '../graphSchemas.ts';
+import * as descriptorSchemas from '../descriptor-schemas.ts';
+import * as fileSchemas from '../file-schemas.ts';
+import * as graphSchemas from '../graph-schemas.ts';
 import * as barrel from '../index.ts';
-import * as planSchema from '../planSchema.ts';
-import { PLAN_SCHEMA_VERSION, PlanSchema } from '../planSchema.ts';
-import * as resolutionSchemas from '../resolutionSchemas.ts';
+import * as planSchema from '../plan-schema.ts';
+import { PLAN_SCHEMA_VERSION, PlanSchema } from '../plan-schema.ts';
+import * as resolutionSchemas from '../resolution-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const tables = ['artifacts', 'blobs', 'files', 'fingerprint', 'kinds', 'partials', 'sources', 'targets'] as const;

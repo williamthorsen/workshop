@@ -1,9 +1,9 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { hashBytes, hashUtf8 } from './hashContent.ts';
-import type { Hash, KindId } from './schemas/common.ts';
-import type { ResolveKind, SourceSpec } from './schemas/resolutionSchemas.ts';
+import { hashBytes, hashUtf8 } from '../portable/hash-content.ts';
+import type { Hash, KindId } from '../schemas/common.ts';
+import type { ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
 
 /** One artifact a source carries, located and digested within that source. */
 export interface SourceArtifact {

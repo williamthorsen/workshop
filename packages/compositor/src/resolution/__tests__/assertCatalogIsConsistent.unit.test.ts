@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { type Catalog, CatalogSchema } from '../../schemas/resolution-schemas.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import {
   assertCatalogIsConsistent,
   CatalogConsistencyError,
   type CatalogViolation,
 } from '../assertCatalogIsConsistent.ts';
-import { type Catalog, CatalogSchema } from '../schemas/resolutionSchemas.ts';
 import { buildCatalog } from '../test-utils/buildCatalog.ts';
-import { requireEntry } from '../test-utils/requireEntry.ts';
 
 describe(assertCatalogIsConsistent, () => {
   it('accepts a catalog whose references, ids, and precedence all agree', () => {

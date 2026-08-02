@@ -1,8 +1,8 @@
+import type { ResolutionCandidate } from '../schemas/graph-schemas.ts';
+import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
+import { CATALOG_SCHEMA_VERSION } from '../schemas/resolution-schemas.ts';
 import { composeArtifactId } from './composeArtifactId.ts';
 import { assertSourceIsReadable, enumerateSource, type SourceArtifact } from './enumerateSource.ts';
-import type { ResolutionCandidate } from './schemas/graphSchemas.ts';
-import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from './schemas/resolutionSchemas.ts';
-import { CATALOG_SCHEMA_VERSION } from './schemas/resolutionSchemas.ts';
 
 /** What resolution reads: the kinds in play, and the sources to search in precedence order. */
 export interface ResolveCatalogInput {

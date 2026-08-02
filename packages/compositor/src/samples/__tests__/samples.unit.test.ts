@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertPlanIsConsistent } from '../../assertPlanIsConsistent.ts';
-import type { FileEntry } from '../../schemas/fileSchemas.ts';
-import type { ArtifactEntry } from '../../schemas/graphSchemas.ts';
-import { PlanSchema } from '../../schemas/planSchema.ts';
-import { resolveInclusionPaths } from '../../traversal.ts';
+import { assertPlanIsConsistent } from '../../plan/assertPlanIsConsistent.ts';
+import { resolveInclusionPaths } from '../../plan/traversal.ts';
+import type { FileEntry } from '../../schemas/file-schemas.ts';
+import type { ArtifactEntry } from '../../schemas/graph-schemas.ts';
+import { PlanSchema } from '../../schemas/plan-schema.ts';
 import { buildRepresentativeSample } from '../buildRepresentativeSample.ts';
 import { buildSampleDocuments } from '../index.ts';
 

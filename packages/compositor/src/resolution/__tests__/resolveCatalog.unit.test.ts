@@ -4,10 +4,10 @@ import path from 'node:path';
 
 import { describe, expect, it, onTestFinished } from 'vitest';
 
+import type { CatalogEntry, ResolveKind, SourceSpec } from '../../schemas/resolution-schemas.ts';
+import { CATALOG_SCHEMA_VERSION, CatalogSchema } from '../../schemas/resolution-schemas.ts';
 import { assertCatalogIsConsistent } from '../assertCatalogIsConsistent.ts';
 import { resolveCatalog } from '../resolveCatalog.ts';
-import type { CatalogEntry, ResolveKind, SourceSpec } from '../schemas/resolutionSchemas.ts';
-import { CATALOG_SCHEMA_VERSION, CatalogSchema } from '../schemas/resolutionSchemas.ts';
 
 const kinds: ReadonlyArray<ResolveKind> = [
   {

@@ -1,4 +1,4 @@
-import type { ArtifactResolution } from './schemas/graphSchemas.ts';
+import type { ArtifactResolution } from '../schemas/graph-schemas.ts';
 
 /** One way a payload contradicts itself, located by a path into it. */
 export interface Violation {

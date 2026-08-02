@@ -11,7 +11,7 @@ export type {
   TargetVariable,
   TokenMapping,
   TokenMappingEntry,
-} from './descriptorSchemas.ts';
+} from './descriptor-schemas.ts';
 export {
   KindDescriptorSchema,
   SourceEntrySchema,
@@ -20,10 +20,10 @@ export {
   TargetVariableSchema,
   TokenMappingEntrySchema,
   TokenMappingSchema,
-} from './descriptorSchemas.ts';
+} from './descriptor-schemas.ts';
 
 // Resolution: what the sources carry, and which one won each artifact
-export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './resolutionSchemas.ts';
+export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './resolution-schemas.ts';
 export {
   CATALOG_SCHEMA_VERSION,
   CatalogEntrySchema,
@@ -31,7 +31,7 @@ export {
   KindLayoutSchema,
   ResolveKindSchema,
   SourceSpecSchema,
-} from './resolutionSchemas.ts';
+} from './resolution-schemas.ts';
 
 // Graph: artifacts, partials, and the edges between them
 export type {
@@ -44,7 +44,7 @@ export type {
   RemovedArtifact,
   ResolutionCandidate,
   SeedOrigin,
-} from './graphSchemas.ts';
+} from './graph-schemas.ts';
 export {
   ArtifactEntrySchema,
   ArtifactResolutionSchema,
@@ -55,7 +55,7 @@ export {
   RemovedArtifactSchema,
   ResolutionCandidateSchema,
   SeedOriginSchema,
-} from './graphSchemas.ts';
+} from './graph-schemas.ts';
 
 // Files: rendered output, ownership, and content
 export type {
@@ -66,7 +66,7 @@ export type {
   FileEntry,
   FileOwnership,
   FileSide,
-} from './fileSchemas.ts';
+} from './file-schemas.ts';
 export {
   ArtifactContributionSchema,
   BlobSchema,
@@ -75,14 +75,14 @@ export {
   FileEntrySchema,
   FileOwnershipSchema,
   FileSideSchema,
-} from './fileSchemas.ts';
+} from './file-schemas.ts';
 
 // Plan envelope
-export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './planSchema.ts';
+export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './plan-schema.ts';
 export {
   PLAN_SCHEMA_VERSION,
   PlanFingerprintSchema,
   PlanSchema,
   SourceDigestSchema,
   TargetDigestSchema,
-} from './planSchema.ts';
+} from './plan-schema.ts';

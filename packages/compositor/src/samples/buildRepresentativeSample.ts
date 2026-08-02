@@ -1,10 +1,10 @@
 import { Buffer } from 'node:buffer';
 
-import { hashBytes, hashUtf8 } from '../hashContent.ts';
+import { hashBytes, hashUtf8 } from '../portable/hash-content.ts';
 import type { Hash } from '../schemas/common.ts';
-import type { Blob, FileSide } from '../schemas/fileSchemas.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { PLAN_SCHEMA_VERSION } from '../schemas/planSchema.ts';
+import type { Blob, FileSide } from '../schemas/file-schemas.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schema.ts';
 
 const REGION_OPEN = '<!-- ambient:start -->';
 const REGION_CLOSE = '<!-- ambient:end -->';

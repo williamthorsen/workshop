@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSampleDocuments } from '../samples/index.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { PlanSchema } from '../schemas/planSchema.ts';
+import type { Plan } from '../../schemas/plan-schema.ts';
+import { PlanSchema } from '../../schemas/plan-schema.ts';
+import { buildSampleDocuments } from '../index.ts';
 
 const documents = buildSampleDocuments().map((document) => [document.fileName, document.plan] as const);
 

@@ -1,6 +1,6 @@
-import { hashUtf8 } from '../hashContent.ts';
-import type { Plan } from '../schemas/planSchema.ts';
-import { PLAN_SCHEMA_VERSION } from '../schemas/planSchema.ts';
+import { hashUtf8 } from '../portable/hash-content.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schema.ts';
 
 const SKILL_BODY = '# Review\n\nRead the diff.\n';
 

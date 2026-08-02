@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { IdSchema } from './common.ts';
-import { KindDescriptorSchema, SourceEntrySchema } from './descriptorSchemas.ts';
-import { ArtifactResolutionSchema } from './graphSchemas.ts';
+import { KindDescriptorSchema, SourceEntrySchema } from './descriptor-schemas.ts';
+import { ArtifactResolutionSchema } from './graph-schemas.ts';
 
 /**
  * Version of the catalog payload.

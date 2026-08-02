@@ -1,7 +1,7 @@
-import { findResolutionOrderViolations } from './findResolutionOrderViolations.ts';
-import type { DiffStatus } from './schemas/common.ts';
-import type { FileEntry } from './schemas/fileSchemas.ts';
-import type { Plan } from './schemas/planSchema.ts';
+import { findResolutionOrderViolations } from '../resolution/findResolutionOrderViolations.ts';
+import type { DiffStatus } from '../schemas/common.ts';
+import type { FileEntry } from '../schemas/file-schemas.ts';
+import type { Plan } from '../schemas/plan-schema.ts';
 
 /** One way a plan contradicts itself, located by a path into the payload. */
 export interface PlanViolation {
