@@ -1,8 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-import { isMissingFile } from '../portable/isMissingFile.ts';
+import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
 
 /** Where to look for a package, and where that package declares the content directory it ships. */
 export interface LocatePackageOptions {
@@ -21,7 +20,8 @@ export interface LocatePackageOptions {
  * Resolution walks the `node_modules` chain Node itself would search from `baseDir`, so it holds under pnpm's symlinked
  * layout and under workspace links, which is what lets a producing repo consume its own content through the declaration
  * a third party would write. Probing the filesystem rather than resolving a package subpath is deliberate: a modern
- * `exports` map does not expose `./package.json`, and a content-only package has no importable entry to resolve instead.
+ * `exports` map does not expose `./package.json`, and a content-only package has no importable entry to resolve
+ * instead.
  *
  * Throws when the name is a filesystem path rather than a package name, when the package is not installed, or when it
  * declares no content directory. Whether that directory exists is left to the caller's source validation, so a package
@@ -109,27 +109,11 @@ function readContentPath(name: string, manifest: unknown, keyPath: ReadonlyArray
 
   if (typeof current !== 'string' || current === '') {
     throw new Error(
-      `Package "${name}" declares no content directory at "${keyPath.join('.')}" in its package.json. A package that ships content sets that key to a directory and includes the directory in its published "files".`,
+      `Package "${name}" declares no content directory at "${keyPath.join('.')}" in its package.json. ` +
+        `A package that ships content sets that key to a directory and includes it in its published "files".`,
     );
   }
   return current;
-}
-
-/**
- * Reads `filePath`, resolving to nothing when it is absent.
- *
- * Any other failure rethrows, so a permission problem surfaces instead of reading as a bare absence and sending
- * resolution on to the next candidate.
- */
-async function readFileIfPresent(filePath: string): Promise<string | undefined> {
-  try {
-    return await readFile(filePath, 'utf8');
-  } catch (error: unknown) {
-    if (isMissingFile(error)) {
-      return undefined;
-    }
-    throw error;
-  }
 }
 
 // endregion | Helpers

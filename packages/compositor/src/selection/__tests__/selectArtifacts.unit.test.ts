@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildConfig, type TierInput } from '../../config/test-utils/buildConfig.ts';
+import { buildConfig, type TierInput } from '../../test-utils/buildConfig.ts';
 import { selectArtifacts, type Selection } from '../selectArtifacts.ts';
 import { buildCatalog } from '../test-utils/buildCatalog.ts';
 

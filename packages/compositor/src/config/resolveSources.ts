@@ -103,8 +103,8 @@ function comparePrecedence(left: FoldedSource, right: FoldedSource): number {
 /**
  * Resolves an authored directory location to an absolute path.
  *
- * A leading `~` expands to the home directory, an already-absolute path stands, and a relative path resolves against the
- * tier that declared it rather than against wherever the process happens to be running.
+ * A leading `~` expands to the home directory, an already-absolute path stands, and a relative path resolves against
+ * the tier that declared it rather than against wherever the process happens to be running.
  */
 function resolveDirectory(location: string, baseDir: string): string {
   if (location === '~' || location.startsWith('~/')) {

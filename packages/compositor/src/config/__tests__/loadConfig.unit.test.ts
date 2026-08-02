@@ -24,7 +24,7 @@ describe(loadConfig, () => {
   it('reads a chain of tier files, keeping the order it was given', async () => {
     const dir = await buildConfigDir({ 'global.yaml': globalTier, 'project.yaml': projectTier });
 
-    const config = await loadConfig([tierAt(dir, 'global'), tierAt(dir, 'project')]);
+    const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
     expect(config.tiers.map(({ id }) => id)).toStrictEqual(['global', 'project']);
   });
@@ -33,7 +33,7 @@ describe(loadConfig, () => {
   it('skips a tier whose file is absent, and keeps one whose file is empty', async () => {
     const dir = await buildConfigDir({ 'global.yaml': '# every entry commented out\n' });
 
-    const config = await loadConfig([tierAt(dir, 'global'), tierAt(dir, 'project')]);
+    const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
     expect(config.tiers).toStrictEqual([
       { id: 'global', label: 'global', baseDir: dir, reset: false, sources: { use: [], drop: [] }, select: [] },
@@ -43,7 +43,9 @@ describe(loadConfig, () => {
   it('yields a config with no tiers when every file is absent', async () => {
     const dir = await buildConfigDir({});
 
-    await expect(loadConfig([tierAt(dir, 'global'), tierAt(dir, 'project')])).resolves.toStrictEqual({ tiers: [] });
+    await expect(loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')])).resolves.toStrictEqual({
+      tiers: [],
+    });
   });
 
   // A relative path resolves against where it was written, not against the directory the process runs in.
@@ -58,7 +60,7 @@ describe(loadConfig, () => {
   it('normalizes what it reads, so the result needs no further parsing', async () => {
     const dir = await buildConfigDir({ 'project.yaml': projectTier });
 
-    const config = await loadConfig([tierAt(dir, 'project')]);
+    const config = await loadConfig([buildTierFile(dir, 'project')]);
 
     expect(config.tiers.at(0)?.sources.use).toStrictEqual([
       { name: 'local', origin: { kind: 'directory', location: './content' } },
@@ -77,26 +79,26 @@ describe(loadConfig, () => {
   it('fails on malformed YAML, naming the file', async () => {
     const dir = await buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
 
-    await expect(loadConfig([tierAt(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
+    await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
   });
 
   it('fails on a tier declaring an unrecognized key, naming the file', async () => {
     const dir = await buildConfigDir({ 'project.yaml': 'selects: {}\n' });
 
-    await expect(loadConfig([tierAt(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
+    await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
   });
 
   it('fails on a tier whose identity is incomplete', async () => {
     const dir = await buildConfigDir({ 'project.yaml': projectTier });
 
-    await expect(loadConfig([{ ...tierAt(dir, 'project'), id: '' }])).rejects.toThrow(/id/);
+    await expect(loadConfig([{ ...buildTierFile(dir, 'project'), id: '' }])).rejects.toThrow(/id/);
   });
 });
 
 // region | Helpers
 
-/** Names the tier a consumer would declare for `<dir>/<name>.yaml`, using the name as its identity. */
-function tierAt(dir: string, name: string): TierFile {
+/** Builds the tier a consumer would declare for `<dir>/<name>.yaml`, using the name as its identity. */
+function buildTierFile(dir: string, name: string): TierFile {
   return { id: name, label: name, path: path.join(dir, `${name}.yaml`) };
 }
 

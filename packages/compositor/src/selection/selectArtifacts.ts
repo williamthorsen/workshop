@@ -1,3 +1,4 @@
+import { appendTo } from '../portable/appendTo.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
 import type { ArtifactId, Id, KindId } from '../schemas/common.ts';
 import type { CompositorConfig, Selector } from '../schemas/config-schemas.ts';
@@ -53,8 +54,8 @@ export interface Selection {
  *
  * The fold runs lowest tier first. Within a tier every `use` applies before every `drop`, and a tier declaring `reset`
  * discards every lower tier's decisions first. Seeds and declines stay disjoint per artifact: a `drop` clears the seeds
- * beneath it and records the decline, and a later `use` clears the decline and seeds afresh. What survives to the end is
- * therefore what decided the final state, which is what tells a project-level opt-in from an inherited one.
+ * beneath it and records the decline, and a later `use` clears the decline and seeds afresh. What survives to the end
+ * is therefore what decided the final state, which is what tells a project-level opt-in from an inherited one.
  *
  * A selector matching nothing is a diagnostic rather than a failure, so validation can report every mistake in a config
  * at once instead of stopping at the first.
@@ -154,9 +155,7 @@ function buildCatalogIndex(catalog: Catalog): CatalogIndex {
 
     const sources = bySource.get(entry.kindId) ?? new Map<Id, Array<ArtifactId>>();
     for (const candidate of [entry.resolution.winner, ...entry.resolution.shadowed]) {
-      const carried = sources.get(candidate.sourceId) ?? [];
-      carried.push(entry.id);
-      sources.set(candidate.sourceId, carried);
+      appendTo(sources, candidate.sourceId, entry.id);
     }
     bySource.set(entry.kindId, sources);
   }

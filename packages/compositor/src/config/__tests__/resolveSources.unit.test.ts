@@ -3,8 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { resolveSources } from '../resolveSources.ts';
-import { buildConfig } from '../test-utils/buildConfig.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
 
 const options = { contentKeyPath: ['compositor', 'content'] };
