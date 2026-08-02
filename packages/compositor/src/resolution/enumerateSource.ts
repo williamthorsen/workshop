@@ -1,7 +1,9 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import { compareStrings } from '../portable/compareStrings.ts';
 import { hashBytes, hashUtf8 } from '../portable/hash-content.ts';
+import { isMissingFile } from '../portable/isMissingFile.ts';
 import type { Hash, KindId } from '../schemas/common.ts';
 import type { ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
 
@@ -33,36 +35,7 @@ export async function enumerateSource(
   return perKind.flat();
 }
 
-/**
- * Throws unless `source` points at a readable directory.
- *
- * A source that is absent, or is a file where a directory was declared, is a mistake in the declaration rather than an
- * empty source, and every artifact it was meant to carry would otherwise resolve from somewhere else without a word.
- */
-export async function assertSourceIsReadable(source: SourceSpec): Promise<void> {
-  let entry;
-  try {
-    entry = await stat(source.dir);
-  } catch (error: unknown) {
-    if (isMissingFile(error)) {
-      throw new Error(`Source "${source.name}" points at "${source.dir}", which does not exist.`, { cause: error });
-    }
-    throw error;
-  }
-  if (!entry.isDirectory()) {
-    throw new Error(`Source "${source.name}" points at "${source.dir}", which is not a directory.`);
-  }
-}
-
 // region | Helpers
-
-/** Orders two strings by code point, which is what a consumer diffing two catalogs reproduces. */
-function compareStrings(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  return left < right ? -1 : 1;
-}
 
 /** Every artifact of one kind under `sourceDir`, ordered by slug. */
 async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Array<SourceArtifact>> {
@@ -102,20 +75,6 @@ async function hashDirectory(dir: string): Promise<Hash> {
  */
 function isArtifactName(name: string): boolean {
   return !name.startsWith('.') && !name.startsWith('_');
-}
-
-/**
- * Reports whether `error` means the path is simply not there.
- *
- * `ENOTDIR` joins `ENOENT` because a probe below a path segment that turned out to be a regular file fails with the
- * former and means the same thing. Every other failure, `EACCES` above all, is a problem to surface rather than an
- * absence to skip past.
- */
-function isMissingFile(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null || !('code' in error)) {
-    return false;
-  }
-  return error.code === 'ENOENT' || error.code === 'ENOTDIR';
 }
 
 /** Every file beneath `dir`, as posix paths relative to the walk's root. */

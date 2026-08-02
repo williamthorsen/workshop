@@ -1,11 +1,11 @@
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { chmod, symlink } from 'node:fs/promises';
 import path from 'node:path';
 
-import { describe, expect, it, onTestFinished } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { ResolveKind, SourceSpec } from '../../schemas/resolution-schemas.ts';
-import { assertSourceIsReadable, enumerateSource, type SourceArtifact } from '../enumerateSource.ts';
+import { enumerateSource, type SourceArtifact } from '../enumerateSource.ts';
+import { buildSource } from '../test-utils/buildSource.ts';
 
 const rulebookKind: ResolveKind = {
   id: 'rulebook',
@@ -179,46 +179,6 @@ describe('artifact digests', () => {
     await expect(hashOf(here, skillKind)).resolves.toBe(await hashOf(there, skillKind));
   });
 });
-
-describe(assertSourceIsReadable, () => {
-  it('accepts a source pointing at a directory', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
-
-    await expect(assertSourceIsReadable(source)).resolves.toBeUndefined();
-  });
-
-  it('rejects a source pointing at nothing', async () => {
-    const source = await buildSource({});
-
-    await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'absent') })).rejects.toThrow(
-      /does not exist/,
-    );
-  });
-
-  it('rejects a source pointing at a file', async () => {
-    const source = await buildSource({ 'guidance.md': 'not a directory' });
-
-    await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'guidance.md') })).rejects.toThrow(
-      /not a directory/,
-    );
-  });
-});
-
-/** A source directory holding each path in `files` with the given content, removed when the test ends. */
-async function buildSource(files: Record<string, string>): Promise<SourceSpec> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'compositor-source-'));
-  onTestFinished(async () => {
-    await rm(dir, { recursive: true, force: true });
-  });
-
-  for (const [relativePath, content] of Object.entries(files)) {
-    const filePath = path.join(dir, relativePath);
-    await mkdir(path.dirname(filePath), { recursive: true });
-    await writeFile(filePath, content, 'utf8');
-  }
-
-  return { id: 'fixture', name: 'fixture', origin: { kind: 'directory', location: dir }, dir };
-}
 
 /** The digest of the source's single artifact of `kind`, failing the test when it carries none. */
 async function hashOf(source: SourceSpec, kind: ResolveKind): Promise<string> {

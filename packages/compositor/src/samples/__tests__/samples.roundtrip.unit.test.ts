@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { compareStrings } from '../../portable/compareStrings.ts';
 import type { Plan } from '../../schemas/plan-schema.ts';
 import { PlanSchema } from '../../schemas/plan-schema.ts';
 import { buildSampleDocuments } from '../sample-documents.ts';
@@ -52,12 +53,4 @@ function collectUnsortedTables(plan: Plan): Array<string> {
 /** Orders two files by target, then by path. */
 function compareFileKeys(left: readonly [string, string], right: readonly [string, string]): number {
   return compareStrings(left[0], right[0]) || compareStrings(left[1], right[1]);
-}
-
-/** Orders two strings by code point, which is what a consumer diffing two plans reproduces. */
-function compareStrings(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  return left < right ? -1 : 1;
 }

@@ -1,8 +1,10 @@
+import { compareStrings } from '../portable/compareStrings.ts';
 import type { ResolutionCandidate } from '../schemas/graph-schemas.ts';
 import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
 import { CATALOG_SCHEMA_VERSION } from '../schemas/resolution-schemas.ts';
+import { assertSourceIsReadable } from './assertSourceIsReadable.ts';
 import { composeArtifactId } from './composeArtifactId.ts';
-import { assertSourceIsReadable, enumerateSource, type SourceArtifact } from './enumerateSource.ts';
+import { enumerateSource, type SourceArtifact } from './enumerateSource.ts';
 
 /** What resolution reads: the kinds in play, and the sources to search in precedence order. */
 export interface ResolveCatalogInput {
@@ -75,14 +77,6 @@ function buildEntry(
     return undefined;
   }
   return { id, kindId: identity.kindId, slug: identity.slug, resolution: { winner, shadowed } };
-}
-
-/** Orders two strings by code point, which is what a consumer diffing two catalogs reproduces. */
-function compareStrings(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  return left < right ? -1 : 1;
 }
 
 // endregion | Helpers

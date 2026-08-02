@@ -1,13 +1,11 @@
+import type { Violation } from '../resolution/findResolutionOrderViolations.ts';
 import { findResolutionOrderViolations } from '../resolution/findResolutionOrderViolations.ts';
 import type { DiffStatus } from '../schemas/common.ts';
 import type { FileEntry } from '../schemas/file-schemas.ts';
 import type { Plan } from '../schemas/plan-schema.ts';
 
 /** One way a plan contradicts itself, located by a path into the payload. */
-export interface PlanViolation {
-  readonly path: string;
-  readonly message: string;
-}
+export type PlanViolation = Violation;
 
 /** Raised when a structurally valid plan contradicts itself. */
 export class PlanConsistencyError extends Error {
