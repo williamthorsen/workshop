@@ -170,6 +170,8 @@ describe(resolveCatalog, () => {
   });
 });
 
+// region | Helpers
+
 /** One source directory per named entry, in the order given, highest precedence first. */
 async function buildSources(byName: Record<string, Record<string, string>>): Promise<ReadonlyArray<SourceSpec>> {
   const sources: Array<SourceSpec> = [];
@@ -199,3 +201,5 @@ async function requireOnlyEntry(sources: ReadonlyArray<SourceSpec>): Promise<Cat
   }
   return entry;
 }
+
+// endregion | Helpers

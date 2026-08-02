@@ -131,6 +131,8 @@ describe(assertCatalogIsConsistent, () => {
   });
 });
 
+// region | Helpers
+
 /** The violations `catalog` raises, failing the test when it is consistent. */
 function findViolations(catalog: Catalog): ReadonlyArray<CatalogViolation> {
   try {
@@ -143,3 +145,5 @@ function findViolations(catalog: Catalog): ReadonlyArray<CatalogViolation> {
   }
   throw new Error('Expected the catalog to be inconsistent, but it passed every check.');
 }
+
+// endregion | Helpers

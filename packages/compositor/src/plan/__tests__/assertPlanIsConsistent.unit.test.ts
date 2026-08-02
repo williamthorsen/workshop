@@ -233,6 +233,8 @@ describe(assertPlanIsConsistent, () => {
   });
 });
 
+// region | Helpers
+
 /** The violations `plan` raises, failing the test when it is consistent. */
 function findViolations(plan: Plan): ReadonlyArray<PlanViolation> {
   try {
@@ -245,3 +247,5 @@ function findViolations(plan: Plan): ReadonlyArray<PlanViolation> {
   }
   throw new Error('Expected the plan to be inconsistent, but it passed every check.');
 }
+
+// endregion | Helpers

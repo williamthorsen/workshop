@@ -32,6 +32,8 @@ describe('determinism', () => {
   });
 });
 
+// region | Helpers
+
 /** The name of each id-keyed table whose entries are not in lexicographic id order. */
 function collectUnsortedTables(plan: Plan): Array<string> {
   const tables = [
@@ -54,3 +56,5 @@ function collectUnsortedTables(plan: Plan): Array<string> {
 function compareFileKeys(left: readonly [string, string], right: readonly [string, string]): number {
   return compareStrings(left[0], right[0]) || compareStrings(left[1], right[1]);
 }
+
+// endregion | Helpers

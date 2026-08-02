@@ -88,6 +88,8 @@ describe(buildTraversalIndex, () => {
   });
 });
 
+// region | Helpers
+
 /** The fixture plan with a second route to `skill:lint`, so one artifact is reached by two paths. */
 function buildDiamond(): Plan {
   const plan = buildPlan();
@@ -95,3 +97,5 @@ function buildDiamond(): Plan {
   core.dependsOn = [...(core.dependsOn ?? []), { to: 'skill:lint', via: 'member' }];
   return plan;
 }
+
+// endregion | Helpers

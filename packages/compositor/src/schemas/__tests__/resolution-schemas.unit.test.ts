@@ -40,18 +40,9 @@ const entry = {
   },
 };
 
-function buildCatalog(): z.infer<typeof CatalogSchema> {
-  return {
-    schemaVersion: CATALOG_SCHEMA_VERSION,
-    kinds: [directoryKind],
-    sources: [source],
-    entries: [entry],
-  };
-}
-
 describe('CatalogSchema', () => {
   it('accepts a catalog carrying every table', () => {
-    const catalog = buildCatalog();
+    const catalog = buildMinimalCatalog();
 
     expect(CatalogSchema.parse(catalog)).toStrictEqual(catalog);
   });
@@ -59,14 +50,14 @@ describe('CatalogSchema', () => {
   it.each(['entries', 'kinds', 'sources', 'schemaVersion'] as const)(
     'if %s is absent, rejects the catalog for that field',
     (table) => {
-      const { [table]: _dropped, ...incomplete } = buildCatalog();
+      const { [table]: _dropped, ...incomplete } = buildMinimalCatalog();
 
       expect(findIssuePaths(CatalogSchema, incomplete)).toStrictEqual([[table]]);
     },
   );
 
   it('round-trips through JSON and revalidates identically', () => {
-    const catalog = CatalogSchema.parse(buildCatalog());
+    const catalog = CatalogSchema.parse(buildMinimalCatalog());
 
     // eslint-disable-next-line unicorn/prefer-structured-clone -- passing through JSON is the property under test; a structured clone would not exercise it.
     expect(CatalogSchema.parse(JSON.parse(JSON.stringify(catalog)))).toStrictEqual(catalog);
@@ -148,3 +139,17 @@ describe('catalog schema evolution', () => {
     expect(schema.parse({ ...value, addedLater: 'ignored' })).toStrictEqual(value);
   });
 });
+
+// region | Helpers
+
+/** The smallest catalog that satisfies the schema: one kind, one source, one entry. */
+function buildMinimalCatalog(): z.infer<typeof CatalogSchema> {
+  return {
+    schemaVersion: CATALOG_SCHEMA_VERSION,
+    kinds: [directoryKind],
+    sources: [source],
+    entries: [entry],
+  };
+}
+
+// endregion | Helpers

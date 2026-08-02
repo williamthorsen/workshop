@@ -27,7 +27,7 @@ describe(enumerateSource, () => {
       'guidance/rulebooks/style.md': 'style',
     });
 
-    await expect(slugsOf(source, [rulebookKind])).resolves.toStrictEqual(['naming', 'style']);
+    await expect(collectSlugs(source, [rulebookKind])).resolves.toStrictEqual(['naming', 'style']);
   });
 
   it('finds one artifact per directory for a directory kind, naming it for the directory', async () => {
@@ -36,7 +36,7 @@ describe(enumerateSource, () => {
       'skills/review/SKILL.md': 'review',
     });
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint', 'review']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'review']);
   });
 
   it('locates a directory kind at its entry file, in posix form', async () => {
@@ -51,7 +51,7 @@ describe(enumerateSource, () => {
       'skills/notaskill/README.md': 'support content',
     });
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('skips a directory whose entry file is itself a directory', async () => {
@@ -60,7 +60,7 @@ describe(enumerateSource, () => {
       'skills/decoy/SKILL.md/inner.txt': 'a directory named like an entry file',
     });
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('skips a loose file sitting in a directory kind root', async () => {
@@ -69,7 +69,7 @@ describe(enumerateSource, () => {
       'skills/README.md': 'not a skill',
     });
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('skips a directory sitting in a file kind root', async () => {
@@ -78,7 +78,7 @@ describe(enumerateSource, () => {
       'guidance/rulebooks/nested/style.md': 'nested',
     });
 
-    await expect(slugsOf(source, [rulebookKind])).resolves.toStrictEqual(['naming']);
+    await expect(collectSlugs(source, [rulebookKind])).resolves.toStrictEqual(['naming']);
   });
 
   it('skips a file whose extension the kind does not declare', async () => {
@@ -87,7 +87,7 @@ describe(enumerateSource, () => {
       'guidance/rulebooks/notes.txt': 'notes',
     });
 
-    await expect(slugsOf(source, [rulebookKind])).resolves.toStrictEqual(['naming']);
+    await expect(collectSlugs(source, [rulebookKind])).resolves.toStrictEqual(['naming']);
   });
 
   it.each(['_partials', '.hidden'])('skips support content named %s', async (name) => {
@@ -96,20 +96,20 @@ describe(enumerateSource, () => {
       [`skills/${name}/SKILL.md`]: 'support content',
     });
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('follows a symlinked artifact directory, which a linked install layout produces', async () => {
     const source = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'elsewhere/shared/SKILL.md': 'shared' });
     await symlink(path.join(source.dir, 'elsewhere/shared'), path.join(source.dir, 'skills/shared'));
 
-    await expect(slugsOf(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
+    await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
   });
 
   it('carries nothing for a kind whose root the source does not have', async () => {
     const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
-    await expect(slugsOf(source, [rulebookKind, skillKind])).resolves.toStrictEqual(['lint']);
+    await expect(collectSlugs(source, [rulebookKind, skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('fails rather than reporting an absence when a kind root cannot be read', async () => {
@@ -134,7 +134,7 @@ describe(enumerateSource, () => {
       'skills/lint/SKILL.md': 'lint',
     });
 
-    await expect(slugsOf(source, [rulebookKind, skillKind])).resolves.toStrictEqual([
+    await expect(collectSlugs(source, [rulebookKind, skillKind])).resolves.toStrictEqual([
       'naming',
       'style',
       'lint',
@@ -148,40 +148,49 @@ describe('artifact digests', () => {
     const same = await buildSource({ 'guidance/rulebooks/naming.md': 'naming' });
     const differs = await buildSource({ 'guidance/rulebooks/naming.md': 'naming, revised' });
 
-    await expect(hashOf(same, rulebookKind)).resolves.not.toBe(await hashOf(differs, rulebookKind));
+    await expect(requireArtifactHash(same, rulebookKind)).resolves.not.toBe(
+      await requireArtifactHash(differs, rulebookKind),
+    );
   });
 
   it('digests a directory kind over the whole artifact, so a changed asset moves it', async () => {
     const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
     const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v2' });
 
-    await expect(hashOf(before, skillKind)).resolves.not.toBe(await hashOf(after, skillKind));
+    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });
 
   it('moves a directory kind digest when an asset is renamed but its bytes are not', async () => {
     const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
     const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/start.mjs': 'v1' });
 
-    await expect(hashOf(before, skillKind)).resolves.not.toBe(await hashOf(after, skillKind));
+    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });
 
   it('reaches assets nested below the artifact root', async () => {
     const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":1}' });
     const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":2}' });
 
-    await expect(hashOf(before, skillKind)).resolves.not.toBe(await hashOf(after, skillKind));
+    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });
 
   it('gives the same artifact the same digest in two sources, so an identical copy is recognizable', async () => {
     const here = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
     const there = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
 
-    await expect(hashOf(here, skillKind)).resolves.toBe(await hashOf(there, skillKind));
+    await expect(requireArtifactHash(here, skillKind)).resolves.toBe(await requireArtifactHash(there, skillKind));
   });
 });
 
+// region | Helpers
+
+/** The slugs the source carries across `kinds`, in enumeration order. */
+async function collectSlugs(source: SourceSpec, kinds: ReadonlyArray<ResolveKind>): Promise<Array<string>> {
+  return (await enumerateSource(source, kinds)).map((artifact: SourceArtifact) => artifact.slug);
+}
+
 /** The digest of the source's single artifact of `kind`, failing the test when it carries none. */
-async function hashOf(source: SourceSpec, kind: ResolveKind): Promise<string> {
+async function requireArtifactHash(source: SourceSpec, kind: ResolveKind): Promise<string> {
   const artifact = (await enumerateSource(source, [kind])).at(0);
   if (artifact === undefined) {
     throw new Error(`Fixture carries no ${kind.id}.`);
@@ -189,7 +198,4 @@ async function hashOf(source: SourceSpec, kind: ResolveKind): Promise<string> {
   return artifact.hash;
 }
 
-/** The slugs the source carries across `kinds`, in enumeration order. */
-async function slugsOf(source: SourceSpec, kinds: ReadonlyArray<ResolveKind>): Promise<Array<string>> {
-  return (await enumerateSource(source, kinds)).map((artifact: SourceArtifact) => artifact.slug);
-}
+// endregion | Helpers
