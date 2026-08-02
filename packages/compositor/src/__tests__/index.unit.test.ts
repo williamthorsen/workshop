@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import * as graphTraversal from '../graph/traversal.ts';
 import * as entry from '../index.ts';
 import * as assertPlanIsConsistent from '../plan/assertPlanIsConsistent.ts';
-import * as traversal from '../plan/traversal.ts';
+import * as planTraversal from '../plan/traversal.ts';
 import * as assertCatalogIsConsistent from '../resolution/assertCatalogIsConsistent.ts';
 import * as composeArtifactId from '../resolution/composeArtifactId.ts';
 import * as enumerateSource from '../resolution/enumerateSource.ts';
@@ -28,8 +29,9 @@ const publishedModules: ReadonlyArray<readonly [string, Record<string, unknown>]
   ['assertPlanIsConsistent', assertPlanIsConsistent],
   ['composeArtifactId', composeArtifactId],
   ['enumerateSource', enumerateSource],
+  ['graph/traversal', graphTraversal],
+  ['plan/traversal', planTraversal],
   ['resolveCatalog', resolveCatalog],
-  ['traversal', traversal],
 ];
 
 describe('package entry', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { resolveInclusionPaths } from '../../graph/traversal.ts';
 import { assertPlanIsConsistent } from '../../plan/assertPlanIsConsistent.ts';
-import { resolveInclusionPaths } from '../../plan/traversal.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { ArtifactEntry } from '../../schemas/graph-schemas.ts';
 import { PlanSchema } from '../../schemas/plan-schema.ts';

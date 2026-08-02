@@ -7,17 +7,20 @@ import {
   SourceEntrySchema,
   SourceOriginSchema,
   TargetEntrySchema,
+  TierDescriptorSchema,
 } from '../descriptor-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };
 const source = { id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team' } };
 const target = { id: 'claude', label: 'Claude', root: '~/.claude', tokenMappings: [], variables: [] };
+const tier = { id: 'project', label: 'Project' };
 
 const openCases: ReadonlyArray<readonly [string, z.ZodType, Record<string, unknown>]> = [
   ['KindDescriptorSchema', KindDescriptorSchema, kind],
   ['SourceEntrySchema', SourceEntrySchema, source],
   ['TargetEntrySchema', TargetEntrySchema, target],
+  ['TierDescriptorSchema', TierDescriptorSchema, tier],
 ];
 
 describe('descriptor schema evolution', () => {
@@ -58,6 +61,16 @@ describe('TargetEntrySchema', () => {
     const withoutMappings = { id: 'claude', label: 'Claude', root: '~/.claude', variables: [] };
 
     expect(findIssuePaths(TargetEntrySchema, withoutMappings)).toStrictEqual([['tokenMappings']]);
+  });
+});
+
+describe('TierDescriptorSchema', () => {
+  it('accepts a tier carrying the label a reader shows for it', () => {
+    expect(TierDescriptorSchema.parse(tier)).toStrictEqual(tier);
+  });
+
+  it('if the tier carries no label, rejects it for that field', () => {
+    expect(findIssuePaths(TierDescriptorSchema, { id: 'project' })).toStrictEqual([['label']]);
   });
 });
 

@@ -1,7 +1,9 @@
+export type { DependencyGraphView, DependentsIndex, TraversableArtifact } from './graph/traversal.ts';
+export { buildDependentsIndex, resolveInclusionPaths } from './graph/traversal.ts';
 export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
 export type { TraversalIndex } from './plan/traversal.ts';
-export { buildTraversalIndex, resolveInclusionPaths } from './plan/traversal.ts';
+export { buildTraversalIndex } from './plan/traversal.ts';
 export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
 export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
 export { composeArtifactId } from './resolution/composeArtifactId.ts';
@@ -17,6 +19,7 @@ export type {
   SourceOrigin,
   TargetEntry,
   TargetVariable,
+  TierDescriptor,
   TokenMapping,
   TokenMappingEntry,
 } from './schemas/descriptor-schemas.ts';
@@ -26,6 +29,7 @@ export {
   SourceOriginSchema,
   TargetEntrySchema,
   TargetVariableSchema,
+  TierDescriptorSchema,
   TokenMappingEntrySchema,
   TokenMappingSchema,
 } from './schemas/descriptor-schemas.ts';
@@ -56,6 +60,7 @@ export type {
   PresentArtifact,
   RemovedArtifact,
   ResolutionCandidate,
+  Seed,
   SeedOrigin,
 } from './schemas/graph-schemas.ts';
 export {
@@ -68,6 +73,7 @@ export {
   RemovedArtifactSchema,
   ResolutionCandidateSchema,
   SeedOriginSchema,
+  SeedSchema,
 } from './schemas/graph-schemas.ts';
 export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schema.ts';
 export {

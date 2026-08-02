@@ -30,9 +30,31 @@ describe('determinism', () => {
 
     expect(hashes).toStrictEqual(hashes.toSorted(compareStrings));
   });
+
+  it.each(documents)("%s orders each artifact's seed records by tier", (_fileName, plan) => {
+    expect(collectMisorderedSeeds(plan)).toStrictEqual([]);
+  });
 });
 
 // region | Helpers
+
+/**
+ * The id of each artifact whose seed records do not follow the plan's tier order.
+ *
+ * `tiers` runs in precedence order rather than lexicographically, so a seed list sorted by tier id would satisfy no rule
+ * the contract states.
+ */
+function collectMisorderedSeeds(plan: Plan): Array<string> {
+  const precedence = new Map(plan.tiers.map((tier, index) => [tier.id, index]));
+
+  return plan.artifacts
+    .filter((artifact) => {
+      const seeds = artifact.status === 'removed' ? [] : artifact.seededBy;
+      const ranks = seeds.map((seed) => precedence.get(seed.tierId) ?? -1);
+      return ranks.some((rank, index) => rank !== ranks.toSorted((left, right) => left - right).at(index));
+    })
+    .map((artifact) => artifact.id);
+}
 
 /** The name of each id-keyed table whose entries are not in lexicographic id order. */
 function collectUnsortedTables(plan: Plan): Array<string> {

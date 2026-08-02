@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -44,6 +44,12 @@
       "variables": []
     }
   ],
+  "tiers": [
+    {
+      "id": "project",
+      "label": "Project"
+    }
+  ],
   "artifacts": [
     {
       "id": "skill:review",
@@ -51,7 +57,10 @@
       "slug": "review",
       "status": "added",
       "seededBy": [
-        "declaration"
+        {
+          "via": "declaration",
+          "tierId": "project"
+        }
       ],
       "dependsOn": [],
       "resolution": {

@@ -28,13 +28,14 @@ export function buildMinimalSample(): Plan {
     kinds: [{ id: 'skill', label: 'Skill', emitsFiles: true }],
     sources: [{ id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team-guidance' } }],
     targets: [{ id: 'claude', label: 'Claude', root: '~/.claude', tokenMappings: [], variables: [] }],
+    tiers: [{ id: 'project', label: 'Project' }],
     artifacts: [
       {
         id: 'skill:review',
         kindId: 'skill',
         slug: 'review',
         status: 'added',
-        seededBy: ['declaration'],
+        seededBy: [{ via: 'declaration', tierId: 'project' }],
         dependsOn: [],
         resolution: {
           winner: { sourceId: 'team', path: 'skills/review/SKILL.md', hash: hashUtf8('team/skills/review') },

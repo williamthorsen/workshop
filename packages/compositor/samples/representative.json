@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -140,6 +140,16 @@
       ]
     }
   ],
+  "tiers": [
+    {
+      "id": "user",
+      "label": "User"
+    },
+    {
+      "id": "project",
+      "label": "Project"
+    }
+  ],
   "artifacts": [
     {
       "id": "collection:core",
@@ -147,7 +157,14 @@
       "slug": "core",
       "status": "unchanged",
       "seededBy": [
-        "declaration"
+        {
+          "via": "declaration",
+          "tierId": "user"
+        },
+        {
+          "via": "declaration",
+          "tierId": "project"
+        }
       ],
       "dependsOn": [
         {
@@ -178,7 +195,10 @@
       "slug": "naming",
       "status": "added",
       "seededBy": [
-        "package-catalog"
+        {
+          "via": "source-catalog",
+          "tierId": "project"
+        }
       ],
       "dependsOn": [],
       "resolution": {
@@ -212,7 +232,10 @@
       "slug": "tests",
       "status": "added",
       "seededBy": [
-        "package-catalog"
+        {
+          "via": "source-catalog",
+          "tierId": "project"
+        }
       ],
       "dependsOn": [],
       "resolution": {
@@ -294,7 +317,10 @@
       "slug": "auditor",
       "status": "changed",
       "seededBy": [
-        "declaration"
+        {
+          "via": "declaration",
+          "tierId": "user"
+        }
       ],
       "dependsOn": [
         {
