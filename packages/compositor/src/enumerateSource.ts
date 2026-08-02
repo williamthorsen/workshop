@@ -138,8 +138,8 @@ async function listFilesRecursively(dir: string, prefix: string): Promise<Array<
  * One artifact at `name` under `rootDir`, or nothing when the entry is not one.
  *
  * A `file` kind's entry must be a file carrying the declared extension. A `directory` kind's must be a directory whose
- * entry file exists and is itself a file: a directory named `SKILL.md` does not make a skill, and reading a body that
- * is not there is the failure that check prevents.
+ * entry file exists and is itself a file: a directory bearing the entry file's own name is not an artifact, and reading
+ * a body that is not there is the failure that check prevents.
  */
 async function readArtifact(rootDir: string, name: string, kind: ResolveKind): Promise<SourceArtifact | undefined> {
   const { layout } = kind;
