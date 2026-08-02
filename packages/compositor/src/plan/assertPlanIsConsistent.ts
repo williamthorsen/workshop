@@ -58,6 +58,7 @@ function findDanglingReferences(plan: Plan): Array<PlanViolation> {
   const partialIds = collectIds(plan.partials);
   const sourceIds = collectIds(plan.sources);
   const targetIds = collectIds(plan.targets);
+  const tierIds = collectIds(plan.tiers);
 
   const violations: Array<PlanViolation> = [];
   const requireKnown = (known: ReadonlySet<string>, id: string | undefined, path: string, table: string): void => {
@@ -80,6 +81,12 @@ function findDanglingReferences(plan: Plan): Array<PlanViolation> {
     for (const [edgeIndex, edge] of edges.entries()) {
       requireKnown(artifactIds, edge.to, `${at}.dependsOn[${edgeIndex}].to`, 'artifacts');
       requireKnown(partialIds, edge.partialId, `${at}.dependsOn[${edgeIndex}].partialId`, 'partials');
+    }
+    // A removed artifact is seeded by nothing and carries no `seededBy` at all, so the narrowing is what reaches the
+    // field rather than a fallback for an absent one.
+    const seeds = artifact.status === 'removed' ? [] : artifact.seededBy;
+    for (const [seedIndex, seed] of seeds.entries()) {
+      requireKnown(tierIds, seed.tierId, `${at}.seededBy[${seedIndex}].tierId`, 'tiers');
     }
     if (artifact.resolution !== undefined) {
       requireKnown(sourceIds, artifact.resolution.winner.sourceId, `${at}.resolution.winner.sourceId`, 'sources');
@@ -142,6 +149,7 @@ function findDuplicateIds(plan: Plan): Array<PlanViolation> {
     ['partials', plan.partials],
     ['sources', plan.sources],
     ['targets', plan.targets],
+    ['tiers', plan.tiers],
   ] as const;
 
   return tables.flatMap(([name, entries]) => {

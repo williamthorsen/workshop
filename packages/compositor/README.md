@@ -26,12 +26,14 @@ A plan is the engine's output: the complete rendered result of a composition, be
 
 - **What the output looks like.** Every file for every target, with its body available, so the whole result can be inspected before apply.
 - **How it differs from what is there now.** Each artifact and file is classified `added`, `changed`, `removed`, or `unchanged`.
-- **Why each part of it is there.** Which source an artifact resolved from, which sources lost, what pulled it into the closure, and which artifacts and transcluded partials contributed to each output file.
+- **Why each part of it is there.** Which source an artifact resolved from, which sources lost, which config tier decided it, what pulled it into the closure, and which artifacts and transcluded partials contributed to each output file.
 - **What it was computed from.** Digests of the config, the sources, and the target's own state, so staleness is a comparison rather than a file watch.
 
 The payload is normalized: cross-references between tables are opaque ids, because the provenance graph has diamonds and JSON holds no references. The per-target directory tree follows from the paths in `files`, and file bodies live in a content-addressed `blobs` table keyed by hash, so a body shared across targets is carried once.
 
 Ordering is part of the contract. Id-keyed tables run lexicographically, `files` runs by target then path, and `blobs` is keyed in hash order, so two plans of the same shape diff cleanly. `sources` and each list of shadowed candidates run in precedence order, where the order is the meaning.
+
+`tiers` names the config tiers a seed can be decided by, and runs lowest precedence first: that is the order a fold applies them in, so the last tier to speak wins. It is deliberately the reverse of `sources`, where the first entry wins, because a source's position encodes precedence directly while a tier's encodes application. An artifact several tiers seed carries one seed record each, which is what tells a project-level opt-in from an inherited one.
 
 ## What the schema checks, and what it does not
 
@@ -47,7 +49,9 @@ The invariants therefore live outside it, in `assertPlanIsConsistent`:
 
 A consumer parsing with `PlanSchema` alone has checked none of these. Call the assertion too, or treat a dangling reference as possible.
 
-Two derived views also live outside the payload, in `buildTraversalIndex` and `resolveInclusionPaths`. The plan stores dependency edges forwards only: paths from a seed to an artifact are enumerated on demand, because a diamond-heavy graph grows them faster than a plan recomputed on every toggle can carry, and the reverse "used by" direction is indexed per plan rather than written twice.
+The derived views also live outside the payload. Dependency edges are stored forwards only: paths from a seed to an artifact are enumerated on demand by `resolveInclusionPaths`, because a diamond-heavy graph grows them faster than a plan recomputed on every toggle can carry, and the reverse "used by" direction is indexed by `buildDependentsIndex` rather than written twice.
+
+Both take any document carrying artifacts and edges, not a plan specifically, so the closure the engine computes from a config uses them unchanged. `buildTraversalIndex` adds the artifact-to-file direction on top, which is a plan's alone: a closure has no files to point at.
 
 ## Evolution
 
@@ -55,11 +59,13 @@ Two derived views also live outside the payload, in `buildTraversalIndex` and `r
 
 That promise holds because objects in this schema are open: an unrecognized field parses and is dropped, so a consumer pinned to one version accepts a payload from a later one. Making any object strict would break it the first time a field was added.
 
+The contract is at version 2. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
+
 ## Samples
 
 Two plans ship as JSON, both validating against the schema and satisfying every invariant:
 
 - `samples/minimal.json` is the smallest plan the contract allows, for a consumer rendering its first view.
-- `samples/representative.json` exercises every shape the contract carries: an artifact reached by three dependency routes, shadowed candidates beside an artifact the lowest-precedence source wins, three artifacts aggregated into one region behind per-artifact markers, entry-level ownership of a structured config, a byte-encoded asset, a file apply will skip, and all four diff statuses.
+- `samples/representative.json` exercises every shape the contract carries: an artifact reached by three dependency routes, shadowed candidates beside an artifact the lowest-precedence source wins, three artifacts aggregated into one region behind per-artifact markers, entry-level ownership of a structured config, a byte-encoded asset, a file apply will skip, an artifact two tiers both seed, and all four diff statuses.
 
 Both are generated from typed builders that digest their own content, so no hash is written by hand, and both are committed and pinned byte for byte by a drift test. Regenerate them with `pnpm exec tsx config/generateSamples.ts`, which also runs as part of `prepare`.

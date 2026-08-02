@@ -33,7 +33,7 @@ const DIAGRAM_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
  * Modelled on a guidance-distribution run: three precedence-ordered sources feeding two targets, with an artifact
  * reached by three routes, an artifact shadowing two losers beside one the lowest-precedence source wins, three
  * rulebooks aggregated into one region with per-artifact markers, entry-level ownership of a structured config, a
- * byte-copied asset, a file apply will skip, and all four diff statuses.
+ * byte-copied asset, a file apply will skip, an artifact two tiers both seed, and all four diff statuses.
  *
  * Tables are authored in the order the contract documents: id-keyed tables lexicographically, files by target then
  * path, and `sources` and each `shadowed` list in precedence order, where the order is the meaning.
@@ -194,13 +194,20 @@ export function buildRepresentativeSample(): Plan {
         ],
       },
     ],
+    tiers: [
+      { id: 'project', label: 'Project' },
+      { id: 'project-local', label: 'Local override' },
+    ],
     artifacts: [
       {
         id: 'collection:core',
         kindId: 'collection',
         slug: 'core',
         status: 'unchanged',
-        seededBy: ['declaration'],
+        seededBy: [
+          { via: 'declaration', tierId: 'project' },
+          { via: 'declaration', tierId: 'project-local' },
+        ],
         dependsOn: [
           { to: 'rulebook:style', via: 'member' },
           { to: 'skill:review', via: 'member' },
@@ -216,7 +223,7 @@ export function buildRepresentativeSample(): Plan {
         kindId: 'rulebook',
         slug: 'naming',
         status: 'added',
-        seededBy: ['package-catalog'],
+        seededBy: [{ via: 'source-catalog', tierId: 'project' }],
         dependsOn: [],
         resolution: {
           winner: { sourceId: 'packaged', path: 'rulebooks/naming.md', hash: hashUtf8('rulebooks/naming.md') },
@@ -240,7 +247,7 @@ export function buildRepresentativeSample(): Plan {
         kindId: 'rulebook',
         slug: 'tests',
         status: 'added',
-        seededBy: ['package-catalog'],
+        seededBy: [{ via: 'source-catalog', tierId: 'project' }],
         dependsOn: [],
         resolution: {
           winner: { sourceId: 'packaged', path: 'rulebooks/tests.md', hash: hashUtf8('rulebooks/tests.md') },
@@ -290,7 +297,7 @@ export function buildRepresentativeSample(): Plan {
         kindId: 'subagent',
         slug: 'auditor',
         status: 'changed',
-        seededBy: ['declaration'],
+        seededBy: [{ via: 'declaration', tierId: 'project-local' }],
         dependsOn: [{ to: 'skill:review', via: 'injected' }],
         resolution: {
           winner: { sourceId: 'team', path: 'subagents/auditor.md', hash: hashUtf8('subagents/auditor.md') },

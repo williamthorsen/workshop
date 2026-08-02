@@ -5,8 +5,9 @@ import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schema.ts';
  * A small plan that satisfies both the schema and every consistency invariant.
  *
  * Exercises the shapes a trivial plan would leave untested: a traversal-only kind, an artifact reached through a
- * dependency edge, a shadowed candidate, a transcluded partial, and a file whose two sides differ. Each call returns a
- * fresh structure, so a test may break one field to show that the invariant guarding it holds.
+ * dependency edge, a shadowed candidate, a transcluded partial, a seed naming the tier that decided it, and a file whose
+ * two sides differ. Each call returns a fresh structure, so a test may break one field to show that the invariant
+ * guarding it holds.
  */
 export function buildPlan(): Plan {
   return {
@@ -39,13 +40,14 @@ export function buildPlan(): Plan {
         variables: [{ name: 'homeDir', value: '.claude' }],
       },
     ],
+    tiers: [{ id: 'project', label: 'Project' }],
     artifacts: [
       {
         id: 'collection:core',
         kindId: 'collection',
         slug: 'core',
         status: 'unchanged',
-        seededBy: ['declaration'],
+        seededBy: [{ via: 'declaration', tierId: 'project' }],
         dependsOn: [{ to: 'skill:review', via: 'member' }],
         resolution: {
           winner: { sourceId: 'team', path: 'collections/core.md', hash: 'hash:core' },

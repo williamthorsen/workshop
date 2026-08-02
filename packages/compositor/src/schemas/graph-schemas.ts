@@ -51,8 +51,27 @@ export const ArtifactResolutionSchema = z
   })
   .meta({ id: 'ArtifactResolution' });
 
-/** How an artifact entered the closure as a root; an artifact reached only as a dependency is seeded by nothing. */
-export const SeedOriginSchema = z.enum(['declaration', 'package-catalog']).meta({ id: 'SeedOrigin' });
+/**
+ * How an artifact entered the closure as a root.
+ *
+ * `declaration` is a tier naming the artifact itself. `source-catalog` is a tier taking everything one source carries,
+ * which names no artifact and so cannot say which one it meant. Nothing here is particular to a package: taking a
+ * source whole is a selection any source can be the object of.
+ */
+export const SeedOriginSchema = z.enum(['declaration', 'source-catalog']).meta({ id: 'SeedOrigin' });
+
+/**
+ * One reason an artifact is a closure root, with the config tier that decided it.
+ *
+ * An artifact seeded by several tiers carries one record each, which is what lets a consumer tell a project-level opt-in
+ * from an inherited one. An artifact reached only as a dependency carries none.
+ */
+export const SeedSchema = z
+  .object({
+    via: SeedOriginSchema,
+    tierId: IdSchema,
+  })
+  .meta({ id: 'Seed' });
 
 /**
  * An artifact the plan deploys or traverses.
@@ -66,7 +85,7 @@ export const PresentArtifactSchema = z
     kindId: IdSchema,
     slug: z.string(),
     status: z.enum(['added', 'changed', 'unchanged']),
-    seededBy: z.array(SeedOriginSchema),
+    seededBy: z.array(SeedSchema),
     dependsOn: z.array(DependencyEdgeSchema),
     resolution: ArtifactResolutionSchema,
   })
@@ -118,4 +137,5 @@ export type PartialEntry = z.infer<typeof PartialEntrySchema>;
 export type PresentArtifact = z.infer<typeof PresentArtifactSchema>;
 export type RemovedArtifact = z.infer<typeof RemovedArtifactSchema>;
 export type ResolutionCandidate = z.infer<typeof ResolutionCandidateSchema>;
+export type Seed = z.infer<typeof SeedSchema>;
 export type SeedOrigin = z.infer<typeof SeedOriginSchema>;

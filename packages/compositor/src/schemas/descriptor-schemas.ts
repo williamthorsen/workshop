@@ -1,4 +1,4 @@
-/** Descriptors: the kinds, sources, and targets a plan is computed over. */
+/** Descriptors: the kinds, sources, tiers, and targets a plan is computed over. */
 
 import { z } from 'zod';
 
@@ -40,6 +40,20 @@ export const SourceEntrySchema = z
     origin: SourceOriginSchema,
   })
   .meta({ id: 'SourceEntry' });
+
+/**
+ * One config tier a seed can be decided by.
+ *
+ * The `tiers` array runs lowest precedence first, the order a fold applies them in, so the last tier to speak wins. That
+ * is deliberately the reverse of `sources`, where the first entry wins: a source's position encodes precedence directly,
+ * and a tier's encodes application.
+ */
+export const TierDescriptorSchema = z
+  .object({
+    id: IdSchema,
+    label: z.string(),
+  })
+  .meta({ id: 'TierDescriptor' });
 
 /** One canonical-name-to-rendered-name pair within a token kind's mapping. */
 export const TokenMappingEntrySchema = z
@@ -90,5 +104,6 @@ export type SourceEntry = z.infer<typeof SourceEntrySchema>;
 export type SourceOrigin = z.infer<typeof SourceOriginSchema>;
 export type TargetEntry = z.infer<typeof TargetEntrySchema>;
 export type TargetVariable = z.infer<typeof TargetVariableSchema>;
+export type TierDescriptor = z.infer<typeof TierDescriptorSchema>;
 export type TokenMapping = z.infer<typeof TokenMappingSchema>;
 export type TokenMappingEntry = z.infer<typeof TokenMappingEntrySchema>;

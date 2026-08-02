@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { ArtifactEntrySchema, DependencyEdgeSchema, type EdgeOrigin, PartialEntrySchema } from '../graph-schemas.ts';
+import {
+  ArtifactEntrySchema,
+  DependencyEdgeSchema,
+  type EdgeOrigin,
+  PartialEntrySchema,
+  type SeedOrigin,
+  SeedSchema,
+} from '../graph-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const winner = { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'h1' };
@@ -10,13 +17,14 @@ const present = {
   kindId: 'skill',
   slug: 'review',
   status: 'changed',
-  seededBy: ['declaration'],
+  seededBy: [{ via: 'declaration', tierId: 'project' }],
   dependsOn: [],
   resolution,
 };
 const removed = { id: 'skill:retired', kindId: 'skill', slug: 'retired', status: 'removed' };
 
 const edgeOrigins: ReadonlyArray<EdgeOrigin> = ['declared', 'enumerated', 'injected', 'member', 'token'];
+const seedOrigins: ReadonlyArray<SeedOrigin> = ['declaration', 'source-catalog'];
 
 describe('ArtifactEntrySchema', () => {
   it('accepts a present artifact carrying its resolution and edges', () => {
@@ -43,6 +51,18 @@ describe('ArtifactEntrySchema', () => {
     const pureDependency = { ...present, seededBy: [] };
 
     expect(ArtifactEntrySchema.parse(pureDependency)).toStrictEqual(pureDependency);
+  });
+
+  it('records one seed per tier for an artifact several tiers declared', () => {
+    const seededTwice = {
+      ...present,
+      seededBy: [
+        { via: 'declaration', tierId: 'project' },
+        { via: 'declaration', tierId: 'project-local' },
+      ],
+    };
+
+    expect(ArtifactEntrySchema.parse(seededTwice)).toStrictEqual(seededTwice);
   });
 
   it('if the status is outside the known set, rejects the artifact', () => {
@@ -82,5 +102,19 @@ describe('PartialEntrySchema', () => {
     const partial = { id: 'team:_data/shared.md', sourceId: 'team', path: '_data/shared.md', hash: 'h4' };
 
     expect(PartialEntrySchema.parse(partial)).toStrictEqual(partial);
+  });
+});
+
+describe('SeedSchema', () => {
+  it.each(seedOrigins)('accepts a seed a tier decided by %s', (via) => {
+    expect(SeedSchema.parse({ via, tierId: 'project' })).toStrictEqual({ via, tierId: 'project' });
+  });
+
+  it('if the seed names no tier, rejects it for that field', () => {
+    expect(findIssuePaths(SeedSchema, { via: 'declaration' })).toStrictEqual([['tierId']]);
+  });
+
+  it('rejects the retired "package-catalog" origin, so taking a source whole is no longer a package privilege', () => {
+    expect(findIssuePaths(SeedSchema, { via: 'package-catalog', tierId: 'project' })).toStrictEqual([['via']]);
   });
 });

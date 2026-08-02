@@ -36,6 +36,25 @@ describe(assertPlanIsConsistent, () => {
     ]);
   });
 
+  it('if a seed names a tier no table carries, locates the dangling reference', () => {
+    const plan = buildPlan();
+    plan.tiers = [];
+
+    expect(findViolations(plan)).toStrictEqual([
+      {
+        path: 'artifacts[0].seededBy[0].tierId',
+        message: 'references "project", which is not an entry in tiers',
+      },
+    ]);
+  });
+
+  it('if the tier table carries one id twice, names the repeated id', () => {
+    const plan = buildPlan();
+    plan.tiers = [...plan.tiers, { id: 'project', label: 'Project, again' }];
+
+    expect(findViolations(plan)).toStrictEqual([{ path: 'tiers', message: 'carries "project" more than once' }]);
+  });
+
   it('if a table carries one id twice, names the repeated id', () => {
     const plan = buildPlan();
     plan.sources = [...plan.sources, { id: 'team', name: 'team-again', origin: { kind: 'directory', location: '/x' } }];
