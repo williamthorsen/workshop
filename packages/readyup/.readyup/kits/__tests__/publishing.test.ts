@@ -41,7 +41,7 @@ describe('publishing kit', () => {
 
       const results = await runPackaging();
 
-      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'passed']);
+      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'passed', 'passed']);
     });
 
     // Nothing is held back, so nothing has to be listed.
@@ -53,6 +53,23 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed' });
     });
 
+    it('accepts an allowlist naming the package root', async () => {
+      writePublishablePackage(projectRoot, { files: ['.'] });
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed', detail: '"files" lists .' });
+    });
+
+    // npm reads these as the same entry, so the check has to as well.
+    it('accepts the kit directory however it is spelled', async () => {
+      writePublishablePackage(projectRoot, { files: ['./.readyup/'] });
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed', detail: '"files" lists .readyup' });
+    });
+
     it('reports an allowlist that omits the kit directory', async () => {
       writePublishablePackage(projectRoot, { files: ['dist'] });
 
@@ -61,6 +78,25 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'allowlist')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('.readyup'),
+      });
+    });
+
+    it('reports an allowlist that is not a list', async () => {
+      writePublishablePackage(projectRoot, { files: '.readyup' });
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'failed', detail: '"files" is not an array' });
+    });
+
+    it('reports a package with no manifest of record', async () => {
+      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'allowlist')).toMatchObject({
+        status: 'failed',
+        detail: 'package.json is missing or unreadable',
       });
     });
 
@@ -81,6 +117,21 @@ describe('publishing kit', () => {
       const results = await runPackaging();
 
       expect(pickResult(results, 'default.js')).toMatchObject({ status: 'failed', severity: 'warn' });
+    });
+
+    // A consumer composes the path from the kit's name and never reads the one the manifest recorded, so a
+    // bundle compiled elsewhere is listable and unloadable.
+    it('reports a kit recorded away from the path a consumer loads it by', async () => {
+      const entry = writeKit(projectRoot, 'default');
+      writePackageJson(projectRoot, { files: ['.readyup'] });
+      writeKitManifest(projectRoot, [{ ...entry, path: path.join('kits', 'nested', 'default.js') }]);
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'under its own name')).toMatchObject({
+        status: 'failed',
+        detail: `default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
+      });
     });
   });
 
