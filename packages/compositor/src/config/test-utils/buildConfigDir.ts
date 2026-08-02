@@ -5,7 +5,7 @@ import path from 'node:path';
 import { onTestFinished } from 'vitest';
 
 /**
- * A directory holding each path in `files` with the given content, removed when the test ends.
+ * Creates a directory holding each path in `files` with the given content, removed when the test ends.
  *
  * Writes a real tree rather than mocking the filesystem, because what loading answers is how Node reports an absent
  * file against a present one -- the very layer a mock would replace with an assumption.

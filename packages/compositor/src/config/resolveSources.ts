@@ -30,7 +30,7 @@ export interface SourceResolution {
 }
 
 /**
- * The sources `config` declares, each located on disk, in precedence order.
+ * Resolves the sources `config` declares, locating each on disk, in precedence order.
  *
  * The fold runs lowest tier first, keyed by name: a `use` adds the source or remaps an inherited one, a `drop` removes
  * it and records the decline, and a tier declaring `reset` discards every lower tier's contributions before it applies.
@@ -80,7 +80,7 @@ interface FoldedSource {
   readonly order: number;
 }
 
-/** One source located on disk, with the tier it came from named on any failure. */
+/** Locates one source on disk, naming the tier it came from on any failure. */
 async function buildSpec(name: string, folded: FoldedSource, options: ResolveSourcesOptions): Promise<SourceSpec> {
   const { origin, baseDir, label } = folded;
   try {
@@ -95,13 +95,13 @@ async function buildSpec(name: string, folded: FoldedSource, options: ResolveSou
   }
 }
 
-/** Higher tier first, then author order, which is precedence descending. */
+/** Orders two sources higher tier first, then by author order, which is precedence descending. */
 function comparePrecedence(left: FoldedSource, right: FoldedSource): number {
   return left.tierIndex === right.tierIndex ? left.order - right.order : right.tierIndex - left.tierIndex;
 }
 
 /**
- * An authored directory location as an absolute path.
+ * Resolves an authored directory location to an absolute path.
  *
  * A leading `~` expands to the home directory, an already-absolute path stands, and a relative path resolves against the
  * tier that declared it rather than against wherever the process happens to be running.

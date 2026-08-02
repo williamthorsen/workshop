@@ -19,7 +19,7 @@ export interface CatalogSpec {
 }
 
 /**
- * A catalog carrying exactly what `spec` describes, with entries in the id order a real catalog runs in.
+ * Builds a catalog carrying exactly what `spec` describes, with entries in the id order a real catalog runs in.
  *
  * Every source points at a directory that does not exist. Selection never reads one, so a test that accidentally grew a
  * filesystem dependency fails rather than passing against whatever happened to be on disk.

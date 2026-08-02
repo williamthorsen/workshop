@@ -160,12 +160,12 @@ describe(selectArtifacts, () => {
 
 // region | Helpers
 
-/** The ids of the artifacts a selection seeded, in the order it runs them. */
+/** Collects the ids of the artifacts a selection seeded, in the order it runs them. */
 function collectIds(selection: Selection): Array<string> {
   return selection.seeded.map(({ artifactId }) => artifactId);
 }
 
-/** The selection `tiers` makes from the shared catalog. */
+/** Selects from the shared catalog using `tiers`. */
 function select(tiers: ReadonlyArray<TierInput>): Selection {
   return selectArtifacts(buildConfig(tiers), catalog);
 }

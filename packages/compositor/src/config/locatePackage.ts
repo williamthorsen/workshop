@@ -16,7 +16,7 @@ export interface LocatePackageOptions {
 }
 
 /**
- * The directory `name` ships its content in.
+ * Locates the directory `name` ships its content in.
  *
  * Resolution walks the `node_modules` chain Node itself would search from `baseDir`, so it holds under pnpm's symlinked
  * layout and under workspace links, which is what lets a producing repo consume its own content through the declaration
@@ -55,7 +55,7 @@ function assertPackageName(name: string): void {
   }
 }
 
-/** The installed directory of `name` with its parsed manifest, or nothing when no candidate directory carries one. */
+/** Finds the installed directory of `name` with its parsed manifest, or nothing when no candidate carries one. */
 async function findInstalledPackage(
   name: string,
   baseDir: string,
@@ -69,7 +69,7 @@ async function findInstalledPackage(
   return undefined;
 }
 
-/** The candidate installed directories for `name`, in the order Node's resolver searches them from `baseDir`. */
+/** Lists the candidate installed directories for `name`, in the order Node's resolver searches them from `baseDir`. */
 function listCandidateDirs(name: string, baseDir: string): ReadonlyArray<string> {
   // `createRequire` needs only a path to anchor resolution; the file itself need not exist.
   const requireFromBase = createRequire(path.join(baseDir, 'package.json'));
@@ -78,7 +78,7 @@ function listCandidateDirs(name: string, baseDir: string): ReadonlyArray<string>
   return (requireFromBase.resolve.paths(name) ?? []).map((nodeModules) => path.join(nodeModules, name));
 }
 
-/** The parsed manifest text, naming the package so a syntax error is attributable. */
+/** Parses the manifest text, naming the package so a syntax error is attributable. */
 function parseManifest(name: string, raw: string): unknown {
   try {
     return JSON.parse(raw);
@@ -89,7 +89,7 @@ function parseManifest(name: string, raw: string): unknown {
 }
 
 /**
- * The content directory `manifest` declares at `keyPath`.
+ * Reads the content directory `manifest` declares at `keyPath`.
  *
  * The key has no default, because a default location would claim a directory name in every producer's package root. A
  * producer states where its content lives and can nest it under a directory it already owns.
@@ -116,7 +116,7 @@ function readContentPath(name: string, manifest: unknown, keyPath: ReadonlyArray
 }
 
 /**
- * The contents of `filePath`, or nothing when it is absent.
+ * Reads `filePath`, resolving to nothing when it is absent.
  *
  * Any other failure rethrows, so a permission problem surfaces instead of reading as a bare absence and sending
  * resolution on to the next candidate.

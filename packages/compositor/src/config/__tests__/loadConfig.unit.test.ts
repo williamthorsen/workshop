@@ -95,7 +95,7 @@ describe(loadConfig, () => {
 
 // region | Helpers
 
-/** The tier a consumer would declare for `<dir>/<name>.yaml`, using the name as its identity. */
+/** Names the tier a consumer would declare for `<dir>/<name>.yaml`, using the name as its identity. */
 function tierAt(dir: string, name: string): TierFile {
   return { id: name, label: name, path: path.join(dir, `${name}.yaml`) };
 }

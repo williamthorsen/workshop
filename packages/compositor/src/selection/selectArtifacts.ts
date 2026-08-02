@@ -46,7 +46,7 @@ export interface Selection {
 }
 
 /**
- * The artifacts `config` selects from `catalog`, each with the tier that decided it.
+ * Selects the artifacts `config` asks for from `catalog`, recording the tier that decided each.
  *
  * Pure and free of I/O: the catalog is the only view of the filesystem, so re-running this over a changed config reads
  * nothing, which is what makes a shadow evaluation of an edited config free.
@@ -137,7 +137,7 @@ function addSeed(seeds: Map<ArtifactId, Array<Seed>>, artifactId: ArtifactId, se
 }
 
 /**
- * The catalog indexed for lookup by slug and by source.
+ * Indexes the catalog for lookup by slug and by source.
  *
  * The by-source index carries an artifact under every source that has a copy, shadowed as well as winning. Shadowing
  * decides which copy an artifact resolves from; selection decides which artifacts are in play, and a source a consumer
@@ -169,7 +169,7 @@ function buildCatalogIndex(catalog: Catalog): CatalogIndex {
   };
 }
 
-/** The artifacts `selector` names, appending a diagnostic and matching nothing when it names something unknown. */
+/** Expands `selector` to the artifacts it names, appending a diagnostic and matching nothing when it names none. */
 function expandSelector(
   selector: Selector,
   kindId: KindId,
@@ -206,7 +206,7 @@ function expandSelector(
   return carried;
 }
 
-/** How a selector named what it named, which is the origin a seed or a decline records. */
+/** Reads how a selector named what it named, which is the origin a seed or a decline records. */
 function readOrigin(selector: Selector): SeedOrigin {
   return 'artifact' in selector ? 'declaration' : 'source-catalog';
 }

@@ -19,7 +19,7 @@ export const TierFileSchema = z.strictObject({
 export type TierFile = z.infer<typeof TierFileSchema>;
 
 /**
- * The config the given tier files declare, lowest precedence first.
+ * Reads the config the given tier files declare, lowest precedence first.
  *
  * Tier identity is the consumer's to supply: a file does not know which tier it is, that follows from where the consumer
  * looked for it, and keeping the decision outside means no particular project layout is compiled in here.
@@ -41,7 +41,7 @@ export async function loadConfig(tiers: ReadonlyArray<TierFile>): Promise<Compos
 // region | Helpers
 
 /**
- * The body `raw` declares, with any failure named for the file it came from.
+ * Parses the body `raw` declares, naming the file it came from on any failure.
  *
  * An empty or comment-only file parses to nullish, which is a tier declaring nothing rather than a malformed one.
  */
@@ -64,7 +64,7 @@ function parseTierBody(raw: string, filePath: string): TierBody {
   return result.data;
 }
 
-/** The contents of `filePath`, or nothing when it is absent. */
+/** Reads `filePath`, resolving to nothing when it is absent. */
 async function readFileIfPresent(filePath: string): Promise<string | undefined> {
   try {
     return await readFile(filePath, 'utf8');
@@ -77,7 +77,7 @@ async function readFileIfPresent(filePath: string): Promise<string | undefined> 
 }
 
 /**
- * One tier read from its file, or nothing when that file is absent.
+ * Reads one tier from its file, resolving to nothing when that file is absent.
  *
  * `baseDir` is the file's own directory, so a relative path a tier declares resolves against where it was written rather
  * than against whatever directory the process happens to be run from.

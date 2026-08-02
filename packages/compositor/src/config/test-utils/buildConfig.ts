@@ -15,7 +15,7 @@ export interface TierInput {
   readonly select?: unknown;
 }
 
-/** A normalized config whose tiers are `tiers`, lowest precedence first. */
+/** Builds a normalized config whose tiers are `tiers`, lowest precedence first. */
 export function buildConfig(tiers: ReadonlyArray<TierInput>): CompositorConfig {
   return CompositorConfigSchema.parse({
     tiers: tiers.map((tier, index) => ({

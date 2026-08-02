@@ -134,7 +134,7 @@ describe(resolveSources, () => {
 
 // region | Helpers
 
-/** The resolved source names, in precedence order. */
+/** Collects the resolved source names, in precedence order. */
 async function collectNames(config: Parameters<typeof resolveSources>[0]): Promise<Array<string>> {
   const { sources } = await resolveSources(config, options);
   return sources.map(({ name }) => name);
