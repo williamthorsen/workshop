@@ -1,9 +1,12 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { compareStrings } from '../portable/compareStrings.ts';
-import { hashBytes, hashUtf8 } from '../portable/hash-content.ts';
-import { isMissingFile } from '../portable/isMissingFile.ts';
+import { hashBytes } from '../portable/hash-content.ts';
+import { hashDirectory } from '../portable/hashDirectory.ts';
+import { readDirNames } from '../portable/readDirNames.ts';
+import { statIfPresent } from '../portable/statIfPresent.ts';
+import { toPosix } from '../portable/toPosix.ts';
 import type { Hash, KindId } from '../schemas/common.ts';
 import type { ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
 
@@ -49,24 +52,6 @@ async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Arra
 }
 
 /**
- * A digest over everything under `dir`, keyed by each file's path within it.
- *
- * Covers the whole artifact rather than its entry file alone, because a directory-shaped artifact ships assets beside
- * the file carrying its frontmatter and a rebuilt asset is a changed artifact. Paths take part in the digest, so moving
- * a file within the artifact moves the digest too. Dotfiles are left out as tool state rather than shipped content.
- */
-async function hashDirectory(dir: string): Promise<Hash> {
-  const relativePaths = (await listFilesRecursively(dir, '')).toSorted(compareStrings);
-  const perFile = await Promise.all(
-    relativePaths.map(async (relativePath) => {
-      const bytes = await readFile(path.join(dir, relativePath));
-      return `${relativePath}\n${hashBytes(bytes)}`;
-    }),
-  );
-  return hashUtf8(perFile.join('\n'));
-}
-
-/**
  * Reports whether `name` can name an artifact.
  *
  * A dot prefix is tool state and an underscore prefix is support content: an include target, a shared data directory,
@@ -75,22 +60,6 @@ async function hashDirectory(dir: string): Promise<Hash> {
  */
 function isArtifactName(name: string): boolean {
   return !name.startsWith('.') && !name.startsWith('_');
-}
-
-/** Every file beneath `dir`, as posix paths relative to the walk's root. */
-async function listFilesRecursively(dir: string, prefix: string): Promise<Array<string>> {
-  const names = (await readDirNames(dir)).filter((name) => !name.startsWith('.'));
-  const nested = await Promise.all(
-    names.map(async (name) => {
-      const relativePath = prefix === '' ? name : `${prefix}/${name}`;
-      const entry = await statOrUndefined(path.join(dir, name));
-      if (entry === undefined) {
-        return [];
-      }
-      return entry.isDirectory() ? await listFilesRecursively(path.join(dir, name), relativePath) : [relativePath];
-    }),
-  );
-  return nested.flat();
 }
 
 /**
@@ -102,7 +71,7 @@ async function listFilesRecursively(dir: string, prefix: string): Promise<Array<
  */
 async function readArtifact(rootDir: string, name: string, kind: ResolveKind): Promise<SourceArtifact | undefined> {
   const { layout } = kind;
-  const entry = await statOrUndefined(path.join(rootDir, name));
+  const entry = await statIfPresent(path.join(rootDir, name));
   if (entry === undefined) {
     return undefined;
   }
@@ -119,7 +88,7 @@ async function readArtifact(rootDir: string, name: string, kind: ResolveKind): P
     };
   }
 
-  const entryFile = await statOrUndefined(path.join(rootDir, name, layout.entryFile));
+  const entryFile = await statIfPresent(path.join(rootDir, name, layout.entryFile));
   if (!entry.isDirectory() || entryFile?.isFile() !== true) {
     return undefined;
   }
@@ -129,40 +98,6 @@ async function readArtifact(rootDir: string, name: string, kind: ResolveKind): P
     path: toPosix(path.join(layout.root, name, layout.entryFile)),
     hash: await hashDirectory(path.join(rootDir, name)),
   };
-}
-
-/** The entry names directly under `dir`, or none when `dir` is absent. */
-async function readDirNames(dir: string): Promise<Array<string>> {
-  try {
-    return await readdir(dir);
-  } catch (error: unknown) {
-    if (isMissingFile(error)) {
-      return [];
-    }
-    throw error;
-  }
-}
-
-/**
- * The stats of `filePath`, or nothing when it is absent.
- *
- * Follows symlinks, which `readdir`'s own file types do not: a symlinked artifact reports as a link rather than as the
- * directory it points at, and under a linked layout that would hide the artifact entirely.
- */
-async function statOrUndefined(filePath: string): Promise<Awaited<ReturnType<typeof stat>> | undefined> {
-  try {
-    return await stat(filePath);
-  } catch (error: unknown) {
-    if (isMissingFile(error)) {
-      return undefined;
-    }
-    throw error;
-  }
-}
-
-/** A path rendered with posix separators, so a catalog built on Windows matches one built anywhere else. */
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join('/');
 }
 
 // endregion | Helpers

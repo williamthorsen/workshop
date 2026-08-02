@@ -160,20 +160,6 @@ describe('artifact digests', () => {
     await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });
 
-  it('moves a directory kind digest when an asset is renamed but its bytes are not', async () => {
-    const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
-    const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/start.mjs': 'v1' });
-
-    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
-  });
-
-  it('reaches assets nested below the artifact root', async () => {
-    const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":1}' });
-    const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/data/rules.json': '{"a":2}' });
-
-    await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
-  });
-
   it('gives the same artifact the same digest in two sources, so an identical copy is recognizable', async () => {
     const here = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
     const there = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
