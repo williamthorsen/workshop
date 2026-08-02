@@ -1,5 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.json",
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "__tests__/", "config/", "*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "__tests__/",
+    ".config/**/*.ts",
+    ".readyup/kits/**/*.ts",
+    "config/",
+    "*.ts",
+  ],
 }

@@ -179,13 +179,15 @@ List available kits without running them.
 Modes:
   rdy list                                  List internal and compiled kits (owner view)
   rdy list --from <path>                    List compiled kits at a local path (consumer view)
+  rdy list --from npm:package               List the kits an installed package publishes
   rdy list --from global                    List compiled kits in the global directory
   rdy list --from dir:<path>                List kits in an arbitrary directory
   rdy list --from github:org/repo[@ref]     List kits in a remote GitHub repository
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
-  --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], global, dir:path, or local path)
+  --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
+                             global, dir:path, or local path)
   --manifest <path>          List the kits a manifest file declares
   --json                     Output the kit list as JSON
   --style <auto|plain|rich>  Output style (default: auto)
