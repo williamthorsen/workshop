@@ -13,8 +13,9 @@ import { compileTokenPattern } from './compileTokenPattern.ts';
  * an anchored pattern cannot recognize a different token set here than the rewrite recognizes.
  *
  * An edge carries the partial its token was read from, and only when the token arrived through one. Edges run in
- * segment order, then in the order `tokenKinds` declares, and repeat only when they differ in the partial that
- * contributed them: the same partial naming one referent twice is one fact, while two partials naming it are two.
+ * segment order, then line by line, then in the order `tokenKinds` declares, and repeat only when they differ in the
+ * partial that contributed them: the same partial naming one referent twice is one fact, while two partials naming it
+ * are two.
  */
 export function extractTokenEdges(
   segments: ReadonlyArray<Segment>,
