@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, and selection. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, and the mechanisms that own part of a destination and overlay a target's metadata. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -41,6 +41,30 @@ Seeds and declines stay disjoint per artifact. A `drop` clears the seeds beneath
 A selection is a plain value, not a versioned document like a catalog. A document earns its cost when re-deriving the payload is expensive or impossible; a selection is a cheap pure function of two documents that already exist, so nothing can hold one it cannot recompute. A declined artifact has no plan representation yet -- `removed` means deployed and no longer selected, which is a different fact.
 
 A selector matching nothing yields a diagnostic naming the tier, kind, list, and position that produced it, rather than throwing, so validation reports every mistake in a config at once and a reader can attach each to the line an author wrote. A block naming a kind the catalog does not carry faults the whole block, so its diagnostic names the tier and kind alone.
+
+## Destination ownership
+
+A destination is not always the engine's to write whole. A guidance file a user also edits, a config another tool also writes: the engine owns part of it and has to leave the rest exactly as it found it. Two mechanisms cover that.
+
+**A region** is a contiguous fenced span. `classifyRegion` reports whether a host holds no markers, one well-formed region, or something no transform may touch, and every other function is defined in terms of it. That indirection is the safety property: the region pattern is lazy, so on a host carrying a stray marker above a well-formed region it matches from the stray marker through the region's close marker, and replacing that span would discard every line between them. Markers are supplied rather than compiled in, matching ignores the indentation a host imposes on them, and injection writes the declared markers back verbatim, so a formatter that re-indented a region does not make it unfindable. Several artifacts aggregate into one region behind their own inner markers: `renderContribution` writes one, and `readContributions` reads back which contributions a host currently carries, taking marker patterns as regular-expression sources so that the question can be asked of a host rather than only confirmed against a list.
+
+**Entries** are individual items of a collection inside a parsed document, interleaved with items other tools wrote. A consumer declares the format, the path to the collection, and the sentinel marking an item as the engine's -- a key path and a value, never a predicate, so the declaration survives being written down. `ensureOwnedItems` replaces the owned subset wholesale: spliced in at the first owned position, appended when the collection owns none, other owned items dropped, foreign items keeping their relative order. That one rule is what makes a re-run a no-op, replaces a drifted item in place, collapses accidental duplicates, and leaves foreign items alone. Every item written is stamped with the sentinel, so an item the engine could not find again is unconstructable rather than refused. Removal prunes the structure it empties, while a collection still holding foreign items survives with those alone.
+
+**Which mechanism applies follows from the ownership, not from the host's format.** A fence needs a comment syntax and a contiguous span; a sentinel needs a host schema that tolerates an extra key. JSON carries no comments, so a JSON host must sentinel. A host whose schema rejects unknown keys can only fence. Interleaved ownership cannot be fenced at all, no span containing it.
+
+What a consumer trades is durability against intrusion. A fence dies the moment another tool re-serializes the host and drops its comments, and the engine then sees no region and writes a second one beside the orphaned first. A sentinel survives that, at the cost of putting a key into a document whose owner did not ask for one.
+
+So a structured host is not automatically parsed. A YAML file whose engine-owned items are contiguous is served by a comment fence over text, and reading it through a parser instead buys nothing while costing formatting fidelity.
+
+Every mechanism is a pure string transform: text in, text out, with parsing and serialization internal, so a target composes them without adapting between two document models. Refusals travel as `OwnershipOutcome`, whose blocked side is the plan's own `FileBlock`: a damaged marker set, a host that will not parse, and a foreign value where a collection was declared are all facts about the destination, and a plan records the intent and the refusal side by side. A fault in the declaration a consumer wrote throws instead, having no plan entry to belong to. Content needing no change comes back untouched rather than re-serialized, which is what makes a re-run byte-identical: re-emitting a parsed document reproduces its comments but not necessarily every formatting choice.
+
+## Frontmatter overlay
+
+A target overlays metadata onto the artifacts it renders: defaults for every artifact, and overrides for one, keyed by slug. The two are separate fields rather than a reserved key beside the slugs, which keeps an artifact from being unaddressable because its slug named the bucket.
+
+`mergeFrontmatter` parses the block and re-emits it rather than rewriting lines. That is what lets an override target a block sequence: a line-based merge can only replace a value sitting on its key's own line, so it orphans the indented lines beneath one, and avoiding that by requiring flow sequences is not a constraint an engine can put on consumer-supplied data. Re-emitting also keeps the comments and formatting of every key the overlay does not touch. Keys already declared keep their position, new keys append sorted, and the body is preserved verbatim.
+
+Nothing is read out of the block. The slug an overlay is keyed by belongs to the caller, which already knows which artifact it is rendering; recovering it from a `name:` field would make the merge depend on one consumer's vocabulary.
 
 ## The plan
 
