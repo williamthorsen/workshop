@@ -5,10 +5,10 @@ import type { Selector } from '../../schemas/selection-schemas.ts';
 import { buildCatalogIndex } from '../buildCatalogIndex.ts';
 import { expandSelector } from '../expandSelector.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from '../SelectionDiagnostic.ts';
-import { buildCatalog } from '../test-utils/buildCatalog.ts';
+import { buildCatalogFromSpec } from '../test-utils/buildCatalogFromSpec.ts';
 
 const index = buildCatalogIndex(
-  buildCatalog({
+  buildCatalogFromSpec({
     kinds: ['rulebook', 'skill'],
     sources: ['local', 'acme'],
     entries: [

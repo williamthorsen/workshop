@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildCatalogIndex } from '../buildCatalogIndex.ts';
-import { buildCatalog } from '../test-utils/buildCatalog.ts';
+import { buildCatalogFromSpec } from '../test-utils/buildCatalogFromSpec.ts';
 
-const catalog = buildCatalog({
+const catalog = buildCatalogFromSpec({
   kinds: ['rulebook', 'skill', 'partial'],
   sources: ['local', 'acme'],
   entries: [
