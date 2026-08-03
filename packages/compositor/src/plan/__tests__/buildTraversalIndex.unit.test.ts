@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildPlan } from '../../test-utils/buildPlan.ts';
-import { buildTraversalIndex } from '../traversal.ts';
+import { buildTraversalIndex } from '../buildTraversalIndex.ts';
 
 describe(buildTraversalIndex, () => {
   it('returns every file an artifact contributes content to', () => {

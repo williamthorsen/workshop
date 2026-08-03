@@ -9,8 +9,8 @@ export type { DependencyGraphView, DependentsIndex, TraversableArtifact } from '
 export { buildDependentsIndex, resolveInclusionPaths } from './graph/traversal.ts';
 export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
-export type { TraversalIndex } from './plan/traversal.ts';
-export { buildTraversalIndex } from './plan/traversal.ts';
+export type { TraversalIndex } from './plan/buildTraversalIndex.ts';
+export { buildTraversalIndex } from './plan/buildTraversalIndex.ts';
 export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
 export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
 export { composeArtifactId } from './resolution/composeArtifactId.ts';
