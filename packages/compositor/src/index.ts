@@ -31,12 +31,19 @@ export {
 } from './schemas/catalog-schemas.ts';
 export type { CompositorConfig, ConfigTier, TierBody } from './schemas/config-schemas.ts';
 export { CompositorConfigSchema, ConfigTierSchema, TierBodySchema } from './schemas/config-schemas.ts';
-export type { KindDescriptor, SourceEntry, SourceOrigin, TierDescriptor } from './schemas/descriptor-schemas.ts';
+export type {
+  KindDescriptor,
+  SourceEntry,
+  SourceOrigin,
+  TierDescriptor,
+  TokenKindDescriptor,
+} from './schemas/descriptor-schemas.ts';
 export {
   KindDescriptorSchema,
   SourceEntrySchema,
   SourceOriginSchema,
   TierDescriptorSchema,
+  TokenKindDescriptorSchema,
 } from './schemas/descriptor-schemas.ts';
 export type {
   ArtifactContribution,

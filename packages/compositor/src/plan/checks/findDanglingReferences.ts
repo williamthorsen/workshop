@@ -11,6 +11,7 @@ export function findDanglingReferences(plan: Plan): Array<Violation> {
   const sourceIds = collectIds(plan.sources);
   const targetIds = collectIds(plan.targets);
   const tierIds = collectIds(plan.tiers);
+  const tokenKindIds = collectIds(plan.tokenKinds);
 
   const violations: Array<Violation> = [];
   const requireKnown = createRequireKnown(violations);
@@ -20,6 +21,13 @@ export function findDanglingReferences(plan: Plan): Array<Violation> {
   }
   for (const [index, entry] of plan.fingerprint.targetState.entries()) {
     requireKnown(targetIds, entry.targetId, `fingerprint.targetState[${index}].targetId`, 'targets');
+  }
+
+  for (const [index, target] of plan.targets.entries()) {
+    for (const [mappingIndex, mapping] of target.tokenMappings.entries()) {
+      const at = `targets[${index}].tokenMappings[${mappingIndex}].kindId`;
+      requireKnown(tokenKindIds, mapping.kindId, at, 'tokenKinds');
+    }
   }
 
   for (const [index, artifact] of plan.artifacts.entries()) {
