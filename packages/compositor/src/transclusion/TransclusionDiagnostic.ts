@@ -14,12 +14,13 @@ export interface TransclusionDiagnostic {
 /**
  * Why a directive could not be resolved.
  *
- * `not-found`, `out-of-tree`, and `cycle` are faults in what a directive names; the rest are faults in how the
- * directives are written, and are reported against the line that breaks the pairing.
+ * `not-found`, `out-of-tree`, and `cycle` are faults in what a directive names; the rest are faults in how or where the
+ * directives are written, and are reported against the line carrying the fault.
  */
 export type TransclusionFailure =
   | 'cycle'
   | 'not-found'
+  | 'orphan-children'
   | 'orphan-close'
   | 'out-of-tree'
   | 'slot-without-children'

@@ -28,7 +28,7 @@ const claude: TargetEntry = {
   variables: [],
 };
 
-/** Deploys every skill under its own slug, which is the case a token rendering its own name is the degenerate form of. */
+/** Deploys every skill under its own slug, the case a token rendering its own name is the degenerate form of. */
 const deploysEverySkill: DeployedNameLookup = (_targetId, artifactId) => artifactId.replace('skill:', '');
 
 describe(rewriteTokens, () => {

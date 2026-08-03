@@ -4,12 +4,12 @@ import { z } from 'zod';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 import { TokenKindSchema } from '../token-kind-schemas.ts';
 
-const mapping = { id: 'tool', label: 'Tool name', form: 'mapping', pattern: '\\{tool:([a-z]+)\\}' };
+const mapping = { id: 'tool', label: 'Tool name', form: 'mapping', pattern: String.raw`\{tool:([a-z]+)\}` };
 const referent = {
   id: 'skill-invocation',
   label: 'Skill invocation',
   form: 'referent',
-  pattern: '\\{skill:([a-z][a-z0-9-]*)\\}',
+  pattern: String.raw`\{skill:([a-z][a-z0-9-]*)\}`,
   artifactKindId: 'skill',
 };
 

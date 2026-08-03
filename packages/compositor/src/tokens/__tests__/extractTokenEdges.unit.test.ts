@@ -67,4 +67,11 @@ describe(extractTokenEdges, () => {
   it('reads no edges from a body whose tokens no kind declares', () => {
     expect(extractTokenEdges([{ lines: ['{rulebook:style}'] }], kinds)).toStrictEqual([]);
   });
+
+  it('matches one line at a time, so an anchored pattern reaches every line of a segment', () => {
+    const anchored: TokenKind = { ...invocation, pattern: String.raw`^\{skill:([a-z][a-z0-9-]*)\}` };
+    const segments = [{ lines: ['{skill:review}', '{skill:lint}'] }];
+
+    expect(extractTokenEdges(segments, [anchored]).map(({ to }) => to)).toStrictEqual(['skill:review', 'skill:lint']);
+  });
 });

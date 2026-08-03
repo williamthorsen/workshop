@@ -1,9 +1,9 @@
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { compareStrings } from '../portable/compareStrings.ts';
 import { hashUtf8 } from '../portable/hash-content.ts';
+import { statIfPresent } from '../portable/statIfPresent.ts';
 import { toPosix } from '../portable/toPosix.ts';
 import type { PartialEntry } from '../schemas/graph-schemas.ts';
 import type { PartialId, SourceId } from '../schemas/scalar-schemas.ts';
@@ -119,7 +119,7 @@ async function expandFile(
 
       const selfCloseTarget = selfClose?.[1];
       if (selfCloseTarget !== undefined) {
-        const resolved = resolveTarget(filePath, selfCloseTarget, context, at);
+        const resolved = await resolveTarget(filePath, selfCloseTarget, context, at);
         appendSegments(stack, out, await expandPartial(resolved, [], context, at));
         continue;
       }
@@ -136,13 +136,18 @@ async function expandFile(
 
       const openTarget = open?.[1];
       if (openTarget !== undefined) {
-        const resolved = resolveTarget(filePath, openTarget, context, at);
+        const resolved = await resolveTarget(filePath, openTarget, context, at);
         stack.push({ lineNumber: index + 1, resolved, slot: [], target: openTarget });
         continue;
       }
 
       if (context.patterns.anyInclude.test(line)) {
         throw fail('unrecognized-parameter', `matches no directive shape: "${line}"`, at);
+      }
+
+      // Only a transcluded partial has a caller whose content could fill the slot a placeholder marks.
+      if (attribution === undefined && context.patterns.children.test(line)) {
+        throw fail('orphan-children', 'marks a slot in a body no directive transcludes', at);
       }
 
       appendSegments(stack, out, [createSegment([line], attribution)]);
@@ -269,8 +274,16 @@ function pushMerged(target: Array<MutableSegment>, incoming: ReadonlyArray<Segme
  *
  * Containment is lexical: a symlink under the source pointing outside it is not resolved, because a source tree is not
  * expected to carry symlinks.
+ *
+ * A target must be a file. A directory answers the existence question the same way a file does, so a directive that
+ * dropped its filename would otherwise pass this gate and fault at the read as an exception.
  */
-function resolveTarget(filePath: string, target: string, context: ExpansionContext, at: DirectiveRef): string {
+async function resolveTarget(
+  filePath: string,
+  target: string,
+  context: ExpansionContext,
+  at: DirectiveRef,
+): Promise<string> {
   const resolved = path.resolve(path.dirname(filePath), target);
 
   const relative = path.relative(context.root, resolved);
@@ -278,8 +291,10 @@ function resolveTarget(filePath: string, target: string, context: ExpansionConte
     throw fail('out-of-tree', `names "${target}", which resolves outside the source`, at);
   }
 
-  if (!existsSync(resolved)) {
-    throw fail('not-found', `names "${target}", which does not exist`, at);
+  const stats = await statIfPresent(resolved);
+  if (stats?.isFile() !== true) {
+    const detail = stats === undefined ? 'does not exist' : 'is not a file';
+    throw fail('not-found', `names "${target}", which ${detail}`, at);
   }
 
   return resolved;

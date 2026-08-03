@@ -15,7 +15,7 @@ export interface RewriteTokensInput {
   readonly tokenKinds: ReadonlyArray<TokenKind>;
   readonly target: TargetEntry;
   /** Names the artifact in a diagnostic, so an author sees which body to fix. */
-  readonly host: string;
+  readonly host: ArtifactId;
   readonly resolveDeployedName: DeployedNameLookup;
 }
 
@@ -35,14 +35,18 @@ export interface TokenRewrite {
  * name resolution and rewriting from depending on each other.
  */
 export function rewriteTokens(input: RewriteTokensInput): TokenRewrite {
-  const diagnostics: Array<TokenDiagnostic> = [];
+  const context: RewriteContext = {
+    diagnostics: [],
+    input,
+    kinds: input.tokenKinds.map((kind) => ({ kind, pattern: compileTokenPattern(kind) })),
+  };
 
   const segments = input.segments.map((segment) => {
-    const lines = segment.lines.map((line) => rewriteLine(line, segment.partialId, input, diagnostics));
+    const lines = segment.lines.map((line) => rewriteLine(line, segment.partialId, context));
     return segment.partialId === undefined ? { lines } : { lines, partialId: segment.partialId };
   });
 
-  return { segments, diagnostics };
+  return { segments, diagnostics: context.diagnostics };
 }
 
 // region | Helpers
@@ -53,10 +57,10 @@ export function rewriteTokens(input: RewriteTokensInput): TokenRewrite {
  * Sorting is stable, so two kinds matching at one position resolve in the order they were declared. Gathering every
  * match before rewriting any of them is what keeps one kind from matching text another kind just produced.
  */
-function collectMatches(line: string, tokenKinds: ReadonlyArray<TokenKind>): Array<TokenMatch> {
+function collectMatches(line: string, kinds: ReadonlyArray<CompiledKind>): Array<TokenMatch> {
   const matches: Array<TokenMatch> = [];
-  for (const kind of tokenKinds) {
-    for (const match of line.matchAll(compileTokenPattern(kind))) {
+  for (const { kind, pattern } of kinds) {
+    for (const match of line.matchAll(pattern)) {
       const name = match[1];
       if (name !== undefined) {
         matches.push({ index: match.index, kind, name, token: match[0] });
@@ -66,11 +70,17 @@ function collectMatches(line: string, tokenKinds: ReadonlyArray<TokenKind>): Arr
   return matches.toSorted((left, right) => left.index - right.index);
 }
 
+/** One declared kind with the expression both token surfaces match it by. */
+interface CompiledKind {
+  readonly kind: TokenKind;
+  readonly pattern: RegExp;
+}
+
 /** Builds the diagnostic for a token that would not resolve, omitting the partial when there is none. */
 function createDiagnostic(
   failure: { readonly failure: TokenFailure; readonly detail: string },
   match: TokenMatch,
-  host: string,
+  host: ArtifactId,
   partialId: PartialId | undefined,
 ): TokenDiagnostic {
   const at: TokenRef = partialId === undefined ? { host, token: match.token } : { host, token: match.token, partialId };
@@ -99,23 +109,25 @@ function resolveToken(match: TokenMatch, input: RewriteTokensInput): TokenResolu
   return { rendered: `${sigil}${deployed}` };
 }
 
+/** Everything one rewrite carries across the lines it renders. */
+interface RewriteContext {
+  readonly diagnostics: Array<TokenDiagnostic>;
+  readonly input: RewriteTokensInput;
+  readonly kinds: ReadonlyArray<CompiledKind>;
+}
+
 /** Rewrites one line's tokens, skipping any match a preceding one already consumed. */
-function rewriteLine(
-  line: string,
-  partialId: PartialId | undefined,
-  input: RewriteTokensInput,
-  diagnostics: Array<TokenDiagnostic>,
-): string {
+function rewriteLine(line: string, partialId: PartialId | undefined, context: RewriteContext): string {
   let rendered = '';
   let cursor = 0;
 
-  for (const match of collectMatches(line, input.tokenKinds)) {
+  for (const match of collectMatches(line, context.kinds)) {
     if (match.index < cursor) {
       continue;
     }
-    const resolution = resolveToken(match, input);
+    const resolution = resolveToken(match, context.input);
     if ('failure' in resolution) {
-      diagnostics.push(createDiagnostic(resolution, match, input.host, partialId));
+      context.diagnostics.push(createDiagnostic(resolution, match, context.input.host, partialId));
     }
     const replacement = 'rendered' in resolution ? resolution.rendered : match.token;
     rendered += line.slice(cursor, match.index) + replacement;

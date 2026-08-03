@@ -126,6 +126,27 @@ describe(expandTransclusions, () => {
     expect(requireFailed(result).at).toStrictEqual({ path: 'skills/review.md', line: 1 });
   });
 
+  it('if a directive names a directory, reports it rather than failing at the read', async () => {
+    const dir = await buildTempTree({
+      '_data/shared.md': 'Shared text.\n',
+      'skills/review.md': '<!-- include: ../_data / -->\n',
+    });
+
+    const result = await expand(dir, 'skills/review.md');
+
+    expect(requireFailed(result).code).toBe('not-found');
+    expect(requireFailed(result).message).toContain('is not a file');
+  });
+
+  it('if the entry file marks a slot no directive can fill, reports it rather than shipping the markup', async () => {
+    const dir = await buildTempTree({ 'skills/review.md': 'Lead.\n<!-- children -->\nTail.\n' });
+
+    const result = await expand(dir, 'skills/review.md');
+
+    expect(requireFailed(result).code).toBe('orphan-children');
+    expect(requireFailed(result).at).toStrictEqual({ path: 'skills/review.md', line: 2 });
+  });
+
   it('if a directive escapes the source, reports it rather than reading from outside', async () => {
     const dir = await buildTempTree({ 'skills/review.md': '<!-- include: ../../outside.md / -->\n' });
 
