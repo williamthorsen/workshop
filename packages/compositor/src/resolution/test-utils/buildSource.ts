@@ -1,4 +1,4 @@
-import type { SourceSpec } from '../../schemas/resolution-schemas.ts';
+import type { SourceSpec } from '../../schemas/catalog-schemas.ts';
 import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 
 /**

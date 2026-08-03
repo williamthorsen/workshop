@@ -1,5 +1,5 @@
-import type { Catalog } from '../../schemas/resolution-schemas.ts';
-import { CATALOG_SCHEMA_VERSION } from '../../schemas/resolution-schemas.ts';
+import type { Catalog } from '../../schemas/catalog-schemas.ts';
+import { CATALOG_SCHEMA_VERSION } from '../../schemas/catalog-schemas.ts';
 
 /**
  * A small catalog that satisfies both the schema and every consistency invariant.

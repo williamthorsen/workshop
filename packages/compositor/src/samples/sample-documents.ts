@@ -1,4 +1,4 @@
-import type { Plan } from '../schemas/plan-schema.ts';
+import type { Plan } from '../schemas/plan-schemas.ts';
 import { buildMinimalSample } from './buildMinimalSample.ts';
 import { buildRepresentativeSample } from './buildRepresentativeSample.ts';
 

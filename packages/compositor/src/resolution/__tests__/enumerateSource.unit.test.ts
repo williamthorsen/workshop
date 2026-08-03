@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import type { ResolveKind, SourceSpec } from '../../schemas/resolution-schemas.ts';
+import type { ResolveKind, SourceSpec } from '../../schemas/catalog-schemas.ts';
 import { enumerateSource, type SourceArtifact } from '../enumerateSource.ts';
 import { buildSource } from '../test-utils/buildSource.ts';
 

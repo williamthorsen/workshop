@@ -12,8 +12,8 @@
 import { z } from 'zod';
 
 import { compareStrings } from '../portable/compareStrings.ts';
-import { IdSchema } from './common.ts';
 import { SourceOriginSchema } from './descriptor-schemas.ts';
+import { IdSchema } from './scalar-schemas.ts';
 
 /**
  * One `use` or `drop` entry: an artifact named by slug, or everything a source carries.

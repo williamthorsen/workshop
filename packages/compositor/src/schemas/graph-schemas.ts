@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { HashSchema, IdSchema } from './common.ts';
+import { HashSchema, IdSchema } from './scalar-schemas.ts';
 
 /**
  * How one dependency edge came to exist.

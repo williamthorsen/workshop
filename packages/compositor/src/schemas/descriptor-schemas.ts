@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { IdSchema } from './common.ts';
+import { IdSchema } from './scalar-schemas.ts';
 
 /**
  * One artifact kind the plan's artifacts are drawn from.

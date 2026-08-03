@@ -2,7 +2,6 @@
 
 import { z } from 'zod';
 
-import { HashSchema, IdSchema } from './common.ts';
 import {
   KindDescriptorSchema,
   SourceEntrySchema,
@@ -11,6 +10,7 @@ import {
 } from './descriptor-schemas.ts';
 import { BlobSchema, FileEntrySchema } from './file-schemas.ts';
 import { ArtifactEntrySchema, PartialEntrySchema } from './graph-schemas.ts';
+import { HashSchema, IdSchema } from './scalar-schemas.ts';
 
 /**
  * Version of the plan payload.

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
-import { IdSchema } from '../common.ts';
 import {
   KindDescriptorSchema,
   SourceEntrySchema,
@@ -9,6 +8,7 @@ import {
   TargetEntrySchema,
   TierDescriptorSchema,
 } from '../descriptor-schemas.ts';
+import { IdSchema } from '../scalar-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };

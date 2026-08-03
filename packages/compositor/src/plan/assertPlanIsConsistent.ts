@@ -2,7 +2,7 @@ import { ConsistencyError } from '../consistency/ConsistencyError.ts';
 import { findDuplicateIds } from '../consistency/findDuplicateIds.ts';
 import { findResolutionOrderViolations } from '../consistency/findResolutionOrderViolations.ts';
 import type { Violation } from '../consistency/Violation.ts';
-import type { Plan } from '../schemas/plan-schema.ts';
+import type { Plan } from '../schemas/plan-schemas.ts';
 import { collectIdTables } from './checks/collectIdTables.ts';
 import { collectResolutions } from './checks/collectResolutions.ts';
 import { findDanglingReferences } from './checks/findDanglingReferences.ts';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { compareStrings } from '../../portable/compareStrings.ts';
-import type { Plan } from '../../schemas/plan-schema.ts';
-import { PlanSchema } from '../../schemas/plan-schema.ts';
+import type { Plan } from '../../schemas/plan-schemas.ts';
+import { PlanSchema } from '../../schemas/plan-schemas.ts';
 import { buildSampleDocuments } from '../sample-documents.ts';
 
 const documents = buildSampleDocuments().map((document) => [document.fileName, document.plan] as const);

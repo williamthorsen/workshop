@@ -1,7 +1,7 @@
 import type { Violation } from '../../consistency/Violation.ts';
-import type { DiffStatus } from '../../schemas/common.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
-import type { Plan } from '../../schemas/plan-schema.ts';
+import type { Plan } from '../../schemas/plan-schemas.ts';
+import type { DiffStatus } from '../../schemas/scalar-schemas.ts';
 
 /** Reports each file whose recorded status disagrees with the sides it carries. */
 export function findStatusDisagreements(plan: Plan): Array<Violation> {

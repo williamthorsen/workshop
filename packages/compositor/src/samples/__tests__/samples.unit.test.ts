@@ -4,7 +4,7 @@ import { resolveInclusionPaths } from '../../graph/traversal.ts';
 import { assertPlanIsConsistent } from '../../plan/assertPlanIsConsistent.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { ArtifactEntry } from '../../schemas/graph-schemas.ts';
-import { PlanSchema } from '../../schemas/plan-schema.ts';
+import { PlanSchema } from '../../schemas/plan-schemas.ts';
 import { buildRepresentativeSample } from '../buildRepresentativeSample.ts';
 import { buildSampleDocuments } from '../sample-documents.ts';
 

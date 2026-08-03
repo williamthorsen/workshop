@@ -1,5 +1,5 @@
 import type { Violation } from '../../consistency/Violation.ts';
-import type { Plan } from '../../schemas/plan-schema.ts';
+import type { Plan } from '../../schemas/plan-schemas.ts';
 
 /** Reports each edge naming a partial it could not have been read from. */
 export function findMisplacedPartialReferences(plan: Plan): Array<Violation> {

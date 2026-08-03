@@ -7,8 +7,8 @@ import { hashDirectory } from '../portable/hashDirectory.ts';
 import { readDirNames } from '../portable/readDirNames.ts';
 import { statIfPresent } from '../portable/statIfPresent.ts';
 import { toPosix } from '../portable/toPosix.ts';
-import type { Hash, KindId } from '../schemas/common.ts';
-import type { ResolveKind, SourceSpec } from '../schemas/resolution-schemas.ts';
+import type { ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
+import type { Hash, KindId } from '../schemas/scalar-schemas.ts';
 
 /** One artifact a source carries, located and digested within that source. */
 export interface SourceArtifact {

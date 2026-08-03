@@ -18,8 +18,15 @@ export type { SourceArtifact } from './resolution/enumerateSource.ts';
 export { enumerateSource } from './resolution/enumerateSource.ts';
 export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
 export { resolveCatalog } from './resolution/resolveCatalog.ts';
-export type { ArtifactId, DiffStatus, Hash, Id, KindId, PartialId, SourceId, TargetId } from './schemas/common.ts';
-export { DiffStatusSchema, HashSchema, IdSchema } from './schemas/common.ts';
+export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
+export {
+  CATALOG_SCHEMA_VERSION,
+  CatalogEntrySchema,
+  CatalogSchema,
+  KindLayoutSchema,
+  ResolveKindSchema,
+  SourceSpecSchema,
+} from './schemas/catalog-schemas.ts';
 export type {
   CompositorConfig,
   ConfigTier,
@@ -101,23 +108,25 @@ export {
   SeedOriginSchema,
   SeedSchema,
 } from './schemas/graph-schemas.ts';
-export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schema.ts';
+export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schemas.ts';
 export {
   PLAN_SCHEMA_VERSION,
   PlanFingerprintSchema,
   PlanSchema,
   SourceDigestSchema,
   TargetDigestSchema,
-} from './schemas/plan-schema.ts';
-export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/resolution-schemas.ts';
-export {
-  CATALOG_SCHEMA_VERSION,
-  CatalogEntrySchema,
-  CatalogSchema,
-  KindLayoutSchema,
-  ResolveKindSchema,
-  SourceSpecSchema,
-} from './schemas/resolution-schemas.ts';
+} from './schemas/plan-schemas.ts';
+export type {
+  ArtifactId,
+  DiffStatus,
+  Hash,
+  Id,
+  KindId,
+  PartialId,
+  SourceId,
+  TargetId,
+} from './schemas/scalar-schemas.ts';
+export { DiffStatusSchema, HashSchema, IdSchema } from './schemas/scalar-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';

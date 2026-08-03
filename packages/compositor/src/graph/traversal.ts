@@ -1,6 +1,6 @@
 import { appendTo } from '../portable/appendTo.ts';
-import type { ArtifactId, DiffStatus } from '../schemas/common.ts';
 import type { DependencyEdge, Seed } from '../schemas/graph-schemas.ts';
+import type { ArtifactId, DiffStatus } from '../schemas/scalar-schemas.ts';
 
 /**
  * One artifact as traversal reads it: an identity, the edges leaving it, and what seeded it.
