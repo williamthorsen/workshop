@@ -35,8 +35,7 @@ export const DependencyEdgeSchema = z
  * How an artifact entered the closure as a root.
  *
  * `declaration` is a tier naming the artifact itself. `source-catalog` is a tier taking everything one source carries,
- * which names no artifact and so cannot say which one it meant. Nothing here is particular to a package: taking a
- * source whole is a selection any source can be the object of.
+ * which names no artifact and so cannot say which one it meant.
  */
 export const SeedOriginSchema = z.enum(['declaration', 'source-catalog']).meta({ id: 'SeedOrigin' });
 

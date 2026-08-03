@@ -15,7 +15,6 @@ describe('SelectorSchema', () => {
     expect(SelectorSchema.parse(selector)).toStrictEqual(selector);
   });
 
-  // Rejecting rather than stripping is the point: a strip would discard half of what the author wrote.
   it('rejects an entry naming both an artifact and a source', () => {
     expect(findIssuePaths(SelectorSchema, { artifact: 'lint', source: 'acme' })).toBeDefined();
   });

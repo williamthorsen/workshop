@@ -30,8 +30,7 @@ export const SourceOriginSchema = z
 /**
  * One declared content source.
  *
- * The `sources` array is ordered highest precedence first, and that order is the only encoding of precedence. A
- * consumer's bundled library holds no special status here: it enters as an ordinary directory source declared last.
+ * The `sources` array is ordered highest precedence first, and that order is the only encoding of precedence.
  */
 export const SourceEntrySchema = z
   .object({

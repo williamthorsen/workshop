@@ -33,7 +33,6 @@ describe('TierBodySchema', () => {
     });
   });
 
-  // Strict, so a misspelled key fails rather than declaring nothing at all.
   it('rejects an unrecognized top-level key, naming it', () => {
     const result = TierBodySchema.safeParse({ selects: {} });
 
@@ -74,7 +73,6 @@ describe('CompositorConfigSchema', () => {
     expect(CompositorConfigSchema.parse({})).toStrictEqual({ tiers: [] });
   });
 
-  // A What-if pass mutates a config it already holds and re-parses it, so normalizing twice must change nothing.
   it('parses its own output unchanged', () => {
     const config = CompositorConfigSchema.parse({ tiers: [authoredTier] });
 
