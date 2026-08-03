@@ -113,9 +113,13 @@ export {
   TokenMappingEntrySchema,
   TokenMappingSchema,
 } from './schemas/target-schemas.ts';
+export type { TokenKind } from './schemas/token-kind-schemas.ts';
+export { TokenKindSchema } from './schemas/token-kind-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
+export type { TokenKindViolation } from './tokens/assertTokenKindsAreConsistent.ts';
+export { assertTokenKindsAreConsistent, TokenKindConsistencyError } from './tokens/assertTokenKindsAreConsistent.ts';
 export type { DirectivePatterns, DirectiveSyntax } from './transclusion/buildDirectivePatterns.ts';
 export { buildDirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
 export { composePartialId } from './transclusion/composePartialId.ts';
