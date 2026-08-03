@@ -4,6 +4,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import { RemoteFetchError } from '../src/remote/RemoteFetchError.ts';
 import type { FailedResult, PassedResult, RdyKit, Severity } from '../src/types.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
@@ -1565,6 +1566,84 @@ describe(runCommand, () => {
     await runCommand({ kitEntries: [{ name: 'config', source: { url }, checklists: [] }], json: false });
 
     expect(stderrText()).toBe(`Error: Failed to reach ${url}: Failed to fetch remote kit\n`);
+  });
+
+  describe('credential hints', () => {
+    const GITHUB_URL = 'https://raw.githubusercontent.com/acme/private/main/.readyup/kits/deploy.js';
+    const BITBUCKET_URL = 'https://api.bitbucket.org/2.0/repositories/acme/private/src/main/.readyup/kits/deploy.js';
+    const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
+    const BITBUCKET_HINT = 'If the repository is private, set BITBUCKET_TOKEN.';
+
+    /** Runs one kit from `url` against a fetch that failed with `status`, and returns the rendered stderr. */
+    async function runAgainstStatus(url: string, status: number): Promise<string> {
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${url}`, status));
+      await runCommand({ kitEntries: [{ name: 'deploy', source: { url }, checklists: [] }], json: false });
+      return stderrText();
+    }
+
+    it.each([401, 403, 404])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
+      mockResolveGitHubToken.mockReturnValue(undefined);
+
+      await expect(runAgainstStatus(GITHUB_URL, status)).resolves.toContain(GITHUB_HINT);
+    });
+
+    it.each([401, 403, 404])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
+      mockResolveBitbucketToken.mockReturnValue(undefined);
+
+      await expect(runAgainstStatus(BITBUCKET_URL, status)).resolves.toContain(BITBUCKET_HINT);
+    });
+
+    it('puts the hint on a line of its own, below the error', async () => {
+      mockResolveGitHubToken.mockReturnValue(undefined);
+
+      await expect(runAgainstStatus(GITHUB_URL, 404)).resolves.toBe(
+        `Error: Failed to fetch remote kit from ${GITHUB_URL}\n\u{1F4A1} Hint: ${GITHUB_HINT}\n`,
+      );
+    });
+
+    it('stays silent when a token was forwarded', async () => {
+      mockResolveGitHubToken.mockReturnValue('my-token');
+
+      await expect(runAgainstStatus(GITHUB_URL, 404)).resolves.not.toContain('Hint');
+    });
+
+    it('stays silent for a third-party host, which readyup holds no credential for', async () => {
+      await expect(runAgainstStatus('https://example.com/config.js', 404)).resolves.not.toContain('Hint');
+    });
+
+    it.each([500, 502])('stays silent on a %i, which no credential would fix', async (status) => {
+      mockResolveGitHubToken.mockReturnValue(undefined);
+
+      await expect(runAgainstStatus(GITHUB_URL, status)).resolves.not.toContain('Hint');
+    });
+
+    it('stays silent on a network failure, which reached no host to be refused by', async () => {
+      mockResolveGitHubToken.mockReturnValue(undefined);
+      mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
+
+      await runCommand({
+        kitEntries: [{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }],
+        json: false,
+      });
+
+      expect(stderrText()).not.toContain('Hint');
+    });
+
+    it('carries the hint into the JSON report’s kit error entry', async () => {
+      mockResolveGitHubToken.mockReturnValue(undefined);
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('boom', 404));
+      mockFormatJsonReport.mockReturnValue('{}');
+
+      await runCommand({
+        kitEntries: [{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }],
+        json: true,
+      });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        [{ name: 'deploy', error: { code: 'kit-load', message: 'boom', hint: GITHUB_HINT } }],
+        expect.anything(),
+      );
+    });
   });
 });
 
