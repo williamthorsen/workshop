@@ -1,5 +1,5 @@
-import type { RdyManifest } from './manifest/manifestSchema.ts';
-import { ManifestSchema } from './manifest/manifestSchema.ts';
+import type { RdyManifest } from '../manifest/manifestSchema.ts';
+import { ManifestSchema } from '../manifest/manifestSchema.ts';
 
 /** Thrown when a remote manifest URL responds with 404 or an HTML soft-404. */
 export class RemoteManifestNotFoundError extends Error {

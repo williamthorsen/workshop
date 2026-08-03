@@ -3,11 +3,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { assertIsRdyKit } from './assertIsRdyKit.ts';
-import type { LoadedRdyKit } from './config.ts';
-import { isRecord } from './isRecord.ts';
-import { resolveKitExports } from './resolveKitExports.ts';
-import { validateKit } from './validateKit.ts';
+import { assertIsRdyKit } from '../assertIsRdyKit.ts';
+import type { LoadedRdyKit } from '../config.ts';
+import { isRecord } from '../isRecord.ts';
+import { resolveKitExports } from '../resolveKitExports.ts';
+import { validateKit } from '../validateKit.ts';
 
 export interface LoadRemoteKitOptions {
   url: string;

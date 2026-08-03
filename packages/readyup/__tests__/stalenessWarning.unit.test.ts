@@ -21,7 +21,7 @@ vi.mock(import('../src/config.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
 }));
 
-vi.mock(import('../src/loadRemoteKit.ts'), () => ({
+vi.mock(import('../src/remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 

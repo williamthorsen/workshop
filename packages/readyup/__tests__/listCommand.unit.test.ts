@@ -36,7 +36,7 @@ vi.mock(import('../src/manifest/readManifest.ts'), async (importOriginal) => {
 
 import { listCommand } from '../src/list/listCommand.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
-import { captureRdyError } from './helpers/captureRdyError.ts';
+import { captureRdyError } from '../src/test-utils/captureRdyError.ts';
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;

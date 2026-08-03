@@ -13,8 +13,8 @@ vi.mock(import('node:fs'), () => ({
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
-import { loadRemoteKit } from '../src/loadRemoteKit.ts';
-import { mockResponse } from './helpers/mockResponse.ts';
+import { mockResponse } from '../../test-utils/mockResponse.ts';
+import { loadRemoteKit } from '../loadRemoteKit.ts';
 
 describe(loadRemoteKit, () => {
   afterEach(() => {

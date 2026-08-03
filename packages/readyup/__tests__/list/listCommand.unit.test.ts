@@ -30,19 +30,19 @@ vi.mock(import('../../src/manifest/readManifest.ts'), async (importOriginal) => 
   };
 });
 
-vi.mock(import('../../src/resolveBitbucketToken.ts'), () => ({
+vi.mock(import('../../src/remote/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-vi.mock(import('../../src/resolveGitHubToken.ts'), () => ({
+vi.mock(import('../../src/remote/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
 vi.stubGlobal('fetch', mockFetch);
 
 import { listCommand } from '../../src/list/listCommand.ts';
-import { captureRdyError } from '../helpers/captureRdyError.ts';
-import { mockResponse } from '../helpers/mockResponse.ts';
+import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
+import { mockResponse } from '../../src/test-utils/mockResponse.ts';
 
 const validRemoteManifestBody = JSON.stringify({
   version: 1,

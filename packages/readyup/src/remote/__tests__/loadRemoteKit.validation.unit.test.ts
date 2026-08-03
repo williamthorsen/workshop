@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
-import { loadRemoteKit } from '../src/loadRemoteKit.ts';
+import { loadRemoteKit } from '../loadRemoteKit.ts';
 
 /** Build a minimal mock Response with the given body and status. */
 function mockResponse(

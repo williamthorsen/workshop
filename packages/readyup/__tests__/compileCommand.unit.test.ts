@@ -60,8 +60,8 @@ import { compileCommand } from '../src/compile/compileCommand.ts';
 import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
 import { richFormatter } from '../src/layout/richFormatter.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
+import { captureRdyError } from '../src/test-utils/captureRdyError.ts';
 import { VERSION } from '../src/version.ts';
-import { captureRdyError } from './helpers/captureRdyError.ts';
 
 const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.glyph;
 const ICON_COMPILED = richFormatter.tokens.passed.glyph;

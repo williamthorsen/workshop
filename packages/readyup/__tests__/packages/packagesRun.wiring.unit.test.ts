@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveKitSources, runCommand } from '../../src/cli.ts';
 import { ReportSchema } from '../../src/schemas/index.ts';
-import { captureRdyError } from '../helpers/captureRdyError.ts';
+import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
 
 /**
  * Joins `--packages` to the kits an installed package publishes, against a real fixture project. The

@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
-import { loadRemoteManifest, RemoteManifestNotFoundError } from '../src/loadRemoteManifest.ts';
-import { mockResponse } from './helpers/mockResponse.ts';
+import { mockResponse } from '../../test-utils/mockResponse.ts';
+import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 
 const validManifestBody = JSON.stringify({
   version: 1,
