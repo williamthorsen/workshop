@@ -27,7 +27,7 @@ describe('package entry', () => {
 
 // region | Helpers
 
-/** Every module the entry re-exports from, paired with its namespace, ordered by specifier. */
+/** Collects every module the entry re-exports from, paired with its namespace, ordered by specifier. */
 async function readPublishedModules(): Promise<Array<readonly [string, Record<string, unknown>]>> {
   const source = await readFile(entryPath, 'utf8');
   const matched = source

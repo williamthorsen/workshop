@@ -2,7 +2,7 @@ import type { Plan } from '../schemas/plan-schemas.ts';
 import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 
 /**
- * A small plan that satisfies both the schema and every consistency invariant.
+ * Builds a small plan that satisfies both the schema and every consistency invariant.
  *
  * Exercises the shapes a trivial plan would leave untested: a traversal-only kind, an artifact reached through a
  * dependency edge, a shadowed candidate, a transcluded partial, a seed naming the tier that decided it, and a file whose
