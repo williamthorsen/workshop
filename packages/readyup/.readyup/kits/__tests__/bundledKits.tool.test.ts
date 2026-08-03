@@ -31,15 +31,15 @@ const baseArgs = {
 };
 
 /**
- * Integration test: reaches the kits readyup publishes the way a consuming project does, through
- * `--from npm:readyup` against a real `node_modules` tree.
+ * Reaches the kits readyup publishes the way a consuming project does, through `--from npm:readyup`
+ * against a real `node_modules` tree.
  *
  * The fixture installs the kits by compiling this package's own sources, so the test exercises what
  * ships without waiting on the `prepare` that produces it. The kits' own unit tests cover what each
  * check decides; this locks in the seam that carries them to a consumer -- that the bundles load from
  * an installed package, and that the manifest beside them is what `list` reports.
  */
-describe('kits readyup publishes (integration)', () => {
+describe('kits readyup publishes', () => {
   let projectRoot: string;
   let originalCwd: string;
   let stdout: string[];

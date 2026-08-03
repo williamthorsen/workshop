@@ -38,7 +38,7 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "tsx ../../config/generateVersion.ts && nmr-compile"
+    "prepare": "node ../../config/generateVersion.ts && nmr-compile"
   },
   "engines": {
     "node": ">=24"

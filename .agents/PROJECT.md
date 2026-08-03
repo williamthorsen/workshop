@@ -30,7 +30,8 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 **Root-level (from repo root):**
 
 - `pnpm install` — Install all dependencies
-- `nmr ci` — Full CI pipeline (strict checks + build)
+- `nmr ci` — The code-quality gate CI runs (build + strict checks)
+- `nmr prepush` — Everything the remote runs (`nmr ci` plus the dependency audit)
 - `nmr check` — Typecheck, format check, lint check, and tests
 - `nmr build` — Build all packages
 - `nmr test` — Run tests across all packages
@@ -54,8 +55,9 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 - Vitest with v8 coverage provider
 - Typecheck uses `tsgo` (TypeScript native preview)
-- Suites are Vitest projects, selected by `--project`, not by naming a config file. `nmr test` runs `app` and `unit`; `nmr test:integration` runs `integration`; `nmr test:all` runs all three.
-- The project a test file lands in is decided by its suffix: `*.int.test.ts` is integration, `*.app.test.ts` is tooling and drift. `unit` is defined by subtracting those two rather than by an allow-list, so a file with any other suffix — or none — is a unit test and needs no rename.
+- Suites are Vitest projects on an isolation ladder, named for the furthest thing a test reaches and selected by `--project`, not by naming a config file. `nmr test` runs `unit` and `tool`, the two tiers a bare install can run; `nmr test:unit` and `nmr test:tool` run one apiece; `nmr test:all` adds `localhost` and `remote`, which this repo declares but does not use.
+- The tier a test file lands in is decided by the infix nearest `.test.ts`: `*.tool.test.ts` reaches a program the environment supplies (a spawned binary, or esbuild through its API). `unit` is the residual and claims every file the named tiers don't, so the filesystem is not a tier boundary — a tmpdir test is a unit test.
+- Test files are named `<subject>[.<aspect>].<tier>.test.ts`. The tier tail is mandatory; a bare `*.test.ts` is drift, as is a tail naming anything but a tier. Any token before the tail documents intent: `.app.` covers something about the repo itself, `.wiring.` a seam whose branches unit tests already cover, `.roundtrip.` a value surviving serialization and reparsing. Readyup's suite predates the convention and is migrating under #192.
 
 ### Code quality
 
@@ -65,3 +67,4 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 ## Gotchas
 
 - **Build caching**: `nmr-compile`'s content-hash cache (`dist/esm/.cache`) means a rebuild won't run if only non-source files change. Delete the cache file to force a rebuild.
+- **Check caching**: a check that already passed on the current working tree reports a pass without running again. Use `nmr --no-cache {command}` when the run has to produce an artifact rather than an exit status (a fresh `coverage/`), and `nmr clean` to forget every recorded pass.

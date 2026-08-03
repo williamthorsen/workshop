@@ -9,14 +9,14 @@ import { hashBytes } from '../../src/verify/targetHash.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 
 /**
- * Integration test: exercises the full `verifyCommand → checkDrift → hashFile → filesystem` chain
- * against real files in a tempdir, without mocking the drift helper. Unit tests cover the branches;
- * this locks in the wiring (e.g., that `manifestDir` is threaded through correctly).
+ * Exercises the full `verifyCommand → checkDrift → hashFile → filesystem` chain against real files in
+ * a tempdir, without mocking the drift helper. Unit tests cover the branches; this locks in the wiring
+ * (e.g., that `manifestDir` is threaded through correctly).
  */
 const OK = richFormatter.tokens.passed.glyph;
 const FAILED = richFormatter.tokens.failedError.glyph;
 
-describe('verifyCommand (integration)', () => {
+describe('verifyCommand wiring', () => {
   let tempDir: string;
   let stdout: string[];
   let stdoutSpy: MockInstance;

@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MIN_CHEZMOI_VERSION, parseVersion } from '../chezmoi/version.ts';
 import { overlay } from '../overlay.ts';
 
-/** Detect a chezmoi binary on PATH meeting the minimum version, so integration tests skip cleanly when absent. */
+/** Detects a chezmoi binary on PATH meeting the minimum version, so these tests skip cleanly when absent. */
 function detectChezmoi(): boolean {
   try {
     const output = execFileSync('chezmoi', ['--version'], { encoding: 'utf8' });

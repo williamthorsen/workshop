@@ -24,7 +24,6 @@ const config = defineConfig([
   {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs', '**/*.ts', '**/*.tsx'],
     rules: {
-      'n/no-extraneous-import': 'off',
       'n/no-missing-import': 'off',
       'n/no-unpublished-import': 'off',
     },
