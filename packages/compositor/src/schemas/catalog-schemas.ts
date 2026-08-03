@@ -35,8 +35,8 @@ export const KindLayoutSchema = z
 /**
  * One artifact kind as resolution needs it: the plan's descriptor, plus where a source keeps artifacts of that kind.
  *
- * Extends the plan's descriptor rather than paralleling it, so a catalog's `kinds` entry parses as a plan's and the two
- * cannot drift. The layout rides along because a consumer rendering a source's tree has no other way to learn it.
+ * Extends the plan's descriptor, so a catalog's `kinds` entry parses as a plan's and the two cannot drift. The layout
+ * rides along because a consumer rendering a source's tree has no other way to learn it.
  */
 export const ResolveKindSchema = KindDescriptorSchema.extend({ layout: KindLayoutSchema }).meta({ id: 'ResolveKind' });
 
@@ -52,7 +52,7 @@ export const SourceSpecSchema = SourceEntrySchema.extend({ dir: z.string() }).me
  * One artifact some source carries, and how precedence settled it.
  *
  * `id` composes `kindId` and `slug`, matching the id a plan gives the same artifact, so a plan entry addresses its
- * catalog entry. It stays opaque on the read side: a slug carrying the separator makes splitting it wrong.
+ * catalog entry.
  */
 export const CatalogEntrySchema = z
   .object({

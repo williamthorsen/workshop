@@ -69,7 +69,6 @@ describe('CatalogSchema', () => {
 });
 
 describe('ResolveKindSchema', () => {
-  // The extension is what keeps the two tables from drifting: a catalog's kinds are readable as a plan's.
   it('produces a kind a plan accepts in its own kinds table', () => {
     const resolveKind = ResolveKindSchema.parse(directoryKind);
 
@@ -142,7 +141,7 @@ describe('catalog schema evolution', () => {
 
 // region | Helpers
 
-/** The smallest catalog that satisfies the schema: one kind, one source, one entry. */
+/** Builds the smallest catalog that satisfies the schema: one kind, one source, one entry. */
 function buildMinimalCatalog(): z.infer<typeof CatalogSchema> {
   return {
     schemaVersion: CATALOG_SCHEMA_VERSION,
