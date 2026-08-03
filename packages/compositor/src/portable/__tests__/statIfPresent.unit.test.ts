@@ -51,7 +51,7 @@ describe(statIfPresent, () => {
     await chmod(lockedDir, 0o000);
 
     try {
-      // Statting below an unsearchable directory fails with EACCES, which is a problem rather than an absence.
+      // Statting below an unsearchable directory fails with EACCES.
       await expect(statIfPresent(path.join(lockedDir, 'inner.md'))).rejects.toThrow(/EACCES/);
     } finally {
       // Restored before the fixture is removed, since the cleanup cannot descend into an unreadable directory.
