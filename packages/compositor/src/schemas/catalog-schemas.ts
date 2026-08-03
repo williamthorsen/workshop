@@ -2,8 +2,8 @@
 
 import { z } from 'zod';
 
+import { ArtifactResolutionSchema } from './artifact-resolution-schemas.ts';
 import { KindDescriptorSchema, SourceEntrySchema } from './descriptor-schemas.ts';
-import { ArtifactResolutionSchema } from './graph-schemas.ts';
 import { IdSchema } from './scalar-schemas.ts';
 
 /**

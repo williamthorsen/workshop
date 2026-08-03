@@ -68,17 +68,6 @@ describe('ArtifactEntrySchema', () => {
   it('if the status is outside the known set, rejects the artifact', () => {
     expect(findIssuePaths(ArtifactEntrySchema, { ...present, status: 'moved' })).toStrictEqual([['status']]);
   });
-
-  it('records every shadowed candidate in the order given', () => {
-    const shadowed = [
-      { sourceId: 'shared', path: 'skills/review/SKILL.md', hash: 'h2' },
-      { sourceId: 'library', path: 'skills/review/SKILL.md', hash: 'h3' },
-    ];
-
-    const parsed = ArtifactEntrySchema.parse({ ...present, resolution: { winner, shadowed } });
-
-    expect(parsed).toHaveProperty('resolution.shadowed', shadowed);
-  });
 });
 
 describe('DependencyEdgeSchema', () => {

@@ -18,6 +18,8 @@ export type { SourceArtifact } from './resolution/enumerateSource.ts';
 export { enumerateSource } from './resolution/enumerateSource.ts';
 export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
 export { resolveCatalog } from './resolution/resolveCatalog.ts';
+export type { ArtifactResolution, ResolutionCandidate } from './schemas/artifact-resolution-schemas.ts';
+export { ArtifactResolutionSchema, ResolutionCandidateSchema } from './schemas/artifact-resolution-schemas.ts';
 export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
 export {
   CATALOG_SCHEMA_VERSION,
@@ -86,25 +88,21 @@ export {
 } from './schemas/file-schemas.ts';
 export type {
   ArtifactEntry,
-  ArtifactResolution,
   DependencyEdge,
   EdgeOrigin,
   PartialEntry,
   PresentArtifact,
   RemovedArtifact,
-  ResolutionCandidate,
   Seed,
   SeedOrigin,
 } from './schemas/graph-schemas.ts';
 export {
   ArtifactEntrySchema,
-  ArtifactResolutionSchema,
   DependencyEdgeSchema,
   EdgeOriginSchema,
   PartialEntrySchema,
   PresentArtifactSchema,
   RemovedArtifactSchema,
-  ResolutionCandidateSchema,
   SeedOriginSchema,
   SeedSchema,
 } from './schemas/graph-schemas.ts';
