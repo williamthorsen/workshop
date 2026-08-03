@@ -2,6 +2,7 @@
 
 import { Buffer } from 'node:buffer';
 
+// The bodies below interpolate these markers, so alphabetizing the module would break its initialization.
 export const REGION_CLOSE = '<!-- ambient:end -->';
 export const REGION_OPEN = '<!-- ambient:start -->';
 
