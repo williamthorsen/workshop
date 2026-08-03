@@ -61,7 +61,7 @@ describe(buildFiles, () => {
 
 // region | Helpers
 
-/** The file at the given path, failing the test when the table carries none. */
+/** Finds the file at the given path, failing the test when the table carries none. */
 function findFile(filePath: string): FileEntry {
   const file = files.find((entry) => entry.path === filePath);
   if (file === undefined) {
@@ -70,7 +70,7 @@ function findFile(filePath: string): FileEntry {
   return file;
 }
 
-/** The sentinel `file` declares for the entries it owns, failing the test when it is not entry-owned. */
+/** Reads the sentinel `file` declares for the entries it owns, failing the test when it is not entry-owned. */
 function readEntriesSentinel(file: FileEntry): string {
   if (file.ownership.kind !== 'entries') {
     throw new Error(`The sample file "${file.path}" does not declare entry ownership.`);
@@ -78,7 +78,7 @@ function readEntriesSentinel(file: FileEntry): string {
   return file.ownership.sentinel;
 }
 
-/** The body planned for `file`, failing the test when the store carries none. */
+/** Reads the body planned for `file`, failing the test when the store carries none. */
 function readPlannedBody(file: FileEntry): string {
   const blob = file.planned === undefined ? undefined : bodies[file.planned.hash];
   if (blob === undefined) {

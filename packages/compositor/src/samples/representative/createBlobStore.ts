@@ -17,7 +17,7 @@ export interface BlobStore {
   /** Registers `data` as a UTF-8 blob and returns the file side naming it. */
   addUtf8(data: string): FileSide;
 
-  /** Every registered blob, keyed by hash in hash order. */
+  /** Collects every registered blob, keyed by hash in hash order. */
   toTable(): Record<Hash, Blob>;
 }
 

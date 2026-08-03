@@ -39,7 +39,7 @@ describe('determinism', () => {
 // region | Helpers
 
 /**
- * The id of each artifact whose seed records do not follow the plan's tier order.
+ * Collects the id of each artifact whose seed records do not follow the plan's tier order.
  *
  * `tiers` runs in precedence order rather than lexicographically, so a seed list sorted by tier id would satisfy no rule
  * the contract states.
@@ -56,7 +56,7 @@ function collectMisorderedSeeds(plan: Plan): Array<string> {
     .map((artifact) => artifact.id);
 }
 
-/** The name of each id-keyed table whose entries are not in lexicographic id order. */
+/** Collects the name of each id-keyed table whose entries are not in lexicographic id order. */
 function collectUnsortedTables(plan: Plan): Array<string> {
   const tables = [
     ['artifacts', plan.artifacts],

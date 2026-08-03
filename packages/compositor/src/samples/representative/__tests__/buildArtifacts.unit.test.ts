@@ -33,7 +33,7 @@ describe(buildArtifacts, () => {
 
 // region | Helpers
 
-/** The artifact with the given id, failing the test when the table carries none. */
+/** Finds the artifact with the given id, failing the test when the table carries none. */
 function findArtifact(id: string): ArtifactEntry {
   const artifact = artifacts.find((entry) => entry.id === id);
   if (artifact === undefined) {
