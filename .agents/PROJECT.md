@@ -57,7 +57,7 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 - Typecheck uses `tsgo` (TypeScript native preview)
 - Suites are Vitest projects on an isolation ladder, named for the furthest thing a test reaches and selected by `--project`, not by naming a config file. `nmr test` runs `unit` and `tool`, the two tiers a bare install can run; `nmr test:unit` and `nmr test:tool` run one apiece; `nmr test:all` adds `localhost` and `remote`, which this repo declares but does not use.
 - The tier a test file lands in is decided by the infix nearest `.test.ts`: `*.tool.test.ts` reaches a program the environment supplies (a spawned binary, or esbuild through its API). `unit` is the residual and claims every file the named tiers don't, so the filesystem is not a tier boundary — a tmpdir test is a unit test.
-- Test files are named `<subject>[.<aspect>].<tier>.test.ts`. The tier tail is mandatory; a bare `*.test.ts` is drift, as is a tail naming anything but a tier. Any token before the tail documents intent: `.app.` covers something about the repo itself, `.wiring.` a seam whose branches unit tests already cover, `.roundtrip.` a value surviving serialization and reparsing. Readyup's suite predates the convention and is migrating under #192.
+- Test files are named `<subject>[.<aspect>].<tier>.test.ts`. The tier tail is mandatory; a bare `*.test.ts` is drift, as is a tail naming anything but a tier. Any token before the tail documents intent: `.app.` covers something about the repo itself, `.wiring.` a seam whose branches unit tests already cover, `.roundtrip.` a value surviving serialization and reparsing. The root suite's `test-tier-infixes` test enforces the tail across every package.
 
 ### Code quality
 

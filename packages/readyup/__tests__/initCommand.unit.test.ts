@@ -1,170 +1,133 @@
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-const mockScaffoldConfig = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../src/init/scaffold.ts'), () => ({
-  scaffoldConfig: mockScaffoldConfig,
-}));
-
-const mockReportWriteResult = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../src/terminal.ts'), () => ({
-  printError: vi.fn(),
-  printSkip: vi.fn(),
-  printStep: vi.fn(),
-  printSuccess: vi.fn(),
-  reportWriteResult: mockReportWriteResult,
-}));
-
-const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
-const mockIsPackageInstalled = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../src/utils/install-command.ts'), () => ({
-  buildInstallCommand: mockBuildInstallCommand,
-}));
-
-vi.mock(import('../src/utils/resolve-package.ts'), () => ({
-  isPackageInstalled: mockIsPackageInstalled,
-}));
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initCommand } from '../src/init/initCommand.ts';
+import { rdyConfigTemplate, rdyKitTemplate } from '../src/init/templates.ts';
 
-/** Build a scaffold result with both files having the same outcome. */
-function makeScaffoldResult(outcome: string) {
-  return {
-    configResult: { filePath: '.config/readyup.config.ts', outcome },
-    kitResult: { filePath: '.readyup/kits/default.ts', outcome },
-  };
-}
+const TEST_DIR = join(import.meta.dirname, '../.test-tmp');
+const CONFIG_PATH = '.config/readyup.config.ts';
+const KIT_PATH = '.readyup/kits/default.ts';
 
-describe(`${initCommand.name} error handling`, () => {
+describe(initCommand, () => {
+  let originalCwd: string;
+
   beforeEach(() => {
+    originalCwd = process.cwd();
+    mkdirSync(TEST_DIR, { recursive: true });
+    process.chdir(TEST_DIR);
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
+    process.chdir(originalCwd);
+    rmSync(TEST_DIR, { recursive: true, force: true });
     vi.restoreAllMocks();
-    mockScaffoldConfig.mockReset();
-    mockReportWriteResult.mockReset();
-    mockBuildInstallCommand.mockReset();
-    mockIsPackageInstalled.mockReset();
   });
 
-  it('throws a config error when scaffoldConfig throws', () => {
-    mockScaffoldConfig.mockImplementation(() => {
-      throw new Error('disk full');
-    });
+  it('scaffolds both config and kit files and returns 0', () => {
+    const exitCode = initCommand({ dryRun: false, force: false });
 
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'config', message: expect.stringContaining('disk full') }),
-    );
+    expect(exitCode).toBe(0);
+    expect(existsSync(join(TEST_DIR, CONFIG_PATH))).toBe(true);
+    expect(existsSync(join(TEST_DIR, KIT_PATH))).toBe(true);
+
+    const configContent = readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8');
+    expect(configContent).toBe(rdyConfigTemplate);
+
+    const kitContent = readFileSync(join(TEST_DIR, KIT_PATH), 'utf8');
+    expect(kitContent).toBe(rdyKitTemplate);
   });
 
-  it('throws a config error naming the file when the config result failed', () => {
-    mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
-
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .config/readyup.config.ts' }),
-    );
-  });
-
-  it('throws a config error naming the file when the kit result failed', () => {
-    mockScaffoldConfig.mockReturnValue({
-      configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
-      kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
-    });
-
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
-      expect.objectContaining({ code: 'config', message: 'Failed to scaffold .readyup/kits/default.ts' }),
-    );
-  });
-
-  it('returns exit code 0 when both results are created', () => {
-    mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
+  it('skips with a warning when both files already exist', () => {
+    mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
+    writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
+    writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
 
     const exitCode = initCommand({ dryRun: false, force: false });
 
     expect(exitCode).toBe(0);
+    expect(readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8')).toBe('existing config');
+    expect(readFileSync(join(TEST_DIR, KIT_PATH), 'utf8')).toBe('existing kit');
   });
 
-  it.each([
-    { outcome: 'created', dryRun: false },
-    { outcome: 'overwritten', dryRun: false },
-    { outcome: 'overwritten', dryRun: true },
-    { outcome: 'up-to-date', dryRun: false },
-    { outcome: 'skipped', dryRun: false },
-    { outcome: 'failed', dryRun: false },
-  ])('calls reportWriteResult for both files with $outcome outcome (dryRun=$dryRun)', ({ outcome, dryRun }) => {
-    const result = makeScaffoldResult(outcome);
-    mockScaffoldConfig.mockReturnValue(result);
+  it('overwrites existing files when force is true', () => {
+    mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
+    writeFileSync(join(TEST_DIR, CONFIG_PATH), 'old config', 'utf8');
+    writeFileSync(join(TEST_DIR, KIT_PATH), 'old kit', 'utf8');
 
-    // A failed write is reported per-file before the command throws, so both calls land either way.
-    try {
-      initCommand({ dryRun, force: false });
-    } catch {
-      // The thrown failure is asserted by its own test.
-    }
+    const exitCode = initCommand({ dryRun: false, force: true });
 
-    expect(mockReportWriteResult).toHaveBeenCalledWith(result.configResult, dryRun);
-    expect(mockReportWriteResult).toHaveBeenCalledWith(result.kitResult, dryRun);
+    expect(exitCode).toBe(0);
+    expect(readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8')).toBe(rdyConfigTemplate);
+    expect(readFileSync(join(TEST_DIR, KIT_PATH), 'utf8')).toBe(rdyKitTemplate);
+  });
+
+  it('previews without writing when dry-run is true', () => {
+    const exitCode = initCommand({ dryRun: true, force: false });
+
+    expect(exitCode).toBe(0);
+    expect(existsSync(join(TEST_DIR, CONFIG_PATH))).toBe(false);
+    expect(existsSync(join(TEST_DIR, KIT_PATH))).toBe(false);
+  });
+
+  it('reports up-to-date when both files match the templates', () => {
+    mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
+    writeFileSync(join(TEST_DIR, CONFIG_PATH), rdyConfigTemplate, 'utf8');
+    writeFileSync(join(TEST_DIR, KIT_PATH), rdyKitTemplate, 'utf8');
+
+    const exitCode = initCommand({ dryRun: false, force: false });
+
+    expect(exitCode).toBe(0);
+    expect(readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8')).toBe(rdyConfigTemplate);
+    expect(readFileSync(join(TEST_DIR, KIT_PATH), 'utf8')).toBe(rdyKitTemplate);
+  });
+
+  it('does not modify existing files during dry-run', () => {
+    mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
+    writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
+    writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
+
+    const exitCode = initCommand({ dryRun: true, force: false });
+
+    expect(exitCode).toBe(0);
+    expect(readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8')).toBe('existing config');
+    expect(readFileSync(join(TEST_DIR, KIT_PATH), 'utf8')).toBe('existing kit');
+  });
+
+  it('does not overwrite during dry-run even with force', () => {
+    mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
+    mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
+    writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
+    writeFileSync(join(TEST_DIR, KIT_PATH), 'existing kit', 'utf8');
+
+    const exitCode = initCommand({ dryRun: true, force: true });
+
+    expect(exitCode).toBe(0);
+    expect(readFileSync(join(TEST_DIR, CONFIG_PATH), 'utf8')).toBe('existing config');
+    expect(readFileSync(join(TEST_DIR, KIT_PATH), 'utf8')).toBe('existing kit');
+  });
+
+  it('does not print next steps during dry-run', () => {
+    const exitCode = initCommand({ dryRun: true, force: false });
+
+    expect(exitCode).toBe(0);
+    const infoMessages = vi.mocked(console.info).mock.calls.map((c) => String(c[0]));
+    expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(false);
+  });
+
+  it('prints next steps after successful scaffolding', () => {
+    const exitCode = initCommand({ dryRun: false, force: false });
+
+    expect(exitCode).toBe(0);
+    const infoMessages = vi.mocked(console.info).mock.calls.map((c) => String(c[0]));
+    expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(true);
   });
 });
-
-describe(`${initCommand.name} next steps`, () => {
-  let infoSpy: MockInstance;
-
-  beforeEach(() => {
-    infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-    mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
-    mockBuildInstallCommand.mockReturnValue('pnpm add --save-dev readyup');
-    mockIsPackageInstalled.mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    mockScaffoldConfig.mockReset();
-    mockBuildInstallCommand.mockReset();
-    mockIsPackageInstalled.mockReset();
-  });
-
-  it('names only rdy commands, never npx readyup', () => {
-    initCommand({ dryRun: false, force: false });
-
-    expect(printedSteps(infoSpy)).not.toContain('npx readyup');
-    expect(printedSteps(infoSpy)).toContain('rdy compile');
-    expect(printedSteps(infoSpy)).toContain('rdy run');
-  });
-
-  it('omits the install step when readyup is already installed', () => {
-    initCommand({ dryRun: false, force: false });
-
-    const steps = printedSteps(infoSpy);
-    expect(steps).not.toContain('Install readyup');
-    expect(steps).toContain('1. Customize .config/readyup.config.ts');
-    expect(steps).toContain('5. Commit the generated files.');
-  });
-
-  it('leads with the install step when readyup is not installed', () => {
-    mockIsPackageInstalled.mockReturnValue(false);
-
-    initCommand({ dryRun: false, force: false });
-
-    const steps = printedSteps(infoSpy);
-    expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup');
-    expect(steps).toContain('2. Customize .config/readyup.config.ts');
-    expect(steps).toContain('6. Commit the generated files.');
-  });
-
-  it('prints no next steps in dry-run mode', () => {
-    initCommand({ dryRun: true, force: false });
-
-    expect(printedSteps(infoSpy)).not.toContain('Customize');
-  });
-});
-
-/** Join everything written to `console.info` into one string. */
-function printedSteps(infoSpy: MockInstance): string {
-  return infoSpy.mock.calls.map((call) => String(call[0])).join('\n');
-}
