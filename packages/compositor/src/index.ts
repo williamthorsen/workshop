@@ -116,3 +116,13 @@ export {
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
+export type { DirectivePatterns, DirectiveSyntax } from './transclusion/buildDirectivePatterns.ts';
+export { buildDirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
+export { composePartialId } from './transclusion/composePartialId.ts';
+export type { Segment, Transclusion, TransclusionSource } from './transclusion/expandTransclusions.ts';
+export { expandTransclusions } from './transclusion/expandTransclusions.ts';
+export type {
+  DirectiveRef,
+  TransclusionDiagnostic,
+  TransclusionFailure,
+} from './transclusion/TransclusionDiagnostic.ts';
