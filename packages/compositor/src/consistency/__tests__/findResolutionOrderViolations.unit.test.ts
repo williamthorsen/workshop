@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { ResolutionCandidate } from '../../schemas/artifact-resolution-schemas.ts';
 import { findResolutionOrderViolations } from '../findResolutionOrderViolations.ts';
 
-// Highest precedence first, which is the order the rule reads.
 const sources = [{ id: 'local' }, { id: 'team' }, { id: 'library' }];
 
 describe(findResolutionOrderViolations, () => {

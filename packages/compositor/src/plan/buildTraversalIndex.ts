@@ -6,10 +6,10 @@ import type { ArtifactId } from '../schemas/scalar-schemas.ts';
 
 /** Reverse lookups over a plan's graph, answering the two "used by" directions the payload stores only forwards. */
 export interface TraversalIndex {
-  /** The artifacts whose edges point at `artifactId`. */
+  /** Finds the artifacts whose edges point at `artifactId`. */
   findDependents(artifactId: ArtifactId): ReadonlyArray<ArtifactId>;
 
-  /** The files `artifactId` contributes content to. */
+  /** Finds the files `artifactId` contributes content to. */
   findContributedFiles(artifactId: ArtifactId): ReadonlyArray<FileEntry>;
 }
 
@@ -18,8 +18,8 @@ export interface TraversalIndex {
  *
  * The file-to-artifact edge is written only on the file, so the artifact-to-file direction exists nowhere in the
  * payload until it is derived here. That half is plan-only, having no counterpart in a closure, which is why the
- * artifact-to-artifact half lives in `buildDependentsIndex` and is composed rather than repeated. Build once per plan: a
- * provenance pane issues many lookups against one plan.
+ * artifact-to-artifact half lives in `buildDependentsIndex` and is composed here. Build once per plan: a provenance
+ * pane issues many lookups against one plan.
  */
 export function buildTraversalIndex(plan: Plan): TraversalIndex {
   const findDependents = buildDependentsIndex(plan);

@@ -30,8 +30,7 @@ export function findDanglingReferences(plan: Plan): Array<Violation> {
       requireKnown(artifactIds, edge.to, `${at}.dependsOn[${edgeIndex}].to`, 'artifacts');
       requireKnown(partialIds, edge.partialId, `${at}.dependsOn[${edgeIndex}].partialId`, 'partials');
     }
-    // A removed artifact is seeded by nothing and carries no `seededBy` at all, so the narrowing is what reaches the
-    // field rather than a fallback for an absent one.
+    // A removed artifact carries no `seededBy` at all, so the status narrowing is what reaches the field.
     const seeds = artifact.status === 'removed' ? [] : artifact.seededBy;
     for (const [seedIndex, seed] of seeds.entries()) {
       requireKnown(tierIds, seed.tierId, `${at}.seededBy[${seedIndex}].tierId`, 'tiers');
