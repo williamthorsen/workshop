@@ -5,8 +5,8 @@ import { readContributions } from '../readContributions.ts';
 import { renderContribution } from '../renderContribution.ts';
 
 const PATTERNS: ContributionPatterns = {
-  open: '<!-- rulebook:([a-z-]+) -->',
-  close: '<!-- /rulebook:([a-z-]+) -->',
+  open: '^<!-- rulebook:([a-z-]+) -->$',
+  close: '^<!-- /rulebook:([a-z-]+) -->$',
 };
 
 describe(readContributions, () => {
@@ -53,6 +53,22 @@ describe(readContributions, () => {
 
   it('if the host carries no contributions, reports none', () => {
     expect(readContributions('# Guidance\n', PATTERNS)).toStrictEqual([]);
+  });
+
+  it('does not read a marker quoted inside prose as a contribution, an anchored pattern binding to its line', () => {
+    const content = 'Write `<!-- rulebook:style -->` to open and `<!-- /rulebook:style -->` to close.\n';
+
+    expect(readContributions(content, PATTERNS)).toStrictEqual([]);
+  });
+
+  it('reads a contribution whose markers are indented, as a host nesting them would write them', () => {
+    const patterns: ContributionPatterns = {
+      open: String.raw`^[ \t]*# rulebook:([a-z-]+)$`,
+      close: String.raw`^[ \t]*# \/rulebook:([a-z-]+)$`,
+    };
+    const content = 'prompts:\n  # rulebook:style\n  - name: style\n  # /rulebook:style\n';
+
+    expect(readContributions(content, patterns)).toStrictEqual([{ key: 'style', body: '  - name: style' }]);
   });
 
   it('if a pattern captures nothing, throws, the fault being the declaration and not the host', () => {

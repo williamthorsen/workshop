@@ -5,6 +5,10 @@
  * Patterns rather than literal marker pairs, because a caller supplying literals could only confirm contributions it
  * already knew about, and the question worth asking of a host is which contributions it carries. They are sources
  * rather than compiled expressions so that a consumer's declaration stays serializable.
+ *
+ * Anchor each pattern to its line with `^` and `$`. Both compile multiline, so those anchors bind to a line rather
+ * than to the whole host, and anchoring is what keeps a marker quoted inside prose from reading as one -- the same
+ * property `classifyRegion` gives a region's own markers.
  */
 export interface ContributionPatterns {
   readonly open: string;
@@ -75,7 +79,7 @@ function findClosingMarker(
  * declaration a consumer wrote, so it throws where a damaged host blocks.
  */
 function toGlobalPattern(source: string, role: string): RegExp {
-  const pattern = new RegExp(source, 'g');
+  const pattern = new RegExp(source, 'gm');
   const groupCount = (new RegExp(`${source}|`).exec('') ?? []).length - 1;
   if (groupCount !== 1) {
     throw new Error(

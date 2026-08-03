@@ -112,6 +112,12 @@ describe(ensureOwnedItems, () => {
     expect(outcome).toHaveProperty('blocked.reason', expect.stringContaining('not valid YAML'));
   });
 
+  it('if a value along the path is not a mapping, blocks rather than letting the write throw', () => {
+    const outcome = ensureOwnedItems('eventHooks: disabled\n', YAML_SPEC, [{ name: 'relay' }]);
+
+    expect(outcome).toHaveProperty('blocked.reason', expect.stringContaining('other than a collection'));
+  });
+
   describe('over a JSON host', () => {
     it('installs through the same signature, keeping foreign items', () => {
       const content = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
@@ -141,6 +147,25 @@ describe(ensureOwnedItems, () => {
       expect(ensureOwnedItems('{ "hooks": ', JSON_SPEC, [])).toHaveProperty(
         'blocked.reason',
         expect.stringContaining('not valid JSON'),
+      );
+    });
+
+    it('if a value along the path is not a mapping, blocks rather than reporting a write it never made', () => {
+      const outcome = ensureOwnedItems(
+        '{"eventHooks": "disabled"}\n',
+        { ...JSON_SPEC, collection: ['eventHooks', 'events'] },
+        [{ command: 'relay' }],
+      );
+
+      expect(outcome).toHaveProperty('blocked.reason', expect.stringContaining('other than a collection'));
+    });
+
+    it('expands an item the host held inline, the indent unit and trailing newline being what carry over', () => {
+      const content = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
+
+      expect(contentOf(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]))).toBe(
+        '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n' +
+          '    {\n      "command": "relay",\n      "source": "compositor"\n    }\n  ]\n}\n',
       );
     });
   });

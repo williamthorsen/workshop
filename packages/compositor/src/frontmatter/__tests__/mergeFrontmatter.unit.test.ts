@@ -93,4 +93,10 @@ describe(mergeFrontmatter, () => {
 
     expect(() => mergeFrontmatter('---\n- alpha\n- beta\n---\nBody\n', overlay, 'reviewer')).toThrow(/not a mapping/);
   });
+
+  it('if the block is never closed, throws rather than writing a second block above the declaration', () => {
+    const overlay: FrontmatterOverlay = { defaults: { model: 'opus' } };
+
+    expect(() => mergeFrontmatter('---\nname: reviewer\n', overlay, 'reviewer')).toThrow(/never closed/);
+  });
 });

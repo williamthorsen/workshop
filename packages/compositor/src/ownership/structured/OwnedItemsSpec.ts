@@ -7,7 +7,7 @@
  */
 export interface OwnedItemsSpec {
   readonly format: 'json' | 'yaml';
-  /** Path to the collection holding the items, from the document's root. */
+  /** Path to the collection holding the items, from the document's root, naming at least one key. */
   readonly collection: ReadonlyArray<string>;
   /**
    * The key path within an item, and the value at it, that marks the item as the engine's.

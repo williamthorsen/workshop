@@ -38,4 +38,15 @@ describe(locateCollection, () => {
     expect(locateCollection(open('{}\n', 'json'), ['hooks'])).toStrictEqual({ absent: true });
     expect(locateCollection(open('{"hooks": {}}\n', 'json'), ['hooks'])).toHaveProperty('blocked');
   });
+
+  it('if a value along the path is not a mapping, blocks rather than reading the leaf beyond it as absent', () => {
+    expect(locateCollection(open('eventHooks: disabled\n'), ['eventHooks', 'events'])).toHaveProperty('blocked');
+    expect(locateCollection(open('{"eventHooks": "disabled"}\n', 'json'), ['eventHooks', 'events'])).toHaveProperty(
+      'blocked',
+    );
+  });
+
+  it('if the path names no key, throws, the document root having no structure a removal could prune', () => {
+    expect(() => locateCollection(open('- name: relay\n'), [])).toThrow(/at least one key/);
+  });
 });

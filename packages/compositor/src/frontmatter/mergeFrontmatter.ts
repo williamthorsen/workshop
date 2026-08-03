@@ -28,8 +28,8 @@ export interface FrontmatterOverlay {
  * Keys already present keep their position and new keys append in sorted order, so an artifact's frontmatter does not
  * reshuffle because an overlay grew. An artifact no override applies to is returned byte for byte.
  *
- * Throws on a frontmatter block that is not a mapping: there is no reading of it that would let the overlay apply, and
- * every alternative to failing loses content the artifact declared.
+ * Throws on a frontmatter block that is not a mapping, and on one that is never closed: no reading of either lets the
+ * overlay apply, and every alternative to failing loses content the artifact declared.
  */
 export function mergeFrontmatter(content: string, overlay: FrontmatterOverlay, slug: string): string {
   const applied = { ...overlay.defaults, ...overlay.overrides?.[slug] };
@@ -37,7 +37,11 @@ export function mergeFrontmatter(content: string, overlay: FrontmatterOverlay, s
     return content;
   }
 
-  const { frontmatter, body } = parseFrontmatter(content);
+  const { frontmatter, body, unterminated } = parseFrontmatter(content);
+  if (unterminated) {
+    throw new Error(`Cannot overlay metadata onto "${slug}": its frontmatter block is never closed.`);
+  }
+
   // An artifact declaring no metadata starts from an empty mapping, which is what lets a block be written where the
   // artifact carried none.
   const document: Document =

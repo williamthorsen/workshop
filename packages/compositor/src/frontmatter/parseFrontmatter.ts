@@ -1,9 +1,16 @@
 /** An artifact split into the metadata block a target may overlay and the content beneath it. */
 export interface ParsedFrontmatter {
-  /** The block between the delimiters, without them, or `undefined` when the content opens with no block. */
+  /** The block between the delimiters, without them, or `undefined` when the content carries no complete block. */
   readonly frontmatter: string | undefined;
   /** Everything below the closing delimiter, or the whole content when there is no block. */
   readonly body: string;
+  /**
+   * True when the content opens a block that no delimiter closes.
+   *
+   * Separate from an absent `frontmatter`, which those two share: an artifact that opened a block declared metadata,
+   * and reading it as body would let a caller write a second block above the declaration it could not see.
+   */
+  readonly unterminated: boolean;
 }
 
 /**
@@ -20,16 +27,17 @@ export interface ParsedFrontmatter {
 export function parseFrontmatter(content: string): ParsedFrontmatter {
   const lines = content.split('\n');
   if (lines[0] !== '---') {
-    return { frontmatter: undefined, body: content };
+    return { frontmatter: undefined, body: content, unterminated: false };
   }
 
   const closingIndex = lines.indexOf('---', 1);
   if (closingIndex === -1) {
-    return { frontmatter: undefined, body: content };
+    return { frontmatter: undefined, body: content, unterminated: true };
   }
 
   return {
     frontmatter: lines.slice(1, closingIndex).join('\n'),
     body: lines.slice(closingIndex + 1).join('\n'),
+    unterminated: false,
   };
 }

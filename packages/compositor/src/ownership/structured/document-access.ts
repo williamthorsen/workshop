@@ -1,6 +1,6 @@
 /** Document access: the one place a structured host's format decides how it is read, edited, and written back. */
 
-import { type Document, isCollection, isNode, isSeq, parseDocument, YAMLSeq } from 'yaml';
+import { type Document, isCollection, isMap, isNode, isSeq, parseDocument, YAMLSeq } from 'yaml';
 
 import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
 
@@ -45,7 +45,13 @@ export function openDocument(
 
 // region | Helpers
 
-/** The formatting a JSON host is written back in, so an edit does not reformat what it did not touch. */
+/**
+ * The formatting a JSON host is written back in: the indent unit read from the source, and whether the file ends in a
+ * newline.
+ *
+ * Those two are what carry over. `JSON.stringify` expands every object and array across lines when given an indent, so
+ * a host holding an item inline gets it back expanded.
+ */
 interface JsonFormat {
   readonly indent: string | number;
   readonly trailingNewline: boolean;
@@ -108,11 +114,20 @@ function openJsonDocument(content: string): { readonly document: DocumentAccess 
   return {
     document: {
       readCollection(path) {
-        const value = readAt(path);
-        if (value === undefined || value === null) {
+        let cursor: unknown = root;
+        for (const key of path) {
+          if (cursor === undefined || cursor === null) {
+            return { state: 'absent' };
+          }
+          if (!isRecord(cursor)) {
+            return { state: 'other' };
+          }
+          cursor = cursor[key];
+        }
+        if (cursor === undefined || cursor === null) {
           return { state: 'absent' };
         }
-        return Array.isArray(value) ? { state: 'collection', items: value } : { state: 'other' };
+        return Array.isArray(cursor) ? { state: 'collection', items: cursor } : { state: 'other' };
       },
       removeCollection(path) {
         for (let depth = path.length; depth > 0; depth--) {
@@ -165,7 +180,16 @@ function openYamlDocument(content: string): { readonly document: DocumentAccess 
   return {
     document: {
       readCollection(path) {
-        const node = readAt(path);
+        let node: unknown = doc.contents;
+        for (const key of path) {
+          if (node === undefined || node === null) {
+            return { state: 'absent' };
+          }
+          if (!isMap(node)) {
+            return { state: 'other' };
+          }
+          node = node.get(key, true);
+        }
         if (node === undefined || node === null) {
           return { state: 'absent' };
         }
