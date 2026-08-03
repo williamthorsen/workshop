@@ -3,19 +3,17 @@ import path from 'node:path';
 import { readDirNames } from './readDirNames.ts';
 import { statIfPresent } from './statIfPresent.ts';
 
-/** What walking a tree needs beyond the directory to walk. */
 export interface ListFilesRecursivelyOptions {
   /**
    * Names to leave out, tested against each entry's own name rather than against its path.
    *
    * Applied during the walk, so a skipped directory is never descended into. Nothing is skipped by default: what
-   * counts as content is the caller's to decide, and a walker that dropped entries on its own would hide them from
-   * every caller that wanted them.
+   * counts as content is the caller's to decide.
    */
   readonly skipName?: (name: string) => boolean;
 }
 
-/** Every file beneath `dir`, as posix paths relative to `dir` itself. */
+/** Lists every file beneath `dir`, as posix paths relative to `dir` itself. */
 export async function listFilesRecursively(
   dir: string,
   options: ListFilesRecursivelyOptions = {},
@@ -25,7 +23,7 @@ export async function listFilesRecursively(
 
 // region | Helpers
 
-/** Every file beneath `dir`, as posix paths carrying `prefix`, the walk's position relative to where it started. */
+/** Lists files beneath `dir` as posix paths carrying `prefix`, the walk's position relative to where it started. */
 async function listFrom(
   dir: string,
   prefix: string,

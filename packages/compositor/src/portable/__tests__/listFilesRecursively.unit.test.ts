@@ -60,7 +60,7 @@ describe(listFilesRecursively, () => {
 
 // region | Helpers
 
-/** The files beneath `dir` in a stable order, so a test states content rather than filesystem enumeration order. */
+/** Lists the files beneath `dir` in a stable order, so a test states content rather than enumeration order. */
 async function sorted(dir: string, skipName?: (name: string) => boolean): Promise<Array<string>> {
   return (await listFilesRecursively(dir, skipName === undefined ? {} : { skipName })).toSorted();
 }
