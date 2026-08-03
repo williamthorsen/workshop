@@ -10,12 +10,12 @@ import { ReportSchema } from '../../src/schemas/index.ts';
 import { captureRdyError } from '../helpers/captureRdyError.ts';
 
 /**
- * Integration test: joins `--packages` to the kits an installed package publishes, against a real
- * fixture project. The unit tests cover the expansion and the resolver separately; this locks in the
- * seam between them — that a configured package becomes a run entry carrying the provenance the
- * report and the headings render.
+ * Joins `--packages` to the kits an installed package publishes, against a real fixture project. The
+ * unit tests cover the expansion and the resolver separately; this locks in the seam between them —
+ * that a configured package becomes a run entry carrying the provenance the report and the headings
+ * render.
  */
-describe('--packages run path (integration)', () => {
+describe('--packages run path wiring', () => {
   let projectRoot: string;
   let originalCwd: string;
   let stdout: string[];

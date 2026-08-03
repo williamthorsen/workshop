@@ -27,7 +27,7 @@
     "samples"
   ],
   "scripts": {
-    "prepare": "tsx config/generateSamples.ts && nmr-compile"
+    "prepare": "node config/generateSamples.ts && nmr-compile"
   },
   "dependencies": {
     "yaml": "2.9.0",

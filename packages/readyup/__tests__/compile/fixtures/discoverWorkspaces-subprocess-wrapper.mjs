@@ -1,5 +1,3 @@
-// Wrapper executed by the externalReadyup integration test.
-//
 // Usage: node discoverWorkspaces-subprocess-wrapper.mjs <compiledFixturePath> <hookPath>
 //
 // Registers the readyup resolver hook against the runner's own readyup

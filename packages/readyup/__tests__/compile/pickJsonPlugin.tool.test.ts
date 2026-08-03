@@ -10,13 +10,13 @@ import { isRecord } from '../../src/isRecord.ts';
 
 const FIXTURE_PATH = path.resolve(import.meta.dirname, 'fixtures/pick-json-fixture.ts');
 
-describe('pickJsonPlugin integration', () => {
+describe('pickJsonPlugin compile pipeline', () => {
   let outputDir: string;
   let outputPath: string;
   let compiledSource: string;
 
   beforeAll(async () => {
-    outputDir = await mkdtemp(path.join(tmpdir(), 'pickjson-integration-'));
+    outputDir = await mkdtemp(path.join(tmpdir(), 'pickjson-compile-'));
     outputPath = path.join(outputDir, 'pick-json-fixture.js');
 
     await compileConfig(FIXTURE_PATH, outputPath);

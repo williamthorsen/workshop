@@ -40,7 +40,7 @@ function spawnNode(args: string[]): Promise<SpawnResult> {
   });
 }
 
-describe('readyup externalization + resolver-hook integration', () => {
+describe('readyup externalization + resolver hook', () => {
   let outputDir: string;
   let compiledFixturePath: string;
   let hookOutputPath: string;

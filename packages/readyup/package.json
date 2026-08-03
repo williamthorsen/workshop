@@ -50,8 +50,8 @@
     "schemas"
   ],
   "scripts": {
-    "prepare": "tsx ../../config/generateVersion.ts && tsx config/generateSchemas.ts && nmr-compile && tsx src/bin/rdy.ts compile",
-    "verify:kits": "tsx src/bin/rdy.ts run publishing"
+    "prepare": "node ../../config/generateVersion.ts && node config/generateSchemas.ts && nmr-compile && node src/bin/rdy.ts compile",
+    "verify:kits": "node src/bin/rdy.ts run publishing"
   },
   "dependencies": {
     "jiti": "2.7.0",
