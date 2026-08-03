@@ -14,8 +14,8 @@ export interface ResolutionAt {
  * descend from there. Nothing else validates this: the schema cannot express an ordering, and a payload listing losers
  * arbitrarily would otherwise render "shadowing Z" from data no check had looked at.
  *
- * Shared by the plan and catalog assertions, which carry the same resolution sub-shape and would otherwise each hold a
- * copy of this rule. Only the reported path differs, which is what `basePath` supplies.
+ * Shared by the plan and catalog assertions, which carry the same resolution sub-shape and differ only in the reported
+ * path, which `basePath` supplies.
  *
  * A candidate naming an unknown source is skipped here, because each caller reports the dangling reference itself. A
  * repeated source id ranks at its first occurrence, which is the one that would win resolution; the repeat itself is
