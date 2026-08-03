@@ -15,6 +15,7 @@ vi.stubGlobal('fetch', mockFetch);
 
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
+import { RemoteFetchError } from '../RemoteFetchError.ts';
 
 describe(loadRemoteKit, () => {
   afterEach(() => {
@@ -30,6 +31,15 @@ describe(loadRemoteKit, () => {
     await expect(loadRemoteKit({ url: 'https://example.com/config.js' })).rejects.toThrow(
       'Failed to fetch remote kit from https://example.com/config.js: 404 Not Found',
     );
+  });
+
+  it.each([401, 403, 404])('throws RemoteFetchError carrying the %i status', async (status) => {
+    mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
+
+    const error = await loadRemoteKit({ url: 'https://example.com/config.js' }).catch((error_: unknown) => error_);
+
+    expect(error).toBeInstanceOf(RemoteFetchError);
+    expect(error).toHaveProperty('status', status);
   });
 
   it('detects HTML error pages', async () => {
