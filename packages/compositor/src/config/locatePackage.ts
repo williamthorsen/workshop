@@ -9,7 +9,7 @@ export interface LocatePackageOptions {
   readonly baseDir: string;
   /**
    * The key path into a package's own `package.json` that names its content directory, such as
-   * `['compositor', 'content']`. Supplied rather than fixed, so no consumer's namespace is compiled in here.
+   * `['compositor', 'content']`.
    */
   readonly contentKeyPath: ReadonlyArray<string>;
 }
@@ -18,14 +18,11 @@ export interface LocatePackageOptions {
  * Locates the directory `name` ships its content in.
  *
  * Resolution walks the `node_modules` chain Node itself would search from `baseDir`, so it holds under pnpm's symlinked
- * layout and under workspace links, which is what lets a producing repo consume its own content through the declaration
- * a third party would write. Probing the filesystem rather than resolving a package subpath is deliberate: a modern
- * `exports` map does not expose `./package.json`, and a content-only package has no importable entry to resolve
- * instead.
+ * layout and under workspace links. The manifest is read from disk, because a modern `exports` map need not expose
+ * `./package.json` and a content-only package has no importable entry.
  *
  * Throws when the name is a filesystem path rather than a package name, when the package is not installed, or when it
- * declares no content directory. Whether that directory exists is left to the caller's source validation, so a package
- * source and a hand-declared one fail through one path.
+ * declares no content directory. Whether that directory exists is the caller's source validation to answer.
  */
 export async function locatePackage(name: string, options: LocatePackageOptions): Promise<string> {
   assertPackageName(name);
@@ -91,8 +88,7 @@ function parseManifest(name: string, raw: string): unknown {
 /**
  * Reads the content directory `manifest` declares at `keyPath`.
  *
- * The key has no default, because a default location would claim a directory name in every producer's package root. A
- * producer states where its content lives and can nest it under a directory it already owns.
+ * The key has no default, because a default location would claim a directory name in every producer's package root.
  */
 function readContentPath(name: string, manifest: unknown, keyPath: ReadonlyArray<string>): string {
   let current: unknown = manifest;
@@ -101,8 +97,6 @@ function readContentPath(name: string, manifest: unknown, keyPath: ReadonlyArray
       current = undefined;
       break;
     }
-    // A key the manifest does not carry reads as `undefined`, which the check below rejects along with every other
-    // value that is not a directory name.
     const next: unknown = Reflect.get(current, key);
     current = next;
   }

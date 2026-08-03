@@ -21,12 +21,12 @@ export interface SourceArtifact {
 }
 
 /**
- * Every artifact `source` carries, across every kind in `kinds`.
+ * Enumerates every artifact `source` carries, across every kind in `kinds`.
  *
- * Enumerates rather than probes for a named slug, which is what makes shadowed candidates and "what does this source
- * carry" answerable at all. A kind whose root is absent from this source contributes nothing, because a source is free
- * to carry only some of the kinds in play; an unreadable root is a failure, so a permission problem cannot pass for an
- * empty one and let a lower-precedence source win by default.
+ * Resolution ranks shadowed candidates across sources, so it needs the whole of what each source carries. A kind whose
+ * root is absent from this source contributes nothing, because a source is free to carry only some of the kinds in
+ * play; an unreadable root is a failure, so a permission problem cannot pass for an empty one and let a
+ * lower-precedence source win by default.
  *
  * Results run by kind, in the order `kinds` gives, then by slug.
  */
@@ -40,7 +40,7 @@ export async function enumerateSource(
 
 // region | Helpers
 
-/** Every artifact of one kind under `sourceDir`, ordered by slug. */
+/** Enumerates every artifact of one kind under `sourceDir`, ordered by slug. */
 async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Array<SourceArtifact>> {
   const rootDir = path.join(sourceDir, kind.layout.root);
   const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
@@ -63,11 +63,10 @@ function isArtifactName(name: string): boolean {
 }
 
 /**
- * One artifact at `name` under `rootDir`, or nothing when the entry is not one.
+ * Reads one artifact at `name` under `rootDir`, or nothing when the entry is not one.
  *
  * A `file` kind's entry must be a file carrying the declared extension. A `directory` kind's must be a directory whose
- * entry file exists and is itself a file: a directory bearing the entry file's own name is not an artifact, and reading
- * a body that is not there is the failure that check prevents.
+ * entry file exists and is itself a file, since a directory bearing the entry file's own name is not an artifact.
  */
 async function readArtifact(rootDir: string, name: string, kind: ResolveKind): Promise<SourceArtifact | undefined> {
   const { layout } = kind;

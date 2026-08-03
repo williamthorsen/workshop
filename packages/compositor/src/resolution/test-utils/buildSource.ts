@@ -2,7 +2,7 @@ import type { SourceSpec } from '../../schemas/catalog-schemas.ts';
 import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 
 /**
- * A source directory holding each path in `files` with the given content, removed when the test ends.
+ * Builds a source directory holding each path in `files` with the given content, removed when the test ends.
  *
  * `name` becomes the source's id, its name, and its temp-directory prefix, so a test resolving several sources can
  * tell which directory belongs to which.

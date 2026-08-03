@@ -1,7 +1,7 @@
 import type { Id, KindId } from '../schemas/scalar-schemas.ts';
 
 /**
- * The id identifying one artifact, composed from its kind and slug.
+ * Composes the id identifying one artifact from its kind and slug.
  *
  * A catalog entry and the plan artifact describing the same artifact compose their id the same way, which is what lets
  * a plan entry address its catalog entry. The result is opaque to a reader: a slug carrying the separator makes

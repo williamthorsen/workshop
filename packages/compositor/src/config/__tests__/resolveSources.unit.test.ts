@@ -101,7 +101,6 @@ describe(resolveSources, () => {
     ]);
   });
 
-  // The declaration a consumer wrote is what a plan reports, so resolving must not overwrite it.
   it('keeps the origin as declared beside the directory it resolved to', async () => {
     const config = buildConfig([{ baseDir: '/srv/tier', sources: { use: [{ name: 'x', path: './content' }] } }]);
 

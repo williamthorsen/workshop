@@ -14,7 +14,7 @@ export interface ResolveCatalogInput {
 }
 
 /**
- * Every artifact the sources carry, each resolved to the source that won it and the sources that lost.
+ * Resolves every artifact the sources carry, each to the source that won it and the sources that lost.
  *
  * Precedence is `sources` order and nothing else: the first source carrying an artifact wins it, and a consumer's
  * bundled library shadows nothing by declaring itself last. Resolution reads no config and computes no closure, so what
@@ -22,9 +22,6 @@ export interface ResolveCatalogInput {
  *
  * Every source is checked before any is read, so a mistyped source fails the call rather than half-populating a catalog
  * and letting the artifacts it should have carried resolve from somewhere else.
- *
- * The result satisfies `assertCatalogIsConsistent` by construction, which is why this does not call it: a replan would
- * pay for the checks on every pass, and the assertion is for a catalog that arrived as data.
  */
 export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalog> {
   const { kinds, sources } = input;
@@ -61,7 +58,7 @@ export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalo
 // region | Helpers
 
 /**
- * One entry from the candidates carrying its artifact, the first being the winner.
+ * Builds one entry from the candidates carrying its artifact, the first being the winner.
  *
  * The candidates arrive in source order because the merge walks the sources in precedence order, so the winner needs no
  * comparison: it is the one that got there first.

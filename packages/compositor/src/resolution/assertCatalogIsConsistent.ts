@@ -29,8 +29,8 @@ export class CatalogConsistencyError extends ConsistencyError {
  * output. It is for a catalog that arrived as data, which is the case a reader rendering a payload it did not compute
  * is in.
  *
- * The checks live here rather than as schema refinements because a refinement would be invisible to `z.toJSONSchema`,
- * leaving a generated JSON Schema accepting catalogs this package rejects.
+ * A schema refinement would be invisible to `z.toJSONSchema`, so a generated JSON Schema would accept catalogs this
+ * package rejects.
  *
  * Every violation is collected before throwing, so one run reports all of them. The order of the checks below is the
  * order they are reported in.

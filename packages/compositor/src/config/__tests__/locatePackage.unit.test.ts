@@ -28,7 +28,7 @@ describe(locatePackage, () => {
     ).resolves.toBe(path.join(baseDir, 'node_modules/guidance/share'));
   });
 
-  // Whether the directory exists is the caller's source validation to answer, so both source forms fail through it.
+  // A package source and a hand-declared one both fail through the caller's source validation.
   it('does not require the content directory to exist', async () => {
     const baseDir = await buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ compositor: { content: 'nowhere' } }),
@@ -67,7 +67,6 @@ describe(locatePackage, () => {
     );
   });
 
-  // A relative specifier would otherwise resolve to the anchor directory, opening a second directory-source route.
   it.each(['./content', '../sibling', '/srv/content'])(
     'rejects "%s" as a filesystem path, not a package name',
     (name) => expect(locatePackage(name, { baseDir: '/srv/app', contentKeyPath })).rejects.toThrow(/filesystem path/),

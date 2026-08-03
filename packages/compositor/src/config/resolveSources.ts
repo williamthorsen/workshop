@@ -9,7 +9,7 @@ import { locatePackage } from './locatePackage.ts';
 export interface ResolveSourcesOptions {
   /**
    * The key path into a package's own `package.json` that names its content directory, such as
-   * `['compositor', 'content']`. Supplied rather than fixed, so no consumer's namespace is compiled in here.
+   * `['compositor', 'content']`.
    */
   readonly contentKeyPath: ReadonlyArray<string>;
 }
@@ -37,7 +37,7 @@ export interface SourceResolution {
  *
  * A package name is located here; a path is resolved against the tier that declared it. The location a consumer wrote
  * stays on the origin either way, so a plan reports the declaration rather than where it landed. Whether a resolved
- * directory exists is `assertSourceIsReadable`'s question, so a package source and a hand-declared one fail alike.
+ * directory exists is `assertSourceIsReadable`'s question.
  */
 export async function resolveSources(
   config: CompositorConfig,

@@ -35,8 +35,6 @@ describe(assertSourceIsReadable, () => {
     await chmod(source.dir, 0o000);
 
     try {
-      // A source behind an unreadable parent must not read as one that does not exist: the declaration is fine, and
-      // reporting it as missing would send the reader looking for a typo.
       await expect(assertSourceIsReadable({ ...source, dir: unreachable })).rejects.toThrow(/EACCES/);
     } finally {
       // Restored before the fixture is removed, since the cleanup cannot descend into an unreadable directory.

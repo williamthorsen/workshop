@@ -125,7 +125,6 @@ describe(enumerateSource, () => {
     await chmod(skillsDir, 0o000);
 
     try {
-      // An unreadable root must not read as an empty one: that would silently hand the artifact to a lower source.
       await expect(enumerateSource(source, [skillKind])).rejects.toThrow(/EACCES/);
     } finally {
       // Restored before the fixture is removed, since the cleanup cannot descend into an unreadable directory.
@@ -177,12 +176,12 @@ describe('artifact digests', () => {
 
 // region | Helpers
 
-/** The slugs the source carries across `kinds`, in enumeration order. */
+/** Collects the slugs the source carries across `kinds`, in enumeration order. */
 async function collectSlugs(source: SourceSpec, kinds: ReadonlyArray<ResolveKind>): Promise<Array<string>> {
   return (await enumerateSource(source, kinds)).map((artifact: SourceArtifact) => artifact.slug);
 }
 
-/** The digest of the source's single artifact of `kind`, failing the test when it carries none. */
+/** Reads the digest of the source's single artifact of `kind`, failing the test when it carries none. */
 async function requireArtifactHash(source: SourceSpec, kind: ResolveKind): Promise<string> {
   const artifact = (await enumerateSource(source, [kind])).at(0);
   if (artifact === undefined) {
