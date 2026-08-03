@@ -14,6 +14,9 @@ export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 /** Optional fields accepted by every `RdyError` constructor and factory. */
 export interface RdyErrorOptions {
   cause?: unknown;
+
+  /** One action the reader can take to clear the failure, where a diagnosis alone would not suggest it. */
+  hint?: string | undefined;
 }
 
 /**
@@ -21,14 +24,19 @@ export interface RdyErrorOptions {
  *
  * Every code maps to the same exit status, because the exit code answers "can I retry this
  * invocation?" while `code` carries the diagnosis.
+ *
+ * `hint` stays out of `message` so the two travel separately: human output renders the hint on its
+ * own line through the selected style, and `--json` carries it as its own envelope field.
  */
 export class RdyError extends Error {
   readonly code: RdyErrorCode;
+  readonly hint: string | undefined;
 
   constructor(code: RdyErrorCode, message: string, options: RdyErrorOptions = {}) {
     super(message, ...(options.cause === undefined ? [] : [{ cause: options.cause }]));
     this.name = 'RdyError';
     this.code = code;
+    this.hint = options.hint;
   }
 }
 

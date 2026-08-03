@@ -629,6 +629,21 @@ An invocation that fails before producing anything else emits:
 
 An error entry carries no counts and no verdict, and the top-level totals cover only the kits that ran.
 
+An error body may also carry `hint`, one action that would clear the failure:
+
+```json
+{
+  "schemaVersion": 1,
+  "error": {
+    "code": "config",
+    "message": "No manifest found at https://raw.githubusercontent.com/acme/private/HEAD/.readyup/manifest.json.",
+    "hint": "If the repository is private, set GITHUB_TOKEN or run `gh auth login`."
+  }
+}
+```
+
+`hint` is optional and absent when nothing useful can be suggested. It never duplicates text already in `message`, so a consumer can present the two separately. Human output renders it on a line of its own, prefixed `💡 Hint:` under the rich style and `Hint:` under plain.
+
 ### The run report
 
 ```json

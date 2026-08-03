@@ -344,6 +344,40 @@ describe(routeCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad config'));
   });
 
+  it('writes a hint on a line of its own, under the style the invocation selected', async () => {
+    mockParseRunArgs.mockImplementation(() => {
+      throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
+    });
+
+    const exitCode = await routeCommand(['--style', 'plain', 'run', '--bad']);
+
+    expect(exitCode).toBe(2);
+    expect(stderrSpy.mock.calls.map((call: unknown[]) => String(call[0]))).toStrictEqual([
+      'Error: nothing found\n',
+      'Hint: Set GITHUB_TOKEN.\n',
+    ]);
+  });
+
+  it('renders the hint through the rich style by default', async () => {
+    mockParseRunArgs.mockImplementation(() => {
+      throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
+    });
+
+    await routeCommand(['run', '--bad']);
+
+    expect(stderrSpy).toHaveBeenCalledWith('💡 Hint: Set GITHUB_TOKEN.\n');
+  });
+
+  it('writes no hint line for a failure that carries none', async () => {
+    mockParseRunArgs.mockImplementation(() => {
+      throw usageError('nothing found');
+    });
+
+    await routeCommand(['run', '--bad']);
+
+    expect(stderrSpy).toHaveBeenCalledTimes(1);
+  });
+
   // -- Config loading: external sources skip loadConfig --
 
   it('does not call loadConfig when --file is used', async () => {
@@ -583,6 +617,20 @@ describe(routeCommand, () => {
         error: { code: 'usage', message: "Unknown option '--bogus'" },
       });
       expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it('carries a hint as its own envelope field, leaving the message unchanged', async () => {
+      mockParseRunArgs.mockImplementation(() => {
+        throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
+      });
+
+      const exitCode = await routeCommand(['--json', '--bogus']);
+
+      expect(exitCode).toBe(2);
+      expect(parseStdout()).toStrictEqual({
+        schemaVersion: 1,
+        error: { code: 'usage', message: 'nothing found', hint: 'Set GITHUB_TOKEN.' },
+      });
     });
 
     it('classifies a config-load failure as a config error in the envelope', async () => {

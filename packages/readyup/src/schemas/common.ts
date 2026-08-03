@@ -11,11 +11,18 @@ export const SeveritySchema = z.enum(['error', 'warn', 'recommend']).meta({ id: 
  */
 export const ErrorCodeSchema = z.enum(['config', 'internal', 'kit-load', 'usage']).meta({ id: 'ErrorCode' });
 
-/** The error body carried by the envelope and, verbatim, by a per-kit error entry inside a report. */
+/**
+ * The error body carried by the envelope and, verbatim, by a per-kit error entry inside a report.
+ *
+ * `hint` names one action that would clear the failure, present only where the diagnosis alone would
+ * not suggest it. It is absent rather than empty when there is nothing to suggest, and never appears
+ * inside `message`, so a consumer can present the two separately.
+ */
 export const ErrorBodySchema = z
   .object({
     code: ErrorCodeSchema,
     message: z.string(),
+    hint: z.string().optional(),
   })
   .meta({ id: 'ErrorBody' });
 

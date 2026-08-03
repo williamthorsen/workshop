@@ -33,6 +33,12 @@ describe('richFormatter', () => {
     expect(richFormatter.gutter).toBeGreaterThan(widest);
   });
 
+  // Anchoring on the property rather than the glyph verifies the two-cell width the label assumes.
+  it('leads a hint with an emoji that renders wide unaided', () => {
+    expect(richFormatter.hintPrefix).toBe('💡 Hint:');
+    expect(richFormatter.hintPrefix).toMatch(/^\p{Emoji_Presentation} /u);
+  });
+
   describe.each(entries)('$name', ({ glyph, width }) => {
     it('declares a width of two cells', () => {
       expect(width).toBe(2);

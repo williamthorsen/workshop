@@ -753,11 +753,11 @@ async function runMultiKitJsonMode(
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
-      const { code, message } = toRdyError(error);
+      const { code, hint, message } = toRdyError(error);
       kitInputs.push({
         name: entry.name,
         ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
-        error: { code, message },
+        error: { code, message, ...(hint !== undefined && { hint }) },
       });
       anyKitFailed = true;
     }
@@ -814,7 +814,11 @@ async function runMultiKitHumanMode(
     } catch (error: unknown) {
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
       const label = showKitHeader ? ` [${describeKitEntry(entry)}]` : '';
-      process.stderr.write(`Error${label}: ${toRdyError(error).message}\n`);
+      const rdyError = toRdyError(error);
+      process.stderr.write(`Error${label}: ${rdyError.message}\n`);
+      if (rdyError.hint !== undefined) {
+        process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
+      }
       anyKitFailed = true;
     }
   }
