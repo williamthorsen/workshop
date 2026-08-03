@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Selector } from '../../schemas/config-schemas.ts';
 import type { ArtifactId } from '../../schemas/scalar-schemas.ts';
+import type { Selector } from '../../schemas/selection-schemas.ts';
 import { buildCatalogIndex } from '../buildCatalogIndex.ts';
 import { expandSelector } from '../expandSelector.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from '../SelectionDiagnostic.ts';

@@ -29,25 +29,8 @@ export {
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/catalog-schemas.ts';
-export type {
-  CompositorConfig,
-  ConfigTier,
-  DeclaredSource,
-  KindSelection,
-  Selector,
-  SourceDeclaration,
-  TierBody,
-} from './schemas/config-schemas.ts';
-export {
-  CompositorConfigSchema,
-  ConfigTierSchema,
-  DeclaredSourceSchema,
-  KindSelectionSchema,
-  SelectorSchema,
-  SelectSchema,
-  SourceDeclarationSchema,
-  TierBodySchema,
-} from './schemas/config-schemas.ts';
+export type { CompositorConfig, ConfigTier, TierBody } from './schemas/config-schemas.ts';
+export { CompositorConfigSchema, ConfigTierSchema, TierBodySchema } from './schemas/config-schemas.ts';
 export type {
   KindDescriptor,
   SourceEntry,
@@ -125,6 +108,10 @@ export type {
   TargetId,
 } from './schemas/scalar-schemas.ts';
 export { DiffStatusSchema, HashSchema, IdSchema } from './schemas/scalar-schemas.ts';
+export type { KindSelection, Selector } from './schemas/selection-schemas.ts';
+export { KindSelectionSchema, SelectorSchema, SelectSchema } from './schemas/selection-schemas.ts';
+export type { DeclaredSource, SourceDeclaration } from './schemas/source-declaration-schemas.ts';
+export { DeclaredSourceSchema, SourceDeclarationSchema } from './schemas/source-declaration-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
