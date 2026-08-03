@@ -24,7 +24,7 @@ export interface CatalogSpec {
  * Every source points at a directory that does not exist. Selection never reads one, so a test that accidentally grew a
  * filesystem dependency fails rather than passing against whatever happened to be on disk.
  */
-export function buildCatalog(spec: CatalogSpec): Catalog {
+export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
   const kindIds = spec.kinds ?? [...new Set(spec.entries.map(({ kindId }) => kindId))];
 
   return {
