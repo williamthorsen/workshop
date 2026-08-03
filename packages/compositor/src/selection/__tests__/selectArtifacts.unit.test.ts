@@ -10,7 +10,7 @@ const catalog = buildCatalogFromSpec({
   entries: [
     { kindId: 'skill', slug: 'lint', carriedBy: ['acme'] },
     { kindId: 'skill', slug: 'format', carriedBy: ['acme'] },
-    // Carried by both, and won by the higher-precedence source: acme still carries it.
+    // The contested entry: local wins it, and acme carries the shadowed copy.
     { kindId: 'skill', slug: 'review', carriedBy: ['local', 'acme'] },
     { kindId: 'rulebook', slug: 'house-style', carriedBy: ['local'] },
   ],
@@ -31,7 +31,6 @@ describe(selectArtifacts, () => {
     expect(collectIds(selection)).toStrictEqual(['skill:format', 'skill:lint', 'skill:review']);
   });
 
-  // Shadowing settles which copy an artifact resolves from; selection settles which artifacts are in play.
   it('takes an artifact a higher-precedence source shadows, because the named source still carries it', () => {
     const selection = select([{ id: 'project', select: { skill: { use: [{ source: 'acme' }] } } }]);
 
@@ -78,7 +77,6 @@ describe(selectArtifacts, () => {
     ]);
   });
 
-  // What survives the fold is what decided the final state, not every tier that ever mentioned the artifact.
   it('names only the deciding tier after a use, a drop, and a use again', () => {
     const selection = select([
       { id: 'global', select: { skill: { use: ['lint'] } } },
@@ -161,7 +159,7 @@ describe(selectArtifacts, () => {
     expect(selection.diagnostics).toHaveLength(2);
   });
 
-  // Every source in the fixture points at a directory that does not exist, so a filesystem read would fail here.
+  // Asserting the dirs is what keeps the claim honest: a source pointing somewhere real would let this pass by accident.
   it('selects without reading anything from disk', () => {
     const selection = select([{ id: 'project', select: { skill: { use: [{ source: 'acme' }] } } }]);
 

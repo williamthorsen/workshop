@@ -44,8 +44,8 @@ export interface Selection {
  * beneath it and records the decline, and a later `use` clears the decline and seeds afresh. What survives to the end
  * is therefore what decided the final state, which is what tells a project-level opt-in from an inherited one.
  *
- * A selector matching nothing is a diagnostic rather than a failure, so validation can report every mistake in a config
- * at once instead of stopping at the first.
+ * A selector matching nothing is a diagnostic rather than a failure, so validation reports every mistake in a config at
+ * once.
  */
 export function selectArtifacts(config: CompositorConfig, catalog: Catalog): Selection {
   const index = buildCatalogIndex(catalog);

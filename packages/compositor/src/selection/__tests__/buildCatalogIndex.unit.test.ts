@@ -34,7 +34,6 @@ describe(buildCatalogIndex, () => {
     expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('acme')).toContain('skill:lint');
   });
 
-  // Shadowing settles which copy resolves; a source a consumer took whole carries the artifact either way.
   it('carries an artifact under a source whose copy is shadowed, not the winner alone', () => {
     expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('local')).toStrictEqual(['skill:review']);
   });
