@@ -15,7 +15,7 @@ import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
@@ -328,7 +328,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     try {
       config = await loadConfig();
     } catch (error: unknown) {
-      throw configError(extractMessage(error), { cause: error });
+      throw configError(extractMessage(error), { cause: error, hint: extractHint(error) });
     }
     configFields = {
       internalDir: config.internal.dir,

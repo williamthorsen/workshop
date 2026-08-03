@@ -1568,6 +1568,21 @@ describe(runCommand, () => {
     expect(stderrText()).toBe(`Error: Failed to reach ${url}: Failed to fetch remote kit\n`);
   });
 
+  it('forwards an install hint from a kit whose imports could not be resolved', async () => {
+    mockLoadRdyKit.mockRejectedValue(
+      Object.assign(new Error("Cannot resolve 'some-lib' while evaluating deploy.ts."), {
+        hint: 'Install it with: pnpm add --save-dev some-lib',
+      }),
+    );
+
+    await runCommand({ kitEntries: singleKitEntry(), json: false });
+
+    expect(stderrText()).toBe(
+      "Error: Cannot resolve 'some-lib' while evaluating deploy.ts.\n" +
+        '\u{1F4A1} Hint: Install it with: pnpm add --save-dev some-lib\n',
+    );
+  });
+
   describe('credential hints', () => {
     const GITHUB_URL = 'https://raw.githubusercontent.com/acme/private/main/.readyup/kits/deploy.js';
     const BITBUCKET_URL = 'https://api.bitbucket.org/2.0/repositories/acme/private/src/main/.readyup/kits/deploy.js';

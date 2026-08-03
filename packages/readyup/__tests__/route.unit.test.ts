@@ -368,6 +368,27 @@ describe(routeCommand, () => {
     expect(stderrSpy).toHaveBeenCalledWith('💡 Hint: Set GITHUB_TOKEN.\n');
   });
 
+  it('forwards an install hint from a config file whose imports could not be resolved', async () => {
+    mockParseRunArgs.mockReturnValue(parsedRunArgs({ json: true }));
+    mockLoadConfig.mockRejectedValue(
+      Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
+        hint: 'Install it with: pnpm add --save-dev some-lib',
+      }),
+    );
+
+    const exitCode = await routeCommand(['run', '--json']);
+
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(stdoutSpy.mock.calls.map((call: unknown[]) => String(call[0])).join(''))).toStrictEqual({
+      schemaVersion: 1,
+      error: {
+        code: 'config',
+        message: "Cannot resolve 'some-lib' while evaluating config.ts.",
+        hint: 'Install it with: pnpm add --save-dev some-lib',
+      },
+    });
+  });
+
   it('writes no hint line for a failure that carries none', async () => {
     mockParseRunArgs.mockImplementation(() => {
       throw usageError('nothing found');

@@ -13,6 +13,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { loadConfig } from '../src/loadConfig.ts';
+import { extractHint, extractMessage } from '../src/utils/error-handling.ts';
 
 describe(loadConfig, () => {
   afterEach(() => {
@@ -123,16 +124,19 @@ describe(loadConfig, () => {
     },
   );
 
-  it('names the config file and the install command in a module-resolution failure', async () => {
+  it('names the config file in a module-resolution failure, with the install command as a hint', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockRejectedValue(
       Object.assign(new Error("Cannot find package 'some-lib'"), { code: 'ERR_MODULE_NOT_FOUND' }),
     );
 
-    await expect(loadConfig('config.ts')).rejects.toThrow(
+    const error = await loadConfig('config.ts').catch((error_: unknown) => error_);
+
+    expect(extractMessage(error)).toBe(
       "Cannot resolve 'some-lib' while evaluating config.ts. External packages imported by the config file " +
-        'must be installed in the project. Install it with: pnpm add --save-dev some-lib',
+        'must be installed in the project.',
     );
+    expect(extractHint(error)).toBe('Install it with: pnpm add --save-dev some-lib');
   });
 
   it('falls back to "unknown module" when the error message does not match the expected pattern', async () => {

@@ -9,9 +9,10 @@ const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
  * Import a TypeScript file via jiti with module-resolution error handling.
  *
  * Catches `MODULE_NOT_FOUND` and `ERR_MODULE_NOT_FOUND` errors and rethrows naming the file being
- * evaluated, the caller-provided `moduleErrorDetail`, and the command that installs the missing
- * package. Validates the imported value is a plain object, using `exportNoun` in the error message
- * if not.
+ * evaluated and the caller-provided `moduleErrorDetail`, with the install command carried as a
+ * `hint` property beside the message. The hint rides on the error rather than being raised as a
+ * typed failure here, because the two callers classify the same failure under different codes.
+ * Validates the imported value is a plain object, using `exportNoun` in the error message if not.
  */
 export async function jitiImport(
   resolvedPath: string,
@@ -30,7 +31,10 @@ export async function jitiImport(
       'code' in error &&
       (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND')
     ) {
-      throw new Error(describeUnresolvedModule(error, resolvedPath, moduleErrorDetail), { cause: error });
+      const { hint, message } = describeUnresolvedModule(error, resolvedPath, moduleErrorDetail);
+      const unresolved = new Error(message, { cause: error });
+      if (hint !== undefined) Object.assign(unresolved, { hint });
+      throw unresolved;
     }
     throw error;
   }
@@ -42,21 +46,34 @@ export async function jitiImport(
   return imported;
 }
 
+/** What a reader is told about a specifier jiti could not resolve. */
+interface UnresolvedModuleReport {
+  hint: string | undefined;
+  message: string;
+}
+
 /**
- * Compose the message for a specifier jiti could not resolve.
+ * Compose the diagnosis and remediation for a specifier jiti could not resolve.
  *
  * The install command is offered only for a specifier that names a package: installing a relative
  * import or a builtin is not the remedy, and a specifier jiti did not name cannot be installed at all.
  */
-function describeUnresolvedModule(error: Error, resolvedPath: string, moduleErrorDetail: string): string {
+function describeUnresolvedModule(
+  error: Error,
+  resolvedPath: string,
+  moduleErrorDetail: string,
+): UnresolvedModuleReport {
   const moduleName = error.message.match(/Cannot find (?:module|package) '([^']+)'/)?.[1];
   const subject = moduleName ?? 'unknown module';
-  const installHint =
+  const hint =
     moduleName !== undefined && isPackageSpecifier(moduleName)
-      ? ` Install it with: ${buildInstallCommand(moduleName)}`
-      : '';
+      ? `Install it with: ${buildInstallCommand(moduleName)}`
+      : undefined;
 
-  return `Cannot resolve '${subject}' while evaluating ${toDisplayPath(resolvedPath)}. ${moduleErrorDetail}${installHint}`;
+  return {
+    hint,
+    message: `Cannot resolve '${subject}' while evaluating ${toDisplayPath(resolvedPath)}. ${moduleErrorDetail}`,
+  };
 }
 
 /** Report whether a specifier names an installable package rather than a file or a builtin. */

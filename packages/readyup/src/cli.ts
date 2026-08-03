@@ -33,7 +33,7 @@ import type {
   RdyStagedChecklist,
   Severity,
 } from './types.ts';
-import { extractMessage } from './utils/error-handling.ts';
+import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
@@ -559,7 +559,7 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
         cause: error,
       });
     }
-    throw kitLoadError(extractMessage(error), { cause: error });
+    throw kitLoadError(extractMessage(error), { cause: error, hint: extractHint(error) });
   }
 }
 

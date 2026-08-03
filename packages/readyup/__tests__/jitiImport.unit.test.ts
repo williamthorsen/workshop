@@ -14,6 +14,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { jitiImport } from '../src/jitiImport.ts';
+import { extractHint, extractMessage } from '../src/utils/error-handling.ts';
 
 const KIT_PATH = path.resolve(process.cwd(), '.readyup/kits/default.ts');
 const DETAIL = 'Uncompiled kits require the package to be installed as a project dependency.';
@@ -24,16 +25,27 @@ describe(jitiImport, () => {
     mockImport.mockReset();
   });
 
-  it('names the evaluated file, the caller detail, and the install command', async () => {
+  it('names the evaluated file and the caller detail', async () => {
     mockExistsSync.mockImplementation((target: string) => target.endsWith('pnpm-lock.yaml'));
     mockImport.mockRejectedValue(
       Object.assign(new Error("Cannot find package 'readyup'"), { code: 'ERR_MODULE_NOT_FOUND' }),
     );
 
     await expect(jitiImport(KIT_PATH, DETAIL, 'Kit file')).rejects.toThrow(
-      `Cannot resolve 'readyup' while evaluating .readyup/kits/default.ts. ${DETAIL} ` +
-        'Install it with: pnpm add --save-dev readyup',
+      `Cannot resolve 'readyup' while evaluating .readyup/kits/default.ts. ${DETAIL}`,
     );
+  });
+
+  it('carries the install command as a hint rather than in the message', async () => {
+    mockExistsSync.mockImplementation((target: string) => target.endsWith('pnpm-lock.yaml'));
+    mockImport.mockRejectedValue(
+      Object.assign(new Error("Cannot find package 'readyup'"), { code: 'ERR_MODULE_NOT_FOUND' }),
+    );
+
+    const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
+
+    expect(extractHint(error)).toBe('Install it with: pnpm add --save-dev readyup');
+    expect(extractMessage(error)).not.toContain('Install it with');
   });
 
   it('omits the install command for a specifier that names a file rather than a package', async () => {
@@ -45,7 +57,7 @@ describe(jitiImport, () => {
     const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
 
     expect(String(error)).toContain("Cannot resolve './helpers.ts' while evaluating .readyup/kits/default.ts.");
-    expect(String(error)).not.toContain('Install it with');
+    expect(extractHint(error)).toBeUndefined();
   });
 
   it('omits the install command when the specifier cannot be read from the error', async () => {
@@ -55,7 +67,7 @@ describe(jitiImport, () => {
     const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
 
     expect(String(error)).toContain("Cannot resolve 'unknown module' while evaluating .readyup/kits/default.ts.");
-    expect(String(error)).not.toContain('Install it with');
+    expect(extractHint(error)).toBeUndefined();
   });
 
   it('re-throws an error that is not a module-resolution failure', async () => {

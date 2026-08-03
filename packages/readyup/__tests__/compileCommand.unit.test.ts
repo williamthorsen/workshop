@@ -192,6 +192,19 @@ describe(compileCommand, () => {
     expect(error.message).toContain('Too many arguments');
   });
 
+  it('forwards an install hint from a config file whose imports could not be resolved', async () => {
+    mockLoadConfig.mockRejectedValue(
+      Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
+        hint: 'Install it with: pnpm add --save-dev some-lib',
+      }),
+    );
+
+    const error = await captureRdyError(() => compileCommand([]));
+
+    expect(error.code).toBe('config');
+    expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
+  });
+
   // Batch compile tests
   it('prints "Compiling kits in" header when srcDir equals outDir', async () => {
     mockLoadConfig.mockResolvedValue({
