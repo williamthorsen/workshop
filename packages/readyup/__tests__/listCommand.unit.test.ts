@@ -215,6 +215,29 @@ describe(listCommand, () => {
       expect(output).toContain('default');
     });
 
+    it('renders a hint the config failure carries, on a line of its own', async () => {
+      mockLoadConfig.mockRejectedValue(
+        Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
+          hint: 'Install it with: pnpm add --save-dev some-lib',
+        }),
+      );
+
+      await listCommand([]);
+
+      expect(stderrSpy.mock.calls.map((call: unknown[]) => String(call[0]))).toStrictEqual([
+        "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings.\n",
+        '\u{1F4A1} Hint: Install it with: pnpm add --save-dev some-lib\n',
+      ]);
+    });
+
+    it('writes no hint line for a config failure that carries none', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config'));
+
+      await listCommand([]);
+
+      expect(stderrSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('does not double the period when the config failure already ends in one', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config.'));
 

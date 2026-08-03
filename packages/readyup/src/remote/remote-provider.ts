@@ -1,12 +1,7 @@
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 
-/**
- * A remote host readyup knows how to authenticate against.
- *
- * The members match `FromSource['type']` for the two remote schemes, so a caller holding a parsed
- * source passes its `type` straight through.
- */
+/** A remote host readyup knows how to authenticate against. */
 export type RemoteProvider = 'bitbucket' | 'github';
 
 /** Host each provider serves kit content from. */

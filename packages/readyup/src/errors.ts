@@ -1,4 +1,4 @@
-import { extractMessage } from './utils/error-handling.ts';
+import { extractHint, extractMessage } from './utils/error-handling.ts';
 
 /**
  * Diagnosis of a failure that prevented rdy from completing an invocation.
@@ -64,9 +64,11 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  * Coerces an unknown thrown value into an `RdyError`.
  *
  * Anything not already classified is `internal`: escaping the command boundary undiagnosed
- * is itself the definition of a defect rather than a known failure mode.
+ * is itself the definition of a defect rather than a known failure mode. A hint the value carries
+ * survives the coercion, so a throw site can attach one without every boundary between it and the
+ * output having to forward it.
  */
 export function toRdyError(error: unknown): RdyError {
   if (error instanceof RdyError) return error;
-  return internalError(extractMessage(error), { cause: error });
+  return internalError(extractMessage(error), { cause: error, hint: extractHint(error) });
 }

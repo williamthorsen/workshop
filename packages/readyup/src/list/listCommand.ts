@@ -6,6 +6,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
+import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -20,7 +21,7 @@ import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 import type { JsonListKitEntry, JsonListOutput } from '../schemas/index.ts';
 import { SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { enumerateKits } from './enumerateKits.ts';
@@ -190,6 +191,8 @@ async function runOwnerMode(json: boolean): Promise<number> {
   } catch (error: unknown) {
     const detail = extractMessage(error).replace(/\.$/, '');
     process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
+    const hint = extractHint(error);
+    if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
     config = { ...DEFAULT_CONFIG };
   }
 
