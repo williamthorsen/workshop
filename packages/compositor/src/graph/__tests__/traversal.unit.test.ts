@@ -101,7 +101,7 @@ describe(buildDependentsIndex, () => {
 // region | Helpers
 
 /**
- * Builds a graph carrying only what traversal reads, standing in for a closure before one exists.
+ * Builds a graph carrying only what traversal reads.
  *
  * Nothing here is a plan: no status, no resolution, no kind. Traversal reads none of them, so a fixture that carried
  * them could pass while depending on a field a closure does not have.
