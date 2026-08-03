@@ -6,17 +6,20 @@ import {
   SourceEntrySchema,
   SourceOriginSchema,
   TierDescriptorSchema,
+  TokenKindDescriptorSchema,
 } from '../descriptor-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };
 const source = { id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team' } };
 const tier = { id: 'project', label: 'Project' };
+const tokenKind = { id: 'tool', label: 'Tool name' };
 
 const openCases: ReadonlyArray<readonly [string, z.ZodType, Record<string, unknown>]> = [
   ['KindDescriptorSchema', KindDescriptorSchema, kind],
   ['SourceEntrySchema', SourceEntrySchema, source],
   ['TierDescriptorSchema', TierDescriptorSchema, tier],
+  ['TokenKindDescriptorSchema', TokenKindDescriptorSchema, tokenKind],
 ];
 
 describe('descriptor schema evolution', () => {
@@ -55,5 +58,15 @@ describe('TierDescriptorSchema', () => {
 
   it('if the tier carries no label, rejects it for that field', () => {
     expect(findIssuePaths(TierDescriptorSchema, { id: 'project' })).toStrictEqual([['label']]);
+  });
+});
+
+describe('TokenKindDescriptorSchema', () => {
+  it('accepts a token kind carrying the label a reader shows for it', () => {
+    expect(TokenKindDescriptorSchema.parse(tokenKind)).toStrictEqual(tokenKind);
+  });
+
+  it('if the token kind carries no label, rejects it for that field', () => {
+    expect(findIssuePaths(TokenKindDescriptorSchema, { id: 'tool' })).toStrictEqual([['label']]);
   });
 });

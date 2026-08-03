@@ -16,12 +16,14 @@ export const TokenMappingEntrySchema = z
  * How one token kind's canonical names render for a target.
  *
  * Token kinds are declared as consumer data, so a tool-name mapping and any other name-rewriting vocabulary share this
- * one shape.
+ * one shape. `sigil` prefixes whatever the kind resolved to, which is how one target addresses an artifact as `/name`
+ * and another as `!name`; a kind resolving through `entries` alone carries none.
  */
 export const TokenMappingSchema = z
   .object({
     kindId: IdSchema,
     entries: z.array(TokenMappingEntrySchema),
+    sigil: z.string().optional(),
   })
   .meta({ id: 'TokenMapping' });
 

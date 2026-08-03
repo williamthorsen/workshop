@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -85,6 +85,11 @@
       "root": "~/.claude",
       "tokenMappings": [
         {
+          "kindId": "skill-invocation",
+          "entries": [],
+          "sigil": "/"
+        },
+        {
           "kindId": "tool",
           "entries": [
             {
@@ -102,10 +107,6 @@
         {
           "name": "guidanceFile",
           "value": "CLAUDE.md"
-        },
-        {
-          "name": "skillSigil",
-          "value": "/"
         }
       ]
     },
@@ -114,6 +115,11 @@
       "label": "Rovo Dev",
       "root": "~/.rovodev",
       "tokenMappings": [
+        {
+          "kindId": "skill-invocation",
+          "entries": [],
+          "sigil": "!"
+        },
         {
           "kindId": "tool",
           "entries": [
@@ -132,10 +138,6 @@
         {
           "name": "guidanceFile",
           "value": "AGENTS.md"
-        },
-        {
-          "name": "skillSigil",
-          "value": "!"
         }
       ]
     }
@@ -148,6 +150,16 @@
     {
       "id": "project",
       "label": "Project"
+    }
+  ],
+  "tokenKinds": [
+    {
+      "id": "skill-invocation",
+      "label": "Skill invocation"
+    },
+    {
+      "id": "tool",
+      "label": "Tool name"
     }
   ],
   "artifacts": [

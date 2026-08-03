@@ -8,6 +8,7 @@ export function buildTargets(): Array<TargetEntry> {
       label: 'Claude',
       root: '~/.claude',
       tokenMappings: [
+        { kindId: 'skill-invocation', entries: [], sigil: '/' },
         {
           kindId: 'tool',
           entries: [
@@ -16,16 +17,14 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
-      variables: [
-        { name: 'guidanceFile', value: 'CLAUDE.md' },
-        { name: 'skillSigil', value: '/' },
-      ],
+      variables: [{ name: 'guidanceFile', value: 'CLAUDE.md' }],
     },
     {
       id: 'rovodev',
       label: 'Rovo Dev',
       root: '~/.rovodev',
       tokenMappings: [
+        { kindId: 'skill-invocation', entries: [], sigil: '!' },
         {
           kindId: 'tool',
           entries: [
@@ -34,10 +33,7 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
-      variables: [
-        { name: 'guidanceFile', value: 'AGENTS.md' },
-        { name: 'skillSigil', value: '!' },
-      ],
+      variables: [{ name: 'guidanceFile', value: 'AGENTS.md' }],
     },
   ];
 }

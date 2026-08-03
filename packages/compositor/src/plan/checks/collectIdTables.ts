@@ -14,5 +14,6 @@ export function collectIdTables(plan: Plan): ReadonlyArray<IdTable> {
     ['sources', plan.sources],
     ['targets', plan.targets],
     ['tiers', plan.tiers],
+    ['tokenKinds', plan.tokenKinds],
   ];
 }

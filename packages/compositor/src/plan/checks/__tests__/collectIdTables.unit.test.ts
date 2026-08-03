@@ -12,6 +12,7 @@ describe(collectIdTables, () => {
       'sources',
       'targets',
       'tiers',
+      'tokenKinds',
     ]);
   });
 

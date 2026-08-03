@@ -33,6 +33,18 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
+  it('if a token mapping names a token kind no table carries, locates the dangling reference', () => {
+    const plan = buildPlan();
+    plan.tokenKinds = [];
+
+    expect(findDanglingReferences(plan)).toStrictEqual([
+      {
+        path: 'targets[0].tokenMappings[0].kindId',
+        message: 'references "tool", which is not an entry in tokenKinds',
+      },
+    ]);
+  });
+
   it('if a seed names a tier no table carries, locates the dangling reference', () => {
     const plan = buildPlan();
     plan.tiers = [];

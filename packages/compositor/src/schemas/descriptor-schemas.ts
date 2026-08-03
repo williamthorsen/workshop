@@ -54,7 +54,21 @@ export const TierDescriptorSchema = z
   })
   .meta({ id: 'TierDescriptor' });
 
+/**
+ * One token kind a target's mappings are keyed by.
+ *
+ * Token kinds are consumer data: the engine names none, so a plan without this table leaves every
+ * `tokenMappings[].kindId` unresolvable to anything a reader recognizes.
+ */
+export const TokenKindDescriptorSchema = z
+  .object({
+    id: IdSchema,
+    label: z.string(),
+  })
+  .meta({ id: 'TokenKindDescriptor' });
+
 export type KindDescriptor = z.infer<typeof KindDescriptorSchema>;
 export type SourceEntry = z.infer<typeof SourceEntrySchema>;
 export type SourceOrigin = z.infer<typeof SourceOriginSchema>;
 export type TierDescriptor = z.infer<typeof TierDescriptorSchema>;
+export type TokenKindDescriptor = z.infer<typeof TokenKindDescriptorSchema>;

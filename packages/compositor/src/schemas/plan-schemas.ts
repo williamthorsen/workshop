@@ -2,7 +2,12 @@
 
 import { z } from 'zod';
 
-import { KindDescriptorSchema, SourceEntrySchema, TierDescriptorSchema } from './descriptor-schemas.ts';
+import {
+  KindDescriptorSchema,
+  SourceEntrySchema,
+  TierDescriptorSchema,
+  TokenKindDescriptorSchema,
+} from './descriptor-schemas.ts';
 import { BlobSchema, FileEntrySchema } from './file-schemas.ts';
 import { ArtifactEntrySchema, PartialEntrySchema } from './graph-schemas.ts';
 import { HashSchema, IdSchema } from './scalar-schemas.ts';
@@ -14,7 +19,7 @@ import { TargetEntrySchema } from './target-schemas.ts';
  * Bumped when a field is removed, renamed, or re-typed, never when an optional field is added. Objects in this schema
  * are open, which is what lets an added field reach a consumer pinned to an earlier version without breaking it.
  */
-export const PLAN_SCHEMA_VERSION = 2;
+export const PLAN_SCHEMA_VERSION = 3;
 
 /** One source's content digest, covering everything under it that could contribute to a plan. */
 export const SourceDigestSchema = z.object({ sourceId: IdSchema, digest: HashSchema }).meta({ id: 'SourceDigest' });
@@ -61,6 +66,7 @@ export const PlanSchema = z
     sources: z.array(SourceEntrySchema),
     targets: z.array(TargetEntrySchema),
     tiers: z.array(TierDescriptorSchema),
+    tokenKinds: z.array(TokenKindDescriptorSchema),
     artifacts: z.array(ArtifactEntrySchema),
     partials: z.array(PartialEntrySchema),
     files: z.array(FileEntrySchema),

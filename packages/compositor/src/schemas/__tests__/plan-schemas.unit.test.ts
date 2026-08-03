@@ -14,6 +14,7 @@ const tables = [
   'sources',
   'targets',
   'tiers',
+  'tokenKinds',
 ] as const;
 
 describe('PlanSchema', () => {

@@ -41,6 +41,7 @@ export function buildPlan(): Plan {
       },
     ],
     tiers: [{ id: 'project', label: 'Project' }],
+    tokenKinds: [{ id: 'tool', label: 'Tool name' }],
     artifacts: [
       {
         id: 'collection:core',

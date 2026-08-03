@@ -8,6 +8,7 @@ import { buildPartials } from './representative/buildPartials.ts';
 import { buildSources } from './representative/buildSources.ts';
 import { buildTargets } from './representative/buildTargets.ts';
 import { buildTiers } from './representative/buildTiers.ts';
+import { buildTokenKinds } from './representative/buildTokenKinds.ts';
 import { createBlobStore } from './representative/createBlobStore.ts';
 
 /**
@@ -33,6 +34,7 @@ export function buildRepresentativeSample(): Plan {
     sources,
     targets,
     tiers: buildTiers(),
+    tokenKinds: buildTokenKinds(),
     artifacts: buildArtifacts(),
     partials: buildPartials(),
     files,

@@ -57,6 +57,8 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 
 `tiers` names the config tiers a seed can be decided by, and runs lowest precedence first: that is the order a fold applies them in, so the last tier to speak wins. It is deliberately the reverse of `sources`, where the first entry wins, because a source's position encodes precedence directly while a tier's encodes application. An artifact several tiers seed carries one seed record each, which is what tells a project-level opt-in from an inherited one.
 
+`tokenKinds` names the token kinds a target's mappings are keyed by, so a `tokenMappings` entry resolves to something a reader recognizes rather than to a bare id. It carries identity alone; the pattern a kind matches and the way it resolves are engine input, not payload. A kind's per-target sigil rides on the mapping itself, where the target and the kind already meet.
+
 ## What the schema checks, and what it does not
 
 `PlanSchema` is purely structural. It validates shapes and nothing else, which keeps it renderable to JSON Schema; a validation refinement would be invisible to `z.toJSONSchema` and would leave a generated document accepting plans this package rejects.
@@ -81,7 +83,7 @@ Both take any document carrying artifacts and edges, not a plan specifically, so
 
 That promise holds because objects in this schema are open: an unrecognized field parses and is dropped, so a consumer pinned to one version accepts a payload from a later one. Making any object strict would break it the first time a field was added.
 
-The contract is at version 2. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
+The contract is at version 3. Version 3 added the `tokenKinds` table, which every target's `tokenMappings` already referenced with nothing to resolve against. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
 
 ## Samples
 
@@ -90,4 +92,4 @@ Two plans ship as JSON, both validating against the schema and satisfying every 
 - `samples/minimal.json` is the smallest plan the contract allows, for a consumer rendering its first view.
 - `samples/representative.json` exercises every shape the contract carries: an artifact reached by three dependency routes, shadowed candidates beside an artifact the lowest-precedence source wins, three artifacts aggregated into one region behind per-artifact markers, entry-level ownership of a structured config, a byte-encoded asset, a file apply will skip, an artifact two tiers both seed, and all four diff statuses.
 
-Both are generated from typed builders that digest their own content, so no hash is written by hand, and both are committed and pinned byte for byte by a drift test. Regenerate them with `pnpm exec tsx config/generateSamples.ts`, which also runs as part of `prepare`.
+Both are generated from typed builders that digest their own content, so no hash is written by hand, and both are committed and pinned byte for byte by a drift test. Regenerate them with `node config/generateSamples.ts`, which also runs as part of `prepare`.
