@@ -101,10 +101,10 @@ describe(buildDependentsIndex, () => {
 // region | Helpers
 
 /**
- * A graph carrying only what traversal reads, standing in for a closure before one exists.
+ * Builds a graph carrying only what traversal reads, standing in for a closure before one exists.
  *
- * Nothing here is a plan: no status, no resolution, no kind. That is the point, because the helpers take this shape and
- * the closure ticket therefore adds no second copy of them.
+ * Nothing here is a plan: no status, no resolution, no kind. Traversal reads none of them, so a fixture that carried
+ * them could pass while depending on a field a closure does not have.
  */
 function buildClosureShaped(): DependencyGraphView {
   return {
@@ -120,7 +120,7 @@ function buildClosureShaped(): DependencyGraphView {
   };
 }
 
-/** The fixture plan with a second route to `skill:lint`, so one artifact is reached by two paths. */
+/** Builds the fixture plan with a second route to `skill:lint`, so one artifact is reached by two paths. */
 function buildDiamond(): Plan {
   const plan = buildPlan();
   const core = requireEntry(plan.artifacts, 0);
