@@ -29,7 +29,6 @@ describe(loadConfig, () => {
     expect(config.tiers.map(({ id }) => id)).toStrictEqual(['global', 'project']);
   });
 
-  // An absent file is a tier a consumer looked for and did not find; an empty one is a tier that declares nothing.
   it('skips a tier whose file is absent, and keeps one whose file is empty', async () => {
     const dir = await buildConfigDir({ 'global.yaml': '# every entry commented out\n' });
 
@@ -48,7 +47,6 @@ describe(loadConfig, () => {
     });
   });
 
-  // A relative path resolves against where it was written, not against the directory the process runs in.
   it('takes each tier’s base directory from the file that declared it', async () => {
     const dir = await buildConfigDir({ 'nested/project.yaml': projectTier });
 

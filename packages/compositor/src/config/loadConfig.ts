@@ -21,16 +21,12 @@ export type TierFile = z.infer<typeof TierFileSchema>;
  * Reads the config the given tier files declare, lowest precedence first.
  *
  * Tier identity is the consumer's to supply: a file does not know which tier it is, that follows from where the
- * consumer looked for it, and keeping the decision outside means no particular project layout is compiled in here. Two
- * tiers sharing an id are rejected, because that id is what every seed and diagnostic downstream names the tier by.
+ * consumer looked for it. Two tiers sharing an id are rejected, because that id is what every seed and diagnostic
+ * downstream names the tier by.
  *
  * A tier whose file is absent contributes no tier at all, while one whose file is present but empty contributes a tier
  * declaring nothing. That distinction is what lets a consumer tell "no config here" from "config here, saying nothing".
- * A chain where every file is absent yields a config with no tiers, which already expresses "nothing declared" without
- * a second sentinel.
- *
- * Loading is one way to obtain a config, not the only one: the value this returns is the same shape a consumer can
- * build in memory and hand straight to the flows downstream.
+ * A chain where every file is absent yields a config with no tiers.
  */
 export async function loadConfig(tiers: ReadonlyArray<TierFile>): Promise<CompositorConfig> {
   const validated = tiers.map((tier) => TierFileSchema.parse(tier));
@@ -79,8 +75,8 @@ function parseTierBody(raw: string, filePath: string): TierBody {
 /**
  * Reads one tier from its file, resolving to nothing when that file is absent.
  *
- * `baseDir` is the file's own directory, so a relative path a tier declares resolves against where it was written
- * rather than against whatever directory the process happens to be run from.
+ * `baseDir` is the file's own directory, so a relative path a tier declares resolves against where it was written, not
+ * against the process's working directory.
  */
 async function readTier(tier: TierFile): Promise<ConfigTier | undefined> {
   const raw = await readFileIfPresent(tier.path);

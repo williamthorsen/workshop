@@ -172,7 +172,7 @@ describe(resolveCatalog, () => {
 
 // region | Helpers
 
-/** One source directory per named entry, in the order given, highest precedence first. */
+/** Builds one source directory per named entry, in the order given, highest precedence first. */
 async function buildSources(byName: Record<string, Record<string, string>>): Promise<ReadonlyArray<SourceSpec>> {
   const sources: Array<SourceSpec> = [];
   for (const [name, files] of Object.entries(byName)) {
@@ -182,7 +182,7 @@ async function buildSources(byName: Record<string, Record<string, string>>): Pro
   return sources;
 }
 
-/** The catalog's single entry, failing the test when it carries any other number. */
+/** Reads the catalog's single entry, failing the test when it carries any other number. */
 async function requireOnlyEntry(sources: ReadonlyArray<SourceSpec>): Promise<CatalogEntry> {
   const { entries } = await resolveCatalog({ kinds, sources });
   const entry = entries.at(0);

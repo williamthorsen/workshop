@@ -2,7 +2,7 @@ import type { Catalog } from '../../schemas/catalog-schemas.ts';
 import { CATALOG_SCHEMA_VERSION } from '../../schemas/catalog-schemas.ts';
 
 /**
- * A small catalog that satisfies both the schema and every consistency invariant.
+ * Builds a small catalog that satisfies both the schema and every consistency invariant.
  *
  * Exercises the shapes a trivial catalog would leave untested: three sources rather than two, so a mis-ordered pair of
  * losers is distinguishable from a reversed one; both layout forms; an artifact two sources shadow; and an artifact the
