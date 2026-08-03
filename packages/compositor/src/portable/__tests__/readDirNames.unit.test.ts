@@ -31,7 +31,6 @@ describe(readDirNames, () => {
     await chmod(lockedDir, 0o000);
 
     try {
-      // A permission problem must not read as an empty directory: a caller would take the absence at face value.
       await expect(readDirNames(lockedDir)).rejects.toThrow(/EACCES/);
     } finally {
       // Restored before the fixture is removed, since the cleanup cannot descend into an unreadable directory.

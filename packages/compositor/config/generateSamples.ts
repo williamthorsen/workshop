@@ -1,4 +1,4 @@
-/** Generate `samples/*.json` from the sample plan builders. */
+/** Generates `samples/*.json` from the sample plan builders. */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

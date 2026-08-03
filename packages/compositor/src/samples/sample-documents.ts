@@ -8,7 +8,7 @@ export interface SampleDocument {
   readonly plan: Plan;
 }
 
-/** Every published sample, in the order they are emitted. */
+/** Builds every published sample, in the order they are emitted. */
 export function buildSampleDocuments(): ReadonlyArray<SampleDocument> {
   return [
     { fileName: 'minimal.json', plan: buildMinimalSample() },
@@ -17,7 +17,7 @@ export function buildSampleDocuments(): ReadonlyArray<SampleDocument> {
 }
 
 /**
- * One sample rendered as the JSON file it is published as.
+ * Renders one sample as the JSON file it is published as.
  *
  * The writer script and the drift test share this, so a mismatch between what is committed and what the builders
  * produce cannot be an artifact of how each side formatted the document.

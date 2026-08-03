@@ -6,8 +6,8 @@ import { toPosix } from '../toPosix.ts';
 
 describe(toPosix, () => {
   it('renders a natively joined path with posix separators', () => {
-    // Built with `path.join` rather than written with literal backslashes: a literal would assert Windows behavior on
-    // every platform, and pass only where `path.sep` happens to be a backslash.
+    // A literal backslash would assert Windows behavior on every platform, and pass only where `path.sep` happens to
+    // be a backslash.
     expect(toPosix(path.join('skills', 'lint', 'SKILL.md'))).toBe('skills/lint/SKILL.md');
   });
 

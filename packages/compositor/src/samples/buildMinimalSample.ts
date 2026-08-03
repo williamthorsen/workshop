@@ -5,7 +5,7 @@ import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 const SKILL_BODY = '# Review\n\nRead the diff.\n';
 
 /**
- * The smallest plan that satisfies the contract: one source, one target, one artifact, one added file.
+ * Builds the smallest plan that satisfies the contract: one source, one target, one artifact, one added file.
  *
  * A consumer wiring up its first render has something to hold before taking on the representative sample's shapes.
  */

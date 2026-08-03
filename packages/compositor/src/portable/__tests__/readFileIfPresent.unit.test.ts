@@ -37,7 +37,6 @@ describe(readFileIfPresent, () => {
     await chmod(lockedFile, 0o000);
 
     try {
-      // A permission problem must not read as an absent file: the caller would carry on as though nothing were there.
       await expect(readFileIfPresent(lockedFile)).rejects.toThrow(/EACCES/);
     } finally {
       await chmod(lockedFile, 0o644);

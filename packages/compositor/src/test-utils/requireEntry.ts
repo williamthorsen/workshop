@@ -1,5 +1,5 @@
 /**
- * The entry at `index`, throwing when the array is shorter than that.
+ * Reads the entry at `index`, throwing when the array is shorter than that.
  *
  * Indexing a fixture yields `T | undefined` under `noUncheckedIndexedAccess`, and a test that reaches past the end of
  * its own fixture should say so rather than assert the absence away.

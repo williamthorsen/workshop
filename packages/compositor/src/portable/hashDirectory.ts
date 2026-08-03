@@ -7,11 +7,11 @@ import { hashBytes, hashUtf8 } from './hash-content.ts';
 import { listFilesRecursively } from './listFilesRecursively.ts';
 
 /**
- * A digest over everything under `dir`, keyed by each file's path within it.
+ * Hashes everything under `dir`, keying each file by its path within the tree.
  *
- * Covers a whole tree rather than any one file, because a directory-shaped artifact ships assets beside the file
- * carrying its frontmatter and a rebuilt asset is a changed artifact. Paths take part in the digest, so moving a file
- * within the tree moves the digest too. Dotfiles are left out as tool state rather than shipped content.
+ * A directory-shaped artifact ships assets beside the file carrying its frontmatter, and a rebuilt asset is a changed
+ * artifact. Paths take part in the digest, so moving a file within the tree moves the digest too. Dotfiles are left
+ * out as tool state rather than shipped content.
  */
 export async function hashDirectory(dir: string): Promise<Hash> {
   const relativePaths = (await listFilesRecursively(dir, { skipName: isToolState })).toSorted(compareStrings);
