@@ -31,25 +31,12 @@ export {
 } from './schemas/catalog-schemas.ts';
 export type { CompositorConfig, ConfigTier, TierBody } from './schemas/config-schemas.ts';
 export { CompositorConfigSchema, ConfigTierSchema, TierBodySchema } from './schemas/config-schemas.ts';
-export type {
-  KindDescriptor,
-  SourceEntry,
-  SourceOrigin,
-  TargetEntry,
-  TargetVariable,
-  TierDescriptor,
-  TokenMapping,
-  TokenMappingEntry,
-} from './schemas/descriptor-schemas.ts';
+export type { KindDescriptor, SourceEntry, SourceOrigin, TierDescriptor } from './schemas/descriptor-schemas.ts';
 export {
   KindDescriptorSchema,
   SourceEntrySchema,
   SourceOriginSchema,
-  TargetEntrySchema,
-  TargetVariableSchema,
   TierDescriptorSchema,
-  TokenMappingEntrySchema,
-  TokenMappingSchema,
 } from './schemas/descriptor-schemas.ts';
 export type {
   ArtifactContribution,
@@ -112,6 +99,13 @@ export type { KindSelection, Selector } from './schemas/selection-schemas.ts';
 export { KindSelectionSchema, SelectorSchema, SelectSchema } from './schemas/selection-schemas.ts';
 export type { DeclaredSource, SourceDeclaration } from './schemas/source-declaration-schemas.ts';
 export { DeclaredSourceSchema, SourceDeclarationSchema } from './schemas/source-declaration-schemas.ts';
+export type { TargetEntry, TargetVariable, TokenMapping, TokenMappingEntry } from './schemas/target-schemas.ts';
+export {
+  TargetEntrySchema,
+  TargetVariableSchema,
+  TokenMappingEntrySchema,
+  TokenMappingSchema,
+} from './schemas/target-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
