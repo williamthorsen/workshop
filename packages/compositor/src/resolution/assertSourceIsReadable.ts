@@ -1,7 +1,7 @@
 import { stat } from 'node:fs/promises';
 
 import { isMissingFile } from '../portable/isMissingFile.ts';
-import type { SourceSpec } from '../schemas/resolution-schemas.ts';
+import type { SourceSpec } from '../schemas/catalog-schemas.ts';
 
 /**
  * Throws unless `source` points at a readable directory.

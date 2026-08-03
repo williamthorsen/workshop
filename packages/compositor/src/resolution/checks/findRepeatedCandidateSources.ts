@@ -1,5 +1,5 @@
 import type { Violation } from '../../consistency/Violation.ts';
-import type { Catalog } from '../../schemas/resolution-schemas.ts';
+import type { Catalog } from '../../schemas/catalog-schemas.ts';
 
 /**
  * Reports each entry naming one source more than once among its candidates.

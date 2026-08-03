@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Plan } from '../../schemas/plan-schema.ts';
+import type { Plan } from '../../schemas/plan-schemas.ts';
 import { buildPlan } from '../../test-utils/buildPlan.ts';
 import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { buildDependentsIndex, type DependencyGraphView, resolveInclusionPaths } from '../traversal.ts';

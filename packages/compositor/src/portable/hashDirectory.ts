@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Hash } from '../schemas/common.ts';
+import type { Hash } from '../schemas/scalar-schemas.ts';
 import { compareStrings } from './compareStrings.ts';
 import { hashBytes, hashUtf8 } from './hash-content.ts';
 import { listFilesRecursively } from './listFilesRecursively.ts';

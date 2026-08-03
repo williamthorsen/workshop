@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { DiffStatusSchema, HashSchema, IdSchema } from './common.ts';
+import { DiffStatusSchema, HashSchema, IdSchema } from './scalar-schemas.ts';
 
 /**
  * One file body, addressed by its hash.

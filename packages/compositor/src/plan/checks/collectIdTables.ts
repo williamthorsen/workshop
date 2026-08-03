@@ -1,5 +1,5 @@
 import type { IdTable } from '../../consistency/findDuplicateIds.ts';
-import type { Plan } from '../../schemas/plan-schema.ts';
+import type { Plan } from '../../schemas/plan-schemas.ts';
 
 /**
  * Collects the plan's id-keyed tables, in the order a violation against them is reported.

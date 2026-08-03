@@ -1,5 +1,5 @@
-import type { ArtifactId, KindId } from '../schemas/common.ts';
-import type { Selector } from '../schemas/config-schemas.ts';
+import type { ArtifactId, KindId } from '../schemas/scalar-schemas.ts';
+import type { Selector } from '../schemas/selection-schemas.ts';
 import type { CatalogIndex } from './buildCatalogIndex.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from './SelectionDiagnostic.ts';
 

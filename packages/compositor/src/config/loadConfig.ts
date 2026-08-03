@@ -4,9 +4,9 @@ import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
 import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
-import { IdSchema } from '../schemas/common.ts';
 import type { CompositorConfig, ConfigTier, TierBody } from '../schemas/config-schemas.ts';
 import { TierBodySchema } from '../schemas/config-schemas.ts';
+import { IdSchema } from '../schemas/scalar-schemas.ts';
 
 /** One tier to read: the identity a consumer gives it, and the file it reads that tier's declarations from. */
 export const TierFileSchema = z.strictObject({

@@ -1,8 +1,8 @@
 import { compareStrings } from '../portable/compareStrings.ts';
 import { expandPath } from '../portable/expandPath.ts';
+import type { SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { SourceOrigin } from '../schemas/descriptor-schemas.ts';
-import type { SourceSpec } from '../schemas/resolution-schemas.ts';
 import { locatePackage } from './locatePackage.ts';
 
 /** What resolving a config's sources needs beyond the config itself. */

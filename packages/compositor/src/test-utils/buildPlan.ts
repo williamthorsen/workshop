@@ -1,5 +1,5 @@
-import type { Plan } from '../schemas/plan-schema.ts';
-import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schema.ts';
+import type { Plan } from '../schemas/plan-schemas.ts';
+import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 
 /**
  * A small plan that satisfies both the schema and every consistency invariant.

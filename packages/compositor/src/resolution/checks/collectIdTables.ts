@@ -1,5 +1,5 @@
 import type { IdTable } from '../../consistency/findDuplicateIds.ts';
-import type { Catalog } from '../../schemas/resolution-schemas.ts';
+import type { Catalog } from '../../schemas/catalog-schemas.ts';
 
 /**
  * Collects the catalog's id-keyed tables, in the order a violation against them is reported.

@@ -2,7 +2,8 @@
 
 import { z } from 'zod';
 
-import { HashSchema, IdSchema } from './common.ts';
+import { ArtifactResolutionSchema } from './artifact-resolution-schemas.ts';
+import { HashSchema, IdSchema } from './scalar-schemas.ts';
 
 /**
  * How one dependency edge came to exist.
@@ -29,27 +30,6 @@ export const DependencyEdgeSchema = z
     partialId: IdSchema.optional(),
   })
   .meta({ id: 'DependencyEdge' });
-
-/** One source that carries an artifact, whether or not it won resolution. */
-export const ResolutionCandidateSchema = z
-  .object({
-    sourceId: IdSchema,
-    path: z.string(),
-    hash: HashSchema,
-  })
-  .meta({ id: 'ResolutionCandidate' });
-
-/**
- * Which source an artifact resolved from, and which lost.
- *
- * `shadowed` holds losers only, in precedence order, so an artifact carried by exactly one source has an empty array.
- */
-export const ArtifactResolutionSchema = z
-  .object({
-    winner: ResolutionCandidateSchema,
-    shadowed: z.array(ResolutionCandidateSchema),
-  })
-  .meta({ id: 'ArtifactResolution' });
 
 /**
  * How an artifact entered the closure as a root.
@@ -130,12 +110,10 @@ export const PartialEntrySchema = z
   .meta({ id: 'PartialEntry' });
 
 export type ArtifactEntry = z.infer<typeof ArtifactEntrySchema>;
-export type ArtifactResolution = z.infer<typeof ArtifactResolutionSchema>;
 export type DependencyEdge = z.infer<typeof DependencyEdgeSchema>;
 export type EdgeOrigin = z.infer<typeof EdgeOriginSchema>;
 export type PartialEntry = z.infer<typeof PartialEntrySchema>;
 export type PresentArtifact = z.infer<typeof PresentArtifactSchema>;
 export type RemovedArtifact = z.infer<typeof RemovedArtifactSchema>;
-export type ResolutionCandidate = z.infer<typeof ResolutionCandidateSchema>;
 export type Seed = z.infer<typeof SeedSchema>;
 export type SeedOrigin = z.infer<typeof SeedOriginSchema>;

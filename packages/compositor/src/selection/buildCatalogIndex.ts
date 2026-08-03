@@ -1,6 +1,6 @@
 import { appendTo } from '../portable/appendTo.ts';
-import type { ArtifactId, Id, KindId } from '../schemas/common.ts';
-import type { Catalog } from '../schemas/resolution-schemas.ts';
+import type { Catalog } from '../schemas/catalog-schemas.ts';
+import type { ArtifactId, Id, KindId } from '../schemas/scalar-schemas.ts';
 
 /** The catalog as selection reads it: what exists, and which artifacts each source carries. */
 export interface CatalogIndex {

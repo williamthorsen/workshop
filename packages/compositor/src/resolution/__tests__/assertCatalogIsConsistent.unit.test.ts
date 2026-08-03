@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ConsistencyError } from '../../consistency/ConsistencyError.ts';
-import { type Catalog, CatalogSchema } from '../../schemas/resolution-schemas.ts';
+import { type Catalog, CatalogSchema } from '../../schemas/catalog-schemas.ts';
 import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { assertCatalogIsConsistent, CatalogConsistencyError } from '../assertCatalogIsConsistent.ts';
 import { buildCatalog } from '../test-utils/buildCatalog.ts';

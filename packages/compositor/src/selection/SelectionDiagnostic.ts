@@ -1,4 +1,4 @@
-import type { Id, KindId } from '../schemas/common.ts';
+import type { Id, KindId } from '../schemas/scalar-schemas.ts';
 
 /**
  * Where in a config something was declared, so a diagnostic reaches the entry an author wrote.

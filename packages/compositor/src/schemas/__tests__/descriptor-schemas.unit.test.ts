@@ -1,25 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
-import { IdSchema } from '../common.ts';
 import {
   KindDescriptorSchema,
   SourceEntrySchema,
   SourceOriginSchema,
-  TargetEntrySchema,
   TierDescriptorSchema,
 } from '../descriptor-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const kind = { id: 'skill', label: 'Skill', emitsFiles: true };
 const source = { id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team' } };
-const target = { id: 'claude', label: 'Claude', root: '~/.claude', tokenMappings: [], variables: [] };
 const tier = { id: 'project', label: 'Project' };
 
 const openCases: ReadonlyArray<readonly [string, z.ZodType, Record<string, unknown>]> = [
   ['KindDescriptorSchema', KindDescriptorSchema, kind],
   ['SourceEntrySchema', SourceEntrySchema, source],
-  ['TargetEntrySchema', TargetEntrySchema, target],
   ['TierDescriptorSchema', TierDescriptorSchema, tier],
 ];
 
@@ -52,18 +48,6 @@ describe('SourceOriginSchema', () => {
   });
 });
 
-describe('TargetEntrySchema', () => {
-  it('accepts a target declaring no token mappings and no variables', () => {
-    expect(TargetEntrySchema.parse(target)).toStrictEqual(target);
-  });
-
-  it('if tokenMappings is absent, rejects the target for that field', () => {
-    const withoutMappings = { id: 'claude', label: 'Claude', root: '~/.claude', variables: [] };
-
-    expect(findIssuePaths(TargetEntrySchema, withoutMappings)).toStrictEqual([['tokenMappings']]);
-  });
-});
-
 describe('TierDescriptorSchema', () => {
   it('accepts a tier carrying the label a reader shows for it', () => {
     expect(TierDescriptorSchema.parse(tier)).toStrictEqual(tier);
@@ -71,11 +55,5 @@ describe('TierDescriptorSchema', () => {
 
   it('if the tier carries no label, rejects it for that field', () => {
     expect(findIssuePaths(TierDescriptorSchema, { id: 'project' })).toStrictEqual([['label']]);
-  });
-});
-
-describe('IdSchema', () => {
-  it('if the id is empty, rejects it at the root', () => {
-    expect(findIssuePaths(IdSchema, '')).toStrictEqual([[]]);
   });
 });

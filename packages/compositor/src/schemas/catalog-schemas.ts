@@ -1,10 +1,10 @@
-/** Resolution: what the sources carry, and which one won each artifact. */
+/** Catalog: every artifact the sources carry, and which source won each one. */
 
 import { z } from 'zod';
 
-import { IdSchema } from './common.ts';
+import { ArtifactResolutionSchema } from './artifact-resolution-schemas.ts';
 import { KindDescriptorSchema, SourceEntrySchema } from './descriptor-schemas.ts';
-import { ArtifactResolutionSchema } from './graph-schemas.ts';
+import { IdSchema } from './scalar-schemas.ts';
 
 /**
  * Version of the catalog payload.

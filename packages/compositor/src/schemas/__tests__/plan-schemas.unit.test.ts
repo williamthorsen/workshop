@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildPlan } from '../../test-utils/buildPlan.ts';
-import { PLAN_SCHEMA_VERSION, PlanSchema } from '../plan-schema.ts';
+import { PLAN_SCHEMA_VERSION, PlanSchema } from '../plan-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const tables = [
