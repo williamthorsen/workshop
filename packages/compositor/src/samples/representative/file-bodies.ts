@@ -17,7 +17,8 @@ export const RETIRED_SKILL_CURRENT = '# Retired\n\nSuperseded.\n';
 export const REVIEW_SKILL_CURRENT = '# Review\n\nRead the diff.\n';
 export const REVIEW_SKILL_PLANNED = '# Review\n\nRead the diff, then the tests.\n';
 // The first hook belongs to another tool and carries no sentinel; the engine owns only the entries marked with one.
+// The planned side is what entry ownership writes, expanded because an indented `JSON.stringify` holds no item inline.
 export const SETTINGS_JSON_CURRENT =
   '{\n  "hooks": [\n    { "command": "vendor-tool sync" },\n    { "command": "relay --on=stop", "source": "codeassembly" }\n  ]\n}\n';
 export const SETTINGS_JSON_PLANNED =
-  '{\n  "hooks": [\n    { "command": "vendor-tool sync" },\n    { "command": "relay --on=stop", "source": "codeassembly" },\n    { "command": "relay --on=review", "source": "codeassembly" }\n  ]\n}\n';
+  '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n    {\n      "command": "relay --on=stop",\n      "source": "codeassembly"\n    },\n    {\n      "command": "relay --on=review",\n      "source": "codeassembly"\n    }\n  ]\n}\n';
