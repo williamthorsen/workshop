@@ -28,12 +28,12 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
     fix: `Run 'rdy compile --force' to re-record ${entry.name}`,
     checks: [
       {
-        name: 'its source is unchanged since it was compiled',
+        name: 'Its source is unchanged since it was compiled',
         check: () => compareToRecordedHash(entry.source, entry.sourceHash),
         fix: `Run 'rdy compile' to rebuild ${entry.name} from its source`,
       },
       {
-        name: 'its bundle is unchanged since it was compiled',
+        name: 'Its bundle is unchanged since it was compiled',
         check: () => compareToRecordedHash(entry.path, entry.targetHash),
         fix: `Move the edits into the source and run 'rdy compile --force'`,
       },
@@ -49,7 +49,7 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
  */
 function buildUnrecordedBundlesCheck(): RdyCheck {
   return {
-    name: 'every compiled kit is recorded in the manifest',
+    name: 'Every compiled kit is recorded in the manifest',
     skip: () => (listCompiledBundlePaths().length === 0 ? 'nothing compiled' : false),
     check: () => ({ ok: false, detail: `${DEFAULT_MANIFEST_PATH} records no kit` }),
     fix: `Run 'rdy compile' to record every compiled kit and its hashes`,

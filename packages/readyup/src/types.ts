@@ -129,8 +129,9 @@ export type CheckReturnValue = boolean | CheckOutcome;
 /** A single readyup check. */
 export interface RdyCheck {
   /**
-   * The claim being asserted, phrased to read true on a pass and false on a failure:
-   * `Node 24 or later`, not `Node >= 24`.
+   * The claim being asserted, in the third person indicative and capitalized like a sentence,
+   * phrased to read true on a pass and false on a failure: `Node.js runtime is v24 or later`,
+   * not `Node >= 24`.
    */
   name: string;
 

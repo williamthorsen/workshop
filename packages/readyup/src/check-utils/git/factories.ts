@@ -3,7 +3,7 @@ import { compareLocalRefs } from './compare-local-refs.ts';
 import { compareRefToRemote } from './compare-ref-to-remote.ts';
 
 interface LocalRefSyncCheckOptions {
-  /** Display name for the check. */
+  /** The claim the check asserts. */
   name: string;
   /** Path to the git repository. */
   path: string;
@@ -18,7 +18,7 @@ interface LocalRefSyncCheckOptions {
 }
 
 interface RemoteRefSyncCheckOptions {
-  /** Display name for the check. */
+  /** The claim the check asserts. */
   name: string;
   /** Path to the git repository. */
   path: string;

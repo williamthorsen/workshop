@@ -32,10 +32,10 @@ const projectFoundations = {
     },
   ],
   checks: [
-    // The claim goes in the name, the evidence in the detail: `🔴 project is ESM` says what
+    // The claim goes in the name, the evidence in the detail: `🔴 Project is ESM` says what
     // is wrong on its own, and the "type" it found explains why.
     {
-      name: 'project is ESM',
+      name: 'Project is ESM',
       check: () => {
         const type = getJsonValue(readPackageJson() ?? {}, 'type');
         return { ok: type === 'module', detail: `"type": ${JSON.stringify(type ?? null)}` };
@@ -56,7 +56,7 @@ const projectFoundations = {
       fix: 'Create pnpm-workspace.yaml with workspace package globs',
       checks: [
         {
-          name: 'workspace includes packages/*',
+          name: 'Workspace includes packages/*',
           check: () => fileContains('pnpm-workspace.yaml', /packages\/\*/),
         },
       ],
@@ -122,7 +122,7 @@ const codeQuality = {
     },
     // A fraction is its own evidence, so this check needs no detail on a pass.
     {
-      name: 'root configs are present',
+      name: 'Root configs are present',
       check: () => filesExist(['eslint.config.ts', 'tsconfig.json', 'vitest.config.ts']),
       fix: 'Add the missing config to the repo root',
     },
@@ -132,7 +132,7 @@ const codeQuality = {
       fix: 'Add bitbucket-pipelines.yml for CI/CD pipeline configuration',
       checks: [
         {
-          name: 'pipeline runs pnpm run check',
+          name: 'Pipeline runs pnpm run check',
           check: () => fileContains('bitbucket-pipelines.yml', /pnpm run check/),
         },
       ],
@@ -163,12 +163,12 @@ const publishingPipeline = {
     // Stage 1: Build infrastructure
     [
       {
-        name: 'build config exists',
+        name: 'Build config exists',
         check: () => fileExists('.config/nmr.config.ts'),
         fix: 'Add .config/nmr.config.ts to declare per-repo nmr script overrides',
       },
       {
-        name: 'shared Vitest config exists',
+        name: 'Shared Vitest config exists',
         check: () => fileExists('config/vitest.config.ts'),
         fix: 'Add config/vitest.config.ts — packages inherit the shared test configuration',
       },
@@ -189,7 +189,7 @@ const publishingPipeline = {
     // Stage 3: Release automation (skipped if compliance fails)
     [
       {
-        name: 'release workflow exists',
+        name: 'Release workflow exists',
         check: () => fileExists('.github/workflows/release.yaml'),
       },
     ],
