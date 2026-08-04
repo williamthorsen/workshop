@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ARTIFACT_ID_PLACEHOLDER } from '../../deployment/contribution-markers.ts';
 import type { KindDescriptor } from '../../schemas/descriptor-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { RenderTargetViolation } from '../assertRenderTargetsAreConsistent.ts';
@@ -14,6 +15,14 @@ const skillDeployment = {
   form: 'tree',
   kindId: 'skill',
   layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
+} as const;
+
+const ambientDeployment = {
+  form: 'region',
+  kindId: 'rulebook',
+  host: 'CLAUDE.md',
+  markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
+  contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
 } as const;
 
 const claude: RenderTarget = {
@@ -79,6 +88,95 @@ describe(assertRenderTargetsAreConsistent, () => {
         path: 'targets[0].stages[0].pattern',
         message: `captures ${groups} groups, but exactly one names the link target`,
       },
+    ]);
+  });
+
+  it('reports a kind deployed once as a tree and once into a host', () => {
+    const both: RenderTarget = { ...claude, deployments: [skillDeployment, { ...ambientDeployment, kindId: 'skill' }] };
+
+    expect(violationsOf([both])).toStrictEqual([
+      { path: 'targets[0].deployments', message: 'deploys "skill" more than once' },
+    ]);
+  });
+
+  it('accepts two kinds aggregating into one host, which their own markers keep apart', () => {
+    const shared: RenderTarget = {
+      ...claude,
+      deployments: [ambientDeployment, { ...ambientDeployment, kindId: 'skill' }],
+    };
+
+    expect(() => assertRenderTargetsAreConsistent([shared], kinds)).not.toThrow();
+  });
+
+  it.each([
+    ['a host standing where a layout root goes', 'skills'],
+    ['a host inside a file layout’s own tree', 'skills/naming.md'],
+  ])('reports %s', (_label, host) => {
+    const collided: RenderTarget = { ...claude, deployments: [skillDeployment, { ...ambientDeployment, host }] };
+
+    expect(violationsOf([collided])).toStrictEqual([
+      {
+        path: 'targets[0].deployments[1].host',
+        message: 'collides with the layout root "skills", which is a directory',
+      },
+    ]);
+  });
+
+  // A directory layout claims `skills/<name>/<entryFile>` and never a file directly beneath its root, so a host there
+  // is no contradiction; only equality and containment are.
+  it('accepts a host beside a layout root rather than inside it', () => {
+    const beside: RenderTarget = {
+      ...claude,
+      deployments: [skillDeployment, { ...ambientDeployment, host: 'skills-index.md' }],
+    };
+
+    expect(() => assertRenderTargetsAreConsistent([beside], kinds)).not.toThrow();
+  });
+
+  // The root is the target's own directory, which every host sits under and none claims as a file.
+  it('accepts a host beneath a layout rooted at the target root', () => {
+    const rooted: RenderTarget = {
+      ...claude,
+      deployments: [
+        { form: 'tree', kindId: 'skill', layout: { form: 'file', root: '', extension: '.md' } },
+        ambientDeployment,
+      ],
+    };
+
+    expect(() => assertRenderTargetsAreConsistent([rooted], kinds)).not.toThrow();
+  });
+
+  it.each([
+    ['stands no placeholder', { open: '<!-- rulebook -->', close: '<!-- /{artifactId} -->' }, 'open', 0],
+    ['stands two', { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId}{artifactId} -->' }, 'close', 2],
+  ])('reports a contribution marker template that %s', (_label, contributionMarkers, role, count) => {
+    const wrong: RenderTarget = { ...claude, deployments: [{ ...ambientDeployment, contributionMarkers }] };
+
+    expect(violationsOf([wrong])).toStrictEqual([
+      {
+        path: `targets[0].deployments[0].contributionMarkers.${role}`,
+        message: `stands ${ARTIFACT_ID_PLACEHOLDER} ${count} times, but exactly one names the contributor`,
+      },
+    ]);
+  });
+
+  it.each([
+    ['markers', { open: '<!-- codeassembly -->', close: '<!-- codeassembly -->' }, 'markers'],
+    ['contribution markers', { open: '{artifactId}', close: '{artifactId}' }, 'contributionMarkers'],
+  ])('reports %s that could not delimit a span', (_label, pair, field) => {
+    const wrong: RenderTarget = { ...claude, deployments: [{ ...ambientDeployment, [field]: pair }] };
+
+    expect(violationsOf([wrong]).map(({ path }) => path)).toStrictEqual([`targets[0].deployments[0].${field}`]);
+  });
+
+  it('reports markers spanning a line break, which no line-anchored match could find', () => {
+    const wrong: RenderTarget = {
+      ...claude,
+      deployments: [{ ...ambientDeployment, markers: { open: '<!--\ncodeassembly -->', close: '<!-- /x -->' } }],
+    };
+
+    expect(violationsOf([wrong])).toStrictEqual([
+      { path: 'targets[0].deployments[0].markers', message: 'A region marker must occupy a single line.' },
     ]);
   });
 
