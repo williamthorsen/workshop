@@ -31,9 +31,9 @@ export interface SourceResolution {
  * Resolves the sources `config` declares, locating each on disk, in precedence order.
  *
  * The fold runs lowest tier first, keyed by name: a `use` adds the source or remaps an inherited one, a `drop` removes
- * it and records the decline, and a tier declaring `reset` discards every lower tier's contributions before it applies.
- * Precedence then runs higher tier first, and author order within a tier, so a config reads with precedence descending
- * down the page and a consumer's own content outranks a package it listed below.
+ * it and records the decline, and a tier declaring `shouldReset` discards every lower tier's contributions before it
+ * applies. Precedence then runs higher tier first, and author order within a tier, so a config reads with precedence
+ * descending down the page and a consumer's own content outranks a package it listed below.
  *
  * A package name is located here; a path is resolved against the tier that declared it. The location a consumer wrote
  * stays on the origin either way, so a plan reports the declaration rather than where it landed. Whether a resolved
@@ -47,7 +47,7 @@ export async function resolveSources(
   const declined = new Set<string>();
 
   for (const [tierIndex, tier] of config.tiers.entries()) {
-    if (tier.reset) {
+    if (tier.shouldReset) {
       adopted.clear();
       declined.clear();
     }

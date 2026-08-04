@@ -10,7 +10,7 @@ import { CompositorConfigSchema } from '../schemas/config-schemas.ts';
 export interface TierInput {
   readonly id?: string;
   readonly baseDir?: string;
-  readonly reset?: boolean;
+  readonly shouldReset?: boolean;
   readonly sources?: unknown;
   readonly select?: unknown;
 }
@@ -22,7 +22,7 @@ export function buildConfig(tiers: ReadonlyArray<TierInput>): CompositorConfig {
       id: tier.id ?? `tier-${index}`,
       label: tier.id ?? `tier-${index}`,
       baseDir: tier.baseDir ?? '/srv/app',
-      reset: tier.reset,
+      shouldReset: tier.shouldReset,
       sources: tier.sources,
       select: tier.select,
     })),

@@ -39,10 +39,11 @@ export interface Selection {
  * Pure and free of I/O: the catalog is the only view of the filesystem, so re-running this over a changed config reads
  * nothing, which is what makes a shadow evaluation of an edited config free.
  *
- * The fold runs lowest tier first. Within a tier every `use` applies before every `drop`, and a tier declaring `reset`
- * discards every lower tier's decisions first. Seeds and declines stay disjoint per artifact: a `drop` clears the seeds
- * beneath it and records the decline, and a later `use` clears the decline and seeds afresh. What survives to the end
- * is therefore what decided the final state, which is what tells a project-level opt-in from an inherited one.
+ * The fold runs lowest tier first. Within a tier every `use` applies before every `drop`, and a tier declaring
+ * `shouldReset` discards every lower tier's decisions first. Seeds and declines stay disjoint per artifact: a `drop`
+ * clears the seeds beneath it and records the decline, and a later `use` clears the decline and seeds afresh. What
+ * survives to the end is therefore what decided the final state, which is what tells a project-level opt-in from an
+ * inherited one.
  *
  * A selector matching nothing is a diagnostic rather than a failure, so validation reports every mistake in a config at
  * once.
@@ -54,7 +55,7 @@ export function selectArtifacts(config: CompositorConfig, catalog: Catalog): Sel
   const diagnostics: Array<SelectionDiagnostic> = [];
 
   for (const tier of config.tiers) {
-    if (tier.reset) {
+    if (tier.shouldReset) {
       seeds.clear();
       declines.clear();
     }

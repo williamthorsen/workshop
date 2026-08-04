@@ -22,7 +22,7 @@ import { SourceDeclarationSchema } from './source-declaration-schemas.ts';
  * because every entry under it is commented out, reads as the empty declaration it means.
  */
 export const TierBodySchema = z.strictObject({
-  reset: z.boolean().default(false),
+  shouldReset: z.boolean().default(false),
   sources: z.preprocess((value) => value ?? undefined, SourceDeclarationSchema.default({ use: [], drop: [] })),
   select: z.preprocess((value) => value ?? undefined, SelectSchema.default([])),
 });
