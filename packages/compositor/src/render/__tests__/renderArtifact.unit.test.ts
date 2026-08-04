@@ -37,6 +37,24 @@ describe(renderArtifact, () => {
     expect(requireRendered(result).content).toBe('Use view on [the rubric](~/.claude/skills/review/rubric.md).\n');
   });
 
+  it('resolves a link against the name the artifact deploys under, not against its slug', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [the rubric](./rubric.md).\n' });
+    const renamed: RenderTarget = {
+      ...claude,
+      deployments: [
+        {
+          kindId: 'skill',
+          layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
+          nameTemplate: 'consult-{slug}',
+        },
+      ],
+    };
+
+    const result = await render(dir, renamed);
+
+    expect(requireRendered(result).content).toBe('See [the rubric](~/.claude/skills/consult-review/rubric.md).\n');
+  });
+
   it('renders for a destination rooted at a plain path rather than a home-relative one', async () => {
     const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [the rubric](./rubric.md).\n' });
     const served: RenderTarget = { ...claude, root: '/srv/out' };
@@ -112,7 +130,7 @@ describe(renderArtifact, () => {
 
     const result = await render(dir, claude);
 
-    expect(requireRendered(result).diagnostics.map(({ stage }) => stage)).toStrictEqual(['tokens', 'links']);
+    expect(requireRendered(result).diagnostics.map(({ stage }) => stage)).toStrictEqual(['links', 'tokens']);
     expect(requireRendered(result).content).toBe('Use {tool:Bash} on [x](../../../away.md).\n');
   });
 

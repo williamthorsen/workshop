@@ -21,7 +21,15 @@ const claude: RenderTarget = {
   id: 'claude',
   label: 'Claude',
   root: '~/.claude',
-  tokenMappings: [{ kindId: 'tool', entries: [{ from: 'Read', to: 'view' }] }],
+  tokenMappings: [
+    {
+      kindId: 'tool',
+      entries: [
+        { from: 'Guidance', to: 'CLAUDE.md' },
+        { from: 'Read', to: 'view' },
+      ],
+    },
+  ],
   deployments: [{ kindId: 'skill', layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } }],
   stages: [],
 };
@@ -67,6 +75,22 @@ describe('per-target stage composition', () => {
     ]);
 
     expect(contentOf(result)).toBe('See [x](~/.claude/skills/review/y.md).\n');
+  });
+
+  it('runs link rewriting first, so a mapping value heading a target is inserted where it stands', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [guidance]({tool:Guidance}).\n' });
+
+    const result = await render(dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
+
+    expect(contentOf(result)).toBe('See [guidance](CLAUDE.md).\n');
+  });
+
+  it('resolves a target whose token sits behind a relative prefix, which is how a consumer asks for that', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [guidance](./{tool:Guidance}).\n' });
+
+    const result = await render(dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
+
+    expect(contentOf(result)).toBe('See [guidance](~/.claude/skills/review/CLAUDE.md).\n');
   });
 
   it('runs the overlay last, so a value the target supplies is not rewritten as though an author wrote it', async () => {

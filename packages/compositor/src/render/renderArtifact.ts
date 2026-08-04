@@ -50,10 +50,12 @@ export type ArtifactRender =
 /**
  * Runs the stages `target` declares over one artifact's file, in the order the engine fixes.
  *
- * Transclusion runs first, since every later stage reads the segments it produces and the attribution they carry; the
- * frontmatter overlay runs last, over the joined document, since it parses a block rather than a run of lines and its
- * values are already the target's own. The stages between them are commutative, the passthrough predicates being data:
- * a link target opening with a token survives the link stage whether or not the token rewrite has already run.
+ * Transclusion runs first, since every later stage reads the segments it produces and the attribution they carry. Link
+ * rewriting runs before the token rewrite, so a link target opening with a token still carries the token the link stage
+ * recognizes: a consumer writes `{name}` for a value to be inserted where it stands and `./{name}` for one to be
+ * resolved against the file. The frontmatter overlay runs last, over the joined document, since it parses a block
+ * rather than a run of lines and its values are already the target's own. Each ordering is load-bearing, which is why a
+ * target declares which stages run and never their sequence.
  *
  * A target declaring no transclusion stage still has its file read: a body with no directives in it is one segment.
  *
@@ -77,18 +79,6 @@ export async function renderArtifact(input: RenderArtifactInput): Promise<Artifa
   const diagnostics: Array<RenderDiagnostic> = [];
   let segments = expansion.segments;
 
-  if (findStage(input.target, 'tokens') !== undefined) {
-    const rewrite = rewriteTokens({
-      segments,
-      tokenKinds: input.tokenKinds,
-      target: input.target,
-      host: input.artifact.id,
-      resolveDeployedName: input.resolveDeployedName,
-    });
-    segments = rewrite.segments;
-    diagnostics.push(...rewrite.diagnostics.map((diagnostic) => ({ stage: 'tokens' as const, diagnostic })));
-  }
-
   const links = findStage(input.target, 'links');
   if (links !== undefined) {
     const rewrite = rewriteLinks({
@@ -101,6 +91,18 @@ export async function renderArtifact(input: RenderArtifactInput): Promise<Artifa
     });
     segments = rewrite.segments;
     diagnostics.push(...rewrite.diagnostics.map((diagnostic) => ({ stage: 'links' as const, diagnostic })));
+  }
+
+  if (findStage(input.target, 'tokens') !== undefined) {
+    const rewrite = rewriteTokens({
+      segments,
+      tokenKinds: input.tokenKinds,
+      target: input.target,
+      host: input.artifact.id,
+      resolveDeployedName: input.resolveDeployedName,
+    });
+    segments = rewrite.segments;
+    diagnostics.push(...rewrite.diagnostics.map((diagnostic) => ({ stage: 'tokens' as const, diagnostic })));
   }
 
   const frontmatter = findStage(input.target, 'frontmatter');
