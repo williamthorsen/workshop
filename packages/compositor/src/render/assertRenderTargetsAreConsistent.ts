@@ -97,16 +97,16 @@ export function assertRenderTargetsAreConsistent(
 // region | Helpers
 
 /**
- * Reports a host that a tree layout's root claims as a directory, or that claims a root's directory as a file.
+ * Reports a host declared where a tree layout needs a directory.
  *
- * Only equality and containment are reported, which is the contradiction no artifact set could resolve: one
- * declaration wants a file where another wants a directory. A host that merely sits inside a root is not one -- a
- * directory layout rooted at `skills` claims `skills/<name>/<entryFile>` and never a file directly beneath it -- and a
- * root at the empty string is the target root itself, which every host is under and no host contradicts.
+ * That is the one contradiction no artifact set could resolve, and it holds two ways: the host stands at a root
+ * itself, or it stands at a directory some root is nested inside. A host merely sitting inside a root is not one, a
+ * directory layout rooted at `skills` claiming `skills/<name>/<entryFile>` and never a file directly beneath it. A root
+ * at the empty string is the target root, which every host is under and no host contradicts.
  *
  * A host whose shape a tree layout's claim rule could match, such as one at the target root under a file layout rooted
- * there, is not decidable from declarations: whether it matches depends on the slugs a catalog turns out to carry. The
- * scan that reads current target state excludes declared hosts instead.
+ * there, is decidable only against the slugs a catalog turns out to carry. The scan that reads current target state
+ * excludes declared hosts instead.
  */
 function collectHostCollisions(
   host: string,
@@ -115,8 +115,11 @@ function collectHostCollisions(
   violations: Array<Violation>,
 ): void {
   for (const root of layoutRoots) {
-    if (host === root || host.startsWith(`${root}/`) || root.startsWith(`${host}/`)) {
-      violations.push({ path, message: `collides with the layout root "${root}", which is a directory` });
+    if (host === root || root.startsWith(`${host}/`)) {
+      violations.push({
+        path,
+        message: `collides with the layout root "${root}", which needs a directory where this host is a file`,
+      });
     }
   }
 }

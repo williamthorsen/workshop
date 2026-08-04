@@ -108,23 +108,48 @@ describe(assertRenderTargetsAreConsistent, () => {
     expect(() => assertRenderTargetsAreConsistent([shared], kinds)).not.toThrow();
   });
 
-  it.each([
-    ['a host standing where a layout root goes', 'skills'],
-    ['a host inside a file layout’s own tree', 'skills/naming.md'],
-  ])('reports %s', (_label, host) => {
-    const collided: RenderTarget = { ...claude, deployments: [skillDeployment, { ...ambientDeployment, host }] };
+  it('reports a host standing where a layout root goes', () => {
+    const collided: RenderTarget = {
+      ...claude,
+      deployments: [skillDeployment, { ...ambientDeployment, host: 'skills' }],
+    };
 
     expect(violationsOf([collided])).toStrictEqual([
       {
         path: 'targets[0].deployments[1].host',
-        message: 'collides with the layout root "skills", which is a directory',
+        message: 'collides with the layout root "skills", which needs a directory where this host is a file',
+      },
+    ]);
+  });
+
+  it('reports a host standing at a directory a layout root is nested inside', () => {
+    const nested = {
+      form: 'tree',
+      kindId: 'skill',
+      layout: { form: 'directory', root: 'agents/skills', entryFile: 'SKILL.md' },
+    } as const;
+    const collided: RenderTarget = { ...claude, deployments: [nested, { ...ambientDeployment, host: 'agents' }] };
+
+    expect(violationsOf([collided])).toStrictEqual([
+      {
+        path: 'targets[0].deployments[1].host',
+        message: 'collides with the layout root "agents/skills", which needs a directory where this host is a file',
       },
     ]);
   });
 
   // A directory layout claims `skills/<name>/<entryFile>` and never a file directly beneath its root, so a host there
-  // is no contradiction; only equality and containment are.
-  it('accepts a host beside a layout root rather than inside it', () => {
+  // contradicts nothing.
+  it('accepts a host sitting inside a layout root', () => {
+    const inside: RenderTarget = {
+      ...claude,
+      deployments: [skillDeployment, { ...ambientDeployment, host: 'skills/README.md' }],
+    };
+
+    expect(() => assertRenderTargetsAreConsistent([inside], kinds)).not.toThrow();
+  });
+
+  it('accepts a host beside a layout root', () => {
     const beside: RenderTarget = {
       ...claude,
       deployments: [skillDeployment, { ...ambientDeployment, host: 'skills-index.md' }],
