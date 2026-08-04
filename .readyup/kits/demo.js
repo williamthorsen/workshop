@@ -10,9 +10,8 @@ import {
   fileContains,
   fileExists,
   filesExist,
-  getJsonValue,
   hasDevDependency,
-  readPackageJson
+  readJsonValue
 } from "readyup/check-utils";
 var projectFoundations = {
   name: "project-foundations",
@@ -28,15 +27,16 @@ var projectFoundations = {
     {
       name: "Project is ESM",
       check: () => {
-        const type = getJsonValue(readPackageJson() ?? {}, "type");
-        return { ok: type === "module", detail: `"type": ${JSON.stringify(type ?? null)}` };
+        const type = readJsonValue("package.json", "type");
+        const detail = type === void 0 ? 'no "type" field' : `"type": ${JSON.stringify(type)}`;
+        return { ok: type === "module", detail };
       },
       fix: 'Add "type": "module" to package.json'
     },
     {
       name: "packageManager field is set",
       check: () => {
-        const value = getJsonValue(readPackageJson() ?? {}, "packageManager");
+        const value = readJsonValue("package.json", "packageManager");
         return typeof value === "string" ? { ok: true, detail: value } : { ok: false };
       },
       fix: 'Add "packageManager" to package.json (e.g., "pnpm@10.x.x")'
