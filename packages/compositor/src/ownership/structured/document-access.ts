@@ -1,6 +1,6 @@
 /** Document access: the one place a structured host's format decides how it is read, edited, and written back. */
 
-import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLSeq } from 'yaml';
+import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLMap, YAMLSeq } from 'yaml';
 
 import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
 
@@ -225,6 +225,15 @@ function openYamlDocument(content: string): { readonly document: DocumentAccess 
         if (isSeq(existing)) {
           existing.items = [...items];
           return;
+        }
+        // Give an ancestor that holds nothing a mapping to descend through. `setIn` builds the structure under a key
+        // that is missing outright, but throws on one that is present holding null, which a stubbed-out key parses to.
+        for (let depth = 1; depth < path.length; depth++) {
+          const ancestorPath = path.slice(0, depth);
+          const ancestor = doc.getIn(ancestorPath, true);
+          if (ancestor !== undefined && holdsNothing(ancestor)) {
+            doc.setIn(ancestorPath, new YAMLMap());
+          }
         }
         const seq = new YAMLSeq();
         seq.items = [...items];

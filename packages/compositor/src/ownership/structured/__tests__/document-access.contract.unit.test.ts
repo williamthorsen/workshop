@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import type { DocumentAccess } from '../document-access.ts';
 import { openDocument } from '../document-access.ts';
+import { ensureOwnedItems } from '../ensureOwnedItems.ts';
 import type { LocatedCollection } from '../locateCollection.ts';
 import { locateCollection } from '../locateCollection.ts';
 import type { OwnedItemsSpec } from '../OwnedItemsSpec.ts';
+import { readOwnedItems } from '../readOwnedItems.ts';
 
 const COLLECTION = ['eventHooks', 'events'];
+const SENTINEL = { path: ['source'], value: 'compositor' };
+const OWNED = { name: 'relay' };
 
 /** One host shape, written once per format, with the single state the contract requires both to reach. */
 interface HostShape {
@@ -72,13 +76,39 @@ const SHAPES: ReadonlyArray<HostShape> = [
   },
 ];
 
+const WRITABLE = SHAPES.filter((shape) => shape.expected !== 'blocked');
+const REFUSED = SHAPES.filter((shape) => shape.expected === 'blocked');
+
 describe.each(['json', 'yaml'] as const)('DocumentAccess over a %s host', (format: OwnedItemsSpec['format']) => {
   it.each(SHAPES)('reads $name as $expected', (shape: HostShape) => {
     expect(summarize(locateCollection(open(shape[format], format), COLLECTION))).toBe(shape.expected);
   });
+
+  // Reading a shape the same way in both formats is half the contract; the divergences that survived it were in the
+  // write, where one format built the structure a read had called absent and the other threw reaching for it.
+  it.each(WRITABLE)('ensures the owned item into $name', (shape: HostShape) => {
+    const spec: OwnedItemsSpec = { format, collection: COLLECTION, sentinel: SENTINEL };
+    const ensured = contentOf(ensureOwnedItems(shape[format], spec, [OWNED]));
+
+    expect(readOwnedItems(ensured, spec)).toStrictEqual({ items: [{ ...OWNED, source: SENTINEL.value }] });
+  });
+
+  it.each(REFUSED)('refuses to ensure into $name rather than throwing', (shape: HostShape) => {
+    const spec: OwnedItemsSpec = { format, collection: COLLECTION, sentinel: SENTINEL };
+
+    expect(ensureOwnedItems(shape[format], spec, [OWNED])).toHaveProperty('blocked.reason');
+  });
 });
 
 // region | Helpers
+
+/** Reads the content an outcome carries, failing the test when it blocked instead. */
+function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
+  if ('blocked' in outcome) {
+    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
+  }
+  return outcome.content;
+}
 
 /** Opens a fixture for the table above, which supplies only hosts that parse. */
 function open(content: string, format: OwnedItemsSpec['format']): DocumentAccess {
