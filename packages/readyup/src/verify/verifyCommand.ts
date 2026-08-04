@@ -33,8 +33,8 @@ const verifyOptions = {
 } as const;
 
 /**
- * Handle the `verify` subcommand: read the manifest, hash each kit's source and compiled output,
- * and report what no longer matches.
+ * Handles the `verify` subcommand: reads the manifest, hashes each kit's source and compiled
+ * output, and reports what no longer matches.
  *
  * Each kit carries two independent verdicts, and a third under `--rebuild`. Returns 0 when every
  * verdict is `ok` or `unverified`; 1 when any kit has drifted, gone stale, lost a file, or failed
@@ -122,7 +122,7 @@ async function requireEsbuild(): Promise<void> {
   }
 }
 
-/** Emit the verify payload under `--json` and turn the run's verdict into an exit code. */
+/** Emits the verify payload under `--json` and turns the run's verdict into an exit code. */
 function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean): number {
   if (json) {
     const output: JsonVerifyOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
@@ -133,7 +133,7 @@ function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean
 }
 
 /**
- * Return true when none of a kit's verdicts reports a mismatch or a missing file.
+ * Returns true when none of a kit's verdicts reports a mismatch or a missing file.
  *
  * Reads the verdicts themselves rather than the entry serialized from them. Each is a total union,
  * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
@@ -155,7 +155,7 @@ function isPassingVerdict(
   return targetPasses && sourcePasses && rebuildPasses;
 }
 
-/** Build a kit's JSON entry, carrying a pair of hashes only on a verdict that compared them. */
+/** Builds a kit's JSON entry, carrying a pair of hashes only on a verdict that compared them. */
 function buildVerifyEntry(
   name: string,
   status: DriftStatus,
@@ -175,6 +175,7 @@ function buildVerifyEntry(
     ...(rebuildStatus?.kind === 'mismatch' && {
       rebuildExpected: rebuildStatus.expected,
       rebuildActual: rebuildStatus.actual,
+      ...(rebuildStatus.compiledWith !== undefined && { rebuildCompiledWith: rebuildStatus.compiledWith }),
     }),
     ...(rebuildStatus?.kind === 'failed' && { rebuildError: rebuildStatus.message }),
   };
@@ -193,11 +194,11 @@ function formatStatusLine(
   rebuildStatus: RebuildStatus | undefined,
 ): string {
   const token = resolveToken(status, sourceStatus, rebuildStatus);
-  const hashesFailed = hasTargetFailed(status) || hasSourceFailed(sourceStatus);
+  const hashesConfirmed = status.kind === 'ok' && sourceStatus.kind === 'ok';
   const clauses = [
     describeDriftStatus(kit, status),
     describeSourceStatus(kit, sourceStatus),
-    describeRebuildStatus(rebuildStatus, hashesFailed),
+    describeRebuildStatus(rebuildStatus, hashesConfirmed),
   ].filter((clause): clause is string => clause !== undefined);
 
   if (token === 'failedError') {
@@ -212,8 +213,9 @@ function formatStatusLine(
 /**
  * Returns the token for the worst of a kit's verdicts.
  *
- * A mismatch or a missing file on any axis yields a failure. `unverified` yields the skip token only
- * when the target itself is unverified.
+ * A mismatch or a missing file on any axis yields a failure. The skip token needs an unverified
+ * target and no answer from the rebuild: a rebuild that reproduced the bundle has checked the kit
+ * more exactly than the absent hash would have, so the kit passed rather than went unchecked.
  */
 function resolveToken(
   status: DriftStatus,
@@ -222,7 +224,7 @@ function resolveToken(
 ): TokenName {
   const rebuildFailed = rebuildStatus !== undefined && rebuildStatus.kind !== 'ok';
   if (hasTargetFailed(status) || hasSourceFailed(sourceStatus) || rebuildFailed) return 'failedError';
-  if (status.kind === 'unverified') return 'skippedOptional';
+  if (status.kind === 'unverified' && rebuildStatus?.kind !== 'ok') return 'skippedOptional';
   return 'passed';
 }
 
@@ -266,16 +268,17 @@ function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string
 /**
  * Returns a clause describing the rebuild verdict, or nothing when there is nothing to add.
  *
- * A passing rebuild is normally silent, but is stated when a hash verdict is failing: that pairing
- * says the bundle reproduces exactly and the manifest's record of it is what has gone wrong, which
- * is the opposite conclusion from the one the failing verdict invites on its own.
+ * A passing rebuild is silent only where both hash verdicts already reached `ok` and it would
+ * restate them. Anywhere else it speaks, because it then carries the line's strongest answer: over
+ * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
+ * wrong, and over an unverified one it supplies the answer the absent hash could not.
  */
-function describeRebuildStatus(status: RebuildStatus | undefined, hashesFailed: boolean): string | undefined {
+function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirmed: boolean): string | undefined {
   if (status === undefined) return undefined;
 
   switch (status.kind) {
     case 'ok':
-      return hashesFailed ? 'rebuild ok' : undefined;
+      return hashesConfirmed ? undefined : 'rebuild ok';
     case 'mismatch': {
       const versions =
         status.compiledWith === undefined ? '' : `; compiled by readyup ${status.compiledWith}, rebuilt by ${VERSION}`;

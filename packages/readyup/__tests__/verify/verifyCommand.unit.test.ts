@@ -359,6 +359,60 @@ describe(verifyCommand, () => {
       });
     });
 
+    it('speaks over an unverified target, where it supplies the answer the absent hash could not', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts' }],
+      });
+      mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+      mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
+      mockCheckRebuild.mockResolvedValue({ kind: 'ok' });
+
+      const exitCode = await verifyCommand(['--rebuild']);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha`));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('rebuild ok'));
+    });
+
+    it('keeps the skip token on an unverified target the rebuild did not answer for', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'alpha', path: 'alpha.js' }],
+      });
+      mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+
+      const exitCode = await verifyCommand([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${UNVERIFIED} alpha`));
+    });
+
+    it('carries the compiling version in the JSON payload when it differs from the runner', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({
+        kind: 'mismatch',
+        expected: '1111aaaa',
+        actual: '2222bbbb',
+        compiledWith: '0.0.1-old',
+      });
+
+      await verifyCommand(['--rebuild', '--json']);
+
+      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      expect(payload).toMatchObject({ kits: [{ rebuildCompiledWith: '0.0.1-old' }] });
+    });
+
+    it('omits the compiling version from the JSON payload when it matches the runner', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
+
+      await verifyCommand(['--rebuild', '--json']);
+
+      const payload = String(stdoutSpy.mock.calls.at(-1)?.[0]);
+      expect(payload).not.toContain('rebuildCompiledWith');
+    });
+
     it('carries the compile error in the JSON payload for a kit that failed to build', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });

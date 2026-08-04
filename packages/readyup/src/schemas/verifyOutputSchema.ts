@@ -32,7 +32,7 @@ export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified'
  * inputs the check needs, and a kit exempted from an exactness check would make a passing run mean
  * less than it says. `missing` covers every such absence and fails.
  */
-export const RebuildStatusSchema = z.enum(['failed', 'missing', 'mismatch', 'ok']).meta({ id: 'RebuildStatus' });
+export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok']).meta({ id: 'RebuildStatus' });
 
 /**
  * One kit's verdicts.
@@ -46,7 +46,9 @@ export const RebuildStatusSchema = z.enum(['failed', 'missing', 'mismatch', 'ok'
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
  * payload it always did. `rebuildExpected` is the hash of the recompiled bytes and `rebuildActual`
  * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` carries the
- * compile failure on `failed`.
+ * compile failure on `failed`. `rebuildCompiledWith` names the readyup a mismatched bundle was
+ * built by, present only when it differs from the running one, which is what separates a mismatch
+ * caused by a readyup upgrade from one caused by an edited bundle.
  */
 export const VerifyKitEntrySchema = z
   .object({
@@ -60,6 +62,7 @@ export const VerifyKitEntrySchema = z
     rebuildStatus: RebuildStatusSchema.optional(),
     rebuildExpected: z.string().optional(),
     rebuildActual: z.string().optional(),
+    rebuildCompiledWith: z.string().optional(),
     rebuildError: z.string().optional(),
   })
   .meta({ id: 'VerifyKitEntry' });
