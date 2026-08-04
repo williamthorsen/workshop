@@ -103,6 +103,8 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 
 `tokenKinds` names the token kinds a target's mappings are keyed by, so a `tokenMappings` entry resolves to something a reader recognizes rather than to a bare id. It carries identity alone; the pattern a kind matches and the way it resolves are engine input, not payload. A kind's per-target sigil rides on the mapping itself, where the target and the kind already meet.
 
+Token mappings are the whole of a target's substitution vocabulary. A named value a body interpolates -- the guidance filename a harness reads, its home directory -- is a mapping token kind, not a table of its own: a name-to-value pairing is inert without a pattern that recognizes a reference to it, and a pattern is what a token kind is.
+
 ## What the schema checks, and what it does not
 
 `PlanSchema` is purely structural. It validates shapes and nothing else, which keeps it renderable to JSON Schema; a validation refinement would be invisible to `z.toJSONSchema` and would leave a generated document accepting plans this package rejects.
@@ -127,7 +129,7 @@ Both take any document carrying artifacts and edges, not a plan specifically, so
 
 That promise holds because objects in this schema are open: an unrecognized field parses and is dropped, so a consumer pinned to one version accepts a payload from a later one. Making any object strict would break it the first time a field was added.
 
-The contract is at version 3. Version 3 added the `tokenKinds` table, which every target's `tokenMappings` already referenced with nothing to resolve against. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
+The contract is at version 4. Version 4 removed each target's `variables` table, whose entries a mapping token kind already expresses; nothing could read it, since it declared names and values but no pattern that would recognize a reference to one. Version 3 added the `tokenKinds` table, which every target's `tokenMappings` already referenced with nothing to resolve against. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
 
 ## Samples
 

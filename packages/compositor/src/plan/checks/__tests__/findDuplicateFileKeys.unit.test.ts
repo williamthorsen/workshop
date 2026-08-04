@@ -20,10 +20,7 @@ describe(findDuplicateFileKeys, () => {
 
   it('tolerates one path claimed once per target, since the destination is keyed by the pair', () => {
     const plan = buildPlan();
-    plan.targets = [
-      ...plan.targets,
-      { id: 'rovodev', label: 'Rovo Dev', root: '~/.rovodev', tokenMappings: [], variables: [] },
-    ];
+    plan.targets = [...plan.targets, { id: 'rovodev', label: 'Rovo Dev', root: '~/.rovodev', tokenMappings: [] }];
     plan.files = [...plan.files, { ...requireEntry(plan.files, 0), targetId: 'rovodev' }];
 
     expect(findDuplicateFileKeys(plan)).toStrictEqual([]);

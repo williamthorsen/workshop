@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -40,8 +40,7 @@
       "id": "claude",
       "label": "Claude",
       "root": "~/.claude",
-      "tokenMappings": [],
-      "variables": []
+      "tokenMappings": []
     }
   ],
   "tiers": [

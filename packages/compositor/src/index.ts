@@ -150,13 +150,8 @@ export type { KindSelection, Selector } from './schemas/selection-schemas.ts';
 export { KindSelectionSchema, SelectorSchema, SelectSchema } from './schemas/selection-schemas.ts';
 export type { DeclaredSource, SourceDeclaration } from './schemas/source-declaration-schemas.ts';
 export { DeclaredSourceSchema, SourceDeclarationSchema } from './schemas/source-declaration-schemas.ts';
-export type { TargetEntry, TargetVariable, TokenMapping, TokenMappingEntry } from './schemas/target-schemas.ts';
-export {
-  TargetEntrySchema,
-  TargetVariableSchema,
-  TokenMappingEntrySchema,
-  TokenMappingSchema,
-} from './schemas/target-schemas.ts';
+export type { TargetEntry, TokenMapping, TokenMappingEntry } from './schemas/target-schemas.ts';
+export { TargetEntrySchema, TokenMappingEntrySchema, TokenMappingSchema } from './schemas/target-schemas.ts';
 export type { TokenKind } from './schemas/token-kind-schemas.ts';
 export { TokenKindSchema } from './schemas/token-kind-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';

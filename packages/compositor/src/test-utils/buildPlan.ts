@@ -37,7 +37,6 @@ export function buildPlan(): Plan {
         label: 'Claude',
         root: '~/.claude',
         tokenMappings: [{ kindId: 'tool', entries: [{ from: 'Read', to: 'view' }] }],
-        variables: [{ name: 'homeDir', value: '.claude' }],
       },
     ],
     tiers: [{ id: 'project', label: 'Project' }],

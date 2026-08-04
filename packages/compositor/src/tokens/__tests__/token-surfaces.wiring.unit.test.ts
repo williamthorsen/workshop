@@ -11,7 +11,6 @@ const claude: TargetEntry = {
   label: 'Claude',
   root: '~/.claude',
   tokenMappings: [{ kindId: 'skill-invocation', entries: [], sigil: '/' }],
-  variables: [],
 };
 
 const segments: ReadonlyArray<Segment> = [

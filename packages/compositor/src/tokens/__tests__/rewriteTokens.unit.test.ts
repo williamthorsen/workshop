@@ -25,7 +25,6 @@ const claude: TargetEntry = {
     { kindId: 'skill-invocation', entries: [], sigil: '/' },
     { kindId: 'tool', entries: [{ from: 'Read', to: 'view' }] },
   ],
-  variables: [],
 };
 
 /** Deploys every skill under its own slug, the case a token rendering its own name is the degenerate form of. */
