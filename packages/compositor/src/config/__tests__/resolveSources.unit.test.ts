@@ -76,10 +76,10 @@ describe(resolveSources, () => {
     await expect(collectNames(config)).resolves.toStrictEqual(['vendor']);
   });
 
-  it('discards every lower tier’s sources and declines at a tier declaring reset', async () => {
+  it('discards every lower tier’s sources and declines at a tier declaring shouldReset', async () => {
     const config = buildConfig([
       { sources: { use: [{ name: 'shared', path: './shared' }], drop: ['vendor'] } },
-      { reset: true, sources: { use: [{ name: 'local', path: './local' }] } },
+      { shouldReset: true, sources: { use: [{ name: 'local', path: './local' }] } },
     ]);
 
     await expect(resolveSources(config, options)).resolves.toMatchObject({ declined: [] });

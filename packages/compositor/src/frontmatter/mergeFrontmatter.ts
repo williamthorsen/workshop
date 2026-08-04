@@ -26,8 +26,8 @@ export function mergeFrontmatter(content: string, overlay: FrontmatterOverlay, s
     return content;
   }
 
-  const { frontmatter, body, unterminated } = parseFrontmatter(content);
-  if (unterminated) {
+  const { frontmatter, body, isUnterminated } = parseFrontmatter(content);
+  if (isUnterminated) {
     throw new Error(`Cannot overlay metadata onto "${slug}": its frontmatter block is never closed.`);
   }
 

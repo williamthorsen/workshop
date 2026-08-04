@@ -11,7 +11,7 @@ export interface ParsedFrontmatter {
    * tells them apart. An artifact that opened a block declared metadata, and reading that as body would let a caller
    * write a second block above a declaration it could not see.
    */
-  readonly unterminated: boolean;
+  readonly isUnterminated: boolean;
 }
 
 /**
@@ -28,17 +28,17 @@ export interface ParsedFrontmatter {
 export function parseFrontmatter(content: string): ParsedFrontmatter {
   const lines = content.split('\n');
   if (lines[0] !== '---') {
-    return { frontmatter: undefined, body: content, unterminated: false };
+    return { frontmatter: undefined, body: content, isUnterminated: false };
   }
 
   const closingIndex = lines.indexOf('---', 1);
   if (closingIndex === -1) {
-    return { frontmatter: undefined, body: content, unterminated: true };
+    return { frontmatter: undefined, body: content, isUnterminated: true };
   }
 
   return {
     frontmatter: lines.slice(1, closingIndex).join('\n'),
     body: lines.slice(closingIndex + 1).join('\n'),
-    unterminated: false,
+    isUnterminated: false,
   };
 }

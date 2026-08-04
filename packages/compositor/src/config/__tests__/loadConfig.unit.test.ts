@@ -35,7 +35,7 @@ describe(loadConfig, () => {
     const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
     expect(config.tiers).toStrictEqual([
-      { id: 'global', label: 'global', baseDir: dir, reset: false, sources: { use: [], drop: [] }, select: [] },
+      { id: 'global', label: 'global', baseDir: dir, shouldReset: false, sources: { use: [], drop: [] }, select: [] },
     ]);
   });
 

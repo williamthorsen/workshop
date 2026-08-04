@@ -23,7 +23,7 @@ export interface RenderArtifactInput {
   /** The file to render, relative to `source.dir`. */
   readonly entryPath: string;
   /** The file's path within the artifact's own directory, for a kind deploying as one. */
-  readonly relPath?: string;
+  readonly relativePath?: string;
   readonly resolveDeployedName: DeployedNameLookup;
   readonly source: TransclusionSource;
   readonly target: RenderTarget;
@@ -85,7 +85,7 @@ export async function renderArtifact(input: RenderArtifactInput): Promise<Artifa
       segments,
       pattern: links.pattern,
       tokenKinds: input.tokenKinds,
-      filePath: resolveDeployedPath(deployment, deployedName, input.relPath),
+      filePath: resolveDeployedPath(deployment, deployedName, input.relativePath),
       targetRoot: input.target.root,
       host: input.artifact.id,
     });

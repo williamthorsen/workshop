@@ -109,10 +109,10 @@ describe(selectArtifacts, () => {
     expect(selection.declined.map(({ artifactId }) => artifactId)).toStrictEqual(['skill:lint', 'skill:review']);
   });
 
-  it('discards every lower tier’s seeds and declines at a tier declaring reset', () => {
+  it('discards every lower tier’s seeds and declines at a tier declaring shouldReset', () => {
     const selection = select([
       { id: 'global', select: { skill: { use: ['lint'], drop: ['format'] } } },
-      { id: 'project', reset: true, select: { skill: { use: ['format'] } } },
+      { id: 'project', shouldReset: true, select: { skill: { use: ['format'] } } },
     ]);
 
     expect(collectIds(selection)).toStrictEqual(['skill:format']);

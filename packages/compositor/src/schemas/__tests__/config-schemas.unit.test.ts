@@ -22,12 +22,12 @@ const authoredTier = {
 
 describe('TierBodySchema', () => {
   it('reads an empty body as a tier declaring nothing', () => {
-    expect(TierBodySchema.parse({})).toStrictEqual({ reset: false, sources: { use: [], drop: [] }, select: [] });
+    expect(TierBodySchema.parse({})).toStrictEqual({ shouldReset: false, sources: { use: [], drop: [] }, select: [] });
   });
 
   it.each(['sources', 'select'] as const)('reads a null %s block as declaring nothing', (block) => {
     expect(TierBodySchema.parse({ [block]: null })).toStrictEqual({
-      reset: false,
+      shouldReset: false,
       sources: { use: [], drop: [] },
       select: [],
     });
@@ -46,7 +46,7 @@ describe('ConfigTierSchema', () => {
       id: 'project',
       label: 'Project',
       baseDir: '/srv/app/.agents',
-      reset: false,
+      shouldReset: false,
       sources: {
         use: [
           { name: 'local', origin: { kind: 'directory', location: './content' } },
