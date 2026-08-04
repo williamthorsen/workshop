@@ -9,8 +9,8 @@ import { IdSchema } from './scalar-schemas.ts';
 /**
  * Version of the closure payload.
  *
- * Bumped when a field is removed, renamed, or re-typed, never when an optional field is added. Independent of the plan's
- * version: the two contracts share the artifact shape but evolve on their own schedules.
+ * Bumped when a field is removed, renamed, or re-typed, never when an optional field is added. Independent of the
+ * plan's version: the two contracts share the artifact shape but evolve on their own schedules.
  */
 export const CLOSURE_SCHEMA_VERSION = 1;
 
@@ -26,8 +26,8 @@ export const ClosureArtifactSchema = PresentArtifactSchema.omit({ status: true }
 /**
  * Where in the content a diagnostic belongs.
  *
- * `key` names the frontmatter key at fault, and is absent when the artifact as a whole is: a block that would not parse,
- * or an edge that closed a cycle.
+ * `key` names the frontmatter key at fault, and is absent when the artifact as a whole is: a block that would not
+ * parse, or an edge that closed a cycle.
  */
 export const ClosureEntryRefSchema = z
   .object({ artifactId: IdSchema, key: z.string().optional() })

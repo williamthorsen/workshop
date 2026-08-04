@@ -7,9 +7,9 @@ import type { Plan } from '../../schemas/plan-schemas.ts';
 /**
  * Reports each id reference that names no entry in the table it points at.
  *
- * The artifact and partial tables are checked by the shared graph check, which a closure calls too; what is left here is
- * what a plan alone carries. Violations follow the fingerprint, the targets, the shared graph, and then the files, so
- * the reported order tracks the payload.
+ * The artifact and partial tables are checked by the shared graph check, which a closure calls too; what is left here
+ * is what a plan alone carries. Violations follow the fingerprint, the targets, the shared graph, and then the files,
+ * so the reported order tracks the payload.
  */
 export function findDanglingReferences(plan: Plan): Array<Violation> {
   const artifactIds = collectIds(plan.artifacts);

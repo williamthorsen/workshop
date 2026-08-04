@@ -149,6 +149,21 @@ describe(computeClosure, () => {
     });
   });
 
+  it('reports an artifact that depends on itself as the one-artifact cycle it is', () => {
+    const graph = buildGraph({ edges: [['skill:review', [{ to: 'skill:review', via: 'declared' }]]] });
+    const closure = computeClosure({ graph, selection: seedsFor(['skill:review']), tiers });
+
+    expect(closure.diagnostics).toStrictEqual([
+      {
+        code: 'dependency-cycle',
+        message: 'skill:review -> skill:review is a dependency cycle.',
+        at: { artifactId: 'skill:review' },
+        cycle: ['skill:review'],
+      },
+    ]);
+    expect(closure.artifacts.map(({ id }) => id)).toStrictEqual(['skill:review']);
+  });
+
   it('reports one cycle once however many seeds reach it', () => {
     const graph = buildGraph({
       edges: [

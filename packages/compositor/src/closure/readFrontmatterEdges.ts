@@ -68,7 +68,7 @@ export function readFrontmatterEdges(input: FrontmatterEdgesInput): FrontmatterE
   }
 
   for (const rule of kindRules.rules) {
-    const value = declaration[rule.key];
+    const value = readOwn(declaration, rule.key);
     if (value === undefined || value === null) {
       continue;
     }
@@ -101,11 +101,19 @@ interface RuleContext {
 /** Records one fault against the artifact being read. */
 type Fault = (code: ClosureDiagnostic['code'], key: string | undefined, message: string) => void;
 
-/** Creates a recorder appending to `diagnostics`, so each caller states the fault and not where it belongs. */
+/**
+ * Creates a recorder appending to `diagnostics`, so each caller states the fault and not where it belongs.
+ *
+ * A key-scoped fault reads as a sentence about that key, since every such message is a predicate on the key rather than
+ * on the artifact carrying it.
+ */
 function createFault(artifactId: ArtifactId, diagnostics: Array<ClosureDiagnostic>): Fault {
   return (code, key, message) => {
-    const at = key === undefined ? { artifactId } : { artifactId, key };
-    diagnostics.push({ code, message: `${artifactId} ${message}.`, at });
+    if (key === undefined) {
+      diagnostics.push({ code, message: `${artifactId} ${message}.`, at: { artifactId } });
+      return;
+    }
+    diagnostics.push({ code, message: `${artifactId}: "${key}" ${message}.`, at: { artifactId, key } });
   };
 }
 
@@ -139,6 +147,16 @@ function parseBlock(block: string): unknown {
   }
 }
 
+/**
+ * Reads `key` from `record`, or reports nothing when the record does not carry it itself.
+ *
+ * Both records read here are keyed by strings someone else wrote, and a plain object answers `constructor`, `toString`,
+ * and every other inherited member with something that is not a declaration.
+ */
+function readOwn<T>(record: Record<string, T>, key: string): T | undefined {
+  return Object.hasOwn(record, key) ? record[key] : undefined;
+}
+
 /** Reads the edges one rule's value declares. */
 function readRule(rule: EdgeRule, value: unknown, context: RuleContext): Array<DependencyEdge> {
   if (rule.form === 'flat') {
@@ -150,7 +168,7 @@ function readRule(rule: EdgeRule, value: unknown, context: RuleContext): Array<D
       const { via } = rule.wildcard;
       return context.expand().map((to) => ({ to, via }));
     }
-    context.fault('invalid-declaration', rule.key, `holds "${value}", which is not a token this key recognizes`);
+    context.fault('invalid-declaration', rule.key, `holds "${value}", which is not a token it recognizes`);
     return [];
   }
 
@@ -165,7 +183,7 @@ function readRule(rule: EdgeRule, value: unknown, context: RuleContext): Array<D
       continue;
     }
     const at = `${rule.key}.${declarationKey}`;
-    const targetKindId = context.kindKeys[declarationKey];
+    const targetKindId = readOwn(context.kindKeys, declarationKey);
     if (targetKindId === undefined) {
       context.fault('invalid-declaration', at, 'names no kind, so its slugs name nothing');
       continue;

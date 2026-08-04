@@ -96,7 +96,7 @@ describe(readFrontmatterEdges, () => {
     expect(diagnosticsOf(block(['dependencies:', '  - lint']))).toStrictEqual([
       {
         code: 'invalid-declaration',
-        message: 'skill:review holds neither a mapping of kind to slugs nor a known token.',
+        message: 'skill:review: "dependencies" holds neither a mapping of kind to slugs nor a known token.',
         at: { artifactId: 'skill:review', key: 'dependencies' },
       },
     ]);
@@ -106,7 +106,7 @@ describe(readFrontmatterEdges, () => {
     expect(diagnosticsOf(block(['members: "@everything"']))).toStrictEqual([
       {
         code: 'invalid-declaration',
-        message: 'skill:review holds "@everything", which is not a token this key recognizes.',
+        message: 'skill:review: "members" holds "@everything", which is not a token it recognizes.',
         at: { artifactId: 'skill:review', key: 'members' },
       },
     ]);
@@ -116,7 +116,7 @@ describe(readFrontmatterEdges, () => {
     expect(diagnosticsOf(block(['dependencies:', '  rulebooks:', '    - style']))).toStrictEqual([
       {
         code: 'invalid-declaration',
-        message: 'skill:review names no kind, so its slugs name nothing.',
+        message: 'skill:review: "dependencies.rulebooks" names no kind, so its slugs name nothing.',
         at: { artifactId: 'skill:review', key: 'dependencies.rulebooks' },
       },
     ]);
@@ -126,7 +126,7 @@ describe(readFrontmatterEdges, () => {
     expect(diagnosticsOf(block(['dependencies:', '  skills: lint']))).toStrictEqual([
       {
         code: 'invalid-declaration',
-        message: 'skill:review holds something other than a list of slugs.',
+        message: 'skill:review: "dependencies.skills" holds something other than a list of slugs.',
         at: { artifactId: 'skill:review', key: 'dependencies.skills' },
       },
     ]);
@@ -139,7 +139,7 @@ describe(readFrontmatterEdges, () => {
     expect(readFrontmatterEdges(inputFor(content, rules)).diagnostics).toStrictEqual([
       {
         code: 'misplaced-key',
-        message: 'skill:review belongs to another kind, so nothing here reads it as an edge.',
+        message: 'skill:review: "members" belongs to another kind, so nothing here reads it as an edge.',
         at: { artifactId: 'skill:review', key: 'members' },
       },
     ]);
@@ -147,6 +147,28 @@ describe(readFrontmatterEdges, () => {
 
   it('leaves a key no rule anywhere owns unremarked, which is ordinary metadata', () => {
     expect(diagnosticsOf(block(['description: Reviews a diff']))).toStrictEqual([]);
+  });
+
+  it('if a declaration key names an inherited member, faults it as the unknown kind it is', () => {
+    expect(diagnosticsOf(block(['dependencies:', '  constructor:', '    - lint']))).toStrictEqual([
+      {
+        code: 'invalid-declaration',
+        message: 'skill:review: "dependencies.constructor" names no kind, so its slugs name nothing.',
+        at: { artifactId: 'skill:review', key: 'dependencies.constructor' },
+      },
+    ]);
+  });
+
+  it('reads no edges from a rule key an artifact did not write, whatever a prototype answers for it', () => {
+    const rules: KindEdgeRules = {
+      rules: [{ ...declared, key: 'toString' }],
+      foreignKeys: new Set(),
+    };
+
+    expect(readFrontmatterEdges(inputFor(block(['description: Reviews a diff']), rules))).toStrictEqual({
+      edges: [],
+      diagnostics: [],
+    });
   });
 
   it('keeps a self-dependency an author declared, which a cycle diagnostic is what answers', () => {
