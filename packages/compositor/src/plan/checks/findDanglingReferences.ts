@@ -1,16 +1,21 @@
 import { collectIds } from '../../consistency/collectIds.ts';
 import { createRequireKnown } from '../../consistency/createRequireKnown.ts';
+import { findGraphDanglingReferences } from '../../consistency/findGraphDanglingReferences.ts';
 import type { Violation } from '../../consistency/Violation.ts';
 import type { Plan } from '../../schemas/plan-schemas.ts';
 
-/** Reports each id reference that names no entry in the table it points at. */
+/**
+ * Reports each id reference that names no entry in the table it points at.
+ *
+ * The artifact and partial tables are checked by the shared graph check, which a closure calls too; what is left here is
+ * what a plan alone carries. Violations follow the fingerprint, the targets, the shared graph, and then the files, so
+ * the reported order tracks the payload.
+ */
 export function findDanglingReferences(plan: Plan): Array<Violation> {
   const artifactIds = collectIds(plan.artifacts);
-  const kindIds = collectIds(plan.kinds);
   const partialIds = collectIds(plan.partials);
   const sourceIds = collectIds(plan.sources);
   const targetIds = collectIds(plan.targets);
-  const tierIds = collectIds(plan.tiers);
   const tokenKindIds = collectIds(plan.tokenKinds);
 
   const violations: Array<Violation> = [];
@@ -30,30 +35,7 @@ export function findDanglingReferences(plan: Plan): Array<Violation> {
     }
   }
 
-  for (const [index, artifact] of plan.artifacts.entries()) {
-    const at = `artifacts[${index}]`;
-    requireKnown(kindIds, artifact.kindId, `${at}.kindId`, 'kinds');
-    const edges = artifact.dependsOn ?? [];
-    for (const [edgeIndex, edge] of edges.entries()) {
-      requireKnown(artifactIds, edge.to, `${at}.dependsOn[${edgeIndex}].to`, 'artifacts');
-      requireKnown(partialIds, edge.partialId, `${at}.dependsOn[${edgeIndex}].partialId`, 'partials');
-    }
-    // A removed artifact carries no `seededBy` at all, so the status narrowing is what reaches the field.
-    const seeds = artifact.status === 'removed' ? [] : artifact.seededBy;
-    for (const [seedIndex, seed] of seeds.entries()) {
-      requireKnown(tierIds, seed.tierId, `${at}.seededBy[${seedIndex}].tierId`, 'tiers');
-    }
-    if (artifact.resolution !== undefined) {
-      requireKnown(sourceIds, artifact.resolution.winner.sourceId, `${at}.resolution.winner.sourceId`, 'sources');
-      for (const [loserIndex, loser] of artifact.resolution.shadowed.entries()) {
-        requireKnown(sourceIds, loser.sourceId, `${at}.resolution.shadowed[${loserIndex}].sourceId`, 'sources');
-      }
-    }
-  }
-
-  for (const [index, partial] of plan.partials.entries()) {
-    requireKnown(sourceIds, partial.sourceId, `partials[${index}].sourceId`, 'sources');
-  }
+  violations.push(...findGraphDanglingReferences(plan));
 
   for (const [index, file] of plan.files.entries()) {
     const at = `files[${index}]`;
