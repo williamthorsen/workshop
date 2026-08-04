@@ -106,7 +106,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
 }
 
 /**
- * Confirm esbuild is installed, raising a config error naming the install command when it is not.
+ * Confirms esbuild is installed, raising a config error naming the install command when it is not.
  *
  * Refuses rather than degrading. `--rebuild` asks whether each bundle is reproducible, and a run
  * that answered "no esbuild, so nothing to report" would pass while establishing nothing -- the
