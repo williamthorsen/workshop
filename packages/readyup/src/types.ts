@@ -115,8 +115,8 @@ export interface CheckOutcome {
   detail?: string | undefined;
 
   /**
-   * Quantitative progress toward the claim, rendered alongside the name. Needs no `detail`:
-   * the fraction is already the evidence.
+   * Quantitative progress toward the claim, rendered alongside the name. On a pass it stands as
+   * the evidence in place of a `detail`; a failing count still needs one, to name what is missing.
    */
   progress?: Progress | undefined;
 }
