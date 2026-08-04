@@ -172,7 +172,7 @@ describe('publishing kit', () => {
 
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 
-    expect(pickResult(results, 'its source')).toMatchObject({ status: 'failed', severity: 'error' });
+    expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed', severity: 'error' });
   });
 });
 

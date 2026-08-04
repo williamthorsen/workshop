@@ -58,7 +58,10 @@ export default defineRdyKit({
       checks: [
         {
           name: 'NODE_ENV is set',
-          check: () => Boolean(process.env['NODE_ENV']),
+          check: () => {
+            const value = process.env['NODE_ENV'];
+            return { ok: Boolean(value), detail: value ?? 'no value in the environment' };
+          },
           fix: 'Set NODE_ENV before deploying',
         },
       ],
@@ -78,6 +81,7 @@ With `NODE_ENV` unset:
 
 ```
 🔴 NODE_ENV is set
+   no value in the environment
 
 🔴 1 error (0ms)
 
@@ -218,18 +222,24 @@ Three fields, three questions:
 
 A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: the operator leaves the reader to infer which direction is the violation.
 
-| Poor                    | Better                     | Why                                                 |
-| ----------------------- | -------------------------- | --------------------------------------------------- |
-| `Node >= 24`            | `Node 24 or later`         | words fix the direction without moving the boundary |
-| `outdated dependencies` | `dependencies are current` | a name true on _failure_ inverts the status token   |
-| `check git status`      | `working tree is clean`    | names the action, not the condition                 |
-| `env vars`              | `NODE_ENV is set`          | names the subject, not the claim                    |
+State the claim in the third person indicative and capitalize it like a sentence, so a column of names reads as a column of assertions rather than labels.
+
+| Poor                         | Better                                     | Why                                                      |
+| ---------------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| `Node >= 24`                 | `Node.js runtime is v24 or later`          | words fix the direction, and the subject says which Node |
+| `outdated dependencies`      | `Dependencies are current`                 | a name true on _failure_ inverts the status token        |
+| `check git status`           | `Working tree is clean`                    | names the action, not the condition                      |
+| `env vars`                   | `NODE_ENV is set`                          | names the subject, not the claim                         |
+| `Docker`                     | `Docker is configured`                     | a bare noun asserts nothing to be true or false          |
+| `extends recommended preset` | `renovate.json extends config:recommended` | a verb with no subject leaves the claim half-stated      |
 
 Rewriting a name often exposes an ambiguous predicate: an author writing "newer than 24" frequently discovers they meant a floor of 24.
 
+A check that exists only to gate the checks nested beneath it is no exception. It still reports a status of its own, so it still needs a claim.
+
 ### The detail contract
 
-`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong.
+`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. It opens in lower case, continuing the claim it hangs from rather than standing as a sentence of its own.
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
@@ -250,26 +260,26 @@ export default defineRdyKit({
       name: 'release',
       checks: [
         {
-          name: 'working tree is clean',
+          name: 'Working tree is clean',
           check: () => ({ ok: true, detail: 'no uncommitted changes' }),
         },
         {
-          name: 'dependencies are installed',
+          name: 'Dependencies are installed',
           check: () => true,
           checks: [
             {
-              name: 'lockfile is current',
+              name: 'Lockfile is current',
               check: () => ({ ok: true, progress: { type: 'fraction', passedCount: 4, count: 4 } }),
               checks: [
                 {
-                  name: 'no duplicated majors',
+                  name: 'No dependency has duplicated majors',
                   check: () => ({ ok: false, detail: 'react resolves to both 18.3.1 and 19.0.0' }),
                   fix: 'Run `pnpm dedupe`, then commit the lockfile',
                 },
               ],
             },
             {
-              name: 'native modules are rebuilt',
+              name: 'Native modules are rebuilt',
               check: () => true,
               skip: () => 'no native dependencies in this workspace',
             },
@@ -284,18 +294,18 @@ export default defineRdyKit({
 It produces:
 
 ```
-🟢 working tree is clean · no uncommitted changes
-🟢 dependencies are installed
-   🟢 lockfile is current [4 of 4]
-      🔴 no duplicated majors
+🟢 Working tree is clean · no uncommitted changes
+🟢 Dependencies are installed
+   🟢 Lockfile is current [4 of 4]
+      🔴 No dependency has duplicated majors
          react resolves to both 18.3.1 and 19.0.0
-   ⚪ native modules are rebuilt · no native dependencies in this workspace
+   ⚪ Native modules are rebuilt · no native dependencies in this workspace
 
 🔴 3 passed | 1 error | 1 skipped (0ms)
 
 ── Fixes
 
-💊 no duplicated majors
+💊 No dependency has duplicated majors
    Run `pnpm dedupe`, then commit the lockfile
 ```
 
@@ -310,7 +320,7 @@ import { defineRdyStagedChecklist } from 'readyup';
 
 export default defineRdyStagedChecklist({
   name: 'release',
-  groups: [[{ name: 'working tree is clean', check: () => true }], [{ name: 'tests pass', check: () => true }]],
+  groups: [[{ name: 'Working tree is clean', check: () => true }], [{ name: 'Tests pass', check: () => true }]],
 });
 ```
 
@@ -447,23 +457,23 @@ Headings encode level by rule weight: `━━` for a kit, `──` for a checkli
 ```
 ── build
 
-🟢 types check cleanly (343ms)
-🟢 bundle is within budget · 42kB of a 50kB budget [84%]
+🟢 Types check cleanly (343ms)
+🟢 Bundle is within budget · 42kB of a 50kB budget [84%]
 
 🟢 2 passed (343ms)
 
 ── integration
 
-🟢 database is reachable
-🔴 migrations are applied (151ms)
+🟢 Database is reachable
+🔴 Migrations are applied (151ms)
    2 migrations pending: add_users, add_index
-⚪ seed data is loaded · seeding is disabled outside CI
+⚪ Seed data is loaded · seeding is disabled outside CI
 
 🔴 1 passed | 1 error | 1 skipped (151ms)
 
 ── Fixes
 
-💊 migrations are applied
+💊 Migrations are applied
    Run `pnpm migrate` against the target database
 
 ── Summary
@@ -492,10 +502,10 @@ In `plain`, every character is printable ASCII, heading rules and separators inc
 ```
 -- integration
 
-PASS  database is reachable
-FAIL  migrations are applied (151ms)
+PASS  Database is reachable
+FAIL  Migrations are applied (151ms)
       2 migrations pending: add_users, add_index
-SKIP  seed data is loaded - seeding is disabled outside CI
+SKIP  Seed data is loaded - seeding is disabled outside CI
 
 FAIL  1 passed | 1 error | 1 skipped (151ms)
 ```
@@ -862,6 +872,14 @@ Reusable check functions for common assertions:
 ```ts
 import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 ```
+
+### Outcomes
+
+| Function                                  | Returns                                                   |
+| ----------------------------------------- | --------------------------------------------------------- |
+| `missingFrom(category, expected, actual)` | `CheckOutcome` with fraction progress over any collection |
+
+`missingFrom` is what `filesExist` and `hasJsonFields` are built from. Reach for it directly to count anything else: it passes when nothing is missing, and otherwise names what was, under a fraction of how many were found.
 
 ### Filesystem
 

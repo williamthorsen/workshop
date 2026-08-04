@@ -42,7 +42,7 @@ export function buildSelfContainmentChecks(): RdyCheck[] {
   if (bundlePaths.length === 0) {
     return [
       {
-        name: 'every compiled kit imports only what the runner supplies',
+        name: 'Every compiled kit imports only what the runner supplies',
         skip: () => 'nothing compiled',
         check: () => true,
       },

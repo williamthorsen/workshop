@@ -24,7 +24,7 @@ const FunctionSchema = z.custom<(...args: never[]) => unknown>((value) => typeof
   error: (issue) => `expected a function, got ${describeType(issue.input)}`,
 });
 
-/** Schema for a display name, which every check and checklist must carry. */
+/** Schema for the name every check and checklist must carry. */
 const NameSchema = z.string('expected a non-empty string').min(1, 'expected a non-empty string');
 
 /**

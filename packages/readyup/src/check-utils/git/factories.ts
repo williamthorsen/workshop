@@ -3,7 +3,7 @@ import { compareLocalRefs } from './compare-local-refs.ts';
 import { compareRefToRemote } from './compare-ref-to-remote.ts';
 
 interface LocalRefSyncCheckOptions {
-  /** Display name for the check. */
+  /** The claim the check asserts. */
   name: string;
   /** Path to the git repository. */
   path: string;
@@ -11,14 +11,14 @@ interface LocalRefSyncCheckOptions {
   refA: string;
   /** Second local ref to compare against. */
   refB: string;
-  /** Custom remediation message. Overrides the default. */
+  /** Remediation message. Overrides the default, which names the refs to bring into sync. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
 }
 
 interface RemoteRefSyncCheckOptions {
-  /** Display name for the check. */
+  /** The claim the check asserts. */
   name: string;
   /** Path to the git repository. */
   path: string;
@@ -26,7 +26,7 @@ interface RemoteRefSyncCheckOptions {
   ref: string;
   /** Remote name. Default: `origin`. */
   remote?: string;
-  /** Custom remediation message. Overrides the default. */
+  /** Remediation message. Overrides the default, which names the refs to bring into sync. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
@@ -43,8 +43,8 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
       if (result.status === 'match') return true;
       return { ok: false, detail: formatLocalResult(result, refA, refB, path) };
     },
+    fix: customFix ?? `Make ${refA} and ${refB} point at the same commit in ${path}`,
   };
-  if (customFix !== undefined) check.fix = customFix;
   if (severity !== undefined) check.severity = severity;
   return check;
 }
@@ -67,7 +67,7 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
     async skip() {
       const result = await getProbe();
       if (result.status === 'unreachable') {
-        return `remote '${remote}' is unreachable; skipping network check`;
+        return `remote '${remote}' is unreachable`;
       }
       return false;
     },
@@ -80,8 +80,8 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
       if (result.status === 'unreachable') return true;
       return { ok: false, detail: formatRemoteResult(result, ref, remote, path) };
     },
+    fix: customFix ?? `Make ${ref} and ${remote}/${ref} point at the same commit in ${path}`,
   };
-  if (customFix !== undefined) rdyCheck.fix = customFix;
   if (severity !== undefined) rdyCheck.severity = severity;
   return rdyCheck;
 }
@@ -104,12 +104,12 @@ function formatLocalResult(
 
   const { ahead, behind } = aheadBehind;
   if (ahead > 0 && behind > 0) {
-    return `${refA} and ${refB} have diverged, with ${ahead} and ${behind} different commits each`;
+    return `${refA} and ${refB} have diverged in ${path}, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git merge ${refB}' in ${path}`;
+    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'} in ${path}`;
   }
-  return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
+  return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }
 
 /** Format a human-readable detail message for a remote ref comparison failure. */
@@ -120,7 +120,7 @@ function formatRemoteResult(
   path: string,
 ): string {
   if (result.status === 'ref-missing') {
-    return `ref '${result.ref}' does not exist`;
+    return `ref '${result.ref}' does not exist in ${path}`;
   }
   if (result.status === 'unreachable') {
     return `remote '${remote}' is unreachable`;
@@ -133,10 +133,10 @@ function formatRemoteResult(
 
   const { ahead, behind } = aheadBehind;
   if (ahead > 0 && behind > 0) {
-    return `${ref} and ${remote}/${ref} have diverged, with ${ahead} and ${behind} different commits each`;
+    return `${ref} and ${remote}/${ref} have diverged in ${path}, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'}; run 'git pull' in ${path}`;
+    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'} in ${path}`;
   }
-  return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
+  return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }

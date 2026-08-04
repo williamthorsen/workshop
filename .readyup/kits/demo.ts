@@ -2,24 +2,21 @@
  * Moderate demo kit showcasing readyup features.
  *
  * Exercises flat and staged checklists, preconditions, nested checks, skip
- * conditions, mixed severities, and fix messages. Run from the repo root:
+ * conditions, mixed severities, fix messages, and both forms a check may
+ * report alongside its result: a detail explaining the status, and progress
+ * counted as a fraction. Run from the repo root:
  *
  *   rdy run demo
  */
-import { execFileSync } from 'node:child_process';
-
 import { defineRdyKit } from 'readyup';
-import { fileContains, fileExists, hasDevDependency, hasPackageJsonField } from 'readyup/check-utils';
-
-/** Return true if a CLI command is available on PATH. */
-function commandExists(name: string): boolean {
-  try {
-    execFileSync('which', [name], { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
+import {
+  commandExists,
+  fileContains,
+  fileExists,
+  filesExist,
+  hasDevDependency,
+  readJsonValue,
+} from 'readyup/check-utils';
 
 // -- Flat checklist with preconditions and nested checks --
 // Demonstrates: precondition gating, nested check hierarchy, fix messages.
@@ -33,14 +30,23 @@ const projectFoundations = {
     },
   ],
   checks: [
+    // The claim goes in the name, the evidence in the detail: `🔴 Project is ESM` says what
+    // is wrong on its own, and the "type" it found explains why.
     {
-      name: 'ESM project ("type": "module")',
-      check: () => hasPackageJsonField('type', 'module'),
+      name: 'Project is ESM',
+      check: () => {
+        const type = readJsonValue('package.json', 'type');
+        const detail = type === undefined ? 'no "type" field' : `"type": ${JSON.stringify(type)}`;
+        return { ok: type === 'module', detail };
+      },
       fix: 'Add "type": "module" to package.json',
     },
     {
       name: 'packageManager field is set',
-      check: () => hasPackageJsonField('packageManager'),
+      check: () => {
+        const value = readJsonValue('package.json', 'packageManager');
+        return typeof value === 'string' ? { ok: true, detail: value } : { ok: false };
+      },
       fix: 'Add "packageManager" to package.json (e.g., "pnpm@10.x.x")',
     },
     {
@@ -49,7 +55,7 @@ const projectFoundations = {
       fix: 'Create pnpm-workspace.yaml with workspace package globs',
       checks: [
         {
-          name: 'workspace includes packages/*',
+          name: 'Workspace includes packages/*',
           check: () => fileContains('pnpm-workspace.yaml', /packages\/\*/),
         },
       ],
@@ -65,7 +71,7 @@ const optionalIntegrations = {
   name: 'optional-integrations',
   checks: [
     {
-      name: 'Docker',
+      name: 'Docker is configured',
       skip: () => (!fileExists('Dockerfile') ? 'no Dockerfile' : false),
       check: () => true,
       checks: [
@@ -76,18 +82,18 @@ const optionalIntegrations = {
       ],
     },
     {
-      name: 'Renovate',
+      name: 'Renovate is configured',
       skip: () => (!fileExists('renovate.json') ? 'no renovate.json' : false),
       check: () => true,
       checks: [
         {
-          name: 'extends recommended preset',
+          name: 'renovate.json extends config:recommended',
           check: () => fileContains('renovate.json', /extends.*config:recommended/),
         },
       ],
     },
     {
-      name: 'lefthook in devDependencies',
+      name: 'lefthook is a devDependency',
       check: () => hasDevDependency('lefthook'),
       fix: 'pnpm add --save-dev lefthook',
       checks: [
@@ -113,13 +119,19 @@ const codeQuality = {
       check: () => fileExists('.editorconfig'),
       fix: 'Add .editorconfig to repo root',
     },
+    // A fraction is its own evidence, so this check needs no detail on a pass.
+    {
+      name: 'Root configs are present',
+      check: () => filesExist(['eslint.config.ts', 'tsconfig.json', 'vitest.config.ts']),
+      fix: 'Add the missing config to the repo root',
+    },
     {
       name: 'bitbucket-pipelines.yml exists',
       check: () => fileExists('bitbucket-pipelines.yml'),
       fix: 'Add bitbucket-pipelines.yml for CI/CD pipeline configuration',
       checks: [
         {
-          name: 'pipeline runs pnpm run check',
+          name: 'Pipeline runs pnpm run check',
           check: () => fileContains('bitbucket-pipelines.yml', /pnpm run check/),
         },
       ],
@@ -150,12 +162,12 @@ const publishingPipeline = {
     // Stage 1: Build infrastructure
     [
       {
-        name: 'build config exists',
+        name: 'Build config exists',
         check: () => fileExists('.config/nmr.config.ts'),
         fix: 'Add .config/nmr.config.ts to declare per-repo nmr script overrides',
       },
       {
-        name: 'shared Vitest config exists',
+        name: 'Shared Vitest config exists',
         check: () => fileExists('config/vitest.config.ts'),
         fix: 'Add config/vitest.config.ts — packages inherit the shared test configuration',
       },
@@ -176,7 +188,7 @@ const publishingPipeline = {
     // Stage 3: Release automation (skipped if compliance fails)
     [
       {
-        name: 'release workflow exists',
+        name: 'Release workflow exists',
         check: () => fileExists('.github/workflows/release.yaml'),
       },
     ],

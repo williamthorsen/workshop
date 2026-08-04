@@ -29,7 +29,7 @@ export default defineRdyKit({
       name: 'packaging',
       checks: [
         {
-          name: `the "files" allowlist ships ${MANIFEST_DIR}`,
+          name: `The "files" allowlist ships ${MANIFEST_DIR}`,
           check: describeFilesCoverage,
           fix: `Add "${MANIFEST_DIR}" to the "files" array in package.json`,
         },
@@ -49,7 +49,7 @@ export default defineRdyKit({
           fix: `Name a kit "default" so a bare 'rdy run --from npm:<package>' resolves to it`,
         },
         {
-          name: `every recorded kit sits in ${KITS_DIR} under its own name`,
+          name: `Every recorded kit sits in ${KITS_DIR} under its own name`,
           check: describeLoadablePaths,
           fix: `Compile kits straight into ${KITS_DIR}; a consumer composes the path from the kit's name`,
         },

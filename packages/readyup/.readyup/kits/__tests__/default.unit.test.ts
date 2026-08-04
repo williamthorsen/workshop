@@ -89,11 +89,11 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
-      expect(pickResult(results, 'its source')).toMatchObject({
+      expect(pickResult(results, 'Its source')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('expected 0badcafe'),
       });
-      expect(pickResult(results, 'its bundle')).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
     });
 
     it('reports a bundle edited by hand', async () => {
@@ -102,7 +102,7 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
-      expect(pickResult(results, 'its bundle')).toMatchObject({
+      expect(pickResult(results, 'Its bundle')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('expected 0badcafe'),
       });
@@ -115,7 +115,7 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
-      expect(pickResult(results, 'its bundle')).toMatchObject({
+      expect(pickResult(results, 'Its bundle')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('is missing'),
       });
@@ -133,8 +133,8 @@ describe('default kit', () => {
         status: 'failed',
         detail: 'no source or bundle hash recorded',
       });
-      expect(pickResult(results, 'its source')).toMatchObject({ status: 'skipped' });
-      expect(pickResult(results, 'its bundle')).toMatchObject({ status: 'skipped' });
+      expect(pickResult(results, 'Its source')).toMatchObject({ status: 'skipped' });
+      expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
     });
 
     it('stands down when the project compiles nothing', async () => {

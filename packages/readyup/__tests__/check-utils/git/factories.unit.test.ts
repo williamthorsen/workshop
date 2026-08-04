@@ -58,7 +58,7 @@ describe(makeLocalRefSyncCheck, () => {
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
-    expect(outcome).toMatchObject({ detail: expect.stringContaining('git merge') });
+    expect(outcome).toMatchObject({ detail: expect.not.stringContaining('git merge') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -96,16 +96,30 @@ describe(makeLocalRefSyncCheck, () => {
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('nonexistent') });
   });
 
+  // A caller runs these checks over more than one repository, which is what `path` is for, so a detail
+  // that reports a count has to say which repository it counted in.
+  it.each([
+    { ahead: 3, behind: 0 },
+    { ahead: 0, behind: 2 },
+    { ahead: 2, behind: 3 },
+  ])('names the repository in the detail reporting $ahead ahead and $behind behind', async (aheadBehind) => {
+    mockCompareLocalRefs.mockResolvedValue({ status: 'mismatch', shaA: 'aaa', shaB: 'bbb', aheadBehind });
+
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+
+    await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
+  });
+
   it('uses custom fix when provided', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', fix: 'custom fix' });
 
     expect(check.fix).toBe('custom fix');
   });
 
-  it('has no fix when not provided', () => {
+  it('falls back to a default fix naming the refs to bring into sync', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
 
-    expect(check.fix).toBeUndefined();
+    expect(check.fix).toBe('Make a and b point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
@@ -165,7 +179,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
-    expect(outcome).toMatchObject({ detail: expect.stringContaining('git pull') });
+    expect(outcome).toMatchObject({ detail: expect.not.stringContaining('git pull') });
   });
 
   it('reports diverged detail when both sides have commits', async () => {
@@ -190,7 +204,24 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('origin/feature') });
+    expect(outcome).toMatchObject({ ok: false, detail: "ref 'origin/feature' does not exist in /repo" });
+  });
+
+  it.each([
+    { ahead: 1, behind: 0 },
+    { ahead: 0, behind: 3 },
+    { ahead: 2, behind: 5 },
+  ])('names the repository in the detail reporting $ahead ahead and $behind behind', async (aheadBehind) => {
+    mockCompareRefToRemote.mockResolvedValue({
+      status: 'out-of-sync',
+      localSha: 'aaa',
+      remoteSha: 'bbb',
+      aheadBehind,
+    });
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+
+    await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
   });
 
   it('returns skip reason when remote is unreachable', async () => {
@@ -200,8 +231,7 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
     const skipResult = await check.skip?.();
 
-    expect(skipResult).toBeTypeOf('string');
-    expect(skipResult).toContain('unreachable');
+    expect(skipResult).toBe("remote 'origin' is unreachable");
   });
 
   it('returns pass from check() when remote is unreachable', async () => {
@@ -230,10 +260,10 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(check.fix).toBe('run git pull');
   });
 
-  it('has no fix when not provided', () => {
+  it('falls back to a default fix naming the local and remote refs to bring into sync', () => {
     const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
 
-    expect(check.fix).toBeUndefined();
+    expect(check.fix).toBe('Make main and origin/main point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
