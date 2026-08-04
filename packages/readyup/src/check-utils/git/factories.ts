@@ -11,7 +11,7 @@ interface LocalRefSyncCheckOptions {
   refA: string;
   /** Second local ref to compare against. */
   refB: string;
-  /** Remediation message. Overrides the default, which names the refs to reconcile. */
+  /** Remediation message. Overrides the default, which names the refs to bring into sync. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
@@ -26,7 +26,7 @@ interface RemoteRefSyncCheckOptions {
   ref: string;
   /** Remote name. Default: `origin`. */
   remote?: string;
-  /** Remediation message. Overrides the default, which names the refs to reconcile. */
+  /** Remediation message. Overrides the default, which names the refs to bring into sync. */
   fix?: string;
   /** Severity of the check. When omitted, the kit's default severity applies. */
   severity?: Severity;
@@ -43,7 +43,7 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
       if (result.status === 'match') return true;
       return { ok: false, detail: formatLocalResult(result, refA, refB, path) };
     },
-    fix: customFix ?? `Reconcile ${refA} with ${refB} in ${path}`,
+    fix: customFix ?? `Make ${refA} and ${refB} point at the same commit in ${path}`,
   };
   if (severity !== undefined) check.severity = severity;
   return check;
@@ -80,7 +80,7 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
       if (result.status === 'unreachable') return true;
       return { ok: false, detail: formatRemoteResult(result, ref, remote, path) };
     },
-    fix: customFix ?? `Reconcile ${ref} with ${remote}/${ref} in ${path}`,
+    fix: customFix ?? `Make ${ref} and ${remote}/${ref} point at the same commit in ${path}`,
   };
   if (severity !== undefined) rdyCheck.severity = severity;
   return rdyCheck;

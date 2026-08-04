@@ -102,10 +102,10 @@ describe(makeLocalRefSyncCheck, () => {
     expect(check.fix).toBe('custom fix');
   });
 
-  it('falls back to a default fix naming the refs to reconcile', () => {
+  it('falls back to a default fix naming the refs to bring into sync', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
 
-    expect(check.fix).toBe('Reconcile a with b in /repo');
+    expect(check.fix).toBe('Make a and b point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
@@ -229,10 +229,10 @@ describe(makeRemoteRefSyncCheck, () => {
     expect(check.fix).toBe('run git pull');
   });
 
-  it('falls back to a default fix naming the local and remote refs', () => {
+  it('falls back to a default fix naming the local and remote refs to bring into sync', () => {
     const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
 
-    expect(check.fix).toBe('Reconcile main with origin/main in /repo');
+    expect(check.fix).toBe('Make main and origin/main point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
