@@ -157,13 +157,17 @@ export type {
   DirectiveSyntax,
   FrontmatterOverlay,
   KindDeployment,
+  MarkerPair,
+  RegionKindDeployment,
   RenderStage,
   RenderTarget,
+  TreeKindDeployment,
 } from './schemas/render-target-schemas.ts';
 export {
   DirectiveSyntaxSchema,
   FrontmatterOverlaySchema,
   KindDeploymentSchema,
+  MarkerPairSchema,
   RenderStageSchema,
   RenderTargetSchema,
 } from './schemas/render-target-schemas.ts';

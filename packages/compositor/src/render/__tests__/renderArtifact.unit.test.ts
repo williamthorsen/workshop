@@ -22,7 +22,9 @@ const claude: RenderTarget = {
   label: 'Claude',
   root: '~/.claude',
   tokenMappings: [{ kindId: 'tool', entries: [{ from: 'Read', to: 'view' }] }],
-  deployments: [{ kindId: 'skill', layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } }],
+  deployments: [
+    { form: 'tree', kindId: 'skill', layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } },
+  ],
   stages: [{ kind: 'transclusion', syntax: COMMENT }, { kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }],
 };
 
@@ -43,6 +45,7 @@ describe(renderArtifact, () => {
       ...claude,
       deployments: [
         {
+          form: 'tree',
           kindId: 'skill',
           layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
           nameTemplate: 'consult-{slug}',

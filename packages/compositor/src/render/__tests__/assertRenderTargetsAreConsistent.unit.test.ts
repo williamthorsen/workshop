@@ -11,6 +11,7 @@ const kinds: ReadonlyArray<KindDescriptor> = [
 ];
 
 const skillDeployment = {
+  form: 'tree',
   kindId: 'skill',
   layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
 } as const;

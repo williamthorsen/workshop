@@ -7,6 +7,14 @@ import { resolveDeployedNames } from '../resolveDeployedNames.ts';
 const skillLayout = { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } as const;
 const rulebookLayout = { form: 'file', root: 'rulebooks', extension: '.md' } as const;
 
+const ambient = {
+  form: 'region',
+  kindId: 'rulebook',
+  host: 'CLAUDE.md',
+  markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
+  contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+} as const;
+
 const review: DeployableArtifact = { id: 'skill:review', kindId: 'skill', slug: 'review' };
 const shell: DeployableArtifact = { id: 'rulebook:shell', kindId: 'rulebook', slug: 'shell' };
 
@@ -15,7 +23,7 @@ const claude: RenderTarget = {
   label: 'Claude',
   root: '~/.claude',
   tokenMappings: [],
-  deployments: [{ kindId: 'skill', layout: skillLayout }],
+  deployments: [{ form: 'tree', kindId: 'skill', layout: skillLayout }],
   stages: [],
 };
 
@@ -28,6 +36,7 @@ describe(resolveDeployedNames, () => {
 
   it('renders the kind template around the slug', () => {
     const target = withDeployment(claude, {
+      form: 'tree',
       kindId: 'rulebook',
       layout: rulebookLayout,
       nameTemplate: 'consult-{slug}',
@@ -40,6 +49,7 @@ describe(resolveDeployedNames, () => {
 
   it("prefers an artifact's own name over the one its kind template would produce", () => {
     const target = withDeployment(claude, {
+      form: 'tree',
       kindId: 'rulebook',
       layout: rulebookLayout,
       nameTemplate: 'consult-{slug}',
@@ -52,7 +62,12 @@ describe(resolveDeployedNames, () => {
   });
 
   it('inserts a slug carrying replacement-pattern syntax verbatim', () => {
-    const target = withDeployment(claude, { kindId: 'rulebook', layout: rulebookLayout, nameTemplate: 'x-{slug}' });
+    const target = withDeployment(claude, {
+      form: 'tree',
+      kindId: 'rulebook',
+      layout: rulebookLayout,
+      nameTemplate: 'x-{slug}',
+    });
     const odd: DeployableArtifact = { ...shell, slug: '$&y' };
 
     const resolve = resolveDeployedNames([odd], [target]);
@@ -72,13 +87,31 @@ describe(resolveDeployedNames, () => {
     expect(resolve('rovodev', 'skill:review')).toBeUndefined();
   });
 
+  it('resolves a region-routed artifact to the host it contributes to', () => {
+    const target = withDeployment(claude, ambient);
+
+    const resolve = resolveDeployedNames([shell], [target]);
+
+    expect(resolve('claude', 'rulebook:shell')).toBe('CLAUDE.md');
+  });
+
+  // The field overrides the name a kind's template would produce, and a contributor to a host has no such name.
+  it('ignores an artifact’s own deployed name where its kind routes into a host', () => {
+    const target = withDeployment(claude, ambient);
+    const named: DeployableArtifact = { ...shell, deployedName: 'elsewhere.md' };
+
+    const resolve = resolveDeployedNames([named], [target]);
+
+    expect(resolve('claude', 'rulebook:shell')).toBe('CLAUDE.md');
+  });
+
   it('resolves one artifact to a different name per target, which is what makes a name per-target', () => {
     const rovodev: RenderTarget = {
       ...claude,
       id: 'rovodev',
       label: 'Rovo Dev',
       root: '~/.rovodev',
-      deployments: [{ kindId: 'skill', layout: skillLayout, nameTemplate: '{slug}-skill' }],
+      deployments: [{ form: 'tree', kindId: 'skill', layout: skillLayout, nameTemplate: '{slug}-skill' }],
     };
 
     const resolve = resolveDeployedNames([review], [claude, rovodev]);

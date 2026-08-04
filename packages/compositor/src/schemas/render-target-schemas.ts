@@ -33,20 +33,56 @@ export const FrontmatterOverlaySchema = z
   .meta({ id: 'FrontmatterOverlay' });
 
 /**
+ * The line pair delimiting a span, each string the whole content of its marker line.
+ *
+ * Serves both a region's own fence and the template a contribution's markers render from, the two being one shape: a
+ * region and a contribution are both a body between two marker lines, which is why one renderer writes either.
+ */
+export const MarkerPairSchema = z
+  .object({
+    open: z.string(),
+    close: z.string(),
+  })
+  .meta({ id: 'MarkerPair' });
+
+/**
  * Where one artifact kind lands in a target, and the name it deploys under.
  *
  * A kind the target declares no deployment for does not deploy there, which is the deployability question a token
  * naming an artifact has to answer before it can render.
  *
+ * The two forms are the two ways a destination can hold a kind. `tree` gives each artifact its own file or directory,
+ * laid out by the same vocabulary a source is read through. `region` routes every artifact of the kind into one file
+ * the engine does not otherwise own, each behind its own markers inside a single fenced span.
+ *
  * `nameTemplate` carries a `{slug}` placeholder the engine owns, so a kind that deploys under a derived name states
  * the derivation as data. Absent means the slug itself, the case every kind whose name is its slug leaves unwritten.
+ * The region form carries none: an artifact routed into a host has no name of its own, and deploys at the host path.
+ *
+ * `contributionMarkers` is a template rather than a literal pair, its `{artifactId}` placeholder standing for the
+ * contributor. The artifact id rather than the slug, because two kinds may aggregate into one host and only the id
+ * carries the kind that tells their contributions apart.
  */
 export const KindDeploymentSchema = z
-  .object({
-    kindId: IdSchema,
-    layout: KindLayoutSchema,
-    nameTemplate: z.string().optional(),
-  })
+  .discriminatedUnion('form', [
+    z
+      .object({
+        form: z.literal('tree'),
+        kindId: IdSchema,
+        layout: KindLayoutSchema,
+        nameTemplate: z.string().optional(),
+      })
+      .meta({ id: 'TreeKindDeployment' }),
+    z
+      .object({
+        form: z.literal('region'),
+        kindId: IdSchema,
+        host: z.string().min(1),
+        markers: MarkerPairSchema,
+        contributionMarkers: MarkerPairSchema,
+      })
+      .meta({ id: 'RegionKindDeployment' }),
+  ])
   .meta({ id: 'KindDeployment' });
 
 /**
@@ -86,5 +122,8 @@ export const RenderTargetSchema = TargetEntrySchema.extend({
 export type DirectiveSyntax = z.infer<typeof DirectiveSyntaxSchema>;
 export type FrontmatterOverlay = z.infer<typeof FrontmatterOverlaySchema>;
 export type KindDeployment = z.infer<typeof KindDeploymentSchema>;
+export type MarkerPair = z.infer<typeof MarkerPairSchema>;
+export type RegionKindDeployment = Extract<KindDeployment, { form: 'region' }>;
 export type RenderStage = z.infer<typeof RenderStageSchema>;
 export type RenderTarget = z.infer<typeof RenderTargetSchema>;
+export type TreeKindDeployment = Extract<KindDeployment, { form: 'tree' }>;

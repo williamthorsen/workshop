@@ -27,6 +27,10 @@ export interface DeployableArtifact {
  * token naming an artifact answers before rendering. That check is per kind: whether one artifact of a deployed kind
  * suppresses its own deployment is a fact the artifact declares, and nothing reads artifact declarations yet.
  *
+ * A region-routed artifact resolves to the host path, so a token naming one renders the file a reader would open to
+ * find it. Its own `deployedName` does not apply there: that field overrides the name a kind's template would produce,
+ * and an artifact aggregated into a host has no name of its own to override.
+ *
  * Two artifacts resolving to one name is not detected here, having no artifact-set to compare against a single lookup.
  */
 export function resolveDeployedNames(
@@ -43,7 +47,12 @@ export function resolveDeployedNames(
       if (deployment === undefined) {
         continue;
       }
-      names.set(artifact.id, artifact.deployedName ?? renderName(deployment.nameTemplate, artifact.slug));
+      names.set(
+        artifact.id,
+        deployment.form === 'region'
+          ? deployment.host
+          : (artifact.deployedName ?? renderName(deployment.nameTemplate, artifact.slug)),
+      );
     }
     byTarget.set(target.id, names);
   }

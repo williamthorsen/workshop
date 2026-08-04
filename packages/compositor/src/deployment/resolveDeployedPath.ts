@@ -5,12 +5,23 @@ import type { KindDeployment } from '../schemas/render-target-schemas.ts';
  *
  * `relativePath` is the file's path within the artifact's own directory, which only a directory layout has: it
  * defaults to the entry file, and naming one under a file layout throws, since a file layout holds exactly one file
- * and a caller asking for a second has a fault no path could express.
+ * and a caller asking for a second has a fault no path could express. A region-routed kind refuses it for the same
+ * reason and more plainly: its artifacts contribute a body to a host, not a tree, so there is nothing for a path
+ * within one to name.
  *
  * A layout rooted at the empty string puts the kind at the target's root, which is how a destination that keeps one
  * guidance file beside its directories is expressed.
  */
 export function resolveDeployedPath(deployment: KindDeployment, deployedName: string, relativePath?: string): string {
+  if (deployment.form === 'region') {
+    if (relativePath !== undefined) {
+      throw new Error(
+        `Cannot resolve "${relativePath}" within "${deployedName}": kind "${deployment.kindId}" contributes to a host.`,
+      );
+    }
+    return deployment.host;
+  }
+
   const { layout } = deployment;
 
   if (layout.form === 'file') {
