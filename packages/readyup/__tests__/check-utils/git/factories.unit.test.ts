@@ -96,6 +96,20 @@ describe(makeLocalRefSyncCheck, () => {
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('nonexistent') });
   });
 
+  // A caller runs these checks over more than one repository, which is what `path` is for, so a detail
+  // that reports a count has to say which repository it counted in.
+  it.each([
+    { ahead: 3, behind: 0 },
+    { ahead: 0, behind: 2 },
+    { ahead: 2, behind: 3 },
+  ])('names the repository in the detail reporting $ahead ahead and $behind behind', async (aheadBehind) => {
+    mockCompareLocalRefs.mockResolvedValue({ status: 'mismatch', shaA: 'aaa', shaB: 'bbb', aheadBehind });
+
+    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+
+    await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
+  });
+
   it('uses custom fix when provided', () => {
     const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', fix: 'custom fix' });
 
@@ -190,7 +204,24 @@ describe(makeRemoteRefSyncCheck, () => {
     const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'feature' });
     const outcome = await check.check();
 
-    expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('origin/feature') });
+    expect(outcome).toMatchObject({ ok: false, detail: "ref 'origin/feature' does not exist in /repo" });
+  });
+
+  it.each([
+    { ahead: 1, behind: 0 },
+    { ahead: 0, behind: 3 },
+    { ahead: 2, behind: 5 },
+  ])('names the repository in the detail reporting $ahead ahead and $behind behind', async (aheadBehind) => {
+    mockCompareRefToRemote.mockResolvedValue({
+      status: 'out-of-sync',
+      localSha: 'aaa',
+      remoteSha: 'bbb',
+      aheadBehind,
+    });
+
+    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+
+    await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
   });
 
   it('returns skip reason when remote is unreachable', async () => {

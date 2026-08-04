@@ -104,12 +104,12 @@ function formatLocalResult(
 
   const { ahead, behind } = aheadBehind;
   if (ahead > 0 && behind > 0) {
-    return `${refA} and ${refB} have diverged, with ${ahead} and ${behind} different commits each`;
+    return `${refA} and ${refB} have diverged in ${path}, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'}`;
+    return `${refA} is behind ${refB} by ${behind} commit${behind === 1 ? '' : 's'} in ${path}`;
   }
-  return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
+  return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }
 
 /** Format a human-readable detail message for a remote ref comparison failure. */
@@ -120,7 +120,7 @@ function formatRemoteResult(
   path: string,
 ): string {
   if (result.status === 'ref-missing') {
-    return `ref '${result.ref}' does not exist`;
+    return `ref '${result.ref}' does not exist in ${path}`;
   }
   if (result.status === 'unreachable') {
     return `remote '${remote}' is unreachable`;
@@ -133,10 +133,10 @@ function formatRemoteResult(
 
   const { ahead, behind } = aheadBehind;
   if (ahead > 0 && behind > 0) {
-    return `${ref} and ${remote}/${ref} have diverged, with ${ahead} and ${behind} different commits each`;
+    return `${ref} and ${remote}/${ref} have diverged in ${path}, with ${ahead} and ${behind} different commits each`;
   }
   if (behind > 0) {
-    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'}`;
+    return `${ref} is behind ${remote}/${ref} by ${behind} commit${behind === 1 ? '' : 's'} in ${path}`;
   }
-  return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'}`;
+  return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }
