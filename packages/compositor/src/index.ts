@@ -8,13 +8,21 @@ export type { ComputeClosureInput, SeedView } from './closure/computeClosure.ts'
 export { computeClosure } from './closure/computeClosure.ts';
 export type { ArtifactRead, EdgeContribution, EdgeContributor } from './closure/EdgeContributor.ts';
 export type { EdgeGraph } from './closure/EdgeGraph.ts';
+export type { SourceResolution } from './config/foldSourceTiers.ts';
+export { foldSourceTiers, StaleSnapshotError } from './config/foldSourceTiers.ts';
 export type { TierFile } from './config/loadConfig.ts';
 export { loadConfig, TierFileSchema } from './config/loadConfig.ts';
 export type { LocatePackageOptions } from './config/locatePackage.ts';
 export { locatePackage } from './config/locatePackage.ts';
-export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
+export type { LocateSourcePackagesOptions, PackageLocation } from './config/locateSourcePackages.ts';
+export { locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
+export {
+  ARTIFACT_ID_PLACEHOLDER,
+  buildContributionPatterns,
+  renderContributionMarkers,
+} from './deployment/contribution-markers.ts';
 export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
@@ -154,13 +162,17 @@ export type {
   DirectiveSyntax,
   FrontmatterOverlay,
   KindDeployment,
+  MarkerPair,
+  RegionKindDeployment,
   RenderStage,
   RenderTarget,
+  TreeKindDeployment,
 } from './schemas/render-target-schemas.ts';
 export {
   DirectiveSyntaxSchema,
   FrontmatterOverlaySchema,
   KindDeploymentSchema,
+  MarkerPairSchema,
   RenderStageSchema,
   RenderTargetSchema,
 } from './schemas/render-target-schemas.ts';

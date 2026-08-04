@@ -6,8 +6,16 @@ import { TargetEntrySchema } from '../target-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 const deployment = {
+  form: 'tree',
   kindId: 'skill',
   layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
+};
+const regionDeployment = {
+  form: 'region',
+  kindId: 'rulebook',
+  host: 'CLAUDE.md',
+  markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
+  contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
 };
 const target = {
   id: 'claude',
@@ -71,6 +79,35 @@ describe('KindDeploymentSchema', () => {
     const { layout: _dropped, ...withoutLayout } = deployment;
 
     expect(findIssuePaths(KindDeploymentSchema, withoutLayout)).toStrictEqual([['layout']]);
+  });
+
+  it('accepts a deployment routing its kind into a region of a host', () => {
+    expect(KindDeploymentSchema.parse(regionDeployment)).toStrictEqual(regionDeployment);
+  });
+
+  it.each(['host', 'markers', 'contributionMarkers'] as const)(
+    'if %s is absent, rejects the region deployment for that field',
+    (field) => {
+      const { [field]: _dropped, ...incomplete } = regionDeployment;
+
+      expect(findIssuePaths(KindDeploymentSchema, incomplete)).toStrictEqual([[field]]);
+    },
+  );
+
+  // A host is a path, and the empty string names none; a layout root may be empty, which is a different question.
+  it('if the host is empty, rejects the region deployment for that field', () => {
+    expect(findIssuePaths(KindDeploymentSchema, { ...regionDeployment, host: '' })).toStrictEqual([['host']]);
+  });
+
+  it('if the form is outside the known set, rejects the deployment for that field', () => {
+    expect(findIssuePaths(KindDeploymentSchema, { ...deployment, form: 'entries' })).toStrictEqual([['form']]);
+  });
+
+  it('renders both forms to JSON Schema, so a published document describes either', () => {
+    const { $defs } = z.toJSONSchema(KindDeploymentSchema);
+
+    expect($defs).toHaveProperty(['TreeKindDeployment']);
+    expect($defs).toHaveProperty(['RegionKindDeployment']);
   });
 });
 

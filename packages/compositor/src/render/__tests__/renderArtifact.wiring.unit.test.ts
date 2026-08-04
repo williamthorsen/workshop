@@ -30,7 +30,9 @@ const claude: RenderTarget = {
       ],
     },
   ],
-  deployments: [{ kindId: 'skill', layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } }],
+  deployments: [
+    { form: 'tree', kindId: 'skill', layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } },
+  ],
   stages: [],
 };
 

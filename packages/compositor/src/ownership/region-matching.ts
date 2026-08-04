@@ -1,5 +1,6 @@
 /** Region matching: the anchored line patterns every region transform reads a host through. */
 
+import { escapeForRegExp } from '../portable/escapeForRegExp.ts';
 import type { RegionMarkers } from './RegionMarkers.ts';
 
 /**
@@ -42,11 +43,6 @@ export function countMarkerLines(content: string, marker: string): number {
 }
 
 // region | Helpers
-
-/** Escapes a string for literal use inside a regular expression. */
-function escapeForRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-}
 
 /**
  * Renders the pattern source matching a line that holds `marker` and nothing else.
