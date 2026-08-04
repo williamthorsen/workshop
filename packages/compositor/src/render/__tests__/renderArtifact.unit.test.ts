@@ -37,6 +37,15 @@ describe(renderArtifact, () => {
     expect(requireRendered(result).content).toBe('Use view on [the rubric](~/.claude/skills/review/rubric.md).\n');
   });
 
+  it('renders for a destination rooted at a plain path rather than a home-relative one', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [the rubric](./rubric.md).\n' });
+    const served: RenderTarget = { ...claude, root: '/srv/out' };
+
+    const result = await render(dir, served);
+
+    expect(requireRendered(result).content).toBe('See [the rubric](/srv/out/skills/review/rubric.md).\n');
+  });
+
   it('reports the artifact and every partial that reached the rendered file', async () => {
     const dir = await buildTempTree({
       '_data/shared.md': 'Shared text.\n',

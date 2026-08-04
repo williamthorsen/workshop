@@ -68,6 +68,18 @@ describe(rewriteLinks, () => {
     expect(lines(result)).toStrictEqual(['see: (~/.claude/skills/review/rubric.md)']);
   });
 
+  it('resolves against a destination root that is a plain path rather than a home-relative one', () => {
+    const result = rewrite(['[x](./rubric.md)'], { targetRoot: '/srv/out' });
+
+    expect(lines(result)).toStrictEqual(['[x](/srv/out/skills/review/rubric.md)']);
+  });
+
+  it('passes a home-relative target through whatever the root is, since it names the home either way', () => {
+    const result = rewrite(['[x](~/notes/y.md)'], { targetRoot: '/srv/out' });
+
+    expect(lines(result)).toStrictEqual(['[x](~/notes/y.md)']);
+  });
+
   it('resolves against the destination root for a file sitting directly at that root', () => {
     const result = rewrite(['[x](./skills/review/SKILL.md)'], { filePath: 'CLAUDE.md' });
 
