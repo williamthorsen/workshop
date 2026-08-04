@@ -15,7 +15,6 @@ export { locatePackage } from './config/locatePackage.ts';
 export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
-export type { FrontmatterOverlay } from './frontmatter/mergeFrontmatter.ts';
 export { mergeFrontmatter } from './frontmatter/mergeFrontmatter.ts';
 export type { ParsedFrontmatter } from './frontmatter/parseFrontmatter.ts';
 export { parseFrontmatter } from './frontmatter/parseFrontmatter.ts';
@@ -49,12 +48,11 @@ export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
 export { resolveCatalog } from './resolution/resolveCatalog.ts';
 export type { ArtifactResolution, ResolutionCandidate } from './schemas/artifact-resolution-schemas.ts';
 export { ArtifactResolutionSchema, ResolutionCandidateSchema } from './schemas/artifact-resolution-schemas.ts';
-export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
+export type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
 export {
   CATALOG_SCHEMA_VERSION,
   CatalogEntrySchema,
   CatalogSchema,
-  KindLayoutSchema,
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/catalog-schemas.ts';
@@ -127,6 +125,8 @@ export {
   SeedOriginSchema,
   SeedSchema,
 } from './schemas/graph-schemas.ts';
+export type { KindLayout } from './schemas/kind-layout-schemas.ts';
+export { KindLayoutSchema } from './schemas/kind-layout-schemas.ts';
 export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schemas.ts';
 export {
   PLAN_SCHEMA_VERSION,
@@ -135,6 +135,20 @@ export {
   SourceDigestSchema,
   TargetDigestSchema,
 } from './schemas/plan-schemas.ts';
+export type {
+  DirectiveSyntax,
+  FrontmatterOverlay,
+  KindDeployment,
+  RenderStage,
+  RenderTarget,
+} from './schemas/render-target-schemas.ts';
+export {
+  DirectiveSyntaxSchema,
+  FrontmatterOverlaySchema,
+  KindDeploymentSchema,
+  RenderStageSchema,
+  RenderTargetSchema,
+} from './schemas/render-target-schemas.ts';
 export type {
   ArtifactId,
   DiffStatus,
@@ -164,7 +178,7 @@ export { extractTokenEdges } from './tokens/extractTokenEdges.ts';
 export type { DeployedNameLookup, RewriteTokensInput, TokenRewrite } from './tokens/rewriteTokens.ts';
 export { rewriteTokens } from './tokens/rewriteTokens.ts';
 export type { TokenDiagnostic, TokenFailure, TokenRef } from './tokens/TokenDiagnostic.ts';
-export type { DirectivePatterns, DirectiveSyntax } from './transclusion/buildDirectivePatterns.ts';
+export type { DirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
 export { buildDirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
 export { composePartialId } from './transclusion/composePartialId.ts';
 export type { Segment, Transclusion, TransclusionSource } from './transclusion/expandTransclusions.ts';

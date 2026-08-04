@@ -1,3 +1,5 @@
+import type { DirectiveSyntax } from '../schemas/render-target-schemas.ts';
+
 /** The line patterns one comment syntax's directives match, each anchored to a whole line. */
 export interface DirectivePatterns {
   /** Matches any line shaped like an include directive, so a malformed one is rejected rather than emitted as text. */
@@ -6,16 +8,6 @@ export interface DirectivePatterns {
   readonly close: RegExp;
   readonly open: RegExp;
   readonly selfClose: RegExp;
-}
-
-/**
- * The comment syntax a source writes its transclusion directives in.
- *
- * `close` is empty for a syntax whose comments run to the end of the line, such as `#`.
- */
-export interface DirectiveSyntax {
-  readonly open: string;
-  readonly close: string;
 }
 
 /**

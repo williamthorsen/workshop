@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { ArtifactResolutionSchema } from './artifact-resolution-schemas.ts';
 import { KindDescriptorSchema, SourceEntrySchema } from './descriptor-schemas.ts';
+import { KindLayoutSchema } from './kind-layout-schemas.ts';
 import { IdSchema } from './scalar-schemas.ts';
 
 /**
@@ -15,28 +16,11 @@ import { IdSchema } from './scalar-schemas.ts';
 export const CATALOG_SCHEMA_VERSION = 1;
 
 /**
- * How artifacts of one kind are laid out inside a source.
- *
- * `file` is one file per artifact, named for its slug. `directory` is a directory per artifact holding an entry file at
- * a fixed name, which is what lets an artifact ship assets beside the file carrying its frontmatter. `root` is relative
- * to a source's own directory, so one declaration locates the kind in every source.
- *
- * Layout is declared rather than compiled in, which is what keeps a path convention from becoming engine vocabulary.
- */
-export const KindLayoutSchema = z
-  .discriminatedUnion('form', [
-    z.object({ form: z.literal('file'), root: z.string(), extension: z.string() }).meta({ id: 'FileKindLayout' }),
-    z
-      .object({ form: z.literal('directory'), root: z.string(), entryFile: z.string() })
-      .meta({ id: 'DirectoryKindLayout' }),
-  ])
-  .meta({ id: 'KindLayout' });
-
-/**
  * One artifact kind as resolution needs it: the plan's descriptor, plus where a source keeps artifacts of that kind.
  *
  * Extends the plan's descriptor, so a catalog's `kinds` entry parses as a plan's and the two cannot drift. The layout
- * rides along because a consumer rendering a source's tree has no other way to learn it.
+ * rides along because a consumer rendering a source's tree has no other way to learn it. `layout.root` is relative to a
+ * source's own directory, so one declaration locates the kind in every source.
  */
 export const ResolveKindSchema = KindDescriptorSchema.extend({ layout: KindLayoutSchema }).meta({ id: 'ResolveKind' });
 
@@ -84,6 +68,5 @@ export const CatalogSchema = z
 
 export type Catalog = z.infer<typeof CatalogSchema>;
 export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
-export type KindLayout = z.infer<typeof KindLayoutSchema>;
 export type ResolveKind = z.infer<typeof ResolveKindSchema>;
 export type SourceSpec = z.infer<typeof SourceSpecSchema>;
