@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildPlan } from '../../../test-utils/buildPlan.ts';
-import { requireEntry } from '../../../test-utils/requireEntry.ts';
+import { buildPlan } from '../../test-utils/buildPlan.ts';
+import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { findMisplacedPartialReferences } from '../findMisplacedPartialReferences.ts';
 
 describe(findMisplacedPartialReferences, () => {

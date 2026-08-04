@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildCatalogFromSpec } from '../../test-utils/buildCatalogFromSpec.ts';
 import { buildConfig, type TierInput } from '../../test-utils/buildConfig.ts';
 import { selectArtifacts, type Selection } from '../selectArtifacts.ts';
-import { buildCatalogFromSpec } from '../test-utils/buildCatalogFromSpec.ts';
 
 const catalog = buildCatalogFromSpec({
   kinds: ['rulebook', 'skill'],

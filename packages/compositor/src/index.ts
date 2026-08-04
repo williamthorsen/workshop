@@ -1,3 +1,13 @@
+export type { ClosureViolation } from './closure/assertClosureIsConsistent.ts';
+export { assertClosureIsConsistent, ClosureConsistencyError } from './closure/assertClosureIsConsistent.ts';
+export type { EdgeRuleViolation } from './closure/assertEdgeRulesAreConsistent.ts';
+export { assertEdgeRulesAreConsistent, EdgeRuleConsistencyError } from './closure/assertEdgeRulesAreConsistent.ts';
+export type { EdgeGraphInput } from './closure/buildEdgeGraph.ts';
+export { buildEdgeGraph } from './closure/buildEdgeGraph.ts';
+export type { ComputeClosureInput, SeedView } from './closure/computeClosure.ts';
+export { computeClosure } from './closure/computeClosure.ts';
+export type { ArtifactRead, EdgeContribution, EdgeContributor } from './closure/EdgeContributor.ts';
+export type { EdgeGraph } from './closure/EdgeGraph.ts';
 export type { TierFile } from './config/loadConfig.ts';
 export { loadConfig, TierFileSchema } from './config/loadConfig.ts';
 export type { LocatePackageOptions } from './config/locatePackage.ts';
@@ -48,6 +58,14 @@ export {
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/catalog-schemas.ts';
+export type { Closure, ClosureArtifact, ClosureDiagnostic, ClosureEntryRef } from './schemas/closure-schemas.ts';
+export {
+  CLOSURE_SCHEMA_VERSION,
+  ClosureArtifactSchema,
+  ClosureDiagnosticSchema,
+  ClosureEntryRefSchema,
+  ClosureSchema,
+} from './schemas/closure-schemas.ts';
 export type { CompositorConfig, ConfigTier, TierBody } from './schemas/config-schemas.ts';
 export { CompositorConfigSchema, ConfigTierSchema, TierBodySchema } from './schemas/config-schemas.ts';
 export type {
@@ -64,6 +82,13 @@ export {
   TierDescriptorSchema,
   TokenKindDescriptorSchema,
 } from './schemas/descriptor-schemas.ts';
+export type { EdgeRule, EdgeWildcard, FrontmatterEdgeOrigin, KindKeys } from './schemas/edge-rule-schemas.ts';
+export {
+  EdgeRuleSchema,
+  EdgeWildcardSchema,
+  FrontmatterEdgeOriginSchema,
+  KindKeysSchema,
+} from './schemas/edge-rule-schemas.ts';
 export type {
   ArtifactContribution,
   Blob,

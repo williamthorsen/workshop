@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { ArtifactId } from '../../schemas/scalar-schemas.ts';
 import type { Selector } from '../../schemas/selection-schemas.ts';
+import { buildCatalogFromSpec } from '../../test-utils/buildCatalogFromSpec.ts';
 import { buildCatalogIndex } from '../buildCatalogIndex.ts';
 import { expandSelector } from '../expandSelector.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from '../SelectionDiagnostic.ts';
-import { buildCatalogFromSpec } from '../test-utils/buildCatalogFromSpec.ts';
 
 const index = buildCatalogIndex(
   buildCatalogFromSpec({
