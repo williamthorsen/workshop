@@ -10,6 +10,7 @@ import { isRecord } from '../../src/isRecord.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
+  hintedErrorEnvelopePayload,
   listPayload,
   minimalReportPayload,
   reportPayload,
@@ -122,6 +123,15 @@ describe('generated JSON Schemas', () => {
     });
   });
 
+  describe('error-envelope document', () => {
+    const envelope = documentFor('error-envelope.v1.json');
+
+    it('publishes the hint as an optional field, which is what keeps the version at 1', () => {
+      expect(objectAt(envelope, '$defs', 'ErrorBody', 'properties', 'hint')).toStrictEqual({ type: 'string' });
+      expect(objectAt(envelope, '$defs', 'ErrorBody').required).toStrictEqual(['code', 'message']);
+    });
+  });
+
   describe('validating real payloads', () => {
     it.each([
       ['report.v1.json', reportPayload],
@@ -130,6 +140,7 @@ describe('generated JSON Schemas', () => {
       // it has to be checked through one rather than through zod alone.
       ['report.v1.json', unknownWarningReportPayload],
       ['error-envelope.v1.json', errorEnvelopePayload],
+      ['error-envelope.v1.json', hintedErrorEnvelopePayload],
       ['list.v1.json', listPayload],
       ['verify.v1.json', verifyPayload],
       ['compile.v1.json', compilePayload],

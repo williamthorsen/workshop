@@ -36,7 +36,7 @@ vi.mock(import('../src/manifest/readManifest.ts'), async (importOriginal) => {
 
 import { listCommand } from '../src/list/listCommand.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
-import { captureRdyError } from './helpers/captureRdyError.ts';
+import { captureRdyError } from '../src/test-utils/captureRdyError.ts';
 
 describe(listCommand, () => {
   let stdoutSpy: MockInstance;
@@ -213,6 +213,29 @@ describe(listCommand, () => {
       expect(stderrSpy).toHaveBeenCalledWith('Warning: bad config. Listing with default settings.\n');
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(output).toContain('default');
+    });
+
+    it('renders a hint the config failure carries, on a line of its own', async () => {
+      mockLoadConfig.mockRejectedValue(
+        Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
+          hint: 'Install it with: pnpm add --save-dev some-lib',
+        }),
+      );
+
+      await listCommand([]);
+
+      expect(stderrSpy.mock.calls.map((call: unknown[]) => String(call[0]))).toStrictEqual([
+        "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings.\n",
+        '\u{1F4A1} Hint: Install it with: pnpm add --save-dev some-lib\n',
+      ]);
+    });
+
+    it('writes no hint line for a config failure that carries none', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config'));
+
+      await listCommand([]);
+
+      expect(stderrSpy).toHaveBeenCalledTimes(1);
     });
 
     it('does not double the period when the config failure already ends in one', async () => {

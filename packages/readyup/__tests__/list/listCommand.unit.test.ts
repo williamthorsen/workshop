@@ -30,19 +30,19 @@ vi.mock(import('../../src/manifest/readManifest.ts'), async (importOriginal) => 
   };
 });
 
-vi.mock(import('../../src/resolveBitbucketToken.ts'), () => ({
+vi.mock(import('../../src/remote/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-vi.mock(import('../../src/resolveGitHubToken.ts'), () => ({
+vi.mock(import('../../src/remote/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
 vi.stubGlobal('fetch', mockFetch);
 
 import { listCommand } from '../../src/list/listCommand.ts';
-import { captureRdyError } from '../helpers/captureRdyError.ts';
-import { mockResponse } from '../helpers/mockResponse.ts';
+import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
+import { mockResponse } from '../../src/test-utils/mockResponse.ts';
 
 const validRemoteManifestBody = JSON.stringify({
   version: 1,
@@ -240,6 +240,78 @@ describe(listCommand, () => {
       'Failed to reach https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
     );
     expect(error.message).toContain('ECONNREFUSED');
+  });
+
+  describe('credential hints', () => {
+    const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
+    const BITBUCKET_HINT = 'If the repository is private, set BITBUCKET_TOKEN.';
+
+    it.each([401, 403, 404])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBe(GITHUB_HINT);
+    });
+
+    it('hints on the HTML soft-404 GitHub serves for a private repository', async () => {
+      mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBe(GITHUB_HINT);
+    });
+
+    it.each([401, 403, 404])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:acme/private']));
+
+      expect(error.hint).toBe(BITBUCKET_HINT);
+    });
+
+    it('leaves the message untouched, carrying the hint beside it', async () => {
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status: 401, statusText: 'Unauthorized' }));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.message).toBe(
+        'Failed to fetch manifest from https://raw.githubusercontent.com/acme/private/main/.readyup/manifest.json: 401 Unauthorized',
+      );
+    });
+
+    it('stays silent when a token was forwarded', async () => {
+      mockResolveGitHubToken.mockReturnValue('my-token');
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status: 404, statusText: 'Not Found' }));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBeUndefined();
+    });
+
+    it.each([500, 502])('stays silent on a %i, which no credential would fix', async (status) => {
+      mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Server Error' }));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBeUndefined();
+    });
+
+    it('stays silent on a malformed body, which arrived over an accepted request', async () => {
+      mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBeUndefined();
+    });
+
+    it('stays silent on a network failure, which reached no host to be refused by', async () => {
+      mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
+
+      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBeUndefined();
+    });
   });
 
   it('with --from bitbucket:ws/repo, fetches and renders the remote manifest', async () => {

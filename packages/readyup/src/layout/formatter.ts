@@ -29,6 +29,9 @@ export interface Formatter {
   /** Columns from the start of a status token to the start of the name beside it. Exceeds every token's width. */
   gutter: number;
 
+  /** Label leading a remediation hint. The engine supplies the space after it. */
+  hintPrefix: string;
+
   rules: Record<HeadingLevel, string>;
 
   tokens: Record<TokenName, LayoutToken>;

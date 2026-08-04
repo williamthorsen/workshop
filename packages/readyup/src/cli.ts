@@ -10,16 +10,16 @@ import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
-import { loadRemoteKit, type LoadRemoteKitOptions } from './loadRemoteKit.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
 import { expandConfiguredPackages } from './packages/expandConfiguredPackages.ts';
 import { type FromSource, type NpmSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
+import { loadRemoteKit, type LoadRemoteKitOptions } from './remote/loadRemoteKit.ts';
+import { resolveRemoteAuthHeaders, resolveRemoteProvider } from './remote/remote-provider.ts';
+import { toRemoteRdyError } from './remote/toRemoteRdyError.ts';
 import { countResults, reportRdy } from './reportRdy.ts';
-import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
-import { resolveGitHubToken } from './resolveGitHubToken.ts';
 import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
@@ -33,7 +33,7 @@ import type {
   RdyStagedChecklist,
   Severity,
 } from './types.ts';
-import { extractMessage } from './utils/error-handling.ts';
+import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
@@ -535,26 +535,19 @@ interface HumanRunSettings {
 /** Load a rdy kit from a path or URL source. */
 async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit> {
   if ('url' in source) {
-    const options: LoadRemoteKitOptions = { url: source.url };
-    if (source.url.includes('raw.githubusercontent.com')) {
-      const token = resolveGitHubToken();
-      if (token !== undefined) {
-        options.headers = { Authorization: `token ${token}` };
-      }
-    } else if (source.url.includes('api.bitbucket.org')) {
-      const token = resolveBitbucketToken();
-      if (token !== undefined) {
-        options.headers = { Authorization: `Bearer ${token}` };
-      }
-    }
+    const provider = resolveRemoteProvider(source.url);
+    const headers = resolveRemoteAuthHeaders(provider);
+    const options: LoadRemoteKitOptions = { url: source.url, ...(headers !== undefined && { headers }) };
 
     try {
       return await loadRemoteKit(options);
     } catch (error: unknown) {
-      const message = extractMessage(error);
-      // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteKit` already include the URL.
-      const detail = message.includes(source.url) ? message : `Failed to reach ${source.url}: ${message}`;
-      throw kitLoadError(detail, { cause: error });
+      throw toRemoteRdyError(error, {
+        code: 'kit-load',
+        provider,
+        tokenForwarded: headers !== undefined,
+        url: source.url,
+      });
     }
   }
 
@@ -566,7 +559,7 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
         cause: error,
       });
     }
-    throw kitLoadError(extractMessage(error), { cause: error });
+    throw kitLoadError(extractMessage(error), { cause: error, hint: extractHint(error) });
   }
 }
 
@@ -753,11 +746,11 @@ async function runMultiKitJsonMode(
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
-      const { code, message } = toRdyError(error);
+      const { code, hint, message } = toRdyError(error);
       kitInputs.push({
         name: entry.name,
         ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
-        error: { code, message },
+        error: { code, message, ...(hint !== undefined && { hint }) },
       });
       anyKitFailed = true;
     }
@@ -814,7 +807,11 @@ async function runMultiKitHumanMode(
     } catch (error: unknown) {
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
       const label = showKitHeader ? ` [${describeKitEntry(entry)}]` : '';
-      process.stderr.write(`Error${label}: ${toRdyError(error).message}\n`);
+      const rdyError = toRdyError(error);
+      process.stderr.write(`Error${label}: ${rdyError.message}\n`);
+      if (rdyError.hint !== undefined) {
+        process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
+      }
       anyKitFailed = true;
     }
   }

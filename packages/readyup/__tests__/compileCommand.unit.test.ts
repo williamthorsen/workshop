@@ -60,8 +60,8 @@ import { compileCommand } from '../src/compile/compileCommand.ts';
 import type { KitMetadata } from '../src/compile/validateCompiledOutput.ts';
 import { richFormatter } from '../src/layout/richFormatter.ts';
 import { ManifestNotFoundError } from '../src/manifest/readManifest.ts';
+import { captureRdyError } from '../src/test-utils/captureRdyError.ts';
 import { VERSION } from '../src/version.ts';
-import { captureRdyError } from './helpers/captureRdyError.ts';
 
 const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.glyph;
 const ICON_COMPILED = richFormatter.tokens.passed.glyph;
@@ -190,6 +190,19 @@ describe(compileCommand, () => {
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('Too many arguments');
+  });
+
+  it('forwards an install hint from a config file whose imports could not be resolved', async () => {
+    mockLoadConfig.mockRejectedValue(
+      Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
+        hint: 'Install it with: pnpm add --save-dev some-lib',
+      }),
+    );
+
+    const error = await captureRdyError(() => compileCommand([]));
+
+    expect(error.code).toBe('config');
+    expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
   });
 
   // Batch compile tests

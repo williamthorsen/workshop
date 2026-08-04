@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
-import { loadRemoteManifest, RemoteManifestNotFoundError } from '../src/loadRemoteManifest.ts';
-import { mockResponse } from './helpers/mockResponse.ts';
+import { mockResponse } from '../../test-utils/mockResponse.ts';
+import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
+import { RemoteFetchError } from '../RemoteFetchError.ts';
 
 const validManifestBody = JSON.stringify({
   version: 1,
@@ -52,12 +53,23 @@ describe(loadRemoteManifest, () => {
     );
   });
 
-  it('throws plain Error containing URL and status for non-404 non-2xx responses', async () => {
+  it('throws an error containing URL and status for non-404 non-2xx responses', async () => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status: 500, statusText: 'Internal Server Error' }));
 
     await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow(
       'Failed to fetch manifest from https://example.com/manifest.json: 500 Internal Server Error',
     );
+  });
+
+  it.each([401, 403, 500])('throws RemoteFetchError carrying the %i status', async (status) => {
+    mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Nope' }));
+
+    const error = await loadRemoteManifest({ url: 'https://example.com/manifest.json' }).catch(
+      (error_: unknown) => error_,
+    );
+
+    expect(error).toBeInstanceOf(RemoteFetchError);
+    expect(error).toHaveProperty('status', status);
   });
 
   it('throws Error containing URL and "malformed" for invalid JSON', async () => {

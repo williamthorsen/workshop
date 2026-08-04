@@ -45,15 +45,15 @@ vi.mock(import('../src/formatJsonError.ts'), () => ({
   formatJsonError: mockFormatJsonError,
 }));
 
-vi.mock(import('../src/resolveGitHubToken.ts'), () => ({
+vi.mock(import('../src/remote/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
-vi.mock(import('../src/resolveBitbucketToken.ts'), () => ({
+vi.mock(import('../src/remote/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-vi.mock(import('../src/loadRemoteKit.ts'), () => ({
+vi.mock(import('../src/remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 

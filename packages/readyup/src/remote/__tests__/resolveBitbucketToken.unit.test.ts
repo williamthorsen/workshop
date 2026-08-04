@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { resolveBitbucketToken } from '../src/resolveBitbucketToken.ts';
+import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
 
 describe(resolveBitbucketToken, () => {
   let originalToken: string | undefined;

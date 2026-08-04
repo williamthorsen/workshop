@@ -76,6 +76,7 @@ export interface LayoutEngine {
   formatCounts(counts: SummaryCounts): string;
   formatHeading(name: string, level: HeadingLevel): string[];
   formatHeadingLine(name: string, level: HeadingLevel): string;
+  formatHint(hint: string): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
   formatSummaryTable(input: SummaryTableInput): string[];
   indent(depth: number): string;
@@ -118,6 +119,11 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /** Returns `name` behind a two-character rule whose weight comes from `level`, with no surrounding blanks. */
   function formatHeadingLine(name: string, level: HeadingLevel): string {
     return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
+  }
+
+  /** Returns a remediation hint behind the formatter's prefix, as one line of its own. */
+  function formatHint(hint: string): string {
+    return `${formatter.hintPrefix} ${hint}`;
   }
 
   /** Returns each reason indented to the name column of a check at `depth`, one gutter further in. */
@@ -193,6 +199,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     formatCounts,
     formatHeading,
     formatHeadingLine,
+    formatHint,
     formatReasonBlock,
     formatSummaryTable,
     indent,

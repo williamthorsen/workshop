@@ -19,6 +19,7 @@ import type { Severity } from '../../src/types.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
+  hintedErrorEnvelopePayload,
   legacyVerifyPayload,
   listPayload,
   minimalReportPayload,
@@ -33,6 +34,7 @@ describe('JSON payload schemas', () => {
       ['report', ReportSchema, reportPayload],
       ['minimal report', ReportSchema, minimalReportPayload],
       ['error envelope', ErrorEnvelopeSchema, errorEnvelopePayload],
+      ['hinted error envelope', ErrorEnvelopeSchema, hintedErrorEnvelopePayload],
       ['list', ListOutputSchema, listPayload],
       ['verify', VerifyOutputSchema, verifyPayload],
       ['compile', CompileOutputSchema, compilePayload],
@@ -67,6 +69,24 @@ describe('JSON payload schemas', () => {
       const counts = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0 };
 
       expect(() => ReportSchema.parse({ ...minimalReportPayload, counts })).toThrow();
+    });
+  });
+
+  describe('error bodies', () => {
+    it('shares the hint field with the per-kit error entry inside a report', () => {
+      const kits = [{ name: 'release', error: { code: 'kit-load', message: 'boom', hint: 'Install it.' } }];
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).not.toThrow();
+    });
+
+    it('accepts an error body carrying no hint', () => {
+      expect(() => ErrorEnvelopeSchema.parse(errorEnvelopePayload)).not.toThrow();
+    });
+
+    it('rejects a non-string hint', () => {
+      const error = { code: 'config', message: 'boom', hint: 42 };
+
+      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 1, error })).toThrow();
     });
   });
 

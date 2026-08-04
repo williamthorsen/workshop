@@ -6,8 +6,8 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
+import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
-import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
@@ -15,12 +15,13 @@ import { discoverKitPackages } from '../packages/discoverKitPackages.ts';
 import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
 import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../parseFromValue.ts';
 import { parseFromValue } from '../parseFromValue.ts';
-import { resolveBitbucketToken } from '../resolveBitbucketToken.ts';
-import { resolveGitHubToken } from '../resolveGitHubToken.ts';
+import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
+import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
+import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 import type { JsonListKitEntry, JsonListOutput } from '../schemas/index.ts';
 import { SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { enumerateKits } from './enumerateKits.ts';
@@ -102,16 +103,12 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
 
   if (source.type === 'github') {
     const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
-    const token = resolveGitHubToken();
-    const headers = token !== undefined ? { Authorization: `token ${token}` } : undefined;
-    return runRemoteFromMode({ url, headers, json });
+    return runRemoteFromMode({ url, json });
   }
 
   if (source.type === 'bitbucket') {
     const url = `https://api.bitbucket.org/2.0/repositories/${source.workspace}/${source.repo}/src/${source.ref}/.readyup/manifest.json`;
-    const token = resolveBitbucketToken();
-    const headers = token !== undefined ? { Authorization: `Bearer ${token}` } : undefined;
-    return runRemoteFromMode({ url, headers, json });
+    return runRemoteFromMode({ url, json });
   }
 
   if (source.type === 'npm') {
@@ -159,27 +156,16 @@ function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: stri
   return finishList(entries, json);
 }
 
-/** Fetch and display kits from a remote manifest URL. */
-async function runRemoteFromMode({
-  url,
-  headers,
-  json,
-}: {
-  url: string;
-  headers?: Record<string, string> | undefined;
-  json: boolean;
-}): Promise<number> {
+/** Fetch and display kits from a remote manifest URL, authenticating where the host is one readyup knows. */
+async function runRemoteFromMode({ url, json }: { url: string; json: boolean }): Promise<number> {
+  const provider = resolveRemoteProvider(url);
+  const headers = resolveRemoteAuthHeaders(provider);
+
   let manifest;
   try {
     manifest = await loadRemoteManifest({ url, headers });
   } catch (error: unknown) {
-    if (error instanceof RemoteManifestNotFoundError) {
-      throw configError(`No manifest found at ${url}.`, { cause: error });
-    }
-    const message = extractMessage(error);
-    // Network failures (raw `fetch` rejections) carry no URL context; thrown errors from `loadRemoteManifest` already include the URL.
-    const detail = message.includes(url) ? message : `Failed to reach ${url}: ${message}`;
-    throw configError(detail, { cause: error });
+    throw toRemoteRdyError(error, { code: 'config', provider, tokenForwarded: headers !== undefined, url });
   }
 
   writeHuman(formatManifestView({ kits: manifest.kits, manifestPath: url }) + '\n', json);
@@ -205,6 +191,8 @@ async function runOwnerMode(json: boolean): Promise<number> {
   } catch (error: unknown) {
     const detail = extractMessage(error).replace(/\.$/, '');
     process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
+    const hint = extractHint(error);
+    if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
     config = { ...DEFAULT_CONFIG };
   }
 

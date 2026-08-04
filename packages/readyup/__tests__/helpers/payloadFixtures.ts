@@ -101,6 +101,15 @@ export const errorEnvelopePayload = {
   error: { code: 'usage', message: "Unknown option '--bogus'" },
 };
 
+export const hintedErrorEnvelopePayload = {
+  schemaVersion: 1,
+  error: {
+    code: 'config',
+    message: 'No manifest found at https://example.com/manifest.json.',
+    hint: 'If the repository is private, set GITHUB_TOKEN.',
+  },
+};
+
 export const listPayload = {
   schemaVersion: 1,
   kits: [

@@ -18,6 +18,9 @@ const PACKAGE_JSON_PATH = join(thisFileDir, '..', 'package.json');
  */
 const INTENTIONAL_SIDE_EFFECT_FILES = new Set<string>(['bin/rdy.ts']);
 
+/** Directories under `src/` that hold test code rather than shipped source, matching nmr's compile-entry exclusions. */
+const NON_SOURCE_DIRS = new Set<string>(['__fixtures__', '__mocks__', '__tests__', 'test-utils']);
+
 /** TypeScript AST kinds that represent purely declarative top-level statements. */
 const DECLARATIVE_KINDS = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.ImportDeclaration,
@@ -75,6 +78,7 @@ function collectSrcFiles(dir: string): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (NON_SOURCE_DIRS.has(entry.name)) continue;
       out.push(...collectSrcFiles(full));
     } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
       out.push(full);

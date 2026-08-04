@@ -10,6 +10,7 @@ import type { Formatter } from './formatter.ts';
 export const richFormatter: Formatter = {
   detailSeparator: '\u{00B7}',
   gutter: 3,
+  hintPrefix: '\u{1F4A1} Hint:',
   rules: {
     kit: '\u{2501}',
     section: '\u{2500}',

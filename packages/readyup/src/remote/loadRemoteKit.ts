@@ -3,11 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { assertIsRdyKit } from './assertIsRdyKit.ts';
-import type { LoadedRdyKit } from './config.ts';
-import { isRecord } from './isRecord.ts';
-import { resolveKitExports } from './resolveKitExports.ts';
-import { validateKit } from './validateKit.ts';
+import { assertIsRdyKit } from '../assertIsRdyKit.ts';
+import type { LoadedRdyKit } from '../config.ts';
+import { isRecord } from '../isRecord.ts';
+import { resolveKitExports } from '../resolveKitExports.ts';
+import { validateKit } from '../validateKit.ts';
+import { RemoteFetchError } from './RemoteFetchError.ts';
 
 export interface LoadRemoteKitOptions {
   url: string;
@@ -21,13 +22,17 @@ export interface LoadRemoteKitOptions {
  * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
  * Writes the fetched content to a temp file for dynamic import, then cleans up. Returns the kit
  * alongside the embedded `__readyupVersion` (undefined for kits compiled before that field existed
- * or fetched from third-party sources that omit it).
+ * or fetched from third-party sources that omit it). Throws `RemoteFetchError` for a non-2xx
+ * response, and a plain `Error` for a body that is not an evaluable kit.
  */
 export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch remote kit from ${url}: ${response.status} ${response.statusText}`);
+    throw new RemoteFetchError(
+      `Failed to fetch remote kit from ${url}: ${response.status} ${response.statusText}`,
+      response.status,
+    );
   }
 
   const body = await response.text();

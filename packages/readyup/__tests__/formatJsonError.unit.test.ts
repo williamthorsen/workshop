@@ -28,4 +28,23 @@ describe(formatJsonError, () => {
 
     expect(output).not.toContain('\n');
   });
+
+  it('carries a hint beside the message rather than inside it', () => {
+    const error = configError('No manifest found at https://example.com/manifest.json.', {
+      hint: 'If the repository is private, set GITHUB_TOKEN.',
+    });
+
+    expect(JSON.parse(formatJsonError(error))).toStrictEqual({
+      schemaVersion: 1,
+      error: {
+        code: 'config',
+        message: 'No manifest found at https://example.com/manifest.json.',
+        hint: 'If the repository is private, set GITHUB_TOKEN.',
+      },
+    });
+  });
+
+  it('omits the field entirely when the error carries no hint', () => {
+    expect(formatJsonError(usageError('x'))).not.toContain('hint');
+  });
 });

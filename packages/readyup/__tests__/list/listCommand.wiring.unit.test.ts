@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 import { listCommand } from '../../src/list/listCommand.ts';
 import { ListOutputSchema } from '../../src/schemas/index.ts';
-import { captureRdyError } from '../helpers/captureRdyError.ts';
+import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
 
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the

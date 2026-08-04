@@ -21,8 +21,8 @@ vi.mock(import('../../src/verify/checkSourceDrift.ts'), () => ({
 }));
 
 import { richFormatter } from '../../src/layout/richFormatter.ts';
+import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
-import { captureRdyError } from '../helpers/captureRdyError.ts';
 
 const OK = richFormatter.tokens.passed.glyph;
 const FAILED = richFormatter.tokens.failedError.glyph;

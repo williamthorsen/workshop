@@ -53,6 +53,7 @@ function renderEverything(): string {
     ...engine.formatHeading('deploy', 'kit'),
     ...engine.formatHeading('build', 'section'),
     ...engine.formatReasonBlock(['a reason'], 2),
+    engine.formatHint('set a token'),
     engine.formatCountLine(counts, 800),
     ...engine.formatSummaryTable({
       rows: [
@@ -118,6 +119,10 @@ describe('rendered output', () => {
   it('heads a section with an ASCII rule', () => {
     expect(engine.formatHeadingLine('code-quality', 'section')).toBe('-- code-quality');
     expect(engine.formatHeadingLine('deploy', 'kit')).toBe('== deploy');
+  });
+
+  it('labels a hint with an ASCII word', () => {
+    expect(engine.formatHint('set GITHUB_TOKEN')).toBe('Hint: set GITHUB_TOKEN');
   });
 });
 

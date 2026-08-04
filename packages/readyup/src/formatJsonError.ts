@@ -6,7 +6,7 @@ import type { JsonErrorEnvelope } from './schemas/index.ts';
 export function formatJsonError(error: RdyError): string {
   const envelope: JsonErrorEnvelope = {
     schemaVersion: SCHEMA_VERSION,
-    error: { code: error.code, message: error.message },
+    error: { code: error.code, message: error.message, ...(error.hint !== undefined && { hint: error.hint }) },
   };
   return JSON.stringify(envelope);
 }

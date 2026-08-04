@@ -11,11 +11,11 @@ import { formatJsonError } from '../formatJsonError.ts';
 import { hasJsonFlag } from '../hasJsonFlag.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kitsDir.ts';
-import { setStyle } from '../layout/engine.ts';
+import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { loadConfig } from '../loadConfig.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
@@ -253,6 +253,9 @@ export function reportFailure(error: unknown, json: boolean): number {
     process.stdout.write(formatJsonError(rdyError) + '\n');
   } else {
     process.stderr.write(`Error: ${rdyError.message}\n`);
+    if (rdyError.hint !== undefined) {
+      process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
+    }
   }
   return EXIT_TOOL_FAILURE;
 }
@@ -325,7 +328,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     try {
       config = await loadConfig();
     } catch (error: unknown) {
-      throw configError(extractMessage(error), { cause: error });
+      throw configError(extractMessage(error), { cause: error, hint: extractHint(error) });
     }
     configFields = {
       internalDir: config.internal.dir,

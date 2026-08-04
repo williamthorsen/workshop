@@ -1,5 +1,6 @@
-import type { RdyManifest } from './manifest/manifestSchema.ts';
-import { ManifestSchema } from './manifest/manifestSchema.ts';
+import type { RdyManifest } from '../manifest/manifestSchema.ts';
+import { ManifestSchema } from '../manifest/manifestSchema.ts';
+import { RemoteFetchError } from './RemoteFetchError.ts';
 
 /** Thrown when a remote manifest URL responds with 404 or an HTML soft-404. */
 export class RemoteManifestNotFoundError extends Error {
@@ -19,8 +20,8 @@ export interface LoadRemoteManifestOptions {
  *
  * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
  * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
- * Throws `RemoteManifestNotFoundError` for 404 and HTML soft-404 responses,
- * and a plain `Error` for other non-2xx responses, malformed JSON, and schema-invalid bodies.
+ * Throws `RemoteManifestNotFoundError` for 404 and HTML soft-404 responses, `RemoteFetchError` for
+ * other non-2xx responses, and a plain `Error` for malformed JSON and schema-invalid bodies.
  */
 export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManifestOptions): Promise<RdyManifest> {
   const response = await fetch(url, { headers });
@@ -30,7 +31,10 @@ export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManife
   }
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch manifest from ${url}: ${response.status} ${response.statusText}`);
+    throw new RemoteFetchError(
+      `Failed to fetch manifest from ${url}: ${response.status} ${response.statusText}`,
+      response.status,
+    );
   }
 
   const body = await response.text();

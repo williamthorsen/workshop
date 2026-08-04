@@ -15,7 +15,7 @@ import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
 import type { JsonCompileKitEntry, JsonCompileOutput } from '../schemas/index.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { pluralizeWithCount } from '../utils/pluralize.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
@@ -211,7 +211,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(extractMessage(error), { cause: error, hint: extractHint(error) });
   }
 
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);

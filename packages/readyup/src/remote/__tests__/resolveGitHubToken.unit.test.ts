@@ -6,7 +6,7 @@ vi.mock(import('node:child_process'), () => ({
   execFileSync: mockExecFileSync,
 }));
 
-import { resolveGitHubToken } from '../src/resolveGitHubToken.ts';
+import { resolveGitHubToken } from '../resolveGitHubToken.ts';
 
 describe(resolveGitHubToken, () => {
   const originalEnv = process.env.GITHUB_TOKEN;

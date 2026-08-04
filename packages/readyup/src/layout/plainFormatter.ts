@@ -15,6 +15,7 @@ import type { Formatter } from './formatter.ts';
 export const plainFormatter: Formatter = {
   detailSeparator: '-',
   gutter: 6,
+  hintPrefix: 'Hint:',
   rules: {
     kit: '=',
     section: '-',
