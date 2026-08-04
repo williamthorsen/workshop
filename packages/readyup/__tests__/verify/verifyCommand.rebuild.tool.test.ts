@@ -5,7 +5,9 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { compileConfig } from '../../src/compile/compileConfig.ts';
+import { ManifestSchema } from '../../src/manifest/manifestSchema.ts';
 import type { JsonVerifyOutput } from '../../src/schemas/index.ts';
+import { VerifyOutputSchema } from '../../src/schemas/index.ts';
 import { hashFile } from '../../src/verify/targetHash.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 import { VERSION } from '../../src/version.ts';
@@ -109,9 +111,7 @@ describe('verifyCommand --rebuild', () => {
   });
 
   it('reports a passing rebuild beside a recorded hash that has gone wrong', async () => {
-    const manifestPath = path.join(tempDir, 'manifest.json');
-    const manifest: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    writeFileSync(manifestPath, JSON.stringify(overrideTargetHash(manifest, 'deadbeef')));
+    overrideTargetHash(path.join(tempDir, 'manifest.json'), 'deadbeef');
 
     const exitCode = await runVerify();
 
@@ -147,13 +147,21 @@ async function runVerify(): Promise<number> {
   return verifyCommand(['--manifest', 'manifest.json', '--rebuild', '--json']);
 }
 
-/** Reads the single JSON document the run wrote to stdout. */
+/**
+ * Reads the single JSON document the run wrote to stdout.
+ *
+ * Parsed through the published schema rather than cast, so a payload that does not satisfy the
+ * contract fails here rather than reaching an assertion that happens not to look at the bad field.
+ */
 function readPayload(stdoutSpy: MockInstance): JsonVerifyOutput {
-  return JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0])) as JsonVerifyOutput;
+  const emitted: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+  return VerifyOutputSchema.parse(emitted);
 }
 
-/** Returns the manifest with its one kit's `targetHash` replaced, standing in for a record gone wrong. */
-function overrideTargetHash(manifest: unknown, targetHash: string): unknown {
-  const { kits, ...rest } = manifest as { kits: Array<Record<string, unknown>> };
-  return { ...rest, kits: kits.map((kit) => ({ ...kit, targetHash })) };
+/** Rewrites every kit's recorded `targetHash`, standing in for a record that has gone wrong. */
+function overrideTargetHash(manifestPath: string, targetHash: string): void {
+  const stored: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const manifest = ManifestSchema.parse(stored);
+  const kits = manifest.kits.map((kit) => ({ ...kit, targetHash }));
+  writeFileSync(manifestPath, JSON.stringify({ ...manifest, kits }));
 }
