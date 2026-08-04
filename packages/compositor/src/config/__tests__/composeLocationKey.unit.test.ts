@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { composeLocationKey } from '../composeLocationKey.ts';
@@ -19,8 +21,9 @@ describe(composeLocationKey, () => {
     expect(composeLocationKey('/srv/app', '@acme/x')).not.toBe(composeLocationKey('/srv/app', '@acme/y'));
   });
 
-  // A relative base stays relative, so the key never depends on the working directory the fold happens to run in.
-  it('leaves a relative base directory relative', () => {
-    expect(composeLocationKey('./app', '@acme/x')).toBe(composeLocationKey('app', '@acme/x'));
+  // Resolving a relative base would collapse these two into one key, which is the ambient reading the pure fold that
+  // reads these keys back cannot afford.
+  it('keys a relative base apart from the directory it would resolve against', () => {
+    expect(composeLocationKey('app', '@acme/x')).not.toBe(composeLocationKey(path.resolve('app'), '@acme/x'));
   });
 });

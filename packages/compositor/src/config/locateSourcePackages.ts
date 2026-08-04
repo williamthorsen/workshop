@@ -32,9 +32,8 @@ export type PackageLocation =
  * every declared package is walked, including one a later tier drops, so a fold over a modified config can re-adopt a
  * dropped source without touching disk again. Nothing here throws for a package that will not resolve.
  *
- * Base directory and package name are the whole of what resolution depends on, which is why they are what a record is
- * keyed by: a fold may rename sources, remap paths, and reorder tiers against one set of locations, and only naming a
- * package the walk never saw leaves it without an answer.
+ * A package this walk never saw is the one thing a later fold cannot answer for, which is what bounds how far a
+ * modified config may travel against one set of locations.
  */
 export async function locateSourcePackages(
   config: CompositorConfig,
