@@ -18,6 +18,11 @@ export type { LocateSourcePackagesOptions, PackageLocation } from './config/loca
 export { composeLocationKey, locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
+export {
+  ARTIFACT_ID_PLACEHOLDER,
+  buildContributionPatterns,
+  renderContributionMarkers,
+} from './deployment/contribution-markers.ts';
 export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
