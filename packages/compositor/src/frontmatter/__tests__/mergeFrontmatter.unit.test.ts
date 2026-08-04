@@ -5,16 +5,6 @@ import type { FrontmatterOverlay } from '../mergeFrontmatter.ts';
 import { mergeFrontmatter } from '../mergeFrontmatter.ts';
 import { parseFrontmatter } from '../parseFrontmatter.ts';
 
-/** Reads the merged frontmatter back as data, failing the test when the result carries no block. */
-function readFrontmatter(merged: string): unknown {
-  const { frontmatter } = parseFrontmatter(merged);
-  if (frontmatter === undefined) {
-    throw new Error('Expected the merged artifact to carry a frontmatter block.');
-  }
-  const parsed: unknown = parseYaml(frontmatter);
-  return parsed;
-}
-
 describe(mergeFrontmatter, () => {
   it('merges an override aimed at a block sequence, which the ported original could not do', () => {
     const content = '---\nname: reviewer\nskills:\n  - alpha\n  - beta\n---\nRead the diff.\n';
@@ -100,3 +90,17 @@ describe(mergeFrontmatter, () => {
     expect(() => mergeFrontmatter('---\nname: reviewer\n', overlay, 'reviewer')).toThrow(/never closed/);
   });
 });
+
+// region | Helpers
+
+/** Reads the merged frontmatter back as data, failing the test when the result carries no block. */
+function readFrontmatter(merged: string): unknown {
+  const { frontmatter } = parseFrontmatter(merged);
+  if (frontmatter === undefined) {
+    throw new Error('Expected the merged artifact to carry a frontmatter block.');
+  }
+  const parsed: unknown = parseYaml(frontmatter);
+  return parsed;
+}
+
+// endregion | Helpers

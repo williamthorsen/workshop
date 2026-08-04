@@ -1,6 +1,6 @@
 /** Document access: the one place a structured host's format decides how it is read, edited, and written back. */
 
-import { type Document, isCollection, isMap, isNode, isSeq, parseDocument, YAMLSeq } from 'yaml';
+import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLSeq } from 'yaml';
 
 import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
 
@@ -72,6 +72,17 @@ function detectJsonFormat(content: string): JsonFormat {
     return { indent: indented[1], trailingNewline };
   }
   return { indent: !isEmptyDocument && !body.includes('\n') ? 0 : 2, trailingNewline };
+}
+
+/**
+ * True for a YAML node carrying nothing, which a key written with no value parses to.
+ *
+ * Such a key is a host with nothing in it rather than a host holding something else, and reads as absent to match the
+ * JSON side, where the same document carries a plain `null`. Without the scalar unwrapped, a stubbed-out key would be
+ * refused as a foreign value the engine must not write over.
+ */
+function holdsNothing(node: unknown): boolean {
+  return node === undefined || node === null || (isScalar(node) && node.value === null);
 }
 
 /** True for a plain object, the only shape a collection path descends through. */
@@ -182,7 +193,7 @@ function openYamlDocument(content: string): { readonly document: DocumentAccess 
       readCollection(path) {
         let node: unknown = doc.contents;
         for (const key of path) {
-          if (node === undefined || node === null) {
+          if (holdsNothing(node)) {
             return { state: 'absent' };
           }
           if (!isMap(node)) {
@@ -190,7 +201,7 @@ function openYamlDocument(content: string): { readonly document: DocumentAccess 
           }
           node = node.get(key, true);
         }
-        if (node === undefined || node === null) {
+        if (holdsNothing(node)) {
           return { state: 'absent' };
         }
         return isSeq(node) ? { state: 'collection', items: node.items } : { state: 'other' };

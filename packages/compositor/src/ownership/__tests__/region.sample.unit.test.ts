@@ -25,16 +25,6 @@ const RULEBOOKS = [
   { slug: 'tests', body: 'Name tests for the behavior they pin.' },
 ];
 
-/** Renders the aggregated region body the planned guidance file carries: one block per rulebook, blank-line separated. */
-function renderRulebooks(): string {
-  return RULEBOOKS.map((rulebook) =>
-    renderContribution(
-      { open: `<!-- rulebook:${rulebook.slug} -->`, close: `<!-- /rulebook:${rulebook.slug} -->` },
-      rulebook.body,
-    ),
-  ).join('\n\n');
-}
-
 // The sample bodies are the repo's committed statement of the shapes a plan carries, so driving one to the other
 // exercises these mechanisms against a fixture nothing else in the change authored.
 describe('region ownership over the representative sample', () => {
@@ -54,3 +44,17 @@ describe('region ownership over the representative sample', () => {
     ]);
   });
 });
+
+// region | Helpers
+
+/** Renders the aggregated region body the planned guidance file carries: one block per rulebook, blank-line separated. */
+function renderRulebooks(): string {
+  return RULEBOOKS.map((rulebook) =>
+    renderContribution(
+      { open: `<!-- rulebook:${rulebook.slug} -->`, close: `<!-- /rulebook:${rulebook.slug} -->` },
+      rulebook.body,
+    ),
+  ).join('\n\n');
+}
+
+// endregion | Helpers

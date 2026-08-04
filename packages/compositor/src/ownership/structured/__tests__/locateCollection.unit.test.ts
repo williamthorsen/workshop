@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DocumentAccess } from '../document-access.ts';
 import { openDocument } from '../document-access.ts';
 import { locateCollection } from '../locateCollection.ts';
-
-/** Opens `content` for the tests below, which only ever supply hosts that parse. */
-function open(content: string, format: 'json' | 'yaml' = 'yaml') {
-  const opened = openDocument(content, format);
-  if ('reason' in opened) {
-    throw new Error(`Expected the fixture to parse, but: ${opened.reason}`);
-  }
-  return opened.document;
-}
 
 describe(locateCollection, () => {
   it('returns the items of the collection at the declared path', () => {
@@ -50,3 +42,16 @@ describe(locateCollection, () => {
     expect(() => locateCollection(open('- name: relay\n'), [])).toThrow(/at least one key/);
   });
 });
+
+// region | Helpers
+
+/** Opens `content` for the tests above, which only ever supply hosts that parse. */
+function open(content: string, format: 'json' | 'yaml' = 'yaml'): DocumentAccess {
+  const opened = openDocument(content, format);
+  if ('reason' in opened) {
+    throw new Error(`Expected the fixture to parse, but: ${opened.reason}`);
+  }
+  return opened.document;
+}
+
+// endregion | Helpers

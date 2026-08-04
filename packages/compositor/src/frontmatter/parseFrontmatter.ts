@@ -7,8 +7,9 @@ export interface ParsedFrontmatter {
   /**
    * True when the content opens a block that no delimiter closes.
    *
-   * Separate from an absent `frontmatter`, which those two share: an artifact that opened a block declared metadata,
-   * and reading it as body would let a caller write a second block above the declaration it could not see.
+   * This case and an artifact carrying no block at all both report `frontmatter: undefined`, so this flag is what
+   * tells them apart. An artifact that opened a block declared metadata, and reading that as body would let a caller
+   * write a second block above a declaration it could not see.
    */
   readonly unterminated: boolean;
 }

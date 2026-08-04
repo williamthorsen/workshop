@@ -15,14 +15,6 @@ const JSON_SPEC: OwnedItemsSpec = {
   sentinel: { path: ['source'], value: 'compositor' },
 };
 
-/** Reads the content an outcome carries, failing the test when it blocked instead. */
-function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
-  if ('blocked' in outcome) {
-    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
-  }
-  return outcome.content;
-}
-
 describe(removeOwnedItems, () => {
   it('leaves a collection holding its foreign items alone', () => {
     const content = [
@@ -74,3 +66,15 @@ describe(removeOwnedItems, () => {
     expect(JSON.parse(contentOf(removeOwnedItems(content, JSON_SPEC)))).toStrictEqual({});
   });
 });
+
+// region | Helpers
+
+/** Reads the content an outcome carries, failing the test when it blocked instead. */
+function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
+  if ('blocked' in outcome) {
+    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
+  }
+  return outcome.content;
+}
+
+// endregion | Helpers

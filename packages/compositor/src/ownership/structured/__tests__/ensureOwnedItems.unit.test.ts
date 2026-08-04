@@ -15,14 +15,6 @@ const JSON_SPEC: OwnedItemsSpec = {
   sentinel: { path: ['source'], value: 'compositor' },
 };
 
-/** Reads the content an outcome carries, failing the test when it blocked instead. */
-function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
-  if ('blocked' in outcome) {
-    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
-  }
-  return outcome.content;
-}
-
 describe(ensureOwnedItems, () => {
   it('if the owned items already read as asked, returns the host untouched, so a re-run is byte-identical', () => {
     const content = 'eventHooks:\n  events:\n    - name: relay\n      source: compositor\n';
@@ -170,3 +162,15 @@ describe(ensureOwnedItems, () => {
     });
   });
 });
+
+// region | Helpers
+
+/** Reads the content an outcome carries, failing the test when it blocked instead. */
+function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
+  if ('blocked' in outcome) {
+    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
+  }
+  return outcome.content;
+}
+
+// endregion | Helpers

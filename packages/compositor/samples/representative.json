@@ -414,7 +414,7 @@
         "hash": "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611"
       },
       "planned": {
-        "hash": "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c"
+        "hash": "sha256:17846c43781848d3cfbc5a8fe0a31b97f60626d87f4844f73669f10cc38ec21d"
       },
       "contributors": {
         "artifacts": [
@@ -542,6 +542,10 @@
       "encoding": "utf8",
       "data": "# Review\n\nRead the diff, then the tests.\n"
     },
+    "sha256:17846c43781848d3cfbc5a8fe0a31b97f60626d87f4844f73669f10cc38ec21d": {
+      "encoding": "utf8",
+      "data": "{\n  \"hooks\": [\n    {\n      \"command\": \"vendor-tool sync\"\n    },\n    {\n      \"command\": \"relay --on=stop\",\n      \"source\": \"codeassembly\"\n    },\n    {\n      \"command\": \"relay --on=review\",\n      \"source\": \"codeassembly\"\n    }\n  ]\n}\n"
+    },
     "sha256:218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86": {
       "encoding": "base64",
       "data": "iVBORw0KGgoAAAAN"
@@ -577,10 +581,6 @@
     "sha256:b17424857398d94ff93cd1456c99771b87ffbdced07ebdf23e6351e027afc076": {
       "encoding": "utf8",
       "data": "# Auditor\n\nAudit the change.\n"
-    },
-    "sha256:d0b29454e984706a85ace0f5cbd124128e8d9afdb112b245113b228ef0af794c": {
-      "encoding": "utf8",
-      "data": "{\n  \"hooks\": [\n    { \"command\": \"vendor-tool sync\" },\n    { \"command\": \"relay --on=stop\", \"source\": \"codeassembly\" },\n    { \"command\": \"relay --on=review\", \"source\": \"codeassembly\" }\n  ]\n}\n"
     }
   }
 }
