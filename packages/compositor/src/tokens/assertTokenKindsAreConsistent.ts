@@ -1,5 +1,6 @@
 import { collectIds } from '../consistency/collectIds.ts';
 import { ConsistencyError } from '../consistency/ConsistencyError.ts';
+import { countCaptureGroups } from '../consistency/countCaptureGroups.ts';
 import { createRequireKnown } from '../consistency/createRequireKnown.ts';
 import { findDuplicateIds } from '../consistency/findDuplicateIds.ts';
 import type { Violation } from '../consistency/Violation.ts';
@@ -54,21 +55,3 @@ export function assertTokenKindsAreConsistent(
     throw new TokenKindConsistencyError(violations);
   }
 }
-
-// region | Helpers
-
-/**
- * Counts the capture groups `source` declares, or reports nothing when it does not compile.
- *
- * Alternating the pattern with an empty branch makes it match the empty string whatever it otherwise requires, so the
- * resulting array's length answers the question without a body to run it against.
- */
-function countCaptureGroups(source: string): number | undefined {
-  try {
-    return (new RegExp(`${source}|`).exec('')?.length ?? 1) - 1;
-  } catch {
-    return undefined;
-  }
-}
-
-// endregion | Helpers

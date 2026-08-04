@@ -15,6 +15,7 @@ export { locatePackage } from './config/locatePackage.ts';
 export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
+export { countCaptureGroups } from './consistency/countCaptureGroups.ts';
 export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
@@ -46,6 +47,11 @@ export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
 export type { TraversalIndex } from './plan/buildTraversalIndex.ts';
 export { buildTraversalIndex } from './plan/buildTraversalIndex.ts';
+export type { RenderTargetViolation } from './render/assertRenderTargetsAreConsistent.ts';
+export {
+  assertRenderTargetsAreConsistent,
+  RenderTargetConsistencyError,
+} from './render/assertRenderTargetsAreConsistent.ts';
 export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
 export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
 export { composeArtifactId } from './resolution/composeArtifactId.ts';
