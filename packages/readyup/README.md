@@ -915,7 +915,7 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
 
 The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
 
-Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
+Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
 
 Two things to know before wiring it into CI. It requires esbuild, and says so rather than passing when esbuild is absent. And the readyup version is part of a bundle's bytes, so upgrading readyup makes every kit mismatch until `rdy compile` runs -- a mismatch that spans versions names both of them, so the cause is legible.
 
