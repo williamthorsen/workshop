@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { TargetEntry } from '../../schemas/target-schemas.ts';
 import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
-import { joinSegments } from '../../test-utils/joinSegments.ts';
 import type { Segment } from '../../transclusion/expandTransclusions.ts';
+import { joinSegments } from '../../transclusion/joinSegments.ts';
 import type { DeployedNameLookup, TokenRewrite } from '../rewriteTokens.ts';
 import { rewriteTokens } from '../rewriteTokens.ts';
 

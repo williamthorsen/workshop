@@ -52,6 +52,9 @@ export {
   assertRenderTargetsAreConsistent,
   RenderTargetConsistencyError,
 } from './render/assertRenderTargetsAreConsistent.ts';
+export type { ArtifactRender, RenderArtifactInput } from './render/renderArtifact.ts';
+export { renderArtifact } from './render/renderArtifact.ts';
+export type { RenderDiagnostic } from './render/RenderDiagnostic.ts';
 export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
 export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
 export { composeArtifactId } from './resolution/composeArtifactId.ts';
@@ -196,6 +199,7 @@ export { buildDirectivePatterns } from './transclusion/buildDirectivePatterns.ts
 export { composePartialId } from './transclusion/composePartialId.ts';
 export type { Segment, Transclusion, TransclusionSource } from './transclusion/expandTransclusions.ts';
 export { expandTransclusions } from './transclusion/expandTransclusions.ts';
+export { joinSegments } from './transclusion/joinSegments.ts';
 export type {
   DirectiveRef,
   TransclusionDiagnostic,
