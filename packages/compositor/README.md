@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, and the mechanisms that own part of a destination and overlay a target's metadata. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, and the mechanisms that own part of a destination and overlay a target's metadata. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -42,6 +42,24 @@ A selection is a plain value, not a versioned document like a catalog. A documen
 
 A selector matching nothing yields a diagnostic naming the tier, kind, list, and position that produced it, rather than throwing, so validation reports every mistake in a config at once and a reader can attach each to the line an author wrote. A block naming a kind the catalog does not carry faults the whole block, so its diagnostic names the tier and kind alone.
 
+## Closure
+
+A selection says which artifacts were asked for; a closure says which artifacts that implies. `buildEdgeGraph` reads the edges and `computeClosure` walks them, and the split between the two is the whole design: reading touches every file the catalog names once, walking touches none, so a reader toggling a selection recomputes as often as it likes for free.
+
+Edges are declared rather than compiled in. A rule names the kind whose artifacts carry a frontmatter key, the key itself, and the origin its slugs are recorded under. A kind-keyed rule reads a mapping of declaration key to slug list, with a shared map bridging those keys to kinds; a flat rule reads a bare list naming one kind. A rule may admit a wildcard token standing for everything the declaring artifact's own source carries. Nothing in any of it names a skill, a collection, or a dependency: the engine's vocabulary is kinds, keys, and origins.
+
+A rule cannot claim the token origin, a token edge coming from a body rather than a key. Those arrive through the contributor `buildEdgeGraph` calls once per artifact, handed the identity, source, entry path, and the content already read. It is the one place the closure takes code rather than data, because a body's edges are found by expanding and matching it rather than by looking a key up, and it hands back the partials its edges came from so a token traces to the file an author wrote it in. A contributed token naming its own artifact is dropped: it renders per target but is not a dependency, and keeping it would report every self-naming artifact as a cycle. A self-dependency written in frontmatter is kept, an author who wrote one having said something the cycle diagnostic answers.
+
+The wildcard expands during the read, because what a source carries cannot move when a config changes. It names the emitting artifacts of the source that won the declaring artifact, never the artifact itself and never another aggregate: a kind that emits no files exists to be walked through, and "everything, including every aggregate of everything" is a question no consumer means to ask. It does name an artifact a higher-precedence source shadows, on the same reasoning selection applies to a source taken whole.
+
+Aggregates stay in the closure after expansion, where the code this ports from dropped them once their members were reached. `emitsFiles: false` is what keeps one out of the output, so nothing needs dropping, and keeping it is what lets a reader see the route by which a member arrived rather than an unexplained membership.
+
+Faults are data. A cycle names the artifacts it runs through and the walk turns back, so the closure is complete apart from what the cycle hid and no caller waits on a walk that will not end. An edge naming an artifact no source carries is reported and dropped, which is what keeps every surviving edge pointing at something the closure holds. A key another kind's rule owns is reported rather than read by nothing at all. A fault in the rules a consumer wrote throws instead, having no artifact to belong to, as does an entry file that cannot be read: a permissions fault is not an authoring mistake, and treating it as an absence would quietly drop every edge that artifact declared.
+
+A closure is its own versioned document, as a catalog is and a selection is not, because re-deriving one costs a pass over every file a catalog names. It carries the partials its token edges name, so a serialized closure resolves its own references, and it carries neither a kind's on-disk layout nor a source's resolved directory: neither means anything to a reader of a closure, and a local filesystem path has no business travelling inside a payload.
+
+`assertClosureIsConsistent` is to a closure what `assertPlanIsConsistent` is to a plan, and shares most of its checks: the reference and partial-placement rules read the artifact graph both documents carry rather than either document itself. A closure `computeClosure` produced satisfies all of it by construction, so the walk does not pay for the checks; call the assertion on a closure that arrived as data.
+
 ## Destination ownership
 
 A destination is not always the engine's to write whole. A guidance file a user also edits, a config another tool also writes: the engine owns part of it and has to leave the rest exactly as it found it. Two mechanisms cover that.
@@ -76,6 +94,8 @@ A plan is the engine's output: the complete rendered result of a composition, be
 - **What it was computed from.** Digests of the config, the sources, and the target's own state, so staleness is a comparison rather than a file watch.
 
 The payload is normalized: cross-references between tables are opaque ids, because the provenance graph has diamonds and JSON holds no references. The per-target directory tree follows from the paths in `files`, and file bodies live in a content-addressed `blobs` table keyed by hash, so a body shared across targets is carried once.
+
+Its artifact shape is also the closure's: a closure artifact is this one with `status` removed, derived from it rather than declared beside it, so the two documents cannot drift in how they record an edge, a seed, or a resolution. The status is what a plan adds, measuring an artifact against target state a closure has not looked at.
 
 Ordering is part of the contract. Id-keyed tables run lexicographically, `files` runs by target then path, and `blobs` is keyed in hash order, so two plans of the same shape diff cleanly. `sources`, `tiers`, and each list of shadowed candidates run in precedence order instead, where the order is the meaning, and each artifact's `seededBy` follows `tiers`.
 
