@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildCatalogFromSpec } from '../../test-utils/buildCatalogFromSpec.ts';
 import { buildCatalogIndex } from '../buildCatalogIndex.ts';
-import { buildCatalogFromSpec } from '../test-utils/buildCatalogFromSpec.ts';
 
 const catalog = buildCatalogFromSpec({
   kinds: ['rulebook', 'skill', 'partial'],

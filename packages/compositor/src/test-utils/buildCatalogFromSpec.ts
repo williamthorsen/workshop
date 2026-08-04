@@ -1,7 +1,7 @@
-import { compareStrings } from '../../portable/compareStrings.ts';
-import { composeArtifactId } from '../../resolution/composeArtifactId.ts';
-import type { Catalog } from '../../schemas/catalog-schemas.ts';
-import { CATALOG_SCHEMA_VERSION } from '../../schemas/catalog-schemas.ts';
+import { compareStrings } from '../portable/compareStrings.ts';
+import { composeArtifactId } from '../resolution/composeArtifactId.ts';
+import type { Catalog } from '../schemas/catalog-schemas.ts';
+import { CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
 
 /** One artifact the catalog carries, and the sources carrying a copy of it, highest precedence first. */
 export interface CatalogEntrySpec {
@@ -14,6 +14,8 @@ export interface CatalogEntrySpec {
 export interface CatalogSpec {
   /** Defaults to the kinds the entries name. State it to declare a kind that carries no entries. */
   readonly kinds?: ReadonlyArray<string>;
+  /** The kinds that take part in the graph without producing output. Every other kind emits files. */
+  readonly traversalOnlyKinds?: ReadonlyArray<string>;
   readonly sources: ReadonlyArray<string>;
   readonly entries: ReadonlyArray<CatalogEntrySpec>;
 }
@@ -26,13 +28,14 @@ export interface CatalogSpec {
  */
 export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
   const kindIds = spec.kinds ?? [...new Set(spec.entries.map(({ kindId }) => kindId))];
+  const traversalOnly = new Set(spec.traversalOnlyKinds);
 
   return {
     schemaVersion: CATALOG_SCHEMA_VERSION,
     kinds: kindIds.map((id) => ({
       id,
       label: id,
-      emitsFiles: true,
+      emitsFiles: !traversalOnly.has(id),
       layout: { form: 'file' as const, root: id, extension: '.md' },
     })),
     sources: spec.sources.map((name) => ({
