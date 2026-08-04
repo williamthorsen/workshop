@@ -364,6 +364,31 @@ Invalid kit at .readyup/kits/default.js:
 
 A typo'd `severity` is the mistake this matters most for: an unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
+### Inlining JSON at compile time
+
+A compiled kit is self-contained, so it cannot read a JSON file that sits next to its source. `pickJson` closes that gap by copying selected fields into the bundle while it is being built:
+
+```ts
+import { pickJson } from 'readyup';
+
+const pkg = pickJson('../../package.json', ['name', 'version', ['engines', 'node']]);
+```
+
+`rdy compile` replaces the call with the literal it resolves to. Nothing of `pickJson` survives, not even the import:
+
+```js
+var pkg = { "name": "my-app", "version": "3.1.0", "engines": { "node": ">=24" } };
+```
+
+The path resolves relative to the source file. Each entry in the second argument names a field to keep: a string for a top-level key, an array of strings for a nested one, whose nesting the result preserves. Naming a path the file does not have fails the compile rather than inlining `undefined`.
+
+Both arguments must be literals written in place. They are read out of the source text before it is parsed, so a variable, a template literal, or a concatenation is a compile error -- and a call inside a comment or a string is still processed, since that reader cannot tell the difference.
+
+Two consequences follow from the value being resolved at compile time:
+
+- `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
+- Editing the JSON afterward leaves the bundle stale, and neither recorded hash changes -- the source did not move, and neither did the bundle. [`rdy verify --rebuild`](#verifying-by-recompiling) is what catches it.
+
 ## Running checks
 
 ```
@@ -868,7 +893,7 @@ In CI:
 
 #### Verifying by recompiling
 
-The two hashes record two of a bundle's inputs. A bundle is a function of many more: every module it inlines past the entry, every JSON file `pickJson` inlines at compile time, the bundler's version, and the compile options. None of those is recorded, so a bundle stale in any of them still hashes as `ok`.
+The two hashes record two of a bundle's inputs. A bundle is a function of many more: every module it inlines past the entry, every JSON file [`pickJson`](#inlining-json-at-compile-time) inlines at compile time, the bundler's version, and the compile options. None of those is recorded, so a bundle stale in any of them still hashes as `ok`.
 
 `--rebuild` answers the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
 
