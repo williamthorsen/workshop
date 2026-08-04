@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 
-import type { FrontmatterOverlay } from '../mergeFrontmatter.ts';
+import type { FrontmatterOverlay } from '../../schemas/render-target-schemas.ts';
 import { mergeFrontmatter } from '../mergeFrontmatter.ts';
 import { parseFrontmatter } from '../parseFrontmatter.ts';
 

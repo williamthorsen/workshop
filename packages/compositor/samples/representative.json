@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -85,6 +85,15 @@
       "root": "~/.claude",
       "tokenMappings": [
         {
+          "kindId": "guidance-file",
+          "entries": [
+            {
+              "from": "guidanceFile",
+              "to": "CLAUDE.md"
+            }
+          ]
+        },
+        {
           "kindId": "skill-invocation",
           "entries": [],
           "sigil": "/"
@@ -102,12 +111,6 @@
             }
           ]
         }
-      ],
-      "variables": [
-        {
-          "name": "guidanceFile",
-          "value": "CLAUDE.md"
-        }
       ]
     },
     {
@@ -115,6 +118,15 @@
       "label": "Rovo Dev",
       "root": "~/.rovodev",
       "tokenMappings": [
+        {
+          "kindId": "guidance-file",
+          "entries": [
+            {
+              "from": "guidanceFile",
+              "to": "AGENTS.md"
+            }
+          ]
+        },
         {
           "kindId": "skill-invocation",
           "entries": [],
@@ -133,12 +145,6 @@
             }
           ]
         }
-      ],
-      "variables": [
-        {
-          "name": "guidanceFile",
-          "value": "AGENTS.md"
-        }
       ]
     }
   ],
@@ -153,6 +159,10 @@
     }
   ],
   "tokenKinds": [
+    {
+      "id": "guidance-file",
+      "label": "Guidance file"
+    },
     {
       "id": "skill-invocation",
       "label": "Skill invocation"

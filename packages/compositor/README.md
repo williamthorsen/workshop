@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, and the mechanisms that own part of a destination and overlay a target's metadata. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, and the per-target transform pipeline that renders one artifact's content. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -84,6 +84,30 @@ A target overlays metadata onto the artifacts it renders: defaults for every art
 
 Nothing is read out of the block. The slug an overlay is keyed by belongs to the caller, which already knows which artifact it is rendering; recovering it from a `name:` field would make the merge depend on one consumer's vocabulary.
 
+## Where a target deploys
+
+A `RenderTarget` is the plan's target entry plus the two things rendering needs and a reader of a plan does not: where each artifact kind lands, and which transforms run. Neither reaches the payload, on the reasoning that makes a token kind engine input while the plan carries only its descriptor.
+
+A deployment names a kind, a layout, and optionally the template its deployed name renders from. The layout vocabulary is the one resolution already uses to describe how a source holds a kind, because a destination holds a kind the same two ways: one file per artifact, or a directory per artifact with an entry file at a fixed name. What differs is only what names the artifact -- its slug in a source, the name it deploys under in a destination -- and that is what the template supplies, `{slug}` being the one placeholder the engine owns. A layout rooted at the empty string puts its kind at the destination root, which is how a destination that keeps one guidance file beside its directories is expressed.
+
+**A kind the target declares no deployment for does not deploy there.** That single rule answers the deployability question a token naming an artifact has to pass before it can render, and `resolveDeployedNames` answers it for every artifact and target at once, before anything is rendered. It has to run first: a referent token renders the name its artifact deploys under, so resolving names during the rewrite would make each wait on the other. Whether one artifact of a deployed kind suppresses its own deployment is a fact that artifact declares, and nothing reads artifact declarations yet; the deployed name an artifact declares for itself arrives as an input to the pass for the same reason. Two artifacts resolving to one name is a question about a set, and belongs to validate.
+
+## The transform pipeline
+
+A target declares which stages run and with what parameters. It does not declare their sequence, which is the engine's, and every ordering the engine fixes is load-bearing, so a consumer-declared one could render wrongly while type-checking. Transclusion precedes everything that reads the segments it produces. Link rewriting precedes the token rewrite, so a link target opening with a token still carries the token the link stage recognizes; that is what the passthrough predicate is for, and it is how a consumer distinguishes a value to be inserted where it stands (`{name}`) from one to be resolved against the file (`./{name}`). The frontmatter overlay follows every transform over the body.
+
+Declaring participation is enough to make one artifact render differently for two destinations with no engine change, which is the whole point of the mechanism: a destination that transcludes but rewrites no links declares the one stage and not the other. A destination declaring no stages at all still gets its file read, a body with no directives being one segment.
+
+**Link rewriting** turns a relative target into the absolute path it deploys at. The grammar is declared, not compiled in: a pattern whose single capture group is the target. The engine owns the flags -- `g` to find every link on a line, `d` to learn where the capture sat -- and replaces the target's own characters rather than rebuilding the link, so a declaration states the grammar and never how to put a link back together. Matching runs a line at a time, so a grammar whose character classes admit a newline cannot run away from a stray opening delimiter and swallow the lines beneath it.
+
+A target that already names its destination is left alone: an anchor, an absolute or home-relative path, anything carrying a URI scheme, and anything opening with a declared token pattern. That last case is why the delimiter is the consumer's: a target opening with a token passes through here, and the token rewrite that follows decides what it becomes. Resolution is against the destination root rather than the tree the rendering file's own kind deploys into, so a link that climbs out of one kind's tree and into another's lands where that other kind actually deploys; one that climbs above the root stays as written and comes back as a diagnostic, no absolute path under that root being able to express where it points.
+
+**What a render produces** is the content, the artifact and transcluded partials whose text reached it, and everything a stage could not resolve. Diagnostics travel beside the content rather than in place of it, so a plan records the file it would write next to the reasons it is incomplete. A directive that cannot be resolved is the exception, ending the render: a cycle or a missing target leaves no body to carry on with. Aggregating several artifacts into one file is not the pipeline's; it renders one artifact, and a caller composing a region calls it once per contributor.
+
+Re-rendering unchanged inputs is byte-identical, which is what lets a plan's diff mean something.
+
+`assertRenderTargetsAreConsistent` is to a set of target declarations what the plan and catalog assertions are to their documents, and for the same reason. A target that runs a stage twice, deploys a kind twice, names a kind no descriptor carries, or declares a link grammar that will not compile or that captures more than one group is reported before anything renders, rather than at the first body that happens to reach the fault.
+
 ## The plan
 
 A plan is the engine's output: the complete rendered result of a composition, before anything is written. It answers four questions at once.
@@ -102,6 +126,8 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 `tiers` names the config tiers a seed can be decided by, and runs lowest precedence first: that is the order a fold applies them in, so the last tier to speak wins. It is deliberately the reverse of `sources`, where the first entry wins, because a source's position encodes precedence directly while a tier's encodes application. An artifact several tiers seed carries one seed record each, which is what tells a project-level opt-in from an inherited one.
 
 `tokenKinds` names the token kinds a target's mappings are keyed by, so a `tokenMappings` entry resolves to something a reader recognizes rather than to a bare id. It carries identity alone; the pattern a kind matches and the way it resolves are engine input, not payload. A kind's per-target sigil rides on the mapping itself, where the target and the kind already meet.
+
+Token mappings are the whole of a target's substitution vocabulary. A named value a body interpolates -- the guidance filename a harness reads, its home directory -- is a mapping token kind, not a table of its own: a name-to-value pairing is inert without a pattern that recognizes a reference to it, and a pattern is what a token kind is.
 
 ## What the schema checks, and what it does not
 
@@ -127,7 +153,7 @@ Both take any document carrying artifacts and edges, not a plan specifically, so
 
 That promise holds because objects in this schema are open: an unrecognized field parses and is dropped, so a consumer pinned to one version accepts a payload from a later one. Making any object strict would break it the first time a field was added.
 
-The contract is at version 3. Version 3 added the `tokenKinds` table, which every target's `tokenMappings` already referenced with nothing to resolve against. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
+The contract is at version 4. Version 4 removed each target's `variables` table, whose entries a mapping token kind already expresses; nothing could read it, since it declared names and values but no pattern that would recognize a reference to one. Version 3 added the `tokenKinds` table, which every target's `tokenMappings` already referenced with nothing to resolve against. Version 2 added the `tiers` table and re-typed each `seededBy` entry from a bare origin into a record naming the tier that decided the seed; the origin `package-catalog` became `source-catalog` in the same change, because taking everything a source carries is a selection any source can be the object of.
 
 ## Samples
 

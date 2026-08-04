@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DirectiveSyntax } from '../../schemas/render-target-schemas.ts';
 import { buildTempTree } from '../../test-utils/buildTempTree.ts';
-import { joinSegments } from '../../test-utils/joinSegments.ts';
-import type { DirectiveSyntax } from '../buildDirectivePatterns.ts';
 import type { Transclusion } from '../expandTransclusions.ts';
 import { expandTransclusions } from '../expandTransclusions.ts';
+import { joinSegments } from '../joinSegments.ts';
 
 const COMMENT: DirectiveSyntax = { open: '<!--', close: '-->' };
 

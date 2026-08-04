@@ -1,18 +1,7 @@
 import { Document, isMap, parseDocument } from 'yaml';
 
+import type { FrontmatterOverlay } from '../schemas/render-target-schemas.ts';
 import { parseFrontmatter } from './parseFrontmatter.ts';
-
-/**
- * The metadata a target overlays onto the artifacts it renders.
- *
- * `defaults` applies to every artifact and `overrides` to one, keyed by slug, so a target states a rule once and
- * departs from it where it must. The two are separate fields rather than a reserved key beside the slugs, which is
- * what keeps an artifact from being unaddressable because its slug named the bucket.
- */
-export interface FrontmatterOverlay {
-  readonly defaults?: Record<string, unknown>;
-  readonly overrides?: Record<string, Record<string, unknown>>;
-}
 
 /**
  * Overlays a target's metadata onto one artifact's frontmatter, leaving its body verbatim.

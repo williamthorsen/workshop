@@ -5,7 +5,6 @@ import {
   CATALOG_SCHEMA_VERSION,
   CatalogEntrySchema,
   CatalogSchema,
-  KindLayoutSchema,
   ResolveKindSchema,
   SourceSpecSchema,
 } from '../catalog-schemas.ts';
@@ -101,28 +100,6 @@ describe('SourceSpecSchema', () => {
     const { dir: _dropped, ...withoutDir } = source;
 
     expect(findIssuePaths(SourceSpecSchema, withoutDir)).toStrictEqual([['dir']]);
-  });
-});
-
-describe('KindLayoutSchema', () => {
-  it('accepts one file per artifact', () => {
-    const layout = { form: 'file', root: 'guidance/rulebooks', extension: '.md' };
-
-    expect(KindLayoutSchema.parse(layout)).toStrictEqual(layout);
-  });
-
-  it('accepts one directory per artifact', () => {
-    expect(KindLayoutSchema.parse(directoryKind.layout)).toStrictEqual(directoryKind.layout);
-  });
-
-  it('if the form is outside the known set, rejects the layout for that field', () => {
-    expect(findIssuePaths(KindLayoutSchema, { form: 'glob', root: 'skills' })).toStrictEqual([['form']]);
-  });
-
-  it('if a file layout omits its extension, rejects the layout for that field', () => {
-    expect(findIssuePaths(KindLayoutSchema, { form: 'file', root: 'guidance/rulebooks' })).toStrictEqual([
-      ['extension'],
-    ]);
   });
 });
 

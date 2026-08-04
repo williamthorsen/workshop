@@ -27,7 +27,7 @@ export function buildMinimalSample(): Plan {
     },
     kinds: [{ id: 'skill', label: 'Skill', emitsFiles: true }],
     sources: [{ id: 'team', name: 'team', origin: { kind: 'directory', location: '/srv/team-guidance' } }],
-    targets: [{ id: 'claude', label: 'Claude', root: '~/.claude', tokenMappings: [], variables: [] }],
+    targets: [{ id: 'claude', label: 'Claude', root: '~/.claude', tokenMappings: [] }],
     tiers: [{ id: 'project', label: 'Project' }],
     tokenKinds: [],
     artifacts: [

@@ -1,4 +1,4 @@
-/** Targets: the destinations a plan renders for, with the name mappings and variables their transforms read. */
+/** Targets: the destinations a plan renders for, with the name mappings their transforms read. */
 
 import { z } from 'zod';
 
@@ -27,18 +27,12 @@ export const TokenMappingSchema = z
   })
   .meta({ id: 'TokenMapping' });
 
-/** One named value a target's transforms are parameterized by. */
-export const TargetVariableSchema = z
-  .object({
-    name: z.string(),
-    value: z.string(),
-  })
-  .meta({ id: 'TargetVariable' });
-
 /**
  * One destination the plan renders content for, with the metadata a consumer can query.
  *
- * `tokenMappings` and `variables` are arrays of pairs, so each has a sort key the determinism guarantee can name.
+ * `tokenMappings` is an array of pairs, so it has a sort key the determinism guarantee can name. It is also the whole
+ * of a target's substitution vocabulary: a named value a body interpolates is a mapping token kind, since a
+ * name-to-value table is inert without a pattern that recognizes a reference to it.
  */
 export const TargetEntrySchema = z
   .object({
@@ -46,11 +40,9 @@ export const TargetEntrySchema = z
     label: z.string(),
     root: z.string(),
     tokenMappings: z.array(TokenMappingSchema),
-    variables: z.array(TargetVariableSchema),
   })
   .meta({ id: 'TargetEntry' });
 
 export type TargetEntry = z.infer<typeof TargetEntrySchema>;
-export type TargetVariable = z.infer<typeof TargetVariableSchema>;
 export type TokenMapping = z.infer<typeof TokenMappingSchema>;
 export type TokenMappingEntry = z.infer<typeof TokenMappingEntrySchema>;

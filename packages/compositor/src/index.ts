@@ -15,12 +15,18 @@ export { locatePackage } from './config/locatePackage.ts';
 export type { ResolveSourcesOptions, SourceResolution } from './config/resolveSources.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
-export type { FrontmatterOverlay } from './frontmatter/mergeFrontmatter.ts';
+export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
+export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
+export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
 export { mergeFrontmatter } from './frontmatter/mergeFrontmatter.ts';
 export type { ParsedFrontmatter } from './frontmatter/parseFrontmatter.ts';
 export { parseFrontmatter } from './frontmatter/parseFrontmatter.ts';
 export type { DependencyGraphView, DependentsIndex, TraversableArtifact } from './graph/traversal.ts';
 export { buildDependentsIndex, resolveInclusionPaths } from './graph/traversal.ts';
+export { compileLinkPattern } from './links/compileLinkPattern.ts';
+export type { LinkDiagnostic, LinkFailure, LinkRef } from './links/LinkDiagnostic.ts';
+export type { LinkRewrite, RewriteLinksInput } from './links/rewriteLinks.ts';
+export { rewriteLinks } from './links/rewriteLinks.ts';
 export type { RegionClassification } from './ownership/classifyRegion.ts';
 export { classifyRegion } from './ownership/classifyRegion.ts';
 export { extractRegionContent } from './ownership/extractRegionContent.ts';
@@ -40,6 +46,14 @@ export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
 export type { TraversalIndex } from './plan/buildTraversalIndex.ts';
 export { buildTraversalIndex } from './plan/buildTraversalIndex.ts';
+export type { RenderTargetViolation } from './render/assertRenderTargetsAreConsistent.ts';
+export {
+  assertRenderTargetsAreConsistent,
+  RenderTargetConsistencyError,
+} from './render/assertRenderTargetsAreConsistent.ts';
+export type { ArtifactRender, RenderArtifactInput } from './render/renderArtifact.ts';
+export { renderArtifact } from './render/renderArtifact.ts';
+export type { RenderDiagnostic } from './render/RenderDiagnostic.ts';
 export type { CatalogViolation } from './resolution/assertCatalogIsConsistent.ts';
 export { assertCatalogIsConsistent, CatalogConsistencyError } from './resolution/assertCatalogIsConsistent.ts';
 export { composeArtifactId } from './resolution/composeArtifactId.ts';
@@ -49,12 +63,11 @@ export type { ResolveCatalogInput } from './resolution/resolveCatalog.ts';
 export { resolveCatalog } from './resolution/resolveCatalog.ts';
 export type { ArtifactResolution, ResolutionCandidate } from './schemas/artifact-resolution-schemas.ts';
 export { ArtifactResolutionSchema, ResolutionCandidateSchema } from './schemas/artifact-resolution-schemas.ts';
-export type { Catalog, CatalogEntry, KindLayout, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
+export type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from './schemas/catalog-schemas.ts';
 export {
   CATALOG_SCHEMA_VERSION,
   CatalogEntrySchema,
   CatalogSchema,
-  KindLayoutSchema,
   ResolveKindSchema,
   SourceSpecSchema,
 } from './schemas/catalog-schemas.ts';
@@ -127,6 +140,8 @@ export {
   SeedOriginSchema,
   SeedSchema,
 } from './schemas/graph-schemas.ts';
+export type { KindLayout } from './schemas/kind-layout-schemas.ts';
+export { KindLayoutSchema } from './schemas/kind-layout-schemas.ts';
 export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schemas.ts';
 export {
   PLAN_SCHEMA_VERSION,
@@ -135,6 +150,20 @@ export {
   SourceDigestSchema,
   TargetDigestSchema,
 } from './schemas/plan-schemas.ts';
+export type {
+  DirectiveSyntax,
+  FrontmatterOverlay,
+  KindDeployment,
+  RenderStage,
+  RenderTarget,
+} from './schemas/render-target-schemas.ts';
+export {
+  DirectiveSyntaxSchema,
+  FrontmatterOverlaySchema,
+  KindDeploymentSchema,
+  RenderStageSchema,
+  RenderTargetSchema,
+} from './schemas/render-target-schemas.ts';
 export type {
   ArtifactId,
   DiffStatus,
@@ -150,13 +179,8 @@ export type { KindSelection, Selector } from './schemas/selection-schemas.ts';
 export { KindSelectionSchema, SelectorSchema, SelectSchema } from './schemas/selection-schemas.ts';
 export type { DeclaredSource, SourceDeclaration } from './schemas/source-declaration-schemas.ts';
 export { DeclaredSourceSchema, SourceDeclarationSchema } from './schemas/source-declaration-schemas.ts';
-export type { TargetEntry, TargetVariable, TokenMapping, TokenMappingEntry } from './schemas/target-schemas.ts';
-export {
-  TargetEntrySchema,
-  TargetVariableSchema,
-  TokenMappingEntrySchema,
-  TokenMappingSchema,
-} from './schemas/target-schemas.ts';
+export type { TargetEntry, TokenMapping, TokenMappingEntry } from './schemas/target-schemas.ts';
+export { TargetEntrySchema, TokenMappingEntrySchema, TokenMappingSchema } from './schemas/target-schemas.ts';
 export type { TokenKind } from './schemas/token-kind-schemas.ts';
 export { TokenKindSchema } from './schemas/token-kind-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
@@ -169,11 +193,12 @@ export { extractTokenEdges } from './tokens/extractTokenEdges.ts';
 export type { DeployedNameLookup, RewriteTokensInput, TokenRewrite } from './tokens/rewriteTokens.ts';
 export { rewriteTokens } from './tokens/rewriteTokens.ts';
 export type { TokenDiagnostic, TokenFailure, TokenRef } from './tokens/TokenDiagnostic.ts';
-export type { DirectivePatterns, DirectiveSyntax } from './transclusion/buildDirectivePatterns.ts';
+export type { DirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
 export { buildDirectivePatterns } from './transclusion/buildDirectivePatterns.ts';
 export { composePartialId } from './transclusion/composePartialId.ts';
 export type { Segment, Transclusion, TransclusionSource } from './transclusion/expandTransclusions.ts';
 export { expandTransclusions } from './transclusion/expandTransclusions.ts';
+export { joinSegments } from './transclusion/joinSegments.ts';
 export type {
   DirectiveRef,
   TransclusionDiagnostic,

@@ -8,6 +8,7 @@ export function buildTargets(): Array<TargetEntry> {
       label: 'Claude',
       root: '~/.claude',
       tokenMappings: [
+        { kindId: 'guidance-file', entries: [{ from: 'guidanceFile', to: 'CLAUDE.md' }] },
         { kindId: 'skill-invocation', entries: [], sigil: '/' },
         {
           kindId: 'tool',
@@ -17,13 +18,13 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
-      variables: [{ name: 'guidanceFile', value: 'CLAUDE.md' }],
     },
     {
       id: 'rovodev',
       label: 'Rovo Dev',
       root: '~/.rovodev',
       tokenMappings: [
+        { kindId: 'guidance-file', entries: [{ from: 'guidanceFile', to: 'AGENTS.md' }] },
         { kindId: 'skill-invocation', entries: [], sigil: '!' },
         {
           kindId: 'tool',
@@ -33,7 +34,6 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
-      variables: [{ name: 'guidanceFile', value: 'AGENTS.md' }],
     },
   ];
 }
