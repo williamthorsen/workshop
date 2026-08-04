@@ -3,8 +3,8 @@ import { expandPath } from '../portable/expandPath.ts';
 import type { SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { SourceOrigin } from '../schemas/descriptor-schemas.ts';
+import { composeLocationKey } from './composeLocationKey.ts';
 import type { PackageLocation } from './locateSourcePackages.ts';
-import { composeLocationKey } from './locateSourcePackages.ts';
 
 /** The sources a config declares, and the names it turned down. */
 export interface SourceResolution {

@@ -15,7 +15,7 @@ export { loadConfig, TierFileSchema } from './config/loadConfig.ts';
 export type { LocatePackageOptions } from './config/locatePackage.ts';
 export { locatePackage } from './config/locatePackage.ts';
 export type { LocateSourcePackagesOptions, PackageLocation } from './config/locateSourcePackages.ts';
-export { composeLocationKey, locateSourcePackages } from './config/locateSourcePackages.ts';
+export { locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
 export {

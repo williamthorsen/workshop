@@ -73,7 +73,7 @@ describe(buildContributionPatterns, () => {
     ]);
   });
 
-  it('reads a host through markers whose template carries no placeholder as one keyless block', () => {
+  it('refuses to read a host whose close template names no contributor, there being no key to pair by', () => {
     const fixed: MarkerPair = { open: '# open {artifactId}', close: '# close' };
 
     expect(() => readContributions('# open x\n# close', buildContributionPatterns(fixed))).toThrow(

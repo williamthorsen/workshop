@@ -1,6 +1,5 @@
-import path from 'node:path';
-
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
+import { composeLocationKey } from './composeLocationKey.ts';
 import { locatePackage } from './locatePackage.ts';
 
 /** What locating a config's declared packages needs beyond the config itself. */
@@ -55,18 +54,6 @@ export async function locateSourcePackages(
   }
 
   return Promise.all(requested.values().map((request) => locateOne(request, options)));
-}
-
-/**
- * Composes the key one located package is identified by.
- *
- * The base directory is normalized, so two tiers spelling one directory differently ask about the same package once.
- * Normalization rather than resolution: resolving a relative base would read the working directory, which would put
- * ambient state into the pure fold that reads these keys back. Joining against `.` is what normalizes, since
- * `path.normalize` keeps a trailing separator and the two spellings must key alike.
- */
-export function composeLocationKey(baseDir: string, packageName: string): string {
-  return `${path.join(baseDir, '.')}\0${packageName}`;
 }
 
 // region | Helpers

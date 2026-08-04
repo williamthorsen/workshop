@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { composeLocationKey, locateSourcePackages } from '../locateSourcePackages.ts';
+import { locateSourcePackages } from '../locateSourcePackages.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
 
 const options = { contentKeyPath: ['compositor', 'content'] };
@@ -87,15 +87,5 @@ describe(locateSourcePackages, () => {
       path.join(root, 'global/node_modules/@acme/guidance/dist/content'),
       path.join(root, 'project/node_modules/@acme/guidance/dist/content'),
     ]);
-  });
-});
-
-describe(composeLocationKey, () => {
-  it('composes one key for two spellings of one base directory', () => {
-    expect(composeLocationKey('/srv/app/', '@acme/x')).toBe(composeLocationKey('/srv/app', '@acme/x'));
-  });
-
-  it('composes different keys for one package under different base directories', () => {
-    expect(composeLocationKey('/srv/global', '@acme/x')).not.toBe(composeLocationKey('/srv/project', '@acme/x'));
   });
 });
