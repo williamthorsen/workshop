@@ -54,7 +54,7 @@ export function openDocument(
  */
 interface JsonFormat {
   readonly indent: string | number;
-  readonly trailingNewline: boolean;
+  readonly hasTrailingNewline: boolean;
 }
 
 /**
@@ -66,12 +66,12 @@ interface JsonFormat {
 function detectJsonFormat(content: string): JsonFormat {
   const body = content.trim();
   const isEmptyDocument = ['', '{}', '[]'].includes(body);
-  const trailingNewline = content.endsWith('\n') || body === '';
+  const hasTrailingNewline = content.endsWith('\n') || body === '';
   const indented = /\n([ \t]+)\S/.exec(content);
   if (indented?.[1] !== undefined) {
-    return { indent: indented[1], trailingNewline };
+    return { indent: indented[1], hasTrailingNewline };
   }
-  return { indent: !isEmptyDocument && !body.includes('\n') ? 0 : 2, trailingNewline };
+  return { indent: !isEmptyDocument && !body.includes('\n') ? 0 : 2, hasTrailingNewline };
 }
 
 /**
@@ -154,7 +154,7 @@ function openJsonDocument(content: string): { readonly document: DocumentAccess 
         }
       },
       serialize() {
-        return JSON.stringify(root, undefined, format.indent) + (format.trailingNewline ? '\n' : '');
+        return JSON.stringify(root, undefined, format.indent) + (format.hasTrailingNewline ? '\n' : '');
       },
       toHandle: (value) => value,
       toPlain: (item) => item,

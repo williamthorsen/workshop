@@ -52,7 +52,7 @@ export function readFrontmatterEdges(input: FrontmatterEdgesInput): FrontmatterE
 
   const block = parseFrontmatter(content);
   if (block.frontmatter === undefined) {
-    if (block.unterminated) {
+    if (block.isUnterminated) {
       fault('invalid-declaration', undefined, 'opens a frontmatter block that no delimiter closes');
     }
     return { edges, diagnostics };
