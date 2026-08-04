@@ -42,12 +42,12 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
 
   const sourcePath = path.resolve(manifestDir, kit.source);
   if (!existsSync(sourcePath)) {
-    return { kind: 'missing', reason: `source file missing (expected ${kit.source})` };
+    return { kind: 'missing', reason: `source file ${kit.source} is gone` };
   }
 
   const targetPath = path.resolve(manifestDir, kit.path);
   if (!existsSync(targetPath)) {
-    return { kind: 'missing', reason: `compiled file missing (expected ${kit.path})` };
+    return { kind: 'missing', reason: `compiled file ${kit.path} is gone` };
   }
 
   let rebuilt: Buffer;
@@ -67,12 +67,12 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
   // The generated banner embeds the compiling readyup's version, so a version move alone makes an
   // untouched source rebuild to different bytes. Carry the recorded version to keep that cause
   // distinguishable from a hand edit.
-  const movedVersion = kit.readyupVersion !== undefined && kit.readyupVersion !== VERSION;
+  const compiledWith = kit.readyupVersion !== VERSION ? kit.readyupVersion : undefined;
 
   return {
     kind: 'mismatch',
     expected: hashBytes(rebuilt),
     actual: hashBytes(onDisk),
-    ...(movedVersion && { compiledWith: kit.readyupVersion }),
+    ...(compiledWith !== undefined && { compiledWith }),
   };
 }

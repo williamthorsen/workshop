@@ -41,7 +41,7 @@ describe('verifyCommand wiring', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('returns 0 and reports ok when on-disk compiled kit matches manifest targetHash', () => {
+  it('returns 0 and reports ok when on-disk compiled kit matches manifest targetHash', async () => {
     const compiled = Buffer.from('export default { checks: [] };\n');
     writeFileSync(path.join(tempDir, 'demo.js'), compiled);
     const manifestPath = path.join(tempDir, 'manifest.json');
@@ -53,14 +53,14 @@ describe('verifyCommand wiring', () => {
       }),
     );
 
-    const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+    const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
     expect(stderrSpy).not.toHaveBeenCalled();
   });
 
-  it('returns 1 and reports drift when on-disk compiled kit differs from manifest targetHash', () => {
+  it('returns 1 and reports drift when on-disk compiled kit differs from manifest targetHash', async () => {
     writeFileSync(path.join(tempDir, 'demo.js'), 'export default { edited: true };\n');
     const manifestPath = path.join(tempDir, 'manifest.json');
     writeFileSync(
@@ -71,7 +71,7 @@ describe('verifyCommand wiring', () => {
       }),
     );
 
-    const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+    const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(1);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   drift`));
@@ -109,41 +109,41 @@ describe('verifyCommand wiring', () => {
       return sourcePath;
     }
 
-    it('returns 0 when both the source and the compiled kit match the manifest', () => {
+    it('returns 0 when both the source and the compiled kit match the manifest', async () => {
       writeCompiledPair();
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
     });
 
-    it('returns 1 when the source was edited without a recompile', () => {
+    it('returns 1 when the source was edited without a recompile', async () => {
       const sourcePath = writeCompiledPair();
       writeFileSync(sourcePath, 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source stale`));
     });
 
-    it('returns 1 when the recorded source was deleted', () => {
+    it('returns 1 when the recorded source was deleted', async () => {
       const sourcePath = writeCompiledPair();
       rmSync(sourcePath);
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source file missing`));
     });
 
-    it('carries both source hashes in the JSON entry for a stale kit', () => {
+    it('carries both source hashes in the JSON entry for a stale kit', async () => {
       const sourcePath = writeCompiledPair();
       const edited = Buffer.from('export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
       writeFileSync(sourcePath, edited);
 
-      verifyCommand(['--manifest', 'manifest.json', '--json']);
+      await verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(JSON.parse(stdout.join(''))).toMatchObject({
         passed: false,
@@ -179,10 +179,10 @@ describe('verifyCommand wiring', () => {
       );
     }
 
-    it('reports every kit status with the hashes only a drift verdict compared', () => {
+    it('reports every kit status with the hashes only a drift verdict compared', async () => {
       writeMixedManifest();
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(1);
       expect(JSON.parse(stdout.join(''))).toStrictEqual({
@@ -203,16 +203,16 @@ describe('verifyCommand wiring', () => {
       });
     });
 
-    it('emits exactly one JSON document and sends the per-kit prose to stderr', () => {
+    it('emits exactly one JSON document and sends the per-kit prose to stderr', async () => {
       writeMixedManifest();
 
-      verifyCommand(['--manifest', 'manifest.json', '--json']);
+      await verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(stdoutSpy).toHaveBeenCalledTimes(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} clean`));
     });
 
-    it('passes when every kit is ok or unverified', () => {
+    it('passes when every kit is ok or unverified', async () => {
       const compiled = Buffer.from('export default { checks: [] };\n');
       writeFileSync(path.join(tempDir, 'demo.js'), compiled);
       writeFileSync(
@@ -226,16 +226,16 @@ describe('verifyCommand wiring', () => {
         }),
       );
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout.join(''))).toMatchObject({ passed: true });
     });
 
-    it('reports an empty manifest as a passing run with no kits', () => {
+    it('reports an empty manifest as a passing run with no kits', async () => {
       writeFileSync(path.join(tempDir, 'manifest.json'), JSON.stringify({ version: 1, kits: [] }));
 
-      const exitCode = verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout.join(''))).toStrictEqual({ schemaVersion: 1, passed: true, kits: [] });

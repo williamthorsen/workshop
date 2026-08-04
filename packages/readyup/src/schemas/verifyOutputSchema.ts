@@ -21,6 +21,20 @@ export const DriftStatusSchema = z.enum(['drift', 'missing', 'ok', 'unverified']
 export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified']).meta({ id: 'SourceStatus' });
 
 /**
+ * Outcome of recompiling one kit and comparing the result to the bundle on disk.
+ *
+ * A third vocabulary rather than a widening of either enum above, for the reason `SourceStatus`
+ * already records: the verdicts answer different questions, and widening a closed enum breaks a
+ * consumer that switches exhaustively over it.
+ *
+ * It has no `unverified`. The other two axes admit one because a manifest with no recorded hash
+ * says nothing about whether the kit changed; here there is no bookkeeping to be absent, only
+ * inputs the check needs, and a kit exempted from an exactness check would make a passing run mean
+ * less than it says. `missing` covers every such absence and fails.
+ */
+export const RebuildStatusSchema = z.enum(['failed', 'missing', 'mismatch', 'ok']).meta({ id: 'RebuildStatus' });
+
+/**
  * One kit's verdicts.
  *
  * `expected` and `actual` are the manifest's hash and the on-disk hash of the compiled bundle; both
@@ -28,6 +42,11 @@ export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified'
  * `sourceExpected` and `sourceActual` are their counterparts for the source, present only on
  * `stale`. `sourceStatus` is optional so a consumer pinned to this schema still validates a payload
  * from the readyup that predates the source verdict.
+ *
+ * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
+ * payload it always did. `rebuildExpected` is the hash of the recompiled bytes and `rebuildActual`
+ * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` carries the
+ * compile failure on `failed`.
  */
 export const VerifyKitEntrySchema = z
   .object({
@@ -38,6 +57,10 @@ export const VerifyKitEntrySchema = z
     sourceStatus: SourceStatusSchema.optional(),
     sourceExpected: z.string().optional(),
     sourceActual: z.string().optional(),
+    rebuildStatus: RebuildStatusSchema.optional(),
+    rebuildExpected: z.string().optional(),
+    rebuildActual: z.string().optional(),
+    rebuildError: z.string().optional(),
   })
   .meta({ id: 'VerifyKitEntry' });
 
@@ -56,6 +79,7 @@ export const VerifyOutputSchema = z
   .meta({ id: 'VerifyOutput' });
 
 export type JsonDriftStatus = z.infer<typeof DriftStatusSchema>;
+export type JsonRebuildStatus = z.infer<typeof RebuildStatusSchema>;
 export type JsonSourceStatus = z.infer<typeof SourceStatusSchema>;
 export type JsonVerifyKitEntry = z.infer<typeof VerifyKitEntrySchema>;
 export type JsonVerifyOutput = z.infer<typeof VerifyOutputSchema>;

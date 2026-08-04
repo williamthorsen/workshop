@@ -110,7 +110,7 @@ describe(checkRebuild, () => {
 
     const status = await checkRebuild(kit(), tempDir);
 
-    expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('source file missing') });
+    expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('source file demo.ts is gone') });
   });
 
   it('returns missing when the compiled file is gone', async () => {
@@ -118,7 +118,7 @@ describe(checkRebuild, () => {
 
     const status = await checkRebuild(kit(), tempDir);
 
-    expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('compiled file missing') });
+    expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('compiled file demo.js is gone') });
   });
 });
 
