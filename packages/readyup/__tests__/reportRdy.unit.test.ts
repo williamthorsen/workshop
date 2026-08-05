@@ -701,8 +701,8 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output).toContain('quiet-optional');
-      expect(output).toContain('quiet-blocked');
+      expect(lineNaming(output, 'quiet-optional')).toBe(`${SKIPPED_OPTIONAL} quiet-optional \u{00B7} no target`);
+      expect(lineNaming(output, 'quiet-blocked')).toBe(`${BLOCKED} quiet-blocked`);
     });
 
     it('counts a hidden quiet pass, so the tally still covers the whole run', () => {
