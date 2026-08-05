@@ -48,13 +48,13 @@ describe('--packages run path wiring', () => {
         name: 'drift',
         source: { path: path.join(projectRoot, 'node_modules', '@acme/kits', '.readyup', 'kits', 'drift.js') },
         checklists: [],
-        origin: { packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
       },
       {
         name: 'preflight',
         source: { path: path.join(projectRoot, 'node_modules', '@acme/kits', '.readyup', 'kits', 'preflight.js') },
         checklists: [],
-        origin: { packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
       },
     ]);
   });
