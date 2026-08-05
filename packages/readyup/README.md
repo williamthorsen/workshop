@@ -82,11 +82,10 @@ With `NODE_ENV` unset:
 ```
 🔴 NODE_ENV is set
    no value in the environment
-
+──
 🔴 1 error (0ms)
 
 ── Fixes
-
 💊 NODE_ENV is set
    Set NODE_ENV before deploying
 ```
@@ -129,7 +128,18 @@ A check result has one of three statuses -- `passed`, `failed`, or `skipped`. Th
 | ⚪   | `SKIP`  | `skipped` | `skip` returned a reason; counts as optional |
 | 🚫   | `BLOCK` | `skipped` | a precondition failed; counts as blocked     |
 
-💊 `FIX` marks a remediation hint rather than a result. 📄 and 📦 are nouns, not statuses: a TypeScript source and a compiled bundle.
+💊 `FIX` marks a remediation hint rather than a result.
+
+Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: position carries the meaning instead.
+
+| Rich | Names                                                  |
+| ---- | ------------------------------------------------------ |
+| 📄   | a kit's TypeScript source                              |
+| 🧰   | a kit                                                  |
+| 📋   | a checklist                                            |
+| 📦   | the npm package a kit was published in                 |
+| 🌐   | a kit fetched from `github:`, `bitbucket:`, or `--url` |
+| 📁   | a directory a kit was read from                        |
 
 ### Thresholds
 
@@ -300,11 +310,10 @@ It produces:
       🔴 No dependency has duplicated majors
          react resolves to both 18.3.1 and 19.0.0
    ⚪ Native modules are rebuilt · no native dependencies in this workspace
-
+──
 🔴 3 passed | 1 error | 1 skipped (0ms)
 
 ── Fixes
-
 💊 No dependency has duplicated majors
    Run `pnpm dedupe`, then commit the lockfile
 ```
@@ -477,37 +486,43 @@ A check line reads `token name <separator> detail [progress] (duration)`. The se
 
 Tail and total lines lead with the run's worst severity, then report counts in a fixed order -- passed, errors, warnings, recommendations, blocked, skipped -- omitting any that is zero.
 
-Headings encode level by rule weight: `━━` for a kit, `──` for a checklist, step, or summary. More than one checklist adds a summary table:
+**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by `/`. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. Other headings -- `Fixes`, `Summary`, and each command's own -- stay at `──`, and a bare `──` closes a block above its count line.
+
+Blank lines part blocks rather than decorate headings: none opens a command's output or follows a heading, one parts one block from the next, and two appear only where one kit ends and the next begins. More than one checklist adds a summary table:
 
 ```
-── build
-
+━━ 📋 build
 🟢 Types check cleanly (343ms)
 🟢 Bundle is within budget · 42kB of a 50kB budget [84%]
-
+──
 🟢 2 passed (343ms)
 
-── integration
-
+━━ 📋 integration
 🟢 Database is reachable
 🔴 Migrations are applied (151ms)
    2 migrations pending: add_users, add_index
 ⚪ Seed data is loaded · seeding is disabled outside CI
-
+──
 🔴 1 passed | 1 error | 1 skipped (151ms)
 
 ── Fixes
-
 💊 Migrations are applied
    Run `pnpm migrate` against the target database
 
-── Summary
-
+━━ Summary
 ─────────────────────────────────────────────────────
 🟢 build        343ms  2 passed
 🔴 integration  151ms  1 passed | 1 error | 1 skipped
 ─────────────────────────────────────────────────────
 🔴 Total: 3 passed | 1 error | 1 skipped (494ms)
+```
+
+A kit from an installed package, a repository, or a URL names where it came from, so a long run says which checks belong to which kit without the reader scrolling for it:
+
+```
+━━ 📦 @acme/release-kit@2.1.0 / 🧰 npm-auto-publish / 📋 repo
+━━ 🌐 github:acme/checks@main / 🧰 default
+━━ 📁 ../shared-kits / 🧰 default
 ```
 
 ### Output styles
@@ -522,17 +537,20 @@ Headings encode level by rule weight: `━━` for a kit, `──` for a checkli
 
 `CI` catches a runner that attaches a pseudo-terminal; the terminal check catches an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. Naming a style that does not exist fails the invocation.
 
-In `plain`, every character is printable ASCII, heading rules and separators included, and the noun glyphs are omitted while keeping their column so names stay aligned:
+In `plain`, every character is printable ASCII, heading rules and separators included. A role glyph is omitted while keeping its column, so names stay aligned; in a breadcrumb, where there is no column to keep, the spaced separator is what parts one segment from the next:
 
 ```
--- integration
-
+== integration
 PASS  Database is reachable
 FAIL  Migrations are applied (151ms)
       2 migrations pending: add_users, add_index
 SKIP  Seed data is loaded - seeding is disabled outside CI
-
+--
 FAIL  1 passed | 1 error | 1 skipped (151ms)
+```
+
+```
+== @acme/release-kit@2.1.0 / npm-auto-publish / repo
 ```
 
 Once a style is named explicitly, output is byte-identical to a terminal or a pipe. `--style` is independent of `--json`: the JSON document never changes.
@@ -572,38 +590,33 @@ Each section names the command that runs the kits beneath it:
 ```
 ── Internal
    rdy run --jit <name>
-
 📄 deploy
 📄 smoke
 
 ── Compiled
    rdy run <name>
-
-📦 deploy
-📦 smoke
+🧰 deploy
+🧰 smoke
 ```
 
-Kits from configured packages get their own section, each labelled with the package and version behind it, and any installed dependency publishing kits the config omits is named as a candidate:
+Kits from configured packages get their own section, each named package-first so a kit reads the same here as in the heading `rdy run` gives it, and any installed dependency publishing kits the config omits is named as a candidate:
 
 ```
 ── Packages
    rdy run --packages
-
-📦 drift (@acme/eslint-config@2.1.0)
+📦 @acme/eslint-config@2.1.0 / 🧰 drift
 
 ── Available
    Add to "packages" in the readyup config
-
-📄 @acme/release-kit
+📦 @acme/release-kit
 ```
 
 `--manifest` reports each kit's compile-time ReadyUp version and description:
 
 ```
 ── Manifest: .readyup/manifest.json
-
-📦 deploy (readyup v0.22.0) · Pre-deployment checks
-📦 smoke (readyup v0.22.0)
+🧰 deploy (readyup v0.22.0) · Pre-deployment checks
+🧰 smoke (readyup v0.22.0)
 ```
 
 A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
@@ -747,11 +760,12 @@ rdy compile <file>             Compile a single file
 | `--json`              | Report each kit's status as JSON                            |
 
 ```
-── Compiling kits in .readyup/kits
-
-🟢 deploy.ts -> 📦 deploy.js
+── Compiling kits in packages/api/.readyup/kits
+🟢 deploy.ts -> 🧰 deploy.js
 ⚪ smoke.ts · no changes
 ```
+
+The directory is named against the enclosing workspace root, so `pnpm -r exec rdy compile` heads each workspace's output distinguishably. A repository with no workspace file anchors on the repository root; a directory under neither is named against the working directory.
 
 A sweep runs to completion: a kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
@@ -869,7 +883,6 @@ rdy verify --rebuild           Also recompile each kit and compare it to the com
 
 ```
 ── Verifying kits against .readyup/manifest.json
-
 🔴 deploy
    drift (expected 6f58905a, got eb104f57)
 🟢 smoke

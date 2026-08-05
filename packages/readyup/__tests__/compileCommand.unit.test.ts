@@ -231,8 +231,7 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockImplementation((target: string) => {
       if (target.endsWith('pnpm-workspace.yaml')) return target === path.join(workspaceRoot, 'pnpm-workspace.yaml');
-      if (target.endsWith('.git')) return false;
-      return true;
+      return !target.endsWith('.git');
     });
     mockReaddirSync.mockReturnValue(['a.ts']);
     mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
