@@ -50,8 +50,17 @@ function renderEverything(): string {
     ...TOKEN_NAMES.map((token) =>
       engine.formatCheckLine({ token, name: 'check', detail: 'detail', progress: '50%', durationMs: 250, depth: 1 }),
     ),
-    ...engine.formatHeading('deploy', 'kit'),
-    ...engine.formatHeading('build', 'section'),
+    engine.formatHeading('deploy', 'kit'),
+    engine.formatHeading('build', 'section'),
+    engine.formatBlockRule(),
+    engine.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+        { role: 'checklist', text: 'repo' },
+      ],
+      'kit',
+    ),
     ...engine.formatReasonBlock(['a reason'], 2),
     engine.formatHint('set a token'),
     engine.formatCountLine(counts, 800),
@@ -117,8 +126,8 @@ describe('rendered output', () => {
   });
 
   it('heads a section with an ASCII rule', () => {
-    expect(engine.formatHeadingLine('code-quality', 'section')).toBe('-- code-quality');
-    expect(engine.formatHeadingLine('deploy', 'kit')).toBe('== deploy');
+    expect(engine.formatHeading('code-quality', 'section')).toBe('-- code-quality');
+    expect(engine.formatHeading('deploy', 'kit')).toBe('== deploy');
   });
 
   it('labels a hint with an ASCII word', () => {

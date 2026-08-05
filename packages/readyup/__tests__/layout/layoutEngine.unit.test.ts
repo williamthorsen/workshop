@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TOKEN_NAMES, type TokenName } from '../../src/layout/formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
+import { plainFormatter } from '../../src/layout/plainFormatter.ts';
 import { richFormatter } from '../../src/layout/richFormatter.ts';
 import type { SummaryCounts } from '../../src/types.ts';
 
@@ -174,19 +175,69 @@ describe('formatReasonBlock', () => {
 });
 
 describe('formatHeading', () => {
-  it('sets a kit heading off with blank lines above and below', () => {
-    expect(engine.formatHeading('deploy', 'kit')).toStrictEqual(['', '\u{2501}\u{2501} deploy', '']);
+  it('renders a kit heading behind the heavier rule', () => {
+    expect(engine.formatHeading('deploy', 'kit')).toBe('\u{2501}\u{2501} deploy');
   });
 
   it('weights a section heading lighter than a kit heading', () => {
-    expect(engine.formatHeading('build', 'section')).toStrictEqual(['', '\u{2500}\u{2500} build', '']);
+    expect(engine.formatHeading('build', 'section')).toBe('\u{2500}\u{2500} build');
+  });
+
+  // Separation belongs to whoever emits the sequence, so two adjacent headings cannot each contribute one.
+  it('carries no blank line of its own', () => {
+    expect(engine.formatHeading('deploy', 'kit')).not.toContain('\n');
   });
 
   it('retires the heading grammars it replaced', () => {
-    const rendered = [...engine.formatHeading('deploy', 'kit'), ...engine.formatHeading('build', 'section')].join('\n');
+    const rendered = [engine.formatHeading('deploy', 'kit'), engine.formatHeading('build', 'section')].join('\n');
 
     expect(rendered).not.toContain('===');
     expect(rendered).not.toContain('---');
+  });
+});
+
+describe('formatBlockRule', () => {
+  it('closes a block with a bare rule at section weight', () => {
+    expect(engine.formatBlockRule()).toBe('\u{2500}\u{2500}');
+  });
+
+  // A heading always carries text after its rule, so the bare form cannot be mistaken for one.
+  it('carries no text, so it does not read as a heading', () => {
+    expect(engine.formatBlockRule()).not.toContain(' ');
+  });
+});
+
+describe('formatBreadcrumb', () => {
+  it('parts each segment from the next with a spaced separator', () => {
+    const rendered = engine.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+        { role: 'checklist', text: 'repo' },
+      ],
+      'kit',
+    );
+
+    expect(rendered).toBe('\u{2501}\u{2501} 📦 @acme/release-kit@2.1.0 / 🧰 npm-auto-publish / 📋 repo');
+  });
+
+  it('renders a lone segment without a separator', () => {
+    expect(engine.formatBreadcrumb([{ role: 'checklist', text: 'repo' }], 'kit')).toBe('\u{2501}\u{2501} 📋 repo');
+  });
+
+  // The spacing is the only segment boundary a glyphless style offers, and segment texts carry slashes
+  // of their own, so a bare separator would leave nothing to read the breadcrumb by.
+  it('keeps the separator spaced where a role has no glyph', () => {
+    const plain = createLayoutEngine(plainFormatter);
+    const rendered = plain.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+      ],
+      'kit',
+    );
+
+    expect(rendered).toBe('== @acme/release-kit@2.1.0 / npm-auto-publish');
   });
 });
 

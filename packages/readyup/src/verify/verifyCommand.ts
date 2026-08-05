@@ -78,7 +78,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section').join('\n') + '\n', json);
+  writeHuman(`\n${getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section')}\n\n`, json);
 
   if (manifest.kits.length === 0) {
     writeHuman('(no kits in manifest)\n', json);

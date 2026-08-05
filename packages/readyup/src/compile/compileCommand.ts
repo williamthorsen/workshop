@@ -449,5 +449,5 @@ function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: '
 
 /** Returns a section heading as a single writable string, newline-terminated. */
 function formatSectionHeading(label: string): string {
-  return getLayout().formatHeading(label, 'section').join('\n') + '\n';
+  return `\n${getLayout().formatHeading(label, 'section')}\n\n`;
 }

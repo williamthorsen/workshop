@@ -14,7 +14,7 @@ interface WriteLine {
 
 /** Writes `message` to stdout as a section heading. */
 export function printStep(message: string): void {
-  console.info(getLayout().formatHeading(message, 'section').join('\n'));
+  console.info(`\n${getLayout().formatHeading(message, 'section')}\n`);
 }
 
 /**

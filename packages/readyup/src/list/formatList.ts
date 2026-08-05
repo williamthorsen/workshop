@@ -150,7 +150,7 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
     });
   });
 
-  return [...getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
+  return ['', getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), '', ...items].join('\n');
 }
 
 // -- Helpers --
@@ -162,7 +162,5 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
  */
 function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
-  return ['', getLayout().formatHeadingLine(title, 'section'), `${getLayout().indent(1)}${hint}`, '', ...items].join(
-    '\n',
-  );
+  return ['', getLayout().formatHeading(title, 'section'), `${getLayout().indent(1)}${hint}`, '', ...items].join('\n');
 }

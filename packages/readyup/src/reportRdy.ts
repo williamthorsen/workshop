@@ -42,7 +42,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
     if (fixes.length > 0) {
-      lines.push(...getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
+      lines.push('', getLayout().formatHeading(FIXES_HEADING, 'section'), '', ...renderFixRecap(fixes));
     }
   }
 

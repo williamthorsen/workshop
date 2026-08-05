@@ -793,7 +793,7 @@ async function runMultiKitHumanMode(
   for (const entry of kitEntries) {
     // Precedes the load so stdout lists every requested kit, including one that never ran.
     if (showKitHeader) {
-      process.stdout.write(getLayout().formatHeading(describeKitEntry(entry), 'kit').join('\n') + '\n');
+      process.stdout.write(`\n${getLayout().formatHeading(describeKitEntry(entry), 'kit')}\n\n`);
     }
 
     try {
@@ -834,7 +834,7 @@ async function runSingleKitHumanMode(
 
   for (const checklist of checklists) {
     if (showChecklistHeader) {
-      process.stdout.write(getLayout().formatHeading(checklist.name, 'section').join('\n') + '\n');
+      process.stdout.write(`\n${getLayout().formatHeading(checklist.name, 'section')}\n\n`);
     }
 
     const report = await runRdy(checklist, {

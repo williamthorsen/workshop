@@ -8,6 +8,9 @@ const DURATION_FLOOR_MS = 100;
 /** Rule characters in a heading's leading sigil. */
 const HEADING_SIGIL_WIDTH = 2;
 
+/** Text parting one breadcrumb segment from the next. */
+const SEGMENT_SEPARATOR = ' / ';
+
 /** Columns between one summary-table cell and the next. */
 const TABLE_CELL_GAP = '  ';
 
@@ -45,6 +48,12 @@ const COUNT_FIELDS: readonly CountField[] = [
   { key: 'optional', singular: 'skipped', plural: 'skipped' },
 ];
 
+/** One segment of a breadcrumb heading: the role the name plays, and the name itself. */
+export interface BreadcrumbSegment {
+  role: TokenName;
+  text: string;
+}
+
 /** A check line's content. Every geometric decision made from it belongs to the engine. */
 export interface CheckLineInput {
   token: TokenName;
@@ -71,11 +80,12 @@ export interface SummaryTableInput {
 
 /** String builders that lay out a formatter's tokens. */
 export interface LayoutEngine {
+  formatBlockRule(): string;
+  formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string;
   formatCheckLine(input: CheckLineInput): string;
   formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string;
   formatCounts(counts: SummaryCounts): string;
-  formatHeading(name: string, level: HeadingLevel): string[];
-  formatHeadingLine(name: string, level: HeadingLevel): string;
+  formatHeading(name: string, level: HeadingLevel): string;
   formatHint(hint: string): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
   formatSummaryTable(input: SummaryTableInput): string[];
@@ -86,6 +96,24 @@ export interface LayoutEngine {
 
 /** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
+  /** Returns the bare rule closing a block, carrying no text so it reads as a rule rather than a heading. */
+  function formatBlockRule(): string {
+    return formatter.rules.section.repeat(HEADING_SIGIL_WIDTH);
+  }
+
+  /**
+   * Returns `segments` as one heading, each behind its role's glyph and parted by a spaced separator.
+   *
+   * The separator is spaced because a segment's own text carries slashes of its own -- a scoped package
+   * name, a relative path -- and under a style whose roles have no glyph, that spacing is the only
+   * boundary a reader gets. A role the formatter gives no glyph closes up rather than carrying the space
+   * that would have followed one.
+   */
+  function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string {
+    const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);
+    return formatHeading(rendered.join(SEGMENT_SEPARATOR), level);
+  }
+
   /**
    * Returns one line, `token name <separator> detail [progress] (duration)`, dropping the segments it lacks.
    *
@@ -111,13 +139,14 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs, label);
   }
 
-  /** Returns the heading line preceded and followed by a blank line. */
-  function formatHeading(name: string, level: HeadingLevel): string[] {
-    return ['', formatHeadingLine(name, level), ''];
-  }
-
-  /** Returns `name` behind a two-character rule whose weight comes from `level`, with no surrounding blanks. */
-  function formatHeadingLine(name: string, level: HeadingLevel): string {
+  /**
+   * Returns `name` behind a two-character rule whose weight comes from `level`.
+   *
+   * A heading carries no blank line of its own. Separation is a property of the sequence a heading sits
+   * in, which only the code emitting that sequence can see: a heading deciding for itself is how two
+   * adjacent ones each contribute a blank and open a gap neither intended.
+   */
+  function formatHeading(name: string, level: HeadingLevel): string {
     return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
   }
 
@@ -155,7 +184,9 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     const rule = formatter.rules.section.repeat(formatter.gutter + bodyWidth);
 
     return [
-      ...formatHeading(SUMMARY_HEADING, 'section'),
+      '',
+      formatHeading(SUMMARY_HEADING, 'section'),
+      '',
       rule,
       ...entries.map((entry) => `${token(entry.token)}${entry.body}`),
       rule,
@@ -194,11 +225,12 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   return {
+    formatBlockRule,
+    formatBreadcrumb,
     formatCheckLine,
     formatCountLine,
     formatCounts,
     formatHeading,
-    formatHeadingLine,
     formatHint,
     formatReasonBlock,
     formatSummaryTable,
