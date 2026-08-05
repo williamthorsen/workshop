@@ -382,7 +382,7 @@ describe(compileCommand, () => {
       expect(mockWriteManifest).not.toHaveBeenCalled();
     });
 
-    it('reports no manifest outcome under --skip-manifest when the source directory is absent', async () => {
+    it('omits the manifest clause under --skip-manifest when the source directory is absent', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: true });
 
       const exitCode = await compileCommand(['--skip-manifest']);
@@ -392,7 +392,7 @@ describe(compileCommand, () => {
       expect(stdoutSpy).toHaveBeenCalledWith('Source directory not found: .readyup/kits\n');
     });
 
-    it('reports no manifest outcome under --skip-manifest when the directory holds no .ts files', async () => {
+    it('omits the manifest clause under --skip-manifest when the directory holds no .ts files', async () => {
       arrangeEmptySweep({ srcDirExists: true, manifestExists: true });
       mockReaddirSync.mockReturnValue(['readme.md']);
 
@@ -405,15 +405,12 @@ describe(compileCommand, () => {
 
     // region | Helpers
 
-    /** Arranges a config-driven sweep with no sources, answering `existsSync` per path. */
-    function arrangeEmptySweep(existence: { srcDirExists: boolean; manifestExists: boolean }): void {
-      const { srcDirExists, manifestExists } = existence;
+    /** Arranges a config-driven sweep that finds no kits. */
+    function arrangeEmptySweep(existence: ArrangeExistenceArgs): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       });
-      mockExistsSync.mockImplementation((target: unknown) =>
-        String(target).endsWith('manifest.json') ? manifestExists : srcDirExists,
-      );
+      arrangeExistence(existence);
     }
 
     // endregion | Helpers
@@ -475,6 +472,20 @@ describe(compileCommand, () => {
       await compileCommand([]);
 
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits failed to compile.'));
+    });
+
+    it('writes a manifest when sources are found but every one fails to compile', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      });
+      arrangeExistence({ srcDirExists: true, manifestExists: false });
+      mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+      mockCompileConfig.mockRejectedValue(new Error('not valid TypeScript'));
+
+      const exitCode = await compileCommand([]);
+
+      expect(exitCode).toBe(1);
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
     });
 
     it('leaves a failed kit out of the manifest rather than recording it as compiled', async () => {
@@ -639,11 +650,11 @@ describe(compileCommand, () => {
     expect(error.message).toContain('EACCES');
   });
 
-  it('writes empty manifest when glob matches only non-.ts files during batch compile', async () => {
+  it('treats an include glob matching only non-.ts files as a sweep that finds no kits', async () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'data/*' },
     });
-    mockExistsSync.mockReturnValue(true);
+    arrangeExistence({ srcDirExists: true, manifestExists: true });
     mockReaddirSync.mockReturnValue(['data/readme.md', 'data/config.json']);
     mockPicomatch.mockReturnValue(() => true);
 
@@ -1128,4 +1139,21 @@ describe(compileCommand, () => {
 
     expect(stderrSpy).not.toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
   });
+
+  // region | Helpers
+
+  interface ArrangeExistenceArgs {
+    srcDirExists: boolean;
+    manifestExists: boolean;
+  }
+
+  /** Answers `existsSync` per path, so the source directory and the manifest are arranged independently. */
+  function arrangeExistence(existence: ArrangeExistenceArgs): void {
+    const { srcDirExists, manifestExists } = existence;
+    mockExistsSync.mockImplementation((target: unknown) =>
+      String(target).endsWith('manifest.json') ? manifestExists : srcDirExists,
+    );
+  }
+
+  // endregion | Helpers
 });

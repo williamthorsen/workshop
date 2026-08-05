@@ -217,8 +217,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
   const outDir = path.resolve(process.cwd(), config.compile.outDir);
 
-  // A missing source directory is treated as an empty one: fall through to the empty-kit-list
-  // manifest write below rather than erroring.
+  // A missing source directory is treated as an empty one rather than as an error.
   const srcDirExists = existsSync(srcDir);
 
   let tsFiles: string[] = [];
