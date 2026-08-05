@@ -217,8 +217,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
   const outDir = path.resolve(process.cwd(), config.compile.outDir);
 
-  // A missing source directory is treated as an empty one: fall through to the empty-kit-list
-  // manifest write below rather than erroring.
+  // A missing source directory is treated as an empty one rather than as an error.
   const srcDirExists = existsSync(srcDir);
 
   let tsFiles: string[] = [];
@@ -231,19 +230,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   }
 
   if (tsFiles.length === 0) {
-    const relSrc = path.relative(process.cwd(), srcDir);
-    const reason = srcDirExists
-      ? `No .ts files found in ${relSrc}`
-      : `Source directory not found: ${relSrc}; treating as empty`;
-    writeHuman(`${reason}\n`, json);
-    if (!skipManifest) {
-      try {
-        writeManifest(manifestPath, { version: 1, kits: [] });
-      } catch (error: unknown) {
-        throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
-      }
-    }
-    return finishCompile([], json);
+    return finishEmptySweep({ srcDir, srcDirExists, skipManifest, manifestPath, json });
   }
 
   const anchor = resolveWorkspaceAnchor(srcDir);
@@ -330,6 +317,42 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   }
 
   return finishCompile(kitResults, json);
+}
+
+/** Arguments for the no-kits early return of a batch compile. */
+interface FinishEmptySweepArgs {
+  srcDir: string;
+  srcDirExists: boolean;
+  skipManifest: boolean;
+  manifestPath: string;
+  json: boolean;
+}
+
+/**
+ * Reports a sweep that found no kits, and settles what becomes of the manifest.
+ *
+ * An existing manifest may still list kits that have since been deleted, so it is emptied rather than
+ * left stale. A project holding neither kits nor a manifest is not one this sweep describes, and gets
+ * none seeded for it.
+ */
+function finishEmptySweep(args: FinishEmptySweepArgs): number {
+  const { srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
+
+  const relSrc = path.relative(process.cwd(), srcDir);
+  const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
+  const writesManifest = !skipManifest && existsSync(manifestPath);
+
+  writeHuman(`${reason}${formatManifestOutcome(skipManifest, writesManifest)}\n`, json);
+
+  if (writesManifest) {
+    try {
+      writeManifest(manifestPath, { version: 1, kits: [] });
+    } catch (error: unknown) {
+      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
+    }
+  }
+
+  return finishCompile([], json);
 }
 
 /** Location fields for a manifest kit entry. */
@@ -451,6 +474,16 @@ function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: '
 /** Returns a section heading as a single writable string, newline-terminated. */
 function formatSectionHeading(label: string): string {
   return `${getLayout().formatHeading(label, 'section')}\n`;
+}
+
+/**
+ * Returns the clause naming what a sweep that found no kits did with the manifest.
+ *
+ * Empty under `--skip-manifest`, where the manifest was never consulted and so has nothing to report.
+ */
+function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean): string {
+  if (skipManifest) return '';
+  return writesManifest ? '; manifest now lists no kits' : '; manifest not written';
 }
 
 /**
