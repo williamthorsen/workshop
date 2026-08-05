@@ -212,6 +212,7 @@ A checklist carries either `checks` or `groups`, never both.
 | `name`     | `string`                        | required                    | The claim being asserted                   |
 | `check`    | `() => boolean \| CheckOutcome` | required                    | The assertion; may be async                |
 | `severity` | `Severity`                      | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`      |
+| `quiet`    | `boolean`                       | `false`                     | Renders only when the check does not pass  |
 | `skip`     | `() => false \| string`         | --                          | Reason string to skip; `false` to run      |
 | `fix`      | `string`                        | --                          | Remediation, shown when the check fails    |
 | `checks`   | `RdyCheck[]`                    | --                          | Nested checks, run only if this one passes |
@@ -246,6 +247,8 @@ State the claim in the third person indicative and capitalize it like a sentence
 Rewriting a name often exposes an ambiguous predicate: an author writing "newer than 24" frequently discovers they meant a floor of 24.
 
 A check that exists only to gate the checks nested beneath it is no exception. It still reports a status of its own, so it still needs a claim.
+
+Neither is a `quiet` check, though it looks like one: its name reaches the reader only on a failure, where the claim reads false. That is the rule working rather than breaking. The name states what must be true, and the line appears precisely when it is not.
 
 ### The detail contract
 
@@ -452,6 +455,8 @@ rdy run -- "--odd-kit-name"
 | `--quiet`                     | Hide passed checks; incompatible with `--json`        |
 
 `--quiet` filters by status where `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
+
+A check's own [`quiet`](#checks) is this flag narrowed to that one check, and a kit whose every check declares it renders what `--quiet` renders. It is not `skip`, which reports that the check did not run and why: a quiet check runs, and its pass reaches the count line and the exit code like any other -- only the line is withheld. `--json` is unaffected, so `rdy run --json --detail full` shows a quiet check that passed.
 
 ### Global options
 
