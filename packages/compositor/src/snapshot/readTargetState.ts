@@ -24,11 +24,19 @@ import type { Blob } from '../schemas/file-schemas.ts';
 import type { RegionKindDeployment, RenderTarget, TreeKindDeployment } from '../schemas/render-target-schemas.ts';
 import type { ArtifactId, Hash, KindId, TargetId } from '../schemas/scalar-schemas.ts';
 
-/** One file a target holds that the engine deployed there, and the artifact its position and name recover. */
+/**
+ * One file a target holds that the engine deployed there, and the artifacts its position and name recover.
+ *
+ * `artifactIds` carries more than one where two deployments' claim rules both match the path, which two kinds rooted at
+ * one directory produce and no declaration resolves: a kind deploying under a template lands its artifacts among an
+ * untemplated kind's, and a name fitting both templates came from either. Which artifact it came from is undecidable
+ * from shape, so a consumer authorizing a write or a deletion has to refuse the path rather than pick.
+ */
 export interface ClaimedFile {
   /** Posix-separated and relative to the target's root. */
   readonly path: string;
-  readonly artifactId: ArtifactId;
+  /** Ordered by id. */
+  readonly artifactIds: ReadonlyArray<ArtifactId>;
   readonly hash: Hash;
   readonly body: Blob;
 }
@@ -55,7 +63,7 @@ export type HostState =
 /** What one target holds now of what the engine deployed there, and the digest identifying that state. */
 export interface TargetState {
   readonly targetId: TargetId;
-  /** Ordered by path. */
+  /** Ordered by path, and holding each path once however many deployments claimed it. */
   readonly claimed: ReadonlyArray<ClaimedFile>;
   /** Ordered by path then kind, one per region deployment the target declares. */
   readonly hosts: ReadonlyArray<HostState>;
@@ -76,6 +84,9 @@ export interface ReadTargetStateOptions {
  * identifies it, no record of a previous apply being kept, which is what makes an artifact deleted from every source
  * still classifiable as removed.
  *
+ * A path is claimed once however many deployments match it, carrying each artifact they recover, so a consumer reading
+ * the result as the destination's own tree finds every path in it exactly where a destination holds it.
+ *
  * Three exclusions bound the claim, and each answers a way the rule could take a file that is not the engine's. Names
  * beginning with a dot or an underscore are support content, the rule a source is enumerated by. Within a claimed
  * artifact, only tool state is passed over, the rule that artifact's digest is taken by, so what a source ships and
@@ -94,10 +105,10 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
     target.deployments.filter((deployment) => deployment.form === 'region').map((deployment) => deployment.host),
   );
 
-  const perTree = await Promise.all(
+  const located = await Promise.all(
     target.deployments
       .filter((deployment) => deployment.form === 'tree')
-      .map((deployment) => claimTree(root, deployment, hostPaths)),
+      .map((deployment) => locateTree(root, deployment)),
   );
   const hosts = await Promise.all(
     target.deployments
@@ -105,7 +116,7 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
       .map((deployment) => readHost(root, deployment)),
   );
 
-  const claimed = perTree.flat().toSorted((left, right) => compareStrings(left.path, right.path));
+  const claimed = await readClaims(root, located.flat(), hostPaths);
   const ordered = hosts.toSorted((left, right) => {
     const byPath = compareStrings(left.path, right.path);
     return byPath === 0 ? compareStrings(left.kindId, right.kindId) : byPath;
@@ -116,25 +127,19 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
 
 // region | Helpers
 
-/** One file the scan decided belongs to an artifact, before its body is read. */
+/** One file one deployment's claim rule matched, before the matches across deployments are gathered per path. */
 interface Claim {
   readonly path: string;
   readonly artifactId: ArtifactId;
 }
 
-/** Claims every file one tree deployment holds, reading each body once the whole set is known. */
-async function claimTree(
-  root: string,
-  deployment: TreeKindDeployment,
-  hostPaths: ReadonlySet<string>,
-): Promise<Array<ClaimedFile>> {
+/** Locates every file one tree deployment's claim rule matches. */
+async function locateTree(root: string, deployment: TreeKindDeployment): Promise<Array<Claim>> {
   const rootDir = path.join(root, deployment.layout.root);
   const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
 
   const located = await Promise.all(names.map((name) => locateClaims(rootDir, name, deployment)));
-  const claims = located.flat().filter((claim) => !hostPaths.has(claim.path));
-
-  return Promise.all(claims.map((claim) => readClaim(root, claim)));
+  return located.flat();
 }
 
 /** Digests a target's state over the sorted path-and-hash pairs of everything it holds, so scan order cannot reach it. */
@@ -192,10 +197,34 @@ async function locateClaims(rootDir: string, name: string, deployment: TreeKindD
   }));
 }
 
-/** Reads one claimed file's body and hash. */
-async function readClaim(root: string, claim: Claim): Promise<ClaimedFile> {
-  const bytes = await readFile(path.join(root, claim.path));
-  return { path: claim.path, artifactId: claim.artifactId, hash: hashBytes(bytes), body: encodeBlob(bytes) };
+/**
+ * Gathers the matches across every deployment into one claim per path, ordered by path, and reads each body.
+ *
+ * Reading follows the gather rather than accompanying each match, so a path two deployments both matched is read once.
+ */
+async function readClaims(
+  root: string,
+  matched: ReadonlyArray<Claim>,
+  hostPaths: ReadonlySet<string>,
+): Promise<Array<ClaimedFile>> {
+  const byPath = new Map<string, Set<ArtifactId>>();
+  for (const claim of matched) {
+    if (hostPaths.has(claim.path)) {
+      continue;
+    }
+    byPath.set(claim.path, (byPath.get(claim.path) ?? new Set()).add(claim.artifactId));
+  }
+
+  const gathered = [...byPath]
+    .map(([filePath, artifactIds]) => ({ path: filePath, artifactIds: [...artifactIds].toSorted(compareStrings) }))
+    .toSorted((left, right) => compareStrings(left.path, right.path));
+
+  return Promise.all(
+    gathered.map(async ({ path: filePath, artifactIds }) => {
+      const bytes = await readFile(path.join(root, filePath));
+      return { path: filePath, artifactIds, hash: hashBytes(bytes), body: encodeBlob(bytes) };
+    }),
+  );
 }
 
 /** Reads one region host, along with the contributions its region carries. */

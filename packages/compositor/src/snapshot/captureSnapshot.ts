@@ -18,6 +18,7 @@ import { resolveCatalog } from '../resolution/resolveCatalog.ts';
 import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { EdgeRule, KindKeys } from '../schemas/edge-rule-schemas.ts';
+import type { KindLayout } from '../schemas/kind-layout-schemas.ts';
 import type { SourceDigest } from '../schemas/plan-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
@@ -140,10 +141,35 @@ interface MatrixEntry {
   readonly render: ArtifactRender;
 }
 
+/** One artifact that ships files beside its entry file, with the layout locating them within its source. */
+interface ShippingArtifact {
+  readonly entry: CatalogEntry;
+  readonly layout: Extract<KindLayout, { form: 'directory' }>;
+}
+
 /** One target's whole column of the matrix. */
 interface TargetRenders {
   readonly targetId: TargetId;
   readonly renders: ReadonlyMap<ArtifactId, ArtifactRender>;
+}
+
+/**
+ * Collects the artifacts whose files are worth reading, in catalog order.
+ *
+ * A kind laid out one file per artifact ships nothing beside it, and a kind that emits no files is walked through
+ * rather than written out, so neither is read. The directory comes from the layout rather than from the entry file's
+ * own path, which is what keeps this reading the artifact's whole tree where an entry file sits below its root.
+ */
+function collectShipping(catalog: Catalog): Array<ShippingArtifact> {
+  const kinds = new Map(catalog.kinds.map((kind) => [kind.id, kind]));
+
+  return catalog.entries.flatMap((entry) => {
+    const kind = kinds.get(entry.kindId);
+    if (kind === undefined || !kind.emitsFiles || kind.layout.form !== 'directory') {
+      return [];
+    }
+    return [{ entry, layout: kind.layout }];
+  });
 }
 
 /** Digests each source over its whole directory, in the precedence order the catalog carries them in. */
@@ -151,18 +177,18 @@ async function digestSources(sources: ReadonlyArray<SourceSpec>): Promise<Readon
   return Promise.all(sources.map(async (source) => ({ sourceId: source.id, digest: await hashDirectory(source.dir) })));
 }
 
-/** Reads the files each directory-shaped artifact ships, keeping an artifact only where it ships something. */
+/** Reads the files each artifact ships beside its entry file, keeping an artifact only where it ships something. */
 async function readAssets(catalog: Catalog): Promise<ReadonlyMap<ArtifactId, ReadonlyArray<ArtifactAsset>>> {
-  const layouts = new Map(catalog.kinds.map((kind) => [kind.id, kind.layout]));
   const sources = new Map(catalog.sources.map((source) => [source.id, source]));
-  const shipping = catalog.entries.filter((entry) => layouts.get(entry.kindId)?.form === 'directory');
 
   const read = await Promise.all(
-    shipping.map(async (entry) => {
-      const entryPath = entry.resolution.winner.path;
-      const artifactDir = path.join(requireSource(sources, entry).dir, path.dirname(entryPath));
-      return { artifactId: entry.id, assets: await readArtifactAssets(artifactDir, path.basename(entryPath)) };
-    }),
+    collectShipping(catalog).map(async ({ entry, layout }) => ({
+      artifactId: entry.id,
+      assets: await readArtifactAssets(
+        path.join(requireSource(sources, entry).dir, layout.root, entry.slug),
+        layout.entryFile,
+      ),
+    })),
   );
 
   return new Map(read.filter(({ assets }) => assets.length > 0).map(({ artifactId, assets }) => [artifactId, assets]));

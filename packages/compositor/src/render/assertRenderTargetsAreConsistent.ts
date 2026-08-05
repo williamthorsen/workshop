@@ -5,7 +5,9 @@ import { createRequireKnown } from '../consistency/createRequireKnown.ts';
 import { findDuplicateIds } from '../consistency/findDuplicateIds.ts';
 import type { Violation } from '../consistency/Violation.ts';
 import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
+import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
+import { isArtifactName } from '../resolution/isArtifactName.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
 import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 
@@ -66,6 +68,7 @@ export function assertRenderTargetsAreConsistent(
     for (const [position, deployment] of target.deployments.entries()) {
       requireKnown(kindIds, deployment.kindId, `${at}.deployments[${position}].kindId`, 'kinds');
       if (deployment.form !== 'region') {
+        collectNameTemplateFaults(deployment.nameTemplate, `${at}.deployments[${position}].nameTemplate`, violations);
         continue;
       }
       const deployedAt = `${at}.deployments[${position}]`;
@@ -130,6 +133,32 @@ function collectMarkerFaults(markers: MarkerPair, path: string, violations: Arra
     assertMarkersAreUsable(markers);
   } catch (error: unknown) {
     violations.push({ path, message: error instanceof Error ? error.message : String(error) });
+  }
+}
+
+/**
+ * Reports a name template rendering names no scan of the destination could claim back.
+ *
+ * A template standing no placeholder renders one name for every artifact of its kind, and no such name recovers the
+ * artifact that deployed it. A literal head beginning with a dot or an underscore renders support content, which a
+ * destination scan passes over on the rule a source is enumerated by. Either deploys files that are never diffed, never
+ * reported as drifted, and never removed, which is the silent kind of fault this pass exists to make loud.
+ *
+ * A template leading with its placeholder needs no check, a slug carrying such a prefix never being enumerated.
+ */
+function collectNameTemplateFaults(template: string | undefined, path: string, violations: Array<Violation>): void {
+  if (template === undefined) {
+    return;
+  }
+
+  const [head = ''] = template.split(SLUG_PLACEHOLDER);
+  if (!template.includes(SLUG_PLACEHOLDER)) {
+    violations.push({
+      path,
+      message: `stands no ${SLUG_PLACEHOLDER}, so no name it renders recovers the artifact that deployed it`,
+    });
+  } else if (!isArtifactName(head)) {
+    violations.push({ path, message: 'renders a support-prefixed name, which a destination scan passes over' });
   }
 }
 

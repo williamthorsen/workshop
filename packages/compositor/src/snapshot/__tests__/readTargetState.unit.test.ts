@@ -42,7 +42,7 @@ describe(readTargetState, () => {
   it('claims a file whose name inverts through the kind’s template', async () => {
     const state = await readState({ 'rulebooks/consult-shell.md': 'Shell rules.\n' }, [rulebooks]);
 
-    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.artifactId).toBe('rulebook:shell');
+    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.artifactIds).toStrictEqual(['rulebook:shell']);
   });
 
   it('claims every file a claimed artifact directory holds, so an asset is planned beside its entry file', async () => {
@@ -54,9 +54,9 @@ describe(readTargetState, () => {
       [skills],
     );
 
-    expect(state.claimed.map(({ path, artifactId }) => [path, artifactId])).toStrictEqual([
-      ['skills/review/SKILL.md', 'skill:review'],
-      ['skills/review/assets/diagram.svg', 'skill:review'],
+    expect(state.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
+      ['skills/review/SKILL.md', ['skill:review']],
+      ['skills/review/assets/diagram.svg', ['skill:review']],
     ]);
   });
 
@@ -67,6 +67,20 @@ describe(readTargetState, () => {
       encoding: 'utf8',
       data: 'Shell rules.\n',
     });
+  });
+
+  // A rulebook deploying as a `consult-*` skill lands among ordinary skills, whose untemplated rule claims every name.
+  it('claims a path two deployments both match once, naming each artifact their rules recover', async () => {
+    const consultSkills = { ...skills, kindId: 'rulebook', nameTemplate: 'consult-{slug}' } as const;
+    const state = await readState(
+      { 'skills/consult-shell/SKILL.md': '# Shell\n', 'skills/review/SKILL.md': '# Review\n' },
+      [skills, consultSkills],
+    );
+
+    expect(state.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
+      ['skills/consult-shell/SKILL.md', ['rulebook:shell', 'skill:consult-shell']],
+      ['skills/review/SKILL.md', ['skill:review']],
+    ]);
   });
 
   it('leaves a name the template could not have produced unclaimed', async () => {

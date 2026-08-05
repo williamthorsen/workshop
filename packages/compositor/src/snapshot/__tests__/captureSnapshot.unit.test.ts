@@ -106,6 +106,41 @@ describe(captureSnapshot, () => {
     expect(snapshot.assets.has('rulebook:shell')).toBe(false);
   });
 
+  it('reads an artifact’s whole tree where its entry file sits below the artifact’s own root', async () => {
+    const nested: ResolveKind = {
+      id: 'skill',
+      label: 'Skill',
+      emitsFiles: true,
+      layout: { form: 'directory', root: 'skills', entryFile: 'docs/SKILL.md' },
+    };
+    const snapshot = await capture({
+      sourceFiles: { 'skills/review/checklist.md': '# Checklist\n', 'skills/review/docs/SKILL.md': '# Review\n' },
+      input: { kinds: kinds.map((kind) => (kind.id === 'skill' ? nested : kind)) },
+    });
+
+    expect(snapshot.assets.get('skill:review')?.map(({ relativePath }) => relativePath)).toStrictEqual([
+      'checklist.md',
+    ]);
+  });
+
+  it('reads no files for a kind that emits none, no target being able to write one out', async () => {
+    const shaped: ResolveKind = {
+      id: 'collection',
+      label: 'Collection',
+      emitsFiles: false,
+      layout: { form: 'directory', root: 'collections', entryFile: 'COLLECTION.md' },
+    };
+    const snapshot = await capture({
+      sourceFiles: {
+        'collections/everything/COLLECTION.md': '# Everything\n',
+        'collections/everything/notes.md': '# Notes\n',
+      },
+      input: { kinds: kinds.map((kind) => (kind.id === 'collection' ? shaped : kind)) },
+    });
+
+    expect(snapshot.assets.has('collection:everything')).toBe(false);
+  });
+
   it('digests each source over its whole directory', async () => {
     const snapshot = await capture();
 
@@ -116,8 +151,8 @@ describe(captureSnapshot, () => {
   it('reads what each target currently holds', async () => {
     const snapshot = await capture({ targetFiles: { 'skills/review/SKILL.md': '# Old review\n' } });
 
-    expect(snapshot.targetState?.[0]?.claimed.map(({ path, artifactId }) => [path, artifactId])).toStrictEqual([
-      ['skills/review/SKILL.md', 'skill:review'],
+    expect(snapshot.targetState?.[0]?.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
+      ['skills/review/SKILL.md', ['skill:review']],
     ]);
   });
 
@@ -164,9 +199,13 @@ describe(captureSnapshot, () => {
 
 /** Captures a snapshot over a temporary source tree and target root, overriding parts of the input a test varies. */
 async function capture(
-  options: { targetFiles?: Record<string, string>; input?: Partial<CaptureSnapshotInput> } = {},
+  options: {
+    sourceFiles?: Record<string, string | Uint8Array>;
+    targetFiles?: Record<string, string>;
+    input?: Partial<CaptureSnapshotInput>;
+  } = {},
 ): Promise<CompositionSnapshot> {
-  const sourceDir = await buildTempTree(sourceFiles, 'compositor-source');
+  const sourceDir = await buildTempTree(options.sourceFiles ?? sourceFiles, 'compositor-source');
   const targetRoot = await buildTempTree(options.targetFiles ?? { '.keep': '' }, 'compositor-target');
 
   return captureSnapshot({ ...buildInput(sourceDir, targetRoot), ...options.input });
