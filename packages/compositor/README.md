@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, and the per-target transform pipeline that renders one artifact's content. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, and the snapshot that gathers all of it. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -113,6 +113,24 @@ A target that already names its destination is left alone: an anchor, an absolut
 Re-rendering unchanged inputs is byte-identical, which is what lets a plan's diff mean something.
 
 `assertRenderTargetsAreConsistent` is to a set of target declarations what the plan and catalog assertions are to their documents, and for the same reason. A target that runs a stage twice, deploys a kind twice, names a kind no descriptor carries, or declares a link grammar that will not compile or that captures more than one group is reported before anything renders, rather than at the first body that happens to reach the fault.
+
+## The snapshot
+
+`captureSnapshot` reads everything a plan is computed from, so that computing one reads nothing. It is the engine's whole filesystem contact for the plan flow: the packages a config declares, the catalog its folded sources resolve to, the edge graph, every artifact rendered for every target that deploys its kind, the files each artifact ships beside its entry file, a digest per source, and what each target currently holds.
+
+The gather is eager rather than lazy because the loop it serves is a reader's: toggle a selection, recompute, render. A memoized reader threaded through the mechanisms would put a disk read behind the first toggle to reach an artifact nothing had memoized yet. The render matrix is computable up front precisely because it is selection-independent -- it covers every artifact the catalog carries, and what a config selects moves nothing in it.
+
+**What an edited config may change against one snapshot is a selection.** The catalog ranks candidates by adopted-source order, and both the edge graph and the render matrix read the winning candidate alone, so a config that adds, drops, reorders, or remaps a source invalidates all three at once. The snapshot carries the resolution it was captured over, which is what lets a later flow compare and refuse rather than compose a plan from a catalog that no longer describes the sources. Widening that would mean ranking candidates from every declared source and reading edges and bodies from the losers too, a cost paid on every capture for a question no interactive loop asks.
+
+**A file the engine deployed is recognized by its shape.** No record of a previous apply is kept, so within a deployment's tree a file whose position and name invert to a slug counts as previously deployed, and that slug with the deployment's kind recovers the artifact it came from. One template renders the name and recovers it, as one template writes a contribution's markers and reads them back. That is what lets an artifact deleted from every source still be classified as removed, and it is why the inverse is anchored: a template's literal parts have to account for the whole name rather than appear somewhere inside it.
+
+Three exclusions bound the claim, each answering a way the rule could take a file that is not the engine's. Names beginning with a dot or an underscore are support content, the rule a source is enumerated by. Within a claimed artifact only tool state is passed over, the rule that artifact's own digest is taken by, so what a source ships and what a destination claims cover the same files. Every declared region host is excluded wherever it falls, a host being a file the engine does not otherwise own -- that is the case `assertRenderTargetsAreConsistent` leaves here, being decidable only against the slugs a catalog turns out to carry. A directory is claimed only when it holds its layout's entry file, since this scan's output is what decides removal and a directory bearing an artifact's name and nothing else is somebody else's.
+
+**An artifact's entry file renders and everything else it ships is copied byte for byte.** The split names no file type, which keeps a vocabulary of binary extensions out of an engine that has none, and it is the only reading under which an image beside a text artifact survives. Those files are keyed by artifact rather than by artifact and target, no target transforming them; where each lands follows from the name its artifact deploys under. A body is carried as text where its bytes survive a UTF-8 round trip and byte for byte where they do not, which is the same question asked of the bytes rather than of the name.
+
+Faults divide as they do everywhere else. A fault in the declarations a consumer wrote throws before anything is read, so a bad target or token kind is reported rather than surfacing at whichever file first reaches it. A permissions fault throws. A render that cannot resolve a directive travels in the matrix as the failure it is, to become a diagnostic where a plan or a validation report is assembled. Reading target state is skippable, for a caller reporting authoring mistakes with no deployment to plan.
+
+A source's digest covers its whole directory rather than the artifacts enumerated from it, because partials sit outside that enumeration and still reach renders through transclusion. A target's digest covers the sorted paths and hashes of everything claimed and every host it carries, so scan order cannot reach it.
 
 ## The plan
 
