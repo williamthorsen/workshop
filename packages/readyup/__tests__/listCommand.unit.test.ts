@@ -91,7 +91,7 @@ describe(listCommand, () => {
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
       expect(exitCode).toBe(0);
       expect(output).toContain('Packages');
-      expect(output).toContain('@acme/kits@2.1.0 / \u{1F9F0} drift');
+      expect(output).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
       expect(output).not.toContain('No kits found');
     });
 

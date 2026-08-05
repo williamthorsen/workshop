@@ -135,7 +135,7 @@ Role glyphs are nouns rather than statuses. They name what something is, in a he
 | Rich | Names                                                  |
 | ---- | ------------------------------------------------------ |
 | 📄   | a kit's TypeScript source                              |
-| 🧰   | a kit                                                  |
+| 📓   | a kit                                                  |
 | 📋   | a checklist                                            |
 | 📦   | the npm package a kit was published in                 |
 | 🌐   | a kit fetched from `github:`, `bitbucket:`, or `--url` |
@@ -525,9 +525,9 @@ Blank lines part blocks rather than decorate headings: none opens a command's ou
 A kit from an installed package, a repository, or a URL names where it came from, so a long run says which checks belong to which kit without the reader scrolling for it:
 
 ```
-━━ 📦 @acme/release-kit@2.1.0 / 🧰 npm-auto-publish / 📋 repo
-━━ 🌐 github:acme/checks@main / 🧰 default
-━━ 📁 ../shared-kits / 🧰 default
+━━ 📦 @acme/release-kit@2.1.0 / 📓 npm-auto-publish / 📋 repo
+━━ 🌐 github:acme/checks@main / 📓 default
+━━ 📁 ../shared-kits / 📓 default
 ```
 
 ### Output styles
@@ -600,8 +600,8 @@ Each section names the command that runs the kits beneath it:
 
 ── Compiled
    rdy run <name>
-🧰 deploy
-🧰 smoke
+📓 deploy
+📓 smoke
 ```
 
 Kits from configured packages get their own section, each named package-first so a kit reads the same here as in the heading `rdy run` gives it, and any installed dependency publishing kits the config omits is named as a candidate:
@@ -609,7 +609,7 @@ Kits from configured packages get their own section, each named package-first so
 ```
 ── Packages
    rdy run --packages
-📦 @acme/eslint-config@2.1.0 / 🧰 drift
+📦 @acme/eslint-config@2.1.0 / 📓 drift
 
 ── Available
    Add to "packages" in the readyup config
@@ -620,8 +620,8 @@ Kits from configured packages get their own section, each named package-first so
 
 ```
 ── Manifest: .readyup/manifest.json
-🧰 deploy (readyup v0.22.0) · Pre-deployment checks
-🧰 smoke (readyup v0.22.0)
+📓 deploy (readyup v0.22.0) · Pre-deployment checks
+📓 smoke (readyup v0.22.0)
 ```
 
 A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
@@ -766,7 +766,7 @@ rdy compile <file>             Compile a single file
 
 ```
 ── Compiling kits in packages/api/.readyup/kits
-🟢 deploy.ts -> 🧰 deploy.js
+🟢 deploy.ts -> 📓 deploy.js
 ⚪ smoke.ts · no changes
 ```
 

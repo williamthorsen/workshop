@@ -1133,8 +1133,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit1');
-    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit2');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit1');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit2');
   });
 
   // Two blanks at a kit boundary, none before the first block. Once headings stopped nesting, the wider
@@ -1155,8 +1155,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F9F0} kit1')).toBe(true);
-    expect(allOutput).toContain(`${KIT_BOUNDARY_GAP}\u{2501}\u{2501} \u{1F9F0} kit2`);
+    expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F4D3} kit1')).toBe(true);
+    expect(allOutput).toContain(`${KIT_BOUNDARY_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
     expect(allOutput).not.toContain(`${KIT_BOUNDARY_GAP}\n`);
   });
 
