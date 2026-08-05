@@ -8,8 +8,13 @@ const DURATION_FLOOR_MS = 100;
 /** Rule characters in a heading's leading sigil. */
 const HEADING_SIGIL_WIDTH = 2;
 
-/** Text parting one breadcrumb segment from the next. */
-const SEGMENT_SEPARATOR = ' / ';
+/**
+ * Text parting one breadcrumb segment from the next.
+ *
+ * Spaced on both sides because a segment's own text carries slashes -- a scoped package name, a relative
+ * path -- and under a style whose roles have no glyph, that spacing is the only boundary a reader gets.
+ */
+export const SEGMENT_SEPARATOR = ' / ';
 
 /** Columns between one summary-table cell and the next. */
 const TABLE_CELL_GAP = '  ';
@@ -102,12 +107,10 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns `segments` as one heading, each behind its role's glyph and parted by a spaced separator.
+   * Returns `segments` as one heading, each behind its role's glyph and parted by the segment separator.
    *
-   * The separator is spaced because a segment's own text carries slashes of its own -- a scoped package
-   * name, a relative path -- and under a style whose roles have no glyph, that spacing is the only
-   * boundary a reader gets. A role the formatter gives no glyph closes up rather than carrying the space
-   * that would have followed one.
+   * A role the formatter gives no glyph closes up rather than carrying the space that would have
+   * followed one.
    */
   function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string {
     const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);

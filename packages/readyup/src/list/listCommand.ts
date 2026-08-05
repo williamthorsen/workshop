@@ -7,6 +7,7 @@ import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
+import { SEGMENT_SEPARATOR } from '../layout/layoutEngine.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -263,10 +264,14 @@ function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
   });
 }
 
-/** Labels a package kit with the package and version it came from. */
+/**
+ * Labels a package kit, its package first, so a kit reads the same here as in the heading a run gives it.
+ *
+ * The row's own token supplies the package glyph, so the label carries only what follows it.
+ */
 function describePackageKit(kit: PackageKit): string {
   const version = kit.version === undefined ? '' : `@${kit.version}`;
-  return `${kit.kitName} (${kit.packageName}${version})`;
+  return `${kit.packageName}${version}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
 }
 
 /** Builds the row for a kit a configured package publishes. */

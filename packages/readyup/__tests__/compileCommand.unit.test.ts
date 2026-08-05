@@ -1,4 +1,6 @@
 import assert from 'node:assert';
+import path from 'node:path';
+import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
@@ -107,7 +109,7 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', undefined);
-    expect(stdoutSpy).toHaveBeenCalledWith('\n\u{2500}\u{2500} Compiling kit\n\n');
+    expect(stdoutSpy).toHaveBeenCalledWith('\u{2500}\u{2500} Compiling kit\n');
   });
 
   it('shows compiled indicator for a changed single file', async () => {
@@ -218,6 +220,45 @@ describe(compileCommand, () => {
 
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Compiling kits in'));
     expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining(' to '));
+  });
+
+  // `pnpm -r exec rdy compile` gives each workspace its own working directory, so a heading naming paths
+  // against that one reads identically from every workspace and tells the reader nothing.
+  it('names the source directory against the enclosing workspace root', async () => {
+    const workspaceRoot = path.resolve(process.cwd(), '..', '..');
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockImplementation((target: string) => {
+      if (target.endsWith('pnpm-workspace.yaml')) return target === path.join(workspaceRoot, 'pnpm-workspace.yaml');
+      if (target.endsWith('.git')) return false;
+      return true;
+    });
+    mockReaddirSync.mockReturnValue(['a.ts']);
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    const expected = path.relative(workspaceRoot, path.resolve(process.cwd(), '.readyup/kits'));
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`Compiling kits in ${expected}`));
+  });
+
+  // Readyup is published, so it runs in repositories that have no workspace file and in directories under
+  // no repository at all. Both still need a stable anchor rather than no heading.
+  it('falls back to the working directory when no workspace or repository encloses the source', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockImplementation(
+      (target: string) => !target.endsWith('pnpm-workspace.yaml') && !target.endsWith('.git'),
+    );
+    mockReaddirSync.mockReturnValue(['a.ts']);
+
+    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+
+    await compileCommand([]);
+
+    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Compiling kits in .readyup/kits'));
   });
 
   it('prints "from ... to ..." header when srcDir differs from outDir', async () => {

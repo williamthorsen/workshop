@@ -26,10 +26,10 @@ describe(printStep, () => {
     vi.restoreAllMocks();
   });
 
-  it('renders a step label as a section heading set off by blank lines', () => {
+  it('renders a step label as a section heading, parted from what precedes it', () => {
     printStep('Scaffolding config');
 
-    expect(infoSpy).toHaveBeenCalledWith('\n\u{2500}\u{2500} Scaffolding config\n');
+    expect(infoSpy).toHaveBeenCalledWith('\n\u{2500}\u{2500} Scaffolding config');
   });
 
   it('retires the arrow-prefixed step grammar', () => {

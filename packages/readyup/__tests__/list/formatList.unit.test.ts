@@ -72,14 +72,13 @@ describe(formatOwnerView, () => {
     });
     const lines = result.split('\n');
 
-    expect(lines[0]).toBe('');
-    expect(lines[1]).toBe('\u{2500}\u{2500} Internal');
-    expect(lines[2]).toBe('   rdy run --jit <name>');
-    expect(lines[3]).toBe('');
-    expect(lines[4]).toBe(`${INTERNAL} deploy`);
+    expect(lines[0]).toBe('\u{2500}\u{2500} Internal');
+    expect(lines[1]).toBe('   rdy run --jit <name>');
+    expect(lines[2]).toBe(`${INTERNAL} deploy`);
   });
 
-  it('sets every section off with a blank line above its title', () => {
+  // A blank parts one section from the next, and the first section opens the output with no blank at all.
+  it('parts one section from the next with a blank line, opening with none', () => {
     const lines = formatOwnerView({
       internalKits: ['deploy'],
       compiledKits: ['monitor'],
@@ -89,10 +88,8 @@ describe(formatOwnerView, () => {
       .map((line, index) => (line.startsWith('\u{2500}\u{2500} ') ? index : -1))
       .filter((index) => index !== -1);
 
-    expect(titleIndexes).toHaveLength(2);
-    for (const index of titleIndexes) {
-      expect(lines[index - 1]).toBe('');
-    }
+    expect(titleIndexes).toStrictEqual([0, 4]);
+    expect(lines[3]).toBe('');
   });
 
   it('fuses neither the command into the title nor the title into the command', () => {
@@ -272,16 +269,14 @@ describe(formatManifestView, () => {
     expect(result).toContain(`${COMPILED} monitor`);
   });
 
-  it('sets the heading off with a blank line above and below', () => {
+  it('sits the kits against the heading, with no blank line anywhere', () => {
     const lines = formatManifestView({
       kits: [{ name: 'deploy' }],
       manifestPath: '.readyup/manifest.json',
     }).split('\n');
 
-    expect(lines[0]).toBe('');
-    expect(lines[1]).toBe('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
-    expect(lines[2]).toBe('');
-    expect(lines[3]).toBe(`${COMPILED} deploy`);
+    expect(lines[0]).toBe('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
+    expect(lines[1]).toBe(`${COMPILED} deploy`);
   });
 
   it('renders description inline after kit name when present', () => {
