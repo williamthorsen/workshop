@@ -12,8 +12,14 @@ import { onTestFinished } from 'vitest';
  *
  * `prefix` names the temp directory, so a test building several trees can tell which directory belongs to which, and a
  * directory left behind by a crashed run still names the suite that made it.
+ *
+ * A file's content is text or the bytes themselves, since a body no UTF-8 reading survives is unwritable as a string
+ * and is exactly what a test of byte-for-byte handling needs.
  */
-export async function buildTempTree(files: Record<string, string>, prefix = 'compositor'): Promise<string> {
+export async function buildTempTree(
+  files: Record<string, string | Uint8Array>,
+  prefix = 'compositor',
+): Promise<string> {
   const dir = await mkdtemp(path.join(tmpdir(), `${prefix}-`));
   onTestFinished(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -22,7 +28,7 @@ export async function buildTempTree(files: Record<string, string>, prefix = 'com
   for (const [relativePath, content] of Object.entries(files)) {
     const filePath = path.join(dir, relativePath);
     await mkdir(path.dirname(filePath), { recursive: true });
-    await writeFile(filePath, content, 'utf8');
+    await writeFile(filePath, content);
   }
 
   return dir;

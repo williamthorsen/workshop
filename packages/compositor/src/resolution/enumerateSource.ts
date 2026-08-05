@@ -9,6 +9,7 @@ import { statIfPresent } from '../portable/statIfPresent.ts';
 import { toPosix } from '../portable/toPosix.ts';
 import type { ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { Hash, KindId } from '../schemas/scalar-schemas.ts';
+import { isArtifactName } from './isArtifactName.ts';
 
 /** One artifact a source carries, located and digested within that source. */
 export interface SourceArtifact {
@@ -49,17 +50,6 @@ async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Arra
   return artifacts
     .filter((artifact): artifact is SourceArtifact => artifact !== undefined)
     .toSorted((left, right) => compareStrings(left.slug, right.slug));
-}
-
-/**
- * Reports whether `name` can name an artifact.
- *
- * A dot prefix is tool state and an underscore prefix is support content: an include target, a shared data directory,
- * anything a source keeps beside its artifacts. The rule is structural, so the engine excludes them without knowing
- * what any particular one is for.
- */
-function isArtifactName(name: string): boolean {
-  return !name.startsWith('.') && !name.startsWith('_');
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { ArtifactId, KindId, TargetId } from '../schemas/scalar-schemas.ts';
 import type { DeployedNameLookup } from '../tokens/rewriteTokens.ts';
+import { renderDeployedName } from './name-templates.ts';
 
 /** One artifact this pass reads: what identifies it, and the name it deploys under where a kind's template is wrong. */
 export interface DeployableArtifact {
@@ -51,7 +52,7 @@ export function resolveDeployedNames(
         artifact.id,
         deployment.form === 'region'
           ? deployment.host
-          : (artifact.deployedName ?? renderName(deployment.nameTemplate, artifact.slug)),
+          : (artifact.deployedName ?? renderDeployedName(deployment.nameTemplate, artifact.slug)),
       );
     }
     byTarget.set(target.id, names);
@@ -59,17 +60,3 @@ export function resolveDeployedNames(
 
   return (targetId, artifactId) => byTarget.get(targetId)?.get(artifactId);
 }
-
-// region | Helpers
-
-/**
- * Renders a kind's name template for one slug, treating an absent template as the slug itself.
- *
- * The substitution goes through a function rather than a string, so a slug carrying `$&` or `$'` is inserted verbatim
- * instead of being read as a replacement pattern.
- */
-function renderName(template: string | undefined, slug: string): string {
-  return template === undefined ? slug : template.replaceAll('{slug}', () => slug);
-}
-
-// endregion | Helpers

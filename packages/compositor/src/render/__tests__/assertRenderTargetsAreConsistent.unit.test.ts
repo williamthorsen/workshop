@@ -69,6 +69,43 @@ describe(assertRenderTargetsAreConsistent, () => {
     ]);
   });
 
+  it('accepts a name template standing its placeholder, wherever in the name it stands', () => {
+    const templated: RenderTarget = {
+      ...claude,
+      deployments: [{ ...skillDeployment, nameTemplate: 'consult-{slug}' }],
+    };
+
+    expect(() => assertRenderTargetsAreConsistent([templated], kinds)).not.toThrow();
+  });
+
+  it('reports a name template standing no placeholder, which deploys one name for every artifact', () => {
+    const fixed: RenderTarget = { ...claude, deployments: [{ ...skillDeployment, nameTemplate: 'guidance' }] };
+
+    expect(violationsOf([fixed])).toStrictEqual([
+      {
+        path: 'targets[0].deployments[0].nameTemplate',
+        message: 'stands no {slug}, so no name it renders recovers the artifact that deployed it',
+      },
+    ]);
+  });
+
+  it.each([
+    ['a dot', '.{slug}'],
+    ['an underscore', '_shared-{slug}'],
+  ])(
+    'reports a name template leading with %s, which a destination scan reads as support content',
+    (_label, nameTemplate) => {
+      const hidden: RenderTarget = { ...claude, deployments: [{ ...skillDeployment, nameTemplate }] };
+
+      expect(violationsOf([hidden])).toStrictEqual([
+        {
+          path: 'targets[0].deployments[0].nameTemplate',
+          message: 'renders a support-prefixed name, which a destination scan passes over',
+        },
+      ]);
+    },
+  );
+
   it('reports a link grammar that does not compile', () => {
     const broken: RenderTarget = { ...claude, stages: [{ kind: 'links', pattern: '([a-z' }] };
 

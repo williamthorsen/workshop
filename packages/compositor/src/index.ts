@@ -23,9 +23,11 @@ export {
   buildContributionPatterns,
   renderContributionMarkers,
 } from './deployment/contribution-markers.ts';
+export { invertDeployedName, renderDeployedName, SLUG_PLACEHOLDER } from './deployment/name-templates.ts';
 export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
+export { ENGINE_VERSION } from './engine-version.ts';
 export { mergeFrontmatter } from './frontmatter/mergeFrontmatter.ts';
 export type { ParsedFrontmatter } from './frontmatter/parseFrontmatter.ts';
 export { parseFrontmatter } from './frontmatter/parseFrontmatter.ts';
@@ -198,6 +200,12 @@ export { TokenKindSchema } from './schemas/token-kind-schemas.ts';
 export type { DeclinedArtifact, SeededArtifact, Selection } from './selection/selectArtifacts.ts';
 export { selectArtifacts } from './selection/selectArtifacts.ts';
 export type { ConfigEntryRef, SelectionDiagnostic } from './selection/SelectionDiagnostic.ts';
+export type { CaptureSnapshotInput, CompositionSnapshot } from './snapshot/captureSnapshot.ts';
+export { captureSnapshot } from './snapshot/captureSnapshot.ts';
+export type { ArtifactAsset } from './snapshot/readArtifactAssets.ts';
+export { readArtifactAssets } from './snapshot/readArtifactAssets.ts';
+export type { ClaimedFile, HostState, ReadTargetStateOptions, TargetState } from './snapshot/readTargetState.ts';
+export { readTargetState } from './snapshot/readTargetState.ts';
 export type { TokenKindViolation } from './tokens/assertTokenKindsAreConsistent.ts';
 export { assertTokenKindsAreConsistent, TokenKindConsistencyError } from './tokens/assertTokenKindsAreConsistent.ts';
 export { compileTokenPattern } from './tokens/compileTokenPattern.ts';
