@@ -1072,7 +1072,10 @@ describe(runCommand, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
-  it('does not show checklist headers for a single checklist', async () => {
+  // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one
+  // checklist to report, so its breadcrumb would carry no segment at all. It heads nothing, and it opens
+  // with no blank line either.
+  it('heads nothing at all for a lone local kit running one checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -1083,7 +1086,9 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).not.toContain('---');
+    expect(allOutput).not.toContain('\u{2501}\u{2501}');
+    expect(allOutput).not.toContain('\u{2500}\u{2500} ');
+    expect(allOutput.startsWith('\n')).toBe(false);
   });
 
   it('shows kit headers when running multiple kits', async () => {
