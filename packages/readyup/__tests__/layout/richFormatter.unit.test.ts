@@ -6,7 +6,7 @@ import { richFormatter } from '../../src/layout/richFormatter.ts';
 const VARIATION_SELECTOR_16 = '\u{FE0F}';
 
 /** Glyphs no token may use, each stripped of any variation selector. */
-const RETIRED_GLYPHS = ['\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}'];
+const RETIRED_GLYPHS = ['\u{1F9F0}', '\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}'];
 
 const entries = TOKEN_NAMES.map((name) => ({ name, ...richFormatter.tokens[name] }));
 
@@ -15,7 +15,7 @@ describe('richFormatter', () => {
     expect(new Set(Object.keys(richFormatter.tokens))).toStrictEqual(new Set<string>(TOKEN_NAMES));
   });
 
-  it('retires the glyphs the unified vocabulary replaced', () => {
+  it('retires every glyph withdrawn from use', () => {
     const glyphs = entries.map((entry) => entry.glyph);
 
     for (const retired of RETIRED_GLYPHS) {

@@ -99,7 +99,7 @@ describe('--packages run path wiring', () => {
 
     await runCommand({ kitEntries: entries, json: false });
 
-    expect(stdout.join('')).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F9F0} drift');
+    expect(stdout.join('')).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} drift');
   });
 });
 

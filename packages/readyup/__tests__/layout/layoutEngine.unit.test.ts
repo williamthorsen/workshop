@@ -180,7 +180,7 @@ describe('formatBreadcrumb', () => {
       'kit',
     );
 
-    expect(rendered).toBe('\u{2501}\u{2501} 📦 @acme/release-kit@2.1.0 / 🧰 npm-auto-publish / 📋 repo');
+    expect(rendered).toBe('\u{2501}\u{2501} 📦 @acme/release-kit@2.1.0 / 📓 npm-auto-publish / 📋 repo');
   });
 
   it('renders a lone segment without a separator', () => {

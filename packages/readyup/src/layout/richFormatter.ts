@@ -22,7 +22,7 @@ export const richFormatter: Formatter = {
     failedRecommend: { glyph: '\u{1F7E1}', width: 2 },
     failedWarn: { glyph: '\u{1F7E0}', width: 2 },
     fix: { glyph: '\u{1F48A}', width: 2 },
-    kit: { glyph: '\u{1F9F0}', width: 2 },
+    kit: { glyph: '\u{1F4D3}', width: 2 },
     kitSource: { glyph: '\u{1F4C4}', width: 2 },
     passed: { glyph: '\u{1F7E2}', width: 2 },
     skippedOptional: { glyph: '\u{26AA}', width: 2 },
