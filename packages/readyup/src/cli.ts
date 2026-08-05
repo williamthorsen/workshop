@@ -10,7 +10,7 @@ import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
-import type { BreadcrumbSegment } from './layout/layoutEngine.ts';
+import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
@@ -948,9 +948,8 @@ function createBlockWriter(): BlockWriter {
 /**
  * Returns the segments heading every block a kit produces: where the kit came from, then the kit itself.
  *
- * A kit resolved from the local kits directory has no source to name and, when it is the only kit in the
- * run, nothing to be told apart from either -- so it heads its blocks with nothing, and a plain local run
- * stays as quiet as it has always been.
+ * A kit with no source to name and no sibling kit in the run has nothing to be told apart from, so it
+ * heads its blocks with nothing, and a plain local run stays as quiet as it has always been.
  */
 function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): BreadcrumbSegment[] {
   const source = describeKitProvenance(entry.provenance);
@@ -960,15 +959,19 @@ function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): Breadcr
 }
 
 /**
- * Returns the segment naming where a kit came from, or nothing for a kit the local kits directory holds.
+ * Returns the segment naming where a kit came from, or nothing where there is nothing to name.
  *
- * A package carries its version because the whole point of running a kit from an installed package is
- * that it matches the version in place, which the reader can only confirm if it is stated.
+ * A kit the local kits directory holds has no source, and neither does one whose directory resolves to
+ * the working directory: naming the directory the reader is standing in tells them nothing. A package
+ * carries its version because the whole point of running a kit from an installed package is that it
+ * matches the version in place, which the reader can only confirm if it is stated.
  */
 function describeKitProvenance(provenance: KitProvenance | undefined): BreadcrumbSegment | undefined {
   if (provenance === undefined) return undefined;
   if (provenance.kind === 'remote') return { role: 'sourceRemote', text: provenance.label };
-  if (provenance.kind === 'directory') return { role: 'sourceDirectory', text: provenance.label };
+  if (provenance.kind === 'directory') {
+    return path.normalize(provenance.label) === '.' ? undefined : { role: 'sourceDirectory', text: provenance.label };
+  }
 
   const version = provenance.version === undefined ? '' : `@${provenance.version}`;
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
@@ -976,7 +979,7 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
 
 /** Returns a breadcrumb as plain text, for a stderr line that carries no layout of its own. */
 function toBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
-  return segments.map((segment) => segment.text).join(' / ');
+  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }
 
 /**

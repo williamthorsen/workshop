@@ -953,6 +953,14 @@ describe(resolveKitSources, () => {
   });
 });
 
+/**
+ * Newline runs the block writer emits between blocks: one blank within a kit, two at a kit boundary.
+ *
+ * Each count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
+ */
+const WITHIN_KIT_GAP = '\n'.repeat(2);
+const KIT_BOUNDARY_GAP = '\n'.repeat(3);
+
 describe(runCommand, () => {
   let stdoutSpy: MockInstance;
   let stderrSpy: MockInstance;
@@ -1072,6 +1080,24 @@ describe(runCommand, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
+  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way. The
+  // wider gap is reserved for a kit boundary, which is the reader's only cue that the kit has changed.
+  it('parts blocks of one kit with a single blank line', async () => {
+    const kit = makeKit();
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).not.toContain(KIT_BOUNDARY_GAP);
+    expect(allOutput).toContain(`${WITHIN_KIT_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
+    expect(allOutput).toContain(`${WITHIN_KIT_GAP}combined summary`);
+  });
+
   // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one
   // checklist to report, so its breadcrumb would carry no segment at all. It heads nothing, and it opens
   // with no blank line either.
@@ -1109,6 +1135,29 @@ describe(runCommand, () => {
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit1');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit2');
+  });
+
+  // Two blanks at a kit boundary, none before the first block. Once headings stopped nesting, the wider
+  // gap is all that tells the reader one kit ended and the next began.
+  it('parts one kit from the next with two blank lines, opening with none', async () => {
+    const kit = makeKit({
+      checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
+    });
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F9F0} kit1')).toBe(true);
+    expect(allOutput).toContain(`${KIT_BOUNDARY_GAP}\u{2501}\u{2501} \u{1F9F0} kit2`);
+    expect(allOutput).not.toContain(`${KIT_BOUNDARY_GAP}\n`);
   });
 
   it('does not print combined summary when running multiple kits', async () => {
