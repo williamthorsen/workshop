@@ -704,6 +704,27 @@ describe(formatJsonReport, () => {
     });
   });
 
+  describe('per-check quiet', () => {
+    it('serializes a kit declaring it exactly as one that does not', () => {
+      const buildReport = (quiet: boolean) =>
+        makeReport({
+          results: [
+            makePassedResult({ name: 'quiet-pass', quiet }),
+            makePassedResult({ name: 'quiet-parent', quiet }),
+            makeFailedResult({ name: 'deep-failure', depth: 1, quiet }),
+            makeSkippedResult({ name: 'quiet-skip', quiet, skipReason: 'n/a' }),
+          ],
+          passed: false,
+          durationMs: 20,
+        });
+
+      const declared = formatReport(singleKit('deploy', buildReport(true)));
+
+      expect(declared).toBe(formatReport(singleKit('deploy', buildReport(false))));
+      expect(declared).toContain('quiet-pass');
+    });
+  });
+
   describe('detail projection', () => {
     const report = makeReport({
       results: [

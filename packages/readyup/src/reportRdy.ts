@@ -97,11 +97,16 @@ export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void 
 
 // -- Helpers --
 
-/** Returns the results surviving `reportOn`, then those surviving `quiet`, each pass keeping ancestors. */
+/**
+ * Returns the results surviving `reportOn`, then those surviving quiet, each pass keeping ancestors.
+ *
+ * A pass drops out when the invocation asked to be quiet or when the check declared itself quiet. The
+ * two are one predicate at two scopes, which is what makes a kit whose every check is quiet render
+ * exactly what `--quiet` renders.
+ */
 function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
   const reported = selectVisibleResults(results, reportOn);
-  if (!quiet) return reported;
-  return retainWithAncestors(reported, (result) => result.status !== 'passed');
+  return retainWithAncestors(reported, (result) => result.status !== 'passed' || !(quiet || result.quiet));
 }
 
 /**
