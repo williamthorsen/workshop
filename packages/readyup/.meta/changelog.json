@@ -1,5 +1,96 @@
 [
   {
+    "version": "0.24.0",
+    "date": "2026-08-05",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Ship ReadyUp's own kits (default and publishing) (#174)",
+            "body": "`readyup` now ships with two kits that can be run directly from the installed package. `rdy run --from npm:readyup` reports on whether the consuming project's kits are set up correctly and advises fixes. `rdy run --from npm:readyup publishing` checks the readiness of the project's kits for publishing, exiting with an error if checks fail. `rdy list --from npm:readyup` lists the available kits.",
+            "hash": "97ba0d327d7657a1e2a777ca75b502fabe2e7b0f"
+          },
+          {
+            "description": "Suggest a credential when a private-repo fetch is refused (#211)",
+            "body": "Adds a hint to the message that `readyup` displays when a remote kit cannot be fetched because a credential is missing. The previously uninformative message is replaced by a message appropriate for the target host (Bitbucket or GitHub). A corresponding `hint` field is added to JSON output when the `--json` option is used.",
+            "hash": "890dc0be7201e318b2a1f40b09b3374bf0d1b45d"
+          },
+          {
+            "description": "Add rdy verify --rebuild to check a kit by recompiling it (#237)",
+            "body": "Adds a `--rebuild` flag to `rdy verify`, which causes the verification to check whether an existing compiled kit bundle exactly matches what its source produces. Previously, a kit was checked only against recorded hashes of its source and its compiled bundle, so a kit could be reported current even if an imported module or inlined data had changed.\n\nThe `--rebuild` flag requires `esbuild`. Because a bundle carries the version of `readyup` that compiled it, upgrading `readyup` makes untouched kits fail until they are recompiled.",
+            "hash": "fdaf9dfebf95c1d285330d10c81315dd2c6c079e"
+          },
+          {
+            "description": "Head every rdy block with a source-first breadcrumb (#240)",
+            "body": "Improves `rdy` output in several ways:\n\n- more clearly labels `rdy run` output to show the source of the checks being run\n- more clearly labels `rdy compile` output to show the location of kits being compiled\n- adds emojis to identify 🌐 host, 📦 package, 🧰 kit, and 📋 collection\n- removes unneeded blank lines in output",
+            "hash": "42cfd4c3566364ea268ced0c39418fb4b4373cec"
+          },
+          {
+            "description": "Let a check declare that it reports only when it fails (#242)",
+            "body": "Kit authors can now mark a check to report only when it fails or is skipped.",
+            "hash": "c1d53c60384d526e48d95f77fb5a9ffb09657fe0"
+          },
+          {
+            "description": "Stop creating a manifest in projects that have no kits (#247)",
+            "body": "Changes the behavior of `rdy compile` so that it no longer creates a manifest if no kits are found to compile. This allows `rdy compile` to be run recursively in a monorepo that has kits in only some workspaces; previously, that operation would have created an empty manifest in workspaces that didn't need one.\n\nA run that finds no kits now reports whether a manifest was written. In a project with no kits, `rdy verify` now reports a missing manifest.",
+            "hash": "527137ad696b177f9a0d7e197973c2bf822956b6"
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Keep the kit heading from reading as a failure (#244)",
+            "body": "Replaces the 🧰 Toolbox emoji representing kits in `rdy` output with 📓 Notebook emoji. At a glance, the Toolbox emoji's bright red color gave the false impression that a failure had occurred.",
+            "hash": "6da6a7d873cfcf14a8279ecf49bdab28082e70dc"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Share temp-directory and stdio scaffolding across test suites (#178)",
+            "body": "Refactors test code to use shared helpers to create a temporary working directory or capture command output; the helpers handle directory cleanup, working-directory redirection, and stream restoration automatically.",
+            "hash": "4a108e20eac47cd5e8dc7cc4f91681a339a73192"
+          },
+          {
+            "description": "Embed the tier in test file names (#195)",
+            "body": "Every test file now embeds the name of its tier (unit, tool, localhost, or remote), and the naming convention is enforced by a CI check. Tests that use tools outside the test process can now be run separately (`nmr test:tool`).",
+            "hash": "5a0094fb51196468e851b1137c9961948e9b13b2"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade nmr, release-kit, and v11y-check (#193)",
+            "body": "Upgrades several dependencies, notably `nmr` to 0.24. That upgrade changes Vitest configuration so that test suites are selected by a tier (\"unit\", \"tool\", \"localhost\", and \"remote\") corresponding to the services they use. `nmr test:unit` and `nmr test:tool` each run one of these; `nmr test:all` runs every suite. `nmr test:integration` no longer exists, and no tests carry the `.int.` infix. The upgraded `nmr` includes a caching feature that skips checks that already succeeded against an identical working tree.",
+            "hash": "06fb89dcc35d45e10cc7fcf198ab218b3dbc467b"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Make readyup's shipped exemplars follow the naming and detail contracts (#219)",
+            "body": "Revises ReadyUp's starter template, demo, editor tooltips, and documentation so that they all align with ReadyUp's own check-authoring contract. \n\nNew features:\n\n- Checks can now report progress as a fraction over any collection, not just files and JSON fields.\n- A failing git ref-sync check now reports the difference between the two refs, and its remediation hint is now shown in the list of fixes, superseded by a hint provided by the kit itself.",
+            "hash": "ec6116a91a47821bf31952a571a5f66af62ee27e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.23.0",
     "date": "2026-08-01",
     "sections": [

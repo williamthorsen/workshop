@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/compositor",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Resolve declared content across precedence-ordered sources and plan idempotent writes to targets",
   "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/compositor#readme",

@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.3.2",
+    "date": "2026-08-05",
+    "sections": [
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade nmr, release-kit, and v11y-check (#193)",
+            "body": "Upgrades several dependencies, notably `nmr` to 0.24. That upgrade changes Vitest configuration so that test suites are selected by a tier (\"unit\", \"tool\", \"localhost\", and \"remote\") corresponding to the services they use. `nmr test:unit` and `nmr test:tool` each run one of these; `nmr test:all` runs every suite. `nmr test:integration` no longer exists, and no tests carry the `.int.` infix. The upgraded `nmr` includes a caching feature that skips checks that already succeeded against an identical working tree.",
+            "hash": "06fb89dcc35d45e10cc7fcf198ab218b3dbc467b"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.1",
     "date": "2026-08-01",
     "sections": [

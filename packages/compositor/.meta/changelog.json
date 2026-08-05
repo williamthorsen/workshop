@@ -1,0 +1,142 @@
+[
+  {
+    "version": "0.0.1",
+    "date": "2026-08-05",
+    "sections": [
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Add the Compositor package (#171)",
+            "body": "Adds `@williamthorsen/compositor`, a private package for the content-composition engine now under construction. It publishes nothing and exports nothing yet.",
+            "hash": "0b8f33e2488552673945101841831f746e6e6961"
+          },
+          {
+            "description": "Design the Compositor plan schema (#172)",
+            "body": "Introduces the plan contract: the full shape a composition's result takes and the guarantees made about that shape, verifiable by an accompanying check. Two sample plans now ship with the package. The contract is versioned. The version changes whenever a field is removed, renamed, or re-typed, but not when an optional field is added.",
+            "hash": "958b617ab1954a18f217af9fa0bf4aa759a6eeaf"
+          },
+          {
+            "description": "Resolve declared sources into a catalog of what they carry (#175)",
+            "body": "Introduces source resolution to Compositor: a single crawl over a set of sources, in declared precedence order, that reports every item any source holds, the source it comes from, which other sources carried it, and whether their copies differ from the one that overrides them. Precedence follows source order alone, so a bundled built-in library holds no special standing. A source that is missing or unreadable aborts the crawl rather than counting as empty.",
+            "hash": "e493f248ce5a39fd560837c0b45b335e23bd8a84"
+          },
+          {
+            "description": "Add tier provenance to the plan schema and share the traversal helpers (#179)",
+            "body": "A plan now records which configuration tier decided each artifact's presence, so that a consumer can tell a project-level opt-in from an inherited one. An artifact's reason for inclusion and its dependents can now be determined from any document that records artifacts and the links between them, not a plan alone.",
+            "hash": "aa50cd8bd4e96890871f59524c4092a213c7ee45"
+          },
+          {
+            "description": "Port the config model and tiered selection (#182)",
+            "body": "Adds tiered content selection. A consumer declares what it wants (named artifacts, everything from a given source, unwanted artifacts) and gets back exactly what was requested, each item having its provenance attached. Tiers stack the way layered config usually does: A project inherits what the tiers beneath it declared, and can extend that, refuse parts of it, or clear the slate and start fresh. Content selection is generic: The consumer names the tiers and the kinds of artifacts.",
+            "hash": "80ca75a386f943ef53ee87010bc2a166be5cf4cd"
+          },
+          {
+            "description": "Port transclusion and declarative token kinds (#209)",
+            "body": "Compositor now transcludes one file's content into another and resolves placeholder tokens, using an inclusion syntax and token vocabulary declared by the consumer. A token resolves against its containing file, not the file that pulled it in. Tokens naming an artifact render under the name by which the artifact is known by each destination; dependencies they imply surface before any destination is chosen. Authoring mistakes in composed content are reported without aborting generation of the remainder of the composition plan.",
+            "hash": "371777dbc219b5e98c6ea039363d7d233ee928f4"
+          },
+          {
+            "description": "Port destination ownership and frontmatter merge (#213)",
+            "body": "Compositor gains the ability to insert content into files that are not its own, writing into a bounded region of a text file or individual items in a YAML or JSON document. Several artifacts can share a single region and remain individually identifiable within it. A target can now also set metadata on the artifacts it renders, as defaults for all of them and as overrides for a single one. Unsafe writes are blocked with a notification. Re-applying an unchanged result leaves a file in an identical state.",
+            "hash": "87e468ee53fb712b355fa3926883a20e3a807810"
+          },
+          {
+            "description": "Port the dependency closure (#218)",
+            "body": "A request for a set of artifacts now expands to encompass their dependencies, returning a result that can be written out and compared and cheaply recomputed when a selection is toggled. Cycles among dependencies, references to nonexistent content, and malformed declarations are reported against the artifact responsible, so that a single pass surfaces every fault in the content tree.",
+            "hash": "33fa46d89dcc1cf4d7fa8f2801305fd131f8cf1f"
+          },
+          {
+            "description": "Declare target deployment and compose the transform pipeline (#220)",
+            "body": "Enables six features of the deployment pipeline:\n\n- Destinations can declare where content goes.\n- Destinations can decline certain kinds of content.\n- Deployed artifacts can be differently named in different destinations.\n- Intra-content links are transformed to in-destination links.\n- Destinations declare which processing steps should run.\n- A broken configuration is caught early.",
+            "hash": "7e9b621aedc70168416ac774d5be48db9e20c264"
+          },
+          {
+            "description": "Split source resolution into locate and fold, and add the region deployment form (#232)",
+            "body": "Re-resolving an edited configuration no longer reads the filesystem. It reuses the packages an earlier pass located, so previewing a renamed source, a remapped path, reordered tiers, or a dropped and re-adopted source is fast enough for an interactive edit-and-preview loop. Only naming a package no earlier pass saw still needs a fresh walk.\n\nA destination can now route a whole artifact kind into one shared file it does not otherwise own, such as an ambient guidance file holding many contributions, instead of giving each artifact its own file or directory. A mistake in that declaration is reported before any file is written. And a package a configuration declares and then drops no longer has to be installed for the configuration to resolve.",
+            "hash": "c4f352ad970f4ce21f0323f8b4b85a8144bf4678"
+          },
+          {
+            "description": "Capture the composition snapshot (#241)",
+            "body": "Recomputing a composition after changes in a consumer's opt-ins no longer requires further disk operations. Content dropped from every source is now planned for removal from its destination instead of being left in place. Files (whether binary or text) shipped alongside an artifact's entry file now travel with it. A declaration that would deploy files untracked by the engine is now rejected outright, preventing the accumulation of files for which there is no cleanup mechanism.",
+            "hash": "24455c7bae3199e6e61c1543c53b0676bb7a3894"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Extract the shared consistency vocabulary and decompose the assertions (#189)",
+            "body": "The consistency failures for plans and catalogs now extend a common `ConsistencyError`, allowing validation code to check a single type.",
+            "hash": "54c0c3d119f4feb3f6cb57557ff906fdfb6d028a"
+          },
+          {
+            "description": "Give the flow modules' helpers their own modules (#190)",
+            "body": "Generic filesystem and path helpers are now grouped under `portable/`, identifying them as candidates for extraction and reuse.",
+            "hash": "50f617e8e1378b363c5448132dd0dd3eeaf61da7"
+          },
+          {
+            "description": "Name each schema module for one subject (#194)",
+            "body": "Renames Compositor files to make their content and schema contract evident from the file name alone. This brings the files into alignment with in-house naming conventions.",
+            "hash": "92507e9e9166d0fcdc4411918c8f6f0d55c10648"
+          },
+          {
+            "description": "Resolve the traversal and test-helper name collisions (#196)",
+            "body": "Replaces the duplicative names of Compositor's dependency-graph traversal modules and catalog test builders with names that better communicate their contents.",
+            "hash": "e633188b9bba2856018cec284718443edb299077"
+          },
+          {
+            "description": "Decompose the representative sample builder (#197)",
+            "body": "Decomposes compositor's monolithic sample plan into one module per table. The fingerprint's source and target ids are no longer duplicated, but derived directly from those tables. The published sample JSON is unchanged.",
+            "hash": "a4b561b71f1451bfc223566c1ed6f7b592a3da0d"
+          },
+          {
+            "description": "Conform property names to the naming conventions (#227)",
+            "body": "Aligns property names with in-house naming conventions.",
+            "hash": "136f2bdceb20ce77349e38ad2324c2692c7a792b"
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade nmr, release-kit, and v11y-check (#193)",
+            "body": "Upgrades several dependencies, notably `nmr` to 0.24. That upgrade changes Vitest configuration so that test suites are selected by a tier (\"unit\", \"tool\", \"localhost\", and \"remote\") corresponding to the services they use. `nmr test:unit` and `nmr test:tool` each run one of these; `nmr test:all` runs every suite. `nmr test:integration` no longer exists, and no tests carry the `.int.` infix. The upgraded `nmr` includes a caching feature that skips checks that already succeeded against an identical working tree.",
+            "hash": "06fb89dcc35d45e10cc7fcf198ab218b3dbc467b"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Apply comment discipline to the schema modules (#202)",
+            "body": "Tightens comments by removing narration of development history and focusing them on the code itself. Function descriptions are now aligned with house style.",
+            "hash": "99a28913001ac3bd18b61479aa75a2616e8d1a94"
+          },
+          {
+            "description": "Revise comments in the config and resolution modules (#203)",
+            "body": "Tightens comments by reducing duplication, removing narration of development history, and focusing on the code itself. Function descriptions are now aligned with house style.",
+            "hash": "06da99fe317e25aacf6b9989008302b7d01785ee"
+          },
+          {
+            "description": "Apply comment discipline to the plan, consistency, graph, and selection modules (#204)",
+            "body": "Tightens comments by reducing duplication, removing narration of development history, and focusing on the code itself. Function descriptions are now aligned with house style.",
+            "hash": "db18896e5c348980ddc477f63bf8460ad224dd9b"
+          },
+          {
+            "description": "Apply comment discipline to the portable, samples, and scaffolding modules (#205)",
+            "body": "Tightens comments by reducing duplication, removing narration of development history, and focusing on the code itself. Function descriptions are now aligned with house style.",
+            "hash": "902114872ed9bfdc022c81079c7f210426d904af"
+          }
+        ]
+      }
+    ]
+  }
+]

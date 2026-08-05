@@ -10,10 +10,10 @@
       ],
       "name": "demo",
       "path": "kits/demo.js",
-      "readyupVersion": "0.23.0",
+      "readyupVersion": "0.24.0",
       "source": "kits/demo.ts",
       "sourceHash": "32c98768",
-      "targetHash": "7630843a"
+      "targetHash": "2d9fed1b"
     }
   ]
 }

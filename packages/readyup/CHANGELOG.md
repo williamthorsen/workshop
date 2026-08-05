@@ -2,6 +2,76 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.24.0 — 2026-08-05
+
+### 🎉 Features
+
+- Ship ReadyUp's own kits (default and publishing) (#174)
+
+  `readyup` now ships with two kits that can be run directly from the installed package. `rdy run --from npm:readyup` reports on whether the consuming project's kits are set up correctly and advises fixes. `rdy run --from npm:readyup publishing` checks the readiness of the project's kits for publishing, exiting with an error if checks fail. `rdy list --from npm:readyup` lists the available kits.
+
+- Suggest a credential when a private-repo fetch is refused (#211)
+
+  Adds a hint to the message that `readyup` displays when a remote kit cannot be fetched because a credential is missing. The previously uninformative message is replaced by a message appropriate for the target host (Bitbucket or GitHub). A corresponding `hint` field is added to JSON output when the `--json` option is used.
+
+- Add rdy verify --rebuild to check a kit by recompiling it (#237)
+
+  Adds a `--rebuild` flag to `rdy verify`, which causes the verification to check whether an existing compiled kit bundle exactly matches what its source produces. Previously, a kit was checked only against recorded hashes of its source and its compiled bundle, so a kit could be reported current even if an imported module or inlined data had changed.
+
+  The `--rebuild` flag requires `esbuild`. Because a bundle carries the version of `readyup` that compiled it, upgrading `readyup` makes untouched kits fail until they are recompiled.
+
+- Head every rdy block with a source-first breadcrumb (#240)
+
+  Improves `rdy` output in several ways:
+
+  - more clearly labels `rdy run` output to show the source of the checks being run
+  - more clearly labels `rdy compile` output to show the location of kits being compiled
+  - adds emojis to identify 🌐 host, 📦 package, 🧰 kit, and 📋 collection
+  - removes unneeded blank lines in output
+
+- Let a check declare that it reports only when it fails (#242)
+
+  Kit authors can now mark a check to report only when it fails or is skipped.
+
+- Stop creating a manifest in projects that have no kits (#247)
+
+  Changes the behavior of `rdy compile` so that it no longer creates a manifest if no kits are found to compile. This allows `rdy compile` to be run recursively in a monorepo that has kits in only some workspaces; previously, that operation would have created an empty manifest in workspaces that didn't need one.
+
+  A run that finds no kits now reports whether a manifest was written. In a project with no kits, `rdy verify` now reports a missing manifest.
+
+### 🐛 Bug fixes
+
+- Keep the kit heading from reading as a failure (#244)
+
+  Replaces the 🧰 Toolbox emoji representing kits in `rdy` output with 📓 Notebook emoji. At a glance, the Toolbox emoji's bright red color gave the false impression that a failure had occurred.
+
+### ♻️ Refactoring
+
+- Share temp-directory and stdio scaffolding across test suites (#178)
+
+  Refactors test code to use shared helpers to create a temporary working directory or capture command output; the helpers handle directory cleanup, working-directory redirection, and stream restoration automatically.
+
+- Embed the tier in test file names (#195)
+
+  Every test file now embeds the name of its tier (unit, tool, localhost, or remote), and the naming convention is enforced by a CI check. Tests that use tools outside the test process can now be run separately (`nmr test:tool`).
+
+### ⚙️ Tooling
+
+- Upgrade nmr, release-kit, and v11y-check (#193)
+
+  Upgrades several dependencies, notably `nmr` to 0.24. That upgrade changes Vitest configuration so that test suites are selected by a tier ("unit", "tool", "localhost", and "remote") corresponding to the services they use. `nmr test:unit` and `nmr test:tool` each run one of these; `nmr test:all` runs every suite. `nmr test:integration` no longer exists, and no tests carry the `.int.` infix. The upgraded `nmr` includes a caching feature that skips checks that already succeeded against an identical working tree.
+
+### 📚 Documentation
+
+- Make readyup's shipped exemplars follow the naming and detail contracts (#219)
+
+  Revises ReadyUp's starter template, demo, editor tooltips, and documentation so that they all align with ReadyUp's own check-authoring contract.
+
+  New features:
+
+  - Checks can now report progress as a fraction over any collection, not just files and JSON fields.
+  - A failing git ref-sync check now reports the difference between the two refs, and its remediation hint is now shown in the list of fixes, superseded by a hint provided by the kit itself.
+
 ## 0.23.0 — 2026-08-01
 
 ### 🎉 Features
