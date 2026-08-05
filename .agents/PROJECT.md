@@ -1,7 +1,5 @@
 # Workshop
 
-@nmr/AGENTS.md
-
 ## Overview
 
 A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; and `compositor`, a private content-composition engine under construction.

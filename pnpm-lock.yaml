@@ -27,17 +27,20 @@ importers:
         specifier: 1.6.24
         version: 1.6.24(@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/eslint-config-typescript':
-        specifier: 8.3.0
-        version: 8.3.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: 8.4.0
+        version: 8.4.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
-        specifier: 0.26.1
-        version: 0.26.1(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
+        specifier: 0.27.0
+        version: 0.27.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/release-kit':
-        specifier: 10.2.1
-        version: 10.2.1
+        specifier: 10.2.2
+        version: 10.2.2
       '@williamthorsen/strict-lint':
-        specifier: 9.2.0
-        version: 9.2.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
+        specifier: 9.3.0
+        version: 9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
+      codeassembly:
+        specifier: 0.4.0
+        version: 0.4.0
       esbuild:
         specifier: 0.28.1
         version: 0.28.1
@@ -57,8 +60,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       v11y-check:
-        specifier: 0.14.1
-        version: 0.14.1
+        specifier: 0.14.2
+        version: 0.14.2
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -742,20 +745,25 @@ packages:
   '@vitest/utils@4.1.10':
     resolution: {integrity: sha512-fy9am/HWxbaGt/Sawrp90vt6Y6jQwf1RX77cz3uwoJwJVMli/e1IEwRPnMNJ7vKfPTwo0diXifkpPvwH9v7nGA==}
 
-  '@williamthorsen/eslint-config-typescript@8.3.0':
-    resolution: {integrity: sha512-yXwgEDsgQ4CPs0irJIDIcIGnbxvS7cWDU9bV3M0oe5BeslDxCMdvXxCppAJCVYLncaUe+9vgVwWU0V+DXbop0A==}
+  '@williamthorsen/eslint-config-typescript@8.4.0':
+    resolution: {integrity: sha512-vU1m2dTCxcOCMkQKVwf8zLeBLpqjZrPOtZ4FGRxqMpzdxaA16/oMg8q4gT7Vd9OzqfXWVqKtRCsQC+JKY8fBwQ==}
     engines: {node: '>=24'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.59.1
       eslint: '>=10'
       typescript: '>=5'
 
-  '@williamthorsen/nmr-core@0.9.1':
-    resolution: {integrity: sha512-BkzEJunkDjSmJ5nCVCmeQK7P4/xZja9SRBBfX5gTNl9rkIl5Dk8bDZmy31mlqWEq1j/4mTcZJh+ogZ0FWe+Fag==}
+  '@williamthorsen/kb@0.3.0':
+    resolution: {integrity: sha512-IHQUQ6XMpxU78TnJAuYcyVrOWmMd1dV/Ku8TzFE0sfqalMSUhAS+siv+z+dtwCuOFoy+V7VcERWUt+w/gDvXBA==}
+    engines: {node: '>=24'}
+    hasBin: true
+
+  '@williamthorsen/nmr-core@0.9.2':
+    resolution: {integrity: sha512-vbWlFFJ1Vh7WyejuZG2/pwtaextXchDV0wx5W/ZCFNEwYdlXpqjTqBMc5F/GNQCV3wOCmXAfz8C+9/QtwD/FmA==}
     engines: {node: '>=24'}
 
-  '@williamthorsen/nmr@0.26.1':
-    resolution: {integrity: sha512-A1hCDqiisYgY8gO8zFykbkwZdCTZqmvvv4uBG5Nf5L4DOo8F6R9qVLxjZVOlNlxOWKdEAJ9iRHsydLcU8ohWZg==}
+  '@williamthorsen/nmr@0.27.0':
+    resolution: {integrity: sha512-tT8T0t0rJYUM8Z+vKVKWGuSc9FOqeh5LkiBbnpU15GxVN2IFR7WSju9d1Seq5kpHSrCvC81NSVh69UMKQdEuog==}
     engines: {node: '>=24.16.0'}
     hasBin: true
     peerDependencies:
@@ -768,13 +776,13 @@ packages:
       vitest:
         optional: true
 
-  '@williamthorsen/release-kit@10.2.1':
-    resolution: {integrity: sha512-Y5XzkfYTU/M6oufvPJ9uQQoiEdLFmVnVcMS+UjgAz17BX0BHhs0bZfnZ0wqT/MFenQJF0m1FG9i5OJJMQoOj0g==}
+  '@williamthorsen/release-kit@10.2.2':
+    resolution: {integrity: sha512-IBs9KYi3lTONYZESIu1RFepJ2OQ1Od83GzkiD3l50wnH5AOFDt7qmuLRD2fkSGXT+u5i+Dwbsl5fiDW/YrG+vg==}
     engines: {node: '>=24'}
     hasBin: true
 
-  '@williamthorsen/strict-lint@9.2.0':
-    resolution: {integrity: sha512-AWj5SM8PZ/R9bjGspN7f9/9o2Yg8DkhGMscPKYJyzIUwtKosN1+1XnMh2RvVW2YRnO4hLi7RIezn7cM2YrHIyg==}
+  '@williamthorsen/strict-lint@9.3.0':
+    resolution: {integrity: sha512-DEvD9YwAvIZNdOaO+6xKj7xcs7/jPrRHEjqZILxrm294tQK0VRqubm1wYK/XGzi1X2NCFI0U8OoQ4UmxvmTqrw==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
@@ -951,6 +959,15 @@ packages:
   cliui@8.0.1:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
+
+  codeassembly-lifecycle@0.2.0:
+    resolution: {integrity: sha512-ycszfwd7+FWlFX80Wwd7lgTadMPWMeaXKBaq0diUAAEeiG1tBFdxntboeBy7MNMoWAngqaG8chXguk5ip+AU7A==}
+    engines: {node: '>=24'}
+
+  codeassembly@0.4.0:
+    resolution: {integrity: sha512-0QxBXfElxnUFbG/I+TvcGEO5VMFp4lBR7/xc/5FJPwXITxjfu6A5uhcXDvw0WOkijBdNPDxZWlYK02DyMaTJ1Q==}
+    engines: {node: '>=24'}
+    hasBin: true
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -1409,6 +1426,10 @@ packages:
 
   globals@17.7.0:
     resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
+    engines: {node: '>=18'}
+
+  globals@17.8.0:
+    resolution: {integrity: sha512-Zz/LMDZScFmkakeL2cTHzf+PbWKdpU3uclqkZT7TjDG58j5WPt0PpA+n9uPI24fZtlw07q0OtEi84K+umsRzqQ==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -2374,6 +2395,10 @@ packages:
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
 
+  ulid@3.0.2:
+    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
+    hasBin: true
+
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
@@ -2403,8 +2428,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  v11y-check@0.14.1:
-    resolution: {integrity: sha512-Vtd65fqWUeUUxSqeeuudb0XV5lGxDopjSQTFeQ3vZyCHoeDS/ps0/HYuuY0i/JrExt4Kr4YcHY5pslK2ggGoXw==}
+  v11y-check@0.14.2:
+    resolution: {integrity: sha512-T2f7LjzdVsYVRQekLe9/RaOI7GRoFtxzwU1YjH3njmgduHFdvs2TknfPFnFX/s9uZElRoFy5lnN0dX531PdQdQ==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3112,7 +3137,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@williamthorsen/eslint-config-typescript@8.3.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@williamthorsen/eslint-config-typescript@8.4.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.7.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/js': 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3126,7 +3151,7 @@ snapshots:
       eslint-plugin-simple-import-sort: 14.0.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-unicorn: 72.0.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-yml: 3.6.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
-      globals: 17.7.0
+      globals: 17.8.0
       jsonc-eslint-parser: 3.1.0
       typescript: 6.0.3
       typescript-eslint: 8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
@@ -3139,11 +3164,17 @@ snapshots:
       - supports-color
       - ts-declaration-location
 
-  '@williamthorsen/nmr-core@0.9.1': {}
-
-  '@williamthorsen/nmr@0.26.1(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)':
+  '@williamthorsen/kb@0.3.0':
     dependencies:
-      '@williamthorsen/nmr-core': 0.9.1
+      picomatch: 4.0.5
+      yaml: 2.9.0
+      zod: 4.4.3
+
+  '@williamthorsen/nmr-core@0.9.2': {}
+
+  '@williamthorsen/nmr@0.27.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)':
+    dependencies:
+      '@williamthorsen/nmr-core': 0.9.2
       glob: 13.0.6
       prettier-plugin-sh: 0.19.0(prettier@3.9.6)
       taze: 19.16.0
@@ -3153,16 +3184,16 @@ snapshots:
       prettier: 3.9.6
       vitest: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
-  '@williamthorsen/release-kit@10.2.1':
+  '@williamthorsen/release-kit@10.2.2':
     dependencies:
-      '@williamthorsen/nmr-core': 0.9.1
+      '@williamthorsen/nmr-core': 0.9.2
       glob: 13.0.6
       json-stringify-pretty-compact: 4.0.0
       semver: 7.8.5
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@williamthorsen/strict-lint@9.2.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))':
+  '@williamthorsen/strict-lint@9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.2.1
       eslint: 10.8.0(jiti@2.7.0)(supports-color@7.2.0)
@@ -3368,6 +3399,16 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
+
+  codeassembly-lifecycle@0.2.0: {}
+
+  codeassembly@0.4.0:
+    dependencies:
+      '@williamthorsen/kb': 0.3.0
+      codeassembly-lifecycle: 0.2.0
+      ulid: 3.0.2
+      yaml: 2.9.0
+      zod: 4.4.3
 
   color-convert@2.0.1:
     dependencies:
@@ -3955,6 +3996,8 @@ snapshots:
   globals@15.15.0: {}
 
   globals@17.7.0: {}
+
+  globals@17.8.0: {}
 
   globalthis@1.0.4:
     dependencies:
@@ -4944,6 +4987,8 @@ snapshots:
 
   ufo@1.6.4: {}
 
+  ulid@3.0.2: {}
+
   unbox-primitive@1.1.0:
     dependencies:
       call-bound: 1.0.4
@@ -4980,9 +5025,9 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v11y-check@0.14.1:
+  v11y-check@0.14.2:
     dependencies:
-      '@williamthorsen/nmr-core': 0.9.1
+      '@williamthorsen/nmr-core': 0.9.2
       audit-ci: 7.1.0
       zod: 4.4.3
 
