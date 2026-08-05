@@ -5,6 +5,7 @@ import type {
   CheckOutcome,
   FailedResult,
   PassedResult,
+  Progress,
   RdyCheck,
   RdyChecklist,
   RdyReport,
@@ -61,55 +62,67 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
   return check.severity ?? defaultSeverity;
 }
 
+/** The fields a check contributes to every result it can produce. */
+interface CheckContext {
+  name: string;
+  severity: Severity;
+  quiet: boolean;
+  fix: string | null;
+  depth: number;
+}
+
+/** Gather the fields a check contributes to every result it can produce. */
+function buildCheckContext(check: RdyCheck, defaultSeverity: Severity, depth: number): CheckContext {
+  return {
+    name: check.name,
+    severity: resolveSeverity(check, defaultSeverity),
+    quiet: check.quiet ?? false,
+    fix: check.fix ?? null,
+    depth,
+  };
+}
+
 /** Build a passed result. */
 function buildPassedResult(
-  name: string,
-  severity: Severity,
-  durationMs: number,
-  detail: string | null,
-  fix: string | null,
-  progress: import('./types.ts').Progress | null,
-  depth = 0,
+  fields: CheckContext & { detail: string | null; durationMs: number; progress: Progress | null },
 ): PassedResult {
-  return { name, status: 'passed', ok: true, severity, detail, fix, error: null, progress, durationMs, depth };
+  return { ...fields, status: 'passed', ok: true, error: null };
 }
 
 /** Build a failed result. */
 function buildFailedResult(
-  name: string,
-  severity: Severity,
-  durationMs: number,
-  detail: string | null,
-  fix: string | null,
-  error: Error | null,
-  progress: import('./types.ts').Progress | null,
-  depth = 0,
+  fields: CheckContext & {
+    detail: string | null;
+    durationMs: number;
+    error: Error | null;
+    progress: Progress | null;
+  },
 ): FailedResult {
-  return { name, status: 'failed', ok: false, severity, detail, fix, error, progress, durationMs, depth };
+  return { ...fields, status: 'failed', ok: false };
 }
 
 /** Build a skipped result. */
 function buildSkippedResult(
-  name: string,
-  severity: Severity,
-  skipReason: 'n/a' | 'precondition',
-  detail: string | null,
-  fix: string | null,
-  depth = 0,
+  fields: CheckContext & { detail: string | null; skipReason: 'n/a' | 'precondition' },
 ): SkippedResult {
-  return {
-    name,
-    status: 'skipped',
-    ok: null,
-    severity,
-    skipReason,
-    detail,
-    fix,
-    error: null,
+  return { ...fields, status: 'skipped', ok: null, error: null, progress: null, durationMs: 0 };
+}
+
+/**
+ * Build the result for a check that is broken rather than failing.
+ *
+ * The declared severity is overridden, because a check that never expressed a verdict says nothing
+ * about the urgency of its subject.
+ */
+function buildAuthoringErrorResult(context: CheckContext, durationMs: number, error: Error): FailedResult {
+  return buildFailedResult({
+    ...context,
+    severity: AUTHORING_ERROR_SEVERITY,
+    detail: null,
+    durationMs,
+    error,
     progress: null,
-    durationMs: 0,
-    depth,
-  };
+  });
 }
 
 /**
@@ -118,8 +131,7 @@ function buildSkippedResult(
  * Returns the check's own result followed by all descendant results in depth-first order.
  */
 async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 0): Promise<RdyResult[]> {
-  const severity = resolveSeverity(check, defaultSeverity);
-  const fix = check.fix ?? null;
+  const context = buildCheckContext(check, defaultSeverity, depth);
   const children = check.checks ?? [];
 
   // Evaluate skip condition before running the check.
@@ -131,30 +143,19 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
       const skipResult: unknown = await check.skip();
       if (typeof skipResult === 'string') {
         // An `n/a` skip terminates its subtree: descendants produce no results at all.
-        return [buildSkippedResult(check.name, severity, 'n/a', skipResult, fix, depth)];
+        return [buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult })];
       }
       if (skipResult !== false) {
-        const durationMs = performance.now() - start;
         const error = new Error(
           `skip() returned ${describeValue(skipResult)}; expected false to run the check, or a reason string to skip it.`,
         );
-        const result = buildFailedResult(
-          check.name,
-          AUTHORING_ERROR_SEVERITY,
-          durationMs,
-          null,
-          fix,
-          error,
-          null,
-          depth,
-        );
+        const result = buildAuthoringErrorResult(context, performance.now() - start, error);
         const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
         return [result, ...childResults];
       }
     } catch (error_: unknown) {
-      const durationMs = performance.now() - start;
       const error = error_ instanceof Error ? error_ : new Error(String(error_));
-      const result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
+      const result = buildAuthoringErrorResult(context, performance.now() - start, error);
       const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
       return [result, ...childResults];
     }
@@ -167,29 +168,28 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
     let result: PassedResult | FailedResult;
     if (typeof raw === 'boolean') {
       result = raw
-        ? buildPassedResult(check.name, severity, durationMs, null, fix, null, depth)
-        : buildFailedResult(check.name, severity, durationMs, null, fix, null, null, depth);
+        ? buildPassedResult({ ...context, detail: null, durationMs, progress: null })
+        : buildFailedResult({ ...context, detail: null, durationMs, error: null, progress: null });
     } else if (isCheckOutcome(raw)) {
       const detail = raw.detail ?? null;
       const progress = raw.progress ?? null;
       result = raw.ok
-        ? buildPassedResult(check.name, severity, durationMs, detail, fix, progress, depth)
-        : buildFailedResult(check.name, severity, durationMs, detail, fix, null, progress, depth);
+        ? buildPassedResult({ ...context, detail, durationMs, progress })
+        : buildFailedResult({ ...context, detail, durationMs, error: null, progress });
     } else {
       // Reported as a defect rather than as an ordinary failure: the check never expressed a
       // verdict, so the severity it declared for its subject says nothing about this outcome.
       const error = new Error(
         `check() returned ${describeValue(raw)}; expected a boolean or an object with a boolean "ok" property.`,
       );
-      result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
+      result = buildAuthoringErrorResult(context, durationMs, error);
     }
 
     const childResults = await collectChildResults(result, children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
-    const durationMs = performance.now() - start;
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
-    const result = buildFailedResult(check.name, AUTHORING_ERROR_SEVERITY, durationMs, null, fix, error, null, depth);
+    const result = buildAuthoringErrorResult(context, performance.now() - start, error);
     const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   }
@@ -247,8 +247,8 @@ function skipAllDescendants(checks: RdyCheck[], defaultSeverity: Severity, depth
 
 /** Mark a check as skipped because a precondition or ancestor check failed. */
 function skipCheck(check: RdyCheck, defaultSeverity: Severity, depth: number): RdyResult {
-  const severity = resolveSeverity(check, defaultSeverity);
-  return buildSkippedResult(check.name, severity, 'precondition', null, check.fix ?? null, depth);
+  const context = buildCheckContext(check, defaultSeverity, depth);
+  return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
 }
 
 /** Run preconditions concurrently. Return true if all passed. */

@@ -145,6 +145,13 @@ export interface RdyCheck {
   severity?: Severity | undefined;
 
   /**
+   * Whether the check renders only when it does not pass. It still runs and still counts toward
+   * the summary; a failure or a skip reports in full.
+   * Default: false.
+   */
+  quiet?: boolean | undefined;
+
+  /**
    * Skip condition. When provided, evaluated before the check runs.
    * Return `false` to run the check, or a reason string to skip it.
    */
@@ -166,6 +173,9 @@ interface RdyResultBase {
 
   /** Resolved severity for this check. */
   severity: Severity;
+
+  /** Whether the check declared itself quiet on a pass. */
+  quiet: boolean;
 
   /** Diagnostic detail (failure reason, skip reason, or supplementary info). */
   detail: string | null;

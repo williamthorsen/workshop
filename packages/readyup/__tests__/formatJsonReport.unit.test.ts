@@ -12,6 +12,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
     status: 'passed',
     ok: true,
     severity: 'error',
+    quiet: false,
     detail: null,
     fix: null,
     error: null,
@@ -28,6 +29,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
     status: 'failed',
     ok: false,
     severity: 'error',
+    quiet: false,
     detail: null,
     fix: null,
     error: null,
@@ -44,6 +46,7 @@ function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
     status: 'skipped',
     ok: null,
     severity: 'error',
+    quiet: false,
     skipReason: 'precondition',
     detail: null,
     fix: null,
@@ -698,6 +701,27 @@ describe(formatJsonReport, () => {
         ],
       });
       expect(output).not.toContain('warn-fail');
+    });
+  });
+
+  describe('per-check quiet', () => {
+    it('serializes a kit declaring it exactly as one that does not', () => {
+      const buildReport = (quiet: boolean) =>
+        makeReport({
+          results: [
+            makePassedResult({ name: 'quiet-pass', quiet }),
+            makePassedResult({ name: 'quiet-parent', quiet }),
+            makeFailedResult({ name: 'deep-failure', depth: 1, quiet }),
+            makeSkippedResult({ name: 'quiet-skip', quiet, skipReason: 'n/a' }),
+          ],
+          passed: false,
+          durationMs: 20,
+        });
+
+      const declared = formatReport(singleKit('deploy', buildReport(true)));
+
+      expect(declared).toBe(formatReport(singleKit('deploy', buildReport(false))));
+      expect(declared).toContain('quiet-pass');
     });
   });
 

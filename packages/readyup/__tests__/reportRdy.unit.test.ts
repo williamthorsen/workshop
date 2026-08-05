@@ -21,6 +21,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
     status: 'passed',
     ok: true,
     severity: 'error',
+    quiet: false,
     detail: null,
     fix: null,
     error: null,
@@ -37,6 +38,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
     status: 'failed',
     ok: false,
     severity: 'error',
+    quiet: false,
     detail: null,
     fix: null,
     error: null,
@@ -53,6 +55,7 @@ function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
     status: 'skipped',
     ok: null,
     severity: 'error',
+    quiet: false,
     skipReason: 'precondition',
     detail: null,
     fix: null,
@@ -659,6 +662,114 @@ describe(reportRdy, () => {
       );
 
       expect(output).toBe(`${PASSED} 2 passed (30ms)`);
+    });
+  });
+
+  describe('per-check quiet', () => {
+    it('hides a quiet check that passes, leaving its loud siblings alone', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'quiet-pass', quiet: true }), makePassedResult({ name: 'loud-pass' })],
+        }),
+      );
+
+      expect(output).not.toContain('quiet-pass');
+      expect(output).toContain('loud-pass');
+    });
+
+    it('reports a quiet check that fails, with its detail and its fix', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'quiet-fail', quiet: true, detail: 'two remain', fix: 'Run install' })],
+          passed: false,
+        }),
+      );
+
+      expect(output).toContain('quiet-fail');
+      expect(output).toContain('   two remain');
+      expect(output).toContain(`${FIX} quiet-fail`);
+      expect(output).toContain('   Run install');
+    });
+
+    it('reports a quiet check that is skipped', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeSkippedResult({ name: 'quiet-optional', quiet: true, skipReason: 'n/a', detail: 'no target' }),
+            makeSkippedResult({ name: 'quiet-blocked', quiet: true, skipReason: 'precondition' }),
+          ],
+        }),
+      );
+
+      expect(lineNaming(output, 'quiet-optional')).toBe(`${SKIPPED_OPTIONAL} quiet-optional \u{00B7} no target`);
+      expect(lineNaming(output, 'quiet-blocked')).toBe(`${BLOCKED} quiet-blocked`);
+    });
+
+    it('counts a hidden quiet pass, so the tally still covers the whole run', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'hidden', quiet: true }),
+            makePassedResult({ name: 'shown' }),
+            makeFailedResult({ name: 'broken' }),
+          ],
+          passed: false,
+          durationMs: 90,
+        }),
+      );
+
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (90ms)`);
+    });
+
+    it('retains a quiet passing parent so a deep failure stays reachable', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'quiet-parent', quiet: true }),
+            makeFailedResult({ name: 'deep-failure', depth: 1 }),
+          ],
+          passed: false,
+        }),
+      );
+
+      expect(output.split('\n').slice(0, 2)).toStrictEqual([
+        `${PASSED} quiet-parent`,
+        `   ${FAILED_ERROR} deep-failure`,
+      ]);
+    });
+
+    it('drops a quiet passing child without dropping its parent', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'loud-parent' }),
+            makePassedResult({ name: 'quiet-child', depth: 1, quiet: true }),
+          ],
+        }),
+      );
+
+      expect(output).toContain('loud-parent');
+      expect(output).not.toContain('quiet-child');
+    });
+
+    it('renders what --quiet renders when every check declares it', () => {
+      const buildResults = (quiet: boolean): RdyResult[] => [
+        makePassedResult({ name: 'parent', quiet }),
+        makeFailedResult({ name: 'deep-failure', depth: 1, quiet, detail: 'two remain', fix: 'Run install' }),
+        makePassedResult({ name: 'clean', quiet }),
+        makeSkippedResult({ name: 'optional-skip', quiet, skipReason: 'n/a', detail: 'no target' }),
+        makeSkippedResult({ name: 'blocked-skip', quiet, skipReason: 'precondition' }),
+      ];
+
+      const byFlag = reportRdy(makeReport({ results: buildResults(false), passed: false, durationMs: 90 }), {
+        quiet: true,
+      });
+      const byField = reportRdy(makeReport({ results: buildResults(true), passed: false, durationMs: 90 }), {
+        quiet: false,
+      });
+
+      expect(byField).toBe(byFlag);
+      expect(byField).not.toContain('clean');
     });
   });
 

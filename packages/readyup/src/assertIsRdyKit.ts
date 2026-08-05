@@ -37,6 +37,7 @@ const CheckSchema = z.looseObject({
   name: NameSchema,
   check: FunctionSchema,
   severity: SeveritySchema.optional(),
+  quiet: z.boolean().optional(),
   skip: FunctionSchema.optional(),
   fix: z.string().optional(),
   get checks() {
