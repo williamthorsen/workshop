@@ -145,7 +145,7 @@ describe(readTargetState, () => {
     const deployments = [skills, rulebooks, ambient];
 
     const first = await readState(files, deployments);
-    const second = await readState(files, [...deployments].reverse());
+    const second = await readState(files, deployments.toReversed());
 
     expect(second.digest).toBe(first.digest);
   });
