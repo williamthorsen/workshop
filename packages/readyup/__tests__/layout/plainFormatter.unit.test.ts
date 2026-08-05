@@ -67,10 +67,10 @@ function renderEverything(): string {
     ...engine.formatSummaryTable({
       rows: [
         { name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 },
-        { name: 'integration', counts, durationMs: 1400 },
+        { name: 'integration', counts, durationMs: 1_400 },
       ],
       totals: counts,
-      totalDurationMs: 1810,
+      totalDurationMs: 1_810,
     }),
     ...TOKEN_NAMES.map((token) => engine.inlineGlyph(token)),
   ].join('\n');

@@ -27,8 +27,8 @@ importers:
         specifier: 1.6.24
         version: 1.6.24(@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/eslint-config-typescript':
-        specifier: 8.4.0
-        version: 8.4.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: 8.5.0
+        version: 8.5.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
         specifier: 0.27.0
         version: 0.27.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
@@ -39,8 +39,8 @@ importers:
         specifier: 9.3.0
         version: 9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       codeassembly:
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
       esbuild:
         specifier: 0.28.1
         version: 0.28.1
@@ -745,16 +745,16 @@ packages:
   '@vitest/utils@4.1.10':
     resolution: {integrity: sha512-fy9am/HWxbaGt/Sawrp90vt6Y6jQwf1RX77cz3uwoJwJVMli/e1IEwRPnMNJ7vKfPTwo0diXifkpPvwH9v7nGA==}
 
-  '@williamthorsen/eslint-config-typescript@8.4.0':
-    resolution: {integrity: sha512-vU1m2dTCxcOCMkQKVwf8zLeBLpqjZrPOtZ4FGRxqMpzdxaA16/oMg8q4gT7Vd9OzqfXWVqKtRCsQC+JKY8fBwQ==}
+  '@williamthorsen/eslint-config-typescript@8.5.0':
+    resolution: {integrity: sha512-ULTEZsVTezz90rtVEl8+nedGv0hXx01dKspJFzrkiEU6/x1lKOeNdTNA81pyMaihU2m92wnGjeccNPpLPG7gTA==}
     engines: {node: '>=24'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.59.1
       eslint: '>=10'
       typescript: '>=5'
 
-  '@williamthorsen/kb@0.3.0':
-    resolution: {integrity: sha512-IHQUQ6XMpxU78TnJAuYcyVrOWmMd1dV/Ku8TzFE0sfqalMSUhAS+siv+z+dtwCuOFoy+V7VcERWUt+w/gDvXBA==}
+  '@williamthorsen/kb@0.3.1':
+    resolution: {integrity: sha512-HvOUunM72c8uJczlei3NdukuzfrspC6T1WYoHM0VVWJ1/dnSCQVclqm8VmGaMmexhgU+57AJNOz78mfRBxctuw==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -960,12 +960,12 @@ packages:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
 
-  codeassembly-lifecycle@0.2.0:
-    resolution: {integrity: sha512-ycszfwd7+FWlFX80Wwd7lgTadMPWMeaXKBaq0diUAAEeiG1tBFdxntboeBy7MNMoWAngqaG8chXguk5ip+AU7A==}
+  codeassembly-lifecycle@0.2.1:
+    resolution: {integrity: sha512-umSbWhKTpqDr0KdCq95VTFaKVDXg+WzOqTII3xBvrSEVGs0a2QS1IgpUz51ofz5M6/B7FWd5vAj/MtE4LyWHEw==}
     engines: {node: '>=24'}
 
-  codeassembly@0.4.0:
-    resolution: {integrity: sha512-0QxBXfElxnUFbG/I+TvcGEO5VMFp4lBR7/xc/5FJPwXITxjfu6A5uhcXDvw0WOkijBdNPDxZWlYK02DyMaTJ1Q==}
+  codeassembly@0.5.0:
+    resolution: {integrity: sha512-I0pDSrd0RMouTYgFR+0mekSzv2q7NM9rlbjIkFNheeqV0uNGM5WNUCLFOPYWGeEGSyQCgogzCdqbnbxvHqfurA==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -1422,10 +1422,6 @@ packages:
 
   globals@15.15.0:
     resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
-    engines: {node: '>=18'}
-
-  globals@17.7.0:
-    resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
     engines: {node: '>=18'}
 
   globals@17.8.0:
@@ -3137,7 +3133,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@williamthorsen/eslint-config-typescript@8.4.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@williamthorsen/eslint-config-typescript@8.5.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.7.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/js': 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3164,7 +3160,7 @@ snapshots:
       - supports-color
       - ts-declaration-location
 
-  '@williamthorsen/kb@0.3.0':
+  '@williamthorsen/kb@0.3.1':
     dependencies:
       picomatch: 4.0.5
       yaml: 2.9.0
@@ -3400,12 +3396,12 @@ snapshots:
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
 
-  codeassembly-lifecycle@0.2.0: {}
+  codeassembly-lifecycle@0.2.1: {}
 
-  codeassembly@0.4.0:
+  codeassembly@0.5.0:
     dependencies:
-      '@williamthorsen/kb': 0.3.0
-      codeassembly-lifecycle: 0.2.0
+      '@williamthorsen/kb': 0.3.1
+      codeassembly-lifecycle: 0.2.1
       ulid: 3.0.2
       yaml: 2.9.0
       zod: 4.4.3
@@ -3783,7 +3779,7 @@ snapshots:
       entities: 4.5.0
       eslint: 10.8.0(jiti@2.7.0)(supports-color@7.2.0)
       find-up-simple: 1.0.1
-      globals: 17.7.0
+      globals: 17.8.0
       indent-string: 5.0.0
       is-builtin-module: 5.0.0
       is-identifier: 1.1.0
@@ -3994,8 +3990,6 @@ snapshots:
       path-scurry: 2.0.2
 
   globals@15.15.0: {}
-
-  globals@17.7.0: {}
 
   globals@17.8.0: {}
 

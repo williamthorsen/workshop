@@ -133,7 +133,7 @@ describe(formatCombinedSummary, () => {
   it('left-aligns names and right-aligns durations across rows', () => {
     const lines = renderLines([
       makeSummary({ name: 'ab', durationMs: 5 }),
-      makeSummary({ name: 'cdef', durationMs: 1200 }),
+      makeSummary({ name: 'cdef', durationMs: 1_200 }),
     ]);
 
     expect(lines[2]).toContain(`${PASSED} ab       5ms`);

@@ -107,7 +107,7 @@ describe('formatCheckLine', () => {
     });
 
     it.each(SKIPPED_TOKENS)('omits the duration on a %s check however long it took', (token) => {
-      expect(engine.formatCheckLine({ token, name: 'skipped', durationMs: 5000 })).not.toContain('ms');
+      expect(engine.formatCheckLine({ token, name: 'skipped', durationMs: 5_000 })).not.toContain('ms');
     });
 
     it('places the duration after detail and progress', () => {
@@ -291,7 +291,7 @@ describe('formatCountLine', () => {
   it('leads with the worst severity rather than the first non-zero field', () => {
     const counts = makeCounts({ passed: 9, errors: 1, worstSeverity: 'error' });
 
-    expect(engine.formatCountLine(counts, 1200)).toBe(`${FAILED_ERROR} 9 passed | 1 error (1200ms)`);
+    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} 9 passed | 1 error (1200ms)`);
   });
 
   it('leads with the passed token when nothing failed', () => {
@@ -318,11 +318,11 @@ describe('formatSummaryTable', () => {
       makeRow({
         name: 'integration',
         counts: makeCounts({ passed: 1, errors: 1, worstSeverity: 'error' }),
-        durationMs: 1400,
+        durationMs: 1_400,
       }),
     ],
     totals: makeCounts({ passed: 3, errors: 1, worstSeverity: 'error' }),
-    totalDurationMs: 1810,
+    totalDurationMs: 1_810,
   };
 
   /** Returns a rendered table line's width in display columns, its leading token counted as one gutter. */

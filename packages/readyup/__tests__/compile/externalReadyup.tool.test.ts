@@ -12,7 +12,7 @@ const FIXTURE_PATH = path.join(FIXTURES_DIR, 'discoverWorkspaces-fixture.ts');
 const HOOK_SOURCE_PATH = path.resolve(import.meta.dirname, '..', '..', 'src', 'readyupResolverHook.ts');
 const WRAPPER_PATH = path.join(FIXTURES_DIR, 'discoverWorkspaces-subprocess-wrapper.mjs');
 
-const BUNDLE_SIZE_LIMIT_BYTES = 2 * 1024;
+const BUNDLE_SIZE_LIMIT_BYTES = 2 * 1_024;
 
 /** Result of running a child process. */
 interface SpawnResult {
