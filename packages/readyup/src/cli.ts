@@ -10,6 +10,7 @@ import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
+import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
@@ -46,18 +47,24 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 /** Discriminated union describing how to locate the rdy kit. */
 export type KitSource = { path: string } | { url: string };
 
-/** The installed package a kit was resolved from, present only for a package-hosted kit. */
-export interface KitOrigin {
-  packageName: string;
-  version: string | undefined;
-}
+/**
+ * Where a kit came from, absent only for a kit resolved from the local kits directory.
+ *
+ * Three kinds where `--from` accepts six: the six collapse onto three roles a heading can name, and a
+ * distinction no reader ever sees is one nothing should carry. A source kind added later joins this
+ * union and the branch that renders it.
+ */
+export type KitProvenance =
+  | { kind: 'directory'; label: string }
+  | { kind: 'package'; packageName: string; version: string | undefined }
+  | { kind: 'remote'; label: string };
 
 /** A resolved kit entry with its source and checklist filter. */
 export interface ResolvedKitEntry {
   name: string;
   source: KitSource;
   checklists: string[];
-  origin?: KitOrigin;
+  provenance?: KitProvenance;
 }
 
 export interface ParsedRunArgs {
@@ -349,10 +356,18 @@ export function resolveKitSources({
   configuredPackages?: string[] | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
-    return [{ name: filePath, source: { path: filePath }, checklists: checklists ?? [] }];
+    return [
+      {
+        name: path.basename(filePath, path.extname(filePath)),
+        source: { path: filePath },
+        checklists: checklists ?? [],
+        provenance: { kind: 'directory', label: path.dirname(filePath) },
+      },
+    ];
   }
   if (urlValue !== undefined) {
-    return [{ name: urlValue, source: { url: urlValue }, checklists: checklists ?? [] }];
+    const { label, name } = describeUrlSource(urlValue);
+    return [{ name, source: { url: urlValue }, checklists: checklists ?? [], provenance: { kind: 'remote', label } }];
   }
 
   // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
@@ -397,53 +412,71 @@ export function resolveKitSources({
 /** Resolve kit entries from a parsed `--from` source. */
 function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension: string): ResolvedKitEntry[] {
   switch (source.type) {
-    case 'github':
+    case 'github': {
+      const provenance: KitProvenance = { kind: 'remote', label: `github:${source.org}/${source.repo}@${source.ref}` };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { url: buildGitHubKitUrl(source.org, source.repo, source.ref, spec.kitName, extension) },
         checklists: spec.checklists,
+        provenance,
       }));
+    }
 
-    case 'bitbucket':
+    case 'bitbucket': {
+      const label = `bitbucket:${source.workspace}/${source.repo}@${source.ref}`;
+      const provenance: KitProvenance = { kind: 'remote', label };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { url: buildBitbucketKitUrl(source.workspace, source.repo, source.ref, spec.kitName, extension) },
         checklists: spec.checklists,
+        provenance,
       }));
+    }
 
     case 'npm': {
       const root = resolveInstalledPackageRoot(source);
-      const origin = { packageName: source.name, version: readPackageVersion(root) };
+      const provenance: KitProvenance = {
+        kind: 'package',
+        packageName: source.name,
+        version: readPackageVersion(root),
+      };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(root, KITS_DIR, `${spec.kitName}${extension}`) },
         checklists: spec.checklists,
-        origin,
+        provenance,
       }));
     }
 
     case 'global': {
       const homeDir = resolveHomeDir();
+      const provenance: KitProvenance = { kind: 'directory', label: `~/${KITS_DIR}` };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(homeDir, KITS_DIR, `${spec.kitName}${extension}`) },
         checklists: spec.checklists,
+        provenance,
       }));
     }
 
-    case 'directory':
+    case 'directory': {
+      const provenance: KitProvenance = { kind: 'directory', label: source.path };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(path.resolve(process.cwd(), source.path), `${spec.kitName}${extension}`) },
         checklists: spec.checklists,
+        provenance,
       }));
+    }
 
     case 'local': {
       const resolvedBase = path.resolve(process.cwd(), source.path);
+      const provenance: KitProvenance = { kind: 'directory', label: path.join(source.path, KITS_DIR) };
       return specs.map((spec) => ({
         name: spec.kitName,
         source: { path: path.join(resolvedBase, KITS_DIR, `${spec.kitName}${extension}`) },
         checklists: spec.checklists,
+        provenance,
       }));
     }
   }
@@ -465,7 +498,7 @@ function resolveConfiguredPackages(configuredPackages: string[], extension: stri
     name: kit.kitName,
     source: { path: kit.path },
     checklists: [],
-    origin: { packageName: kit.packageName, version: kit.version },
+    provenance: { kind: 'package', packageName: kit.packageName, version: kit.version },
   }));
 }
 
@@ -740,7 +773,7 @@ async function runMultiKitJsonMode(
 
       kitInputs.push({
         name: entry.name,
-        ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
+        ...toJsonOriginField(entry.provenance),
         entries,
         failOn: thresholds.failOn,
         reportOn: thresholds.reportOn,
@@ -749,7 +782,7 @@ async function runMultiKitJsonMode(
       const { code, hint, message } = toRdyError(error);
       kitInputs.push({
         name: entry.name,
-        ...(entry.origin !== undefined && { origin: toJsonOrigin(entry.origin) }),
+        ...toJsonOriginField(entry.provenance),
         error: { code, message, ...(hint !== undefined && { hint }) },
       });
       anyKitFailed = true;
@@ -782,19 +815,14 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  // A dependency-provided kit is headed even when it runs alone: its package and version appear nowhere
-  // else in human output, and confirming the kit matches the version in place is the point of running it
-  // from an installed package.
-  const showKitHeader = kitEntries.length > 1 || kitEntries.some((entry) => entry.origin !== undefined);
+  const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
+  const writeBlock = createBlockWriter();
   let allPassed = true;
   let anyKitFailed = false;
 
   for (const entry of kitEntries) {
-    // Precedes the load so stdout lists every requested kit, including one that never ran.
-    if (showKitHeader) {
-      process.stdout.write(getLayout().formatHeading(describeKitEntry(entry), 'kit').join('\n') + '\n');
-    }
+    const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
       const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
@@ -802,11 +830,18 @@ async function runMultiKitHumanMode(
       warnOnVersionSkew(entry.name, compileTimeVersion);
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
-      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, showKitHeader);
+      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, {
+        isMultiKit,
+        kitSegments,
+        writeBlock,
+      });
       if (exitCode !== EXIT_OK) allPassed = false;
     } catch (error: unknown) {
+      // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
+      if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'), true);
+
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-      const label = showKitHeader ? ` [${describeKitEntry(entry)}]` : '';
+      const label = kitSegments.length > 0 ? ` [${toBreadcrumbLabel(kitSegments)}]` : '';
       const rdyError = toRdyError(error);
       process.stderr.write(`Error${label}: ${rdyError.message}\n`);
       if (rdyError.hint !== undefined) {
@@ -819,66 +854,146 @@ async function runMultiKitHumanMode(
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
+/** What a kit's checklists need in order to take their place in the run's sequence of blocks. */
+interface KitBlockContext {
+  isMultiKit: boolean;
+  kitSegments: BreadcrumbSegment[];
+  writeBlock: BlockWriter;
+}
+
 /** Run checklists from a single kit in human-readable mode. */
 async function runSingleKitHumanMode(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  isMultiKit: boolean,
+  { isMultiKit, kitSegments, writeBlock }: KitBlockContext,
 ): Promise<number> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
-  const showChecklistHeader = checklists.length > 1;
+  const showChecklistSegment = checklists.length > 1;
   let allPassed = true;
+  let startsKit = true;
   const summaries: ChecklistSummary[] = [];
 
   for (const checklist of checklists) {
-    if (showChecklistHeader) {
-      process.stdout.write(getLayout().formatHeading(checklist.name, 'section').join('\n') + '\n');
-    }
-
     const report = await runRdy(checklist, {
       defaultSeverity: thresholds.defaultSeverity,
       failOn: thresholds.failOn,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-    const output = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
-    process.stdout.write(output + '\n');
+    const body = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
+
+    const segments: BreadcrumbSegment[] = showChecklistSegment
+      ? [...kitSegments, { role: 'checklist', text: checklist.name }]
+      : kitSegments;
+    const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
+
+    writeBlock(heading + body, startsKit);
+    startsKit = false;
 
     if (!report.passed) {
       allPassed = false;
     }
 
-    if (showChecklistHeader) {
+    if (showChecklistSegment) {
       summaries.push(summarizeReport(checklist.name, report));
     }
   }
 
   if (summaries.length > 1 && !isMultiKit) {
-    process.stdout.write(formatCombinedSummary(summaries) + '\n');
+    writeBlock(formatCombinedSummary(summaries), false);
   }
 
   return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
-/** Converts a kit's origin to the wire shape, omitting a version the package did not declare readably. */
-function toJsonOrigin(origin: KitOrigin): JsonKitOrigin {
-  return origin.version === undefined
-    ? { package: origin.packageName }
-    : { package: origin.packageName, version: origin.version };
+/**
+ * Returns the `origin` field for a kit's JSON entry, empty for a kit no package published.
+ *
+ * The wire shape names the publishing package and nothing else, so every other provenance contributes no
+ * field at all -- which is the shape a consumer has always seen for a kit resolved from anywhere but a
+ * package. A version the package did not declare readably is omitted.
+ */
+function toJsonOriginField(provenance: KitProvenance | undefined): { origin?: JsonKitOrigin } {
+  if (provenance?.kind !== 'package') return {};
+
+  return {
+    origin:
+      provenance.version === undefined
+        ? { package: provenance.packageName }
+        : { package: provenance.packageName, version: provenance.version },
+  };
+}
+
+/** Writes one block of a run to stdout, `startsKit` widening the gap that parts it from the block before. */
+type BlockWriter = (text: string, startsKit: boolean) => void;
+
+/**
+ * Returns a writer that parts each block of a run from the one before, opening a wider gap at a kit boundary.
+ *
+ * Separation lives here rather than in the headings because only a sequence can see what precedes it: the
+ * run's first block needs no blank at all, and once headings stopped nesting, a gap wider than the ones
+ * within a kit is the reader's only remaining cue that the kit has changed.
+ */
+function createBlockWriter(): BlockWriter {
+  let hasWritten = false;
+
+  return (text, startsKit) => {
+    if (hasWritten) process.stdout.write(startsKit ? '\n\n' : '\n');
+    hasWritten = true;
+    process.stdout.write(`${text}\n`);
+  };
 }
 
 /**
- * Labels a kit for its heading, naming the package a dependency-provided kit came from.
+ * Returns the segments heading every block a kit produces: where the kit came from, then the kit itself.
  *
- * Two packages may each publish a kit of the same name, so the kit name alone does not identify what ran.
- * The version comes along because the whole point of resolving from an installed package is that the kit
+ * A kit with no source to name and no sibling kit in the run has nothing to be told apart from, so it
+ * heads its blocks with nothing, and a plain local run stays as quiet as it has always been.
+ */
+function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): BreadcrumbSegment[] {
+  const source = describeKitProvenance(entry.provenance);
+  if (source === undefined) return isMultiKit ? [{ role: 'kit', text: entry.name }] : [];
+
+  return [source, { role: 'kit', text: entry.name }];
+}
+
+/**
+ * Returns the segment naming where a kit came from, or nothing where there is nothing to name.
+ *
+ * A kit the local kits directory holds has no source, and neither does one whose directory resolves to
+ * the working directory: naming the directory the reader is standing in tells them nothing. A package
+ * carries its version because the whole point of running a kit from an installed package is that it
  * matches the version in place, which the reader can only confirm if it is stated.
  */
-function describeKitEntry(entry: ResolvedKitEntry): string {
-  if (entry.origin === undefined) return entry.name;
-  const version = entry.origin.version === undefined ? '' : `@${entry.origin.version}`;
-  return `${entry.name} (${entry.origin.packageName}${version})`;
+function describeKitProvenance(provenance: KitProvenance | undefined): BreadcrumbSegment | undefined {
+  if (provenance === undefined) return undefined;
+  if (provenance.kind === 'remote') return { role: 'sourceRemote', text: provenance.label };
+  if (provenance.kind === 'directory') {
+    return path.normalize(provenance.label) === '.' ? undefined : { role: 'sourceDirectory', text: provenance.label };
+  }
+
+  const version = provenance.version === undefined ? '' : `@${provenance.version}`;
+  return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
+}
+
+/** Returns a breadcrumb as plain text, for a stderr line that carries no layout of its own. */
+function toBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
+  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
+}
+
+/**
+ * Splits a kit URL into the kit's name and the label naming where it was fetched from.
+ *
+ * The scheme is dropped from the label because every kit URL carries one and it distinguishes nothing.
+ * A URL that does not parse is reported exactly as given, since a value the runner could not read is one
+ * the reader needs to see unaltered.
+ */
+function describeUrlSource(urlValue: string): { label: string; name: string } {
+  if (!URL.canParse(urlValue)) return { label: urlValue, name: urlValue };
+
+  const { host, pathname } = new URL(urlValue);
+  return { label: `${host}${pathname}`, name: path.basename(pathname, path.extname(pathname)) };
 }
 
 /** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */

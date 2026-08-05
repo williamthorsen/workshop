@@ -12,9 +12,9 @@ interface WriteLine {
   reason?: string;
 }
 
-/** Writes `message` to stdout as a section heading. */
+/** Writes `message` to stdout as a section heading, parted from whatever precedes it by a blank line. */
 export function printStep(message: string): void {
-  console.info(getLayout().formatHeading(message, 'section').join('\n'));
+  console.info(`\n${getLayout().formatHeading(message, 'section')}`);
 }
 
 /**

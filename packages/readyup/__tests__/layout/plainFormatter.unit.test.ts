@@ -8,8 +8,8 @@ import type { SummaryCounts } from '../../src/types.ts';
 /** Every printable ASCII character, plus the newline that separates rendered lines. */
 const PRINTABLE_ASCII = /^[\u{20}-\u{7E}\n]*$/u;
 
-/** Tokens that name a kind of file rather than reporting an outcome. */
-const NOUN_TOKENS = ['docCompiled', 'docInternal'] as const;
+/** Tokens that name what a thing is rather than reporting an outcome. */
+const ROLE_TOKENS = ['checklist', 'kit', 'kitSource', 'sourceDirectory', 'sourcePackage', 'sourceRemote'] as const;
 
 const engine = createLayoutEngine(plainFormatter);
 
@@ -50,8 +50,17 @@ function renderEverything(): string {
     ...TOKEN_NAMES.map((token) =>
       engine.formatCheckLine({ token, name: 'check', detail: 'detail', progress: '50%', durationMs: 250, depth: 1 }),
     ),
-    ...engine.formatHeading('deploy', 'kit'),
-    ...engine.formatHeading('build', 'section'),
+    engine.formatHeading('deploy', 'kit'),
+    engine.formatHeading('build', 'section'),
+    engine.formatBlockRule(),
+    engine.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+        { role: 'checklist', text: 'repo' },
+      ],
+      'kit',
+    ),
     ...engine.formatReasonBlock(['a reason'], 2),
     engine.formatHint('set a token'),
     engine.formatCountLine(counts, 800),
@@ -68,7 +77,7 @@ function renderEverything(): string {
 }
 
 describe('plainFormatter', () => {
-  it('supplies a token for every semantic state and no others', () => {
+  it('supplies a token for every name in the vocabulary and no others', () => {
     expect(new Set(Object.keys(plainFormatter.tokens))).toStrictEqual(new Set<string>(TOKEN_NAMES));
   });
 
@@ -88,7 +97,7 @@ describe('plainFormatter', () => {
     });
   });
 
-  it.each(NOUN_TOKENS)('gives %s no glyph, so it is omitted rather than substituted', (token) => {
+  it.each(ROLE_TOKENS)('gives %s no glyph, so it is omitted rather than substituted', (token) => {
     expect(plainFormatter.tokens[token].glyph).toBe('');
   });
 });
@@ -103,7 +112,7 @@ describe('rendered output', () => {
   });
 
   it('reserves the gutter for a token carrying no glyph, so names stay in one column', () => {
-    const noun = engine.formatCheckLine({ token: 'docCompiled', name: 'deploy' });
+    const noun = engine.formatCheckLine({ token: 'kit', name: 'deploy' });
     const status = engine.formatCheckLine({ token: 'passed', name: 'deploy' });
 
     expect(measureNameColumn(noun)).toBe(measureNameColumn(status));
@@ -117,8 +126,8 @@ describe('rendered output', () => {
   });
 
   it('heads a section with an ASCII rule', () => {
-    expect(engine.formatHeadingLine('code-quality', 'section')).toBe('-- code-quality');
-    expect(engine.formatHeadingLine('deploy', 'kit')).toBe('== deploy');
+    expect(engine.formatHeading('code-quality', 'section')).toBe('-- code-quality');
+    expect(engine.formatHeading('deploy', 'kit')).toBe('== deploy');
   });
 
   it('labels a hint with an ASCII word', () => {

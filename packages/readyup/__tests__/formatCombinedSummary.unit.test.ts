@@ -30,21 +30,22 @@ function renderLines(summaries: ChecklistSummary[]): string[] {
 }
 
 describe(formatCombinedSummary, () => {
-  it('leads with a blank line so a caller appends it directly to the report above', () => {
-    expect(renderLines([makeSummary()])[0]).toBe('');
+  // The run's writer parts one block from the next, so a table carrying its own blank would double the gap.
+  it('carries no separation of its own', () => {
+    expect(renderLines([makeSummary()])[0]).not.toBe('');
   });
 
-  it('renders a section heading rather than a full-width banner', () => {
+  it('heads the table as a block of the run rather than a full-width banner', () => {
     const lines = renderLines([makeSummary()]);
 
-    expect(lines[1]).toBe('\u{2500}\u{2500} Summary');
+    expect(lines[0]).toBe('\u{2501}\u{2501} Summary');
   });
 
   it('encloses the rows in two equal rules', () => {
     const lines = renderLines([makeSummary()]);
 
-    expect(lines[3]).toMatch(/^\u{2500}+$/u);
-    expect(lines[5]).toBe(lines[3]);
+    expect(lines[1]).toMatch(/^\u{2500}+$/u);
+    expect(lines[3]).toBe(lines[1]);
   });
 
   it.each([
@@ -135,14 +136,14 @@ describe(formatCombinedSummary, () => {
       makeSummary({ name: 'cdef', durationMs: 1200 }),
     ]);
 
-    expect(lines[4]).toContain(`${PASSED} ab       5ms`);
-    expect(lines[5]).toContain(`${PASSED} cdef  1200ms`);
+    expect(lines[2]).toContain(`${PASSED} ab       5ms`);
+    expect(lines[3]).toContain(`${PASSED} cdef  1200ms`);
   });
 
   it('sizes the rules to the widest line rather than a fixed width', () => {
     const narrow = renderLines([makeSummary({ name: 'a', passed: 1, durationMs: 1 })]);
     const wide = renderLines([makeSummary({ name: 'a-considerably-longer-checklist-name', passed: 1, durationMs: 1 })]);
 
-    expect(wide[3]?.length).toBeGreaterThan(narrow[3]?.length ?? 0);
+    expect(wide[1]?.length).toBeGreaterThan(narrow[1]?.length ?? 0);
   });
 });

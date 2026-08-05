@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TOKEN_NAMES, type TokenName } from '../../src/layout/formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
+import { plainFormatter } from '../../src/layout/plainFormatter.ts';
 import { richFormatter } from '../../src/layout/richFormatter.ts';
 import type { SummaryCounts } from '../../src/types.ts';
 
@@ -174,19 +175,69 @@ describe('formatReasonBlock', () => {
 });
 
 describe('formatHeading', () => {
-  it('sets a kit heading off with blank lines above and below', () => {
-    expect(engine.formatHeading('deploy', 'kit')).toStrictEqual(['', '\u{2501}\u{2501} deploy', '']);
+  it('renders a kit heading behind the heavier rule', () => {
+    expect(engine.formatHeading('deploy', 'kit')).toBe('\u{2501}\u{2501} deploy');
   });
 
   it('weights a section heading lighter than a kit heading', () => {
-    expect(engine.formatHeading('build', 'section')).toStrictEqual(['', '\u{2500}\u{2500} build', '']);
+    expect(engine.formatHeading('build', 'section')).toBe('\u{2500}\u{2500} build');
+  });
+
+  // Separation belongs to whoever emits the sequence, so two adjacent headings cannot each contribute one.
+  it('carries no blank line of its own', () => {
+    expect(engine.formatHeading('deploy', 'kit')).not.toContain('\n');
   });
 
   it('retires the heading grammars it replaced', () => {
-    const rendered = [...engine.formatHeading('deploy', 'kit'), ...engine.formatHeading('build', 'section')].join('\n');
+    const rendered = [engine.formatHeading('deploy', 'kit'), engine.formatHeading('build', 'section')].join('\n');
 
     expect(rendered).not.toContain('===');
     expect(rendered).not.toContain('---');
+  });
+});
+
+describe('formatBlockRule', () => {
+  it('closes a block with a bare rule at section weight', () => {
+    expect(engine.formatBlockRule()).toBe('\u{2500}\u{2500}');
+  });
+
+  // A heading always carries text after its rule, so the bare form cannot be mistaken for one.
+  it('carries no text, so it does not read as a heading', () => {
+    expect(engine.formatBlockRule()).not.toContain(' ');
+  });
+});
+
+describe('formatBreadcrumb', () => {
+  it('parts each segment from the next with a spaced separator', () => {
+    const rendered = engine.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+        { role: 'checklist', text: 'repo' },
+      ],
+      'kit',
+    );
+
+    expect(rendered).toBe('\u{2501}\u{2501} 📦 @acme/release-kit@2.1.0 / 🧰 npm-auto-publish / 📋 repo');
+  });
+
+  it('renders a lone segment without a separator', () => {
+    expect(engine.formatBreadcrumb([{ role: 'checklist', text: 'repo' }], 'kit')).toBe('\u{2501}\u{2501} 📋 repo');
+  });
+
+  // The spacing is the only segment boundary a glyphless style offers, and segment texts carry slashes
+  // of their own, so a bare separator would leave nothing to read the breadcrumb by.
+  it('keeps the separator spaced where a role has no glyph', () => {
+    const plain = createLayoutEngine(plainFormatter);
+    const rendered = plain.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+      ],
+      'kit',
+    );
+
+    expect(rendered).toBe('== @acme/release-kit@2.1.0 / npm-auto-publish');
   });
 });
 
@@ -287,27 +338,30 @@ describe('formatSummaryTable', () => {
   it('renders a heading, two rules, one row per checklist, and a total', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[0]).toBe('');
-    expect(lines[1]).toBe('\u{2500}\u{2500} Summary');
-    expect(lines[2]).toBe('');
-    expect(lines[4]).toMatch(/^\S build\s+410ms {2}2 passed$/u);
-    expect(lines[5]).toMatch(/^\S integration {2}1400ms {2}1 passed \| 1 error$/u);
+    expect(lines[0]).toBe('\u{2501}\u{2501} Summary');
+    expect(lines[2]).toMatch(/^\S build\s+410ms {2}2 passed$/u);
+    expect(lines[3]).toMatch(/^\S integration {2}1400ms {2}1 passed \| 1 error$/u);
     expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 3 passed | 1 error (1810ms)`);
-    expect(lines).toHaveLength(8);
+    expect(lines).toHaveLength(6);
+  });
+
+  // The run's writer parts one block from the next, so a table carrying its own blanks would double the gap.
+  it('carries no blank line of its own', () => {
+    expect(engine.formatSummaryTable(input)).not.toContain('');
   });
 
   it('sizes both rules equally', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[3]).toBe(lines[6]);
-    expect(lines[3]).toMatch(/^\u{2500}+$/u);
+    expect(lines[1]).toBe(lines[4]);
+    expect(lines[1]).toMatch(/^\u{2500}+$/u);
   });
 
   it('sizes the rules to the widest line they enclose', () => {
     const lines = engine.formatSummaryTable(input);
-    const widest = Math.max(...[lines[4], lines[5], lines[7]].map((line) => measureWidth(line ?? '')));
+    const widest = Math.max(...[lines[2], lines[3], lines[5]].map((line) => measureWidth(line ?? '')));
 
-    expect(lines[3]?.length).toBe(widest);
+    expect(lines[1]?.length).toBe(widest);
   });
 
   it('sizes the rules to the total line when it is the widest', () => {
@@ -317,20 +371,20 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 9,
     });
 
-    expect(lines[3]?.length).toBe(measureWidth(lines.at(-1) ?? ''));
+    expect(lines[1]?.length).toBe(measureWidth(lines.at(-1) ?? ''));
   });
 
   it('pads names so the counts column starts at one place in every row', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[4]?.indexOf('2 passed')).toBe(lines[5]?.indexOf('1 passed'));
+    expect(lines[2]?.indexOf('2 passed')).toBe(lines[3]?.indexOf('1 passed'));
   });
 
   it('right-aligns durations', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[4]).toContain(' 410ms');
-    expect(lines[5]).toContain('1400ms');
+    expect(lines[2]).toContain(' 410ms');
+    expect(lines[3]).toContain('1400ms');
   });
 
   it('leads each row with the worst severity of that checklist alone', () => {
@@ -343,8 +397,8 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 200,
     });
 
-    expect(lines[4]?.startsWith(FAILED_WARN)).toBe(true);
-    expect(lines[5]?.startsWith(PASSED)).toBe(true);
+    expect(lines[2]?.startsWith(FAILED_WARN)).toBe(true);
+    expect(lines[3]?.startsWith(PASSED)).toBe(true);
   });
 
   it('handles a single row', () => {
@@ -354,7 +408,7 @@ describe('formatSummaryTable', () => {
       totalDurationMs: 100,
     });
 
-    expect(lines).toHaveLength(7);
+    expect(lines).toHaveLength(5);
   });
 });
 
@@ -378,17 +432,17 @@ describe('token and glyph', () => {
   });
 
   it('returns a glyph and one space for mid-line placement', () => {
-    expect(engine.inlineGlyph('docCompiled')).toBe(`${richFormatter.tokens.docCompiled.glyph} `);
+    expect(engine.inlineGlyph('kit')).toBe(`${richFormatter.tokens.kit.glyph} `);
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
   });
 
   it('returns nothing for a token the formatter gives no glyph, so no orphan space is left behind', () => {
     const glyphless = createLayoutEngine({
       ...richFormatter,
-      tokens: { ...richFormatter.tokens, docCompiled: { glyph: '', width: 0 } },
+      tokens: { ...richFormatter.tokens, kit: { glyph: '', width: 0 } },
     });
 
-    expect(glyphless.inlineGlyph('docCompiled')).toBe('');
+    expect(glyphless.inlineGlyph('kit')).toBe('');
   });
 
   it('indents by one gutter per level', () => {

@@ -1,6 +1,9 @@
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
+/** Blank line parting one listed section from the next. A section supplies none of its own. */
+const SECTION_SEPARATOR = '\n\n';
+
 /** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
 function buildKitHint(kits: string[]): string {
   return kits.includes('default') ? '[<name>]' : '<name>';
@@ -52,7 +55,7 @@ export function formatOwnerView({
     // turns an empty listing into a next step.
     return availablePackages.length === 0
       ? formatEmpty('owner')
-      : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join('\n');
+      : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join(SECTION_SEPARATOR);
   }
 
   const sections: string[] = [];
@@ -60,34 +63,34 @@ export function formatOwnerView({
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
     const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, 'docInternal'));
+    sections.push(formatSection('Internal', hint, internalKits, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
       const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, 'docCompiled'));
+      sections.push(formatSection('Compiled', hint, compiledKits, 'kit'));
     } else {
       const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, 'docCompiled'));
+      sections.push(formatSection('Compiled', hint, pathItems, 'kit'));
     }
   }
 
   if (packageKits.length > 0) {
-    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'docCompiled'));
+    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'sourcePackage'));
   }
 
   if (availablePackages.length > 0) {
     sections.push(formatAvailableSection(availablePackages));
   }
 
-  return sections.join('\n');
+  return sections.join(SECTION_SEPARATOR);
 }
 
 /** Returns the section naming installed packages that publish kits the config does not list. */
 function formatAvailableSection(availablePackages: string[]): string {
-  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'docInternal');
+  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
 }
 
 // -- Consumer view --
@@ -109,7 +112,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   }
 
   const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, 'docCompiled');
+  return formatSection('Compiled', hint, compiledKits, 'kit');
 }
 
 // -- Empty messages --
@@ -144,25 +147,25 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
   const items = kits.map((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
     return getLayout().formatCheckLine({
-      token: 'docCompiled',
+      token: 'kit',
       name: `${kit.name}${versionSegment}`,
       ...(kit.description !== undefined && { detail: kit.description }),
     });
   });
 
-  return [...getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
+  return [getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
 // -- Helpers --
 
 /**
- * Returns a titled section, opening with a blank line: the title, `hint` indented beneath it, then the kits.
+ * Returns a titled section: the title, `hint` indented beneath it, then the kits.
  *
- * `hint` sits against the title with no blank between them, so the command reads as part of the heading.
+ * Nothing inside is parted by a blank line. `hint` sits against the title so the command reads as part of
+ * the heading, the kits sit against the hint, and the blank parting one section from the next belongs to
+ * whoever assembles them.
  */
 function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
-  return ['', getLayout().formatHeadingLine(title, 'section'), `${getLayout().indent(1)}${hint}`, '', ...items].join(
-    '\n',
-  );
+  return [getLayout().formatHeading(title, 'section'), `${getLayout().indent(1)}${hint}`, ...items].join('\n');
 }

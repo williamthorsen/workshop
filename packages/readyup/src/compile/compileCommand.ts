@@ -246,8 +246,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     return finishCompile([], json);
   }
 
-  const relSrcDir = path.relative(process.cwd(), srcDir);
-  const relOutDir = path.relative(process.cwd(), outDir);
+  const anchor = resolveWorkspaceAnchor(srcDir);
+  const relSrcDir = path.relative(anchor, srcDir);
+  const relOutDir = path.relative(anchor, outDir);
   const label =
     srcDir === outDir ? `Compiling kits in ${relSrcDir}` : `Compiling kits from ${relSrcDir} to ${relOutDir}`;
   writeHuman(formatSectionHeading(label), json);
@@ -435,7 +436,7 @@ function formatResultLine(srcName: string, outName: string, changed: boolean): s
   }
 
   const claim = getLayout().formatCheckLine({ token: 'passed', name: srcName });
-  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('docCompiled')}${outName}\n`;
+  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('kit')}${outName}\n`;
 }
 
 /** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */
@@ -449,5 +450,28 @@ function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: '
 
 /** Returns a section heading as a single writable string, newline-terminated. */
 function formatSectionHeading(label: string): string {
-  return getLayout().formatHeading(label, 'section').join('\n') + '\n';
+  return `${getLayout().formatHeading(label, 'section')}\n`;
+}
+
+/**
+ * Returns the directory a compile heading names its paths against.
+ *
+ * The nearest enclosing workspace root wins, then the nearest repository root, then the working
+ * directory. `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths
+ * against that one would head every workspace's output identically and leave the reader unable to tell
+ * whose kits a line reports. A repository with no workspace file still gets a stable anchor, and a
+ * directory under neither falls back to the behaviour it has always had.
+ */
+function resolveWorkspaceAnchor(srcDir: string): string {
+  const markers = ['pnpm-workspace.yaml', '.git'];
+
+  for (const marker of markers) {
+    let directory = srcDir;
+    while (directory !== path.dirname(directory)) {
+      if (existsSync(path.join(directory, marker))) return directory;
+      directory = path.dirname(directory);
+    }
+  }
+
+  return process.cwd();
 }
