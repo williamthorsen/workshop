@@ -34,15 +34,15 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
   const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
 
-  // The blank line separates the count line from the tree, so an empty tree needs none: the heading
-  // above already supplies one, and a second would open a gap under every fully-hidden checklist.
-  if (lines.length > 0) lines.push('');
+  // The rule parts the count line from the tree it tallies, so an empty tree needs none: a checklist whose
+  // every result is hidden closes with its count line sitting directly under its heading.
+  if (lines.length > 0) lines.push(getLayout().formatBlockRule());
   lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
 
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
     if (fixes.length > 0) {
-      lines.push('', getLayout().formatHeading(FIXES_HEADING, 'section'), '', ...renderFixRecap(fixes));
+      lines.push('', getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
     }
   }
 

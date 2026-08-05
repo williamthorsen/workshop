@@ -10,6 +10,7 @@ import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
+import type { BreadcrumbSegment } from './layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
@@ -814,19 +815,14 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  // A dependency-provided kit is headed even when it runs alone: its package and version appear nowhere
-  // else in human output, and confirming the kit matches the version in place is the point of running it
-  // from an installed package.
-  const showKitHeader = kitEntries.length > 1 || kitEntries.some((entry) => entry.provenance?.kind === 'package');
+  const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
+  const writeBlock = createBlockWriter();
   let allPassed = true;
   let anyKitFailed = false;
 
   for (const entry of kitEntries) {
-    // Precedes the load so stdout lists every requested kit, including one that never ran.
-    if (showKitHeader) {
-      process.stdout.write(`\n${getLayout().formatHeading(describeKitEntry(entry), 'kit')}\n\n`);
-    }
+    const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
       const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
@@ -834,11 +830,18 @@ async function runMultiKitHumanMode(
       warnOnVersionSkew(entry.name, compileTimeVersion);
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
-      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, showKitHeader);
+      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, {
+        isMultiKit,
+        kitSegments,
+        writeBlock,
+      });
       if (exitCode !== EXIT_OK) allPassed = false;
     } catch (error: unknown) {
+      // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
+      if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'), true);
+
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-      const label = showKitHeader ? ` [${describeKitEntry(entry)}]` : '';
+      const label = kitSegments.length > 0 ? ` [${toBreadcrumbLabel(kitSegments)}]` : '';
       const rdyError = toRdyError(error);
       process.stderr.write(`Error${label}: ${rdyError.message}\n`);
       if (rdyError.hint !== undefined) {
@@ -851,43 +854,54 @@ async function runMultiKitHumanMode(
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
+/** What a kit's checklists need in order to take their place in the run's sequence of blocks. */
+interface KitBlockContext {
+  isMultiKit: boolean;
+  kitSegments: BreadcrumbSegment[];
+  writeBlock: BlockWriter;
+}
+
 /** Run checklists from a single kit in human-readable mode. */
 async function runSingleKitHumanMode(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  isMultiKit: boolean,
+  { isMultiKit, kitSegments, writeBlock }: KitBlockContext,
 ): Promise<number> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
-  const showChecklistHeader = checklists.length > 1;
+  const showChecklistSegment = checklists.length > 1;
   let allPassed = true;
+  let startsKit = true;
   const summaries: ChecklistSummary[] = [];
 
   for (const checklist of checklists) {
-    if (showChecklistHeader) {
-      process.stdout.write(`\n${getLayout().formatHeading(checklist.name, 'section')}\n\n`);
-    }
-
     const report = await runRdy(checklist, {
       defaultSeverity: thresholds.defaultSeverity,
       failOn: thresholds.failOn,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-    const output = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
-    process.stdout.write(output + '\n');
+    const body = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
+
+    const segments: BreadcrumbSegment[] = showChecklistSegment
+      ? [...kitSegments, { role: 'checklist', text: checklist.name }]
+      : kitSegments;
+    const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
+
+    writeBlock(heading + body, startsKit);
+    startsKit = false;
 
     if (!report.passed) {
       allPassed = false;
     }
 
-    if (showChecklistHeader) {
+    if (showChecklistSegment) {
       summaries.push(summarizeReport(checklist.name, report));
     }
   }
 
   if (summaries.length > 1 && !isMultiKit) {
-    process.stdout.write(formatCombinedSummary(summaries) + '\n');
+    writeBlock(formatCombinedSummary(summaries), false);
   }
 
   return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
@@ -911,17 +925,58 @@ function toJsonOriginField(provenance: KitProvenance | undefined): { origin?: Js
   };
 }
 
+/** Writes one block of a run to stdout, `startsKit` widening the gap that parts it from the block before. */
+type BlockWriter = (text: string, startsKit: boolean) => void;
+
 /**
- * Labels a kit for its heading, naming the package a dependency-provided kit came from.
+ * Returns a writer that parts each block of a run from the one before, opening a wider gap at a kit boundary.
  *
- * Two packages may each publish a kit of the same name, so the kit name alone does not identify what ran.
- * The version comes along because the whole point of resolving from an installed package is that the kit
- * matches the version in place, which the reader can only confirm if it is stated.
+ * Separation lives here rather than in the headings because only a sequence can see what precedes it: the
+ * run's first block needs no blank at all, and once headings stopped nesting, a gap wider than the ones
+ * within a kit is the reader's only remaining cue that the kit has changed.
  */
-function describeKitEntry(entry: ResolvedKitEntry): string {
-  if (entry.provenance?.kind !== 'package') return entry.name;
-  const version = entry.provenance.version === undefined ? '' : `@${entry.provenance.version}`;
-  return `${entry.name} (${entry.provenance.packageName}${version})`;
+function createBlockWriter(): BlockWriter {
+  let hasWritten = false;
+
+  return (text, startsKit) => {
+    if (hasWritten) process.stdout.write(startsKit ? '\n\n' : '\n');
+    hasWritten = true;
+    process.stdout.write(`${text}\n`);
+  };
+}
+
+/**
+ * Returns the segments heading every block a kit produces: where the kit came from, then the kit itself.
+ *
+ * A kit resolved from the local kits directory has no source to name and, when it is the only kit in the
+ * run, nothing to be told apart from either -- so it heads its blocks with nothing, and a plain local run
+ * stays as quiet as it has always been.
+ */
+function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): BreadcrumbSegment[] {
+  const source = describeKitProvenance(entry.provenance);
+  if (source === undefined) return isMultiKit ? [{ role: 'kit', text: entry.name }] : [];
+
+  return [source, { role: 'kit', text: entry.name }];
+}
+
+/**
+ * Returns the segment naming where a kit came from, or nothing for a kit the local kits directory holds.
+ *
+ * A package carries its version because the whole point of running a kit from an installed package is
+ * that it matches the version in place, which the reader can only confirm if it is stated.
+ */
+function describeKitProvenance(provenance: KitProvenance | undefined): BreadcrumbSegment | undefined {
+  if (provenance === undefined) return undefined;
+  if (provenance.kind === 'remote') return { role: 'sourceRemote', text: provenance.label };
+  if (provenance.kind === 'directory') return { role: 'sourceDirectory', text: provenance.label };
+
+  const version = provenance.version === undefined ? '' : `@${provenance.version}`;
+  return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
+}
+
+/** Returns a breadcrumb as plain text, for a stderr line that carries no layout of its own. */
+function toBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
+  return segments.map((segment) => segment.text).join(' / ');
 }
 
 /**

@@ -2,7 +2,7 @@ import { getLayout } from './layout/engine.ts';
 import { emptyCounts, mergeCounts } from './reportRdy.ts';
 import type { ChecklistSummary, SummaryCounts } from './types.ts';
 
-/** Returns the summary table for `summaries`, one row each, opening with a blank line. */
+/** Returns the summary table for `summaries`, one row each, carrying no separation of its own. */
 export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
   const rows = summaries.map((summary) => ({
     name: summary.name,

@@ -318,10 +318,17 @@ describe(reportRdy, () => {
       expect(output.split('\n').at(-1)).toContain('2 passed');
     });
 
-    it('separates the count line from the tree with a blank line', () => {
+    it('parts the count line from the tree with a bare rule', () => {
       const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }));
 
-      expect(output.split('\n', 2)[1]).toBe('');
+      expect(output.split('\n', 2)[1]).toBe('\u{2500}\u{2500}');
+    });
+
+    // Nothing to part it from, and a rule under a heading would read as a tree that rendered empty.
+    it('omits the rule when every result is hidden', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }), { quiet: true });
+
+      expect(output).not.toContain('\u{2500}\u{2500}\n');
     });
   });
 
@@ -334,8 +341,8 @@ describe(reportRdy, () => {
       const heading = indexNaming(output, 'Fixes');
 
       expect(lines[heading]).toBe('\u{2500}\u{2500} Fixes');
-      expect(lines[heading + 2]).toBe(`${FIX} broken`);
-      expect(lines[heading + 3]).toBe('   Run pnpm install');
+      expect(lines[heading + 1]).toBe(`${FIX} broken`);
+      expect(lines[heading + 2]).toBe('   Run pnpm install');
     });
 
     it('recaps a fix from each failed check', () => {

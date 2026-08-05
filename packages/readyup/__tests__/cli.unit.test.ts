@@ -1068,8 +1068,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).toContain('\u{2500}\u{2500} deploy');
-    expect(allOutput).toContain('\u{2500}\u{2500} infra');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} deploy');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
   it('does not show checklist headers for a single checklist', async () => {
@@ -1102,8 +1102,8 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).toContain('\u{2501}\u{2501} kit1');
-    expect(allOutput).toContain('\u{2501}\u{2501} kit2');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit1');
+    expect(allOutput).toContain('\u{2501}\u{2501} \u{1F9F0} kit2');
   });
 
   it('does not print combined summary when running multiple kits', async () => {
