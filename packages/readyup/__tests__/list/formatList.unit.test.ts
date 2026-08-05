@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { richFormatter } from '../../src/layout/richFormatter.ts';
 import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
 
-const COMPILED = richFormatter.tokens.docCompiled.glyph;
-const INTERNAL = richFormatter.tokens.docInternal.glyph;
+const COMPILED = richFormatter.tokens.kit.glyph;
+const INTERNAL = richFormatter.tokens.kitSource.glyph;
 
 /**
  * Returns the line beneath a section's title, which is where its command sits.
@@ -261,15 +261,15 @@ describe(formatConsumerView, () => {
 });
 
 describe(formatManifestView, () => {
-  it('renders kit names with the compiled icon', () => {
+  it('renders kit names with the kit icon', () => {
     const result = formatManifestView({
       kits: [{ name: 'deploy' }, { name: 'monitor' }],
       manifestPath: '.readyup/manifest.json',
     });
 
     expect(result).toContain('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
-    expect(result).toContain('📦 deploy');
-    expect(result).toContain('📦 monitor');
+    expect(result).toContain(`${COMPILED} deploy`);
+    expect(result).toContain(`${COMPILED} monitor`);
   });
 
   it('sets the heading off with a blank line above and below', () => {
@@ -290,7 +290,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('\u{1F4E6} default \u{00B7} General project health checks');
+    expect(result).toContain(`${COMPILED} default \u{00B7} General project health checks`);
   });
 
   it('omits description suffix when description is absent', () => {
@@ -301,7 +301,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('deploy'));
-    expect(kitLine).toBe('\u{1F4E6} deploy');
+    expect(kitLine).toBe(`${COMPILED} deploy`);
   });
 
   it('returns empty-manifest message when kits array is empty', () => {
@@ -319,7 +319,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('\u{1F4E6} default (readyup v0.20.0) \u{00B7} General project health checks');
+    expect(result).toContain(`${COMPILED} default (readyup v0.20.0) \u{00B7} General project health checks`);
   });
 
   it('renders version-only parenthetical when description is absent', () => {
@@ -330,7 +330,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('deploy'));
-    expect(kitLine).toBe('\u{1F4E6} deploy (readyup v0.19.2)');
+    expect(kitLine).toBe(`${COMPILED} deploy (readyup v0.19.2)`);
   });
 
   it('omits the version parenthetical entirely when readyupVersion is absent', () => {
@@ -339,7 +339,7 @@ describe(formatManifestView, () => {
       manifestPath: '.readyup/manifest.json',
     });
 
-    expect(result).toContain('\u{1F4E6} legacy \u{00B7} Older kit');
+    expect(result).toContain(`${COMPILED} legacy \u{00B7} Older kit`);
     expect(result).not.toContain('readyup v');
   });
 
@@ -351,7 +351,7 @@ describe(formatManifestView, () => {
 
     const lines = result.split('\n');
     const kitLine = lines.find((l) => l.includes('bare'));
-    expect(kitLine).toBe('\u{1F4E6} bare');
+    expect(kitLine).toBe(`${COMPILED} bare`);
   });
 });
 

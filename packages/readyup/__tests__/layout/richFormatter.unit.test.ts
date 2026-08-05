@@ -11,7 +11,7 @@ const RETIRED_GLYPHS = ['\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753
 const entries = TOKEN_NAMES.map((name) => ({ name, ...richFormatter.tokens[name] }));
 
 describe('richFormatter', () => {
-  it('supplies a token for every semantic state and no others', () => {
+  it('supplies a token for every name in the vocabulary and no others', () => {
     expect(new Set(Object.keys(richFormatter.tokens))).toStrictEqual(new Set<string>(TOKEN_NAMES));
   });
 

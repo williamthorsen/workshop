@@ -66,7 +66,7 @@ import { VERSION } from '../src/version.ts';
 const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.glyph;
 const ICON_COMPILED = richFormatter.tokens.passed.glyph;
 const ICON_DRIFT = richFormatter.tokens.failedWarn.glyph;
-const GLYPH_OUTPUT = richFormatter.tokens.docCompiled.glyph;
+const GLYPH_OUTPUT = richFormatter.tokens.kit.glyph;
 
 /** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {

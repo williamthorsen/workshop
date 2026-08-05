@@ -435,7 +435,7 @@ function formatResultLine(srcName: string, outName: string, changed: boolean): s
   }
 
   const claim = getLayout().formatCheckLine({ token: 'passed', name: srcName });
-  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('docCompiled')}${outName}\n`;
+  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('kit')}${outName}\n`;
 }
 
 /** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */

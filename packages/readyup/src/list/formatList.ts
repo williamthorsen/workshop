@@ -60,22 +60,22 @@ export function formatOwnerView({
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
     const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, 'docInternal'));
+    sections.push(formatSection('Internal', hint, internalKits, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
       const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, 'docCompiled'));
+      sections.push(formatSection('Compiled', hint, compiledKits, 'kit'));
     } else {
       const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, 'docCompiled'));
+      sections.push(formatSection('Compiled', hint, pathItems, 'kit'));
     }
   }
 
   if (packageKits.length > 0) {
-    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'docCompiled'));
+    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'kit'));
   }
 
   if (availablePackages.length > 0) {
@@ -87,7 +87,7 @@ export function formatOwnerView({
 
 /** Returns the section naming installed packages that publish kits the config does not list. */
 function formatAvailableSection(availablePackages: string[]): string {
-  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'docInternal');
+  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
 }
 
 // -- Consumer view --
@@ -109,7 +109,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   }
 
   const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, 'docCompiled');
+  return formatSection('Compiled', hint, compiledKits, 'kit');
 }
 
 // -- Empty messages --
@@ -144,7 +144,7 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
   const items = kits.map((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
     return getLayout().formatCheckLine({
-      token: 'docCompiled',
+      token: 'kit',
       name: `${kit.name}${versionSegment}`,
       ...(kit.description !== undefined && { detail: kit.description }),
     });

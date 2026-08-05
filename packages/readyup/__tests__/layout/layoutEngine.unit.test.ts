@@ -378,17 +378,17 @@ describe('token and glyph', () => {
   });
 
   it('returns a glyph and one space for mid-line placement', () => {
-    expect(engine.inlineGlyph('docCompiled')).toBe(`${richFormatter.tokens.docCompiled.glyph} `);
+    expect(engine.inlineGlyph('kit')).toBe(`${richFormatter.tokens.kit.glyph} `);
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
   });
 
   it('returns nothing for a token the formatter gives no glyph, so no orphan space is left behind', () => {
     const glyphless = createLayoutEngine({
       ...richFormatter,
-      tokens: { ...richFormatter.tokens, docCompiled: { glyph: '', width: 0 } },
+      tokens: { ...richFormatter.tokens, kit: { glyph: '', width: 0 } },
     });
 
-    expect(glyphless.inlineGlyph('docCompiled')).toBe('');
+    expect(glyphless.inlineGlyph('kit')).toBe('');
   });
 
   it('indents by one gutter per level', () => {

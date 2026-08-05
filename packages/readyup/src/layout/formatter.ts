@@ -1,14 +1,24 @@
-/** Every semantic state a status token can name. */
+/**
+ * Every token a formatter gives a glyph.
+ *
+ * Two kinds share the list: a status token reports what became of a check, and a role token names what a
+ * thing is -- a kit, a checklist, the source one came from. Both resolve through the same vocabulary, so a
+ * style declares its glyphs in one place.
+ */
 export const TOKEN_NAMES = [
   'blockedPrecondition',
-  'docCompiled',
-  'docInternal',
+  'checklist',
   'failedError',
   'failedRecommend',
   'failedWarn',
   'fix',
+  'kit',
+  'kitSource',
   'passed',
   'skippedOptional',
+  'sourceDirectory',
+  'sourcePackage',
+  'sourceRemote',
 ] as const;
 
 export type TokenName = (typeof TOKEN_NAMES)[number];
