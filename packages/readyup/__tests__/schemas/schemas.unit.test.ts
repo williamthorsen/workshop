@@ -155,6 +155,33 @@ describe('JSON payload schemas', () => {
 
       expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
     });
+
+    it('accepts a payload from a readyup that predates the rebuild verdict', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+    });
+
+    it('accepts a rebuild mismatch carrying both hashes', () => {
+      const kits = [
+        {
+          name: 'deploy',
+          status: 'ok',
+          sourceStatus: 'ok',
+          rebuildStatus: 'mismatch',
+          rebuildExpected: '1111aaaa',
+          rebuildActual: '2222bbbb',
+        },
+      ];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).not.toThrow();
+    });
+
+    it('rejects a rebuild verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+    });
   });
 
   describe('kit entries', () => {

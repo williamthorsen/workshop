@@ -364,6 +364,31 @@ Invalid kit at .readyup/kits/default.js:
 
 A typo'd `severity` is the mistake this matters most for: an unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
+### Inlining JSON at compile time
+
+A compiled kit is self-contained, so it cannot read a JSON file that sits next to its source. `pickJson` closes that gap by copying selected fields into the bundle while it is being built:
+
+```ts
+import { pickJson } from 'readyup';
+
+const pkg = pickJson('../../package.json', ['name', 'version', ['engines', 'node']]);
+```
+
+`rdy compile` replaces the call with the literal it resolves to. Nothing of `pickJson` survives, not even the import:
+
+```js
+var pkg = { "name": "my-app", "version": "3.1.0", "engines": { "node": ">=24" } };
+```
+
+The path resolves relative to the source file. Each entry in the second argument names a field to keep: a string for a top-level key, an array of strings for a nested one, whose nesting the result preserves. Naming a path the file does not have fails the compile rather than inlining `undefined`.
+
+Both arguments must be literals written in place. They are read out of the source text before it is parsed, so a variable, a template literal, or a concatenation is a compile error -- and a call inside a comment or a string is still processed, since that reader cannot tell the difference.
+
+Two consequences follow from the value being resolved at compile time:
+
+- `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
+- Editing the JSON afterward leaves the bundle stale, and neither recorded hash changes -- the source did not move, and neither did the bundle. [`rdy verify --rebuild`](#verifying-by-recompiling) is what catches it.
+
 ## Running checks
 
 ```
@@ -526,11 +551,11 @@ They are silent when the manifest is absent, when no entry describes the kit, wh
 
 ### Exit codes
 
-| Code | Meaning                                                                                             |
-| ---- | --------------------------------------------------------------------------------------------------- |
-| `0`  | Ran and found no problems                                                                           |
-| `1`  | Ran and found problems: failed checks, a `verify` drift or missing kit, a kit that fails to compile |
-| `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error                     |
+| Code | Meaning                                                                                       |
+| ---- | --------------------------------------------------------------------------------------------- |
+| `0`  | Ran and found no problems                                                                     |
+| `1`  | Ran and found problems: failed checks, a kit that fails `verify`, a kit that fails to compile |
+| `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error               |
 
 The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that loses a kit part-way exits `2` even when the kits that ran found problems, and still reports what it collected.
 
@@ -702,7 +727,7 @@ The path from source to a consumer:
 2. Run `rdy compile` to bundle it to `<name>.js` and record its hashes in `.readyup/manifest.json`.
 3. Commit both the compiled `.js` and the manifest.
 4. Consumers run `rdy run --from github:org/repo`, which fetches the bundle the manifest describes.
-5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled.
+5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled, or `rdy verify --rebuild` to catch a bundle stale in anything the hashes do not record.
 
 A published package can carry its kits instead, so consumers reach them through the dependency they already have rather than through a repository URL. See [package-hosted kits](#package-hosted-kits).
 
@@ -839,6 +864,7 @@ export default defineRdyConfig({
 ```
 rdy verify                     Check compiled kits against the manifest's hashes
 rdy verify --manifest <path>   Use a manifest other than .readyup/manifest.json
+rdy verify --rebuild           Also recompile each kit and compare it to the committed bundle
 ```
 
 ```
@@ -864,6 +890,38 @@ In CI:
 ```
 
 `rdy verify` enforces where `rdy run` advises: a stale source fails verification and exits 1, while a run emits a warning and proceeds. A verification tool that refused to run because its own bookkeeping was out of date would be worse than one that ran and said so.
+
+#### Verifying by recompiling
+
+The two hashes record two of a bundle's inputs. A bundle is a function of many more: every module it inlines past the entry, every JSON file [`pickJson`](#inlining-json-at-compile-time) inlines at compile time, the bundler's version, and the compile options. None of those is recorded, so a bundle stale in any of them still hashes as `ok`.
+
+`--rebuild` answers the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
+
+```
+── Verifying kits against .readyup/manifest.json
+
+🔴 deploy
+   rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a)
+🟢 smoke
+```
+
+The comparison is against the bundle on disk, never the recorded hash, so the verdict is independent of the manifest's bookkeeping and can contradict it. A bundle that reproduces exactly while its recorded hash does not match says the record is what went wrong, not the kit:
+
+```
+🔴 deploy
+   drift (expected 6f58905a, got eb104f57)
+   rebuild ok
+```
+
+The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
+
+Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
+
+Two things to know before wiring it into CI. It requires esbuild, and says so rather than passing when esbuild is absent. And the readyup version is part of a bundle's bytes, so upgrading readyup makes every kit mismatch until `rdy compile` runs -- a mismatch that spans versions names both of them, so the cause is legible.
+
+```yaml
+- run: npx rdy verify --rebuild
+```
 
 ## Check utilities
 

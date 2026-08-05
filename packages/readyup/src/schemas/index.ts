@@ -50,9 +50,16 @@ export type { JsonKitKind, JsonListKitEntry, JsonListOutput } from './listOutput
 export { KitKindSchema, ListKitEntrySchema, ListOutputSchema } from './listOutputSchema.ts';
 
 // verify
-export type { JsonDriftStatus, JsonSourceStatus, JsonVerifyKitEntry, JsonVerifyOutput } from './verifyOutputSchema.ts';
+export type {
+  JsonDriftStatus,
+  JsonRebuildStatus,
+  JsonSourceStatus,
+  JsonVerifyKitEntry,
+  JsonVerifyOutput,
+} from './verifyOutputSchema.ts';
 export {
   DriftStatusSchema,
+  RebuildStatusSchema,
   SourceStatusSchema,
   VerifyKitEntrySchema,
   VerifyOutputSchema,

@@ -165,6 +165,8 @@ Check compiled kits against the hashes recorded in the manifest.
 Options:
   --manifest <path>          Manifest file path (default: .readyup/manifest.json)
   --json                     Report each kit's verification status as JSON
+  --rebuild                  Also recompile each kit and compare it to the committed bundle;
+                             requires esbuild
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 

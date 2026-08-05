@@ -2,9 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
-import { VERSION } from '../version.ts';
-import { loadEsbuild } from './loadEsbuild.ts';
-import { pickJsonPlugin } from './pickJsonPlugin.ts';
+import { buildBundle } from './buildBundle.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
@@ -13,63 +11,17 @@ export interface CompileResult {
   targetHash: string;
 }
 
-/** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
-export const KIT_COMPILE_TARGET = 'es2025';
-
 /**
- * Generated-file header prepended to compiled output.
+ * Bundles a TypeScript checklist file and writes the result to disk.
  *
- * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
- * readyup version a kit was compiled against and the runner's own version at execution time.
- */
-const GENERATED_HEADER = [
-  '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
-  '/* eslint-disable */',
-  `export const __readyupVersion = ${JSON.stringify(VERSION)};`,
-  '',
-].join('\n');
-
-/**
- * Bundles a TypeScript checklist file into a self-contained ESM bundle using esbuild.
- *
- * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are
- * kept external; all other imports are inlined. The externalized `readyup` specifiers
- * are resolved at runtime by the `rdy` runner's module-resolution hook
- * (`readyupResolverHook.ts`), which routes them to the runner's own readyup
- * installation. Prepends a generated-file header comment to the output.
+ * The bundle itself is `buildBundle`'s; this adds the destination. Writing is skipped when the
+ * bytes already on disk are identical, so a compile that changes nothing leaves the file's mtime
+ * alone.
  */
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
-  const resolvedInput = path.resolve(inputPath);
   const resolvedOutput = path.resolve(outputPath ?? deriveOutputPath(inputPath));
 
-  let esbuild: typeof import('esbuild');
-  try {
-    esbuild = await loadEsbuild();
-  } catch (error: unknown) {
-    throw new Error(
-      'esbuild is required for the compile command but is not installed. Install it with: pnpm add --save-dev esbuild',
-      { cause: error },
-    );
-  }
-
-  const result = await esbuild.build({
-    entryPoints: [resolvedInput],
-    bundle: true,
-    format: 'esm',
-    platform: 'node',
-    target: KIT_COMPILE_TARGET,
-    external: ['node:*', 'readyup', 'readyup/*'],
-    plugins: [pickJsonPlugin()],
-    banner: { js: GENERATED_HEADER },
-    write: false,
-  });
-
-  const outputFile = result.outputFiles[0];
-  if (outputFile === undefined) {
-    throw new Error(`esbuild produced no output for ${resolvedInput}`);
-  }
-
-  const compiled = Buffer.from(outputFile.contents);
+  const compiled = await buildBundle(inputPath);
   const existing = existsSync(resolvedOutput) ? readFileSync(resolvedOutput) : undefined;
   const changed = existing === undefined || !compiled.equals(existing);
 

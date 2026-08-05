@@ -2,7 +2,8 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { compileConfig, KIT_COMPILE_TARGET } from '../src/compile/compileConfig.ts';
+import { KIT_COMPILE_TARGET } from '../src/compile/buildBundle.ts';
+import { compileConfig } from '../src/compile/compileConfig.ts';
 import { VERSION } from '../src/version.ts';
 
 const mockBuild = vi.hoisted(() => vi.fn());
