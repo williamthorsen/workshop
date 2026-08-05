@@ -125,6 +125,25 @@ describe(assertIsRdyKit, () => {
       expect(messageFrom(raw)).toContain('checklists[0].checks[0].fix:');
     });
 
+    it('throws when quiet is not a boolean', () => {
+      const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, quiet: 'true' }] }] };
+
+      expect(messageFrom(raw)).toContain('checklists[0].checks[0].quiet:');
+    });
+
+    it('locates a bad quiet on a check nested under a parent', () => {
+      const raw = {
+        checklists: [
+          {
+            name: 'test',
+            checks: [{ name: 'parent', check: () => true, checks: [{ name: 'child', check: () => true, quiet: 1 }] }],
+          },
+        ],
+      };
+
+      expect(messageFrom(raw)).toContain('checklists[0].checks[0].checks[0].quiet:');
+    });
+
     it('validates checks nested under a parent check', () => {
       const raw = {
         checklists: [
@@ -254,7 +273,16 @@ describe(assertIsRdyKit, () => {
           checklists: [
             {
               name: 'test',
-              checks: [{ name: 'a', check: () => true, severity: 'recommend', skip: () => false, fix: 'run it' }],
+              checks: [
+                {
+                  name: 'a',
+                  check: () => true,
+                  severity: 'recommend',
+                  quiet: true,
+                  skip: () => false,
+                  fix: 'run it',
+                },
+              ],
             },
           ],
         }),
