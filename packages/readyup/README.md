@@ -774,6 +774,8 @@ The directory is named against the enclosing workspace root, so `pnpm -r exec rd
 
 A sweep runs to completion: a kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
+A sweep that finds no kits writes a manifest only where one already exists, emptying it so that kits since deleted stop being advertised. A project with neither kits nor a manifest is left alone, so sweeping a monorepo does not seed `.readyup/` in workspaces that hold no kits.
+
 `rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` -- someone edited the bundle directly:
 
 ```
