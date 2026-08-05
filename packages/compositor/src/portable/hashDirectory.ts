@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Hash } from '../schemas/scalar-schemas.ts';
 import { compareStrings } from './compareStrings.ts';
 import { hashBytes, hashUtf8 } from './hash-content.ts';
+import { isToolState } from './isToolState.ts';
 import { listFilesRecursively } from './listFilesRecursively.ts';
 
 /**
@@ -23,12 +24,3 @@ export async function hashDirectory(dir: string): Promise<Hash> {
   );
   return hashUtf8(perFile.join('\n'));
 }
-
-// region | Helpers
-
-/** Reports whether `name` is a tool's own state rather than content the tree ships. */
-function isToolState(name: string): boolean {
-  return name.startsWith('.');
-}
-
-// endregion | Helpers
