@@ -6,6 +6,7 @@ import { encodeBlob } from '../portable/encodeBlob.ts';
 import { hashBytes } from '../portable/hash-content.ts';
 import { isToolState } from '../portable/isToolState.ts';
 import { listFilesRecursively } from '../portable/listFilesRecursively.ts';
+import { toPosix } from '../portable/toPosix.ts';
 import type { Blob } from '../schemas/file-schemas.ts';
 import type { Hash } from '../schemas/scalar-schemas.ts';
 
@@ -34,8 +35,9 @@ export async function readArtifactAssets(
   artifactDir: string,
   entryFile: string,
 ): Promise<ReadonlyArray<ArtifactAsset>> {
+  const entryPath = toPosix(path.normalize(entryFile));
   const shipped = await listFilesRecursively(artifactDir, { skipName: isToolState });
-  const relativePaths = shipped.filter((relativePath) => relativePath !== entryFile).toSorted(compareStrings);
+  const relativePaths = shipped.filter((relativePath) => relativePath !== entryPath).toSorted(compareStrings);
 
   return Promise.all(relativePaths.map((relativePath) => readAsset(artifactDir, relativePath)));
 }

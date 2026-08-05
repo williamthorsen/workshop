@@ -21,6 +21,14 @@ describe(readArtifactAssets, () => {
     expect(assets.map(({ relativePath }) => relativePath)).toStrictEqual(['assets/diagram.svg', 'checklist.md']);
   });
 
+  it('excludes the entry file however the layout spells its path, the name arriving as a consumer declared it', async () => {
+    const dir = await buildTempTree({ 'SKILL.md': '# Review\n', 'checklist.md': '# Checklist\n' });
+
+    const assets = await readArtifactAssets(dir, './SKILL.md');
+
+    expect(assets.map(({ relativePath }) => relativePath)).toStrictEqual(['checklist.md']);
+  });
+
   it('reads an artifact shipping nothing else as shipping nothing', async () => {
     const dir = await buildTempTree({ 'SKILL.md': '# Review\n' });
 
