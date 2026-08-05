@@ -16,44 +16,6 @@ const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
 const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
 const SKIPPED = richFormatter.tokens.skippedOptional.glyph;
 
-function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
-  return {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-    ...overrides,
-  };
-}
-
-function makeRow(overrides?: Partial<SummaryRow>): SummaryRow {
-  return { name: 'checklist', counts: makeCounts({ passed: 1 }), durationMs: 100, ...overrides };
-}
-
-/**
- * Returns the display column at which a rendered line's name begins.
- *
- * Counts terminal cells, taking each glyph's width from the formatter, so a two-cell glyph counts twice.
- */
-function measureNameColumn(line: string): number {
-  const match = /^(?<indent> *)(?<glyph>\P{White_Space})(?<pad> +)/u.exec(line);
-  const groups = match?.groups;
-  if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
-
-  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === groups.glyph);
-  if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(groups.glyph)}`);
-
-  return (groups.indent?.length ?? 0) + token.width + (groups.pad?.length ?? 0);
-}
-
-/** Returns a line's count of leading spaces, one per column. */
-function measureIndent(line: string): number {
-  return line.length - line.trimStart().length;
-}
-
 describe('formatCheckLine', () => {
   it('leads with the token and pads to the gutter', () => {
     expect(engine.formatCheckLine({ token: 'passed', name: 'lockfile' })).toBe(`${PASSED} lockfile`);
@@ -450,3 +412,45 @@ describe('token and glyph', () => {
     expect(engine.indent(3)).toBe(' '.repeat(9));
   });
 });
+
+// region | Helpers
+
+function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
+  return {
+    passed: 0,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
+    ...overrides,
+  };
+}
+
+function makeRow(overrides?: Partial<SummaryRow>): SummaryRow {
+  return { name: 'checklist', counts: makeCounts({ passed: 1 }), durationMs: 100, ...overrides };
+}
+
+/**
+ * Returns the display column at which a rendered line's name begins.
+ *
+ * Counts terminal cells, taking each glyph's width from the formatter, so a two-cell glyph counts twice.
+ */
+function measureNameColumn(line: string): number {
+  const match = /^(?<indent> *)(?<glyph>\P{White_Space})(?<pad> +)/u.exec(line);
+  const groups = match?.groups;
+  if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
+
+  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === groups.glyph);
+  if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(groups.glyph)}`);
+
+  return (groups.indent?.length ?? 0) + token.width + (groups.pad?.length ?? 0);
+}
+
+/** Returns a line's count of leading spaces, one per column. */
+function measureIndent(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
+// endregion | Helpers

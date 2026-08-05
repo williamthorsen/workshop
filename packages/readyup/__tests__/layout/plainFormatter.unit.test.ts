@@ -15,67 +15,6 @@ const engine = createLayoutEngine(plainFormatter);
 
 const entries = TOKEN_NAMES.map((name) => ({ name, ...plainFormatter.tokens[name] }));
 
-function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
-  return {
-    passed: 0,
-    errors: 0,
-    warnings: 0,
-    recommendations: 0,
-    blocked: 0,
-    optional: 0,
-    worstSeverity: null,
-    ...overrides,
-  };
-}
-
-/** Returns the display column at which a rendered line's name begins. */
-function measureNameColumn(line: string): number {
-  const match = /^(?<indent> *)(?<word>[A-Z]*)(?<pad> +)/u.exec(line);
-  const groups = match?.groups;
-  if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
-
-  return (groups.indent?.length ?? 0) + (groups.word?.length ?? 0) + (groups.pad?.length ?? 0);
-}
-
-/** Returns a line's count of leading spaces, one per column. */
-function measureIndent(line: string): number {
-  return line.length - line.trimStart().length;
-}
-
-/** Returns every line the engine can produce, so a whole-vocabulary assertion has something to run against. */
-function renderEverything(): string {
-  const counts = makeCounts({ passed: 2, errors: 1, warnings: 1, recommendations: 1, blocked: 1, optional: 1 });
-
-  return [
-    ...TOKEN_NAMES.map((token) =>
-      engine.formatCheckLine({ token, name: 'check', detail: 'detail', progress: '50%', durationMs: 250, depth: 1 }),
-    ),
-    engine.formatHeading('deploy', 'kit'),
-    engine.formatHeading('build', 'section'),
-    engine.formatBlockRule(),
-    engine.formatBreadcrumb(
-      [
-        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
-        { role: 'kit', text: 'npm-auto-publish' },
-        { role: 'checklist', text: 'repo' },
-      ],
-      'kit',
-    ),
-    ...engine.formatReasonBlock(['a reason'], 2),
-    engine.formatHint('set a token'),
-    engine.formatCountLine(counts, 800),
-    ...engine.formatSummaryTable({
-      rows: [
-        { name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 },
-        { name: 'integration', counts, durationMs: 1_400 },
-      ],
-      totals: counts,
-      totalDurationMs: 1_810,
-    }),
-    ...TOKEN_NAMES.map((token) => engine.inlineGlyph(token)),
-  ].join('\n');
-}
-
 describe('plainFormatter', () => {
   it('supplies a token for every name in the vocabulary and no others', () => {
     expect(new Set(Object.keys(plainFormatter.tokens))).toStrictEqual(new Set<string>(TOKEN_NAMES));
@@ -177,3 +116,68 @@ describe('alignment', () => {
     );
   });
 });
+
+// region | Helpers
+
+function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
+  return {
+    passed: 0,
+    errors: 0,
+    warnings: 0,
+    recommendations: 0,
+    blocked: 0,
+    optional: 0,
+    worstSeverity: null,
+    ...overrides,
+  };
+}
+
+/** Returns the display column at which a rendered line's name begins. */
+function measureNameColumn(line: string): number {
+  const match = /^(?<indent> *)(?<word>[A-Z]*)(?<pad> +)/u.exec(line);
+  const groups = match?.groups;
+  if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
+
+  return (groups.indent?.length ?? 0) + (groups.word?.length ?? 0) + (groups.pad?.length ?? 0);
+}
+
+/** Returns a line's count of leading spaces, one per column. */
+function measureIndent(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
+/** Returns every line the engine can produce, so a whole-vocabulary assertion has something to run against. */
+function renderEverything(): string {
+  const counts = makeCounts({ passed: 2, errors: 1, warnings: 1, recommendations: 1, blocked: 1, optional: 1 });
+
+  return [
+    ...TOKEN_NAMES.map((token) =>
+      engine.formatCheckLine({ token, name: 'check', detail: 'detail', progress: '50%', durationMs: 250, depth: 1 }),
+    ),
+    engine.formatHeading('deploy', 'kit'),
+    engine.formatHeading('build', 'section'),
+    engine.formatBlockRule(),
+    engine.formatBreadcrumb(
+      [
+        { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+        { role: 'kit', text: 'npm-auto-publish' },
+        { role: 'checklist', text: 'repo' },
+      ],
+      'kit',
+    ),
+    ...engine.formatReasonBlock(['a reason'], 2),
+    engine.formatHint('set a token'),
+    engine.formatCountLine(counts, 800),
+    ...engine.formatSummaryTable({
+      rows: [
+        { name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 },
+        { name: 'integration', counts, durationMs: 1_400 },
+      ],
+      totals: counts,
+      totalDurationMs: 1_810,
+    }),
+    ...TOKEN_NAMES.map((token) => engine.inlineGlyph(token)),
+  ].join('\n');
+}
+
+// endregion | Helpers
