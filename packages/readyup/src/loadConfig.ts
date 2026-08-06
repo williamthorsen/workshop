@@ -21,8 +21,13 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
   packages: [],
 };
 
-/** Ordered lookup paths for the config file, resolved relative to the directory being read. */
-const LOOKUP_PATHS = ['.config/readyup.config.ts'];
+/**
+ * Ordered lookup paths for the config file, resolved relative to the directory being read.
+ *
+ * Exported because a caller deciding whether a directory is worth loading a config for has to test the
+ * same paths this chain searches; re-typing them elsewhere is how the two fall out of step.
+ */
+export const CONFIG_LOOKUP_PATHS = ['.config/readyup.config.ts'];
 
 /** Structural schema for RdyConfig. */
 const RdyConfigSchema = z.looseObject({
@@ -101,7 +106,7 @@ function resolveConfigPath(fromDir: string, overridePath: string | undefined): s
     return resolvedPath;
   }
 
-  for (const lookupPath of LOOKUP_PATHS) {
+  for (const lookupPath of CONFIG_LOOKUP_PATHS) {
     const candidate = path.resolve(fromDir, lookupPath);
     if (existsSync(candidate)) return candidate;
   }
