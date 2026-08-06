@@ -320,7 +320,7 @@ function collectProjectKits(project: KitProject): JsonListKitEntry[] {
     names = enumerateKits({ dir: outDir, extension: '.js' });
   } catch (error: unknown) {
     if (!isSkippableFilesystemError(error)) throw error;
-    process.stderr.write(`Warning: Cannot read ${outDir}. Listing ${project.dir} without its kits.\n`);
+    process.stderr.write(`Warning: Cannot read ${outDir}. Omitting ${project.dir} from the listing.\n`);
     return [];
   }
 

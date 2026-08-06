@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
@@ -14,9 +12,8 @@ import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { listCommand } from '../listCommand.ts';
-
-const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 
 const tempDir = useTempDir({
   prefix: 'rdy-recursive-',
@@ -91,11 +88,13 @@ const tempDir = useTempDir({
   },
 });
 
+const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
+
 describe('list --recursive', () => {
   let stdoutSpy: MockInstance;
 
   beforeEach(() => {
-    mockReaddirSync.mockImplementation(readdirSyncActual);
+    passAllReads();
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
@@ -257,6 +256,9 @@ describe('list --recursive', () => {
       expect(exitCode).toBe(0);
       expect(output).not.toContain('packages/blocked');
       expect(output).toContain('packages/readyup/');
+      expect(process.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Omitting packages/blocked from the listing'),
+      );
     });
 
     it('rethrows a filesystem failure that is not benign', async () => {
@@ -291,15 +293,6 @@ describe('list --recursive', () => {
   });
 
   // region | Helpers
-
-  /** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
-  function failReadOf(relativePath: string, code: string): void {
-    const failingDir = path.join(tempDir.dir, relativePath);
-    mockReaddirSync.mockImplementation((...args: Parameters<typeof readdirSyncActual>) => {
-      if (args[0] === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
-      return readdirSyncActual(...args);
-    });
-  }
 
   /** Returns everything the run wrote to stdout. */
   function readOutput(): string {

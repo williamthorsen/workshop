@@ -12,9 +12,8 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { discoverKitProjects } from '../discoverKitProjects.ts';
-
-const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 
 const tempDir = useTempDir({
   prefix: 'rdy-projects-',
@@ -65,9 +64,11 @@ const tempDir = useTempDir({
   },
 });
 
+const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
+
 describe(discoverKitProjects, () => {
   beforeEach(() => {
-    mockReaddirSync.mockImplementation(readdirSyncActual);
+    passAllReads();
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
 
@@ -189,15 +190,6 @@ describe(discoverKitProjects, () => {
 async function discoverDirs(): Promise<string[]> {
   const projects = await discoverKitProjects({ root: tempDir.dir });
   return projects.map((project) => project.dir);
-}
-
-/** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
-function failReadOf(relativePath: string, code: string): void {
-  const failingDir = path.join(tempDir.dir, relativePath);
-  mockReaddirSync.mockImplementation((...args: Parameters<typeof readdirSyncActual>) => {
-    if (args[0] === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
-    return readdirSyncActual(...args);
-  });
 }
 
 // endregion | Helpers

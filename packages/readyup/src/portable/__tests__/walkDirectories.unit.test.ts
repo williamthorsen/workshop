@@ -9,9 +9,8 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { walkDirectories } from '../walkDirectories.ts';
-
-const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 
 const tempDir = useTempDir({
   prefix: 'rdy-walk-',
@@ -28,9 +27,11 @@ const tempDir = useTempDir({
   },
 });
 
+const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
+
 describe(walkDirectories, () => {
   beforeEach(() => {
-    mockReaddirSync.mockImplementation(readdirSyncActual);
+    passAllReads();
   });
 
   it('yields every directory holding a match, root-relative and sorted', () => {
@@ -113,22 +114,3 @@ describe(walkDirectories, () => {
     expect(() => walkDirectories({ root: tempDir.dir, match: '**/package.json' })).toThrow('read failed: EMFILE');
   });
 });
-
-// region | Helpers
-
-/** The read options the sweep passes, which a passthrough hands straight back to the real reader. */
-interface SweepReaddirOptions {
-  encoding: 'utf8';
-  withFileTypes: true;
-}
-
-/** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
-function failReadOf(relativePath: string, code: string): void {
-  const failingDir = `${tempDir.dir}/${relativePath}`;
-  mockReaddirSync.mockImplementation((dir: string, options: SweepReaddirOptions) => {
-    if (dir === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
-    return readdirSyncActual(dir, options);
-  });
-}
-
-// endregion | Helpers
