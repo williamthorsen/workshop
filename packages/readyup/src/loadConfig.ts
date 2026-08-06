@@ -21,7 +21,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
   packages: [],
 };
 
-/** Ordered lookup paths for the config file, resolved relative to `process.cwd()`. */
+/** Ordered lookup paths for the config file, resolved relative to the directory being read. */
 const LOOKUP_PATHS = ['.config/readyup.config.ts'];
 
 /** Structural schema for RdyConfig. */
@@ -47,14 +47,27 @@ function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
   RdyConfigSchema.parse(raw);
 }
 
+/** Options for `loadConfig`. */
+export interface LoadConfigOptions {
+  /** Directory the config is read for. Both the lookup chain and `overridePath` resolve against it. */
+  fromDir?: string;
+  /** A config file to load in place of the lookup chain. */
+  overridePath?: string;
+}
+
 /**
  * Load readyup config from the filesystem.
  *
  * Checks `.config/readyup.config.ts` and returns defaults if not found.
  * An explicit override path skips the lookup chain.
+ *
+ * Naming a directory is what lets one invocation read several projects, each under its own config,
+ * without moving the process between them.
  */
-export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConfig> {
-  const resolvedPath = resolveConfigPath(overridePath);
+export async function loadConfig(options: LoadConfigOptions = {}): Promise<ResolvedRdyConfig> {
+  const { fromDir = process.cwd(), overridePath } = options;
+
+  const resolvedPath = resolveConfigPath(fromDir, overridePath);
   if (resolvedPath === undefined) {
     return { ...DEFAULT_CONFIG };
   }
@@ -79,9 +92,9 @@ export async function loadConfig(overridePath?: string): Promise<ResolvedRdyConf
  * An override path skips the lookup chain, and a file missing at that path is an error rather than a
  * fall-through to defaults: naming a config that is not there is a mistake, not a request for defaults.
  */
-function resolveConfigPath(overridePath: string | undefined): string | undefined {
+function resolveConfigPath(fromDir: string, overridePath: string | undefined): string | undefined {
   if (overridePath !== undefined) {
-    const resolvedPath = path.resolve(process.cwd(), overridePath);
+    const resolvedPath = path.resolve(fromDir, overridePath);
     if (!existsSync(resolvedPath)) {
       throw new Error(`Config not found: ${resolvedPath}`);
     }
@@ -89,7 +102,7 @@ function resolveConfigPath(overridePath: string | undefined): string | undefined
   }
 
   for (const lookupPath of LOOKUP_PATHS) {
-    const candidate = path.resolve(process.cwd(), lookupPath);
+    const candidate = path.resolve(fromDir, lookupPath);
     if (existsSync(candidate)) return candidate;
   }
   return undefined;
