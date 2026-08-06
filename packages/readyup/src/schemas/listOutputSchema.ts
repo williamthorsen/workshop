@@ -36,6 +36,13 @@ export const ListKitEntrySchema = z
   .object({
     name: z.string(),
     kind: KitKindSchema,
+    /**
+     * The project a kit was authored in, relative to the sweep root, present only for a repo-wide listing.
+     *
+     * Orthogonal to `origin` rather than an alternative to it: one names where a kit lives in this tree,
+     * the other which installed package published it, and a kit can answer both.
+     */
+    project: z.string().optional(),
     origin: ListKitOriginSchema.optional(),
     path: z.string().optional(),
     description: z.string().optional(),
@@ -47,13 +54,14 @@ export const ListKitEntrySchema = z
 /**
  * Top-level shape of `rdy list --json`.
  *
- * Rows are keyed by `name`, `kind`, and `origin.package` together, never by any subset. Under the
+ * Rows are keyed by `name`, `kind`, `project`, and `origin.package` together, never by any subset. Under the
  * default configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a
  * compiled source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as
  * `compiled`, which `rdy run <name>` runs. A package's kit is `compiled` as well, so `name` and `kind`
  * alone collide between a project's own kit and a package's kit of the same name, and between two
- * packages publishing that name. Every such row is meaningful, and a consumer indexing on less than
- * the full key silently drops one of them.
+ * packages publishing that name. A repo-wide listing adds a third collision, since two projects may each
+ * hold a `default` kit. Every such row is meaningful, and a consumer indexing on less than the full key
+ * silently drops one of them.
  *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits that would run. They are kept out of `kits` for exactly

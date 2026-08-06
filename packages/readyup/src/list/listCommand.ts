@@ -16,6 +16,8 @@ import { discoverKitPackages } from '../packages/discoverKitPackages.ts';
 import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
 import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../parseFromValue.ts';
 import { parseFromValue } from '../parseFromValue.ts';
+import type { KitProject } from '../projects/discoverKitProjects.ts';
+import { discoverKitProjects } from '../projects/discoverKitProjects.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
@@ -26,7 +28,14 @@ import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { enumerateKits } from './enumerateKits.ts';
-import { formatConsumerView, formatManifestView, formatOwnerView, resolveCompiledStyle } from './formatList.ts';
+import type { RecursiveProjectView } from './formatList.ts';
+import {
+  formatConsumerView,
+  formatManifestView,
+  formatOwnerView,
+  formatRecursiveView,
+  resolveCompiledStyle,
+} from './formatList.ts';
 
 /** A local `--from` source, which resolves to a directory on this machine. */
 type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
@@ -35,6 +44,8 @@ const listOptions = {
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
+  // No short flag: `-r` wants to be `--rebuild` under `rdy verify`, which the CLI's short-flag rule bars.
+  recursive: { type: 'boolean' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
@@ -62,9 +73,23 @@ export async function listCommand(args: string[]): Promise<number> {
   const fromArg = values.from;
   const json = values.json === true;
   const manifestArg = values.manifest;
+  const recursive = values.recursive === true;
 
   if (fromArg !== undefined && manifestArg !== undefined) {
     throw usageError('--from and --manifest are mutually exclusive');
+  }
+
+  // `--recursive` sweeps this tree, while the other two name a single foreign source.
+  if (recursive && fromArg !== undefined) {
+    throw usageError('--recursive and --from are mutually exclusive');
+  }
+
+  if (recursive && manifestArg !== undefined) {
+    throw usageError('--recursive and --manifest are mutually exclusive');
+  }
+
+  if (recursive) {
+    return runRecursiveMode(json);
   }
 
   if (manifestArg !== undefined) {
@@ -246,6 +271,77 @@ async function runOwnerMode(json: boolean): Promise<number> {
 }
 
 /**
+ * Enumerate the compiled kits of every kit project below the working directory.
+ *
+ * Compiled kits only: an internal kit is never reachable from another directory, since `--jit` and
+ * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis
+ * rather than to this one. What is left is exactly the set a reader can run from where they stand.
+ *
+ * `availablePackages` is omitted for the same reason: it is a per-project config suggestion, and a
+ * whole-repo sweep has no single config to suggest anything for.
+ */
+async function runRecursiveMode(json: boolean): Promise<number> {
+  const root = process.cwd();
+  const projects = await discoverKitProjects({ root });
+
+  const views: RecursiveProjectView[] = [];
+  const entries: JsonListKitEntry[] = [];
+
+  for (const project of projects) {
+    const kits = collectProjectKits(project);
+    views.push({
+      dir: project.dir,
+      compiledKits: kits.map((kit) => ({ name: kit.name, description: kit.description })),
+      compiledStyle: resolveCompiledStyle(project.absolutePath, project.config.compile.outDir, root),
+    });
+    entries.push(...kits);
+  }
+
+  writeHuman(formatRecursiveView({ projects: views }) + '\n', json);
+
+  return finishList(entries, json);
+}
+
+/**
+ * Reads one project's compiled kits, preferring its manifest and falling back to the files on disk.
+ *
+ * The same order of preference `list --from` takes for a foreign directory: the manifest is where the
+ * descriptions live, and a project compiled with `--skip-manifest` still has kits worth naming.
+ */
+function collectProjectKits(project: KitProject): JsonListKitEntry[] {
+  const manifest = readProjectManifest(project.manifestPath);
+  if (manifest !== undefined) {
+    const manifestDir = path.dirname(project.manifestPath);
+    return manifest.kits.map((kit) => buildManifestEntry(kit, manifestDir, project.dir));
+  }
+
+  const outDir = path.resolve(project.absolutePath, project.config.compile.outDir);
+  return enumerateKits({ dir: outDir, extension: '.js' }).map((name) => ({
+    name,
+    kind: 'compiled',
+    project: project.dir,
+    path: path.relative(process.cwd(), path.join(outDir, `${name}.js`)),
+  }));
+}
+
+/**
+ * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
+ *
+ * A manifest nobody can read costs that project its descriptions rather than its listing, which is the
+ * warn-and-continue every other read-only path takes; the kits themselves are still on disk.
+ */
+function readProjectManifest(manifestPath: string): RdyManifest | undefined {
+  try {
+    return readManifest(manifestPath);
+  } catch (error: unknown) {
+    if (!(error instanceof ManifestNotFoundError)) {
+      process.stderr.write(`Warning: ${extractMessage(error)}\n`);
+    }
+    return undefined;
+  }
+}
+
+/**
  * Collects the kits the configured packages publish, tolerating one that cannot be expanded.
  *
  * `run` fails hard on the same configuration, because it would otherwise execute against a package set
@@ -310,10 +406,14 @@ function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListK
  *
  * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
  * straight to `rdy run --file`. Pass `undefined` for a manifest that is not on this machine.
+ *
+ * `project` names the directory a repo-wide sweep found the kit in, and is left off by every listing
+ * that reads one project, where there is nothing for it to distinguish.
  */
-function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined): JsonListKitEntry {
+function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined, project?: string): JsonListKitEntry {
   const entry: JsonListKitEntry = { name: kit.name, kind: 'compiled' };
 
+  if (project !== undefined) entry.project = project;
   if (kit.path !== undefined) {
     entry.path =
       manifestDir === undefined ? kit.path : path.relative(process.cwd(), path.resolve(manifestDir, kit.path));
