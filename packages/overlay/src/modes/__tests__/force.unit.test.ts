@@ -5,11 +5,11 @@ import { runForce } from '../force.ts';
 
 const context = { source: '/src', target: '/target' };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(runForce, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('runs a full apply and reports M rows as forced, exiting 0 on success', async () => {
     mockStatus(' A .new\n M .diff\n D .gone\n R normalize.sh\n');
     const apply = mockApply(0);

@@ -5,11 +5,11 @@ import { runCreate } from '../create.ts';
 
 const context = { source: '/src', target: '/target' };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(runCreate, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('applies A and D entries by absolute target path', async () => {
     mockStatus(' A .new\n D .gone\n');
     const streamed = mockStreamed(0);

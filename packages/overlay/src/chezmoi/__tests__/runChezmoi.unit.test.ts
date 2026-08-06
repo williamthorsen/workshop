@@ -23,11 +23,11 @@ interface ChildStub {
   on: (event: string, handler: (value: unknown) => void) => ChildStub;
 }
 
-afterEach(() => {
-  vi.clearAllMocks();
-});
-
 describe(runChezmoiCaptured, () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('injects source, destination, throwaway persistent-state and config, and --no-tty', async () => {
     resolveExecFile('output');
 
@@ -71,6 +71,10 @@ describe(runChezmoiCaptured, () => {
 });
 
 describe(runChezmoiStreamed, () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('inherits child stdout and stderr to process.stderr, never stdout', async () => {
     arrangeSpawn('close', 0);
 

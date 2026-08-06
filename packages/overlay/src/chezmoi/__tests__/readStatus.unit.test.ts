@@ -6,11 +6,11 @@ import * as runChezmoiModule from '../runChezmoi.ts';
 
 const context: ChezmoiContext = { source: '/src', target: '/dst' };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(readStatus, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns stdout when chezmoi status exits 0', async () => {
     vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout: 'A  .newfile', stderr: '', code: 0 });
 
