@@ -1,17 +1,11 @@
 import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
-import { deferredLintRules } from './.config/eslint/deferred-lint-rules.ts';
-
 const config = defineConfig([
   ...baseConfig,
   {
     // Completely ignore these files
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
-  },
-  {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
-    rules: deferredLintRules,
   },
   {
     // `prefer-simple-condition-first` reorders conditions to save a property read, at the cost of the reading
