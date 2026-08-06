@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ENGINE_VERSION } from '../../engine-version.ts';
 import { RenderTargetConsistencyError } from '../../render/assertRenderTargetsAreConsistent.ts';
 import type { ArtifactRender } from '../../render/renderArtifact.ts';
 import type { ResolveKind } from '../../schemas/catalog-schemas.ts';
@@ -165,7 +166,7 @@ describe(captureSnapshot, () => {
   it('records the engine version, so a plan names what produced it', async () => {
     const snapshot = await capture();
 
-    expect(snapshot.engineVersion).toBe('0.0.0');
+    expect(snapshot.engineVersion).toBe(ENGINE_VERSION);
   });
 
   it('reads an unchanged workspace to the same digests twice, which is what a fingerprint rests on', async () => {

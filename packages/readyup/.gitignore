@@ -2,4 +2,6 @@
 # already does for the generated `schemas/`.
 .readyup/kits/*.js
 .readyup/manifest.json
-schemas/
+
+# Anchored to the package root, so that `src/schemas/` and `__tests__/schemas/` stay tracked.
+/schemas/

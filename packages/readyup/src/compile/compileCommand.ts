@@ -1,9 +1,7 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
-
-import picomatch from 'picomatch';
 
 import { configError, usageError } from '../errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../exitCodes.ts';
@@ -23,6 +21,7 @@ import { checkDrift } from '../verify/checkDrift.ts';
 import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
 import { writeHuman } from '../writeHuman.ts';
+import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
@@ -180,13 +179,6 @@ function formatDriftReason(status: Extract<DriftStatus, { kind: 'drift' }>): str
 /** Resolve the manifest output path from the optional `--manifest` flag. */
 function resolveManifestPath(flagValue: string | undefined): string {
   return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
-}
-
-/** Collect `.ts` files matching the optional `include` glob, falling back to all `.ts` files. */
-function collectSourceFiles(srcDir: string, includeGlob: string | undefined): string[] {
-  const entries = readdirSync(srcDir, { recursive: true, encoding: 'utf8' });
-  const isMatch = includeGlob !== undefined ? picomatch(includeGlob) : undefined;
-  return entries.filter((name) => name.endsWith('.ts') && (isMatch === undefined || isMatch(name))).toSorted();
 }
 
 /** Arguments for the batch compile path. */

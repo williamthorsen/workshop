@@ -118,6 +118,22 @@ export const listPayload = {
   ],
 };
 
+/** A repo-wide listing, where two projects each hold a kit of the same name. */
+export const recursiveListPayload = {
+  schemaVersion: 1,
+  kits: [
+    { name: 'default', kind: 'compiled', project: '.', path: '.readyup/kits/default.js' },
+    {
+      name: 'default',
+      kind: 'compiled',
+      project: 'packages/ui',
+      path: 'packages/ui/.readyup/kits/default.js',
+      description: 'Publication readiness',
+      readyupVersion: '0.24.0',
+    },
+  ],
+};
+
 export const verifyPayload = {
   schemaVersion: 1,
   passed: false,

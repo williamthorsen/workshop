@@ -1,22 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import path from 'node:path';
 
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { setStyle } from '../../src/layout/engine.ts';
 import { richFormatter } from '../../src/layout/richFormatter.ts';
-import { formatConsumerView, formatEmpty, formatManifestView, formatOwnerView } from '../../src/list/formatList.ts';
+import {
+  formatConsumerView,
+  formatEmpty,
+  formatManifestView,
+  formatOwnerView,
+  formatRecursiveView,
+  type RecursiveProjectView,
+  resolveCompiledStyle,
+} from '../../src/list/formatList.ts';
 
 const COMPILED = richFormatter.tokens.kit.glyph;
 const INTERNAL = richFormatter.tokens.kitSource.glyph;
-
-/**
- * Returns the line beneath a section's title, which is where its command sits.
- *
- * Reading that line positionally is the assertion: a command fused into the title would still satisfy a
- * `toContain` over the whole output.
- */
-function findSectionCommand(output: string, title: string): string | undefined {
-  const lines = output.split('\n');
-  const titleIndex = lines.indexOf(`\u{2500}\u{2500} ${title}`);
-  return titleIndex === -1 ? undefined : lines[titleIndex + 1];
-}
+const DIRECTORY = richFormatter.tokens.sourceDirectory.glyph;
 
 describe(formatOwnerView, () => {
   it('renders only the Internal section when compiled kits are empty', () => {
@@ -350,12 +350,160 @@ describe(formatManifestView, () => {
   });
 });
 
+describe(formatRecursiveView, () => {
+  afterEach(() => {
+    setStyle('rich');
+  });
+
+  it('heads each project with its directory, carrying a trailing slash', () => {
+    const result = formatRecursiveView({
+      projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/ui', kits: ['deploy'] })],
+    });
+
+    expect(result).toContain(`\u{2501}\u{2501} ${DIRECTORY} ./`);
+    expect(result).toContain(`\u{2501}\u{2501} ${DIRECTORY} packages/ui/`);
+  });
+
+  it('renders the sweep root with a hint naming no project', () => {
+    const result = formatRecursiveView({ projects: [buildProject({ dir: '.', kits: ['demo'] })] });
+
+    expect(findProjectCommand(result, './')).toBe('   rdy run <name>');
+  });
+
+  it('renders another project with a hint naming it', () => {
+    const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['deploy'] })] });
+
+    expect(findProjectCommand(result, 'packages/ui/')).toBe('   rdy run --from packages/ui <name>');
+  });
+
+  it('brackets the positional name when the project holds a default kit', () => {
+    const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['default'] })] });
+
+    expect(findProjectCommand(result, 'packages/ui/')).toBe('   rdy run --from packages/ui [<name>]');
+  });
+
+  it('renders a description as inline detail, and a kit without one as the bare name', () => {
+    const result = formatRecursiveView({
+      projects: [
+        {
+          dir: 'packages/ui',
+          compiledKits: [{ name: 'default', description: 'Publication readiness' }, { name: 'deploy' }],
+          compiledStyle: { kind: 'local-convention' },
+        },
+      ],
+    });
+
+    expect(result).toContain(`${COMPILED} default \u{00B7} Publication readiness`);
+    expect(result).toContain(`${COMPILED} deploy`);
+    expect(result).not.toContain('deploy \u{00B7}');
+  });
+
+  it('renders a custom-outDir project by file path, against the sweep root', () => {
+    const result = formatRecursiveView({
+      projects: [
+        {
+          dir: 'packages/tooling',
+          compiledKits: [{ name: 'lint', description: 'Shared lint and format gate' }],
+          compiledStyle: { kind: 'custom-outDir', outDirRel: 'packages/tooling/dist/kits' },
+        },
+      ],
+    });
+
+    expect(findProjectCommand(result, 'packages/tooling/')).toBe('   rdy run --file <file path>');
+    expect(result).toContain(`${COMPILED} packages/tooling/dist/kits/lint.js \u{00B7} Shared lint and format gate`);
+  });
+
+  it('omits a project with no compiled kits, its heading included', () => {
+    const result = formatRecursiveView({
+      projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/authored', kits: [] })],
+    });
+
+    expect(result).not.toContain('packages/authored');
+    expect(result).toContain('demo');
+  });
+
+  it('parts one project block from the next with a blank line, opening with none', () => {
+    const lines = formatRecursiveView({
+      projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/ui', kits: ['deploy'] })],
+    }).split('\n');
+
+    expect(lines[0]).toBe(`\u{2501}\u{2501} ${DIRECTORY} ./`);
+    expect(lines[3]).toBe('');
+    expect(lines[4]).toBe(`\u{2501}\u{2501} ${DIRECTORY} packages/ui/`);
+  });
+
+  it('renders projects in the order they are given', () => {
+    const result = formatRecursiveView({
+      projects: [
+        buildProject({ dir: '.', kits: ['demo'] }),
+        buildProject({ dir: 'packages/a', kits: ['first'] }),
+        buildProject({ dir: 'packages/b', kits: ['second'] }),
+      ],
+    });
+
+    expect(result.indexOf('packages/a/')).toBeLessThan(result.indexOf('packages/b/'));
+    expect(result.indexOf('./')).toBeLessThan(result.indexOf('packages/a/'));
+  });
+
+  it('returns the empty-sweep message when no project has compiled kits', () => {
+    const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/authored', kits: [] })] });
+
+    expect(result).toBe('No kit projects found.');
+  });
+
+  it('returns the empty-sweep message for a sweep that found no project at all', () => {
+    expect(formatRecursiveView({ projects: [] })).toBe('No kit projects found.');
+  });
+
+  it('degrades to ASCII rules and an unglyphed heading in plain style', () => {
+    setStyle('plain');
+
+    const lines = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['deploy'] })] }).split(
+      '\n',
+    );
+
+    expect(lines[0]).toBe('== packages/ui/');
+    expect(lines[1]).toBe('      rdy run --from packages/ui <name>');
+    expect(lines[2]).toBe('      deploy');
+  });
+});
+
+describe(resolveCompiledStyle, () => {
+  it('reports the local convention when outDir is the default kits directory', () => {
+    const style = resolveCompiledStyle('/repo', '.readyup/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'local-convention' });
+  });
+
+  it('reports a custom outDir relative to the directory being rendered from', () => {
+    const style = resolveCompiledStyle('/repo', 'dist/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'custom-outDir', outDirRel: path.join('dist', 'kits') });
+  });
+
+  it('settles the convention against the project while naming the path against the sweep root', () => {
+    const style = resolveCompiledStyle('/repo/packages/tooling', 'dist/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'custom-outDir', outDirRel: path.join('packages/tooling/dist/kits') });
+  });
+
+  it('reports the local convention for a nested project on the default outDir', () => {
+    const style = resolveCompiledStyle('/repo/packages/ui', '.readyup/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'local-convention' });
+  });
+});
+
 describe(formatEmpty, () => {
   it('returns owner message for owner mode', () => {
     const result = formatEmpty('owner');
 
     expect(result).toContain('rdy init');
     expect(result).toContain('rdy compile');
+  });
+
+  it('returns the empty-sweep message for recursive mode', () => {
+    expect(formatEmpty('recursive')).toBe('No kit projects found.');
   });
 
   it('returns consumer message with the provided kitsDir', () => {
@@ -370,3 +518,35 @@ describe(formatEmpty, () => {
     expect(result).toBe('No compiled kits found at .readyup/kits.');
   });
 });
+
+// region | Helpers
+
+/** Builds a project on the default outDir, holding the named kits and no descriptions. */
+function buildProject({ dir, kits }: { dir: string; kits: string[] }): RecursiveProjectView {
+  return {
+    dir,
+    compiledKits: kits.map((name) => ({ name })),
+    compiledStyle: { kind: 'local-convention' },
+  };
+}
+
+/** Returns the line beneath a project's heading, which is where its command sits. */
+function findProjectCommand(output: string, heading: string): string | undefined {
+  const lines = output.split('\n');
+  const headingIndex = lines.findIndex((line) => line.endsWith(` ${heading}`));
+  return headingIndex === -1 ? undefined : lines[headingIndex + 1];
+}
+
+/**
+ * Returns the line beneath a section's title, which is where its command sits.
+ *
+ * Reading that line positionally is the assertion: a command fused into the title would still satisfy a
+ * `toContain` over the whole output.
+ */
+function findSectionCommand(output: string, title: string): string | undefined {
+  const lines = output.split('\n');
+  const titleIndex = lines.indexOf(`\u{2500}\u{2500} ${title}`);
+  return titleIndex === -1 ? undefined : lines[titleIndex + 1];
+}
+
+// endregion | Helpers

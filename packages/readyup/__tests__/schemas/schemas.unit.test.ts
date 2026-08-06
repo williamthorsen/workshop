@@ -23,6 +23,7 @@ import {
   legacyVerifyPayload,
   listPayload,
   minimalReportPayload,
+  recursiveListPayload,
   reportPayload,
   unknownWarningReportPayload,
   verifyPayload,
@@ -36,10 +37,24 @@ describe('JSON payload schemas', () => {
       ['error envelope', ErrorEnvelopeSchema, errorEnvelopePayload],
       ['hinted error envelope', ErrorEnvelopeSchema, hintedErrorEnvelopePayload],
       ['list', ListOutputSchema, listPayload],
+      ['recursive list', ListOutputSchema, recursiveListPayload],
       ['verify', VerifyOutputSchema, verifyPayload],
       ['compile', CompileOutputSchema, compilePayload],
     ])('accepts a representative %s payload', (_label, schema, payload) => {
       expect(() => schema.parse(payload)).not.toThrow();
+    });
+
+    it('accepts a listing that names no project, at the same schema version', () => {
+      expect(listPayload.kits[0]).not.toHaveProperty('project');
+      expect(ListOutputSchema.parse(listPayload).schemaVersion).toBe(1);
+      expect(ListOutputSchema.parse(recursiveListPayload).schemaVersion).toBe(1);
+    });
+
+    it('keeps a kit\u{2019}s project apart from the package that published it', () => {
+      const parsed = ListOutputSchema.parse(recursiveListPayload);
+
+      expect(parsed.kits[1]?.project).toBe('packages/ui');
+      expect(parsed.kits[1]?.origin).toBeUndefined();
     });
   });
 
