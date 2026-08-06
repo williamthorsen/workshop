@@ -1,6 +1,19 @@
 import { readFileSync } from 'node:fs';
 
 /**
+ * Leading characters that mark a sequence item as using an unsupported YAML feature, mapped to the
+ * feature name reported for each. A feature with two spellings appears once per character.
+ */
+const UNSUPPORTED_ITEM_LEADERS = new Map([
+  ['&', 'anchor (&name)'],
+  ['*', 'alias (*name)'],
+  ['[', 'flow sequence or mapping'],
+  ['{', 'flow sequence or mapping'],
+  ['|', 'block scalar (| or >)'],
+  ['>', 'block scalar (| or >)'],
+]);
+
+/**
  * Read the `packages` block-sequence from a `pnpm-workspace.yaml` file.
  * Returns the list of pattern strings, or `null` when the `packages` key is absent.
  * Throws on YAML features outside the supported subset (anchors, flow sequences,
@@ -120,20 +133,11 @@ function rejectItemLevelUnsupportedFeatures(
   const trimmed = after.replace(/^\s*/, '');
   if (trimmed === '') return;
 
-  const firstChar = trimmed[0];
+  const feature = UNSUPPORTED_ITEM_LEADERS.get(trimmed.charAt(0));
+  if (feature !== undefined) {
+    throwUnsupported(absolutePath, lineIndex, line, feature);
+  }
 
-  if (firstChar === '&') {
-    throwUnsupported(absolutePath, lineIndex, line, 'anchor (&name)');
-  }
-  if (firstChar === '*') {
-    throwUnsupported(absolutePath, lineIndex, line, 'alias (*name)');
-  }
-  if (firstChar === '[' || firstChar === '{') {
-    throwUnsupported(absolutePath, lineIndex, line, 'flow sequence or mapping');
-  }
-  if (firstChar === '|' || firstChar === '>') {
-    throwUnsupported(absolutePath, lineIndex, line, 'block scalar (| or >)');
-  }
   // `!!tag` (e.g., `!!str`) is a YAML verbatim tag; always unsupported.
   // A single-`!` prefix on a plain (unquoted) scalar is treated as a negation pattern
   // (e.g., `!packages/deprecated/*`) and is handled downstream after unquoting.

@@ -75,7 +75,8 @@ function toSrcRelative(absolutePath: string): string {
 
 function collectSrcFiles(dir: string): string[] {
   const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (NON_SOURCE_DIRS.has(entry.name)) continue;

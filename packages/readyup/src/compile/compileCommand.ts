@@ -67,16 +67,15 @@ export async function compileCommand(args: string[]): Promise<number> {
     }
   }
 
+  if (positionals.length > 1) {
+    throw usageError('Too many arguments. Expected a single input file.');
+  }
+
   const force = values.force === true;
   const json = values.json === true;
   const outputPath = values.output;
   const skipManifest = values['skip-manifest'] === true;
   const manifestPath = resolveManifestPath(values.manifest);
-
-  if (positionals.length > 1) {
-    throw usageError('Too many arguments. Expected a single input file.');
-  }
-
   const inputPath = positionals[0];
 
   // Explicit input file -- compile just that one

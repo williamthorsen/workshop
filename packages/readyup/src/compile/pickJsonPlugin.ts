@@ -18,6 +18,11 @@ import { extractJsonPaths } from './extractJsonPaths.ts';
  */
 const PICK_JSON_RE = /\bpickJson\s*\((?<args>[^)]+)\)/g;
 
+/** Narrows a parsed JSON value to the nested-path form a path specifier may take. */
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
 /**
  * Parse the static arguments from a `pickJson(...)` call's argument string.
  *
@@ -61,13 +66,10 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Arr
 
   const paths: Array<string | Array<string>> = [];
   for (const item of parsed) {
-    if (typeof item === 'string') {
-      paths.push(item);
-    } else if (Array.isArray(item) && item.every((v) => typeof v === 'string')) {
-      paths.push(item);
-    } else {
+    if (typeof item !== 'string' && !isStringArray(item)) {
       throw new Error(`Invalid path in pickJson paths array: ${JSON.stringify(item)}`);
     }
+    paths.push(item);
   }
 
   return { relativePath, paths };
