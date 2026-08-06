@@ -72,7 +72,9 @@ describe(enumerateKits, () => {
     fs.mkdirSync(path.join(tempDir, 'restricted'));
     fs.chmodSync(path.join(tempDir, 'restricted'), 0o000);
 
-    expect(() => enumerateKits({ dir: path.join(tempDir, 'restricted'), extension: '.ts' })).toThrow();
+    expect(() => enumerateKits({ dir: path.join(tempDir, 'restricted'), extension: '.ts' })).toThrow(
+      expect.objectContaining({ code: 'EACCES' }),
+    );
 
     // Restore permissions for cleanup
     fs.chmodSync(path.join(tempDir, 'restricted'), 0o755);

@@ -171,11 +171,9 @@ describe('flag surface', () => {
     { long: '--report-on', args: ['passing', '--report-on', 'error'] },
   ])('leaves $long accepted after its short is retired', async ({ args }) => {
     // The flag may still fail for want of a kit; what matters is that it is not a usage error.
-    const exitCode = await routeCommand([...args, '--json']);
+    await routeCommand([...args, '--json']);
 
-    if (exitCode === 2) {
-      expect(JSON.parse(io.stdout)).not.toMatchObject({ error: { code: 'usage' } });
-    }
+    expect(JSON.parse(io.stdout)).not.toMatchObject({ error: { code: 'usage' } });
   });
 
   it('runs the named checklists from a single positional kit', async () => {

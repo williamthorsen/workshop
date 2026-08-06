@@ -14,11 +14,11 @@ vi.mock('node:child_process', () => {
   return { execFile: stub };
 });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe(runGit, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('returns trimmed stdout for a successful git command', async () => {
     execFileAsync.mockResolvedValue({ stdout: '  abc123\n', stderr: '' });
 

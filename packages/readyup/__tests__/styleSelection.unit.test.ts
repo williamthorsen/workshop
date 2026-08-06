@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { routeCommand } from '../src/bin/route.ts';
 import { plainFormatter } from '../src/layout/plainFormatter.ts';
@@ -51,10 +51,6 @@ const temp = useTempDir({
 
 // `init` reports through the console rather than the streams directly, so both channels are captured.
 const io = useCapturedStdio({ console: true });
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
 
 describe('--style plain', () => {
   it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }) => {

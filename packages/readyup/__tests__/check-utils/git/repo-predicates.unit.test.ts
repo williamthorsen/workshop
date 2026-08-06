@@ -19,12 +19,12 @@ vi.mock(import('node:fs'), () => ({
 
 import { isAtRepoRoot, isGitRepo } from '../../../src/check-utils/git/repo-predicates.ts';
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  existsSyncMock.mockReturnValue(true);
-});
-
 describe(isGitRepo, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    existsSyncMock.mockReturnValue(true);
+  });
+
   it('returns false when the path does not exist', async () => {
     existsSyncMock.mockReturnValue(false);
 
@@ -69,6 +69,11 @@ describe(isGitRepo, () => {
 });
 
 describe(isAtRepoRoot, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    existsSyncMock.mockReturnValue(true);
+  });
+
   it('returns false when the path does not exist', async () => {
     existsSyncMock.mockReturnValue(false);
 

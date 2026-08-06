@@ -1,4 +1,7 @@
+import assert from 'node:assert';
+
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { ZodError } from 'zod';
 
 import type { RdyErrorCode } from '../../src/errors.ts';
 import type {
@@ -64,7 +67,7 @@ describe('JSON payload schemas', () => {
       (field) => {
         const incomplete = Object.fromEntries(Object.entries(minimalReportPayload).filter(([key]) => key !== field));
 
-        expect(() => ReportSchema.parse(incomplete)).toThrow();
+        expect(() => ReportSchema.parse(incomplete)).toThrow(ZodError);
       },
     );
 
@@ -77,13 +80,13 @@ describe('JSON payload schemas', () => {
       const kit = reportPayload.kits[0];
       const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== field));
 
-      expect(() => ReportSchema.parse({ ...reportPayload, kits: [stripped] })).toThrow();
+      expect(() => ReportSchema.parse({ ...reportPayload, kits: [stripped] })).toThrow(ZodError);
     });
 
     it('rejects a counts object missing one of its six buckets', () => {
       const counts = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0 };
 
-      expect(() => ReportSchema.parse({ ...minimalReportPayload, counts })).toThrow();
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, counts })).toThrow(ZodError);
     });
   });
 
@@ -101,7 +104,7 @@ describe('JSON payload schemas', () => {
     it('rejects a non-string hint', () => {
       const error = { code: 'config', message: 'boom', hint: 42 };
 
-      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 1, error })).toThrow();
+      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 1, error })).toThrow(ZodError);
     });
   });
 
@@ -109,7 +112,7 @@ describe('JSON payload schemas', () => {
     it('reads `passed` as a verdict at every level and as a count only under `counts`', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
-      if (kit === undefined || 'error' in kit) throw new Error('expected a kit that ran');
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
 
       expect(parsed.passed).toBe(false);
       expect(parsed.counts.passed).toBe(2);
@@ -127,7 +130,7 @@ describe('JSON payload schemas', () => {
     });
 
     it('rejects a numeric `warnings` at the top level, where the old flat shape put the count', () => {
-      expect(() => ReportSchema.parse({ ...minimalReportPayload, warnings: 3 })).toThrow();
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, warnings: 3 })).toThrow(ZodError);
     });
   });
 
@@ -135,7 +138,7 @@ describe('JSON payload schemas', () => {
     it('carries the kit-declared threshold that governed a kit, not the one the run requested', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
-      if (kit === undefined || 'error' in kit) throw new Error('expected a kit that ran');
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
 
       expect(parsed.failOn).toBe('error');
       expect(kit.failOn).toBe('warn');
@@ -150,7 +153,7 @@ describe('JSON payload schemas', () => {
     it('rejects an error code this version does not know, which selects a consumer branch', () => {
       const kits = [{ name: 'release', error: { code: 'kit-retired', message: 'boom' } }];
 
-      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow();
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow(ZodError);
     });
   });
 
@@ -162,13 +165,13 @@ describe('JSON payload schemas', () => {
     it('rejects a source verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'drift' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
     });
 
     it('keeps the source vocabulary distinct from the target vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'stale', sourceStatus: 'ok' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
     });
 
     it('accepts a payload from a readyup that predates the rebuild verdict', () => {
@@ -195,7 +198,7 @@ describe('JSON payload schemas', () => {
     it('rejects a rebuild verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
     });
   });
 
@@ -207,7 +210,7 @@ describe('JSON payload schemas', () => {
     });
 
     it('rejects a kit that carries neither results nor an error', () => {
-      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits: [{ name: 'orphan' }] })).toThrow();
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits: [{ name: 'orphan' }] })).toThrow(ZodError);
     });
   });
 

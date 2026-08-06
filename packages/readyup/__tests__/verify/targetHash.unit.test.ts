@@ -57,6 +57,6 @@ describe(hashFile, () => {
   });
 
   it('throws when the file does not exist', () => {
-    expect(() => hashFile(path.join(tempDir, 'missing.js'))).toThrow();
+    expect(() => hashFile(path.join(tempDir, 'missing.js'))).toThrow(expect.objectContaining({ code: 'ENOENT' }));
   });
 });
