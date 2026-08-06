@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { resolveRequestedNames } from '../src/resolveRequestedNames.ts';
+import { captureError } from '../src/test-utils/captureError.ts';
 import type { RdyKit } from '../src/types.ts';
 
 /** Build a minimal kit with named checklists and optional suites. */
@@ -80,8 +81,8 @@ describe(resolveRequestedNames, () => {
     expect(() => resolveRequestedNames(['x', 'y'], makeKit())).toThrow('Unknown name(s): x, y');
   });
 
-  it('does not list suites in error when kit has no suites', () => {
-    const error = getError(() => resolveRequestedNames(['missing'], makeKit()));
+  it('does not list suites in error when kit has no suites', async () => {
+    const error = await captureError(() => resolveRequestedNames(['missing'], makeKit()));
 
     expect(error.message).not.toContain('Suites');
   });
@@ -93,14 +94,3 @@ describe(resolveRequestedNames, () => {
     expect(() => resolveRequestedNames(['toString'], kit)).toThrow('Unknown name(s): toString');
   });
 });
-
-/** Extract the thrown error from a function call. */
-function getError(fn: () => unknown): Error {
-  try {
-    fn();
-  } catch (error: unknown) {
-    if (error instanceof Error) return error;
-    throw new Error('Expected an Error to be thrown');
-  }
-  throw new Error('Expected function to throw');
-}
