@@ -1,3 +1,5 @@
+import assert from 'node:assert';
+
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ZodError } from 'zod';
 
@@ -110,7 +112,7 @@ describe('JSON payload schemas', () => {
     it('reads `passed` as a verdict at every level and as a count only under `counts`', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
-      if (kit === undefined || 'error' in kit) throw new Error('expected a kit that ran');
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
 
       expect(parsed.passed).toBe(false);
       expect(parsed.counts.passed).toBe(2);
@@ -136,7 +138,7 @@ describe('JSON payload schemas', () => {
     it('carries the kit-declared threshold that governed a kit, not the one the run requested', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
-      if (kit === undefined || 'error' in kit) throw new Error('expected a kit that ran');
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
 
       expect(parsed.failOn).toBe('error');
       expect(kit.failOn).toBe('warn');

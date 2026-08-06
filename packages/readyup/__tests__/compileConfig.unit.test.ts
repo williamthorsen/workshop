@@ -154,11 +154,7 @@ describe(compileConfig, () => {
     const importError = new Error('Cannot find module esbuild');
     mockLoadEsbuild.mockRejectedValue(importError);
 
-    const thrownError = await compileConfig('input.ts').catch((error: unknown) => error);
-    expect(thrownError).toBeInstanceOf(Error);
-    if (thrownError instanceof Error) {
-      expect(thrownError.cause).toBe(importError);
-    }
+    await expect(compileConfig('input.ts')).rejects.toThrow(expect.objectContaining({ cause: importError }));
   });
 });
 
