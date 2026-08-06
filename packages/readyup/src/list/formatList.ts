@@ -1,3 +1,6 @@
+import path from 'node:path';
+
+import { KITS_DIR } from '../kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
@@ -21,6 +24,25 @@ export interface CustomOutDirStyle {
 }
 
 export type CompiledStyle = LocalConventionStyle | CustomOutDirStyle;
+
+/**
+ * Determine the compiled-section display style for a project's `outDir`.
+ *
+ * The two directories are separate because the question has two halves. Whether an `outDir` is the
+ * convention is a fact about the project, so it is settled against `projectDir`; the path a reader is
+ * shown has to resolve from where they stand, so it is named against `renderFrom`. They coincide for a
+ * listing of the working directory, and part for a sweep rendering another project's kits.
+ */
+export function resolveCompiledStyle(projectDir: string, outDir: string, renderFrom: string): CompiledStyle {
+  const resolvedOutDir = path.resolve(projectDir, outDir);
+  const defaultOutDir = path.resolve(projectDir, KITS_DIR);
+
+  if (resolvedOutDir === defaultOutDir) {
+    return { kind: 'local-convention' };
+  }
+
+  return { kind: 'custom-outDir', outDirRel: path.relative(renderFrom, resolvedOutDir) };
+}
 
 // -- Owner view --
 
@@ -115,12 +137,50 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   return formatSection('Compiled', hint, compiledKits, 'kit');
 }
 
+// -- Recursive view --
+
+/** One kit a recursive listing reports, carrying the description its project's manifest records. */
+export interface RecursiveKitView {
+  name: string;
+  description?: string | undefined;
+}
+
+/** One discovered project's contribution to a recursive listing. */
+export interface RecursiveProjectView {
+  /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
+  dir: string;
+  compiledKits: RecursiveKitView[];
+  /** Resolved against the sweep root, so a custom-`outDir` row names a path that works from there. */
+  compiledStyle: CompiledStyle;
+}
+
+interface RecursiveViewOptions {
+  projects: RecursiveProjectView[];
+}
+
+/**
+ * Format the repo-wide output: one block per project, headed by the directory its kits live in.
+ *
+ * A project with nothing compiled contributes no block at all, heading included, so a caller may hand
+ * over every project discovery found rather than filtering first -- a heading with nothing beneath it
+ * reads as a defect rather than a finding. A sweep left with no block returns the empty-sweep message,
+ * which names no next step because neither scaffolding nor a single directory is one for a whole repo.
+ */
+export function formatRecursiveView({ projects }: RecursiveViewOptions): string {
+  const blocks = projects.filter((project) => project.compiledKits.length > 0).map(formatProjectBlock);
+
+  return blocks.length === 0 ? formatEmpty('recursive') : blocks.join(SECTION_SEPARATOR);
+}
+
 // -- Empty messages --
 
 /** Format the "no kits found" message appropriate to the given mode. */
-export function formatEmpty(mode: 'owner' | 'consumer', kitsDir?: string): string {
+export function formatEmpty(mode: 'owner' | 'consumer' | 'recursive', kitsDir?: string): string {
   if (mode === 'consumer') {
     return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
+  }
+  if (mode === 'recursive') {
+    return 'No kit projects found.';
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
@@ -157,6 +217,40 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
 }
 
 // -- Helpers --
+
+/**
+ * Returns the command that runs a project's kits from where the reader stands.
+ *
+ * A project on a custom `outDir` is reachable only by file: every other resolution path hardcodes the
+ * convention directory, so naming the project would produce a command that finds nothing.
+ */
+function buildProjectHint(project: RecursiveProjectView): string {
+  if (project.compiledStyle.kind === 'custom-outDir') {
+    return 'rdy run --file <file path>';
+  }
+
+  const nameHint = buildKitHint(project.compiledKits.map((kit) => kit.name));
+  return project.dir === '.' ? `rdy run ${nameHint}` : `rdy run --from ${project.dir} ${nameHint}`;
+}
+
+/** Returns one project's heading, the command running its kits, and a line per kit. */
+function formatProjectBlock(project: RecursiveProjectView): string {
+  const heading = getLayout().formatBreadcrumb([{ role: 'sourceDirectory', text: `${project.dir}/` }], 'kit');
+  const items = project.compiledKits.map((kit) =>
+    getLayout().formatCheckLine({
+      token: 'kit',
+      name: resolveKitLabel(project.compiledStyle, kit.name),
+      ...(kit.description !== undefined && { detail: kit.description }),
+    }),
+  );
+
+  return [heading, `${getLayout().indent(1)}${buildProjectHint(project)}`, ...items].join('\n');
+}
+
+/** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */
+function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
+  return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
+}
 
 /**
  * Returns a titled section: the title, `hint` indented beneath it, then the kits.

@@ -26,8 +26,7 @@ import { extractHint, extractMessage } from '../utils/error-handling.ts';
 import { translateParseArgsError } from '../utils/parse-args-error.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { enumerateKits } from './enumerateKits.ts';
-import type { CompiledStyle } from './formatList.ts';
-import { formatConsumerView, formatManifestView, formatOwnerView } from './formatList.ts';
+import { formatConsumerView, formatManifestView, formatOwnerView, resolveCompiledStyle } from './formatList.ts';
 
 /** A local `--from` source, which resolves to a directory on this machine. */
 type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
@@ -224,7 +223,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
   const availablePackages = discoverKitPackages(cwd).filter((name) => !config.packages.includes(name));
 
   const compiledKits = manifestKits.map((kit) => kit.name);
-  const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir);
+  const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir, cwd);
   const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
   writeHuman(
     formatOwnerView({
@@ -407,17 +406,4 @@ function resolveFromKitsDir(source: LocalFromSource): string {
 
   // local path
   return path.join(path.resolve(source.path), KITS_DIR);
-}
-
-/** Determine the compiled-section display style based on the outDir setting. */
-function resolveCompiledStyle(cwd: string, outDir: string): CompiledStyle {
-  const resolvedOutDir = path.resolve(cwd, outDir);
-  const defaultOutDir = path.resolve(cwd, KITS_DIR);
-
-  if (resolvedOutDir === defaultOutDir) {
-    return { kind: 'local-convention' };
-  }
-
-  const outDirRel = path.relative(cwd, resolvedOutDir);
-  return { kind: 'custom-outDir', outDirRel };
 }
