@@ -1,14 +1,13 @@
 import { advisoryRuleSeverities } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from '@williamthorsen/strict-lint/config';
 
-import { deferredLintRules, deferredTestRules } from './eslint/deferred-lint-rules.ts';
+import { deferredLintRules } from './eslint/deferred-lint-rules.ts';
 
 const config = defineConfig({
   // Keep the deferred rules as warnings; strict-lint otherwise promotes every warning to an error.
   maxSeverity: {
     ...advisoryRuleSeverities,
     ...deferredLintRules,
-    ...deferredTestRules,
   },
 });
 
