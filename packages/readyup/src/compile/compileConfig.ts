@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
 import { buildBundle } from './buildBundle.ts';
+import { deriveJsPath } from './deriveJsPath.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
@@ -19,7 +20,7 @@ export interface CompileResult {
  * alone.
  */
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
-  const resolvedOutput = path.resolve(outputPath ?? deriveOutputPath(inputPath));
+  const resolvedOutput = path.resolve(outputPath ?? deriveJsPath(inputPath));
 
   const compiled = await buildBundle(inputPath);
   const existing = existsSync(resolvedOutput) ? readFileSync(resolvedOutput) : undefined;
@@ -31,13 +32,4 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
   }
 
   return { outputPath: resolvedOutput, changed, targetHash: hashBytes(compiled) };
-}
-
-/** Derives the default output path by replacing the `.ts` extension with `.js`. */
-function deriveOutputPath(inputPath: string): string {
-  const ext = path.extname(inputPath);
-  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
-    return inputPath.slice(0, -ext.length) + '.js';
-  }
-  return `${inputPath}.js`;
 }

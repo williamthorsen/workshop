@@ -23,6 +23,7 @@ import { VERSION } from '../version.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
+import { deriveJsPath } from './deriveJsPath.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
@@ -407,15 +408,6 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
     }
   }
   return map;
-}
-
-/** Derive a `.js` sibling path from a `.ts`/`.mts`/`.cts` input. */
-function deriveJsPath(inputPath: string): string {
-  const ext = path.extname(inputPath);
-  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
-    return inputPath.slice(0, -ext.length) + '.js';
-  }
-  return `${inputPath}.js`;
 }
 
 /** Arguments for the per-kit drift-detection helper. */
