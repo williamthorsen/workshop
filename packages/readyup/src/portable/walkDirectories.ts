@@ -3,14 +3,13 @@ import path from 'node:path';
 
 import picomatch from 'picomatch';
 
+import { isSkippableFilesystemError } from './isSkippableFilesystemError.ts';
+
 /** Globs pruned when the caller names none: dependency trees and dot-directories. */
 const DEFAULT_PRUNE_GLOBS = ['**/node_modules', '**/.*'];
 
 /** Directory levels below the root the sweep descends when the caller sets no cap. */
 const DEFAULT_MAX_DEPTH = 10;
-
-/** Filesystem errors that cost the sweep one directory rather than the whole answer. */
-const SKIPPABLE_ERROR_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
 
 /**
  * Matcher options shared by `match` and `prune`.
@@ -68,11 +67,6 @@ interface SweepContext {
   directories: Set<string>;
 }
 
-/** Type guard for Node.js filesystem errors carrying a `code`. */
-function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
-}
-
 /**
  * Visits one directory, recording it when it holds a match and descending into the children left unpruned.
  *
@@ -87,8 +81,7 @@ function sweepDirectory(context: SweepContext, relativeDir: string, depth: numbe
   } catch (error: unknown) {
     // A directory that is missing or barred to this process costs the sweep that one directory.
     // Anything else is systemic (EMFILE, EIO), and an incomplete sweep must not pass for a complete one.
-    const code = isNodeError(error) ? error.code : undefined;
-    if (code !== undefined && SKIPPABLE_ERROR_CODES.has(code)) return;
+    if (isSkippableFilesystemError(error)) return;
     throw error;
   }
 

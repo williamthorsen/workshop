@@ -3,8 +3,18 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const mockReaddirSync = vi.hoisted(() => vi.fn());
+
+// Only directory reads are intercepted; the temporary-directory helper still writes through to disk.
+vi.mock(import('node:fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, readdirSync: mockReaddirSync };
+});
+
 import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
 import { discoverKitProjects } from '../discoverKitProjects.ts';
+
+const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 
 const tempDir = useTempDir({
   prefix: 'rdy-projects-',
@@ -57,6 +67,7 @@ const tempDir = useTempDir({
 
 describe(discoverKitProjects, () => {
   beforeEach(() => {
+    mockReaddirSync.mockImplementation(readdirSyncActual);
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
 
@@ -145,6 +156,31 @@ describe(discoverKitProjects, () => {
 
     expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
   });
+
+  it.each(['EACCES', 'EPERM'])('omits a project whose kit directory it cannot read for a benign %s', async (code) => {
+    failReadOf('packages/compiled-only/.readyup/kits', code);
+
+    const dirs = await discoverDirs();
+
+    expect(dirs).not.toContain('packages/compiled-only');
+    expect(dirs).toStrictEqual(expect.arrayContaining(['.', 'packages/authored', 'packages/tooling']));
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('packages/compiled-only'));
+  });
+
+  it('omits a project whose source directory it cannot read', async () => {
+    failReadOf('packages/custom/src/kits', 'EACCES');
+
+    const dirs = await discoverDirs();
+
+    expect(dirs).not.toContain('packages/custom');
+    expect(dirs).toContain('packages/authored');
+  });
+
+  it('rethrows a filesystem failure that is not benign', async () => {
+    failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
+
+    await expect(discoverKitProjects({ root: tempDir.dir })).rejects.toThrow('read failed: EMFILE');
+  });
 });
 
 // region | Helpers
@@ -153,6 +189,15 @@ describe(discoverKitProjects, () => {
 async function discoverDirs(): Promise<string[]> {
   const projects = await discoverKitProjects({ root: tempDir.dir });
   return projects.map((project) => project.dir);
+}
+
+/** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
+function failReadOf(relativePath: string, code: string): void {
+  const failingDir = path.join(tempDir.dir, relativePath);
+  mockReaddirSync.mockImplementation((...args: Parameters<typeof readdirSyncActual>) => {
+    if (args[0] === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
+    return readdirSyncActual(...args);
+  });
 }
 
 // endregion | Helpers

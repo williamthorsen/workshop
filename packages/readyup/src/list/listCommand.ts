@@ -16,6 +16,7 @@ import { discoverKitPackages } from '../packages/discoverKitPackages.ts';
 import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
 import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../parseFromValue.ts';
 import { parseFromValue } from '../parseFromValue.ts';
+import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import type { KitProject } from '../projects/discoverKitProjects.ts';
 import { discoverKitProjects } from '../projects/discoverKitProjects.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
@@ -313,7 +314,17 @@ function collectProjectKits(project: KitProject): JsonListKitEntry[] {
   }
 
   const outDir = path.resolve(project.absolutePath, project.config.compile.outDir);
-  return enumerateKits({ dir: outDir, extension: '.js' }).map((name) => ({
+
+  let names: string[];
+  try {
+    names = enumerateKits({ dir: outDir, extension: '.js' });
+  } catch (error: unknown) {
+    if (!isSkippableFilesystemError(error)) throw error;
+    process.stderr.write(`Warning: Cannot read ${outDir}. Listing ${project.dir} without its kits.\n`);
+    return [];
+  }
+
+  return names.map((name) => ({
     name,
     kind: 'compiled',
     project: project.dir,

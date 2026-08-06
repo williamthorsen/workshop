@@ -7,6 +7,7 @@ import { READYUP_DIR } from '../kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
 import type { ResolvedRdyConfig } from '../types.ts';
 import { extractMessage } from '../utils/error-handling.ts';
@@ -68,14 +69,22 @@ export async function discoverKitProjects(options: DiscoverKitProjectsOptions = 
 /** Reports whether a project's `compile.outDir` holds at least one compiled kit. */
 function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig): boolean {
   const outDir = path.resolve(absolutePath, config.compile.outDir);
-  return enumerateKits({ dir: outDir, extension: '.js' }).length > 0;
+  try {
+    return enumerateKits({ dir: outDir, extension: '.js' }).length > 0;
+  } catch (error: unknown) {
+    return skipUnreadableDir(outDir, error);
+  }
 }
 
 /** Reports whether a project's `compile.srcDir` holds at least one TypeScript kit source. */
 function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean {
   const srcDir = path.resolve(absolutePath, config.compile.srcDir);
   if (!existsSync(srcDir)) return false;
-  return collectSourceFiles(srcDir, config.compile.include).length > 0;
+  try {
+    return collectSourceFiles(srcDir, config.compile.include).length > 0;
+  } catch (error: unknown) {
+    return skipUnreadableDir(srcDir, error);
+  }
 }
 
 /**
@@ -112,6 +121,13 @@ async function readProjectConfig(absolutePath: string, dir: string): Promise<Res
     process.stderr.write(`Warning: ${detail}. Reading ${dir} with default settings.\n`);
     return { ...DEFAULT_CONFIG };
   }
+}
+
+/** Answers `false` for a directory the sweep cannot read, rethrowing a failure it cannot skip past. */
+function skipUnreadableDir(dir: string, error: unknown): false {
+  if (!isSkippableFilesystemError(error)) throw error;
+  process.stderr.write(`Warning: Cannot read ${dir}. Reading the project without it.\n`);
+  return false;
 }
 
 // endregion | Helpers

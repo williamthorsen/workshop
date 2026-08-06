@@ -1,10 +1,22 @@
+import path from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+
+const mockReaddirSync = vi.hoisted(() => vi.fn());
+
+// Only directory reads are intercepted; the temporary-directory helper still writes through to disk.
+vi.mock(import('node:fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, readdirSync: mockReaddirSync };
+});
 
 import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { listCommand } from '../listCommand.ts';
+
+const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 
 const tempDir = useTempDir({
   prefix: 'rdy-recursive-',
@@ -62,6 +74,20 @@ const tempDir = useTempDir({
     // Discovered for its manifest, which now lists nothing.
     tempDir.writeJson('packages/emptied/package.json', { name: 'emptied' });
     tempDir.writeJson('packages/emptied/.readyup/manifest.json', { version: 1, kits: [] });
+
+    // Compiled kits beside a manifest that cannot be parsed.
+    tempDir.writeJson('packages/corrupt/package.json', { name: 'corrupt' });
+    tempDir.write('packages/corrupt/.readyup/kits/audit.js', 'export default {};');
+    tempDir.write('packages/corrupt/.readyup/manifest.json', '{ "version": 1, "kits": [');
+
+    // Discovered for its sources, with its output directory barred to the process.
+    tempDir.writeJson('packages/blocked/package.json', { name: 'blocked' });
+    tempDir.write(
+      'packages/blocked/.config/readyup.config.ts',
+      "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
+    );
+    tempDir.write('packages/blocked/kit-sources/probe.ts', 'export default {};');
+    tempDir.write('packages/blocked/dist/kits/probe.js', 'export default {};');
   },
 });
 
@@ -69,6 +95,7 @@ describe('list --recursive', () => {
   let stdoutSpy: MockInstance;
 
   beforeEach(() => {
+    mockReaddirSync.mockImplementation(readdirSyncActual);
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
@@ -201,6 +228,44 @@ describe('list --recursive', () => {
     });
   });
 
+  describe('a project the filesystem will not fully give up', () => {
+    it('lists the kits beside a manifest that cannot be parsed, and warns', async () => {
+      await listCommand(['--recursive']);
+
+      expect(readOutput()).toContain('packages/corrupt/');
+      expect(readOutput()).toContain('audit');
+      expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('manifest'));
+    });
+
+    it('names the project of a kit read from disk past a broken manifest', async () => {
+      const parsed = ListOutputSchema.parse(await runForPayload());
+
+      expect(parsed.kits).toContainEqual({
+        name: 'audit',
+        kind: 'compiled',
+        project: 'packages/corrupt',
+        path: 'packages/corrupt/.readyup/kits/audit.js',
+      });
+    });
+
+    it('drops a project whose output directory it cannot read, and lists the rest', async () => {
+      failReadOf('packages/blocked/dist/kits', 'EACCES');
+
+      const exitCode = await listCommand(['--recursive']);
+      const output = readOutput();
+
+      expect(exitCode).toBe(0);
+      expect(output).not.toContain('packages/blocked');
+      expect(output).toContain('packages/readyup/');
+    });
+
+    it('rethrows a filesystem failure that is not benign', async () => {
+      failReadOf('packages/blocked/dist/kits', 'EMFILE');
+
+      await expect(listCommand(['--recursive'])).rejects.toThrow('read failed: EMFILE');
+    });
+  });
+
   describe('flag exclusivity', () => {
     it('rejects --recursive alongside --from', async () => {
       const error = await captureRdyError(() => listCommand(['--recursive', '--from', '.']));
@@ -226,6 +291,15 @@ describe('list --recursive', () => {
   });
 
   // region | Helpers
+
+  /** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
+  function failReadOf(relativePath: string, code: string): void {
+    const failingDir = path.join(tempDir.dir, relativePath);
+    mockReaddirSync.mockImplementation((...args: Parameters<typeof readdirSyncActual>) => {
+      if (args[0] === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
+      return readdirSyncActual(...args);
+    });
+  }
 
   /** Returns everything the run wrote to stdout. */
   function readOutput(): string {
