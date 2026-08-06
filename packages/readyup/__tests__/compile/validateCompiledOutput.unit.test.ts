@@ -69,7 +69,7 @@ describe(validateCompiledOutput, () => {
       notAKit: true,
     });
 
-    await expect(validateCompiledOutput(outputPath)).rejects.toThrow();
+    await expect(validateCompiledOutput(outputPath)).rejects.toThrow('Kit file must export checklists');
     expect(existsSync(outputPath)).toBe(false);
   });
 
