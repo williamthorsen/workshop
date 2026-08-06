@@ -71,7 +71,7 @@ describe(discoverKitProjects, () => {
   });
 
   it('reports every kit project in the tree, the sweep root first', async () => {
-    expect(await discoverDirs()).toStrictEqual([
+    await expect(discoverDirs()).resolves.toStrictEqual([
       '.',
       'packages/authored',
       'packages/broken',
@@ -84,27 +84,27 @@ describe(discoverKitProjects, () => {
 
   // The case #113 exists for: a sweep has to reach this project to rewrite the manifest left behind.
   it('reports a project whose kits were deleted but whose manifest remains', async () => {
-    expect(await discoverDirs()).toContain('packages/emptied');
+    await expect(discoverDirs()).resolves.toContain('packages/emptied');
   });
 
   it('reports a project with kit sources but no manifest and no compiled output', async () => {
-    expect(await discoverDirs()).toContain('packages/authored');
+    await expect(discoverDirs()).resolves.toContain('packages/authored');
   });
 
   it('reports a never-compiled project whose config repoints the source directory', async () => {
-    expect(await discoverDirs()).toContain('packages/custom');
+    await expect(discoverDirs()).resolves.toContain('packages/custom');
   });
 
   it('reports a project compiled without a manifest beside its kits', async () => {
-    expect(await discoverDirs()).toContain('packages/compiled-only');
+    await expect(discoverDirs()).resolves.toContain('packages/compiled-only');
   });
 
   it('omits a workspace with neither a readyup directory nor a readyup config', async () => {
-    expect(await discoverDirs()).not.toContain('packages/plain');
+    await expect(discoverDirs()).resolves.not.toContain('packages/plain');
   });
 
   it('omits an installed dependency that publishes kits', async () => {
-    expect(await discoverDirs()).not.toContain('node_modules/dep');
+    await expect(discoverDirs()).resolves.not.toContain('node_modules/dep');
   });
 
   it('reads each project under its own config', async () => {
@@ -135,7 +135,7 @@ describe(discoverKitProjects, () => {
 
   // Topology comes from the filesystem, so a repo declaring no workspaces is swept like any other.
   it('finds nested projects with no workspace file anywhere in the tree', async () => {
-    expect(await discoverDirs()).toContain('packages/authored');
+    await expect(discoverDirs()).resolves.toContain('packages/authored');
   });
 
   it('reports nothing for a tree holding no kit project', async () => {

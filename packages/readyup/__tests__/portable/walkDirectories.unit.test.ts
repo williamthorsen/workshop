@@ -29,7 +29,10 @@ const tempDir = useTempDir({
 });
 
 /** The read options the sweep passes, which a passthrough hands straight back to the real reader. */
-type SweepReaddirOptions = { encoding: 'utf8'; withFileTypes: true };
+interface SweepReaddirOptions {
+  encoding: 'utf8';
+  withFileTypes: true;
+}
 
 /** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
 function failReadOf(relativePath: string, code: string): void {

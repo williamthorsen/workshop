@@ -586,6 +586,7 @@ The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy 
 
 ```
 rdy list                       List internal, compiled, and configured-package kits (owner view)
+rdy list --recursive           List compiled kits in every project below the working directory
 rdy list --from <source>       List compiled kits at a local path, remote source, or installed package
 rdy list --manifest <path>     List the kits a manifest file declares
 ```
@@ -626,7 +627,34 @@ Kits from configured packages get their own section, each named package-first so
 
 A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
 
-Rows are keyed by `name`, `kind`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name. A consumer indexing on less than the full key silently drops a row. Candidates from the **Available** section are not kits and appear separately.
+#### Listing a whole repository
+
+`--recursive` sweeps down from the working directory and reports each project's compiled kits under a heading naming the directory they live in, with the descriptions that project's manifest records:
+
+```
+━━ 📁 ./
+   rdy run <name>
+📓 demo
+
+━━ 📁 packages/readyup/
+   rdy run --from packages/readyup [<name>]
+📓 default · Authoring hygiene for a project that defines readyup kits
+📓 publishing · Publication readiness for a package that ships readyup kits
+```
+
+Every listed kit is reachable by the command above it, from wherever the sweep was run. A project that sets a custom `compile.outDir` is reached by file instead, since that is the only resolution path that respects it, and its rows are named by a path that resolves from the sweep root:
+
+```
+━━ 📁 packages/tooling/
+   rdy run --file <file path>
+📓 packages/tooling/dist/kits/lint.js · Shared lint and format gate
+```
+
+Internal kits and configured-package kits are absent: no invocation reaches another project's uncompiled sources, and packages are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
+
+The sweep reads each project under its own `.config/readyup.config.ts`, skips `node_modules` and dot-directories, and takes its topology from the filesystem rather than a workspace file, so it does not care which package manager the repository uses. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source.
+
+Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each hold a `default`. A consumer indexing on less than the full key silently drops a row. Candidates from the **Available** section are not kits and appear separately.
 
 ### Scaffolding
 

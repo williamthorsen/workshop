@@ -54,8 +54,10 @@ export interface DiscoverKitProjectsOptions {
 export async function discoverKitProjects(options: DiscoverKitProjectsOptions = {}): Promise<KitProject[]> {
   const { root = process.cwd() } = options;
 
+  const candidates = walkDirectories({ root, match: CANDIDATE_GLOB });
+
   const projects: KitProject[] = [];
-  for (const dir of walkDirectories({ root, match: CANDIDATE_GLOB })) {
+  for (const dir of candidates) {
     const absolutePath = dir === '.' ? root : path.join(root, dir);
     if (!hasReadyupFootprint(absolutePath)) continue;
 

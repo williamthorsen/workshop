@@ -73,13 +73,14 @@ export async function listCommand(args: string[]): Promise<number> {
   const fromArg = values.from;
   const json = values.json === true;
   const manifestArg = values.manifest;
-  const recursive = values.recursive === true;
 
   if (fromArg !== undefined && manifestArg !== undefined) {
     throw usageError('--from and --manifest are mutually exclusive');
   }
 
   // `--recursive` sweeps this tree, while the other two name a single foreign source.
+  const recursive = values.recursive === true;
+
   if (recursive && fromArg !== undefined) {
     throw usageError('--recursive and --from are mutually exclusive');
   }
