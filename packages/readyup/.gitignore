@@ -2,4 +2,7 @@
 # already does for the generated `schemas/`.
 .readyup/kits/*.js
 .readyup/manifest.json
-schemas/
+
+# Anchored to the package root: unanchored, this would also swallow `src/schemas/` and
+# `__tests__/schemas/`, where a newly added file would go untracked without a word.
+/schemas/
