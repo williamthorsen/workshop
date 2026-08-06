@@ -3,7 +3,7 @@ import { readdirSync } from 'node:fs';
 import picomatch from 'picomatch';
 
 /**
- * Collect `.ts` files matching the optional `include` glob, falling back to all `.ts` files.
+ * Collects `.ts` files matching the optional `include` glob, falling back to all `.ts` files.
  *
  * The walk is recursive and the glob is matched against paths relative to `srcDir`, so a project that
  * filters a nested source tree gets the same set from anyone asking what it would compile.

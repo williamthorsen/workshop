@@ -21,12 +21,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
   packages: [],
 };
 
-/**
- * Ordered lookup paths for the config file, resolved relative to the directory being read.
- *
- * Exported because a caller deciding whether a directory is worth loading a config for has to test the
- * same paths this chain searches; re-typing them elsewhere is how the two fall out of step.
- */
+/** Ordered lookup paths for the config file, resolved relative to the directory being read. */
 export const CONFIG_LOOKUP_PATHS = ['.config/readyup.config.ts'];
 
 /** Structural schema for RdyConfig. */
@@ -65,9 +60,6 @@ export interface LoadConfigOptions {
  *
  * Checks `.config/readyup.config.ts` and returns defaults if not found.
  * An explicit override path skips the lookup chain.
- *
- * Naming a directory is what lets one invocation read several projects, each under its own config,
- * without moving the process between them.
  */
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<ResolvedRdyConfig> {
   const { fromDir = process.cwd(), overridePath } = options;

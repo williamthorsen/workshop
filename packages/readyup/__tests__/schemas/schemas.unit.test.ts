@@ -44,7 +44,6 @@ describe('JSON payload schemas', () => {
       expect(() => schema.parse(payload)).not.toThrow();
     });
 
-    // An added optional field leaves the version alone, so a v1 consumer keeps accepting both shapes.
     it('accepts a listing that names no project, at the same schema version', () => {
       expect(listPayload.kits[0]).not.toHaveProperty('project');
       expect(ListOutputSchema.parse(listPayload).schemaVersion).toBe(1);

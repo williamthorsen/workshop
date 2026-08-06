@@ -83,7 +83,6 @@ describe(loadConfig, () => {
       expect(mockJitiImport).toHaveBeenCalledWith(path.join('/repo/packages/tooling', 'custom.config.ts'));
     });
 
-    // Reading another project's config must not disturb the process, which every other path still reads.
     it('reads a directory other than the working one without moving the process', async () => {
       const originalCwd = process.cwd();
       mockExistsSync.mockReturnValue(true);

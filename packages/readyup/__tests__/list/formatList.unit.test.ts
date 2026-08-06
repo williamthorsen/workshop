@@ -376,7 +376,6 @@ describe(formatRecursiveView, () => {
     expect(findProjectCommand(result, 'packages/ui/')).toBe('   rdy run --from packages/ui <name>');
   });
 
-  // Every other view brackets the positional when a default kit exists, and this one runs the same kits.
   it('brackets the positional name when the project holds a default kit', () => {
     const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['default'] })] });
 
@@ -414,7 +413,6 @@ describe(formatRecursiveView, () => {
     expect(result).toContain(`${COMPILED} packages/tooling/dist/kits/lint.js \u{00B7} Shared lint and format gate`);
   });
 
-  // A heading with nothing beneath it reads as a defect, so the caller hands over every project it found.
   it('omits a project with no compiled kits, its heading included', () => {
     const result = formatRecursiveView({
       projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/authored', kits: [] })],
@@ -483,8 +481,6 @@ describe(resolveCompiledStyle, () => {
     expect(style).toStrictEqual({ kind: 'custom-outDir', outDirRel: path.join('dist', 'kits') });
   });
 
-  // Whether an outDir is the convention is a fact about the project; the path shown has to work
-  // from where the reader stands, which for a sweep is not the project's own directory.
   it('settles the convention against the project while naming the path against the sweep root', () => {
     const style = resolveCompiledStyle('/repo/packages/tooling', 'dist/kits', '/repo');
 

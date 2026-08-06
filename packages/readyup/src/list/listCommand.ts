@@ -44,7 +44,6 @@ const listOptions = {
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
-  // No short flag: `-r` wants to be `--rebuild` under `rdy verify`, which the CLI's short-flag rule bars.
   recursive: { type: 'boolean' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
@@ -78,9 +77,9 @@ export async function listCommand(args: string[]): Promise<number> {
     throw usageError('--from and --manifest are mutually exclusive');
   }
 
-  // `--recursive` sweeps this tree, while the other two name a single foreign source.
   const recursive = values.recursive === true;
 
+  // `--recursive` sweeps this tree, while the other two name a single foreign source.
   if (recursive && fromArg !== undefined) {
     throw usageError('--recursive and --from are mutually exclusive');
   }
@@ -272,14 +271,11 @@ async function runOwnerMode(json: boolean): Promise<number> {
 }
 
 /**
- * Enumerate the compiled kits of every kit project below the working directory.
+ * Enumerates the compiled kits of every kit project below the working directory.
  *
  * Compiled kits only: an internal kit is never reachable from another directory, since `--jit` and
- * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis
- * rather than to this one. What is left is exactly the set a reader can run from where they stand.
- *
- * `availablePackages` is omitted for the same reason: it is a per-project config suggestion, and a
- * whole-repo sweep has no single config to suggest anything for.
+ * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
+ * What is left is exactly the set a reader can run from where they stand.
  */
 async function runRecursiveMode(json: boolean): Promise<number> {
   const root = process.cwd();
@@ -306,8 +302,8 @@ async function runRecursiveMode(json: boolean): Promise<number> {
 /**
  * Reads one project's compiled kits, preferring its manifest and falling back to the files on disk.
  *
- * The same order of preference `list --from` takes for a foreign directory: the manifest is where the
- * descriptions live, and a project compiled with `--skip-manifest` still has kits worth naming.
+ * The manifest is where the descriptions live, and a project compiled with `--skip-manifest` still has
+ * kits worth naming.
  */
 function collectProjectKits(project: KitProject): JsonListKitEntry[] {
   const manifest = readProjectManifest(project.manifestPath);
@@ -328,8 +324,8 @@ function collectProjectKits(project: KitProject): JsonListKitEntry[] {
 /**
  * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
  *
- * A manifest nobody can read costs that project its descriptions rather than its listing, which is the
- * warn-and-continue every other read-only path takes; the kits themselves are still on disk.
+ * A manifest nobody can read costs that project its descriptions, not its listing: the kits themselves
+ * are still on disk.
  */
 function readProjectManifest(manifestPath: string): RdyManifest | undefined {
   try {
@@ -408,8 +404,8 @@ function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListK
  * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
  * straight to `rdy run --file`. Pass `undefined` for a manifest that is not on this machine.
  *
- * `project` names the directory a repo-wide sweep found the kit in, and is left off by every listing
- * that reads one project, where there is nothing for it to distinguish.
+ * `project` names the directory a repo-wide sweep found the kit in. Pass `undefined` for a listing that
+ * reads one project.
  */
 function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined, project?: string): JsonListKitEntry {
   const entry: JsonListKitEntry = { name: kit.name, kind: 'compiled' };

@@ -15,9 +15,8 @@ const SKIPPABLE_ERROR_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
 /**
  * Matcher options shared by `match` and `prune`.
  *
- * `dot` is on so that pruning is the only thing excluding anything. Under picomatch's default, `**` refuses
- * to cross a dot-segment, which would silently exclude everything beneath a dot-directory even from a caller
- * who cleared `prune` precisely to sweep it.
+ * `dot` is on so that pruning is the only thing excluding anything: picomatch otherwise stops `**` at a
+ * dot-segment, hiding a dot-directory even from a caller who cleared `prune` to sweep it.
  */
 const MATCHER_OPTIONS = { dot: true };
 
@@ -27,9 +26,8 @@ export interface WalkDirectoriesOptions {
   root: string;
   /**
    * Glob matched against each entry the sweep meets, file and directory alike, as a path relative to
-   * `root`. A matching entry contributes the directory holding it, which is what lets a recursive glob
-   * ending in `/package.json` name the directories that hold one; a glob over directory paths could not
-   * express that.
+   * `root`. A matching entry contributes the directory holding it, so a recursive glob ending in
+   * `/package.json` names the directories that hold one.
    */
   match: string;
   /**
@@ -78,8 +76,7 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 /**
  * Visits one directory, recording it when it holds a match and descending into the children left unpruned.
  *
- * Pruning is settled before matching, so a pruned directory contributes nothing at all: it neither
- * satisfies the match itself nor is descended into.
+ * Pruning is settled before matching, so a pruned directory is neither recorded nor descended into.
  */
 function sweepDirectory(context: SweepContext, relativeDir: string, depth: number): void {
   const absoluteDir = relativeDir === '.' ? context.root : path.join(context.root, relativeDir);

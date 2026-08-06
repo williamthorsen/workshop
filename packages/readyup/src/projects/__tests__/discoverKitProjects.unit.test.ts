@@ -3,8 +3,8 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { discoverKitProjects } from '../../src/projects/discoverKitProjects.ts';
-import { useTempDir } from '../helpers/tempDir.ts';
+import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { discoverKitProjects } from '../discoverKitProjects.ts';
 
 const tempDir = useTempDir({
   prefix: 'rdy-projects-',
@@ -55,12 +55,6 @@ const tempDir = useTempDir({
   },
 });
 
-/** Returns the root-relative directories discovery reports for the fixture tree. */
-async function discoverDirs(): Promise<string[]> {
-  const projects = await discoverKitProjects({ root: tempDir.dir });
-  return projects.map((project) => project.dir);
-}
-
 describe(discoverKitProjects, () => {
   beforeEach(() => {
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
@@ -82,7 +76,7 @@ describe(discoverKitProjects, () => {
     ]);
   });
 
-  // The case #113 exists for: a sweep has to reach this project to rewrite the manifest left behind.
+  // A sweep has to reach this project to rewrite the manifest left behind.
   it('reports a project whose kits were deleted but whose manifest remains', async () => {
     await expect(discoverDirs()).resolves.toContain('packages/emptied');
   });
@@ -152,3 +146,13 @@ describe(discoverKitProjects, () => {
     expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
   });
 });
+
+// region | Helpers
+
+/** Returns the root-relative directories discovery reports for the fixture tree. */
+async function discoverDirs(): Promise<string[]> {
+  const projects = await discoverKitProjects({ root: tempDir.dir });
+  return projects.map((project) => project.dir);
+}
+
+// endregion | Helpers

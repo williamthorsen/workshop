@@ -14,8 +14,7 @@ import { extractMessage } from '../utils/error-handling.ts';
 /**
  * Glob naming the candidates a sweep considers: every directory holding a package manifest.
  *
- * Reading topology from the filesystem rather than from a workspace file is what keeps discovery
- * indifferent to which package manager the repo uses, and adds no dependency to parse one.
+ * Topology comes from the filesystem, so discovery is indifferent to which package manager the repo uses.
  */
 const CANDIDATE_GLOB = '**/package.json';
 
@@ -43,13 +42,6 @@ export interface DiscoverKitProjectsOptions {
  * three states of the same project: authored but never compiled, compiled, and compiled but since
  * emptied. A manifest counts on existence alone, however many kits it currently lists, which is what
  * keeps a project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
- *
- * That breadth is wider than a listing needs, deliberately: a caller that only renders compiled kits
- * filters, rather than narrowing the predicate and putting `compile --recursive` out of reach of the
- * projects it exists to visit.
- *
- * Each project's config is resolved rather than its path returned, because the predicate has already
- * paid for it and a caller that re-read it would pay twice.
  */
 export async function discoverKitProjects(options: DiscoverKitProjectsOptions = {}): Promise<KitProject[]> {
   const { root = process.cwd() } = options;
@@ -89,10 +81,9 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
 /**
  * Reports whether a directory carries any readyup footprint at all, before any config is evaluated.
  *
- * Sound because a project with neither falls back to the default config, which points inside
- * `.readyup/`: declaring a source directory anywhere else takes a config file to say so. Settling this
- * first is what keeps the sweep from evaluating TypeScript in every workspace of a repo whose kits
- * live in one of them.
+ * A project with neither falls back to the default config, which points inside `.readyup/`: declaring a
+ * source directory anywhere else takes a config file to say so. Settling this first keeps the sweep from
+ * evaluating TypeScript in every workspace of a repo whose kits live in one of them.
  */
 function hasReadyupFootprint(absolutePath: string): boolean {
   if (existsSync(path.join(absolutePath, READYUP_DIR))) return true;
@@ -102,8 +93,7 @@ function hasReadyupFootprint(absolutePath: string): boolean {
 /**
  * Reports whether a candidate is a kit project, testing the clauses cheapest first.
  *
- * The manifest is one stat, the compiled kits one directory read, and the sources a recursive walk,
- * so the order costs a project nothing it does not need to spend.
+ * The manifest is one stat, the compiled kits one directory read, and the sources a recursive walk.
  */
 function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath: string): boolean {
   return existsSync(manifestPath) || hasCompiledKits(absolutePath, config) || hasKitSources(absolutePath, config);
@@ -112,8 +102,7 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
 /**
  * Reads one project's config, falling back to the defaults when it cannot be evaluated.
  *
- * A config that fails costs that project its settings rather than its discovery, which is the
- * warn-and-continue the listing path already takes for the same failure.
+ * Discovery is read-only, so a config that fails costs that project its settings, not its discovery.
  */
 async function readProjectConfig(absolutePath: string, dir: string): Promise<ResolvedRdyConfig> {
   try {

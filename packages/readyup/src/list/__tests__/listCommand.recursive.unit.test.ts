@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { setStyle } from '../../src/layout/engine.ts';
-import { listCommand } from '../../src/list/listCommand.ts';
-import { ListOutputSchema } from '../../src/schemas/index.ts';
-import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
-import { useTempDir } from '../helpers/tempDir.ts';
+import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { setStyle } from '../../layout/engine.ts';
+import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
+import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { listCommand } from '../listCommand.ts';
 
 const tempDir = useTempDir({
   prefix: 'rdy-recursive-',
@@ -77,17 +77,6 @@ describe('list --recursive', () => {
     vi.restoreAllMocks();
     setStyle('rich');
   });
-
-  /** Returns everything the run wrote to stdout. */
-  function readOutput(): string {
-    return stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
-  }
-
-  /** Runs a recursive listing under `--json` and returns the payload it emitted. */
-  async function runForPayload(): Promise<unknown> {
-    await listCommand(['--recursive', '--json']);
-    return JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
-  }
 
   describe('rendering', () => {
     it('groups kits under the project holding them, the sweep root first', async () => {
@@ -228,7 +217,6 @@ describe('list --recursive', () => {
     });
   });
 
-  // The flag adds a mode rather than changing one, so the working directory's own listing is untouched.
   it('leaves a plain listing showing sections rather than project blocks', async () => {
     await listCommand([]);
     const output = readOutput();
@@ -236,4 +224,19 @@ describe('list --recursive', () => {
     expect(output).toContain('\u{2500}\u{2500} Compiled');
     expect(output).not.toContain('\u{1F4C1}');
   });
+
+  // region | Helpers
+
+  /** Returns everything the run wrote to stdout. */
+  function readOutput(): string {
+    return stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+  }
+
+  /** Runs a recursive listing under `--json` and returns the payload it emitted. */
+  async function runForPayload(): Promise<unknown> {
+    await listCommand(['--recursive', '--json']);
+    return JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+  }
+
+  // endregion | Helpers
 });

@@ -7,11 +7,6 @@ import type { TokenName } from '../layout/formatter.ts';
 /** Blank line parting one listed section from the next. A section supplies none of its own. */
 const SECTION_SEPARATOR = '\n\n';
 
-/** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
-function buildKitHint(kits: string[]): string {
-  return kits.includes('default') ? '[<name>]' : '<name>';
-}
-
 // -- Compiled-section style discriminants --
 
 export interface LocalConventionStyle {
@@ -26,12 +21,12 @@ export interface CustomOutDirStyle {
 export type CompiledStyle = LocalConventionStyle | CustomOutDirStyle;
 
 /**
- * Determine the compiled-section display style for a project's `outDir`.
+ * Determines the compiled-section display style for a project's `outDir`.
  *
- * The two directories are separate because the question has two halves. Whether an `outDir` is the
- * convention is a fact about the project, so it is settled against `projectDir`; the path a reader is
- * shown has to resolve from where they stand, so it is named against `renderFrom`. They coincide for a
- * listing of the working directory, and part for a sweep rendering another project's kits.
+ * Whether an `outDir` is the convention is a fact about the project, so it is settled against
+ * `projectDir`; the path a reader is shown has to resolve from where they stand, so it is named against
+ * `renderFrom`. They coincide for a listing of the working directory, and part for a sweep rendering
+ * another project's kits.
  */
 export function resolveCompiledStyle(projectDir: string, outDir: string, renderFrom: string): CompiledStyle {
   const resolvedOutDir = path.resolve(projectDir, outDir);
@@ -110,11 +105,6 @@ export function formatOwnerView({
   return sections.join(SECTION_SEPARATOR);
 }
 
-/** Returns the section naming installed packages that publish kits the config does not list. */
-function formatAvailableSection(availablePackages: string[]): string {
-  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
-}
-
 // -- Consumer view --
 
 interface ConsumerViewOptions {
@@ -159,12 +149,10 @@ interface RecursiveViewOptions {
 }
 
 /**
- * Format the repo-wide output: one block per project, headed by the directory its kits live in.
+ * Formats the repo-wide output: one block per project, headed by the directory its kits live in.
  *
  * A project with nothing compiled contributes no block at all, heading included, so a caller may hand
- * over every project discovery found rather than filtering first -- a heading with nothing beneath it
- * reads as a defect rather than a finding. A sweep left with no block returns the empty-sweep message,
- * which names no next step because neither scaffolding nor a single directory is one for a whole repo.
+ * over every project discovery found. A sweep left with no block returns the empty-sweep message.
  */
 export function formatRecursiveView({ projects }: RecursiveViewOptions): string {
   const blocks = projects.filter((project) => project.compiledKits.length > 0).map(formatProjectBlock);
@@ -216,13 +204,18 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
   return [getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
 }
 
-// -- Helpers --
+// region | Helpers
+
+/** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
+function buildKitHint(kits: string[]): string {
+  return kits.includes('default') ? '[<name>]' : '<name>';
+}
 
 /**
  * Returns the command that runs a project's kits from where the reader stands.
  *
  * A project on a custom `outDir` is reachable only by file: every other resolution path hardcodes the
- * convention directory, so naming the project would produce a command that finds nothing.
+ * convention directory.
  */
 function buildProjectHint(project: RecursiveProjectView): string {
   if (project.compiledStyle.kind === 'custom-outDir') {
@@ -231,6 +224,11 @@ function buildProjectHint(project: RecursiveProjectView): string {
 
   const nameHint = buildKitHint(project.compiledKits.map((kit) => kit.name));
   return project.dir === '.' ? `rdy run ${nameHint}` : `rdy run --from ${project.dir} ${nameHint}`;
+}
+
+/** Returns the section naming installed packages that publish kits the config does not list. */
+function formatAvailableSection(availablePackages: string[]): string {
+  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
@@ -247,11 +245,6 @@ function formatProjectBlock(project: RecursiveProjectView): string {
   return [heading, `${getLayout().indent(1)}${buildProjectHint(project)}`, ...items].join('\n');
 }
 
-/** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */
-function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
-  return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
-}
-
 /**
  * Returns a titled section: the title, `hint` indented beneath it, then the kits.
  *
@@ -263,3 +256,10 @@ function formatSection(title: string, hint: string, kits: string[], token: Token
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
   return [getLayout().formatHeading(title, 'section'), `${getLayout().indent(1)}${hint}`, ...items].join('\n');
 }
+
+/** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */
+function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
+  return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
+}
+
+// endregion | Helpers
