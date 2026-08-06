@@ -23,6 +23,7 @@ import { VERSION } from '../version.ts';
 import { writeHuman } from '../writeHuman.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
+import { deriveJsPath } from './deriveJsPath.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
 
@@ -66,16 +67,15 @@ export async function compileCommand(args: string[]): Promise<number> {
     }
   }
 
+  if (positionals.length > 1) {
+    throw usageError('Too many arguments. Expected a single input file.');
+  }
+
   const force = values.force === true;
   const json = values.json === true;
   const outputPath = values.output;
   const skipManifest = values['skip-manifest'] === true;
   const manifestPath = resolveManifestPath(values.manifest);
-
-  if (positionals.length > 1) {
-    throw usageError('Too many arguments. Expected a single input file.');
-  }
-
   const inputPath = positionals[0];
 
   // Explicit input file -- compile just that one
@@ -407,15 +407,6 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
     }
   }
   return map;
-}
-
-/** Derive a `.js` sibling path from a `.ts`/`.mts`/`.cts` input. */
-function deriveJsPath(inputPath: string): string {
-  const ext = path.extname(inputPath);
-  if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
-    return inputPath.slice(0, -ext.length) + '.js';
-  }
-  return `${inputPath}.js`;
 }
 
 /** Arguments for the per-kit drift-detection helper. */

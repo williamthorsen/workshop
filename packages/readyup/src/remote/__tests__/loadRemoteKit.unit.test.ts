@@ -13,6 +13,7 @@ vi.mock(import('node:fs'), () => ({
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
+import { captureError } from '../../test-utils/captureError.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
@@ -36,7 +37,7 @@ describe(loadRemoteKit, () => {
   it.each([401, 403, 404])('throws RemoteFetchError carrying the %i status', async (status) => {
     mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
-    const error = await loadRemoteKit({ url: 'https://example.com/config.js' }).catch((error_: unknown) => error_);
+    const error = await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js' }));
 
     expect(error).toBeInstanceOf(RemoteFetchError);
     expect(error).toHaveProperty('status', status);
@@ -61,12 +62,12 @@ describe(loadRemoteKit, () => {
   it('forwards supplied headers to fetch', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    await loadRemoteKit({
-      url: 'https://example.com/config.js',
-      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
-    }).catch(() => {
-      // Expected to throw due to 404
-    });
+    await captureError(() =>
+      loadRemoteKit({
+        url: 'https://example.com/config.js',
+        headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+      }),
+    );
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
@@ -76,9 +77,7 @@ describe(loadRemoteKit, () => {
   it('calls fetch with empty headers when none are provided', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    await loadRemoteKit({ url: 'https://example.com/config.js' }).catch(() => {
-      // Expected to throw due to 404
-    });
+    await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js' }));
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: {},

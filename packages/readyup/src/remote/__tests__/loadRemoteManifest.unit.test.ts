@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
+import { captureError } from '../../test-utils/captureError.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
@@ -64,20 +65,19 @@ describe(loadRemoteManifest, () => {
   it.each([401, 403, 500])('throws RemoteFetchError carrying the %i status', async (status) => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Nope' }));
 
-    const error = await loadRemoteManifest({ url: 'https://example.com/manifest.json' }).catch(
-      (error_: unknown) => error_,
-    );
+    const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
 
     expect(error).toBeInstanceOf(RemoteFetchError);
     expect(error).toHaveProperty('status', status);
   });
 
-  it('throws Error containing URL and "malformed" for invalid JSON', async () => {
+  it('throws Error containing URL and "malformed" for invalid JSON, preserving the parse failure as the cause', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow(
-      /Manifest at https:\/\/example\.com\/manifest\.json is malformed:/,
-    );
+    const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
+
+    expect(error.message).toMatch(/Manifest at https:\/\/example\.com\/manifest\.json is malformed:/);
+    expect(error.cause).toBeInstanceOf(SyntaxError);
   });
 
   it('throws Error containing URL and "malformed" for schema-invalid JSON', async () => {

@@ -89,8 +89,9 @@ function parseOrgRepo(value: string): { owner: string; name: string; ref: string
     throw new Error(`Invalid --from value: ref after '@' must not be empty in "${value}"`);
   }
 
+  // The slash must sit strictly inside the slug, leaving a non-empty owner and name on either side.
   const slashIndex = slug.indexOf('/');
-  if (slashIndex === -1 || slashIndex === 0 || slashIndex === slug.length - 1) {
+  if (slashIndex <= 0 || slashIndex === slug.length - 1) {
     throw new Error(`Invalid --from value: expected "owner/repo" format, got "${slug}"`);
   }
 

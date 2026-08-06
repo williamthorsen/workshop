@@ -15,6 +15,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { loadConfig } from '../src/loadConfig.ts';
+import { captureError } from '../src/test-utils/captureError.ts';
 import { extractHint, extractMessage } from '../src/utils/error-handling.ts';
 
 describe(loadConfig, () => {
@@ -172,7 +173,7 @@ describe(loadConfig, () => {
       Object.assign(new Error("Cannot find package 'some-lib'"), { code: 'ERR_MODULE_NOT_FOUND' }),
     );
 
-    const error = await loadConfig({ overridePath: 'config.ts' }).catch((error_: unknown) => error_);
+    const error = await captureError(() => loadConfig({ overridePath: 'config.ts' }));
 
     expect(extractMessage(error)).toBe(
       "Cannot resolve 'some-lib' while evaluating config.ts. External packages imported by the config file " +

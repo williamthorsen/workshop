@@ -7,6 +7,7 @@ vi.mock(import('node:fs'), () => ({
 }));
 
 import { readManifest } from '../../src/manifest/readManifest.ts';
+import { captureError } from '../../src/test-utils/captureError.ts';
 
 describe(readManifest, () => {
   it('returns a typed manifest for valid content', () => {
@@ -37,14 +38,18 @@ describe(readManifest, () => {
     expect(() => readManifest('/missing/manifest.json')).toThrow('Manifest file not found');
   });
 
-  it('throws with detail when the file is unreadable', () => {
+  it('throws with detail when the file is unreadable, preserving the read failure as the cause', async () => {
+    const readFailure = Object.assign(new Error("EACCES: permission denied, open '/locked/manifest.json'"), {
+      code: 'EACCES',
+    });
     mockReadFileSync.mockImplementation(() => {
-      throw Object.assign(new Error("EACCES: permission denied, open '/locked/manifest.json'"), {
-        code: 'EACCES',
-      });
+      throw readFailure;
     });
 
-    expect(() => readManifest('/locked/manifest.json')).toThrow('Failed to read manifest file');
+    const error = await captureError(() => readManifest('/locked/manifest.json'));
+
+    expect(error.message).toContain('Failed to read manifest file');
+    expect(error.cause).toBe(readFailure);
   });
 
   it('throws when the file contains invalid JSON', () => {

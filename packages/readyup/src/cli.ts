@@ -172,8 +172,6 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
 
-  const sourceType = sourceFlags[0];
-
   // `--packages` runs every kit its configured packages publish, so nothing it could be paired with
   // narrows that set: a positional or a `--checklists` filter names kits in this project instead.
   if (parsed.packages && kitSpecifiers.length > 0) {
@@ -182,6 +180,8 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
   if (parsed.packages && parsed.checklists !== undefined) {
     throw usageError('--packages cannot be combined with --checklists; it runs every kit each package publishes');
   }
+
+  const sourceType = sourceFlags[0];
 
   if (parsed.jit && sourceType !== undefined) {
     throw usageError(`--jit cannot be combined with ${sourceType}`);

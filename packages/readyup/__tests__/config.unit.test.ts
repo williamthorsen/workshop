@@ -16,6 +16,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { loadRdyKit } from '../src/config.ts';
+import { captureError } from '../src/test-utils/captureError.ts';
 
 const KIT_PATH = '.readyup/kits/default.ts';
 
@@ -56,7 +57,7 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockReturnValue(buildDirents('deploy.js', 'release.js'));
 
-    const error = await loadRdyKit('.readyup/kits/default.js').catch((error_: unknown) => error_);
+    const error = await captureError(() => loadRdyKit('.readyup/kits/default.js'));
 
     expect(String(error)).toContain(
       'Kit "default" not found at .readyup/kits/default.js. Available kits: deploy, release.',

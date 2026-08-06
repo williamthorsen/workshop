@@ -14,6 +14,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { jitiImport } from '../src/jitiImport.ts';
+import { captureError } from '../src/test-utils/captureError.ts';
 import { extractHint, extractMessage } from '../src/utils/error-handling.ts';
 
 const KIT_PATH = path.resolve(process.cwd(), '.readyup/kits/default.ts');
@@ -42,7 +43,7 @@ describe(jitiImport, () => {
       Object.assign(new Error("Cannot find package 'readyup'"), { code: 'ERR_MODULE_NOT_FOUND' }),
     );
 
-    const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
+    const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
     expect(extractHint(error)).toBe('Install it with: pnpm add --save-dev readyup');
     expect(extractMessage(error)).not.toContain('Install it with');
@@ -54,7 +55,7 @@ describe(jitiImport, () => {
       Object.assign(new Error("Cannot find module './helpers.ts'"), { code: 'MODULE_NOT_FOUND' }),
     );
 
-    const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
+    const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
     expect(String(error)).toContain("Cannot resolve './helpers.ts' while evaluating .readyup/kits/default.ts.");
     expect(extractHint(error)).toBeUndefined();
@@ -64,7 +65,7 @@ describe(jitiImport, () => {
     mockExistsSync.mockReturnValue(false);
     mockImport.mockRejectedValue(Object.assign(new Error('Module load failed'), { code: 'MODULE_NOT_FOUND' }));
 
-    const error = await jitiImport(KIT_PATH, DETAIL, 'Kit file').catch((error_: unknown) => error_);
+    const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
     expect(String(error)).toContain("Cannot resolve 'unknown module' while evaluating .readyup/kits/default.ts.");
     expect(extractHint(error)).toBeUndefined();

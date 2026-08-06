@@ -38,6 +38,9 @@ const MAX_WALK_DEPTH = 10;
  */
 const PRUNED_NAMES = new Set(['node_modules']);
 
+/** Error codes a directory read may fail with benignly, leaving the rest of the walk sound. */
+const SKIPPABLE_READ_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
+
 /**
  * Discover the workspaces of the current repo.
  * Detects pnpm (`pnpm-workspace.yaml`), then npm/yarn (`package.json.workspaces`),
@@ -184,7 +187,7 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
     // Skip directories we can't read for benign reasons (missing, permission-denied).
     // Rethrow systemic failures (e.g. EMFILE, EIO) so an incomplete walk isn't masked.
     const code = isRecord(error) && typeof error.code === 'string' ? error.code : undefined;
-    if (code === 'ENOENT' || code === 'EACCES' || code === 'EPERM') return;
+    if (code !== undefined && SKIPPABLE_READ_CODES.has(code)) return;
     throw error;
   }
 

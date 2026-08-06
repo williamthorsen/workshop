@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { validateCompiledOutput } from '../../src/compile/validateCompiledOutput.ts';
+import { captureError } from '../../src/test-utils/captureError.ts';
 
 /** Create a temporary ESM bundle that exports the given kit fields. */
 function writeTempKit(dir: string, filename: string, kitFields: Record<string, unknown>): string {
@@ -61,7 +62,11 @@ describe(validateCompiledOutput, () => {
     mkdirSync(testDir, { recursive: true });
     writeFileSync(filePath, 'throw new Error("parse error");\n');
 
-    await expect(validateCompiledOutput(filePath)).rejects.toThrow('Failed to load compiled output for validation');
+    const error = await captureError(() => validateCompiledOutput(filePath));
+
+    expect(error.message).toContain('Failed to load compiled output for validation');
+    expect(error.cause).toBeInstanceOf(Error);
+    expect(error.cause).toHaveProperty('message', expect.stringContaining('parse error'));
   });
 
   it('deletes the output file and throws when the kit is structurally invalid', async () => {

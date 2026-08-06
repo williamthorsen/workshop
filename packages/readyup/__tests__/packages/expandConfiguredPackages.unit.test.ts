@@ -85,7 +85,8 @@ function installPackage(
   temp.mkdir(path.join(root, '.readyup', 'kits'));
   temp.writeJson(path.join(root, 'package.json'), { name, version });
 
-  for (const kit of options.kits ?? []) {
+  const kits = options.kits ?? [];
+  for (const kit of kits) {
     temp.write(path.join(root, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
   }
   if (options.manifest !== undefined) {

@@ -29,7 +29,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
   } catch (error: unknown) {
     rmSync(outputPath, { force: true });
     const detail = extractMessage(error);
-    throw new Error(`Failed to load compiled output for validation: ${detail}`);
+    throw new Error(`Failed to load compiled output for validation: ${detail}`, { cause: error });
   }
 
   const moduleRecord = isRecord(imported) ? imported : {};
