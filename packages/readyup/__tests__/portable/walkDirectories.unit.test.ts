@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
+// Only directory reads are intercepted; the temporary-directory helper still writes through to disk.
 vi.mock(import('node:fs'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs')>();
+  const actual = await importOriginal();
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
@@ -27,10 +28,13 @@ const tempDir = useTempDir({
   },
 });
 
+/** The read options the sweep passes, which a passthrough hands straight back to the real reader. */
+type SweepReaddirOptions = { encoding: 'utf8'; withFileTypes: true };
+
 /** Fails the directory at `relativePath`, letting every other read through to the filesystem. */
 function failReadOf(relativePath: string, code: string): void {
   const failingDir = `${tempDir.dir}/${relativePath}`;
-  mockReaddirSync.mockImplementation((dir: string, options: unknown) => {
+  mockReaddirSync.mockImplementation((dir: string, options: SweepReaddirOptions) => {
     if (dir === failingDir) throw Object.assign(new Error(`read failed: ${code}`), { code });
     return readdirSyncActual(dir, options);
   });
