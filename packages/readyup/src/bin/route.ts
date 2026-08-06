@@ -24,6 +24,9 @@ import { writeHuman } from '../writeHuman.ts';
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
 const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];
 
+/** Flags that request help, whether given as the command itself or among a subcommand's flags. */
+const HELP_FLAGS = new Set(['--help', '-h']);
+
 /** Edits (insertions, deletions, or substitutions) a word may be from a command and still match it. */
 const MAX_TYPO_DISTANCE = 2;
 
@@ -271,7 +274,7 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
   const args = dropLeadingStyleFlag(argv);
   const command = args[0];
 
-  if (command === undefined || command === '--help' || command === '-h') {
+  if (command === undefined || HELP_FLAGS.has(command)) {
     return writeHelp(HELP, json);
   }
 
@@ -412,7 +415,7 @@ function dropLeadingStyleFlag(argv: string[]): string[] {
 
 /** Returns true when the flags request help for the current subcommand. */
 function wantsHelp(flags: string[]): boolean {
-  return flags.some((f) => f === '--help' || f === '-h');
+  return flags.some((f) => HELP_FLAGS.has(f));
 }
 
 /** Emits help text through the human channel and reports success. */
