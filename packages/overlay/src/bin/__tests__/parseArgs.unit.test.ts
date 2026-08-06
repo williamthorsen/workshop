@@ -55,6 +55,10 @@ describe(parseArgs, () => {
     expect(() => parseArgs(['./source', '--json=x'])).toThrow(/option takes no value: --json/);
   });
 
+  it.each([['--h'], ['--h=1']])('reports %s as an unknown option, not the -h short flag', (flag) => {
+    expect(() => parseArgs(['./source', flag])).toThrow(/unknown option: --h/);
+  });
+
   it('keeps the underlying parse error as the cause', () => {
     expect(catchError(() => parseArgs(['./source', '--nope']))).toHaveProperty(
       'cause.code',

@@ -15,10 +15,8 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 } as const;
 
-/** Every option name `node:util.parseArgs` accepts, in the undashed form its tokens carry. */
-const ACCEPTED_NAMES = new Set<string>(
-  Object.entries(OPTIONS).flatMap(([name, option]) => ('short' in option ? [name, option.short] : [name])),
-);
+/** Every option name a token can carry: `node:util.parseArgs` reports a short flag under its long name. */
+const ACCEPTED_NAMES = new Set<string>(Object.keys(OPTIONS));
 
 /**
  * Parses overlay's CLI arguments via `node:util.parseArgs`.
@@ -49,7 +47,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
 
 /** Builds overlay's message for a `node:util.parseArgs` rejection, naming the flag at fault. */
 function describeParseFailure(argv: string[], error: unknown): string {
-  // The rejection carries only a code, so a permissive second pass supplies the token that names the flag.
+  // Node exposes the offending flag only inside its message prose, so a permissive second pass supplies it as a token.
   const { tokens } = nodeParseArgs({
     args: argv,
     allowPositionals: true,
