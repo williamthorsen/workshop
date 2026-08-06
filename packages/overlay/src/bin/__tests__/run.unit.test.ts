@@ -15,11 +15,11 @@ const stubResult: OverlayResult = {
   exitCode: 0,
 };
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(run, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('writes JSON to stdout and returns the result exit code under --json', async () => {
     vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
