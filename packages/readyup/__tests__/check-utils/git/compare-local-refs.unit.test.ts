@@ -15,32 +15,11 @@ vi.mock(import('../../../src/check-utils/git/run-git.ts'), async (importOriginal
 
 const runGit = vi.mocked(runGitModule.runGit);
 
-beforeEach(() => {
-  vi.restoreAllMocks();
-});
-
-/** Stub `runGit` to route calls by git subcommand and arguments. */
-function stubRunGit(routes: Record<string, string | Error>): void {
-  runGit.mockImplementation((_path: string, ...args: string[]) => {
-    const key = args.join(' ');
-    for (const [pattern, value] of Object.entries(routes)) {
-      if (key.includes(pattern)) {
-        if (value instanceof Error) return Promise.reject(value);
-        return Promise.resolve(value);
-      }
-    }
-    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
-  });
-}
-
-function makeRefMissingError(ref: string): Error {
-  return Object.assign(new Error(`unknown revision: ${ref}`), {
-    code: 128,
-    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
-  });
-}
-
 describe(compareLocalRefs, () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns match when both refs resolve to the same SHA', async () => {
     const sha = 'abc123def456abc123def456abc123def456abc1';
     stubRunGit({
@@ -174,3 +153,25 @@ describe(compareLocalRefs, () => {
     expect(result.aheadBehind).toBeUndefined();
   });
 });
+
+/** Builds the error shape git produces for a ref that does not resolve. */
+function makeRefMissingError(ref: string): Error {
+  return Object.assign(new Error(`unknown revision: ${ref}`), {
+    code: 128,
+    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
+  });
+}
+
+/** Stubs `runGit` to route calls by git subcommand and arguments. */
+function stubRunGit(routes: Record<string, string | Error>): void {
+  runGit.mockImplementation((_path: string, ...args: string[]) => {
+    const key = args.join(' ');
+    for (const [pattern, value] of Object.entries(routes)) {
+      if (key.includes(pattern)) {
+        if (value instanceof Error) return Promise.reject(value);
+        return Promise.resolve(value);
+      }
+    }
+    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
+  });
+}

@@ -10,6 +10,9 @@ import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 // a terminal and whether CI was set, so the same assertion would pass locally and fail on the runner. A test wanting
 // plain output passes `--style plain`, which outranks this.
 //
+// Restoring a stubbed environment variable is the runner's job rather than a suite's. `unstubEnvs` clears every stub
+// before each test, so a suite that stubs one carries no hook to undo it.
+//
 // The aliases let a test import this package's own kits, which reach readyup by package name the way a consumer's kit
 // does, without a prior build standing between the test and the source. Longest specifier first: an alias on `readyup`
 // also matches `readyup/check-utils`, and the first match wins.
@@ -20,7 +23,7 @@ import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 // drops the `__tests__/` directories the same glob would otherwise sweep in. The text reporter shows no `test-utils`
 // group; those files are in the coverage data regardless.
 export default defineVitestConfig({
-  project: { env: { RDY_STYLE: 'rich' } },
+  project: { env: { RDY_STYLE: 'rich' }, unstubEnvs: true },
   root: {
     resolve: {
       alias: [

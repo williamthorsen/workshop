@@ -30,7 +30,6 @@ describe('scaffolded kit', () => {
   afterEach(() => {
     process.chdir(originalCwd);
     rmSync(TEST_DIR, { recursive: true, force: true });
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
