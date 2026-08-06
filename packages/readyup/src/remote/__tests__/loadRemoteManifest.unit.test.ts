@@ -71,12 +71,13 @@ describe(loadRemoteManifest, () => {
     expect(error).toHaveProperty('status', status);
   });
 
-  it('throws Error containing URL and "malformed" for invalid JSON', async () => {
+  it('throws Error containing URL and "malformed" for invalid JSON, preserving the parse failure as the cause', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow(
-      /Manifest at https:\/\/example\.com\/manifest\.json is malformed:/,
-    );
+    const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
+
+    expect(error.message).toMatch(/Manifest at https:\/\/example\.com\/manifest\.json is malformed:/);
+    expect(error.cause).toBeInstanceOf(SyntaxError);
   });
 
   it('throws Error containing URL and "malformed" for schema-invalid JSON', async () => {

@@ -50,7 +50,7 @@ export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManife
     parsed = JSON.parse(body);
   } catch (error: unknown) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Manifest at ${url} is malformed: ${detail}`);
+    throw new Error(`Manifest at ${url} is malformed: ${detail}`, { cause: error });
   }
 
   const result = ManifestSchema.safeParse(parsed);

@@ -25,7 +25,7 @@ export function readManifest(manifestPath: string): RdyManifest {
       throw new ManifestNotFoundError(manifestPath);
     }
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to read manifest file ${manifestPath}: ${detail}`);
+    throw new Error(`Failed to read manifest file ${manifestPath}: ${detail}`, { cause: error });
   }
 
   let parsed: unknown;
