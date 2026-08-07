@@ -144,7 +144,9 @@ function resolveThroughNodeResolver(specifier: string, configDir: string): strin
     return undefined;
   }
   // A core module such as `"fs/promises"` answers with its own name rather than with a path.
-  return isAbsolute(resolved) ? resolved : undefined;
+  if (!isAbsolute(resolved)) return undefined;
+  // TypeScript resolves `extends` under a JSON-only extension set, so a package's entry point is not a config.
+  return resolved.endsWith('.json') ? resolved : undefined;
 }
 
 /**

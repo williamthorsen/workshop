@@ -198,6 +198,34 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
+  it('lets the "." entry of an exports map outrank the manifest tsconfig field', () => {
+    installPackage('both-base', {
+      'package.json': { name: 'both-base', exports: { '.': './declared.json' }, tsconfig: './field.json' },
+      'declared.json': { compilerOptions: { target: 'ES2015' } },
+      'field.json': { compilerOptions: { target: 'ES2014' } },
+    });
+    temp.writeJson('tsconfig.json', { extends: 'both-base' });
+
+    const result = readTsconfigLanguageLevel('tsconfig.json');
+
+    expect(result?.target).toBe('es2015');
+    expect(result?.chain).toStrictEqual(['tsconfig.json', 'node_modules/both-base/declared.json']);
+  });
+
+  it('reports a package whose entry point is not a config as unresolved', () => {
+    installPackage('js-base', { 'package.json': { name: 'js-base', exports: { '.': './index.js' } } });
+    // The parser recovers an empty record from JavaScript source, so only the resolver can reject this.
+    temp.write('node_modules/js-base/index.js', 'module.exports = {};\n');
+    temp.writeJson('tsconfig.json', { extends: 'js-base', compilerOptions: { target: 'ES2025' } });
+
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
+      lib: undefined,
+      target: 'es2025',
+      chain: ['tsconfig.json'],
+      unresolvedExtends: ['js-base'],
+    });
+  });
+
   it('reports a bare package name as unresolved when the exports map has no "." entry', () => {
     installPackage('@scoped/base', {
       'package.json': { name: '@scoped/base', exports: { './tsconfig.base.json': './tsconfig.base.json' } },
