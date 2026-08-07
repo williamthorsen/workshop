@@ -137,8 +137,9 @@ function measureNameColumn(line: string): number {
   const match = /^(?<indent> *)(?<word>[A-Z]*)(?<pad> +)/u.exec(line);
   const groups = match?.groups;
   if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
+  const { indent, pad, word } = groups;
 
-  return (groups.indent?.length ?? 0) + (groups.word?.length ?? 0) + (groups.pad?.length ?? 0);
+  return (indent?.length ?? 0) + (word?.length ?? 0) + (pad?.length ?? 0);
 }
 
 /** Returns a line's count of leading spaces, one per column. */

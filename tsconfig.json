@@ -1,47 +1,17 @@
-// TSConfig for monorepo root
-// Adapted from https://blog.logrocket.com/setting-up-monorepo-with-lerna-typescript/
+// TSConfig for the monorepo root. Packages have their own tsconfig.json files that extend this one.
+// Every setting not declared here comes from the shared base.
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@williamthorsen/tsconfig/tsconfig.base.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    "declaration": true,
-    // Support importation of CJS modules in ESM.
-    "esModuleInterop": true,
-    // Report an error when the value `undefined` is given to an optional property that doesn't specify `undefined` as a valid value.
-    "exactOptionalPropertyTypes": true,
-    // Each file must transpile standalone.
-    "isolatedModules": true,
-    "lib": ["ES2025"], // Keep aligned with the `engines` floor: Node 24 → ES2025.
-    // Omitting this would default to `ES2022` with `Bundler` resolution, which is wrong for published Node packages.
-    "module": "NodeNext",
-    // Treat every file as a module, including those with no import or export.
-    "moduleDetection": "force",
-    "noEmit": true,
-    "noFallthroughCasesInSwitch": true,
-    // Force functions designed to override their parent class to be specified as `override`.
-    "noImplicitOverride": true,
-    // Force functions to specify that they can return `undefined` if a possible code path does not return a value.
-    "noImplicitReturns": true,
-    // Consider enabling this; see https://www.typescriptlang.org/tsconfig#noPropertyAccessFromIndexSignature
-    // "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    // TypeScript resolves `baseUrl`-less `paths` relative to the file that declares them, so the shared
+    // base cannot carry this: it would resolve inside node_modules.
     "paths": {
       "~/*": ["./*"],
     },
-    "removeComments": true,
-    // Don't typecheck libraries and declaration (.d.ts) files
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "target": "ES2025", // Keep aligned with the `engines` floor: Node 24 → ES2025.
     "types": ["node"],
   },
-  "exclude": ["node_modules"],
   "include": [
-    // This file covers only the monorepo root. Packages have their own tsconfig.json files that extend this one.
     ".config/**/*.ts",
     "__tests__/",
     "config/",

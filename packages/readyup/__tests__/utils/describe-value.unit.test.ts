@@ -59,7 +59,7 @@ describe(previewValue, () => {
 
   it('falls back to the type name for a value with no JSON rendering', () => {
     const circular: Record<string, unknown> = {};
-    circular.self = circular;
+    circular['self'] = circular;
 
     expect(previewValue(circular)).toBe('object');
   });

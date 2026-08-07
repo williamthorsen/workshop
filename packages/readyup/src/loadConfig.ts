@@ -76,7 +76,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Resol
   );
 
   // Support both default export and named exports
-  const raw = imported.default !== undefined && isRecord(imported.default) ? imported.default : imported;
+  const raw = imported['default'] !== undefined && isRecord(imported['default']) ? imported['default'] : imported;
 
   assertIsRdyConfig(raw);
 

@@ -55,7 +55,7 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
     // but TypeScript types it as `any`; narrowing avoids unsafe-member-access lint errors.
     const moduleRecord = isRecord(imported) ? imported : {};
     // Read __readyupVersion from the raw namespace before resolveKitExports drops unknown fields.
-    const versionValue = moduleRecord.__readyupVersion;
+    const versionValue = moduleRecord['__readyupVersion'];
     const compileTimeVersion = typeof versionValue === 'string' ? versionValue : undefined;
     const resolved = resolveKitExports(moduleRecord);
     assertIsRdyKit(resolved, url);

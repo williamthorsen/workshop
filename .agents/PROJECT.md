@@ -18,6 +18,7 @@ Key files:
 - `.config/readyup.config.ts` — Readyup compile settings
 - `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
 - `packages/readyup/vitest.config.ts` — Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection
+- `tsconfig.json` — Extends `@williamthorsen/tsconfig`; declares only the `paths`, `types`, and `include` the shared base leaves to the consumer
 - `vitest.config.ts` — Vitest projects for packages, built on `@williamthorsen/nmr/vitest`
 - `vitest.root.config.ts` — Vitest projects for root-level tests, which exclude every workspace package
 

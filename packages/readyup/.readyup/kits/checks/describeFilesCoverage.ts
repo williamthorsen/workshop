@@ -16,7 +16,7 @@ export function describeFilesCoverage(): CheckOutcome {
   const packageJson = readPackageJson();
   if (packageJson === undefined) return { ok: false, detail: 'package.json is missing or unreadable' };
 
-  const files = packageJson.files;
+  const files = packageJson['files'];
   if (files === undefined) return { ok: true, detail: 'no "files" allowlist, so everything ships' };
   if (!Array.isArray(files)) return { ok: false, detail: '"files" is not an array' };
 

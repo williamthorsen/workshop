@@ -366,5 +366,5 @@ function assertRankedSeverity(severity: Severity, role: string): void {
  * treating it as one is how a broken check reports success.
  */
 function isCheckOutcome(raw: unknown): raw is CheckOutcome {
-  return isRecord(raw) && typeof raw.ok === 'boolean';
+  return isRecord(raw) && typeof raw['ok'] === 'boolean';
 }

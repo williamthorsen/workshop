@@ -106,7 +106,7 @@ function findTopLevelSideEffects(absolutePath: string): Offender[] {
 
 function extractSideEffectsArray(parsed: unknown): Set<string> {
   if (!isRecord(parsed)) return new Set();
-  const value = parsed.sideEffects;
+  const value = parsed['sideEffects'];
   if (!Array.isArray(value)) return new Set();
   return new Set(value.filter((entry): entry is string => typeof entry === 'string'));
 }

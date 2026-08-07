@@ -6,7 +6,7 @@
  * Returns `undefined` when the env var is unset or empty.
  */
 export function resolveBitbucketToken(): string | undefined {
-  const envToken = process.env.BITBUCKET_TOKEN;
+  const envToken = process.env['BITBUCKET_TOKEN'];
   if (envToken !== undefined && envToken !== '') {
     return envToken;
   }

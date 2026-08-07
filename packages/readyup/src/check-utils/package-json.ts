@@ -16,7 +16,7 @@ export function hasPackageJsonField(field: string, expectedValue?: string): bool
 export function hasDevDependency(name: string): boolean {
   const pkg = readJsonFile('package.json');
   if (pkg === undefined) return false;
-  const devDeps = pkg.devDependencies;
+  const devDeps = pkg['devDependencies'];
   return isRecord(devDeps) && Object.hasOwn(devDeps, name);
 }
 
@@ -28,7 +28,7 @@ export function hasMinDevDependencyVersion(
 ): boolean {
   const pkg = readJsonFile('package.json');
   if (pkg === undefined) return false;
-  const devDeps = pkg.devDependencies;
+  const devDeps = pkg['devDependencies'];
   if (!isRecord(devDeps) || !Object.hasOwn(devDeps, name)) return false;
   const range = devDeps[name];
   if (typeof range !== 'string') return false;

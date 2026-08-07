@@ -105,7 +105,7 @@ function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: Wo
 
   const rootPackageJson = readJsonFile('package.json');
   if (rootPackageJson !== undefined) {
-    const workspaces = rootPackageJson.workspaces;
+    const workspaces = rootPackageJson['workspaces'];
     const npmPatterns = extractNpmWorkspacePatterns(workspaces);
     if (npmPatterns !== null) {
       return { patterns: npmPatterns, source: 'package.json' };
@@ -123,7 +123,7 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
     return strings;
   }
   if (isRecord(workspaces)) {
-    const nested = workspaces.packages;
+    const nested = workspaces['packages'];
     if (Array.isArray(nested)) {
       const strings = nested.filter((entry): entry is string => typeof entry === 'string');
       if (strings.length !== nested.length) return null;
@@ -186,7 +186,7 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
   } catch (error) {
     // Skip directories we can't read for benign reasons (missing, permission-denied).
     // Rethrow systemic failures (e.g. EMFILE, EIO) so an incomplete walk isn't masked.
-    const code = isRecord(error) && typeof error.code === 'string' ? error.code : undefined;
+    const code = isRecord(error) && typeof error['code'] === 'string' ? error['code'] : undefined;
     if (code !== undefined && SKIPPABLE_READ_CODES.has(code)) return;
     throw error;
   }
@@ -216,9 +216,9 @@ function buildWorkspaceFromPackageJson(
   absolutePath: string,
   packageJson: Record<string, unknown>,
 ): Workspace {
-  const nameValue = packageJson.name;
+  const nameValue = packageJson['name'];
   const name = typeof nameValue === 'string' ? nameValue : undefined;
-  const isPackage = packageJson.private !== true;
+  const isPackage = packageJson['private'] !== true;
   return { dir: relDir, absolutePath, name, isPackage, packageJson };
 }
 

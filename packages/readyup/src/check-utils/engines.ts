@@ -21,9 +21,9 @@ const COMPARABLE_VERSION = /^\d+(?:\.\d+)*$/;
  * Ranges outside the simple floor forms are reported as unparseable rather than guessed at.
  */
 export function readEnginesNodeFloor(manifest: Record<string, unknown>): EnginesNodeFloor {
-  const engines = manifest.engines;
+  const engines = manifest['engines'];
   if (!isRecord(engines)) return { kind: 'absent' };
-  const raw = engines.node;
+  const raw = engines['node'];
   if (typeof raw !== 'string') return { kind: 'absent' };
 
   const floor = SIMPLE_FLOOR.exec(raw.trim())?.[1];

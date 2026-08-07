@@ -52,7 +52,7 @@ export function readManifestEntries(): ManifestEntry[] {
   const manifest = readJsonFile(DEFAULT_MANIFEST_PATH);
   if (manifest === undefined) return [];
 
-  const kits = manifest.kits;
+  const kits = manifest['kits'];
   if (!Array.isArray(kits)) return [];
 
   return kits.filter(isRecord).map(toManifestEntry);
@@ -73,11 +73,11 @@ function asString(value: unknown): string | undefined {
 /** Projects a raw manifest kit record onto the fields these kits read. */
 function toManifestEntry(kit: Record<string, unknown>): ManifestEntry {
   return {
-    name: asString(kit.name) ?? '(unnamed)',
-    path: asString(kit.path),
-    source: asString(kit.source),
-    sourceHash: asString(kit.sourceHash),
-    targetHash: asString(kit.targetHash),
+    name: asString(kit['name']) ?? '(unnamed)',
+    path: asString(kit['path']),
+    source: asString(kit['source']),
+    sourceHash: asString(kit['sourceHash']),
+    targetHash: asString(kit['targetHash']),
   };
 }
 
