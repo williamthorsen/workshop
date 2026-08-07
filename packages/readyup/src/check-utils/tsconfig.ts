@@ -62,15 +62,16 @@ export function readTsconfigLanguageLevel(relativePath: string): TsconfigLanguag
  * `extends` entry overrides an earlier one.
  */
 function applyConfig(config: Record<string, unknown>, configPath: string, resolution: Resolution): void {
-  const compilerOptions = isRecord(config.compilerOptions) ? config.compilerOptions : {};
+  const compilerOptions = isRecord(config['compilerOptions']) ? config['compilerOptions'] : {};
   if (resolution.lib === undefined) {
-    resolution.lib = readLib(compilerOptions.lib);
+    resolution.lib = readLib(compilerOptions['lib']);
   }
   if (resolution.target === undefined) {
-    resolution.target = readTarget(compilerOptions.target);
+    resolution.target = readTarget(compilerOptions['target']);
   }
 
-  for (const specifier of readExtends(config.extends).toReversed()) {
+  const parentSpecifiers = readExtends(config['extends']).toReversed();
+  for (const specifier of parentSpecifiers) {
     visitParent(specifier, configPath, resolution);
   }
 }
@@ -163,11 +164,11 @@ function resolvePackageDefaultConfig(packageName: string, configDir: string): st
   if (manifest === undefined) return undefined;
   // An `exports` map is exhaustive, so it answers for the package or nothing does. A null map has no
   // entries to answer with, and TypeScript reads it as no map at all.
-  if ('exports' in manifest && manifest.exports !== null) {
+  if ('exports' in manifest && manifest['exports'] !== null) {
     return resolveThroughNodeResolver(packageName, configDir);
   }
 
-  const declared = manifest.tsconfig;
+  const declared = manifest['tsconfig'];
   return resolvePathSpecifier(typeof declared === 'string' ? declared : './tsconfig.json', packageRoot);
 }
 

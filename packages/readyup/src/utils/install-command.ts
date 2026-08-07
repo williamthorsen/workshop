@@ -78,7 +78,7 @@ function readDeclaredManager(packageJsonPath: string): string | undefined {
     return undefined;
   }
 
-  const declared = isRecord(parsed) ? parsed.packageManager : undefined;
+  const declared = isRecord(parsed) ? parsed['packageManager'] : undefined;
   return typeof declared === 'string' ? /^[a-z]+/.exec(declared)?.[0] : undefined;
 }
 

@@ -41,7 +41,7 @@ export function resolvePackageRoot(packageName: string, fromDir: string = proces
 export function readPackageVersion(packageRoot: string): string | undefined {
   try {
     const parsed: unknown = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
-    if (isRecord(parsed) && typeof parsed.version === 'string') return parsed.version;
+    if (isRecord(parsed) && typeof parsed['version'] === 'string') return parsed['version'];
   } catch {
     // A package whose manifest is unreadable is still a package; it simply goes unlabelled.
   }

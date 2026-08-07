@@ -39,6 +39,6 @@ describe('pickJsonPlugin compile pipeline', () => {
   it('produces valid ESM that exports the expected values', async () => {
     const mod: unknown = await import(outputPath);
     assert.ok(isRecord(mod));
-    expect(mod.metadata).toStrictEqual({ name: 'test-kit', version: '1.0.0' });
+    expect(mod['metadata']).toStrictEqual({ name: 'test-kit', version: '1.0.0' });
   });
 });

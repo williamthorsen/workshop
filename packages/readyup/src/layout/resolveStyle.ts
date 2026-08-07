@@ -103,7 +103,7 @@ function readStyleFlag(argv: string[]): string | undefined {
  * it. An explicit `CI=false` is honored as a denial, which is how the wider ecosystem reads it.
  */
 function detectStyle(env: Environment, isTty: boolean): Style {
-  const ci = env.CI;
+  const ci = env['CI'];
   if (ci !== undefined && ci !== '' && ci !== 'false') return 'plain';
   return isTty ? 'rich' : 'plain';
 }

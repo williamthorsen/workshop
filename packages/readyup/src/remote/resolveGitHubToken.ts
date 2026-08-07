@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
  * Returns `undefined` when neither source produces a token.
  */
 export function resolveGitHubToken(): string | undefined {
-  const envToken = process.env.GITHUB_TOKEN;
+  const envToken = process.env['GITHUB_TOKEN'];
   if (envToken !== undefined && envToken !== '') {
     return envToken;
   }

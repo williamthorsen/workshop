@@ -94,6 +94,6 @@ function listAvailableKits(dir: string, extension: string): string[] {
 
 /** Narrow `__readyupVersion` from an imported module namespace to a string, or undefined. */
 function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string | undefined {
-  const value = moduleRecord.__readyupVersion;
+  const value = moduleRecord['__readyupVersion'];
   return typeof value === 'string' ? value : undefined;
 }

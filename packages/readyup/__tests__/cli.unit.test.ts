@@ -855,7 +855,7 @@ describe(resolveKitSources, () => {
   // -- --from global --
 
   it('resolves --from global to home directory', () => {
-    const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '~';
+    const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
 
     expect(resolve({ fromValue: 'global' })).toStrictEqual([
       {
