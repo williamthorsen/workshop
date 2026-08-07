@@ -15,7 +15,7 @@ export interface TsconfigLanguageLevel {
   target: string | undefined;
   /** Config paths visited, entry file first, cwd-relative. */
   chain: string[];
-  /** `extends` references resolution could not follow: uninstalled packages, missing files, malformed configs. */
+  /** `extends` references resolution could not follow: specifiers that do not resolve, configs that do not parse. */
   unresolvedExtends: string[];
 }
 
@@ -116,14 +116,9 @@ function resolvePathSpecifier(specifier: string, baseDir: string): string | unde
   return undefined;
 }
 
-/**
- * Resolves a package specifier, which names either a subpath into a package or the package alone.
- *
- * The two forms take different instruments because `exports` governs a subpath but hides the package
- * directory a bare name has to reach.
- */
+/** Resolves a package specifier, which names either a subpath into a package or the package alone. */
 function resolvePackageSpecifier(specifier: string, configDir: string): string | undefined {
-  if (hasSubpath(specifier)) return resolvePackageSubpath(specifier, configDir);
+  if (hasSubpath(specifier)) return resolveThroughNodeResolver(specifier, configDir);
   return resolvePackageDefaultConfig(specifier, configDir);
 }
 
@@ -134,13 +129,13 @@ function hasSubpath(specifier: string): boolean {
 }
 
 /**
- * Resolves a package subpath through Node's resolver anchored at the extending config, so `exports`
- * governs which subpaths are reachable and a pnpm symlink answers with the directory the package occupies.
+ * Resolves a package specifier through Node's resolver anchored at the extending config, so `exports`
+ * governs what is reachable and a pnpm symlink answers with the directory the package occupies.
  *
  * Resolution runs under the `require` condition, which is the condition TypeScript resolves `extends`
- * under, so a subpath this reaches is a subpath `tsc` reaches.
+ * under, so a specifier this reaches is a specifier `tsc` reaches.
  */
-function resolvePackageSubpath(specifier: string, configDir: string): string | undefined {
+function resolveThroughNodeResolver(specifier: string, configDir: string): string | undefined {
   let resolved: string;
   try {
     // The anchor names a file that need not exist; only its directory takes part in resolution.
@@ -153,17 +148,19 @@ function resolvePackageSubpath(specifier: string, configDir: string): string | u
 }
 
 /**
- * Resolves a bare package name to the config the package declares, as TypeScript does: its `tsconfig`
- * field, else `tsconfig.json` in its root.
+ * Resolves a bare package name to the config the package declares, as TypeScript does: the `"."` entry of an
+ * `exports` map, else the manifest's `tsconfig` field, else `tsconfig.json` in the package root.
  *
- * A package declaring `exports` declines the form, because the map is exhaustive and names no default config.
+ * Reaching the last two takes readyup's own walk, because `exports` exists to hide the directory they address.
  */
 function resolvePackageDefaultConfig(packageName: string, configDir: string): string | undefined {
   const packageRoot = resolvePackageRoot(packageName, configDir);
   if (packageRoot === undefined) return undefined;
 
   const manifest = readJsonFile(resolve(packageRoot, 'package.json'));
-  if (manifest === undefined || 'exports' in manifest) return undefined;
+  if (manifest === undefined) return undefined;
+  // An `exports` map is exhaustive, so it answers for the package or nothing does.
+  if ('exports' in manifest) return resolveThroughNodeResolver(packageName, configDir);
 
   const declared = manifest.tsconfig;
   return resolvePathSpecifier(typeof declared === 'string' ? declared : './tsconfig.json', packageRoot);

@@ -104,7 +104,7 @@ function createTempDir(prefix: string): TempDir {
   function symlinkDir(relativePath: string, relativeTarget: string): string {
     const absolutePath = path.join(dir, relativePath);
     mkdirSync(path.dirname(absolutePath), { recursive: true });
-    // `junction` is ignored off Windows, where it links a directory without the elevation a symlink needs.
+    // On Windows a junction links a directory without the elevation a symlink needs; other platforms ignore the type.
     symlinkSync(path.join(dir, relativeTarget), absolutePath, 'junction');
     return absolutePath;
   }

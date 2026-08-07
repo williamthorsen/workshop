@@ -183,7 +183,22 @@ describe(readTsconfigLanguageLevel, () => {
     expect(result?.chain).toStrictEqual(['tsconfig.json', 'node_modules/field-base/configs/base.json']);
   });
 
-  it('reports a bare package name as unresolved when the package declares an exports map', () => {
+  it('resolves a bare package name through the "." entry of an exports map', () => {
+    installPackage('@scoped/base', {
+      'package.json': { name: '@scoped/base', exports: { '.': './tsconfig.json' } },
+      'tsconfig.json': { compilerOptions: { lib: ['ES2018'], target: 'ES2018' } },
+    });
+    temp.writeJson('tsconfig.json', { extends: '@scoped/base' });
+
+    expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
+      lib: ['es2018'],
+      target: 'es2018',
+      chain: ['tsconfig.json', 'node_modules/@scoped/base/tsconfig.json'],
+      unresolvedExtends: [],
+    });
+  });
+
+  it('reports a bare package name as unresolved when the exports map has no "." entry', () => {
     installPackage('@scoped/base', {
       'package.json': { name: '@scoped/base', exports: { './tsconfig.base.json': './tsconfig.base.json' } },
       // Present so the refusal is attributable to the exports map rather than to a missing file.
