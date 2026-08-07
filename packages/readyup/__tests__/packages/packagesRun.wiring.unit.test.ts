@@ -39,7 +39,7 @@ describe('--packages run path wiring', () => {
   });
 
   it('expands a configured package into entries carrying its name and version', () => {
-    installPackage('@acme/kits', ['drift', 'preflight'], '2.1.0');
+    installPackage('@acme/kits', ['drift', 'preflight'], { version: '2.1.0' });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
@@ -71,7 +71,7 @@ describe('--packages run path wiring', () => {
   });
 
   it('carries the package and version into the JSON report', async () => {
-    installPackage('@acme/kits', ['drift'], '2.1.0');
+    installPackage('@acme/kits', ['drift'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const exitCode = await runCommand({ kitEntries: entries, json: true });
@@ -82,7 +82,7 @@ describe('--packages run path wiring', () => {
   });
 
   it('omits the version from the report when the package declares none', async () => {
-    installPackage('@acme/kits', ['drift'], undefined);
+    installPackage('@acme/kits', ['drift']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     await runCommand({ kitEntries: entries, json: true });
@@ -93,7 +93,7 @@ describe('--packages run path wiring', () => {
   });
 
   it('names the readyup that compiled a package kit beside the package, not inside it', async () => {
-    installPackage('@acme/kits', ['drift'], '2.1.0', '0.19.2');
+    installPackage('@acme/kits', ['drift'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     await runCommand({ kitEntries: entries, json: true });
@@ -105,7 +105,7 @@ describe('--packages run path wiring', () => {
 
   // A lone dependency-provided kit is the common shape, and its package appears nowhere else on screen.
   it('heads a single package kit with the package and version in human output', async () => {
-    installPackage('@acme/kits', ['drift'], '2.1.0');
+    installPackage('@acme/kits', ['drift'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     await runCommand({ kitEntries: entries, json: false });
@@ -127,21 +127,27 @@ const baseArgs = {
   internal: false,
 };
 
-/** Installs a package publishing the named kits, each holding one passing check and an optional version stamp. */
-function installPackage(name: string, kits: string[], version: string | undefined, stamp?: string): void {
+/** Installs a package publishing the named kits, each holding one passing check. */
+function installPackage(name: string, kits: string[], options: InstallPackageOptions = {}): void {
+  const { readyupVersion, version } = options;
   const root = path.join(process.cwd(), 'node_modules', name);
   mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
   writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, ...(version !== undefined && { version }) }));
 
   for (const kit of kits) {
     const body = `export default { checklists: [{ name: '${kit}', checks: [{ name: 'ok', check: () => true }] }] };\n`;
-    const source = stamp === undefined ? body : `export const __readyupVersion = '${stamp}';\n${body}`;
-    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), source);
+    const stamp = readyupVersion === undefined ? '' : `export const __readyupVersion = '${readyupVersion}';\n`;
+    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), `${stamp}${body}`);
   }
   writeFileSync(
     path.join(root, '.readyup', 'manifest.json'),
     JSON.stringify({ version: 1, kits: kits.map((kit) => ({ name: kit })) }),
   );
+}
+
+interface InstallPackageOptions {
+  version?: string;
+  readyupVersion?: string;
 }
 
 // endregion | Helpers

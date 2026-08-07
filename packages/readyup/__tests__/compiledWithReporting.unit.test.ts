@@ -22,14 +22,7 @@ const temp = useTempDir({
 const io = useCapturedStdio();
 
 describe('compile-time readyup version in the run report', () => {
-  it('names the readyup a stamped bundle was built by', async () => {
-    await routeCommand(['stamped', '--json']);
-    const parsed: unknown = JSON.parse(io.stdout);
-
-    expect(parsed).toHaveProperty('kits.0.compiledWith', '0.19.2');
-  });
-
-  it('names it for a locally compiled kit, which no package published', async () => {
+  it('names the readyup a local bundle was built by, with no origin to nest it under', async () => {
     await routeCommand(['stamped', '--json']);
     const parsed: unknown = JSON.parse(io.stdout);
 
