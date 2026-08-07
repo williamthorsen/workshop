@@ -1,9 +1,11 @@
 import { readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 import { parse as parseJsonc } from 'jsonc-parser';
 
 import { isRecord } from '../isRecord.ts';
+import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 
 /** Effective language-level settings of a tsconfig, resolved through its `extends` chain. */
 export interface TsconfigLanguageLevel {
@@ -13,7 +15,7 @@ export interface TsconfigLanguageLevel {
   target: string | undefined;
   /** Config paths visited, entry file first, cwd-relative. */
   chain: string[];
-  /** `extends` references resolution could not follow: bare specifiers, missing files, malformed configs. */
+  /** `extends` references resolution could not follow: uninstalled packages, missing files, malformed configs. */
   unresolvedExtends: string[];
 }
 
@@ -28,14 +30,14 @@ interface Resolution {
 }
 
 /**
- * Reads a tsconfig's effective `lib` and `target`, resolving relative and array-form `extends`.
+ * Reads a tsconfig's effective `lib` and `target`, resolving `extends` as TypeScript does.
  * Returns undefined if the entry file is missing or unparseable; unresolvable parents are reported
  * in `unresolvedExtends` rather than treated as failures.
  */
 export function readTsconfigLanguageLevel(relativePath: string): TsconfigLanguageLevel | undefined {
   const cwd = process.cwd();
   const entryPath = resolve(cwd, relativePath);
-  const entryConfig = readTsconfigFile(entryPath);
+  const entryConfig = readJsonFile(entryPath);
   if (entryConfig === undefined) return undefined;
 
   const resolution: Resolution = {
@@ -84,7 +86,7 @@ function visitParent(specifier: string, configPath: string, resolution: Resoluti
   if (resolution.visited.has(parentPath)) return;
   resolution.visited.add(parentPath);
 
-  const parentConfig = readTsconfigFile(parentPath);
+  const parentConfig = readJsonFile(parentPath);
   if (parentConfig === undefined) {
     resolution.unresolvedExtends.push(specifier);
     return;
@@ -94,20 +96,81 @@ function visitParent(specifier: string, configPath: string, resolution: Resoluti
 }
 
 /**
- * Resolves a relative `extends` specifier against the extending config's directory, retrying with a
- * `.json` suffix as TypeScript does for `"./base"`. Bare package specifiers are not followed.
+ * Resolves an `extends` specifier as TypeScript does: a path specifier against the extending config's
+ * directory, and a package specifier through Node's resolver anchored there.
  */
 function resolveExtendsPath(specifier: string, configDir: string): string | undefined {
-  if (!specifier.startsWith('.') && !isAbsolute(specifier)) return undefined;
-  const candidate = resolve(configDir, specifier);
+  if (specifier.startsWith('.') || isAbsolute(specifier)) return resolvePathSpecifier(specifier, configDir);
+  return resolvePackageSpecifier(specifier, configDir);
+}
+
+/**
+ * Resolves a relative or absolute specifier against `baseDir`, retrying with a `.json` suffix as
+ * TypeScript does for `"./base"`.
+ */
+function resolvePathSpecifier(specifier: string, baseDir: string): string | undefined {
+  const candidate = resolve(baseDir, specifier);
   if (isFile(candidate)) return candidate;
   const withJsonSuffix = `${candidate}.json`;
   if (isFile(withJsonSuffix)) return withJsonSuffix;
   return undefined;
 }
 
-/** Reads and JSONC-parses a tsconfig. Returns undefined when the file is unreadable or is not an object. */
-function readTsconfigFile(absolutePath: string): Record<string, unknown> | undefined {
+/**
+ * Resolves a package specifier, which names either a subpath into a package or the package alone.
+ *
+ * The two forms take different instruments because `exports` governs a subpath but hides the package
+ * directory a bare name has to reach.
+ */
+function resolvePackageSpecifier(specifier: string, configDir: string): string | undefined {
+  if (hasSubpath(specifier)) return resolvePackageSubpath(specifier, configDir);
+  return resolvePackageDefaultConfig(specifier, configDir);
+}
+
+/** Reports whether a package specifier names a subpath, which a scoped name reaches only at its third segment. */
+function hasSubpath(specifier: string): boolean {
+  const segmentCount = specifier.split('/').length;
+  return segmentCount > (specifier.startsWith('@') ? 2 : 1);
+}
+
+/**
+ * Resolves a package subpath through Node's resolver anchored at the extending config, so `exports`
+ * governs which subpaths are reachable and a pnpm symlink answers with the directory the package occupies.
+ *
+ * Resolution runs under the `require` condition, which is the condition TypeScript resolves `extends`
+ * under, so a subpath this reaches is a subpath `tsc` reaches.
+ */
+function resolvePackageSubpath(specifier: string, configDir: string): string | undefined {
+  let resolved: string;
+  try {
+    // The anchor names a file that need not exist; only its directory takes part in resolution.
+    resolved = createRequire(resolve(configDir, 'tsconfig.json')).resolve(specifier);
+  } catch {
+    return undefined;
+  }
+  // A core module such as `"fs/promises"` answers with its own name rather than with a path.
+  return isAbsolute(resolved) ? resolved : undefined;
+}
+
+/**
+ * Resolves a bare package name to the config the package declares, as TypeScript does: its `tsconfig`
+ * field, else `tsconfig.json` in its root.
+ *
+ * A package declaring `exports` declines the form, because the map is exhaustive and names no default config.
+ */
+function resolvePackageDefaultConfig(packageName: string, configDir: string): string | undefined {
+  const packageRoot = resolvePackageRoot(packageName, configDir);
+  if (packageRoot === undefined) return undefined;
+
+  const manifest = readJsonFile(resolve(packageRoot, 'package.json'));
+  if (manifest === undefined || 'exports' in manifest) return undefined;
+
+  const declared = manifest.tsconfig;
+  return resolvePathSpecifier(typeof declared === 'string' ? declared : './tsconfig.json', packageRoot);
+}
+
+/** Reads and JSONC-parses a JSON file. Returns undefined when the file is unreadable or is not an object. */
+function readJsonFile(absolutePath: string): Record<string, unknown> | undefined {
   if (!isFile(absolutePath)) return undefined;
   let content: string;
   try {
