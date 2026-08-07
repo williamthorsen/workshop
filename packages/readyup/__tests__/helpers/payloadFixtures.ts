@@ -26,6 +26,7 @@ export const reportPayload = {
   kits: [
     {
       name: 'deploy',
+      compiledWith: '0.19.2',
       passed: false,
       counts: { passed: 2, errors: 1, warnings: 0, recommendations: 0, blocked: 1, optional: 0 },
       worstSeverity: 'error',

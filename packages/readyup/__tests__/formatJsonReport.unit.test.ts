@@ -193,6 +193,28 @@ describe(formatJsonReport, () => {
       expect(parsed).not.toHaveProperty('warnings');
       expect(parsed).toHaveProperty('counts.warnings', 0);
     });
+
+    it('names the readyup that compiled a kit on that kit\u{2019}s entry', () => {
+      const kits = [{ name: 'deploy', compiledWith: '0.19.2', entries: [{ name: 'preflight', report: makeReport() }] }];
+
+      const parsed: unknown = JSON.parse(formatReport(kits));
+
+      expect(parsed).toHaveProperty('kits.0.compiledWith', '0.19.2');
+    });
+
+    it('names the compiling readyup even where it matches the runner', () => {
+      const kits = [{ name: 'deploy', compiledWith: VERSION, entries: [{ name: 'preflight', report: makeReport() }] }];
+
+      const parsed: unknown = JSON.parse(formatReport(kits));
+
+      expect(parsed).toHaveProperty('kits.0.compiledWith', VERSION);
+    });
+
+    it('omits the compiling readyup for a kit that carries no stamp', () => {
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+
+      expect(parsed).not.toHaveProperty('kits.0.compiledWith');
+    });
   });
 
   describe('per-kit thresholds', () => {

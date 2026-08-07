@@ -87,11 +87,19 @@ export const KitOriginSchema = z
  * differ from the run level: `passed` is meaningless without the threshold it was decided against,
  * and an absent-means-inherit rule would send a consumer elsewhere in the document to read a
  * six-byte enum.
+ *
+ * `compiledWith` is the readyup that built this kit's bundle, read from the stamp the bundle
+ * exports. It is present whenever that stamp is, including when it equals the report's own
+ * `readyupVersion`, so its absence means the kit carries no stamp: a bundle compiled before the
+ * stamp existed, or a `--jit` run that loaded TypeScript source. `rdy verify` reports the same
+ * value as `rebuildCompiledWith` under a narrower rule, appearing only where it differs from the
+ * running readyup.
  */
 export const KitResultEntrySchema = z
   .object({
     name: z.string(),
     origin: KitOriginSchema.optional(),
+    compiledWith: z.string().optional(),
     passed: z.boolean(),
     counts: CountsSchema,
     worstSeverity: SeveritySchema.optional(),

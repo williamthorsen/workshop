@@ -30,6 +30,7 @@ interface ChecklistEntry {
 export interface KitResultInput {
   name: string;
   origin?: JsonKitOrigin;
+  compiledWith?: string;
   entries: ChecklistEntry[];
   failOn: Severity;
   reportOn: Severity;
@@ -135,6 +136,7 @@ function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit 
   const entry: JsonKitResultEntry = {
     name: input.name,
     ...(input.origin !== undefined && { origin: input.origin }),
+    ...(input.compiledWith !== undefined && { compiledWith: input.compiledWith }),
     passed: checklists.every((checklist) => checklist.passed),
     ...splitCounts(counts),
     failOn: input.failOn,
