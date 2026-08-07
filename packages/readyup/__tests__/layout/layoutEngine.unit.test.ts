@@ -441,11 +441,12 @@ function measureNameColumn(line: string): number {
   const match = /^(?<indent> *)(?<glyph>\P{White_Space})(?<pad> +)/u.exec(line);
   const groups = match?.groups;
   if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
+  const { glyph, indent, pad } = groups;
 
-  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === groups.glyph);
-  if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(groups.glyph)}`);
+  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === glyph);
+  if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(glyph)}`);
 
-  return (groups.indent?.length ?? 0) + token.width + (groups.pad?.length ?? 0);
+  return (indent?.length ?? 0) + token.width + (pad?.length ?? 0);
 }
 
 /** Returns a line's count of leading spaces, one per column. */

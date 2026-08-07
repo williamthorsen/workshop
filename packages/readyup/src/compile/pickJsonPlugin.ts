@@ -43,8 +43,7 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Arr
   }
 
   assert.ok(match.groups);
-  const relativePath = match.groups.relPath;
-  const rest = match.groups.rest;
+  const { relPath: relativePath, rest } = match.groups;
   assert.ok(relativePath !== undefined);
   assert.ok(rest !== undefined);
 
