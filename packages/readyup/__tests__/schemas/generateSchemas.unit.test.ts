@@ -20,29 +20,6 @@ import {
 
 const documents = new Map(buildSchemaDocuments().map(({ fileName, document }) => [fileName, document]));
 
-/** Look up a generated document by file name, failing loudly rather than returning undefined. */
-function documentFor(fileName: string): Record<string, unknown> {
-  const document = documents.get(fileName);
-  if (document === undefined) throw new Error(`No generated schema named ${fileName}`);
-  return document;
-}
-
-/** Read a nested object property, failing when the path does not lead to an object. */
-function objectAt(root: Record<string, unknown>, ...keys: string[]): Record<string, unknown> {
-  let current: unknown = root;
-  for (const key of keys) {
-    if (!isRecord(current)) throw new TypeError(`Expected an object at ${keys.join('.')}`);
-    current = current[key];
-  }
-  if (!isRecord(current)) throw new TypeError(`Expected an object at ${keys.join('.')}`);
-  return current;
-}
-
-/** Compile a generated document into a validator. */
-function validatorFor(fileName: string): ValidateFunction {
-  return new Ajv2020({ strict: true }).compile(documentFor(fileName));
-}
-
 describe('generated JSON Schemas', () => {
   it('emits one document per published payload', () => {
     expect(documents.keys().toArray()).toStrictEqual([
@@ -56,13 +33,13 @@ describe('generated JSON Schemas', () => {
 
   it('gives each document an $id matching its published location', () => {
     for (const [fileName, document] of documents) {
-      expect(document.$id).toBe(`${SCHEMA_BASE_URL}/${fileName}`);
+      expect(document).toMatchObject({ $id: `${SCHEMA_BASE_URL}/${fileName}` });
     }
   });
 
   it('declares the draft each document is written against', () => {
     for (const document of documents.values()) {
-      expect(document.$schema).toBe('https://json-schema.org/draft/2020-12/schema');
+      expect(document).toMatchObject({ $schema: 'https://json-schema.org/draft/2020-12/schema' });
     }
   });
 
@@ -70,7 +47,7 @@ describe('generated JSON Schemas', () => {
     const report = documentFor('report.v1.json');
 
     it('requires exactly the fields every report carries', () => {
-      expect(report.required).toStrictEqual([
+      expect(valueAt(report, 'required')).toStrictEqual([
         'schemaVersion',
         'readyupVersion',
         'passed',
@@ -82,21 +59,19 @@ describe('generated JSON Schemas', () => {
     });
 
     it('requires the effective thresholds on a kit that ran, where the top level leaves them optional', () => {
-      expect(objectAt(report, '$defs', 'KitResultEntry').required).toContain('failOn');
-      expect(objectAt(report, '$defs', 'KitResultEntry').required).toContain('reportOn');
+      expect(valueAt(report, '$defs', 'KitResultEntry', 'required')).toContain('failOn');
+      expect(valueAt(report, '$defs', 'KitResultEntry', 'required')).toContain('reportOn');
     });
 
     it('publishes the warning vocabulary as an open set that still names its known codes', () => {
-      const warningCode = objectAt(report, '$defs', 'WarningCode');
-
-      expect(warningCode.anyOf).toStrictEqual([
+      expect(valueAt(report, '$defs', 'WarningCode', 'anyOf')).toStrictEqual([
         { type: 'string', enum: ['source-stale', 'target-drift', 'version-skew'] },
         { type: 'string' },
       ]);
     });
 
     it('requires all six buckets of the counts object', () => {
-      expect(objectAt(report, '$defs', 'Counts').required).toStrictEqual([
+      expect(valueAt(report, '$defs', 'Counts', 'required')).toStrictEqual([
         'passed',
         'errors',
         'warnings',
@@ -107,11 +82,13 @@ describe('generated JSON Schemas', () => {
     });
 
     it('expresses the check tree as a self-reference rather than a fixed depth', () => {
-      expect(objectAt(report, '$defs', 'CheckEntry', 'properties', 'checks', 'items').$ref).toBe('#/$defs/CheckEntry');
+      expect(valueAt(report, '$defs', 'CheckEntry', 'properties', 'checks', 'items', '$ref')).toBe(
+        '#/$defs/CheckEntry',
+      );
     });
 
     it('offers both kit-entry shapes as alternatives', () => {
-      expect(objectAt(report, '$defs', 'KitEntry').anyOf).toStrictEqual([
+      expect(valueAt(report, '$defs', 'KitEntry', 'anyOf')).toStrictEqual([
         { $ref: '#/$defs/KitErrorEntry' },
         { $ref: '#/$defs/KitResultEntry' },
       ]);
@@ -128,7 +105,7 @@ describe('generated JSON Schemas', () => {
 
     it('publishes the hint as an optional field, which is what keeps the version at 1', () => {
       expect(objectAt(envelope, '$defs', 'ErrorBody', 'properties', 'hint')).toStrictEqual({ type: 'string' });
-      expect(objectAt(envelope, '$defs', 'ErrorBody').required).toStrictEqual(['code', 'message']);
+      expect(valueAt(envelope, '$defs', 'ErrorBody', 'required')).toStrictEqual(['code', 'message']);
     });
   });
 
@@ -185,3 +162,36 @@ describe('generated JSON Schemas', () => {
     });
   });
 });
+
+// region | Helpers
+
+/** Looks up a generated document by file name, failing loudly rather than returning undefined. */
+function documentFor(fileName: string): Record<string, unknown> {
+  const document = documents.get(fileName);
+  if (document === undefined) throw new Error(`No generated schema named ${fileName}`);
+  return document;
+}
+
+/** Reads a nested object property, failing when the path does not lead to an object. */
+function objectAt(root: Record<string, unknown>, ...keys: string[]): Record<string, unknown> {
+  const value = valueAt(root, ...keys);
+  if (!isRecord(value)) throw new TypeError(`Expected an object at ${keys.join('.')}`);
+  return value;
+}
+
+/** Compiles a generated document into a validator. */
+function validatorFor(fileName: string): ValidateFunction {
+  return new Ajv2020({ strict: true }).compile(documentFor(fileName));
+}
+
+/** Reads a nested value, failing when the path runs through anything but an object. */
+function valueAt(root: Record<string, unknown>, ...keys: string[]): unknown {
+  let current: unknown = root;
+  for (const key of keys) {
+    if (!isRecord(current)) throw new TypeError(`Expected an object at ${keys.join('.')}`);
+    current = current[key];
+  }
+  return current;
+}
+
+// endregion | Helpers
