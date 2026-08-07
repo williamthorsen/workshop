@@ -32,7 +32,7 @@
     "@williamthorsen/nmr": "0.27.0",
     "@williamthorsen/release-kit": "10.2.2",
     "@williamthorsen/strict-lint": "9.3.0",
-    "codeassembly": "0.5.0",
+    "codeassembly": "0.6.0",
     "esbuild": "0.28.1",
     "eslint": "10.8.0",
     "lefthook": "2.1.10",

@@ -39,8 +39,8 @@ importers:
         specifier: 9.3.0
         version: 9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       codeassembly:
-        specifier: 0.5.0
-        version: 0.5.0
+        specifier: 0.6.0
+        version: 0.6.0
       esbuild:
         specifier: 0.28.1
         version: 0.28.1
@@ -753,8 +753,8 @@ packages:
       eslint: '>=10'
       typescript: '>=5'
 
-  '@williamthorsen/kb@0.3.1':
-    resolution: {integrity: sha512-HvOUunM72c8uJczlei3NdukuzfrspC6T1WYoHM0VVWJ1/dnSCQVclqm8VmGaMmexhgU+57AJNOz78mfRBxctuw==}
+  '@williamthorsen/kb@0.4.0':
+    resolution: {integrity: sha512-i83eR3ip19Mknm2v76/RW2DThcPF3hT50nAsm0llq/FVKRt2fal3RoxGS4uNdvYPFCut8+0GK2kSR1qYNCd6qQ==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -960,12 +960,12 @@ packages:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
 
-  codeassembly-lifecycle@0.2.1:
-    resolution: {integrity: sha512-umSbWhKTpqDr0KdCq95VTFaKVDXg+WzOqTII3xBvrSEVGs0a2QS1IgpUz51ofz5M6/B7FWd5vAj/MtE4LyWHEw==}
+  codeassembly-lifecycle@0.3.0:
+    resolution: {integrity: sha512-po6xU8f1UqzjbO4walh99CiNWET1q7XDEACUSnl87AAeYqXxHoaLODMYqZziFM18BsPH7gEjzH6sagNSmPjyUg==}
     engines: {node: '>=24'}
 
-  codeassembly@0.5.0:
-    resolution: {integrity: sha512-I0pDSrd0RMouTYgFR+0mekSzv2q7NM9rlbjIkFNheeqV0uNGM5WNUCLFOPYWGeEGSyQCgogzCdqbnbxvHqfurA==}
+  codeassembly@0.6.0:
+    resolution: {integrity: sha512-+2InZF++hcV7jc/Sdyj/jEuGHoyMnp+jeg1T9/N785+2uCBGcgzWV4/03UHMjwvF6ojxc9wA87EVvWSZMF888Q==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3160,7 +3160,7 @@ snapshots:
       - supports-color
       - ts-declaration-location
 
-  '@williamthorsen/kb@0.3.1':
+  '@williamthorsen/kb@0.4.0':
     dependencies:
       picomatch: 4.0.5
       yaml: 2.9.0
@@ -3396,12 +3396,12 @@ snapshots:
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
 
-  codeassembly-lifecycle@0.2.1: {}
+  codeassembly-lifecycle@0.3.0: {}
 
-  codeassembly@0.5.0:
+  codeassembly@0.6.0:
     dependencies:
-      '@williamthorsen/kb': 0.3.1
-      codeassembly-lifecycle: 0.2.1
+      '@williamthorsen/kb': 0.4.0
+      codeassembly-lifecycle: 0.3.0
       ulid: 3.0.2
       yaml: 2.9.0
       zod: 4.4.3
