@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -10,6 +10,8 @@ export interface TempDir {
   readonly dir: string;
   /** Creates a directory-relative directory and its parents, and returns the absolute path. */
   mkdir(relativePath: string): string;
+  /** Links a directory-relative path to a directory-relative target, creating parents, and returns the link path. */
+  symlinkDir(relativePath: string, relativeTarget: string): string;
   /** Writes `contents` at a directory-relative path, creating parents, and returns the absolute path. */
   write(relativePath: string, contents: string | Uint8Array): string;
   /** Writes `value` as JSON at a directory-relative path, creating parents, and returns the absolute path. */
@@ -76,6 +78,7 @@ export function useTempDir(options: TempDirOptions): TempDir {
       return requireCurrent().dir;
     },
     mkdir: (relativePath) => requireCurrent().mkdir(relativePath),
+    symlinkDir: (relativePath, relativeTarget) => requireCurrent().symlinkDir(relativePath, relativeTarget),
     write: (relativePath, contents) => requireCurrent().write(relativePath, contents),
     writeJson: (relativePath, value) => requireCurrent().writeJson(relativePath, value),
   };
@@ -98,6 +101,14 @@ function createTempDir(prefix: string): TempDir {
     return absolutePath;
   }
 
+  function symlinkDir(relativePath: string, relativeTarget: string): string {
+    const absolutePath = path.join(dir, relativePath);
+    mkdirSync(path.dirname(absolutePath), { recursive: true });
+    // On Windows a junction links a directory without the elevation a symlink needs; other platforms ignore the type.
+    symlinkSync(path.join(dir, relativeTarget), absolutePath, 'junction');
+    return absolutePath;
+  }
+
   function write(relativePath: string, contents: string | Uint8Array): string {
     const absolutePath = path.join(dir, relativePath);
     mkdirSync(path.dirname(absolutePath), { recursive: true });
@@ -109,7 +120,7 @@ function createTempDir(prefix: string): TempDir {
     return write(relativePath, JSON.stringify(value));
   }
 
-  return { dir, mkdir, write, writeJson };
+  return { dir, mkdir, symlinkDir, write, writeJson };
 }
 
 /** Points the code under test at `dir`, returning the undo. */
