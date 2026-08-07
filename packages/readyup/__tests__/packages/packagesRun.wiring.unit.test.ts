@@ -92,6 +92,17 @@ describe('--packages run path wiring', () => {
     expect(report.kits[0]?.origin).not.toHaveProperty('version');
   });
 
+  it('names the readyup that compiled a package kit beside the package, not inside it', async () => {
+    installPackage('@acme/kits', ['drift'], '2.1.0', '0.19.2');
+    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+
+    await runCommand({ kitEntries: entries, json: true });
+
+    const report = ReportSchema.parse(JSON.parse(stdout.join('')));
+    expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { package: '@acme/kits' } });
+    expect(report.kits[0]?.origin).not.toHaveProperty('compiledWith');
+  });
+
   // A lone dependency-provided kit is the common shape, and its package appears nowhere else on screen.
   it('heads a single package kit with the package and version in human output', async () => {
     installPackage('@acme/kits', ['drift'], '2.1.0');
@@ -116,15 +127,16 @@ const baseArgs = {
   internal: false,
 };
 
-/** Installs a package publishing the named kits, each holding one passing check. */
-function installPackage(name: string, kits: string[], version: string | undefined): void {
+/** Installs a package publishing the named kits, each holding one passing check and an optional version stamp. */
+function installPackage(name: string, kits: string[], version: string | undefined, stamp?: string): void {
   const root = path.join(process.cwd(), 'node_modules', name);
   mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
   writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, ...(version !== undefined && { version }) }));
 
   for (const kit of kits) {
     const body = `export default { checklists: [{ name: '${kit}', checks: [{ name: 'ok', check: () => true }] }] };\n`;
-    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), body);
+    const source = stamp === undefined ? body : `export const __readyupVersion = '${stamp}';\n${body}`;
+    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), source);
   }
   writeFileSync(
     path.join(root, '.readyup', 'manifest.json'),
