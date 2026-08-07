@@ -27,8 +27,8 @@ importers:
         specifier: 1.6.24
         version: 1.6.24(@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.10)
       '@williamthorsen/eslint-config-typescript':
-        specifier: 8.5.0
-        version: 8.5.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: 8.6.0
+        version: 8.6.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
         specifier: 0.27.0
         version: 0.27.0(prettier@3.9.6)(typescript@6.0.3)(vitest@4.1.10)
@@ -36,8 +36,8 @@ importers:
         specifier: 10.2.2
         version: 10.2.2
       '@williamthorsen/strict-lint':
-        specifier: 9.3.0
-        version: 9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
+        specifier: 9.4.0
+        version: 9.4.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       codeassembly:
         specifier: 0.6.0
         version: 0.6.0
@@ -745,8 +745,8 @@ packages:
   '@vitest/utils@4.1.10':
     resolution: {integrity: sha512-fy9am/HWxbaGt/Sawrp90vt6Y6jQwf1RX77cz3uwoJwJVMli/e1IEwRPnMNJ7vKfPTwo0diXifkpPvwH9v7nGA==}
 
-  '@williamthorsen/eslint-config-typescript@8.5.0':
-    resolution: {integrity: sha512-ULTEZsVTezz90rtVEl8+nedGv0hXx01dKspJFzrkiEU6/x1lKOeNdTNA81pyMaihU2m92wnGjeccNPpLPG7gTA==}
+  '@williamthorsen/eslint-config-typescript@8.6.0':
+    resolution: {integrity: sha512-geiIbbvKbk3lj9Z7Z/y0J7liYSxD+uNHGfHS1gBXIk/M57rWfwKI8/wOc5aYrB7oAcHAeRqF+H4339TOGcCoYQ==}
     engines: {node: '>=24'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.59.1
@@ -781,8 +781,8 @@ packages:
     engines: {node: '>=24'}
     hasBin: true
 
-  '@williamthorsen/strict-lint@9.3.0':
-    resolution: {integrity: sha512-DEvD9YwAvIZNdOaO+6xKj7xcs7/jPrRHEjqZILxrm294tQK0VRqubm1wYK/XGzi1X2NCFI0U8OoQ4UmxvmTqrw==}
+  '@williamthorsen/strict-lint@9.4.0':
+    resolution: {integrity: sha512-KJ202aJBQHzskFgTrzEKpafxUf5RvTE2t1ZcewnwqWsQ/e1KPc0s/HyUOvZ02EE/wz/dIr7lZ9t/n+u9YW3ECA==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
@@ -3133,7 +3133,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@williamthorsen/eslint-config-typescript@8.5.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@williamthorsen/eslint-config-typescript@8.6.0(@typescript-eslint/parser@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@typescript-eslint/utils@8.65.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.7.2(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
       '@eslint/js': 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3189,7 +3189,7 @@ snapshots:
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@williamthorsen/strict-lint@9.3.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))':
+  '@williamthorsen/strict-lint@9.4.0(eslint@10.8.0(jiti@2.7.0)(supports-color@7.2.0))':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.2.1
       eslint: 10.8.0(jiti@2.7.0)(supports-color@7.2.0)
