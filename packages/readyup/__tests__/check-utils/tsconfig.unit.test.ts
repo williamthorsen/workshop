@@ -212,6 +212,21 @@ describe(readTsconfigLanguageLevel, () => {
     expect(result?.chain).toStrictEqual(['tsconfig.json', 'node_modules/both-base/declared.json']);
   });
 
+  it('reads past a null exports map to the config in the package root', () => {
+    installPackage('null-base', {
+      'package.json': { name: 'null-base', exports: null, main: './index.js' },
+      'tsconfig.json': { compilerOptions: { target: 'ES2016' } },
+    });
+    // A resolvable `main` stands in the way, so reaching the root config is what proves the map is read past.
+    temp.write('node_modules/null-base/index.js', 'module.exports = {};\n');
+    temp.writeJson('tsconfig.json', { extends: 'null-base' });
+
+    const result = readTsconfigLanguageLevel('tsconfig.json');
+
+    expect(result?.target).toBe('es2016');
+    expect(result?.chain).toStrictEqual(['tsconfig.json', 'node_modules/null-base/tsconfig.json']);
+  });
+
   it('reports a package whose entry point is not a config as unresolved', () => {
     installPackage('js-base', { 'package.json': { name: 'js-base', exports: { '.': './index.js' } } });
     // The parser recovers an empty record from JavaScript source, so only the resolver can reject this.

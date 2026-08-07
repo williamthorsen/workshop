@@ -150,8 +150,8 @@ function resolveThroughNodeResolver(specifier: string, configDir: string): strin
 }
 
 /**
- * Resolves a bare package name to the config the package declares, as TypeScript does: the `"."` entry of an
- * `exports` map, else the manifest's `tsconfig` field, else `tsconfig.json` in the package root.
+ * Resolves a bare package name to the config the package declares, as TypeScript does: the `"."` entry of a
+ * non-null `exports` map, else the manifest's `tsconfig` field, else `tsconfig.json` in the package root.
  *
  * Reaching the last two takes readyup's own walk, because `exports` exists to hide the directory they address.
  */
@@ -161,8 +161,11 @@ function resolvePackageDefaultConfig(packageName: string, configDir: string): st
 
   const manifest = readJsonFile(resolve(packageRoot, 'package.json'));
   if (manifest === undefined) return undefined;
-  // An `exports` map is exhaustive, so it answers for the package or nothing does.
-  if ('exports' in manifest) return resolveThroughNodeResolver(packageName, configDir);
+  // An `exports` map is exhaustive, so it answers for the package or nothing does. A null map has no
+  // entries to answer with, and TypeScript reads it as no map at all.
+  if ('exports' in manifest && manifest.exports !== null) {
+    return resolveThroughNodeResolver(packageName, configDir);
+  }
 
   const declared = manifest.tsconfig;
   return resolvePathSpecifier(typeof declared === 'string' ? declared : './tsconfig.json', packageRoot);
