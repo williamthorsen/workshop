@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { compileConfig } from '../../src/compile/compileConfig.ts';
+import type { RdyManifestKit } from '../../src/manifest/manifestSchema.ts';
 import { ManifestSchema } from '../../src/manifest/manifestSchema.ts';
 import type { JsonVerifyOutput } from '../../src/schemas/index.ts';
 import { VerifyOutputSchema } from '../../src/schemas/index.ts';
@@ -21,6 +22,9 @@ export const metadata = pickJson('./data.json', ['name', 'version']);
 
 export default { checklists: [] };
 `;
+
+/** A readyup old enough that no fixture here could have been compiled by it. */
+const PRIOR_VERSION = '0.19.2';
 
 /**
  * Exercises `--rebuild` against real esbuild, which is what the check is for: the inputs it catches
@@ -99,6 +103,20 @@ describe('verifyCommand --rebuild', () => {
     expect(readFileSync(path.join(tempDir, 'kit.js'), 'utf8')).toContain('1.0.0');
   });
 
+  it('fails a bundle stale only in its version stamp, which both recorded hashes still pass', async () => {
+    // A version bump moves neither the source nor the bundle, so the stamp and the hashes recorded for
+    // it go stale in agreement and keep matching. Only a recompile reads the version.
+    restampBundle(tempDir, PRIOR_VERSION);
+
+    const exitCode = await runVerify();
+
+    expect(exitCode).toBe(1);
+    expect(readPayload(stdoutSpy)).toMatchObject({
+      passed: false,
+      kits: [{ status: 'ok', sourceStatus: 'ok', rebuildStatus: 'mismatch', rebuildCompiledWith: PRIOR_VERSION }],
+    });
+  });
+
   it('fails a hand-edited bundle', async () => {
     writeFileSync(path.join(tempDir, 'kit.js'), 'export default { checklists: [] };\n');
 
@@ -111,7 +129,7 @@ describe('verifyCommand --rebuild', () => {
   });
 
   it('reports a passing rebuild beside a recorded hash that has gone wrong', async () => {
-    overrideTargetHash(path.join(tempDir, 'manifest.json'), 'deadbeef');
+    patchKits(path.join(tempDir, 'manifest.json'), { targetHash: 'deadbeef' });
 
     const exitCode = await runVerify();
 
@@ -142,9 +160,14 @@ describe('verifyCommand --rebuild', () => {
   });
 });
 
-/** Runs `verify` over the tempdir's manifest with the rebuild check and JSON output on. */
-async function runVerify(): Promise<number> {
-  return verifyCommand(['--manifest', 'manifest.json', '--rebuild', '--json']);
+// region | Helpers
+
+/** Applies a patch to every kit the manifest records. */
+function patchKits(manifestPath: string, patch: Partial<RdyManifestKit>): void {
+  const stored: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const manifest = ManifestSchema.parse(stored);
+  const kits = manifest.kits.map((kit) => ({ ...kit, ...patch }));
+  writeFileSync(manifestPath, JSON.stringify({ ...manifest, kits }));
 }
 
 /**
@@ -158,10 +181,26 @@ function readPayload(stdoutSpy: MockInstance): JsonVerifyOutput {
   return VerifyOutputSchema.parse(emitted);
 }
 
-/** Rewrites every kit's recorded `targetHash`, standing in for a record that has gone wrong. */
-function overrideTargetHash(manifestPath: string, targetHash: string): void {
-  const stored: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const manifest = ManifestSchema.parse(stored);
-  const kits = manifest.kits.map((kit) => ({ ...kit, targetHash }));
-  writeFileSync(manifestPath, JSON.stringify({ ...manifest, kits }));
+/**
+ * Rewrites the bundle's version stamp and re-records the manifest against the restamped bytes.
+ *
+ * The stamp, the recorded `targetHash`, and the recorded `readyupVersion` all name the earlier
+ * readyup, which is the state a version bump leaves behind.
+ */
+function restampBundle(tempDir: string, version: string): void {
+  const bundlePath = path.join(tempDir, 'kit.js');
+  const restamped = readFileSync(bundlePath, 'utf8').replace(
+    /__readyupVersion = "[^"]*"/,
+    () => `__readyupVersion = ${JSON.stringify(version)}`,
+  );
+  writeFileSync(bundlePath, restamped);
+
+  patchKits(path.join(tempDir, 'manifest.json'), { readyupVersion: version, targetHash: hashFile(bundlePath) });
 }
+
+/** Runs `verify` over the tempdir's manifest with the rebuild check and JSON output on. */
+async function runVerify(): Promise<number> {
+  return verifyCommand(['--manifest', 'manifest.json', '--rebuild', '--json']);
+}
+
+// endregion | Helpers

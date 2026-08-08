@@ -3,7 +3,7 @@ import { defineConfig } from '@williamthorsen/nmr/config';
 /** nmr configuration for this repo. */
 export default defineConfig({
   devBin: {
-    // Run the readyup bin from TypeScript source so `build:post` needs no prior build.
+    // Run the readyup bin from TypeScript source so the root's `rdy` hooks need no prior build.
     rdy: 'node packages/readyup/src/bin/rdy.ts',
   },
   rootScripts: {
@@ -11,5 +11,7 @@ export default defineConfig({
     // Checks are cwd-relative, so the kit has to run from the package it audits. A root
     // `rdy run --from npm:readyup publishing` would audit the repo root instead.
     'ci:post': 'pnpm --filter readyup run verify:kits',
+    // `build:post` recompiles every kit, so a committed bundle's freshness is observable only before the build.
+    'ci:pre': 'rdy verify --rebuild',
   },
 });
