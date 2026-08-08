@@ -8,6 +8,7 @@ import { kitLoadError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
+import type { KitProvenance } from './KitProvenance.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
 import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine.ts';
@@ -46,18 +47,6 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 
 /** Discriminated union describing how to locate the rdy kit. */
 export type KitSource = { path: string } | { url: string };
-
-/**
- * Where a kit came from, absent only for a kit resolved from the local kits directory.
- *
- * Three kinds where `--from` accepts six: the six collapse onto three roles a heading can name, and a
- * distinction no reader ever sees is one nothing should carry. A source kind added later joins this
- * union and the branch that renders it.
- */
-export type KitProvenance =
-  | { kind: 'directory'; label: string }
-  | { kind: 'package'; packageName: string; version: string | undefined }
-  | { kind: 'remote'; label: string };
 
 /** A resolved kit entry with its source and checklist filter. */
 export interface ResolvedKitEntry {

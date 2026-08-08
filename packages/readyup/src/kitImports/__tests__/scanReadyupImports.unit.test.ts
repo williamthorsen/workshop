@@ -114,7 +114,7 @@ describe(scanReadyupImports, () => {
   });
 
   it('throws for source it cannot parse', async () => {
-    await expect(scanReadyupImports('import { from "readyup";', 'broken.js')).rejects.toThrow();
+    await expect(scanReadyupImports('import { from "readyup";', 'broken.js')).rejects.toBeInstanceOf(Error);
   });
 
   it('binds only names the runner exports, across a real compiled kit', async () => {

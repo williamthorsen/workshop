@@ -24,5 +24,5 @@ export function listRunnerExports(specifier: string): ReadonlySet<string> | unde
 
 /** Lists every `readyup` specifier whose exports the runner can account for. */
 export function listRunnerSpecifiers(): string[] {
-  return [...RUNNER_EXPORTS.keys()];
+  return RUNNER_EXPORTS.keys().toArray();
 }
