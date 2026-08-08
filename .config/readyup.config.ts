@@ -7,6 +7,6 @@ export default defineRdyConfig({
   internal: {
     dir: 'internal',
   },
-  // The checks in these packages will be run by `rdy run --packages`.
+  // `rdy run --packages` runs the `default` kit of each of these packages.
   packages: ['@williamthorsen/nmr', '@williamthorsen/release-kit', 'v11y-check'],
 });
