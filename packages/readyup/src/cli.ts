@@ -41,8 +41,6 @@ import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
-import { VERSION } from './version.ts';
-import { compareVersionsForSkew } from './versionSkew/compareVersionsForSkew.ts';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
@@ -607,26 +605,6 @@ function toUnresolvableImportsError(error: UnresolvableKitImportsError, entry: R
   return kitLoadError(message, { cause: error, hint });
 }
 
-/**
- * Emit a directional, advisory stderr warning when a kit's compile-time readyup version skews
- * from the runner's version above the leftmost-non-zero boundary.
- *
- * Silent when the compile-time version is absent (older kit, third-party `--url` source, or
- * uncompiled `.ts` source via `--jit`) and when the comparator returns no-skew.
- *
- * The stderr line is written in both modes; the returned entry is what JSON mode captures into the
- * report, so a consumer that owns only stdout still learns the run was advised of something.
- */
-function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): RaisedWarning | undefined {
-  if (compileTimeVersion === undefined) return undefined;
-  const result = compareVersionsForSkew(compileTimeVersion, VERSION);
-  if (result.kind === 'no-skew') return undefined;
-  const remedy = result.direction === 'runner-newer' ? 'Run `rdy compile` to refresh.' : 'Upgrade readyup to match.';
-  const message = `kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}.`;
-  process.stderr.write(`Warning: ${message} ${remedy}\n`);
-  return { code: 'version-skew', message, remedy };
-}
-
 /** The manifest an invocation checks its kits against, read once and shared by every kit in the run. */
 interface ManifestTracking {
   manifest: RdyManifest;
@@ -764,8 +742,6 @@ async function runMultiKitJsonMode(
     try {
       const { kit, compileTimeVersion } = await loadKit(entry, isJit);
 
-      const warning = warnOnVersionSkew(entry.name, compileTimeVersion);
-      if (warning !== undefined) warnings.push(warning);
       warnings.push(...warnOnKitStaleness(entry.name, entry.source, tracking));
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
@@ -839,9 +815,8 @@ async function runMultiKitHumanMode(
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, isJit);
+      const { kit } = await loadKit(entry, isJit);
 
-      warnOnVersionSkew(entry.name, compileTimeVersion);
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
       const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, {

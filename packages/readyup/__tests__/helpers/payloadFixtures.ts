@@ -22,7 +22,7 @@ export const reportPayload = {
   reportOn: 'recommend',
   detail: 'full',
   durationMs: 42,
-  warnings: [{ code: 'version-skew', message: 'kit is stale', remedy: 'Run `rdy compile` to refresh.' }],
+  warnings: [{ code: 'source-stale', message: 'kit is stale', remedy: 'Run `rdy compile` to refresh.' }],
   kits: [
     {
       name: 'deploy',

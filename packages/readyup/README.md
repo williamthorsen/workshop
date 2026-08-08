@@ -564,13 +564,28 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 
 `rdy run` compares the kits it is about to run against `.readyup/manifest.json` and says so when they disagree. Warnings go to stderr in both modes and appear under `warnings` in JSON; none affects the exit code.
 
-| Code           | Raised when                                                                |
-| -------------- | -------------------------------------------------------------------------- |
-| `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it   |
-| `target-drift` | The compiled bundle no longer matches the manifest's recorded hash         |
-| `version-skew` | The kit was compiled against a ReadyUp version differing from the runner's |
+| Code           | Raised when                                                              |
+| -------------- | ------------------------------------------------------------------------ |
+| `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it |
+| `target-drift` | The compiled bundle no longer matches the manifest's recorded hash       |
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes, or when a file cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
+
+### Kit import compatibility
+
+A compiled kit leaves its `readyup` imports unbundled, so it binds whichever readyup runs it rather than the one that built it. Before running a bundle, `rdy run` reads the `readyup` symbols it imports and compares them against what the running readyup exports.
+
+A kit importing a symbol, or a `readyup` subpath, the runner does not export does not run: the failure is a `kit-load` error naming every missing symbol, the kit, and the publishing package where the kit has one, and it exits `2`. Unlike the advisory warnings above, this check is not manifest-derived and applies wherever the kit came from, `--url`, `--from`, and `--packages` included. `--jit` runs load TypeScript source rather than a bundle, and are unaffected.
+
+The remedy follows where the kit is maintained:
+
+| Kit source                     | Remedy                                                  |
+| ------------------------------ | ------------------------------------------------------- |
+| This project's `.readyup/kits` | Run `rdy compile` to rebuild it                         |
+| An installed package           | Upgrade the package to a release built for this readyup |
+| A URL or remote repository     | Ask the kit's publisher to recompile it                 |
+
+An import naming no symbol the runner could be asked for -- a namespace import, a default import, a dynamic import -- is left unchecked.
 
 ### Exit codes
 
