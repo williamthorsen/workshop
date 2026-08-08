@@ -739,6 +739,7 @@ An error body may also carry `hint`, one action that would clear the failure:
   "kits": [
     {
       "name": "deploy",
+      "compiledWith": "0.21.0",
       "passed": false,
       "counts": {},
       "worstSeverity": "error",
@@ -755,6 +756,7 @@ An error body may also carry `hint`, one action that would clear the failure:
 - **`counts`** holds the six tallies at report, kit, and checklist level, nested so count names and verdict names share no namespace.
 - **`worstSeverity`** is derived verdict data, omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear at the top level only when the corresponding flag was passed, and on every kit that ran as the value that governed it. See [thresholds](#thresholds) for how each resolves.
+- **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit that ran whose bundle carries a compile-time stamp, including where that stamp matches the report's own `readyupVersion`, and is absent for a bundle compiled before the stamp existed or for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](#verifying-by-recompiling) reports the same value under a narrower rule, appearing only where it disagrees with the running readyup: that field explains a mismatch, this one records what ran.
 - **`warnings`** carries any advisory as `{ code, message, remedy? }`, absent when none was raised.
 
 Payloads are slim by construction: a field carrying nothing is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks.

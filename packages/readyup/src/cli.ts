@@ -774,11 +774,14 @@ async function runMultiKitJsonMode(
       kitInputs.push({
         name: entry.name,
         ...toJsonOriginField(entry.provenance),
+        ...(compileTimeVersion !== undefined && { compiledWith: compileTimeVersion }),
         entries,
         failOn: thresholds.failOn,
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
+      // An entry built here carries no `compiledWith`: a kit that produced no results has nothing
+      // for a compile-time version to explain.
       const { code, hint, message } = toRdyError(error);
       kitInputs.push({
         name: entry.name,

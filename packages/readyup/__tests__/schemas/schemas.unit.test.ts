@@ -59,6 +59,15 @@ describe('JSON payload schemas', () => {
       expect(parsed.kits[1]?.project).toBe('packages/ui');
       expect(parsed.kits[1]?.origin).toBeUndefined();
     });
+
+    it('accepts a kit that names no compile-time readyup, at the same schema version', () => {
+      const kit = reportPayload.kits[0];
+      const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== 'compiledWith'));
+
+      expect(kit).toHaveProperty('compiledWith');
+      expect(ReportSchema.parse(reportPayload).schemaVersion).toBe(1);
+      expect(ReportSchema.parse({ ...reportPayload, kits: [stripped] }).schemaVersion).toBe(1);
+    });
   });
 
   describe('required fields', () => {
