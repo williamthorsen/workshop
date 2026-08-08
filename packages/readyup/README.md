@@ -177,7 +177,7 @@ Repo-level settings live in `.config/readyup.config.ts`.
 | `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                  |
 | `internal.dir`    | `.`             | Directory holding internal sources, relative to the kits root |
 | `internal.infix`  | none            | Filename segment marking a file as internal                   |
-| `packages`        | none            | Packages whose published kits `rdy run --packages` runs       |
+| `packages`        | none            | Packages `rdy run --packages` runs a published kit from       |
 
 See [internal kits](#internal-kits) for what the `internal` keys select, and [package-hosted kits](#package-hosted-kits) for `packages`.
 
@@ -439,20 +439,20 @@ rdy run -- "--odd-kit-name"
 
 ### Run options
 
-| Option                        | Description                                           |
-| ----------------------------- | ----------------------------------------------------- |
-| `--from <source>`             | Kit source (see [kit sources](#kit-sources))          |
-| `--file, -f <path>`           | Path to a local kit file                              |
-| `--url <url>`                 | Fetch kit from a URL                                  |
-| `--packages`                  | Run every kit the config's `packages` list publishes  |
-| `--jit`                       | Run from TypeScript source instead of compiled JS     |
-| `--internal`                  | Use the internal kit directory and infix from config  |
-| `--checklists, -c <name,...>` | Filter checklists within the selected kit             |
-| `--json`                      | Output results as JSON                                |
-| `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`) |
-| `--fail-on <severity>`        | Fail on this severity or above                        |
-| `--report-on <severity>`      | Show this severity or above                           |
-| `--quiet`                     | Hide passed checks; incompatible with `--json`        |
+| Option                        | Description                                                           |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `--from <source>`             | Kit source (see [kit sources](#kit-sources))                          |
+| `--file, -f <path>`           | Path to a local kit file                                              |
+| `--url <url>`                 | Fetch kit from a URL                                                  |
+| `--packages [<name>]`         | Run a kit the config's `packages` list publishes (default: `default`) |
+| `--jit`                       | Run from TypeScript source instead of compiled JS                     |
+| `--internal`                  | Use the internal kit directory and infix from config                  |
+| `--checklists, -c <name,...>` | Filter checklists within the selected kit                             |
+| `--json`                      | Output results as JSON                                                |
+| `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`)                 |
+| `--fail-on <severity>`        | Fail on this severity or above                                        |
+| `--report-on <severity>`      | Show this severity or above                                           |
+| `--quiet`                     | Hide passed checks; incompatible with `--json`                        |
 
 `--quiet` filters by status where `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
 
@@ -624,7 +624,7 @@ Kits from configured packages get their own section, each named package-first so
 
 ```
 ── Packages
-   rdy run --packages
+   rdy run --packages [<name>]
 📦 @acme/eslint-config@2.1.0 / 📓 drift
 
 ── Available
@@ -854,7 +854,7 @@ rdy run --from npm:@acme/eslint-config drift # a kit it publishes, by name
 rdy list --from npm:@acme/eslint-config      # what it publishes
 ```
 
-Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is what runs every kit a package publishes.
+Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is the same selection, made across several packages at once.
 
 Naming several packages once is a config list, because running code a dependency ships is an opt-in worth writing down:
 
@@ -865,10 +865,17 @@ export default defineRdyConfig({
 ```
 
 ```bash
-rdy run --packages
+rdy run --packages       # the kit named `default`, from every listed package
+rdy run --packages drift # the kit named `drift`, from every listed package publishing it
 ```
 
-`rdy run --packages` runs every kit each listed package publishes and reports each with the package and version it came from. A listed package that is absent, or that publishes no kits, fails the run and names itself; `rdy list` warns instead and reports the rest, then names any installed dependency publishing kits the list omits.
+The kit name is the selector, exactly as it is for every other source, and each result carries the package and version it came from. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, leaving the checklists no single one to select within.
+
+A listed package that does not publish the requested kit is skipped. `rdy run --packages` asks whether this project satisfies what its listed packages require of it, and a package publishing no `default` requires nothing of it: that package contributes no kit, and a run that selects nothing reports as much and passes. The named form differs in one respect, because naming a kit asks for something specific: a name no listed package publishes is a usage error rather than an empty run.
+
+That rule is how an author holds a kit back from a routine `--packages` run: publish it under a name other than `default`. It stays listed by `rdy list` and reachable by name, both here and through `--from npm:<package>`. Nothing is needed from the consumer's config, and nothing needs republishing.
+
+A listed package that is absent, or that publishes no kits at all, fails the run and names itself; `rdy list` warns instead and reports the rest, then names any installed dependency publishing kits the list omits.
 
 Two limitations follow from resolving through `node_modules`. A package must be a **direct** dependency: a strict pnpm layout links nothing else into the project, so a transitive package is genuinely unreachable. And Yarn Plug'n'Play keeps no `node_modules` on disk, so package sources do not resolve under it.
 
@@ -909,7 +916,7 @@ A package declaring no `files` field passes the first check, because everything 
 
 Both kits read the convention layout: `.readyup/manifest.json` and bundles directly under `.readyup/kits`. A project that compiles to a different `outDir` still gets its recorded kits checked for freshness, since those paths come from the manifest, but the checks that count compiled bundles report nothing to do. For a published package the layout is not a convention but a contract, which is what the last `packaging` check enforces: `--from npm:` composes a kit's path from its name, so a bundle recorded anywhere else is listed and then fails to load.
 
-Adding readyup to `packages` in the config is what makes `rdy run --packages` include the `default` kit. Until it is listed there, `rdy list` names readyup among the dependencies that publish kits.
+Adding readyup to `packages` in the config is what makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, by the rule that holds back every kit not named `default`; reach it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name. Until readyup is listed, `rdy list` names it among the dependencies that publish kits.
 
 ### Internal kits
 

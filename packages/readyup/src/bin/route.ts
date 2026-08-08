@@ -60,7 +60,7 @@ Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages                         Run every kit the config's "packages" list publishes
+  --packages [<name>]                Run a kit the config's "packages" list publishes (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists within the selected kit
@@ -101,8 +101,9 @@ Kit source (mutually exclusive):
                                      npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages                         Run every kit published by the packages the config's
-                                     "packages" list names
+  --packages [<name>]                Run a kit from every package the config's "packages"
+                                     list names that publishes it, skipping those that do
+                                     not; without a name, the kit named "default"
 
 Mode flags (incompatible with --from, --file, --url, --packages):
   --jit                              Run from TypeScript source instead of compiled JS

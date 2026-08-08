@@ -321,15 +321,22 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['--packages', '--from', '/path'])).toThrow('Cannot combine --from, --packages flags');
   });
 
-  it('throws when --packages is combined with positional kit arguments', () => {
-    expect(() => parseRunArgs(['--packages', 'deploy'])).toThrow(
-      '--packages cannot be combined with positional kit arguments',
-    );
+  // The positional selects which kit runs in every configured package, so it narrows rather than competes.
+  it('accepts a positional kit name alongside --packages', () => {
+    expect(parseRunArgs(['--packages', 'deploy']).kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
   });
 
   it('throws when --packages is combined with --checklists', () => {
     expect(() => parseRunArgs(['--packages', '--checklists', 'build'])).toThrow(
-      '--packages cannot be combined with --checklists',
+      '--packages cannot be combined with --checklists; several configured packages may publish the named kit',
+    );
+  });
+
+  // Unreachable while positionals were banned outright, and silently dropped if left unrejected.
+  it('throws when --packages is combined with an inline checklist filter', () => {
+    expect(() => parseRunArgs(['--packages', 'deploy:build'])).toThrow(
+      '--packages cannot be combined with the ":" checklist filter on "deploy"; ' +
+        'several configured packages may publish the named kit',
     );
   });
 

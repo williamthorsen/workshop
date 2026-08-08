@@ -17,7 +17,7 @@ import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
-import { expandConfiguredPackages } from './packages/expandConfiguredPackages.ts';
+import { expandConfiguredPackages, type PackageKit } from './packages/expandConfiguredPackages.ts';
 import { type FromSource, type NpmSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './remote/loadRemoteKit.ts';
@@ -41,6 +41,9 @@ import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
+
+/** The kit every source runs when the invocation names none. */
+const DEFAULT_KIT_NAME = 'default';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
@@ -126,6 +129,10 @@ function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit:
 /** Guidance shown for every spelling of `--checklists` that names no checklist. */
 const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
 
+/** Why checklist selection is rejected under `--packages`, whichever spelling expressed it. */
+const PACKAGES_CHECKLISTS_REASON =
+  'several configured packages may publish the named kit, so the checklists select within no single one';
+
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
@@ -161,13 +168,18 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
 
-  // `--packages` runs every kit its configured packages publish, so nothing it could be paired with
-  // narrows that set: a positional or a `--checklists` filter names kits in this project instead.
-  if (parsed.packages && kitSpecifiers.length > 0) {
-    throw usageError('--packages cannot be combined with positional kit arguments');
-  }
+  // A positional names the kit to select in every configured package, so it narrows the run. Checklist
+  // selection cannot: it names checklists within one kit, and `--packages` may reach several packages'
+  // copies of the name. Both spellings of that selection are rejected for the same reason.
   if (parsed.packages && parsed.checklists !== undefined) {
-    throw usageError('--packages cannot be combined with --checklists; it runs every kit each package publishes');
+    throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
+  }
+  const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
+  if (parsed.packages && filteredSpec !== undefined) {
+    throw usageError(
+      `--packages cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
+        PACKAGES_CHECKLISTS_REASON,
+    );
   }
 
   const sourceType = sourceFlags[0];
@@ -362,10 +374,15 @@ export function resolveKitSources({
   // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
+  // Fill the default before the `--packages` branch reads it, so a bare invocation is structurally
+  // `--packages default` and the two forms cannot select different kits.
+  const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
+
   if (packages === true) {
-    return resolveConfiguredPackages(configuredPackages ?? [], extension);
+    const requestedNames = declaredSpecs.map((spec) => spec.kitName);
+    return resolveConfiguredPackages(configuredPackages ?? [], requestedNames, extension);
   }
-  const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
+
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
   // invocation where "one kit" is ambiguous, so this map never covers more than a single spec.
   const specs = checklists === undefined ? declaredSpecs : declaredSpecs.map((spec) => ({ ...spec, checklists }));
@@ -472,23 +489,51 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
 }
 
 /**
- * Resolves every kit the configured packages publish into run entries.
+ * Resolves the requested kits, drawn from what the configured packages publish, into run entries.
  *
- * An empty list is a usage error rather than an empty run: `--packages` with nothing configured would
- * otherwise report a clean pass having checked nothing, which is the one outcome a verification tool
- * must never invent.
+ * An empty `packages` list is a usage error: the flag names a config key the config does not have, so
+ * the invocation asks for something that cannot be answered. Configured packages that publish no
+ * requested kit are a different case and run nothing, which is the honest answer to "does this project
+ * satisfy what these packages require of it" when they require nothing.
  */
-function resolveConfiguredPackages(configuredPackages: string[], extension: string): ResolvedKitEntry[] {
+function resolveConfiguredPackages(
+  configuredPackages: string[],
+  requestedNames: string[],
+  extension: string,
+): ResolvedKitEntry[] {
   if (configuredPackages.length === 0) {
     throw usageError('--packages requires a "packages" list in the readyup config; none is configured.');
   }
 
-  return expandConfiguredPackages(configuredPackages, extension).map((kit) => ({
+  const published = expandConfiguredPackages(configuredPackages, extension);
+
+  return selectRequestedKits(published, requestedNames).map((kit) => ({
     name: kit.kitName,
     source: { path: kit.path },
     checklists: [],
     provenance: { kind: 'package', packageName: kit.packageName, version: kit.version },
   }));
+}
+
+/**
+ * Narrows what the configured packages publish to the requested kits, name-major.
+ *
+ * A configured package not publishing a requested kit is skipped rather than reported: `--packages`
+ * asks whether this project satisfies what its configured packages require of it, and a package
+ * requiring nothing under that name has nothing to answer for.
+ *
+ * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
+ * order `rdy run a b` runs them in against a single source.
+ */
+function selectRequestedKits(published: PackageKit[], requestedNames: string[]): PackageKit[] {
+  return requestedNames.flatMap((kitName) => {
+    const selected = published.filter((kit) => kit.kitName === kitName);
+    if (selected.length === 0 && kitName !== DEFAULT_KIT_NAME) {
+      const available = [...new Set(published.map((kit) => kit.kitName))].join(', ');
+      throw usageError(`No configured package publishes a kit named "${kitName}"; available kits: ${available}.`);
+    }
+    return selected;
+  });
 }
 
 /**
@@ -805,6 +850,13 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
+  // Say so when a run selected nothing, which `--packages` reaches when no configured package publishes
+  // the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
+  if (kitEntries.length === 0) {
+    process.stdout.write('No kits to run.\n');
+    return EXIT_OK;
+  }
+
   const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
   const writeBlock = createBlockWriter();
