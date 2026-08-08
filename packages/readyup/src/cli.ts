@@ -129,6 +129,10 @@ function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit:
 /** Guidance shown for every spelling of `--checklists` that names no checklist. */
 const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
 
+/** Why checklist selection is rejected under `--packages`, whichever spelling expressed it. */
+const PACKAGES_CHECKLISTS_REASON =
+  'several configured packages may publish the named kit, so the checklists select within no single one';
+
 /** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
@@ -164,13 +168,18 @@ function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
   }
 
-  // `--packages` runs every kit its configured packages publish, so nothing it could be paired with
-  // narrows that set: a positional or a `--checklists` filter names kits in this project instead.
-  if (parsed.packages && kitSpecifiers.length > 0) {
-    throw usageError('--packages cannot be combined with positional kit arguments');
-  }
+  // A positional names the kit to select in every configured package, so it narrows the run. Checklist
+  // selection cannot: it names checklists within one kit, and `--packages` may reach several packages'
+  // copies of the name. Both spellings of that selection are rejected for the same reason.
   if (parsed.packages && parsed.checklists !== undefined) {
-    throw usageError('--packages cannot be combined with --checklists; it runs every kit each package publishes');
+    throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
+  }
+  const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
+  if (parsed.packages && filteredSpec !== undefined) {
+    throw usageError(
+      `--packages cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
+        PACKAGES_CHECKLISTS_REASON,
+    );
   }
 
   const sourceType = sourceFlags[0];
