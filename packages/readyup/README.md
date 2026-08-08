@@ -314,7 +314,7 @@ It produces:
          react resolves to both 18.3.1 and 19.0.0
    ⚪ Native modules are rebuilt · no native dependencies in this workspace
 ──
-🔴 3 passed | 1 error | 1 skipped (0ms)
+🔴 | 1 error, 3 passed, 1 skipped (0ms)
 
 ── Fixes
 💊 No dependency has duplicated majors
@@ -489,7 +489,7 @@ A check line reads `token name <separator> detail [progress] (duration)`. The se
 
 **A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. Passes and skips keep their detail inline.
 
-Tail and total lines lead with the run's worst severity, then report counts in a fixed order -- passed, errors, warnings, recommendations, blocked, skipped -- omitting any that is zero.
+Tail and total lines lead with the run's worst severity, then report counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero. Commas part the counts from one another, and a `|` parts the verdict from the list wherever no label already does, so the verdict is never read as a label on the count beside it.
 
 **Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies; `Fixes` and each command's own heading stay at `──`, and a bare `──` closes a block above its count line.
 
@@ -500,7 +500,7 @@ Blank lines part blocks rather than decorate headings: none opens a command's ou
 🟢 Types check cleanly (343ms)
 🟢 Bundle is within budget · 42kB of a 50kB budget [84%]
 ──
-🟢 2 passed (343ms)
+🟢 | 2 passed (343ms)
 
 ━━ 📋 integration
 🟢 Database is reachable
@@ -508,18 +508,18 @@ Blank lines part blocks rather than decorate headings: none opens a command's ou
    2 migrations pending: add_users, add_index
 ⚪ Seed data is loaded · seeding is disabled outside CI
 ──
-🔴 1 passed | 1 error | 1 skipped (151ms)
+🔴 | 1 error, 1 passed, 1 skipped (151ms)
 
 ── Fixes
 💊 Migrations are applied
    Run `pnpm migrate` against the target database
 
 ━━ Summary
-─────────────────────────────────────────────────────
+───────────────────────────────────────────────────
 🟢 build        343ms  2 passed
-🔴 integration  151ms  1 passed | 1 error | 1 skipped
-─────────────────────────────────────────────────────
-🔴 Total: 3 passed | 1 error | 1 skipped (494ms)
+🔴 integration  151ms  1 error, 1 passed, 1 skipped
+───────────────────────────────────────────────────
+🔴 Total: 1 error, 3 passed, 1 skipped (494ms)
 ```
 
 A kit from an installed package, a repository, or a URL names where it came from, so a long run says which checks belong to which kit without the reader scrolling for it:
@@ -551,7 +551,7 @@ FAIL  Migrations are applied (151ms)
       2 migrations pending: add_users, add_index
 SKIP  Seed data is loaded - seeding is disabled outside CI
 --
-FAIL  1 passed | 1 error | 1 skipped (151ms)
+FAIL  | 1 error, 1 passed, 1 skipped (151ms)
 ```
 
 ```

@@ -204,7 +204,7 @@ describe('formatBreadcrumb', () => {
 });
 
 describe('formatCounts', () => {
-  it('joins non-zero fields with pipes in the fixed order', () => {
+  it('joins non-zero fields with commas in the fixed order', () => {
     const counts = makeCounts({
       passed: 14,
       errors: 1,
@@ -215,14 +215,12 @@ describe('formatCounts', () => {
       worstSeverity: 'error',
     });
 
-    expect(engine.formatCounts(counts)).toBe(
-      '14 passed | 1 error | 1 warning | 2 recommendations | 5 blocked | 2 skipped',
-    );
+    expect(engine.formatCounts(counts)).toBe('1 error, 1 warning, 2 recommendations, 14 passed, 5 blocked, 2 skipped');
   });
 
   it('omits zero-count fields', () => {
     expect(engine.formatCounts(makeCounts({ passed: 3, warnings: 1, worstSeverity: 'warn' }))).toBe(
-      '3 passed | 1 warning',
+      '1 warning, 3 passed',
     );
   });
 
@@ -232,12 +230,12 @@ describe('formatCounts', () => {
 
   it('pluralizes the severity labels', () => {
     expect(engine.formatCounts(makeCounts({ errors: 2, warnings: 2, recommendations: 2 }))).toBe(
-      '2 errors | 2 warnings | 2 recommendations',
+      '2 errors, 2 warnings, 2 recommendations',
     );
   });
 
   it('leaves the skip labels unchanged for any count', () => {
-    expect(engine.formatCounts(makeCounts({ blocked: 3, optional: 4 }))).toBe('3 blocked | 4 skipped');
+    expect(engine.formatCounts(makeCounts({ blocked: 3, optional: 4 }))).toBe('3 blocked, 4 skipped');
   });
 
   it('carries no per-field tokens', () => {
@@ -250,26 +248,26 @@ describe('formatCounts', () => {
 });
 
 describe('formatCountLine', () => {
-  it('leads with the worst severity rather than the first non-zero field', () => {
+  it('parts the verdict from the counts when no label does', () => {
     const counts = makeCounts({ passed: 9, errors: 1, worstSeverity: 'error' });
 
-    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} 9 passed | 1 error (1200ms)`);
+    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} | 1 error, 9 passed (1200ms)`);
   });
 
   it('leads with the passed token when nothing failed', () => {
-    expect(engine.formatCountLine(makeCounts({ passed: 4 }), 300)).toBe(`${PASSED} 4 passed (300ms)`);
+    expect(engine.formatCountLine(makeCounts({ passed: 4 }), 300)).toBe(`${PASSED} | 4 passed (300ms)`);
   });
 
   it('shows a duration below the check-line floor', () => {
     expect(engine.formatCountLine(makeCounts({ passed: 1 }), 4)).toContain('(4ms)');
   });
 
-  it('places an optional label between the token and the counts', () => {
+  it('takes no separator when a label already parts the verdict from the counts', () => {
     expect(engine.formatCountLine(makeCounts({ passed: 2 }), 500, 'Total:')).toBe(`${PASSED} Total: 2 passed (500ms)`);
   });
 
   it('leads a blocked-only run with the passed token, since nothing failed', () => {
-    expect(engine.formatCountLine(makeCounts({ blocked: 2 }), 100)).toBe(`${PASSED} 2 blocked (100ms)`);
+    expect(engine.formatCountLine(makeCounts({ blocked: 2 }), 100)).toBe(`${PASSED} | 2 blocked (100ms)`);
   });
 });
 
@@ -302,8 +300,8 @@ describe('formatSummaryTable', () => {
 
     expect(lines[0]).toBe('\u{2501}\u{2501} Summary');
     expect(lines[2]).toMatch(/^\S build\s+410ms {2}2 passed$/u);
-    expect(lines[3]).toMatch(/^\S integration {2}1400ms {2}1 passed \| 1 error$/u);
-    expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 3 passed | 1 error (1810ms)`);
+    expect(lines[3]).toMatch(/^\S integration {2}1400ms {2}1 error, 1 passed$/u);
+    expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 1 error, 3 passed (1810ms)`);
     expect(lines).toHaveLength(6);
   });
 
@@ -339,7 +337,7 @@ describe('formatSummaryTable', () => {
   it('pads names so the counts column starts at one place in every row', () => {
     const lines = engine.formatSummaryTable(input);
 
-    expect(lines[2]?.indexOf('2 passed')).toBe(lines[3]?.indexOf('1 passed'));
+    expect(lines[2]?.indexOf('2 passed')).toBe(lines[3]?.indexOf('1 error'));
   });
 
   it('right-aligns durations', () => {
@@ -371,6 +369,27 @@ describe('formatSummaryTable', () => {
     });
 
     expect(lines).toHaveLength(5);
+  });
+});
+
+describe('verdict adjacency', () => {
+  const counts = makeCounts({ passed: 2, errors: 1, worstSeverity: 'error' });
+  const verdict = engine.token('failedError');
+
+  it.each([
+    ['tail line', () => engine.formatCountLine(counts, 500)],
+    ['total line', () => engine.formatCountLine(counts, 500, 'Total:')],
+    [
+      'table row',
+      () =>
+        engine.formatSummaryTable({
+          rows: [makeRow({ name: 'infra', counts })],
+          totals: counts,
+          totalDurationMs: 500,
+        })[2],
+    ],
+  ])('leaves no count against the verdict glyph on a %s', (_kind, render) => {
+    expect((render() ?? '').slice(verdict.length)).not.toMatch(/^\d/u);
   });
 });
 

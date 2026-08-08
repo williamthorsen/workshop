@@ -203,7 +203,7 @@ describe(reportRdy, () => {
     it('always shows the total duration on the count line', () => {
       const output = reportRdy(makeReport({ results: [makePassedResult()], durationMs: 4 }));
 
-      expect(output.split('\n').at(-1)).toBe(`${PASSED} 1 passed (4ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${PASSED} | 1 passed (4ms)`);
     });
   });
 
@@ -283,10 +283,10 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} 1 passed | 1 warning (142ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} | 1 warning, 1 passed (142ms)`);
     });
 
-    it('orders the fields by decreasing severity and omits zeros', () => {
+    it('orders the fields by outcome, worst news first, and omits zeros', () => {
       const output = reportRdy(
         makeReport({
           results: [
@@ -302,7 +302,7 @@ describe(reportRdy, () => {
       );
 
       expect(output.split('\n').at(-1)).toBe(
-        `${FAILED_ERROR} 1 passed | 1 error | 1 recommendation | 1 blocked | 1 skipped (500ms)`,
+        `${FAILED_ERROR} | 1 error, 1 recommendation, 1 passed, 1 blocked, 1 skipped (500ms)`,
       );
     });
 
@@ -528,7 +528,7 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (50ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (50ms)`);
     });
   });
 
@@ -614,7 +614,7 @@ describe(reportRdy, () => {
         { quiet: true },
       );
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (90ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (90ms)`);
     });
 
     it('keeps the fix recap', () => {
@@ -661,7 +661,7 @@ describe(reportRdy, () => {
         { quiet: true },
       );
 
-      expect(output).toBe(`${PASSED} 2 passed (30ms)`);
+      expect(output).toBe(`${PASSED} | 2 passed (30ms)`);
     });
   });
 
@@ -718,7 +718,7 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} 2 passed | 1 error (90ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (90ms)`);
     });
 
     it('retains a quiet passing parent so a deep failure stays reachable', () => {
@@ -802,7 +802,7 @@ describe(reportRdy, () => {
         { reportOn: 'error' },
       );
 
-      expect(output.split('\n').at(-1)).toContain(`${FAILED_WARN} 1 passed | 1 warning`);
+      expect(output.split('\n').at(-1)).toContain(`${FAILED_WARN} | 1 warning, 1 passed`);
       expect(output).not.toContain('warn-fail');
     });
 
