@@ -27,7 +27,6 @@ export { invertDeployedName, renderDeployedName, SLUG_PLACEHOLDER } from './depl
 export type { DeployableArtifact } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedNames } from './deployment/resolveDeployedNames.ts';
 export { resolveDeployedPath } from './deployment/resolveDeployedPath.ts';
-export { ENGINE_VERSION } from './engine-version.ts';
 export { mergeFrontmatter } from './frontmatter/mergeFrontmatter.ts';
 export type { ParsedFrontmatter } from './frontmatter/parseFrontmatter.ts';
 export { parseFrontmatter } from './frontmatter/parseFrontmatter.ts';

@@ -30,6 +30,7 @@
     "prepare": "node config/generateSamples.ts && nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/toolbelt.packaging": "0.2.0",
     "yaml": "2.9.0",
     "zod": "4.4.3"
   },

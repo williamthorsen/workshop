@@ -38,7 +38,7 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "node ../../config/generateVersion.ts && nmr-compile"
+    "prepare": "nmr-compile"
   },
   "engines": {
     "node": ">=24"
