@@ -4,7 +4,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
-import { configError, kitLoadError, type RdyError, toRdyError, usageError } from './errors.ts';
+import { kitLoadError, type RdyError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
@@ -491,9 +491,10 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
 /**
  * Resolves the requested kits, drawn from what the configured packages publish, into run entries.
  *
- * An empty list is a usage error rather than an empty run: `--packages` with nothing configured would
- * otherwise report a clean pass having checked nothing, which is the one outcome a verification tool
- * must never invent.
+ * An empty `packages` list is a usage error: the flag names a config key the config does not have, so
+ * the invocation asks for something that cannot be answered. Configured packages that publish no
+ * requested kit are a different case and run nothing, which is the honest answer to "does this project
+ * satisfy what these packages require of it" when they require nothing.
  */
 function resolveConfiguredPackages(
   configuredPackages: string[],
@@ -517,52 +518,22 @@ function resolveConfiguredPackages(
 /**
  * Narrows what the configured packages publish to the requested kits, name-major.
  *
+ * A configured package not publishing a requested kit is skipped rather than reported: `--packages`
+ * asks whether this project satisfies what its configured packages require of it, and a package
+ * requiring nothing under that name has nothing to answer for.
+ *
  * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
  * order `rdy run a b` runs them in against a single source.
  */
 function selectRequestedKits(published: PackageKit[], requestedNames: string[]): PackageKit[] {
-  return requestedNames.flatMap((kitName) =>
-    kitName === DEFAULT_KIT_NAME ? selectDefaultKits(published) : selectNamedKits(published, kitName),
-  );
-}
-
-/**
- * Selects `default` from every configured package, failing on one that publishes none.
- *
- * A package missing `default` is drift between a hand-maintained list and a convention readyup's own
- * `publishing` kit enforces, so it fails the run the way an absent package already does. The kits it
- * does publish are named because the reader's next move is to run one of them by name.
- */
-function selectDefaultKits(published: PackageKit[]): PackageKit[] {
-  const packageNames = new Set(published.map((kit) => kit.packageName));
-
-  return [...packageNames].map((packageName) => {
-    const kits = published.filter((kit) => kit.packageName === packageName);
-    const defaultKit = kits.find((kit) => kit.kitName === DEFAULT_KIT_NAME);
-    if (defaultKit === undefined) {
-      const names = kits.map((kit) => kit.kitName).join(', ');
-      throw configError(
-        `Configured package "${packageName}" publishes no kit named "${DEFAULT_KIT_NAME}"; it publishes: ${names}.`,
-      );
+  return requestedNames.flatMap((kitName) => {
+    const selected = published.filter((kit) => kit.kitName === kitName);
+    if (selected.length === 0 && kitName !== DEFAULT_KIT_NAME) {
+      const available = [...new Set(published.map((kit) => kit.kitName))].join(', ');
+      throw usageError(`No configured package publishes a kit named "${kitName}"; available kits: ${available}.`);
     }
-    return defaultKit;
+    return selected;
   });
-}
-
-/**
- * Selects a named kit from every configured package publishing it, rejecting a name none publishes.
- *
- * A package without the kit is skipped rather than reported: naming a kit is a selection across the
- * configured set, and a package that does not participate is not drift. A name nothing publishes is a
- * bad invocation, and answering it with an empty pass would be the clean report of nothing checked.
- */
-function selectNamedKits(published: PackageKit[], kitName: string): PackageKit[] {
-  const selected = published.filter((kit) => kit.kitName === kitName);
-  if (selected.length === 0) {
-    const available = [...new Set(published.map((kit) => kit.kitName))].join(', ');
-    throw usageError(`No configured package publishes a kit named "${kitName}"; available kits: ${available}.`);
-  }
-  return selected;
 }
 
 /**
@@ -879,6 +850,13 @@ async function runMultiKitHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
+  // Say so when a run selected nothing, which `--packages` reaches when no configured package publishes
+  // the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
+  if (kitEntries.length === 0) {
+    process.stdout.write('No kits to run.\n');
+    return EXIT_OK;
+  }
+
   const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
   const writeBlock = createBlockWriter();

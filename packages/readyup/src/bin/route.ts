@@ -102,8 +102,8 @@ Kit source (mutually exclusive):
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
   --packages [<name>]                Run a kit from every package the config's "packages"
-                                     list names that publishes it; without a name, the kit
-                                     named "default", which every listed package must publish
+                                     list names that publishes it, skipping those that do
+                                     not; without a name, the kit named "default"
 
 Mode flags (incompatible with --from, --file, --url, --packages):
   --jit                              Run from TypeScript source instead of compiled JS

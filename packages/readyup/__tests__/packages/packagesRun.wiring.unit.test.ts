@@ -126,19 +126,37 @@ describe('--packages run path wiring', () => {
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
   });
 
-  // Drift between a hand-maintained list and a convention readyup's own `publishing` kit enforces.
-  it('fails a configured package publishing no default, naming what it does publish', async () => {
+  // A package publishing no `default` requires nothing of this project, so there is nothing to fail.
+  it('skips a configured package publishing no default', () => {
+    installPackage('plain-kit', ['default']);
     installPackage('@acme/kits', ['drift', 'preflight']);
 
-    const error = await captureRdyError(() => {
-      resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
-      return 0;
+    const entries = resolveKitSources({
+      ...baseArgs,
+      packages: true,
+      configuredPackages: ['plain-kit', '@acme/kits'],
     });
 
-    expect(error.code).toBe('config');
-    expect(error.message).toBe(
-      'Configured package "@acme/kits" publishes no kit named "default"; it publishes: drift, preflight.',
-    );
+    expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
+  });
+
+  // Nothing published to align with is alignment, not a failure to check.
+  it('selects nothing when no configured package publishes a default', () => {
+    installPackage('@acme/kits', ['drift', 'preflight']);
+
+    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+
+    expect(entries).toStrictEqual([]);
+  });
+
+  it('passes without running a kit when the selection is empty', async () => {
+    installPackage('@acme/kits', ['drift']);
+    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+
+    const exitCode = await runCommand({ kitEntries: entries, json: false });
+
+    expect(exitCode).toBe(0);
+    expect(stdout.join('')).toBe('No kits to run.\n');
   });
 
   // Answering with an empty pass would be the clean report of nothing checked.

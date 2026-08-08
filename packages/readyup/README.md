@@ -871,9 +871,9 @@ rdy run --packages drift # the kit named `drift`, from every listed package publ
 
 The kit name is the selector, exactly as it is for every other source, and each result carries the package and version it came from. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, leaving the checklists no single one to select within.
 
-The two forms differ in strictness. A listed package publishing no `default` fails the run and names the kits it does publish: the list is hand-maintained, and a package in it that does not follow the convention is drift. A name other than `default` is a selection, so a listed package not publishing it is skipped, and only a name no listed package publishes fails, as a bad invocation.
+A listed package that does not publish the requested kit is skipped. `rdy run --packages` asks whether this project satisfies what its listed packages require of it, and a package publishing no `default` requires nothing of it: that package contributes no kit, and a run that selects nothing reports as much and passes. The named form differs in one respect, because naming a kit asks for something specific: a name no listed package publishes is a usage error rather than an empty run.
 
-That split is how an author holds a kit back from a routine `--packages` run: publish it under a name other than `default`. It stays listed by `rdy list` and reachable by name, both here and through `--from npm:<package>`. Nothing is needed from the consumer's config, and nothing needs republishing.
+That rule is how an author holds a kit back from a routine `--packages` run: publish it under a name other than `default`. It stays listed by `rdy list` and reachable by name, both here and through `--from npm:<package>`. Nothing is needed from the consumer's config, and nothing needs republishing.
 
 A listed package that is absent, or that publishes no kits at all, fails the run and names itself; `rdy list` warns instead and reports the rest, then names any installed dependency publishing kits the list omits.
 
