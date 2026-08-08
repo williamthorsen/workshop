@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.1.1",
+    "date": "2026-08-08",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Read package versions at run time instead of generating them (#275)",
+            "body": "Fixes an issue where `readyup` and `compositor` could keep reporting an old version after a bump, which also left readyup's warnings about mismatched versions wrong. A fresh install or rebuild is no longer required.",
+            "hash": "ba6a61bb0a08a8829531caa565f5a7fead14fca7"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-08-08",
     "sections": [

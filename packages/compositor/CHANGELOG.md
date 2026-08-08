@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.1 — 2026-08-08
+
+### 🐛 Bug fixes
+
+- Read package versions at run time instead of generating them (#275)
+
+  Fixes an issue where `readyup` and `compositor` could keep reporting an old version after a bump, which also left readyup's warnings about mismatched versions wrong. A fresh install or rebuild is no longer required.
+
 ## 0.1.0 — 2026-08-08
 
 ### 🎉 Features

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.26.0 — 2026-08-08
+
+### 🎉 Features
+
+- Run only the default kit under `--packages` unless a kit is named (#274)
+
+  `rdy run --packages` now accepts positional arguments specifying the kits to run. Without positional arguments, `rdy run --packages` now runs only the kit named `default` (if it exists) from each package listed in the configuration.
+
+- Separate run verdict from counts and lead with failures (#276)
+
+  Refines readyup's human-readable report to distinguish the verdict for a run from the counts for each kind of result. Counts now lead with errors instead of passes.
+
+### 🐛 Bug fixes
+
+- Read package versions at run time instead of generating them (#275)
+
+  Fixes an issue where `readyup` and `compositor` could keep reporting an old version after a bump, which also left readyup's warnings about mismatched versions wrong. A fresh install or rebuild is no longer required.
+
 ## 0.25.0 — 2026-08-08
 
 ### 🎉 Features
