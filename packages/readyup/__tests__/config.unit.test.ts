@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -5,10 +6,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockJitiImport = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
+const mockReadFileSync = vi.hoisted(() => vi.fn());
 
 vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   readdirSync: mockReaddirSync,
+  readFileSync: mockReadFileSync,
 }));
 
 vi.mock('jiti', () => ({
@@ -16,15 +19,18 @@ vi.mock('jiti', () => ({
 }));
 
 import { loadRdyKit } from '../src/config.ts';
+import { UnresolvableKitImportsError } from '../src/kitImports/UnresolvableKitImportsError.ts';
 import { captureError } from '../src/test-utils/captureError.ts';
 
 const KIT_PATH = '.readyup/kits/default.ts';
+const COMPILED_KIT_PATH = '.readyup/kits/default.js';
 
 describe(loadRdyKit, () => {
   afterEach(() => {
     mockExistsSync.mockReset();
     mockJitiImport.mockReset();
     mockReaddirSync.mockReset();
+    mockReadFileSync.mockReset();
   });
 
   it('reports an uncompiled kit when only the TypeScript source exists', async () => {
@@ -261,6 +267,38 @@ describe(loadRdyKit, () => {
     const { compileTimeVersion } = await loadRdyKit(KIT_PATH);
 
     expect(compileTimeVersion).toBeUndefined();
+  });
+
+  it('refuses a compiled kit binding a symbol the runner does not export', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue('import { retiredHelper } from "readyup/check-utils";');
+
+    const error = await captureError(() => loadRdyKit(COMPILED_KIT_PATH));
+
+    assert.ok(error instanceof UnresolvableKitImportsError);
+    expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
+    expect(mockJitiImport).not.toHaveBeenCalled();
+  });
+
+  it('loads a compiled kit binding only symbols the runner exports', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue('import { defineRdyKit } from "readyup";');
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists });
+
+    const { kit } = await loadRdyKit(COMPILED_KIT_PATH);
+
+    expect(kit.checklists).toHaveLength(1);
+  });
+
+  it('leaves a TypeScript source unscanned, since it is not a bundle', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists });
+
+    await loadRdyKit(KIT_PATH);
+
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 });
 

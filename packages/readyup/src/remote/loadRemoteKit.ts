@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { assertIsRdyKit } from '../assertIsRdyKit.ts';
 import type { LoadedRdyKit } from '../config.ts';
 import { isRecord } from '../isRecord.ts';
+import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
 import { resolveKitExports } from '../resolveKitExports.ts';
 import { validateKit } from '../validateKit.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
@@ -42,6 +43,10 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
   if (trimmedBody.startsWith('<html') || trimmedBody.startsWith('<!doctype')) {
     throw new Error(`Remote kit URL returned an HTML page instead of JavaScript: ${url}`);
   }
+
+  // Check the fetched source before it is written and imported: a native import would fail a missing named export
+  // as an opaque link error naming neither the kit nor the symbol.
+  await assertKitImportsResolve(body, url);
 
   const tempDir = mkdtempSync(join(tmpdir(), 'rdy-'));
   const tempFile = join(tempDir, 'kit.js');

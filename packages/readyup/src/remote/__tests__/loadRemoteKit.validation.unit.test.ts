@@ -1,8 +1,12 @@
+import assert from 'node:assert';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
+import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
+import { captureError } from '../../test-utils/captureError.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
 
 /** Build a minimal mock Response with the given body and status. */
@@ -114,5 +118,34 @@ describe('loadRemoteKit validation', () => {
     const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
 
     expect(compileTimeVersion).toBeUndefined();
+  });
+
+  it('names the symbol a remote kit binds that the runner does not export', async () => {
+    const jsBody = `
+      import { retiredHelper } from 'readyup/check-utils';
+      export const checklists = [
+        { name: 'test', checks: [{ name: 'check-a', check: () => retiredHelper() }] },
+      ];
+    `;
+    mockFetch.mockResolvedValue(mockResponse(jsBody));
+
+    const error = await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js' }));
+
+    assert.ok(error instanceof UnresolvableKitImportsError);
+    expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
+  });
+
+  it('accepts a remote kit binding only symbols the runner exports', async () => {
+    const jsBody = `
+      import { fileExists } from 'readyup/check-utils';
+      export const checklists = [
+        { name: 'test', checks: [{ name: 'check-a', check: () => fileExists('package.json') }] },
+      ];
+    `;
+    mockFetch.mockResolvedValue(mockResponse(jsBody));
+
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+
+    expect(kit.checklists).toHaveLength(1);
   });
 });
