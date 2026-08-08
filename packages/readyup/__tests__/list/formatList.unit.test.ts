@@ -146,6 +146,20 @@ describe(formatOwnerView, () => {
     expect(findSectionCommand(result, 'Compiled')).not.toContain('--jit');
   });
 
+  // Discovery is not run selection, so the rows list every published kit and the optional name reaches each.
+  it('heads the Packages section with the optional-name form of the run command', () => {
+    const result = formatOwnerView({
+      internalKits: [],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+      packageKits: ['default', 'npm-auto-publish'],
+    });
+
+    expect(findSectionCommand(result, 'Packages')).toBe('   rdy run --packages [<name>]');
+    expect(result).toContain('default');
+    expect(result).toContain('npm-auto-publish');
+  });
+
   it('renders custom outDir style with file paths', () => {
     const result = formatOwnerView({
       internalKits: [],

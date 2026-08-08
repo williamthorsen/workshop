@@ -95,7 +95,9 @@ export function formatOwnerView({
   }
 
   if (packageKits.length > 0) {
-    sections.push(formatSection('Packages', 'rdy run --packages', packageKits, 'sourcePackage'));
+    // The rows stay every published kit — discovery is not run selection — so the bracketed optional keeps
+    // the promise that every kit listed is reachable by the command above it.
+    sections.push(formatSection('Packages', 'rdy run --packages [<name>]', packageKits, 'sourcePackage'));
   }
 
   if (availablePackages.length > 0) {
