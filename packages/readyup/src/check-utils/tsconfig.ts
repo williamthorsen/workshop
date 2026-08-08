@@ -24,9 +24,10 @@ export interface TsconfigChainEntry {
   /** Path of the config, cwd-relative. */
   path: string;
   /**
-   * The `extends` specifier that reached this config; undefined for the entry config. This is the identity that
-   * holds across install layouts, which `path` does not: pnpm resolves a package under `.pnpm` and a workspace
-   * link under the directory it points at, so the same base config answers to two different paths.
+   * The `extends` specifier that reached this config; undefined for the entry config. Unlike `path`, it survives a
+   * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory it
+   * points at, so one base config answers to two different paths. Where two branches reach one config, it names the
+   * branch that reached it first.
    */
   specifier: string | undefined;
 }
@@ -272,7 +273,8 @@ function visitParent(specifier: string, configPath: string, resolution: Resoluti
     resolution.unresolvedExtends.push({ from, specifier });
     return;
   }
-  // A config reached twice (cycle or diamond) has already contributed everything it can.
+  // A config reached twice (cycle or diamond) has nothing further to contribute;
+  // it keeps the entry recorded on the branch that reached it first.
   if (resolution.visited.has(parentPath)) return;
   resolution.visited.add(parentPath);
 
