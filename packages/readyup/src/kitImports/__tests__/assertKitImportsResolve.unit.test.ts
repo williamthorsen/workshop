@@ -77,6 +77,15 @@ describe(assertKitImportsResolve, () => {
     });
   });
 
+  it.each([
+    ['a comment', 'import { /* c */ retiredHelper } from "readyup/check-utils";'],
+    ['a quoted export name', 'import { "retiredHelper" as helper } from "readyup/check-utils";'],
+  ])('catches a missing symbol written with %s', async (_label, bundle) => {
+    const findings = await captureFindings(bundle);
+
+    expect(findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
+  });
+
   it('resolves for a namespace import, whose members cannot be read statically', async () => {
     await expect(assertKitImportsResolve('import * as rdy from "readyup";')).resolves.toBeUndefined();
   });

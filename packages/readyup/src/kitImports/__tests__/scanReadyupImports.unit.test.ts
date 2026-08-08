@@ -69,6 +69,37 @@ describe(scanReadyupImports, () => {
     expect(found[0]?.names).toStrictEqual(['DEFAULT_MANIFEST_PATH', 'defineRdyKit']);
   });
 
+  it.each([
+    ['a block comment before the name', 'import { /* c */ fileExists } from "readyup/check-utils";'],
+    ['a line comment above the name', 'import {\n  // c\n  fileExists\n} from "readyup/check-utils";'],
+    ['a comment after the name', 'import { fileExists /* c */ } from "readyup/check-utils";'],
+  ])('reads a name past %s', async (_label, bundle) => {
+    const found = await scanReadyupImports(bundle);
+
+    expect(found[0]?.names).toStrictEqual(['fileExists']);
+  });
+
+  it('keeps every name in a clause where only one carries a comment', async () => {
+    const found = await scanReadyupImports('import { a, /* c */ b } from "readyup";');
+
+    expect(found[0]?.names).toStrictEqual(['a', 'b']);
+  });
+
+  it.each([
+    ['double quotes', 'import { "fileExists" as fe } from "readyup/check-utils";'],
+    ['single quotes', "import { 'fileExists' as fe } from 'readyup/check-utils';"],
+  ])('reads a quoted module-export name in %s', async (_label, bundle) => {
+    const found = await scanReadyupImports(bundle);
+
+    expect(found[0]?.names).toStrictEqual(['fileExists']);
+  });
+
+  it('yields no name for the empty entry a trailing comma leaves', async () => {
+    const found = await scanReadyupImports('import { fileExists, } from "readyup/check-utils";');
+
+    expect(found[0]?.names).toStrictEqual(['fileExists']);
+  });
+
   it('reports the names a re-export imports', async () => {
     const bundle = 'export { fileExists } from "readyup/check-utils";';
 

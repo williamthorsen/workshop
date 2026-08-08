@@ -44,11 +44,19 @@ export async function scanReadyupImports(bundle: string, sourceName?: string): P
  */
 const CLAUSE_PATTERN = /^(?:import|export)\s*([\s\S]*)from\s*["']/;
 
+/** A comment sitting inside an import clause, in either spelling. */
+const CLAUSE_COMMENT_PATTERN = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+
 /** The braced group of a named-import clause, absent for a namespace, default-only, or star form. */
 const BRACED_GROUP_PATTERN = /\{([\s\S]*)\}/;
 
-/** The imported name leading one entry of a braced clause, ahead of any `as` rename. */
-const LEADING_NAME_PATTERN = /^\s*([A-Za-z_$][\w$]*)/;
+/**
+ * The imported name leading one entry of a braced clause, ahead of any `as` rename.
+ *
+ * Both spellings the grammar allows for the name: a bare identifier, and the quoted form that carries a module-export
+ * name an identifier cannot express.
+ */
+const LEADING_NAME_PATTERN = /^\s*(?:"([^"]*)"|'([^']*)'|([A-Za-z_$][\w$]*))/;
 
 /** Reports whether a specifier names the readyup package or one of its subpaths. */
 function isReadyupSpecifier(specifier: string): boolean {
@@ -59,8 +67,12 @@ function isReadyupSpecifier(specifier: string): boolean {
  * Reads the names a single import or re-export statement binds from its braced clause.
  *
  * The statement is one the lexer already identified, so a regular expression is reading trusted input rather than
- * deciding whether the text is an import at all. A default binding sits outside the braces and is skipped: jiti's CJS
- * interop supplies a module object for it, so a runner exporting no `default` breaks nothing.
+ * deciding whether the text is an import at all. Comments are removed before the clause is split, since either
+ * spelling may sit between a brace and a comma and would otherwise hide the name behind it.
+ *
+ * Every entry the grammar allows is read: a bare identifier, `name as local`, and `"name" as local`. What yields no
+ * name is an entry holding none, which a trailing comma produces. A default binding sits outside the braces and is
+ * skipped: jiti's CJS interop supplies a module object for it, so a runner exporting no `default` breaks nothing.
  */
 function readBoundNames(statement: string): string[] {
   const clause = CLAUSE_PATTERN.exec(statement)?.[1];
@@ -70,8 +82,9 @@ function readBoundNames(statement: string): string[] {
   if (braced === undefined) return [];
 
   const names: string[] = [];
-  for (const entry of braced.split(',')) {
-    const name = LEADING_NAME_PATTERN.exec(entry)?.[1];
+  for (const entry of braced.replaceAll(CLAUSE_COMMENT_PATTERN, ' ').split(',')) {
+    const [, quoted, singleQuoted, identifier] = LEADING_NAME_PATTERN.exec(entry) ?? [];
+    const name = quoted ?? singleQuoted ?? identifier;
     if (name !== undefined) names.push(name);
   }
   return names;
