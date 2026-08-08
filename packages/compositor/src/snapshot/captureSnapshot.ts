@@ -9,7 +9,7 @@ import type { PackageLocation } from '../config/locateSourcePackages.ts';
 import { locateSourcePackages } from '../config/locateSourcePackages.ts';
 import type { DeployableArtifact } from '../deployment/resolveDeployedNames.ts';
 import { resolveDeployedNames } from '../deployment/resolveDeployedNames.ts';
-import { ENGINE_VERSION } from '../engine-version.ts';
+import { getEngineVersion } from '../getEngineVersion.ts';
 import { hashDirectory } from '../portable/hashDirectory.ts';
 import { assertRenderTargetsAreConsistent } from '../render/assertRenderTargetsAreConsistent.ts';
 import type { ArtifactRender } from '../render/renderArtifact.ts';
@@ -119,7 +119,7 @@ export async function captureSnapshot(input: CaptureSnapshotInput): Promise<Comp
   ]);
 
   return {
-    engineVersion: ENGINE_VERSION,
+    engineVersion: getEngineVersion(),
     locations,
     resolution,
     catalog,

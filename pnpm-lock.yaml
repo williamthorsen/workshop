@@ -74,6 +74,9 @@ importers:
 
   packages/compositor:
     dependencies:
+      '@williamthorsen/toolbelt.packaging':
+        specifier: 0.2.0
+        version: 0.2.0
       yaml:
         specifier: 2.9.0
         version: 2.9.0
@@ -796,6 +799,14 @@ packages:
 
   '@williamthorsen/toolbelt.filesystem@0.2.1':
     resolution: {integrity: sha512-vC+LkLEVBKaTcOsR6G8R0cGPnseX3IC3ZiWeYGuPcwOwypmWb8+CgG/a8P6fhaSU/aqXpszUFB41nTLsEeTyWw==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.filesystem@0.3.0':
+    resolution: {integrity: sha512-LAgacq4EBEtrmXCMUsZ6gslzOGF01HHLluwIQRwuqitdcjqrOMU/kh8GFJTWpWnT77JtFwAb80bGyGCYCz6NWQ==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.packaging@0.2.0':
+    resolution: {integrity: sha512-SR6VTng8kAQXFEZEVgexp04G/rEUkm15MoL6vx2rKIX9B9ltLMDHZBHK/2oSOxic0UInCZW1cA+y73vdpnkM7Q==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/tsconfig@0.3.0':
@@ -3205,6 +3216,12 @@ snapshots:
       eslint: 10.8.0(jiti@2.7.0)(supports-color@7.2.0)
 
   '@williamthorsen/toolbelt.filesystem@0.2.1': {}
+
+  '@williamthorsen/toolbelt.filesystem@0.3.0': {}
+
+  '@williamthorsen/toolbelt.packaging@0.2.0':
+    dependencies:
+      '@williamthorsen/toolbelt.filesystem': 0.3.0
 
   '@williamthorsen/tsconfig@0.3.0': {}
 
