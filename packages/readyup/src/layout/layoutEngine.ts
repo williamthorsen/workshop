@@ -25,6 +25,17 @@ const TOTAL_LABEL = 'Total:';
 /** Heading over the combined summary table. */
 const SUMMARY_HEADING = 'Summary';
 
+/**
+ * Text parting a count line's verdict from its counts, used wherever no label already parts them.
+ *
+ * Heavier than `COUNT_SEPARATOR`, so the counts read as one list under the verdict rather than binding
+ * their first field to the glyph beside it.
+ */
+const VERDICT_SEPARATOR = '|';
+
+/** Text parting one count from the next. */
+const COUNT_SEPARATOR = ', ';
+
 /** Statement a count line makes when there is nothing at all to report. */
 const EMPTY_COUNTS = '0 passed';
 
@@ -41,14 +52,15 @@ interface CountField {
 /**
  * Count fields in the order every count line presents them.
  *
- * Ordered by decreasing severity rather than alphabetically: the reader scans left to right for the
- * worst news, and a fixed order is what lets them find a field without reading every label.
+ * Ordered by outcome rather than alphabetically: the checks that ran, worst news first, then the checks
+ * that did not. The reader scans left to right and meets the failures before anything else, and a fixed
+ * order is what lets them find a field without reading every label.
  */
 const COUNT_FIELDS: readonly CountField[] = [
-  { key: 'passed', singular: 'passed', plural: 'passed' },
   { key: 'errors', singular: 'error', plural: 'errors' },
   { key: 'warnings', singular: 'warning', plural: 'warnings' },
   { key: 'recommendations', singular: 'recommendation', plural: 'recommendations' },
+  { key: 'passed', singular: 'passed', plural: 'passed' },
   { key: 'blocked', singular: 'blocked', plural: 'blocked' },
   { key: 'optional', singular: 'skipped', plural: 'skipped' },
 ];
@@ -134,7 +146,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns `token label counts (duration)`, led by the token for `counts.worstSeverity`.
+   * Returns `token <label or separator> counts (duration)`, led by the token for `counts.worstSeverity`.
    *
    * The duration always appears, whatever its magnitude.
    */
@@ -219,10 +231,14 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   // -- Helpers --
 
-  /** Returns everything a count line carries after its leading token. */
+  /**
+   * Returns everything a count line carries after its leading token.
+   *
+   * A label and the verdict separator occupy one slot, so a labelled line takes no separator: whichever
+   * fills the slot is what keeps the verdict from touching the first count.
+   */
   function buildCountBody(counts: SummaryCounts, durationMs: number, label?: string): string {
-    const prefix = label === undefined ? '' : `${label} `;
-    return `${prefix}${formatCounts(counts)} (${formatDuration(durationMs)})`;
+    return `${label ?? VERDICT_SEPARATOR} ${formatCounts(counts)} (${formatDuration(durationMs)})`;
   }
 
   return {
@@ -249,12 +265,12 @@ export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   return 'passed';
 }
 
-/** Returns the non-zero counts pipe-joined in field order, or `0 passed` when every count is zero. */
+/** Returns the non-zero counts joined in field order, or `0 passed` when every count is zero. */
 function formatCounts(counts: SummaryCounts): string {
   const fields = COUNT_FIELDS.filter((field) => counts[field.key] > 0).map((field) =>
     pluralizeWithCount(counts[field.key], field.singular, field.plural),
   );
-  return fields.length > 0 ? fields.join(' | ') : EMPTY_COUNTS;
+  return fields.length > 0 ? fields.join(COUNT_SEPARATOR) : EMPTY_COUNTS;
 }
 
 /** Returns the formatted duration, or nothing for a skipped token or a duration under the floor. */

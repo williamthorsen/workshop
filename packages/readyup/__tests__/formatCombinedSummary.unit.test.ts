@@ -64,7 +64,7 @@ describe(formatCombinedSummary, () => {
       makeSummary({ name: 'infra', passed: 2, errors: 1, worstSeverity: 'error', durationMs: 45 }),
     ]);
 
-    expect(output).toContain(`${FAILED_ERROR} infra  45ms  2 passed | 1 error`);
+    expect(output).toContain(`${FAILED_ERROR} infra  45ms  1 error, 2 passed`);
   });
 
   it('omits zero-count fields from a row', () => {
@@ -79,7 +79,7 @@ describe(formatCombinedSummary, () => {
       makeSummary({ name: 'checks', passed: 1, errors: 1, blocked: 2, optional: 1, worstSeverity: 'error' }),
     ]);
 
-    expect(output).toContain('1 passed | 1 error | 2 blocked | 1 skipped');
+    expect(output).toContain('1 error, 1 passed, 2 blocked, 1 skipped');
   });
 
   it('retires the prose count grammar', () => {
@@ -98,7 +98,7 @@ describe(formatCombinedSummary, () => {
         makeSummary({ name: 'other', passed: 5, errors: 2, blocked: 1, worstSeverity: 'error', durationMs: 200 }),
       ]);
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 15 passed | 2 errors | 1 blocked (300ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 2 errors, 15 passed, 1 blocked (300ms)`);
     });
 
     it('leads with the passed token when no checklist failed', () => {
@@ -118,7 +118,7 @@ describe(formatCombinedSummary, () => {
       const totalLine = output.split('\n').at(-1);
 
       expect(totalLine?.startsWith(FAILED_WARN)).toBe(true);
-      expect(totalLine).toContain('1 warning | 1 recommendation');
+      expect(totalLine).toContain('1 warning, 1 recommendation');
       expect(totalLine).not.toContain('passed');
     });
 
