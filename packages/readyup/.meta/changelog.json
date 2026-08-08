@@ -1,5 +1,80 @@
 [
   {
+    "version": "0.25.0",
+    "date": "2026-08-08",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add repo-wide kit discovery with rdy list --recursive (#253)",
+            "body": "Adds a recursive option to ReadyUp's list command. `rdy list --recursive` reports the kits across an entire repository in a single pass. The listing groups kits by containing project, shows the description each project records for its kits, and pairs each group with the command that runs those kits from the current directory.",
+            "hash": "c99dbc4def04061ddadf5573ed2df31620f92dd0"
+          },
+          {
+            "description": "Follow package-specifier extends when reading a tsconfig's language level (#265)",
+            "body": "A check that asserts a project's effective TypeScript language level now gets an answer when the project inherits that level from a base config installed as a package, not only from a config file within the project itself. Such a project previously reported no language level at all, indistinguishable from one that declares none. A base config that still cannot be reached is reported as unresolved rather than as an absent setting.",
+            "hash": "eb934c011aaa5001298534e49df5b4297cd0d420"
+          },
+          {
+            "description": "Report each kit's compile-time readyup version in JSON output (#267)",
+            "body": "`rdy run --json` now reports which version of `readyup` compiled each kit. No version appears for kits built by older `readyup` versions that did not record it, or for kits run from TypeScript source under `--jit`.",
+            "hash": "399e6d127eb2c8e3bd649993ca36a8cdead1c0ab"
+          },
+          {
+            "description": "Decide kit compatibility by what a kit imports (#269)",
+            "body": "A kit incompatible with the version of `readyup` attempting to run it now fails before any check runs, naming the reason and available corrective action. Previously, no guard prevented such kits from running, and a kit could falsely report success. ReadyUp no longer warns about harmless version differences between the `readyup` version that compiled a kit and the one running it.",
+            "hash": "f1ac16262de8a22fb661491a69a62e48ce7f9016"
+          },
+          {
+            "description": "Expose the resolved tsconfig extends chain with each config's own declarations (#273)",
+            "body": "ReadyUp now enables kits to determine which config in a tsconfig's `extends` chain declared a given setting. Previously, only the chain's effective language level could be determined. The kit can also distinguish a first-party base config from a third-party framework base, even when the same published config sits at different paths from one install to the next.",
+            "hash": "100ffbde6cd913126475c17dfb85f12d8aa23294"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Report causes of read, parse, and load failures; fix lint (#260)",
+            "body": "A failure to read a manifest, parse a remote manifest, or load a compiled kit now names the permission denial, syntax error, or module failure that caused it.\n\nAlso fixes lint violations and removes severity downgrades for the associated rules.",
+            "hash": "f02396f3f1ea5005de0fc6ee9adef9a37f1b051b"
+          },
+          {
+            "description": "Migrate to the shared tsconfig (#266)",
+            "body": "Adopts `@williamthorsen/tsconfig` as the standard TypeScript configuration for this repo, replacing the previous hand-maintained copy. Reading a property through an index signature now requires bracket notation or a type that declares the property. Explicit resource management (`using` and `await using`) can now be used.",
+            "hash": "95f06a809cde1ebc080aa36dcd28039871e3a450"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Clear readyup's Vitest lint violations and enforce the rules (#258)",
+            "body": "Fixes deferred violations of Vitest lint rules in the readyup package and restores the severity of the associated rules to \"error\" when a strict-lint check is run.",
+            "hash": "9799e8b7122dd95b343922df8e76835ac023dc69"
+          }
+        ]
+      },
+      {
+        "title": "👷 CI",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Enforce kit-bundle freshness in the quality gate (#272)",
+            "body": "Adds `rdy verify --rebuild` to the repo's quality gate, which now fails when a committed kit bundle has fallen out of date with the installed `readyup`; `rdy compile` clears the failure.",
+            "hash": "55de5d882b6038313339f78937ded91f95518d6e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.24.0",
     "date": "2026-08-05",
     "sections": [

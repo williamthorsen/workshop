@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.25.0 — 2026-08-08
+
+### 🎉 Features
+
+- Add repo-wide kit discovery with rdy list --recursive (#253)
+
+  Adds a recursive option to ReadyUp's list command. `rdy list --recursive` reports the kits across an entire repository in a single pass. The listing groups kits by containing project, shows the description each project records for its kits, and pairs each group with the command that runs those kits from the current directory.
+
+- Follow package-specifier extends when reading a tsconfig's language level (#265)
+
+  A check that asserts a project's effective TypeScript language level now gets an answer when the project inherits that level from a base config installed as a package, not only from a config file within the project itself. Such a project previously reported no language level at all, indistinguishable from one that declares none. A base config that still cannot be reached is reported as unresolved rather than as an absent setting.
+
+- Report each kit's compile-time readyup version in JSON output (#267)
+
+  `rdy run --json` now reports which version of `readyup` compiled each kit. No version appears for kits built by older `readyup` versions that did not record it, or for kits run from TypeScript source under `--jit`.
+
+- Decide kit compatibility by what a kit imports (#269)
+
+  A kit incompatible with the version of `readyup` attempting to run it now fails before any check runs, naming the reason and available corrective action. Previously, no guard prevented such kits from running, and a kit could falsely report success. ReadyUp no longer warns about harmless version differences between the `readyup` version that compiled a kit and the one running it.
+
+- Expose the resolved tsconfig extends chain with each config's own declarations (#273)
+
+  ReadyUp now enables kits to determine which config in a tsconfig's `extends` chain declared a given setting. Previously, only the chain's effective language level could be determined. The kit can also distinguish a first-party base config from a third-party framework base, even when the same published config sits at different paths from one install to the next.
+
+### ♻️ Refactoring
+
+- Report causes of read, parse, and load failures; fix lint (#260)
+
+  A failure to read a manifest, parse a remote manifest, or load a compiled kit now names the permission denial, syntax error, or module failure that caused it.
+
+  Also fixes lint violations and removes severity downgrades for the associated rules.
+
+- Migrate to the shared tsconfig (#266)
+
+  Adopts `@williamthorsen/tsconfig` as the standard TypeScript configuration for this repo, replacing the previous hand-maintained copy. Reading a property through an index signature now requires bracket notation or a type that declares the property. Explicit resource management (`using` and `await using`) can now be used.
+
+### 🧪 Tests
+
+- Clear readyup's Vitest lint violations and enforce the rules (#258)
+
+  Fixes deferred violations of Vitest lint rules in the readyup package and restores the severity of the associated rules to "error" when a strict-lint check is run.
+
+### 👷 CI
+
+- Enforce kit-bundle freshness in the quality gate (#272)
+
+  Adds `rdy verify --rebuild` to the repo's quality gate, which now fails when a committed kit bundle has fallen out of date with the installed `readyup`; `rdy compile` clears the failure.
+
 ## 0.24.0 — 2026-08-05
 
 ### 🎉 Features

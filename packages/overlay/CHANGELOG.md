@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.3 — 2026-08-08
+
+### 🐛 Bug fixes
+
+- Name the flag at fault when arguments are rejected (#257)
+
+  Fixes an issue where overlay rejected a command line without naming the flag at fault, whether the flag was unrecognized or was given a value it does not take, and offered advice about passing positional arguments that does not apply to overlay. A single letter written in long form, such as `--h`, is now reported as unrecognized rather than read as the short flag `-h`.
+
 ## 0.3.2 — 2026-08-05
 
 ### ⚙️ Tooling

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.0 — 2026-08-08
+
+### 🎉 Features
+
+- Add repo-wide kit discovery with rdy list --recursive (#253)
+
+  Adds a recursive option to ReadyUp's list command. `rdy list --recursive` reports the kits across an entire repository in a single pass. The listing groups kits by containing project, shows the description each project records for its kits, and pairs each group with the command that runs those kits from the current directory.
+
 ## 0.0.1 — 2026-08-05
 
 ### 🏗️ Internal features

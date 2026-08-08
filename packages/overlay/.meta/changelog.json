@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.3.3",
+    "date": "2026-08-08",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Name the flag at fault when arguments are rejected (#257)",
+            "body": "Fixes an issue where overlay rejected a command line without naming the flag at fault, whether the flag was unrecognized or was given a value it does not take, and offered advice about passing positional arguments that does not apply to overlay. A single letter written in long form, such as `--h`, is now reported as unrecognized rather than read as the short flag `-h`.",
+            "hash": "2e99938f5c29c3ae256f650005afbb9ef0b501eb"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.2",
     "date": "2026-08-05",
     "sections": [
