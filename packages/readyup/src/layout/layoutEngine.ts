@@ -29,7 +29,8 @@ const SUMMARY_HEADING = 'Summary';
  * Text parting a count line's verdict from its counts, used wherever no label already parts them.
  *
  * Heavier than `COUNT_SEPARATOR`, so the counts read as one list under the verdict rather than binding
- * their first field to the glyph beside it.
+ * their first field to the glyph beside it. `buildCountBody` supplies the space after it, as it does for
+ * the label it stands in for.
  */
 const VERDICT_SEPARATOR = '|';
 

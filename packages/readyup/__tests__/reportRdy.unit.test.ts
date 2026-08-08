@@ -286,7 +286,7 @@ describe(reportRdy, () => {
       expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} | 1 warning, 1 passed (142ms)`);
     });
 
-    it('orders the fields by decreasing severity and omits zeros', () => {
+    it('orders the fields by outcome, worst news first, and omits zeros', () => {
       const output = reportRdy(
         makeReport({
           results: [

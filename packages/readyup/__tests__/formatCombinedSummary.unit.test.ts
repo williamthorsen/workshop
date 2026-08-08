@@ -59,7 +59,7 @@ describe(formatCombinedSummary, () => {
     expect(output).toContain(`${token} deploy`);
   });
 
-  it('renders each row as name, duration, then pipe counts', () => {
+  it('renders each row as name, duration, then comma-joined counts', () => {
     const output = formatCombinedSummary([
       makeSummary({ name: 'infra', passed: 2, errors: 1, worstSeverity: 'error', durationMs: 45 }),
     ]);
