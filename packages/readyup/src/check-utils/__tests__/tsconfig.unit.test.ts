@@ -1,9 +1,171 @@
 import { describe, expect, it } from 'vitest';
 
-import { readTsconfigLanguageLevel } from '../../src/check-utils/tsconfig.ts';
-import { useTempDir } from '../helpers/tempDir.ts';
+import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { readTsconfigChain, readTsconfigLanguageLevel } from '../tsconfig.ts';
 
 const temp = useTempDir({ prefix: 'rdy-tsconfig-', cwd: 'mock' });
+
+describe(readTsconfigChain, () => {
+  it('reports a single config as one entry reached by no specifier', () => {
+    temp.writeJson('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
+
+    expect(readTsconfigChain('tsconfig.json')).toStrictEqual({
+      entries: [
+        {
+          compilerOptions: { lib: ['ES2025'], target: 'ES2025' },
+          config: { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } },
+          path: 'tsconfig.json',
+          specifier: undefined,
+        },
+      ],
+      unresolvedExtends: [],
+    });
+  });
+
+  it('reports compilerOptions as empty when the config declares none', () => {
+    temp.writeJson('tsconfig.json', { include: ['src'] });
+
+    expect(readTsconfigChain('tsconfig.json')?.entries[0]?.compilerOptions).toStrictEqual({});
+  });
+
+  it('reports compilerOptions as empty when the declared value is not an object', () => {
+    temp.writeJson('tsconfig.json', { compilerOptions: 'strict' });
+
+    const entry = readTsconfigChain('tsconfig.json')?.entries[0];
+
+    // The unusable value is still reachable through `config`, which reports the config as written.
+    expect(entry?.compilerOptions).toStrictEqual({});
+    expect(entry?.config).toStrictEqual({ compilerOptions: 'strict' });
+  });
+
+  it('reports raw values where the language-level reader reports normalized ones', () => {
+    temp.writeJson('tsconfig.json', { compilerOptions: { target: 'ES2025' } });
+
+    expect(readTsconfigChain('tsconfig.json')?.entries[0]?.compilerOptions['target']).toBe('ES2025');
+    expect(readTsconfigLanguageLevel('tsconfig.json')?.target).toBe('es2025');
+  });
+
+  it('carries top-level fields that are not compilerOptions', () => {
+    temp.writeJson('tsconfig.json', { files: ['vite.config.ts'], include: ['src'] });
+
+    expect(readTsconfigChain('tsconfig.json')?.entries[0]?.config).toStrictEqual({
+      files: ['vite.config.ts'],
+      include: ['src'],
+    });
+  });
+
+  it('records the extends specifier that reached each config, verbatim', () => {
+    temp.writeJson('base.json', { compilerOptions: { target: 'ES2022' } });
+    temp.writeJson('tsconfig.json', { extends: './base' });
+
+    const entries = readTsconfigChain('tsconfig.json')?.entries;
+
+    // Only `path` reflects the `.json` the resolver appended; the specifier stays as the config wrote it.
+    expect(entries?.map((entry) => [entry.path, entry.specifier])).toStrictEqual([
+      ['tsconfig.json', undefined],
+      ['base.json', './base'],
+    ]);
+  });
+
+  it('keeps the specifier stable where the path depends on install layout', () => {
+    linkPackage('@scoped/base', {
+      'package.json': { name: '@scoped/base', exports: { './tsconfig.base.json': './tsconfig.base.json' } },
+      'tsconfig.base.json': { compilerOptions: { target: 'ES2025' } },
+    });
+    temp.writeJson('tsconfig.json', { extends: '@scoped/base/tsconfig.base.json' });
+
+    const parent = readTsconfigChain('tsconfig.json')?.entries[1];
+
+    // A symlinked package resolves to the directory it occupies, so only the specifier names the package.
+    expect(parent?.path).toBe('store/@scoped/base/tsconfig.base.json');
+    expect(parent?.specifier).toBe('@scoped/base/tsconfig.base.json');
+  });
+
+  it('reports only what each config declares in its own right', () => {
+    temp.writeJson('base.json', { compilerOptions: { strict: true, target: 'ES2023' } });
+    temp.writeJson('tsconfig.json', { extends: './base.json', compilerOptions: { lib: ['ES2023'] } });
+
+    const entries = readTsconfigChain('tsconfig.json')?.entries;
+
+    // The entry config declares no `target`, so nothing folds the base's value into its options.
+    expect(entries?.map((entry) => entry.compilerOptions)).toStrictEqual([
+      { lib: ['ES2023'] },
+      { strict: true, target: 'ES2023' },
+    ]);
+  });
+
+  it('orders entries so a nearer declaration precedes the one it overrides', () => {
+    temp.writeJson('first.json', { compilerOptions: { target: 'ES2021' } });
+    temp.writeJson('second.json', { compilerOptions: { target: 'ES2024' } });
+    temp.writeJson('tsconfig.json', { extends: ['./first.json', './second.json'] });
+
+    // A later `extends` entry outranks an earlier one, so `second` precedes `first`.
+    expect(readTsconfigChain('tsconfig.json')?.entries.map((entry) => entry.path)).toStrictEqual([
+      'tsconfig.json',
+      'second.json',
+      'first.json',
+    ]);
+  });
+
+  it('reports a config reached through a diamond once, naming the branch that outranks', () => {
+    temp.writeJson('base.json', { compilerOptions: { target: 'ES2021' } });
+    temp.writeJson('low.json', { extends: './base' });
+    temp.writeJson('high.json', { extends: './base.json' });
+    temp.writeJson('tsconfig.json', { extends: ['./low.json', './high.json'] });
+
+    const entries = readTsconfigChain('tsconfig.json')?.entries;
+
+    // Both branches name the same file by different specifiers; `high` reaches it first and supplies the identity.
+    expect(entries?.map((entry) => [entry.path, entry.specifier])).toStrictEqual([
+      ['tsconfig.json', undefined],
+      ['high.json', './high.json'],
+      ['base.json', './base.json'],
+      ['low.json', './low.json'],
+    ]);
+  });
+
+  it('stops at a cycle, reporting each config once', () => {
+    temp.writeJson('a.json', { extends: './b.json' });
+    temp.writeJson('b.json', { extends: './a.json' });
+
+    expect(readTsconfigChain('a.json')?.entries.map((entry) => entry.path)).toStrictEqual(['a.json', 'b.json']);
+  });
+
+  it('attributes an unresolvable specifier to the config that declared it', () => {
+    temp.writeJson('middle.json', { extends: './absent.json' });
+    temp.writeJson('tsconfig.json', { extends: './middle.json' });
+
+    expect(readTsconfigChain('tsconfig.json')?.unresolvedExtends).toStrictEqual([
+      { from: 'middle.json', specifier: './absent.json' },
+    ]);
+  });
+
+  it('attributes an unparseable parent to the config that declared it', () => {
+    temp.write('broken.json', 'this is not a config at all');
+    temp.writeJson('middle.json', { extends: './broken.json' });
+    temp.writeJson('tsconfig.json', { extends: './middle.json' });
+
+    expect(readTsconfigChain('tsconfig.json')?.unresolvedExtends).toStrictEqual([
+      { from: 'middle.json', specifier: './broken.json' },
+    ]);
+  });
+
+  it('returns undefined when the entry file is missing', () => {
+    expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
+  });
+
+  it('returns undefined when the entry file is malformed', () => {
+    temp.write('tsconfig.json', '@@@ not json @@@');
+
+    expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
+  });
+
+  it('returns undefined when the entry file holds a non-object', () => {
+    temp.write('tsconfig.json', '["ES2025"]');
+
+    expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
+  });
+});
 
 describe(readTsconfigLanguageLevel, () => {
   it('reads lib and target from a single config', () => {
