@@ -29,7 +29,7 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 **Root-level (from repo root):**
 
 - `pnpm install` — Install all dependencies
-- `nmr ci` — The code-quality gate CI runs (build + strict checks)
+- `nmr ci` — The code-quality gate CI runs (kit-freshness check + build + strict checks)
 - `nmr prepush` — Everything the remote runs (`nmr ci` plus the dependency audit)
 - `nmr check` — Typecheck, format check, lint check, and tests
 - `nmr build` — Build all packages
@@ -67,3 +67,4 @@ Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scrip
 
 - **Build caching**: `nmr-compile`'s content-hash cache (`dist/esm/.cache`) means a rebuild won't run if only non-source files change. Delete the cache file to force a rebuild.
 - **Check caching**: a check that already passed on the current working tree reports a pass without running again. Use `nmr --no-cache {command}` when the run has to produce an artifact rather than an exit status (a fresh `coverage/`), and `nmr clean` to forget every recorded pass.
+- **Kit freshness**: the tracked kit bundles embed the readyup version that compiled them, so a readyup version bump leaves them stale until `rdy compile` runs. `nmr ci` verifies them by recompiling, and does so before its build step, which would otherwise regenerate a stale bundle in place.
