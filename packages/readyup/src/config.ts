@@ -1,8 +1,9 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { assertIsRdyKit } from './assertIsRdyKit.ts';
 import { jitiImport } from './jitiImport.ts';
+import { assertKitImportsResolve } from './kitImports/assertKitImportsResolve.ts';
 import { KITS_DIR } from './kitsDir.ts';
 import { enumerateKits } from './list/enumerateKits.ts';
 import { resolveKitExports } from './resolveKitExports.ts';
@@ -20,18 +21,27 @@ export interface LoadedRdyKit {
 }
 
 /**
- * Load and validate a rdy kit file.
+ * Loads and validates a rdy kit file.
  *
  * Uses jiti to load TypeScript config files at runtime. Returns the validated kit and the
  * embedded `__readyupVersion` from the imported module namespace when present, or `undefined`
  * for kits compiled before that field was introduced (and for `.ts` sources, which have no
  * generated banner).
+ *
+ * A compiled kit binding readyup symbols this runner does not export never reaches evaluation, so the failure
+ * names them rather than surfacing as an `undefined` binding once a check calls one.
  */
 export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
 
   if (!existsSync(resolvedPath)) {
     throw new Error(diagnoseMissingKit(resolvedPath));
+  }
+
+  // Check a bundle's readyup imports before evaluating it. A `.ts` kit is source rather than a bundle: it binds
+  // readyup through the project's own installation, which resolves or fails on its own terms.
+  if (path.extname(resolvedPath) === '.js') {
+    await assertKitImportsResolve(readFileSync(resolvedPath, 'utf8'), toDisplayPath(resolvedPath));
   }
 
   const imported = await jitiImport(

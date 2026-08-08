@@ -4,10 +4,13 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
-import { kitLoadError, toRdyError, usageError } from './errors.ts';
+import { kitLoadError, type RdyError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
+import { describeUnresolvableImports } from './kitImports/describeUnresolvableImports.ts';
+import { UnresolvableKitImportsError } from './kitImports/UnresolvableKitImportsError.ts';
+import type { KitProvenance } from './KitProvenance.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
 import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine.ts';
@@ -38,26 +41,12 @@ import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
-import { VERSION } from './version.ts';
-import { compareVersionsForSkew } from './versionSkew/compareVersionsForSkew.ts';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 
 /** Discriminated union describing how to locate the rdy kit. */
 export type KitSource = { path: string } | { url: string };
-
-/**
- * Where a kit came from, absent only for a kit resolved from the local kits directory.
- *
- * Three kinds where `--from` accepts six: the six collapse onto three roles a heading can name, and a
- * distinction no reader ever sees is one nothing should carry. A source kind added later joins this
- * union and the branch that renders it.
- */
-export type KitProvenance =
-  | { kind: 'directory'; label: string }
-  | { kind: 'package'; packageName: string; version: string | undefined }
-  | { kind: 'remote'; label: string };
 
 /** A resolved kit entry with its source and checklist filter. */
 export interface ResolvedKitEntry {
@@ -565,8 +554,15 @@ interface HumanRunSettings {
   reportOn: Severity | undefined;
 }
 
-/** Load a rdy kit from a path or URL source. */
-async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit> {
+/**
+ * Loads a rdy kit from a path or URL source.
+ *
+ * Takes the whole entry rather than its source alone: a kit whose readyup imports the runner cannot satisfy is
+ * reported with a remedy chosen from the kit's provenance, which the source by itself does not carry.
+ */
+async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
+  const { source } = entry;
+
   if ('url' in source) {
     const provider = resolveRemoteProvider(source.url);
     const headers = resolveRemoteAuthHeaders(provider);
@@ -575,6 +571,9 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
     try {
       return await loadRemoteKit(options);
     } catch (error: unknown) {
+      // Catch ahead of the remote wrapper: a kit that fetched cleanly and binds symbols the runner lacks is a
+      // diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
+      if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
       throw toRemoteRdyError(error, {
         code: 'kit-load',
         provider,
@@ -587,6 +586,7 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
   try {
     return await loadRdyKit(source.path);
   } catch (error: unknown) {
+    if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
     if (isJit && isModuleNotFoundError(error, 'readyup')) {
       throw kitLoadError('Running from source requires readyup to be installed as a project dependency.', {
         cause: error,
@@ -596,24 +596,13 @@ async function loadKit(source: KitSource, isJit: boolean): Promise<LoadedRdyKit>
   }
 }
 
-/**
- * Emit a directional, advisory stderr warning when a kit's compile-time readyup version skews
- * from the runner's version above the leftmost-non-zero boundary.
- *
- * Silent when the compile-time version is absent (older kit, third-party `--url` source, or
- * uncompiled `.ts` source via `--jit`) and when the comparator returns no-skew.
- *
- * The stderr line is written in both modes; the returned entry is what JSON mode captures into the
- * report, so a consumer that owns only stdout still learns the run was advised of something.
- */
-function warnOnVersionSkew(kitName: string, compileTimeVersion: string | undefined): RaisedWarning | undefined {
-  if (compileTimeVersion === undefined) return undefined;
-  const result = compareVersionsForSkew(compileTimeVersion, VERSION);
-  if (result.kind === 'no-skew') return undefined;
-  const remedy = result.direction === 'runner-newer' ? 'Run `rdy compile` to refresh.' : 'Upgrade readyup to match.';
-  const message = `kit "${kitName}" was compiled against readyup ${compileTimeVersion}; runner is ${VERSION}.`;
-  process.stderr.write(`Warning: ${message} ${remedy}\n`);
-  return { code: 'version-skew', message, remedy };
+/** Turns unresolvable readyup imports into the kit-load failure a reader sees, named for where the kit came from. */
+function toUnresolvableImportsError(error: UnresolvableKitImportsError, entry: ResolvedKitEntry): RdyError {
+  const { hint, message } = describeUnresolvableImports(error.findings, {
+    kitName: entry.name,
+    provenance: entry.provenance,
+  });
+  return kitLoadError(message, { cause: error, hint });
 }
 
 /** The manifest an invocation checks its kits against, read once and shared by every kit in the run. */
@@ -751,10 +740,8 @@ async function runMultiKitJsonMode(
 
   for (const entry of kitEntries) {
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
+      const { kit, compileTimeVersion } = await loadKit(entry, isJit);
 
-      const warning = warnOnVersionSkew(entry.name, compileTimeVersion);
-      if (warning !== undefined) warnings.push(warning);
       warnings.push(...warnOnKitStaleness(entry.name, entry.source, tracking));
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
@@ -828,9 +815,8 @@ async function runMultiKitHumanMode(
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry.source, isJit);
+      const { kit } = await loadKit(entry, isJit);
 
-      warnOnVersionSkew(entry.name, compileTimeVersion);
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
       const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, {

@@ -179,7 +179,7 @@ describe(formatJsonReport, () => {
     });
 
     it('carries collected warnings alongside the results', () => {
-      const warnings = [{ code: 'version-skew' as const, message: 'kit is stale', remedy: 'Run `rdy compile`.' }];
+      const warnings = [{ code: 'source-stale' as const, message: 'kit is stale', remedy: 'Run `rdy compile`.' }];
 
       const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport()), { warnings }));
 
