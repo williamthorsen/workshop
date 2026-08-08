@@ -54,6 +54,7 @@
     "verify:kits": "node src/bin/rdy.ts run publishing"
   },
   "dependencies": {
+    "es-module-lexer": "2.3.1",
     "jiti": "2.7.0",
     "jsonc-parser": "3.3.1",
     "picomatch": "4.0.5",
