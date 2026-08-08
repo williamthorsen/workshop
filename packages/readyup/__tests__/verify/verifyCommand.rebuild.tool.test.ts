@@ -191,7 +191,7 @@ function restampBundle(tempDir: string, version: string): void {
   const bundlePath = path.join(tempDir, 'kit.js');
   const restamped = readFileSync(bundlePath, 'utf8').replace(
     /__readyupVersion = "[^"]*"/,
-    `__readyupVersion = ${JSON.stringify(version)}`,
+    () => `__readyupVersion = ${JSON.stringify(version)}`,
   );
   writeFileSync(bundlePath, restamped);
 
