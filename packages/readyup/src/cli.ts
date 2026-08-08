@@ -4,7 +4,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { buildKitFilename } from './buildKitFilename.ts';
 import { type LoadedRdyKit, loadRdyKit } from './config.ts';
-import { kitLoadError, type RdyError, toRdyError, usageError } from './errors.ts';
+import { configError, kitLoadError, type RdyError, toRdyError, usageError } from './errors.ts';
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { formatCombinedSummary } from './formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from './formatJsonReport.ts';
@@ -17,7 +17,7 @@ import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
-import { expandConfiguredPackages } from './packages/expandConfiguredPackages.ts';
+import { expandConfiguredPackages, type PackageKit } from './packages/expandConfiguredPackages.ts';
 import { type FromSource, type NpmSource, parseFromValue } from './parseFromValue.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from './remote/loadRemoteKit.ts';
@@ -41,6 +41,9 @@ import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
 import { checkSourceDrift } from './verify/checkSourceDrift.ts';
+
+/** The kit every source runs when the invocation names none. */
+const DEFAULT_KIT_NAME = 'default';
 
 /** Valid severity values for CLI flag validation. */
 const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
@@ -362,10 +365,15 @@ export function resolveKitSources({
   // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
+  // Fill the default before the `--packages` branch reads it, so a bare invocation is structurally
+  // `--packages default` and the two forms cannot select different kits.
+  const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
+
   if (packages === true) {
-    return resolveConfiguredPackages(configuredPackages ?? [], extension);
+    const requestedNames = declaredSpecs.map((spec) => spec.kitName);
+    return resolveConfiguredPackages(configuredPackages ?? [], requestedNames, extension);
   }
-  const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: 'default', checklists: [] }];
+
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
   // invocation where "one kit" is ambiguous, so this map never covers more than a single spec.
   const specs = checklists === undefined ? declaredSpecs : declaredSpecs.map((spec) => ({ ...spec, checklists }));
@@ -472,23 +480,80 @@ function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension:
 }
 
 /**
- * Resolves every kit the configured packages publish into run entries.
+ * Resolves the requested kits, drawn from what the configured packages publish, into run entries.
  *
  * An empty list is a usage error rather than an empty run: `--packages` with nothing configured would
  * otherwise report a clean pass having checked nothing, which is the one outcome a verification tool
  * must never invent.
  */
-function resolveConfiguredPackages(configuredPackages: string[], extension: string): ResolvedKitEntry[] {
+function resolveConfiguredPackages(
+  configuredPackages: string[],
+  requestedNames: string[],
+  extension: string,
+): ResolvedKitEntry[] {
   if (configuredPackages.length === 0) {
     throw usageError('--packages requires a "packages" list in the readyup config; none is configured.');
   }
 
-  return expandConfiguredPackages(configuredPackages, extension).map((kit) => ({
+  const published = expandConfiguredPackages(configuredPackages, extension);
+
+  return selectRequestedKits(published, requestedNames).map((kit) => ({
     name: kit.kitName,
     source: { path: kit.path },
     checklists: [],
     provenance: { kind: 'package', packageName: kit.packageName, version: kit.version },
   }));
+}
+
+/**
+ * Narrows what the configured packages publish to the requested kits, name-major.
+ *
+ * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
+ * order `rdy run a b` runs them in against a single source.
+ */
+function selectRequestedKits(published: PackageKit[], requestedNames: string[]): PackageKit[] {
+  return requestedNames.flatMap((kitName) =>
+    kitName === DEFAULT_KIT_NAME ? selectDefaultKits(published) : selectNamedKits(published, kitName),
+  );
+}
+
+/**
+ * Selects `default` from every configured package, failing on one that publishes none.
+ *
+ * A package missing `default` is drift between a hand-maintained list and a convention readyup's own
+ * `publishing` kit enforces, so it fails the run the way an absent package already does. The kits it
+ * does publish are named because the reader's next move is to run one of them by name.
+ */
+function selectDefaultKits(published: PackageKit[]): PackageKit[] {
+  const packageNames = new Set(published.map((kit) => kit.packageName));
+
+  return [...packageNames].map((packageName) => {
+    const kits = published.filter((kit) => kit.packageName === packageName);
+    const defaultKit = kits.find((kit) => kit.kitName === DEFAULT_KIT_NAME);
+    if (defaultKit === undefined) {
+      const names = kits.map((kit) => kit.kitName).join(', ');
+      throw configError(
+        `Configured package "${packageName}" publishes no kit named "${DEFAULT_KIT_NAME}"; it publishes: ${names}.`,
+      );
+    }
+    return defaultKit;
+  });
+}
+
+/**
+ * Selects a named kit from every configured package publishing it, rejecting a name none publishes.
+ *
+ * A package without the kit is skipped rather than reported: naming a kit is a selection across the
+ * configured set, and a package that does not participate is not drift. A name nothing publishes is a
+ * bad invocation, and answering it with an empty pass would be the clean report of nothing checked.
+ */
+function selectNamedKits(published: PackageKit[], kitName: string): PackageKit[] {
+  const selected = published.filter((kit) => kit.kitName === kitName);
+  if (selected.length === 0) {
+    const available = [...new Set(published.map((kit) => kit.kitName))].join(', ');
+    throw usageError(`No configured package publishes a kit named "${kitName}"; available kits: ${available}.`);
+  }
+  return selected;
 }
 
 /**
