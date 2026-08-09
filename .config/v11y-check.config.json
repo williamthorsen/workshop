@@ -2,15 +2,7 @@
   "$schema": "https://github.com/williamthorsen/node-monorepo-tools/raw/audit-deps-v0.4.0/packages/audit-deps/schemas/config.json",
   "dev": {
     "severityThreshold": "moderate",
-    "allowlist": [
-      {
-        "addedAt": "2026-08-08T21:00:55.395Z",
-        "id": "1138813",
-        "path": ".>@vitest/coverage-v8>vitest>vite>postcss>nanoid",
-        "reason": "Added by v11y sync at 2026-08-08 21:00:55 UTC",
-        "url": "https://github.com/advisories/GHSA-2v37-7h3g-55p8"
-      }
-    ]
+    "allowlist": []
   },
   "prod": {
     "severityThreshold": "low",

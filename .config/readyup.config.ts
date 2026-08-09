@@ -8,5 +8,13 @@ export default defineRdyConfig({
     dir: 'internal',
   },
   // `rdy run --packages` runs the `default` kit of each of these packages.
-  packages: ['@williamthorsen/nmr', '@williamthorsen/release-kit', 'v11y-check'],
+  packages: [
+    '@williamthorsen/eslint-config-typescript',
+    '@williamthorsen/nmr',
+    '@williamthorsen/release-kit',
+    '@williamthorsen/tsconfig',
+    'codeassembly',
+    'readyup',
+    'v11y-check',
+  ],
 });
