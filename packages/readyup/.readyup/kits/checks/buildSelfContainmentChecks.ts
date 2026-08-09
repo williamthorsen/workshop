@@ -1,7 +1,7 @@
 import type { CheckOutcome, RdyCheck } from 'readyup';
 import { readFile } from 'readyup/check-utils';
 
-import { listCompiledBundlePaths } from './kit-layout.ts';
+import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
 
 /**
  * Module specifiers a compiled kit may import verbatim.
@@ -43,7 +43,7 @@ export function buildSelfContainmentChecks(): RdyCheck[] {
     return [
       {
         name: 'Every compiled kit imports only what the runner supplies',
-        skip: () => 'nothing compiled',
+        skip: () => NO_BUNDLES_REASON,
         check: () => true,
       },
     ];
@@ -72,7 +72,7 @@ function describeSelfContainment(bundlePath: string): CheckOutcome {
 
   const foreign = findForeignSpecifiers(bundle);
   if (foreign.length === 0) return { ok: true };
-  return { ok: false, detail: `imports ${foreign.join(', ')}` };
+  return { ok: false, detail: `It imports ${foreign.join(', ')}` };
 }
 
 /** Returns true when a specifier is one esbuild was told to leave external. */

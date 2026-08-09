@@ -110,6 +110,16 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed' });
     });
 
+    // `default` stands down for a project that defines no kits; a package that ships them and has none
+    // is broken, so this kit keeps reading the absence as an error.
+    it('reports a package holding no kit directory at all', async () => {
+      writePackageJson(projectRoot, { files: ['.readyup'] });
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed', severity: 'error' });
+    });
+
     // Publishing only named kits is legitimate, but a consumer's first invocation is a bare one.
     it('reports a missing default kit without blocking the publish', async () => {
       writePublishablePackage(projectRoot, { files: ['.readyup'] }, 'release');
@@ -130,7 +140,7 @@ describe('publishing kit', () => {
 
       expect(pickResult(results, 'under its own name')).toMatchObject({
         status: 'failed',
-        detail: `default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
+        detail: `The manifest records default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
       });
     });
   });
@@ -150,7 +160,7 @@ describe('publishing kit', () => {
 
       const results = await runSelfContainment();
 
-      expect(results[0]).toMatchObject({ status: 'failed', detail: 'imports picomatch' });
+      expect(results[0]).toMatchObject({ status: 'failed', detail: 'It imports picomatch' });
     });
 
     it('stands down when the package compiles nothing', async () => {
@@ -159,7 +169,7 @@ describe('publishing kit', () => {
       const results = await runSelfContainment();
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'nothing compiled' });
+      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
   });
 

@@ -10,7 +10,7 @@ import { DEFAULT_MANIFEST_PATH, defineRdyKit } from 'readyup';
 import { fileExists } from 'readyup/check-utils';
 
 import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
-import { KITS_DIR, listCompiledBundlePaths } from './checks/kit-layout.ts';
+import { skipWithoutBundles, skipWithoutKits } from './checks/kit-layout.ts';
 
 /** The one path `loadConfig` looks in; see `src/loadConfig.ts`. */
 const CONFIG_PATH = '.config/readyup.config.ts';
@@ -23,21 +23,18 @@ export default defineRdyKit({
       name: 'setup',
       checks: [
         {
-          name: `${KITS_DIR} exists`,
-          check: () => fileExists(KITS_DIR),
-          fix: `Run 'rdy init' to scaffold a starter config and kit`,
-        },
-        {
           name: `${CONFIG_PATH} exists`,
           severity: 'recommend',
+          skip: skipWithoutKits,
           check: () => fileExists(CONFIG_PATH),
           fix: `Run 'rdy init' to scaffold one; without it, compile settings fall back to their defaults`,
         },
         {
           // A project running its kits with `--jit` compiles nothing and needs no manifest, so the
-          // claim only applies once a bundle exists to be recorded.
+          // claim only applies once a bundle exists to be recorded. The broader reason comes first:
+          // a project with no kits at all has not declined to compile them.
           name: `${DEFAULT_MANIFEST_PATH} exists`,
-          skip: () => (listCompiledBundlePaths().length === 0 ? 'nothing compiled' : false),
+          skip: () => skipWithoutKits() || skipWithoutBundles(),
           check: () => fileExists(DEFAULT_MANIFEST_PATH),
           fix: `Run 'rdy compile' to record every compiled kit and its hashes`,
         },

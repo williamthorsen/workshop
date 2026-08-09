@@ -39,17 +39,31 @@ describe('default kit', () => {
 
       const results = await runSetup();
 
-      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'passed']);
+      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed']);
     });
 
-    it('reports a missing kit directory', async () => {
+    // A monorepo root that lists `packages` authors no kits of its own, and is not defective for it.
+    it('stands down for a project that defines no kits', async () => {
       const results = await runSetup();
 
-      expect(pickResult(results, 'kits')).toMatchObject({ status: 'failed' });
+      expect(results).toHaveLength(2);
+      expect(results.every((result) => result.status === 'skipped')).toBe(true);
+      expect(results.every((result) => result.detail === 'This project defines no kits')).toBe(true);
+    });
+
+    // The manifest is where a project compiling to a non-default `outDir` declares that it has kits.
+    it('applies to a project holding a manifest but no kit directory', async () => {
+      writeKitManifest(projectRoot, []);
+
+      const results = await runSetup();
+
+      expect(pickResult(results, 'readyup.config.ts')).toMatchObject({ status: 'failed' });
     });
 
     // A project can be perfectly functional without one; the defaults it would have declared still apply.
     it('reports a missing config at the lowest severity', async () => {
+      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+
       const results = await runSetup();
 
       expect(pickResult(results, 'readyup.config.ts')).toMatchObject({ status: 'failed', severity: 'recommend' });
@@ -61,7 +75,10 @@ describe('default kit', () => {
 
       const results = await runSetup();
 
-      expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'skipped', detail: 'nothing compiled' });
+      expect(pickResult(results, 'manifest.json')).toMatchObject({
+        status: 'skipped',
+        detail: 'There are no compiled kits',
+      });
     });
 
     it('asks for a manifest once a bundle exists', async () => {
@@ -91,7 +108,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Its source')).toMatchObject({
         status: 'failed',
-        detail: expect.stringContaining('expected 0badcafe'),
+        detail: expect.stringContaining('not the recorded 0badcafe'),
       });
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
     });
@@ -104,7 +121,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Its bundle')).toMatchObject({
         status: 'failed',
-        detail: expect.stringContaining('expected 0badcafe'),
+        detail: expect.stringContaining('not the recorded 0badcafe'),
       });
     });
 
@@ -131,7 +148,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'recorded with a source and a bundle hash')).toMatchObject({
         status: 'failed',
-        detail: 'no source or bundle hash recorded',
+        detail: 'The manifest records no source or bundle hash',
       });
       expect(pickResult(results, 'Its source')).toMatchObject({ status: 'skipped' });
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
@@ -143,7 +160,7 @@ describe('default kit', () => {
       const results = await runFreshness();
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'nothing compiled' });
+      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
 
     it('reports bundles no manifest accounts for', async () => {

@@ -106,8 +106,9 @@ describe('kits readyup publishes', () => {
     ]);
   });
 
-  // A consuming project has no kit directory of its own, and the kits report on that rather than
-  // mistaking the absence for nothing to say.
+  // The kits read the consuming project's working directory, and this one defines no kits of its own.
+  // Every setup check standing down is what says so: a pass would mean they had judged readyup's own
+  // kit directory, which travelled in with the package.
   it('judges the consuming project rather than the package it came from', async () => {
     const entries = resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
@@ -115,8 +116,7 @@ describe('kits readyup publishes', () => {
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     const setup = kit.checklists.find((checklist) => checklist.name === 'setup');
-    expect(setup?.counts.warnings).toBeGreaterThan(0);
-    // Advisory findings alone, so a bare run still exits clean.
+    expect(setup?.counts).toMatchObject({ passed: 0, warnings: 0, optional: 2 });
     expect(exitCode).toBe(0);
   });
 });

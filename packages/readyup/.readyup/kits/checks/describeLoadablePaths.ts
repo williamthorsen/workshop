@@ -19,7 +19,7 @@ export function describeLoadablePaths(): CheckOutcome {
   });
 
   if (misplaced.length === 0) return { ok: true };
-  return { ok: false, detail: misplaced.join(', ') };
+  return { ok: false, detail: `The manifest records ${misplaced.join(', ')}` };
 }
 
 // region | Helpers

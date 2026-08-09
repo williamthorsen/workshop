@@ -39,7 +39,7 @@ describe('scaffolded kit', () => {
 
     const results = await runScaffoldedKit();
 
-    expect(results).toMatchObject([{ name: 'NODE_ENV is set', status: 'passed', detail: 'production' }]);
+    expect(results).toMatchObject([{ name: 'NODE_ENV is set', status: 'passed', detail: 'NODE_ENV is production' }]);
   });
 
   it('fails with NODE_ENV unset, reporting that the environment carries no value', async () => {
@@ -52,7 +52,7 @@ describe('scaffolded kit', () => {
       {
         name: 'NODE_ENV is set',
         status: 'failed',
-        detail: 'no value in the environment',
+        detail: 'NODE_ENV has no value in the environment',
         fix: 'Set NODE_ENV before deploying',
       },
     ]);
