@@ -1037,12 +1037,14 @@ import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 
 ### Package manifests
 
-| Function                                    | Returns                                   |
-| ------------------------------------------- | ----------------------------------------- |
-| `readPackageJson()`                         | Parsed `package.json`                     |
-| `hasPackageJsonField(field, value?)`        | Field exists, optionally matching a value |
-| `hasDevDependency(name)`                    | Dev dependency is declared                |
-| `hasMinDevDependencyVersion(name, version)` | Dev dependency meets a minimum            |
+| Function                                              | Returns                                   |
+| ----------------------------------------------------- | ----------------------------------------- |
+| `readPackageJson()`                                   | Parsed `package.json`                     |
+| `hasPackageJsonField(field, value?)`                  | Field exists, optionally matching a value |
+| `hasDevDependency(name)`                              | Dev dependency is declared                |
+| `hasMinDevDependencyVersion(name, version, options?)` | Dev dependency meets a minimum            |
+
+`hasMinDevDependencyVersion` compares the floor against the version it reads out of the specifier in `package.json`, so the specifier's protocol can settle the answer before any comparison happens. Any `workspace:`-prefixed specifier satisfies any floor, `workspace:^1.2.3` included: it links to the package the repo builds, and a repo that publishes a package is not a consumer of it. A `catalog:` specifier does not, because the version it resolves to in `pnpm-workspace.yaml` can genuinely be below the floor. Pass `options.exempt` to exempt further specifiers; it receives the specifier as written and adds to the built-in exemption rather than replacing it.
 
 ### Versions and runtime alignment
 
