@@ -60,7 +60,7 @@ export default defineRdyKit({
           name: 'NODE_ENV is set',
           check: () => {
             const value = process.env['NODE_ENV'];
-            return { ok: Boolean(value), detail: value ?? 'no value in the environment' };
+            return { ok: Boolean(value), detail: value ?? 'NODE_ENV has no value in the environment' };
           },
           fix: 'Set NODE_ENV before deploying',
         },
@@ -81,7 +81,7 @@ With `NODE_ENV` unset:
 
 ```
 🔴 NODE_ENV is set
-   no value in the environment
+   NODE_ENV has no value in the environment
 ──
 🔴 1 error (0ms)
 
@@ -252,7 +252,7 @@ Neither is a `quiet` check, though it looks like one: its name reaches the reade
 
 ### The detail contract
 
-`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. It opens in lower case, continuing the claim it hangs from rather than standing as a sentence of its own.
+`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and carrying no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
@@ -274,7 +274,7 @@ export default defineRdyKit({
       checks: [
         {
           name: 'Working tree is clean',
-          check: () => ({ ok: true, detail: 'no uncommitted changes' }),
+          check: () => ({ ok: true, detail: 'There are no uncommitted changes' }),
         },
         {
           name: 'Dependencies are installed',
@@ -294,7 +294,7 @@ export default defineRdyKit({
             {
               name: 'Native modules are rebuilt',
               check: () => true,
-              skip: () => 'no native dependencies in this workspace',
+              skip: () => 'This workspace has no native dependencies',
             },
           ],
         },
@@ -307,12 +307,12 @@ export default defineRdyKit({
 It produces:
 
 ```
-🟢 Working tree is clean · no uncommitted changes
+🟢 Working tree is clean · There are no uncommitted changes
 🟢 Dependencies are installed
    🟢 Lockfile is current [4 of 4]
       🔴 No dependency has duplicated majors
          react resolves to both 18.3.1 and 19.0.0
-   ⚪ Native modules are rebuilt · no native dependencies in this workspace
+   ⚪ Native modules are rebuilt · This workspace has no native dependencies
 ──
 🔴 | 1 error, 3 passed, 1 skipped (0ms)
 
@@ -897,12 +897,12 @@ rdy list --from npm:readyup           # both, with the checklists each one carri
 
 `default` reports at `warn` and below, so it is safe to run mid-edit:
 
-| Checklist   | What it asserts                                                                                                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------------- |
-| `setup`     | The kit directory exists, a config file is present (at `recommend`), and a manifest records what has been compiled. |
-| `freshness` | Every kit the manifest records still matches the hashes recorded for it, on the source side and the bundle side.    |
+| Checklist   | What it asserts                                                                                                  |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                        |
+| `freshness` | Every kit the manifest records still matches the hashes recorded for it, on the source side and the bundle side. |
 
-The manifest check stands down when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit.
+Both `setup` checks stand down for a project that defines no kits of its own: a monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it holds either `.readyup/kits` or `.readyup/manifest.json`. The manifest check stands down for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit.
 
 `publishing` reports at `error`, for a package that distributes its kits:
 

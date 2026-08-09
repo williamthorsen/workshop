@@ -31,7 +31,7 @@ export default defineRdyKit({
           name: 'NODE_ENV is set',
           check: () => {
             const value = process.env['NODE_ENV'];
-            return { ok: Boolean(value), detail: value ?? 'no value in the environment' };
+            return { ok: Boolean(value), detail: value ?? 'NODE_ENV has no value in the environment' };
           },
           fix: 'Set NODE_ENV before deploying',
         },
