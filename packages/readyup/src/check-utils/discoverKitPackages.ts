@@ -17,12 +17,12 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
  * packages the reader already chose to depend on and keeps every answer actionable: a transitive package
  * is not one they can sensibly add to a list of their own.
  *
- * Best effort throughout — this feeds a suggestion, so an unreadable manifest costs the suggestion and
- * never the listing that carries it.
+ * Best effort throughout: a project manifest that cannot be read or parsed yields `[]`, which a caller
+ * cannot distinguish from a project that declares no kit-publishing dependencies.
  */
 export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
   // A package may be declared in both dependency fields, which npm permits; the set collapses the pair
-  // so it is offered once.
+  // so it is named once.
   const declared = new Set(readDeclaredDependencies(fromDir));
   return [...declared].filter((packageName) => publishesKits(packageName, fromDir)).toSorted();
 }

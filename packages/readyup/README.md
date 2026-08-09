@@ -1109,6 +1109,16 @@ const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 
 `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, or negation patterns raise a clear error.
 
+### Kit packages
+
+`discoverKitPackages(fromDir?)` names the installed dependencies that publish kits, sorted. It reads the `dependencies` and `devDependencies` a project declares rather than sweeping `node_modules`, so every name it returns is one the reader chose to depend on and can act on; a transitive package is not. `fromDir` defaults to `cwd`, which under `rdy run --from <other-repo>` is the project being checked rather than the repo the kit came from.
+
+```ts
+const missing = discoverKitPackages().filter((name) => !configuredPackages.includes(name));
+```
+
+It answers best effort: a project manifest it cannot read or parse yields `[]`. An empty result therefore does not distinguish a project with no kit-publishing dependencies from one whose manifest could not be read, which a check treating the result as authoritative would report as a pass either way.
+
 ## Compatibility
 
 `readyup/check-utils` is the stable, versioned surface for kit-author imports. It follows semver: no breaking changes within a major version.

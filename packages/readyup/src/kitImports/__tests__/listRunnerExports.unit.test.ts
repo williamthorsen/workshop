@@ -39,6 +39,11 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('runGit');
   });
 
+  // The whole of what lets a kit import it: absent from the table, the import fails validation.
+  it('reports discoverKitPackages as a value export a kit can bind', () => {
+    expect(listRunnerExports('readyup/check-utils')).toContain('discoverKitPackages');
+  });
+
   it('omits a type-only export, which no bundle can bind', () => {
     expect(listRunnerExports('readyup')).not.toContain('RdyKit');
   });

@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { discoverKitPackages } from '../../src/packages/discoverKitPackages.ts';
+import { discoverKitPackages } from '../../src/check-utils/discoverKitPackages.ts';
 import { useTempDir } from '../helpers/tempDir.ts';
 
 const temp = useTempDir({
