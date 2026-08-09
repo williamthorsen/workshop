@@ -36,7 +36,8 @@ const projectFoundations = {
       name: 'Project is ESM',
       check: () => {
         const type = readJsonValue('package.json', 'type');
-        const detail = type === undefined ? 'no "type" field' : `"type": ${JSON.stringify(type)}`;
+        const detail =
+          type === undefined ? 'package.json declares no "type" field' : `"type" is ${JSON.stringify(type)}`;
         return { ok: type === 'module', detail };
       },
       fix: 'Add "type": "module" to package.json',
@@ -45,7 +46,7 @@ const projectFoundations = {
       name: 'packageManager field is set',
       check: () => {
         const value = readJsonValue('package.json', 'packageManager');
-        return typeof value === 'string' ? { ok: true, detail: value } : { ok: false };
+        return typeof value === 'string' ? { ok: true, detail: `packageManager is ${value}` } : { ok: false };
       },
       fix: 'Add "packageManager" to package.json (e.g., "pnpm@10.x.x")',
     },
@@ -72,7 +73,7 @@ const optionalIntegrations = {
   checks: [
     {
       name: 'Docker is configured',
-      skip: () => (!fileExists('Dockerfile') ? 'no Dockerfile' : false),
+      skip: () => (!fileExists('Dockerfile') ? 'This project has no Dockerfile' : false),
       check: () => true,
       checks: [
         {
@@ -83,7 +84,7 @@ const optionalIntegrations = {
     },
     {
       name: 'Renovate is configured',
-      skip: () => (!fileExists('renovate.json') ? 'no renovate.json' : false),
+      skip: () => (!fileExists('renovate.json') ? 'This project has no renovate.json' : false),
       check: () => true,
       checks: [
         {
