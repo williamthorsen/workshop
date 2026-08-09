@@ -110,6 +110,16 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed' });
     });
 
+    // `default` stands down for a project that defines no kits; a package that ships them and has none
+    // is broken, so this kit keeps reading the absence as an error.
+    it('reports a package holding no kit directory at all', async () => {
+      writePackageJson(projectRoot, { files: ['.readyup'] });
+
+      const results = await runPackaging();
+
+      expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed', severity: 'error' });
+    });
+
     // Publishing only named kits is legitimate, but a consumer's first invocation is a bare one.
     it('reports a missing default kit without blocking the publish', async () => {
       writePublishablePackage(projectRoot, { files: ['.readyup'] }, 'release');
