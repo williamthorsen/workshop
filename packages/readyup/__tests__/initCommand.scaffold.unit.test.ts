@@ -52,7 +52,7 @@ describe('scaffolded kit', () => {
       {
         name: 'NODE_ENV is set',
         status: 'failed',
-        detail: 'no value in the environment',
+        detail: 'NODE_ENV has no value in the environment',
         fix: 'Set NODE_ENV before deploying',
       },
     ]);
