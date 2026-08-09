@@ -14,6 +14,11 @@ export const MANIFEST_DIR = path.dirname(DEFAULT_MANIFEST_PATH);
 /** Directory holding kit sources and the bundles compiled from them. */
 export const KITS_DIR = path.join(MANIFEST_DIR, 'kits');
 
+// -- Skip reasons --
+
+/** Detail reported by a check that stands down for want of a compiled bundle. */
+export const NO_BUNDLES_REASON = 'There are no compiled kits';
+
 /**
  * Paths of the compiled bundles in the kit directory, relative to the working directory.
  *
@@ -66,7 +71,7 @@ export function resolveRecordedPath(recordedPath: string): string {
 
 /** Skip reason for a check that has nothing to say until a bundle exists, or `false` once one does. */
 export function skipWithoutBundles(): SkipResult {
-  return listCompiledBundlePaths().length === 0 ? 'There are no compiled kits' : false;
+  return listCompiledBundlePaths().length === 0 ? NO_BUNDLES_REASON : false;
 }
 
 /**

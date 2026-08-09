@@ -1,7 +1,7 @@
 import type { CheckOutcome, RdyCheck } from 'readyup';
 import { readFile } from 'readyup/check-utils';
 
-import { listCompiledBundlePaths, skipWithoutBundles } from './kit-layout.ts';
+import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
 
 /**
  * Module specifiers a compiled kit may import verbatim.
@@ -43,7 +43,7 @@ export function buildSelfContainmentChecks(): RdyCheck[] {
     return [
       {
         name: 'Every compiled kit imports only what the runner supplies',
-        skip: skipWithoutBundles,
+        skip: () => NO_BUNDLES_REASON,
         check: () => true,
       },
     ];
