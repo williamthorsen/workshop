@@ -3,7 +3,8 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { DEFAULT_MANIFEST_PATH } from 'readyup';
-import { isRecord, readJsonFile } from 'readyup/check-utils';
+import type { SkipResult } from 'readyup';
+import { fileExists, isRecord, readJsonFile } from 'readyup/check-utils';
 
 // -- Paths --
 
@@ -61,6 +62,23 @@ export function readManifestEntries(): ManifestEntry[] {
 /** Path to a file the manifest names, relative to the working directory. */
 export function resolveRecordedPath(recordedPath: string): string {
   return path.join(MANIFEST_DIR, recordedPath);
+}
+
+/** Skip reason for a check that has nothing to say until a bundle exists, or `false` once one does. */
+export function skipWithoutBundles(): SkipResult {
+  return listCompiledBundlePaths().length === 0 ? 'There are no compiled kits' : false;
+}
+
+/**
+ * Skip reason for a check about a project that defines no kits, or `false` for one that does.
+ *
+ * A project defining none is outside these kits' subject rather than failing them: a monorepo root
+ * that lists `packages` authors no kits of its own, and no consumer is expected to keep them at its
+ * root. The manifest arm admits a project compiling to a non-default `outDir`, whose recorded kits
+ * are still worth checking.
+ */
+export function skipWithoutKits(): SkipResult {
+  return fileExists(KITS_DIR) || fileExists(DEFAULT_MANIFEST_PATH) ? false : 'This project defines no kits';
 }
 
 // region | Helpers
