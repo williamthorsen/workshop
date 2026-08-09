@@ -20,7 +20,11 @@ export function hasDevDependency(name: string): boolean {
   return isRecord(devDeps) && Object.hasOwn(devDeps, name);
 }
 
-/** Check whether a dev dependency meets a minimum version, with optional exemption predicate. */
+/**
+ * Checks whether a dev dependency meets a minimum version. A `workspace:` specifier satisfies any floor, because it
+ * links to the package the repo builds rather than to a version the specifier can be read for. `exempt` extends that
+ * exemption to further specifiers rather than replacing it.
+ */
 export function hasMinDevDependencyVersion(
   name: string,
   minVersion: string,
@@ -32,6 +36,7 @@ export function hasMinDevDependencyVersion(
   if (!isRecord(devDeps) || !Object.hasOwn(devDeps, name)) return false;
   const range = devDeps[name];
   if (typeof range !== 'string') return false;
+  if (range.startsWith('workspace:')) return true;
   if (options?.exempt?.(range)) return true;
   // Strip leading semver range operators to extract the base version.
   const versionMatch = /(\d+\.\d+\.\d+)/.exec(range)?.[1];

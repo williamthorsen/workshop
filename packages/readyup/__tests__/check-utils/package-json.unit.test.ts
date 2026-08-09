@@ -99,12 +99,30 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
   });
 
-  it('returns true when the exempt predicate matches', () => {
+  it('returns true for a workspace specifier naming no version', () => {
     writePackageJson({ devDependencies: { core: 'workspace:*' } });
+
+    expect(hasMinDevDependencyVersion('core', '99.0.0')).toBe(true);
+  });
+
+  it('returns true for a workspace specifier naming a version below the minimum', () => {
+    writePackageJson({ devDependencies: { core: 'workspace:^1.2.3' } });
+
+    expect(hasMinDevDependencyVersion('core', '2.0.0')).toBe(true);
+  });
+
+  it('returns false for a catalog specifier', () => {
+    writePackageJson({ devDependencies: { vitest: 'catalog:' } });
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
+  });
+
+  it('returns true when the exempt predicate matches', () => {
+    writePackageJson({ devDependencies: { core: 'link:../core' } });
 
     expect(
       hasMinDevDependencyVersion('core', '1.0.0', {
-        exempt: (range) => range.startsWith('workspace:'),
+        exempt: (range) => range.startsWith('link:'),
       }),
     ).toBe(true);
   });
