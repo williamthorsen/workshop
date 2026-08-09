@@ -108,7 +108,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Its source')).toMatchObject({
         status: 'failed',
-        detail: expect.stringContaining('expected 0badcafe'),
+        detail: expect.stringContaining('not the recorded 0badcafe'),
       });
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
     });
@@ -121,7 +121,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Its bundle')).toMatchObject({
         status: 'failed',
-        detail: expect.stringContaining('expected 0badcafe'),
+        detail: expect.stringContaining('not the recorded 0badcafe'),
       });
     });
 
@@ -148,7 +148,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'recorded with a source and a bundle hash')).toMatchObject({
         status: 'failed',
-        detail: 'no source or bundle hash recorded',
+        detail: 'The manifest records no source or bundle hash',
       });
       expect(pickResult(results, 'Its source')).toMatchObject({ status: 'skipped' });
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
@@ -160,7 +160,7 @@ describe('default kit', () => {
       const results = await runFreshness();
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'nothing compiled' });
+      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
 
     it('reports bundles no manifest accounts for', async () => {

@@ -3,7 +3,7 @@ import type { CheckOutcome, RdyCheck } from 'readyup';
 import { computeHash, readFile } from 'readyup/check-utils';
 
 import type { ManifestEntry } from './kit-layout.ts';
-import { listCompiledBundlePaths, readManifestEntries, resolveRecordedPath } from './kit-layout.ts';
+import { readManifestEntries, resolveRecordedPath, skipWithoutBundles } from './kit-layout.ts';
 
 /**
  * Checks asserting that every kit the manifest records still matches the hashes recorded for it.
@@ -50,7 +50,7 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
 function buildUnrecordedBundlesCheck(): RdyCheck {
   return {
     name: 'Every compiled kit is recorded in the manifest',
-    skip: () => (listCompiledBundlePaths().length === 0 ? 'nothing compiled' : false),
+    skip: skipWithoutBundles,
     check: () => ({ ok: false, detail: `${DEFAULT_MANIFEST_PATH} records no kit` }),
     fix: `Run 'rdy compile' to record every compiled kit and its hashes`,
   };
@@ -64,7 +64,7 @@ function buildUnrecordedBundlesCheck(): RdyCheck {
  */
 function compareToRecordedHash(recordedPath: string | undefined, expected: string | undefined): CheckOutcome {
   if (recordedPath === undefined || expected === undefined) {
-    return { ok: false, detail: 'the manifest records nothing to compare against' };
+    return { ok: false, detail: 'The manifest records nothing to compare against' };
   }
 
   const filePath = resolveRecordedPath(recordedPath);
@@ -72,9 +72,11 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
   if (content === undefined) return { ok: false, detail: `${filePath} is missing` };
 
   const actual = computeHash(content).slice(0, expected.length);
-  if (actual !== expected) return { ok: false, detail: `${filePath}: expected ${expected}, got ${actual}` };
+  if (actual !== expected) {
+    return { ok: false, detail: `${filePath} hashes to ${actual}, not the recorded ${expected}` };
+  }
 
-  return { ok: true, detail: filePath };
+  return { ok: true, detail: `${filePath} matches the recorded hash` };
 }
 
 /** Reports which of a manifest entry's two hash records are absent. */
@@ -84,7 +86,7 @@ function describeRecordedHashes(entry: ManifestEntry): CheckOutcome {
   if (entry.path === undefined || entry.targetHash === undefined) unrecorded.push('bundle');
 
   if (unrecorded.length === 0) return { ok: true };
-  return { ok: false, detail: `no ${unrecorded.join(' or ')} hash recorded` };
+  return { ok: false, detail: `The manifest records no ${unrecorded.join(' or ')} hash` };
 }
 
 // endregion | Helpers

@@ -130,7 +130,7 @@ describe('publishing kit', () => {
 
       expect(pickResult(results, 'under its own name')).toMatchObject({
         status: 'failed',
-        detail: `default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
+        detail: `The manifest records default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
       });
     });
   });
@@ -150,7 +150,7 @@ describe('publishing kit', () => {
 
       const results = await runSelfContainment();
 
-      expect(results[0]).toMatchObject({ status: 'failed', detail: 'imports picomatch' });
+      expect(results[0]).toMatchObject({ status: 'failed', detail: 'It imports picomatch' });
     });
 
     it('stands down when the package compiles nothing', async () => {
@@ -159,7 +159,7 @@ describe('publishing kit', () => {
       const results = await runSelfContainment();
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'nothing compiled' });
+      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
   });
 
