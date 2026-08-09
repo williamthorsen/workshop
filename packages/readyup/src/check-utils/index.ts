@@ -1,4 +1,5 @@
 export { isRecord } from '../isRecord.ts';
+export { discoverKitPackages } from './discoverKitPackages.ts';
 export type { EnginesNodeFloor } from './engines.ts';
 export { readEnginesNodeFloor, satisfiesNodeFloor } from './engines.ts';
 export type { EsYear } from './es-year.ts';

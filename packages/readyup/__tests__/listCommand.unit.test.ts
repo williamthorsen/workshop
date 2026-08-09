@@ -10,7 +10,7 @@ vi.mock(import('../src/packages/expandConfiguredPackages.ts'), () => ({
   expandConfiguredPackages: mockExpandConfiguredPackages,
 }));
 
-vi.mock(import('../src/packages/discoverKitPackages.ts'), () => ({
+vi.mock(import('../src/check-utils/discoverKitPackages.ts'), () => ({
   discoverKitPackages: mockDiscoverKitPackages,
 }));
 

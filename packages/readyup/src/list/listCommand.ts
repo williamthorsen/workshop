@@ -3,6 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { discoverKitPackages } from '../check-utils/discoverKitPackages.ts';
 import { configError, kitLoadError, usageError } from '../errors.ts';
 import { EXIT_OK } from '../exitCodes.ts';
 import { KITS_DIR, resolveHomeDir } from '../kitsDir.ts';
@@ -12,7 +13,6 @@ import { DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
-import { discoverKitPackages } from '../packages/discoverKitPackages.ts';
 import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
 import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../parseFromValue.ts';
 import { parseFromValue } from '../parseFromValue.ts';
