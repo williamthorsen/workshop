@@ -21,25 +21,25 @@ export function hasDevDependency(name: string): boolean {
 }
 
 /**
- * Checks whether a dev dependency meets a minimum version. A `workspace:` specifier satisfies any floor, because it
- * links to the package the repo builds rather than to a version the specifier can be read for. `exempt` extends that
- * exemption to further specifiers rather than replacing it.
+ * Checks whether a dev dependency meets a minimum version. Any `workspace:`-prefixed specifier satisfies any floor,
+ * including one that names a version: the specifier links to the package the repo builds, and a version it names is a
+ * publish range, not the version that resolves. `exempt` adds further exemptions; it cannot remove this one.
  */
 export function hasMinDevDependencyVersion(
   name: string,
   minVersion: string,
-  options?: { exempt?: (range: string) => boolean },
+  options?: { exempt?: (specifier: string) => boolean },
 ): boolean {
   const pkg = readJsonFile('package.json');
   if (pkg === undefined) return false;
   const devDeps = pkg['devDependencies'];
   if (!isRecord(devDeps) || !Object.hasOwn(devDeps, name)) return false;
-  const range = devDeps[name];
-  if (typeof range !== 'string') return false;
-  if (range.startsWith('workspace:')) return true;
-  if (options?.exempt?.(range)) return true;
+  const specifier = devDeps[name];
+  if (typeof specifier !== 'string') return false;
+  if (specifier.startsWith('workspace:')) return true;
+  if (options?.exempt?.(specifier)) return true;
   // Strip leading semver range operators to extract the base version.
-  const versionMatch = /(\d+\.\d+\.\d+)/.exec(range)?.[1];
+  const versionMatch = /(\d+\.\d+\.\d+)/.exec(specifier)?.[1];
   if (versionMatch === undefined) return false;
   return compareVersions(versionMatch, minVersion) >= 0;
 }

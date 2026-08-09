@@ -122,7 +122,7 @@ describe(hasMinDevDependencyVersion, () => {
 
     expect(
       hasMinDevDependencyVersion('core', '1.0.0', {
-        exempt: (range) => range.startsWith('link:'),
+        exempt: (specifier) => specifier.startsWith('link:'),
       }),
     ).toBe(true);
   });
