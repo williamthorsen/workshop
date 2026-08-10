@@ -505,9 +505,9 @@ A check line reads `token name <separator> detail [progress] (duration)`. The se
 
 Tail and total lines lead with the run's worst severity, then report counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero. Commas part the counts from one another, and a `|` parts the verdict from the list wherever no label already does, so the verdict is never read as a label on the count beside it.
 
-**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies; `Fixes` and each command's own heading stay at `──`, and a bare `──` closes a block above its count line.
+**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, and a bare `──` closes a block above its count line.
 
-Blank lines part blocks rather than decorate headings: none opens a command's output or follows a heading, one parts one block from the next, and two appear only where one kit ends and the next begins. More than one checklist adds a summary table:
+Blank lines part blocks rather than decorate headings: none opens a command's output or follows a heading, one parts one block from the next, and two appear only where one kit ends and the next begins. More than one checklist anywhere in the run adds a summary table:
 
 ```
 ━━ 📋 build
@@ -542,6 +542,19 @@ A kit from an installed package, a repository, or a URL names where it came from
 ━━ 📦 @acme/release-kit@2.1.0 / 📓 npm-auto-publish / 📋 repo
 ━━ 🌐 github:acme/checks@main / 📓 default
 ━━ 📁 ../shared-kits / 📓 default
+```
+
+A run spanning several kits tallies them together, each row naming its source and kit so it reads without reference to the blocks above. Row names carry no role glyphs, since the padding that aligns the columns counts characters rather than terminal cells:
+
+```
+━━ Summary
+─────────────────────────────────────────────────────────────────────────────────
+🟢 @acme/release-kit@2.1.0 / npm-auto-publish / repo      12ms  4 passed
+🟢 @acme/release-kit@2.1.0 / npm-auto-publish / secrets    9ms  2 passed
+🔴 github:acme/checks@main / default                     151ms  1 error, 1 passed
+🟢 ../shared-kits / default                                4ms  3 passed
+─────────────────────────────────────────────────────────────────────────────────
+🔴 Total: 1 error, 10 passed (176ms)
 ```
 
 ### Output styles
