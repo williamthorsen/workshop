@@ -139,10 +139,11 @@ describe(compileConfig, () => {
     expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
 
-  it('propagates errors from esbuild.build', async () => {
+  it('propagates a build failure that names no unresolved import, unchanged', async () => {
     mockBuild.mockRejectedValue(new Error('Build failed'));
 
-    await expect(compileConfig('input.ts')).rejects.toThrow('Build failed');
+    // Anchored, so a guard that started matching every failure would append its hint here and fail.
+    await expect(compileConfig('input.ts')).rejects.toThrow(/^Build failed$/);
   });
 
   it('throws a clear error when esbuild is not installed', async () => {
