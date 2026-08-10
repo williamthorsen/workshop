@@ -402,6 +402,19 @@ Two consequences follow from the value being resolved at compile time:
 - `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
 - Editing the JSON afterward leaves the bundle stale, and neither recorded hash changes -- the source did not move, and neither did the bundle. [`rdy verify --rebuild`](#verifying-by-recompiling) is what catches it.
 
+### TypeScript settings
+
+Kits compile with no `tsconfig.json`. Whatever config sits above a kit is ignored, so the same source compiles to the same bytes in any repository and a published bundle is the one its author built.
+
+Kits are bundled by esbuild, and its defaults apply, with two settings declared:
+
+| Setting                   | Value   |
+| ------------------------- | ------- |
+| `experimentalDecorators`  | `false` |
+| `useDefineForClassFields` | `true`  |
+
+One consequence reaches every kit: `paths` aliases do not resolve. Import by relative path or package specifier. A kit that reaches for an alias fails to compile and is told why, rather than compiling into something that breaks when it runs.
+
 ## Running checks
 
 ```

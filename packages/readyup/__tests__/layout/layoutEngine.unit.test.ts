@@ -134,6 +134,18 @@ describe('formatReasonBlock', () => {
 
     expect(reason).toBe('   lockfile out of date');
   });
+
+  it('indents every line of a reason that carries its own line breaks', () => {
+    const [reason] = engine.formatReasonBlock(['rebuild failed (first line\nsecond line)']);
+
+    expect(reason).toBe('   rebuild failed (first line\n   second line)');
+  });
+
+  it('leaves a blank line within a reason blank, rather than indenting it into whitespace', () => {
+    const [reason] = engine.formatReasonBlock(['first line\n\nthird line']);
+
+    expect(reason).toBe('   first line\n\n   third line');
+  });
 });
 
 describe('formatHeading', () => {

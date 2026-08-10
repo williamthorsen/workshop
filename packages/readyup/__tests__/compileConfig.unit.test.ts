@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { KIT_COMPILE_TARGET } from '../src/compile/buildBundle.ts';
+import { KIT_COMPILE_TARGET, KIT_TSCONFIG } from '../src/compile/buildBundle.ts';
 import { compileConfig } from '../src/compile/compileConfig.ts';
 import { VERSION } from '../src/version.ts';
 
@@ -52,6 +52,7 @@ describe(compileConfig, () => {
       format: 'esm',
       platform: 'node',
       target: KIT_COMPILE_TARGET,
+      tsconfigRaw: KIT_TSCONFIG,
       external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
@@ -138,10 +139,11 @@ describe(compileConfig, () => {
     expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
 
-  it('propagates errors from esbuild.build', async () => {
+  it('propagates a build failure that names no unresolved import, unchanged', async () => {
     mockBuild.mockRejectedValue(new Error('Build failed'));
 
-    await expect(compileConfig('input.ts')).rejects.toThrow('Build failed');
+    // Anchored, so a guard that started matching every failure would append its hint here and fail.
+    await expect(compileConfig('input.ts')).rejects.toThrow(/^Build failed$/);
   });
 
   it('throws a clear error when esbuild is not installed', async () => {
