@@ -3,6 +3,6 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { writeSchemaFiles } from './buildSchemas.ts';
+import { writeSchemaFiles } from '../src/schemas/buildSchemas.ts';
 
 writeSchemaFiles(path.join(process.cwd(), 'schemas'));

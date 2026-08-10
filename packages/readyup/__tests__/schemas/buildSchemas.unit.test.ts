@@ -5,8 +5,8 @@ import path from 'node:path';
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { buildSchemaDocuments, SCHEMA_BASE_URL, writeSchemaFiles } from '../../config/buildSchemas.ts';
 import { isRecord } from '../../src/isRecord.ts';
+import { buildSchemaDocuments, SCHEMA_BASE_URL, writeSchemaFiles } from '../../src/schemas/buildSchemas.ts';
 import {
   compilePayload,
   errorEnvelopePayload,

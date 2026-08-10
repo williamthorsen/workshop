@@ -3,11 +3,11 @@ import path from 'node:path';
 
 import { z } from 'zod';
 
-import { CompileOutputSchema, SCHEMA_VERSION as COMPILE_VERSION } from '../src/schemas/compileOutputSchema.ts';
-import { ErrorEnvelopeSchema, SCHEMA_VERSION as ENVELOPE_VERSION } from '../src/schemas/errorEnvelopeSchema.ts';
-import { ListOutputSchema, SCHEMA_VERSION as LIST_VERSION } from '../src/schemas/listOutputSchema.ts';
-import { ReportSchema, SCHEMA_VERSION as REPORT_VERSION } from '../src/schemas/reportSchema.ts';
-import { SCHEMA_VERSION as VERIFY_VERSION, VerifyOutputSchema } from '../src/schemas/verifyOutputSchema.ts';
+import { CompileOutputSchema, SCHEMA_VERSION as COMPILE_VERSION } from './compileOutputSchema.ts';
+import { ErrorEnvelopeSchema, SCHEMA_VERSION as ENVELOPE_VERSION } from './errorEnvelopeSchema.ts';
+import { ListOutputSchema, SCHEMA_VERSION as LIST_VERSION } from './listOutputSchema.ts';
+import { ReportSchema, SCHEMA_VERSION as REPORT_VERSION } from './reportSchema.ts';
+import { SCHEMA_VERSION as VERIFY_VERSION, VerifyOutputSchema } from './verifyOutputSchema.ts';
 
 /** Where a published schema answers from once the package is on npm. */
 export const SCHEMA_BASE_URL = 'https://unpkg.com/readyup/schemas';
