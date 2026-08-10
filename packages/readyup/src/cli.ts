@@ -870,7 +870,7 @@ async function runMultiKitHumanMode(
         writeBlock,
       });
       rows.push(...kitResult.rows);
-      if (kitResult.exitCode !== EXIT_OK) allPassed = false;
+      if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
       // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
       if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'), true);
@@ -901,7 +901,7 @@ interface KitBlockContext {
 
 /** A kit's verdict alongside the rows its checklists contribute to the run's summary table. */
 interface KitRunResult {
-  exitCode: number;
+  passed: boolean;
   rows: SummaryRow[];
 }
 
@@ -942,7 +942,7 @@ async function runSingleKitHumanMode(
     rows.push(toSummaryRow(segments, report));
   }
 
-  return { exitCode: allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND, rows };
+  return { passed: allPassed, rows };
 }
 
 /**
