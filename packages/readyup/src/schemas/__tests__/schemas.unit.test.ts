@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ZodError } from 'zod';
 
-import type { RdyErrorCode } from '../../errors.ts';
-import type { Severity } from '../../types.ts';
+import type { RdyErrorCode } from '../../errors/RdyError.ts';
+import type { Severity } from '../../kits/types.ts';
 import type { JsonErrorCode, JsonSeverity, JsonWarning, JsonWarningCode, RaisedWarning } from '../common.ts';
 import { CompileOutputSchema } from '../compileOutputSchema.ts';
 import { ErrorEnvelopeSchema } from '../errorEnvelopeSchema.ts';

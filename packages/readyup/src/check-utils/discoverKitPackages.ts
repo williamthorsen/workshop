@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { isRecord } from '../isRecord.ts';
-import { KITS_DIR } from '../kitsDir.ts';
+import { KITS_DIR } from '../kits/kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
-import { resolvePackageRoot } from '../resolvePackageRoot.ts';
+import { resolvePackageRoot } from '../packages/resolvePackageRoot.ts';
+import { isRecord } from '../portable/isRecord.ts';
 
 /** Manifest fields a kit-carrying dependency can be declared in. */
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];

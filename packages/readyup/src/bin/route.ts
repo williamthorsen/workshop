@@ -3,23 +3,23 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { parseRunArgs, resolveKitSources, runCommand } from '../cli.ts';
 import { compileCommand } from '../compile/compileCommand.ts';
-import { configError, toRdyError, usageError } from '../errors.ts';
-import { EXIT_OK, EXIT_TOOL_FAILURE } from '../exitCodes.ts';
-import { formatJsonError } from '../formatJsonError.ts';
-import { hasJsonFlag } from '../hasJsonFlag.ts';
+import { loadConfig } from '../config/loadConfig.ts';
+import { extractHint, extractMessage } from '../errors/error-handling.ts';
+import { translateParseArgsError } from '../errors/parse-args-error.ts';
+import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { initCommand } from '../init/initCommand.ts';
-import { KITS_DIR } from '../kitsDir.ts';
+import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
-import { loadConfig } from '../loadConfig.ts';
-import { extractHint, extractMessage } from '../utils/error-handling.ts';
-import { translateParseArgsError } from '../utils/parse-args-error.ts';
+import { writeHuman } from '../output/writeHuman.ts';
+import { formatJsonError } from '../reporting/formatJsonError.ts';
+import { parseRunArgs, resolveKitSources, runCommand } from '../run/runCommand.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
-import { writeHuman } from '../writeHuman.ts';
+import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
+import { hasJsonFlag } from './hasJsonFlag.ts';
 
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
 const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];

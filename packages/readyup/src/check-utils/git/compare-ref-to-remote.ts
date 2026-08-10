@@ -1,4 +1,4 @@
-import type { RemoteRefCompareResult } from '../../types.ts';
+import type { RemoteRefCompareResult } from '../../kits/types.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Compare a local ref to its counterpart on a remote. Uses `ls-remote` (no fetch). */

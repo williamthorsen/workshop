@@ -4,7 +4,7 @@
 import module from 'node:module';
 import process from 'node:process';
 
-import { hasJsonFlag } from '../hasJsonFlag.ts';
+import { hasJsonFlag } from './hasJsonFlag.ts';
 import { resolveHookSpecifier } from './resolveHookSpecifier.ts';
 import { reportFailure, routeCommand } from './route.ts';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SummaryCounts } from '../../types.ts';
+import type { SummaryCounts } from '../../kits/types.ts';
 import { TOKEN_NAMES } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
 import { plainFormatter } from '../plainFormatter.ts';

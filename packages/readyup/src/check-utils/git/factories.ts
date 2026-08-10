@@ -1,4 +1,4 @@
-import type { LocalRefsCompareResult, RdyCheck, RemoteRefCompareResult, Severity } from '../../types.ts';
+import type { LocalRefsCompareResult, RdyCheck, RemoteRefCompareResult, Severity } from '../../kits/types.ts';
 import { compareLocalRefs } from './compare-local-refs.ts';
 import { compareRefToRemote } from './compare-ref-to-remote.ts';
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 
 /**
  * Extract selected paths from a parsed JSON object, preserving original nesting structure.

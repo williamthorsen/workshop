@@ -6,7 +6,6 @@ import process from 'node:process';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveKitSources, runCommand } from '../../../src/cli.ts';
 import { compileConfig } from '../../../src/compile/compileConfig.ts';
 import { validateCompiledOutput } from '../../../src/compile/validateCompiledOutput.ts';
 import { listCommand } from '../../../src/list/listCommand.ts';
@@ -14,6 +13,7 @@ import type { RdyManifestKit } from '../../../src/manifest/manifestSchema.ts';
 import { ListOutputSchema } from '../../../src/schemas/listOutputSchema.ts';
 import type { JsonKitResultEntry, JsonReport } from '../../../src/schemas/reportSchema.ts';
 import { ReportSchema } from '../../../src/schemas/reportSchema.ts';
+import { resolveKitSources, runCommand } from '../../../src/run/runCommand.ts';
 import { hashFile } from '../../../src/verify/targetHash.ts';
 
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..', '..');

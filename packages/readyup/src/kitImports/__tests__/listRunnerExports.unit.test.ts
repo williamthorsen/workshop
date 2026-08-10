@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { isRecord } from '../../isRecord.ts';
+import { isRecord } from '../../portable/isRecord.ts';
 import { listRunnerExports, listRunnerSpecifiers } from '../listRunnerExports.ts';
 
 /**

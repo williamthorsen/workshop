@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { buildBundle } from '../compile/buildBundle.ts';
+import { extractMessage } from '../errors/error-handling.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { extractMessage } from '../utils/error-handling.ts';
 import { VERSION } from '../version.ts';
 import { hashBytes } from './targetHash.ts';
 

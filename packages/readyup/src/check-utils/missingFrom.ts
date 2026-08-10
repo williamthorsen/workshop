@@ -1,4 +1,4 @@
-import type { CheckOutcome, FractionProgress } from '../types.ts';
+import type { CheckOutcome, FractionProgress } from '../kits/types.ts';
 
 /** Build a `CheckOutcome` with `FractionProgress` from expected vs. actual arrays. */
 export function missingFrom(category: string, expected: string[], actual: string[]): CheckOutcome {

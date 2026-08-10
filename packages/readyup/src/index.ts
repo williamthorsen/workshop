@@ -23,10 +23,10 @@ export type {
   SkippedResult,
   SkipResult,
   SummaryCounts,
-} from './types.ts';
+} from './kits/types.ts';
 
 // Error taxonomy
-export type { RdyErrorCode } from './errors.ts';
+export type { RdyErrorCode } from './errors/RdyError.ts';
 
 // JSON payload types, derived from the zod schemas that also generate the published JSON Schemas
 export type { JsonCounts, JsonErrorBody, JsonWarning, JsonWarningCode } from './schemas/common.ts';
@@ -51,7 +51,7 @@ export type {
 } from './schemas/verifyOutputSchema.ts';
 
 // Type guards
-export { isFlatChecklist, isPercentProgress } from './types.ts';
+export { isFlatChecklist, isPercentProgress } from './kits/types.ts';
 
 // Authoring helpers
 export {
@@ -60,7 +60,7 @@ export {
   defineRdyConfig,
   defineRdyKit,
   defineRdyStagedChecklist,
-} from './authoring.ts';
+} from './kits/authoring.ts';
 
 // Compile utilities
 export { pickJson } from './compile/pickJson.ts';

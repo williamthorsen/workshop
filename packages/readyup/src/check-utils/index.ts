@@ -1,4 +1,4 @@
-export { isRecord } from '../isRecord.ts';
+export { isRecord } from '../portable/isRecord.ts';
 export { discoverKitPackages } from './discoverKitPackages.ts';
 export type { EnginesNodeFloor } from './engines.ts';
 export { readEnginesNodeFloor, satisfiesNodeFloor } from './engines.ts';

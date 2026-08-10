@@ -1,4 +1,4 @@
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 
 /** Extract a nested value from a parsed object by traversing the key path. */
 export function getJsonValue(obj: Record<string, unknown>, ...keys: string[]): unknown {

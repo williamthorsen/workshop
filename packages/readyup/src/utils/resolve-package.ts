@@ -1,4 +1,4 @@
-import { resolvePackageRoot } from '../resolvePackageRoot.ts';
+import { resolvePackageRoot } from '../packages/resolvePackageRoot.ts';
 
 /**
  * Reports whether a package is installed in the current project.

@@ -1,7 +1,7 @@
-import { configError } from '../errors.ts';
-import { EXIT_OK } from '../exitCodes.ts';
-import { printStep, reportWriteResult } from '../terminal.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { EXIT_OK } from '../bin/exitCodes.ts';
+import { extractMessage } from '../errors/error-handling.ts';
+import { configError } from '../errors/RdyError.ts';
+import { printStep, reportWriteResult } from '../output/terminal.ts';
 import { buildInstallCommand } from '../utils/install-command.ts';
 import { isPackageInstalled } from '../utils/resolve-package.ts';
 import { scaffoldConfig } from './scaffold.ts';

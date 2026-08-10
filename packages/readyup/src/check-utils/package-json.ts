@@ -1,4 +1,4 @@
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { hasJsonField, readJsonFile } from './json.ts';
 import { compareVersions } from './semver.ts';
 

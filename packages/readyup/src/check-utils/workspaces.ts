@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 
 import picomatch from 'picomatch';
 
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 

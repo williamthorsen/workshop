@@ -1,11 +1,11 @@
 import path from 'node:path';
 
-import { configError } from '../errors.ts';
-import { KITS_DIR } from '../kitsDir.ts';
+import { configError } from '../errors/RdyError.ts';
+import { KITS_DIR } from '../kits/kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
-import { readPackageVersion, resolvePackageRoot } from '../resolvePackageRoot.ts';
+import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 
 /** A kit published by an installed package, carrying the provenance its output is labelled with. */
 export interface PackageKit {
