@@ -52,14 +52,12 @@ describe(jitiImport, () => {
   it('omits the install command for a specifier that names a file rather than a package', async () => {
     mockExistsSync.mockReturnValue(false);
     mockImport.mockRejectedValue(
-      Object.assign(new Error("Cannot find module '../../__tests__/helpers.ts'"), { code: 'MODULE_NOT_FOUND' }),
+      Object.assign(new Error("Cannot find module './helpers.ts'"), { code: 'MODULE_NOT_FOUND' }),
     );
 
     const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
-    expect(String(error)).toContain(
-      "Cannot resolve '../../__tests__/helpers.ts' while evaluating .readyup/kits/default.ts.",
-    );
+    expect(String(error)).toContain("Cannot resolve './helpers.ts' while evaluating .readyup/kits/default.ts.");
     expect(extractHint(error)).toBeUndefined();
   });
 
