@@ -171,9 +171,21 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     return `${formatter.hintPrefix} ${hint}`;
   }
 
-  /** Returns each reason indented to the name column of a check at `depth`, one gutter further in. */
+  /**
+   * Returns each reason indented to the name column of a check at `depth`, one gutter further in.
+   *
+   * A reason carrying its own line breaks -- a bundler's rendered diagnostic, say -- is indented on
+   * every line, so it reads as one block rather than falling back to the left margin partway through.
+   * Blank lines within it stay blank rather than becoming trailing whitespace.
+   */
   function formatReasonBlock(reasons: string[], depth = 0): string[] {
-    return reasons.map((reason) => `${indent(depth + 1)}${reason}`);
+    const gutter = indent(depth + 1);
+    return reasons.map((reason) =>
+      reason
+        .split('\n')
+        .map((line) => (line === '' ? line : `${gutter}${line}`))
+        .join('\n'),
+    );
   }
 
   /**
