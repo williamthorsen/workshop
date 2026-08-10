@@ -976,7 +976,7 @@ describe(runCommand, () => {
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    mockReportRdy.mockReturnValue('report output');
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
   });
 
@@ -1166,6 +1166,61 @@ describe(runCommand, () => {
     expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F4D3} kit1')).toBe(true);
     expect(allOutput).toContain(`${KIT_BOUNDARY_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
     expect(allOutput).not.toContain(`${KIT_BOUNDARY_GAP}\n`);
+  });
+
+  // A bodiless block states nothing its table row does not, so it goes and the row reports it.
+  it('leaves out a block whose tree rendered nothing', async () => {
+    const kit = makeKit();
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).not.toContain('report output');
+    expect(allOutput).toContain('combined summary');
+  });
+
+  // Nothing tabulates a run of one checklist, so its block stands however little it has to say.
+  it('keeps a bodiless block when the run will tabulate nothing', async () => {
+    const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).toContain('report output');
+    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+  });
+
+  // The row is the only report a dropped block gets, so it is tabulated even with no sibling row beside it.
+  it('tabulates a dropped block even when one row is all that survives', async () => {
+    const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
+    mockLoadRdyKit.mockResolvedValueOnce({ kit, compileTimeVersion: undefined });
+    mockLoadRdyKit.mockRejectedValueOnce(new Error('kit2 cannot be read'));
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).not.toContain('report output');
+    expect(allOutput).toContain('combined summary');
   });
 
   it('prints one combined summary covering every kit in a multi-kit run', async () => {

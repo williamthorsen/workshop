@@ -14,6 +14,12 @@ interface AttributedFix {
   severity: Severity;
 }
 
+/** A rendered report, alongside whether its check tree rendered anything at all. */
+export interface RenderedReport {
+  body: string;
+  hasVisibleResults: boolean;
+}
+
 /** Options controlling how the report is formatted. */
 export interface ReportRdyOptions {
   fixLocation?: FixLocation;
@@ -28,8 +34,11 @@ export interface ReportRdyOptions {
  * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
  * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree, and it
  * closes the block: the last line a reader meets before the blank parting one block from the next.
+ *
+ * Reports whether the tree rendered anything, so a caller placing the block in a sequence can decide
+ * whether a report that is nothing but its count line has earned its place there.
  */
-export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
+export function reportRdy(report: RdyReport, options?: ReportRdyOptions): RenderedReport {
   const fixLocation = options?.fixLocation ?? 'end';
   const reportOn = options?.reportOn ?? 'recommend';
 
@@ -43,9 +52,9 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
     }
   }
 
-  lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
+  const countLine = getLayout().formatCountLine(countResults(report.results), report.durationMs);
 
-  return lines.join('\n');
+  return { body: [...lines, countLine].join('\n'), hasVisibleResults: lines.length > 0 };
 }
 
 /** Returns counts with every field at zero and no worst severity. */

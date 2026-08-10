@@ -70,7 +70,7 @@ describe('count agreement across views', () => {
     const expectedFields = getLayout().formatCounts(expectedCounts);
 
     // Human tail line.
-    const human = reportRdy(report, { reportOn: 'error' });
+    const human = reportRdy(report, { reportOn: 'error' }).body;
     expect(human).toContain(expectedFields);
 
     // Combined-summary table row.
@@ -90,7 +90,7 @@ describe('count agreement across views', () => {
   it('prunes below-threshold results from the detail tree without altering the counts', async () => {
     const report = await runRdy(checklist);
 
-    const human = reportRdy(report, { reportOn: 'error' });
+    const human = reportRdy(report, { reportOn: 'error' }).body;
     const json = formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' });
 
     expect(human).not.toContain('warn-fail');
@@ -102,7 +102,7 @@ describe('count agreement across views', () => {
   it('retains the parent chain of a visible result in every view', async () => {
     const report = await runRdy(nestedChecklist);
 
-    const human = reportRdy(report, { reportOn: 'error' });
+    const human = reportRdy(report, { reportOn: 'error' }).body;
     const parsed: unknown = JSON.parse(
       formatReport([{ name: 'kit', entries: [{ name: 'nested', report }] }], { reportOn: 'error' }),
     );
@@ -117,7 +117,7 @@ describe('count agreement across views', () => {
   it('emits no descendants of an n/a result in any view', async () => {
     const report = await runRdy(checklist);
 
-    const human = reportRdy(report);
+    const human = reportRdy(report).body;
     const json = formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }]);
 
     for (const name of ['na-child', 'na-grandchild']) {

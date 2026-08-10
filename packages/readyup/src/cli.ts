@@ -855,6 +855,7 @@ async function runMultiKitHumanMode(
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
   let allPassed = true;
+  let anyBlockDropped = false;
   let anyKitFailed = false;
 
   for (const entry of kitEntries) {
@@ -866,10 +867,12 @@ async function runMultiKitHumanMode(
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
       const kitResult = await runSingleKitHumanMode(kit, entry.checklists, settings, {
+        isMultiKit,
         kitSegments,
         writeBlock,
       });
       rows.push(...kitResult.rows);
+      if (kitResult.droppedBlock) anyBlockDropped = true;
       if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
       // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
@@ -887,20 +890,23 @@ async function runMultiKitHumanMode(
   }
 
   // Tallying follows the last kit rather than riding inside one, so a kit that failed to load still leaves
-  // the table covering the checklists that did run. Two blanks mark a kit boundary, and this is a block.
-  if (rows.length > 1) writeBlock(formatCombinedSummary(rows), false);
+  // the table covering the checklists that did run. A dropped block is reported by its row alone, so one
+  // dropped block earns the table even where a single row is all it has to carry.
+  if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows), false);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
 /** What a kit's checklists need in order to take their place in the run's sequence of blocks. */
 interface KitBlockContext {
+  isMultiKit: boolean;
   kitSegments: BreadcrumbSegment[];
   writeBlock: BlockWriter;
 }
 
 /** A kit's verdict alongside the rows its checklists contribute to the run's summary table. */
 interface KitRunResult {
+  droppedBlock: boolean;
   passed: boolean;
   rows: SummaryRow[];
 }
@@ -910,13 +916,17 @@ async function runSingleKitHumanMode(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  { kitSegments, writeBlock }: KitBlockContext,
+  { isMultiKit, kitSegments, writeBlock }: KitBlockContext,
 ): Promise<KitRunResult> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistSegment = checklists.length > 1;
+  // A block may go unwritten only where the summary table will carry the row it leaves behind. A run of
+  // one checklist tabulates nothing, so its block stands however little it has to say.
+  const willTabulate = isMultiKit || checklists.length > 1;
   const rows: SummaryRow[] = [];
   let allPassed = true;
+  let droppedBlock = false;
   let startsKit = true;
 
   for (const checklist of checklists) {
@@ -925,15 +935,23 @@ async function runSingleKitHumanMode(
       failOn: thresholds.failOn,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-    const body = reportRdy(report, { fixLocation, quiet: settings.quiet, reportOn: thresholds.reportOn });
+    const { body, hasVisibleResults } = reportRdy(report, {
+      fixLocation,
+      quiet: settings.quiet,
+      reportOn: thresholds.reportOn,
+    });
 
     const segments: BreadcrumbSegment[] = showChecklistSegment
       ? [...kitSegments, { role: 'checklist', text: checklist.name }]
       : kitSegments;
-    const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
 
-    writeBlock(heading + body, startsKit);
-    startsKit = false;
+    if (hasVisibleResults || !willTabulate) {
+      const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
+      writeBlock(heading + body, startsKit);
+      startsKit = false;
+    } else {
+      droppedBlock = true;
+    }
 
     if (!report.passed) {
       allPassed = false;
@@ -942,7 +960,7 @@ async function runSingleKitHumanMode(
     rows.push(toSummaryRow(segments, report));
   }
 
-  return { passed: allPassed, rows };
+  return { droppedBlock, passed: allPassed, rows };
 }
 
 /**
