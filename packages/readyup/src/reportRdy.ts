@@ -54,7 +54,7 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): Render
 
   const countLine = getLayout().formatCountLine(countResults(report.results), report.durationMs);
 
-  return { body: [...lines, countLine].join('\n'), hasVisibleResults: lines.length > 0 };
+  return { body: [...lines, countLine].join('\n'), hasVisibleResults: visibleResults.length > 0 };
 }
 
 /** Returns counts with every field at zero and no worst severity. */

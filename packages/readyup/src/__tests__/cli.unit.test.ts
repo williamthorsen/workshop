@@ -962,11 +962,10 @@ describe(resolveKitSources, () => {
 });
 
 /**
- * Newline runs the block writer emits between blocks: one blank within a kit, two at a kit boundary.
+ * The blank line parting one block from the next, as it reads in concatenated stdout writes.
  *
- * Each count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
+ * The count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
  */
-/** The blank line parting one block from the next, as it reads in concatenated stdout writes. */
 const BLOCK_GAP = '\n'.repeat(2);
 
 /** A gap wider than one blank line, which no boundary opens. */
@@ -1091,8 +1090,7 @@ describe(runCommand, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
-  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way. The
-  // wider gap is reserved for a kit boundary, which is the reader's only cue that the kit has changed.
+  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way.
   it('parts one block from the next with a single blank line', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });

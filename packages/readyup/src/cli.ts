@@ -872,7 +872,7 @@ async function runMultiKitHumanMode(
         writeBlock,
       });
       rows.push(...kitResult.rows);
-      if (kitResult.droppedBlock) anyBlockDropped = true;
+      if (kitResult.hasDroppedBlock) anyBlockDropped = true;
       if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
       // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
@@ -906,7 +906,7 @@ interface KitBlockContext {
 
 /** A kit's verdict alongside the rows its checklists contribute to the run's summary table. */
 interface KitRunResult {
-  droppedBlock: boolean;
+  hasDroppedBlock: boolean;
   passed: boolean;
   rows: SummaryRow[];
 }
@@ -926,7 +926,7 @@ async function runSingleKitHumanMode(
   const willTabulate = isMultiKit || checklists.length > 1;
   const rows: SummaryRow[] = [];
   let allPassed = true;
-  let droppedBlock = false;
+  let hasDroppedBlock = false;
 
   for (const checklist of checklists) {
     const report = await runRdy(checklist, {
@@ -948,7 +948,7 @@ async function runSingleKitHumanMode(
       const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
       writeBlock(heading + body);
     } else {
-      droppedBlock = true;
+      hasDroppedBlock = true;
     }
 
     if (!report.passed) {
@@ -958,7 +958,7 @@ async function runSingleKitHumanMode(
     rows.push(toSummaryRow(segments, report));
   }
 
-  return { droppedBlock, passed: allPassed, rows };
+  return { hasDroppedBlock, passed: allPassed, rows };
 }
 
 /**

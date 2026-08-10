@@ -436,8 +436,10 @@ describe(reportRdy, () => {
         }),
       ).body;
 
-      expect(output).toContain(`${FAILED_ERROR} child`);
-      expect(output).toContain(`   ${FIX} fix child`);
+      // The tree's own `   🔴 child` satisfies a substring match, so the recapped line is pinned by its
+      // exact form: the recap flattens nesting rather than mirroring the tree's indent.
+      expect(output.split('\n')).toContain(`${FAILED_ERROR} child`);
+      expect(output.split('\n')).toContain(`   ${FIX} fix child`);
     });
 
     // The recap names the check with the token the tree gave it, so a reader scanning fixes sees which
