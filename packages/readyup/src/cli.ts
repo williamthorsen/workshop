@@ -876,7 +876,7 @@ async function runMultiKitHumanMode(
       if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
       // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
-      if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'), true);
+      if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'));
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
       const label = kitSegments.length > 0 ? ` [${getLayout().formatBreadcrumbLabel(kitSegments)}]` : '';
@@ -892,7 +892,7 @@ async function runMultiKitHumanMode(
   // Tallying follows the last kit rather than riding inside one, so a kit that failed to load still leaves
   // the table covering the checklists that did run. A dropped block is reported by its row alone, so one
   // dropped block earns the table even where a single row is all it has to carry.
-  if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows), false);
+  if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
@@ -927,7 +927,6 @@ async function runSingleKitHumanMode(
   const rows: SummaryRow[] = [];
   let allPassed = true;
   let droppedBlock = false;
-  let startsKit = true;
 
   for (const checklist of checklists) {
     const report = await runRdy(checklist, {
@@ -947,8 +946,7 @@ async function runSingleKitHumanMode(
 
     if (hasVisibleResults || !willTabulate) {
       const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
-      writeBlock(heading + body, startsKit);
-      startsKit = false;
+      writeBlock(heading + body);
     } else {
       droppedBlock = true;
     }
@@ -981,21 +979,22 @@ function toJsonOriginField(provenance: KitProvenance | undefined): { origin?: Js
   };
 }
 
-/** Writes one block of a run to stdout, `startsKit` widening the gap that parts it from the block before. */
-type BlockWriter = (text: string, startsKit: boolean) => void;
+/** Writes one block of a run to stdout, parted from the block before it by a blank line. */
+type BlockWriter = (text: string) => void;
 
 /**
- * Returns a writer that parts each block of a run from the one before, opening a wider gap at a kit boundary.
+ * Returns a writer that parts each block of a run from the one before with a single blank line.
  *
- * Separation lives here rather than in the headings because only a sequence can see what precedes it: the
- * run's first block needs no blank at all, and once headings stopped nesting, a gap wider than the ones
- * within a kit is the reader's only remaining cue that the kit has changed.
+ * Separation lives here rather than in the headings because only a sequence can see what precedes it, and
+ * the run's first block needs no blank at all. One width serves every boundary, a kit's included: the
+ * heading below a gap names the kit it opens, so a wider gap would restate in whitespace what the next
+ * line already states in words.
  */
 function createBlockWriter(): BlockWriter {
   let hasWritten = false;
 
-  return (text, startsKit) => {
-    if (hasWritten) process.stdout.write(startsKit ? '\n\n' : '\n');
+  return (text) => {
+    if (hasWritten) process.stdout.write('\n');
     hasWritten = true;
     process.stdout.write(`${text}\n`);
   };
