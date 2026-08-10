@@ -74,7 +74,9 @@ describe('count agreement across views', () => {
     expect(human).toContain(expectedFields);
 
     // Combined-summary table row.
-    const table = formatCombinedSummary([{ name: 'deploy', ...counts, durationMs: report.durationMs }]);
+    const table = formatCombinedSummary([
+      { counts, durationMs: report.durationMs, segments: [{ role: 'checklist', text: 'deploy' }] },
+    ]);
     expect(table).toContain(expectedFields);
 
     // JSON payload: the same tally, nested under `counts` with the verdict beside it.

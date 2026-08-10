@@ -13,7 +13,7 @@ import { UnresolvableKitImportsError } from './kitImports/UnresolvableKitImports
 import type { KitProvenance } from './KitProvenance.ts';
 import { KITS_DIR, resolveHomeDir } from './kitsDir.ts';
 import { getLayout } from './layout/engine.ts';
-import { type BreadcrumbSegment, SEGMENT_SEPARATOR } from './layout/layoutEngine.ts';
+import type { BreadcrumbSegment, SummaryRow } from './layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';
 import type { RdyManifest } from './manifest/manifestSchema.ts';
 import { readManifest } from './manifest/readManifest.ts';
@@ -29,15 +29,7 @@ import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
 import type { JsonWarning, RaisedWarning } from './schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from './schemas/reportSchema.ts';
-import type {
-  ChecklistSummary,
-  FixLocation,
-  RdyChecklist,
-  RdyKit,
-  RdyReport,
-  RdyStagedChecklist,
-  Severity,
-} from './types.ts';
+import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from './types.ts';
 import { extractHint, extractMessage } from './utils/error-handling.ts';
 import { translateParseArgsError } from './utils/parse-args-error.ts';
 import { checkDrift } from './verify/checkDrift.ts';
@@ -567,9 +559,9 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
 
-/** Build a checklist summary from a report. */
-function summarizeReport(name: string, report: RdyReport): ChecklistSummary {
-  return { name, ...countResults(report.results), durationMs: report.durationMs };
+/** Builds a summary row from a report, named by the breadcrumb heading the block the report renders into. */
+function toSummaryRow(segments: BreadcrumbSegment[], report: RdyReport): SummaryRow {
+  return { counts: countResults(report.results), durationMs: report.durationMs, segments };
 }
 
 /** Resolve threshold values from the cascade: CLI flag > kit field > default. */
@@ -861,6 +853,7 @@ async function runMultiKitHumanMode(
   const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
   const writeBlock = createBlockWriter();
+  const rows: SummaryRow[] = [];
   let allPassed = true;
   let anyKitFailed = false;
 
@@ -872,18 +865,18 @@ async function runMultiKitHumanMode(
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
-      const exitCode = await runSingleKitHumanMode(kit, entry.checklists, settings, {
-        isMultiKit,
+      const kitResult = await runSingleKitHumanMode(kit, entry.checklists, settings, {
         kitSegments,
         writeBlock,
       });
-      if (exitCode !== EXIT_OK) allPassed = false;
+      rows.push(...kitResult.rows);
+      if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
       // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
       if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'), true);
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-      const label = kitSegments.length > 0 ? ` [${toBreadcrumbLabel(kitSegments)}]` : '';
+      const label = kitSegments.length > 0 ? ` [${getLayout().formatBreadcrumbLabel(kitSegments)}]` : '';
       const rdyError = toRdyError(error);
       process.stderr.write(`Error${label}: ${rdyError.message}\n`);
       if (rdyError.hint !== undefined) {
@@ -893,14 +886,23 @@ async function runMultiKitHumanMode(
     }
   }
 
+  // Tallying follows the last kit rather than riding inside one, so a kit that failed to load still leaves
+  // the table covering the checklists that did run. Two blanks mark a kit boundary, and this is a block.
+  if (rows.length > 1) writeBlock(formatCombinedSummary(rows), false);
+
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
 
 /** What a kit's checklists need in order to take their place in the run's sequence of blocks. */
 interface KitBlockContext {
-  isMultiKit: boolean;
   kitSegments: BreadcrumbSegment[];
   writeBlock: BlockWriter;
+}
+
+/** A kit's verdict alongside the rows its checklists contribute to the run's summary table. */
+interface KitRunResult {
+  passed: boolean;
+  rows: SummaryRow[];
 }
 
 /** Run checklists from a single kit in human-readable mode. */
@@ -908,14 +910,14 @@ async function runSingleKitHumanMode(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  { isMultiKit, kitSegments, writeBlock }: KitBlockContext,
-): Promise<number> {
+  { kitSegments, writeBlock }: KitBlockContext,
+): Promise<KitRunResult> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistSegment = checklists.length > 1;
+  const rows: SummaryRow[] = [];
   let allPassed = true;
   let startsKit = true;
-  const summaries: ChecklistSummary[] = [];
 
   for (const checklist of checklists) {
     const report = await runRdy(checklist, {
@@ -937,16 +939,10 @@ async function runSingleKitHumanMode(
       allPassed = false;
     }
 
-    if (showChecklistSegment) {
-      summaries.push(summarizeReport(checklist.name, report));
-    }
+    rows.push(toSummaryRow(segments, report));
   }
 
-  if (summaries.length > 1 && !isMultiKit) {
-    writeBlock(formatCombinedSummary(summaries), false);
-  }
-
-  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+  return { passed: allPassed, rows };
 }
 
 /**
@@ -1017,11 +1013,6 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
 
   const version = provenance.version === undefined ? '' : `@${provenance.version}`;
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
-}
-
-/** Returns a breadcrumb as plain text, for a stderr line that carries no layout of its own. */
-function toBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
-  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }
 
 /**

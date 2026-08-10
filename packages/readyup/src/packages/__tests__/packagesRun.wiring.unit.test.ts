@@ -232,6 +232,73 @@ describe('--packages run path wiring', () => {
 
     expect(stdout.join('')).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} default');
   });
+
+  // The defect #238 reports: every package kit here runs one checklist, so the run tallied nothing at all.
+  it('ends a multi-package run with a table covering every checklist that ran', async () => {
+    installPackage('plain-kit', ['default'], { version: '1.0.0' });
+    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+    const entries = resolveKitSources({
+      ...baseArgs,
+      packages: true,
+      configuredPackages: ['plain-kit', '@acme/kits'],
+    });
+
+    await runCommand({ kitEntries: entries, json: false });
+    const lines = stdout.join('').trimEnd().split('\n');
+
+    // Heading, rule, one row per checklist, rule, total.
+    expect(lines.at(-6)).toContain('Summary');
+    expect(lines.at(-4)).toContain('plain-kit@1.0.0 / default');
+    expect(lines.at(-3)).toContain('@acme/kits@2.1.0 / default');
+    expect(lines.at(-1)).toContain('Total: 2 passed');
+  });
+
+  // A row is an index into the blocks above it, so it repeats its heading rather than naming its own scheme.
+  it('names each row by the breadcrumb heading its block carries', async () => {
+    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+    installPackage('plain-kit', ['default'], { version: '1.0.0' });
+    const entries = resolveKitSources({
+      ...baseArgs,
+      packages: true,
+      configuredPackages: ['@acme/kits', 'plain-kit'],
+    });
+
+    await runCommand({ kitEntries: entries, json: false });
+    const output = stdout.join('');
+    const headings = output
+      .matchAll(/^\u{2501}\u{2501} \u{1F4E6} (?<crumb>.+)$/gmu)
+      .map((match) => (match.groups?.['crumb'] ?? '').replaceAll(/\p{Emoji_Presentation} /gu, ''))
+      .toArray();
+
+    expect(headings).toStrictEqual(['@acme/kits@2.1.0 / default', 'plain-kit@1.0.0 / default']);
+    for (const heading of headings) {
+      expect(output).toContain(`\u{1F7E2} ${heading}`);
+    }
+  });
+
+  // A kit that never loaded ran no checklist, and the ones that did are still worth tallying.
+  it('tallies the checklists that ran when a kit fails to load', async () => {
+    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+    installPackage('plain-kit', ['default'], { version: '1.0.0' });
+    installPackage('broken-kit', ['default'], { version: '3.0.0' });
+    writeFileSync(
+      path.join(process.cwd(), 'node_modules', 'broken-kit', '.readyup', 'kits', 'default.js'),
+      'export default { nope: true };\n',
+    );
+    const entries = resolveKitSources({
+      ...baseArgs,
+      packages: true,
+      configuredPackages: ['@acme/kits', 'broken-kit', 'plain-kit'],
+    });
+
+    await runCommand({ kitEntries: entries, json: false });
+    const table = stdout.join('').split('\u{2501}\u{2501} Summary\n', 2)[1] ?? '';
+
+    expect(table).toContain('@acme/kits@2.1.0 / default');
+    expect(table).toContain('plain-kit@1.0.0 / default');
+    expect(table).not.toContain('broken-kit');
+    expect(table).toContain('Total: 2 passed');
+  });
 });
 
 // region | Helpers

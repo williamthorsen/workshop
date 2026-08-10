@@ -171,8 +171,16 @@ function renderEverything(): string {
     engine.formatCountLine(counts, 800),
     ...engine.formatSummaryTable({
       rows: [
-        { name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 },
-        { name: 'integration', counts, durationMs: 1_400 },
+        { counts: makeCounts({ passed: 2 }), durationMs: 410, segments: [{ role: 'checklist', text: 'build' }] },
+        {
+          counts,
+          durationMs: 1_400,
+          segments: [
+            { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+            { role: 'kit', text: 'npm-auto-publish' },
+            { role: 'checklist', text: 'integration' },
+          ],
+        },
       ],
       totals: counts,
       totalDurationMs: 1_810,

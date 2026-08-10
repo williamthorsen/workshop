@@ -86,7 +86,7 @@ export interface CheckLineInput {
 export interface SummaryRow {
   counts: SummaryCounts;
   durationMs: number;
-  name: string;
+  segments: BreadcrumbSegment[];
 }
 
 /** The combined summary table's rows alongside the totals its final line reports. */
@@ -100,6 +100,7 @@ export interface SummaryTableInput {
 export interface LayoutEngine {
   formatBlockRule(): string;
   formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string;
+  formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string;
   formatCheckLine(input: CheckLineInput): string;
   formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string;
   formatCounts(counts: SummaryCounts): string;
@@ -192,13 +193,16 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * Returns the summary table's lines: a heading, a rule, one line per row, a closing rule, and a total.
    *
    * Names are padded and durations right-aligned, so every row's counts begin at the same column. Both
-   * rules span the widest line they enclose, the total included.
+   * rules span the widest line they enclose, the total included. A row names itself by its breadcrumb
+   * without the role glyphs the matching heading carries, because padding counts characters while the
+   * terminal lays out display width, and a glyph makes the two disagree.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
-    const nameWidth = Math.max(...rows.map((row) => row.name.length));
-    const durationWidth = Math.max(...rows.map((row) => formatDuration(row.durationMs).length));
+    const named = rows.map((row) => ({ ...row, name: formatBreadcrumbLabel(row.segments) }));
+    const nameWidth = Math.max(...named.map((row) => row.name.length));
+    const durationWidth = Math.max(...named.map((row) => formatDuration(row.durationMs).length));
 
-    const entries = rows.map((row) => ({
+    const entries = named.map((row) => ({
       token: resolveWorstToken(row.counts.worstSeverity),
       body: [
         row.name.padEnd(nameWidth),
@@ -257,6 +261,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   return {
     formatBlockRule,
     formatBreadcrumb,
+    formatBreadcrumbLabel,
     formatCheckLine,
     formatCountLine,
     formatCounts,
@@ -268,6 +273,11 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     inlineGlyph,
     token,
   };
+}
+
+/** Returns `segments` parted as a heading parts them, carrying none of the role glyphs a heading adds. */
+function formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
+  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }
 
 /** Returns the token for a severity, or the `passed` token for `null`. */

@@ -1,7 +1,6 @@
 // Types
 export type {
   AheadBehind,
-  ChecklistSummary,
   CheckOutcome,
   CheckReturnValue,
   FailedResult,
