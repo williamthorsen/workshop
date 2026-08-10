@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { useTempDir } from '../../test-utils/tempDir.ts';
 import { readTsconfigChain, readTsconfigLanguageLevel } from '../tsconfig.ts';
 
 const temp = useTempDir({ prefix: 'rdy-tsconfig-', cwd: 'mock' });

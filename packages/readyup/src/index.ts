@@ -30,31 +30,26 @@ export type {
 export type { RdyErrorCode } from './errors.ts';
 
 // JSON payload types, derived from the zod schemas that also generate the published JSON Schemas
+export type { JsonCounts, JsonErrorBody, JsonWarning, JsonWarningCode } from './schemas/common.ts';
+export type { JsonCompileKitEntry, JsonCompileOutput, JsonCompileStatus } from './schemas/compileOutputSchema.ts';
+export type { JsonErrorEnvelope } from './schemas/errorEnvelopeSchema.ts';
+export type { JsonKitKind, JsonListKitEntry, JsonListOutput } from './schemas/listOutputSchema.ts';
 export type {
   JsonCheckEntry,
   JsonChecklistEntry,
-  JsonCompileKitEntry,
-  JsonCompileOutput,
-  JsonCompileStatus,
-  JsonCounts,
   JsonDetail,
-  JsonDriftStatus,
-  JsonErrorBody,
-  JsonErrorEnvelope,
   JsonKitEntry,
   JsonKitErrorEntry,
-  JsonKitKind,
   JsonKitResultEntry,
-  JsonListKitEntry,
-  JsonListOutput,
   JsonProgress,
   JsonReport,
+} from './schemas/reportSchema.ts';
+export type {
+  JsonDriftStatus,
   JsonSourceStatus,
   JsonVerifyKitEntry,
   JsonVerifyOutput,
-  JsonWarning,
-  JsonWarningCode,
-} from './schemas/index.ts';
+} from './schemas/verifyOutputSchema.ts';
 
 // Type guards
 export { isFlatChecklist, isPercentProgress } from './types.ts';

@@ -1,0 +1,241 @@
+import assert from 'node:assert';
+
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { ZodError } from 'zod';
+
+import type { RdyErrorCode } from '../../errors.ts';
+import type { Severity } from '../../types.ts';
+import type { JsonErrorCode, JsonSeverity, JsonWarning, JsonWarningCode, RaisedWarning } from '../common.ts';
+import { CompileOutputSchema } from '../compileOutputSchema.ts';
+import { ErrorEnvelopeSchema } from '../errorEnvelopeSchema.ts';
+import { ListOutputSchema } from '../listOutputSchema.ts';
+import { ReportSchema } from '../reportSchema.ts';
+import { VerifyOutputSchema } from '../verifyOutputSchema.ts';
+import {
+  compilePayload,
+  errorEnvelopePayload,
+  hintedErrorEnvelopePayload,
+  legacyVerifyPayload,
+  listPayload,
+  minimalReportPayload,
+  recursiveListPayload,
+  reportPayload,
+  unknownWarningReportPayload,
+  verifyPayload,
+} from './fixtures/payloadFixtures.ts';
+
+describe('JSON payload schemas', () => {
+  describe('representative payloads', () => {
+    it.each([
+      ['report', ReportSchema, reportPayload],
+      ['minimal report', ReportSchema, minimalReportPayload],
+      ['error envelope', ErrorEnvelopeSchema, errorEnvelopePayload],
+      ['hinted error envelope', ErrorEnvelopeSchema, hintedErrorEnvelopePayload],
+      ['list', ListOutputSchema, listPayload],
+      ['recursive list', ListOutputSchema, recursiveListPayload],
+      ['verify', VerifyOutputSchema, verifyPayload],
+      ['compile', CompileOutputSchema, compilePayload],
+    ])('accepts a representative %s payload', (_label, schema, payload) => {
+      expect(() => schema.parse(payload)).not.toThrow();
+    });
+
+    it('accepts a listing that names no project, at the same schema version', () => {
+      expect(listPayload.kits[0]).not.toHaveProperty('project');
+      expect(ListOutputSchema.parse(listPayload).schemaVersion).toBe(1);
+      expect(ListOutputSchema.parse(recursiveListPayload).schemaVersion).toBe(1);
+    });
+
+    it('keeps a kit\u{2019}s project apart from the package that published it', () => {
+      const parsed = ListOutputSchema.parse(recursiveListPayload);
+
+      expect(parsed.kits[1]?.project).toBe('packages/ui');
+      expect(parsed.kits[1]?.origin).toBeUndefined();
+    });
+
+    it('accepts a kit that names no compile-time readyup, at the same schema version', () => {
+      const kit = reportPayload.kits[0];
+      const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== 'compiledWith'));
+
+      expect(kit).toHaveProperty('compiledWith');
+      expect(ReportSchema.parse(reportPayload).schemaVersion).toBe(1);
+      expect(ReportSchema.parse({ ...reportPayload, kits: [stripped] }).schemaVersion).toBe(1);
+    });
+  });
+
+  describe('required fields', () => {
+    it.each(['schemaVersion', 'readyupVersion', 'passed', 'counts', 'detail', 'kits'])(
+      'rejects a report missing %s',
+      (field) => {
+        const incomplete = Object.fromEntries(Object.entries(minimalReportPayload).filter(([key]) => key !== field));
+
+        expect(() => ReportSchema.parse(incomplete)).toThrow(ZodError);
+      },
+    );
+
+    it.each(['failOn', 'reportOn'])('accepts a report whose invocation requested no %s', (field) => {
+      expect(minimalReportPayload).not.toHaveProperty(field);
+      expect(() => ReportSchema.parse(minimalReportPayload)).not.toThrow();
+    });
+
+    it.each(['failOn', 'reportOn'])('rejects a kit that ran without its effective %s', (field) => {
+      const kit = reportPayload.kits[0];
+      const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== field));
+
+      expect(() => ReportSchema.parse({ ...reportPayload, kits: [stripped] })).toThrow(ZodError);
+    });
+
+    it('rejects a counts object missing one of its six buckets', () => {
+      const counts = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0 };
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, counts })).toThrow(ZodError);
+    });
+  });
+
+  describe('error bodies', () => {
+    it('shares the hint field with the per-kit error entry inside a report', () => {
+      const kits = [{ name: 'release', error: { code: 'kit-load', message: 'boom', hint: 'Install it.' } }];
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).not.toThrow();
+    });
+
+    it('accepts an error body carrying no hint', () => {
+      expect(() => ErrorEnvelopeSchema.parse(errorEnvelopePayload)).not.toThrow();
+    });
+
+    it('rejects a non-string hint', () => {
+      const error = { code: 'config', message: 'boom', hint: 42 };
+
+      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 1, error })).toThrow(ZodError);
+    });
+  });
+
+  describe('collision fields', () => {
+    it('reads `passed` as a verdict at every level and as a count only under `counts`', () => {
+      const parsed = ReportSchema.parse(reportPayload);
+      const kit = parsed.kits[0];
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
+
+      expect(parsed.passed).toBe(false);
+      expect(parsed.counts.passed).toBe(2);
+      expect(kit.passed).toBe(false);
+      expect(kit.checklists[0]?.passed).toBe(false);
+    });
+
+    it('reads `warnings` as advisory entries at the top level and as a count only under `counts`', () => {
+      const parsed = ReportSchema.parse(reportPayload);
+
+      expect(parsed.warnings).toStrictEqual([
+        { code: 'source-stale', message: 'kit is stale', remedy: 'Run `rdy compile` to refresh.' },
+      ]);
+      expect(parsed.counts.warnings).toBe(0);
+    });
+
+    it('rejects a numeric `warnings` at the top level, where the old flat shape put the count', () => {
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, warnings: 3 })).toThrow(ZodError);
+    });
+  });
+
+  describe('thresholds', () => {
+    it('carries the kit-declared threshold that governed a kit, not the one the run requested', () => {
+      const parsed = ReportSchema.parse(reportPayload);
+      const kit = parsed.kits[0];
+      assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
+
+      expect(parsed.failOn).toBe('error');
+      expect(kit.failOn).toBe('warn');
+    });
+  });
+
+  describe('warning codes', () => {
+    it('accepts an advisory code this version does not know', () => {
+      expect(() => ReportSchema.parse(unknownWarningReportPayload)).not.toThrow();
+    });
+
+    it('rejects an error code this version does not know, which selects a consumer branch', () => {
+      const kits = [{ name: 'release', error: { code: 'kit-retired', message: 'boom' } }];
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow(ZodError);
+    });
+  });
+
+  describe('verify entries', () => {
+    it('accepts a payload from a readyup that predates the source verdict', () => {
+      expect(() => VerifyOutputSchema.parse(legacyVerifyPayload)).not.toThrow();
+    });
+
+    it('rejects a source verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'drift' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+    });
+
+    it('keeps the source vocabulary distinct from the target vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'stale', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+    });
+
+    it('accepts a payload from a readyup that predates the rebuild verdict', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+    });
+
+    it('accepts a rebuild mismatch carrying both hashes', () => {
+      const kits = [
+        {
+          name: 'deploy',
+          status: 'ok',
+          sourceStatus: 'ok',
+          rebuildStatus: 'mismatch',
+          rebuildExpected: '1111aaaa',
+          rebuildActual: '2222bbbb',
+        },
+      ];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).not.toThrow();
+    });
+
+    it('rejects a rebuild verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+    });
+  });
+
+  describe('kit entries', () => {
+    it('accepts a counts-free error entry', () => {
+      const kits = [{ name: 'release', error: { code: 'config', message: 'boom' } }];
+
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).not.toThrow();
+    });
+
+    it('rejects a kit that carries neither results nor an error', () => {
+      expect(() => ReportSchema.parse({ ...minimalReportPayload, kits: [{ name: 'orphan' }] })).toThrow(ZodError);
+    });
+  });
+
+  describe('derived types', () => {
+    it('keeps the wire severity vocabulary in step with the runner type', () => {
+      expectTypeOf<JsonSeverity>().toEqualTypeOf<Severity>();
+    });
+
+    it('keeps the wire error taxonomy in step with RdyErrorCode', () => {
+      expectTypeOf<JsonErrorCode>().toEqualTypeOf<RdyErrorCode>();
+    });
+
+    it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'source-stale' | 'target-drift'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'source-stale' | 'target-drift'>();
+    });
+
+    it('publishes the known warning codes as distinguishable members of an open set', () => {
+      // A union of a literal and `string` collapses to `string`, which would still accept both
+      // assignments below while offering a consumer no vocabulary at all.
+      expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
+      expectTypeOf<'target-drift'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'source-stale'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
+    });
+  });
+});

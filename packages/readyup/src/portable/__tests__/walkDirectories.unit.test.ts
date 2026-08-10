@@ -8,7 +8,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
-import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
+import { useTempDir } from '../../test-utils/tempDir.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { walkDirectories } from '../walkDirectories.ts';
 

@@ -8,10 +8,10 @@ vi.mock(import('node:fs'), async (importOriginal) => {
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
-import { useTempDir } from '../../../__tests__/helpers/tempDir.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { useTempDir } from '../../test-utils/tempDir.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { listCommand } from '../listCommand.ts';
 
