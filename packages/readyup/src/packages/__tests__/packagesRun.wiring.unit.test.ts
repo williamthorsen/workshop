@@ -292,10 +292,12 @@ describe('--packages run path wiring', () => {
     });
 
     await runCommand({ kitEntries: entries, json: false });
-    const output = stdout.join('');
+    const table = stdout.join('').split('\u{2501}\u{2501} Summary\n', 2)[1] ?? '';
 
-    expect(output).toContain('Total: 2 passed');
-    expect(output).not.toContain('broken-kit@3.0.0 / default  ');
+    expect(table).toContain('@acme/kits@2.1.0 / default');
+    expect(table).toContain('plain-kit@1.0.0 / default');
+    expect(table).not.toContain('broken-kit');
+    expect(table).toContain('Total: 2 passed');
   });
 });
 
