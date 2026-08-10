@@ -21,11 +21,12 @@ export interface ReportRdyOptions {
 }
 
 /**
- * Returns a report rendered for a terminal: a tree of check lines, a count line, and any fix recap.
+ * Returns a report rendered for a terminal: a tree of check lines, any fix recap, then the count line.
  *
  * A failed check contributes its claim plus a reason block; every other status contributes one line.
  * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
- * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree.
+ * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree, and it
+ * closes the block: the last line a reader meets before the blank parting one block from the next.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -34,17 +35,14 @@ export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string
   const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
   const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
 
-  // The rule parts the count line from the tree it tallies, so an empty tree needs none: a checklist whose
-  // every result is hidden closes with its count line sitting directly under its heading.
-  if (lines.length > 0) lines.push(getLayout().formatBlockRule());
-  lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
-
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
     if (fixes.length > 0) {
-      lines.push('', getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
+      lines.push(getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
     }
   }
+
+  lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
 
   return lines.join('\n');
 }

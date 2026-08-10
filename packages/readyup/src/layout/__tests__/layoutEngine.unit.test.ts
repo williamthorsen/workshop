@@ -170,17 +170,6 @@ describe('formatHeading', () => {
   });
 });
 
-describe('formatBlockRule', () => {
-  it('closes a block with a bare rule at section weight', () => {
-    expect(engine.formatBlockRule()).toBe('\u{2500}\u{2500}');
-  });
-
-  // A heading always carries text after its rule, so the bare form cannot be mistaken for one.
-  it('carries no text, so it does not read as a heading', () => {
-    expect(engine.formatBlockRule()).not.toContain(' ');
-  });
-});
-
 describe('formatBreadcrumb', () => {
   it('parts each segment from the next with a spaced separator', () => {
     const rendered = engine.formatBreadcrumb(
@@ -284,26 +273,22 @@ describe('formatCounts', () => {
 });
 
 describe('formatCountLine', () => {
-  it('parts the verdict from the counts when no label does', () => {
+  it('labels the counts, so the line names itself as a tally', () => {
     const counts = makeCounts({ passed: 9, errors: 1, worstSeverity: 'error' });
 
-    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} | 1 error, 9 passed (1200ms)`);
+    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} Total: 1 error, 9 passed (1200ms)`);
   });
 
   it('leads with the passed token when nothing failed', () => {
-    expect(engine.formatCountLine(makeCounts({ passed: 4 }), 300)).toBe(`${PASSED} | 4 passed (300ms)`);
+    expect(engine.formatCountLine(makeCounts({ passed: 4 }), 300)).toBe(`${PASSED} Total: 4 passed (300ms)`);
   });
 
   it('shows a duration below the check-line floor', () => {
     expect(engine.formatCountLine(makeCounts({ passed: 1 }), 4)).toContain('(4ms)');
   });
 
-  it('takes no separator when a label already parts the verdict from the counts', () => {
-    expect(engine.formatCountLine(makeCounts({ passed: 2 }), 500, 'Total:')).toBe(`${PASSED} Total: 2 passed (500ms)`);
-  });
-
   it('leads a blocked-only run with the passed token, since nothing failed', () => {
-    expect(engine.formatCountLine(makeCounts({ blocked: 2 }), 100)).toBe(`${PASSED} | 2 blocked (100ms)`);
+    expect(engine.formatCountLine(makeCounts({ blocked: 2 }), 100)).toBe(`${PASSED} Total: 2 blocked (100ms)`);
   });
 });
 
@@ -449,8 +434,7 @@ describe('verdict adjacency', () => {
   const verdict = engine.token('failedError');
 
   it.each([
-    ['tail line', () => engine.formatCountLine(counts, 500)],
-    ['total line', () => engine.formatCountLine(counts, 500, 'Total:')],
+    ['count line', () => engine.formatCountLine(counts, 500)],
     [
       'table row',
       () =>

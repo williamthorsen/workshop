@@ -19,20 +19,16 @@ export const SEGMENT_SEPARATOR = ' / ';
 /** Columns between one summary-table cell and the next. */
 const TABLE_CELL_GAP = '  ';
 
-/** Label leading the combined summary table's final line. */
+/**
+ * Label leading every count line.
+ *
+ * The word is what tells a count line apart from the check lines above it: both lead with a severity
+ * token in the same column, so the tally needs to name itself rather than rely on the glyph.
+ */
 const TOTAL_LABEL = 'Total:';
 
 /** Heading over the combined summary table. */
 const SUMMARY_HEADING = 'Summary';
-
-/**
- * Text parting a count line's verdict from its counts, used wherever no label already parts them.
- *
- * Heavier than `COUNT_SEPARATOR`, so the counts read as one list under the verdict rather than binding
- * their first field to the glyph beside it. `buildCountBody` supplies the space after it, as it does for
- * the label it stands in for.
- */
-const VERDICT_SEPARATOR = '|';
 
 /** Text parting one count from the next. */
 const COUNT_SEPARATOR = ', ';
@@ -98,11 +94,10 @@ export interface SummaryTableInput {
 
 /** String builders that lay out a formatter's tokens. */
 export interface LayoutEngine {
-  formatBlockRule(): string;
   formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string;
   formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string;
   formatCheckLine(input: CheckLineInput): string;
-  formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string;
+  formatCountLine(counts: SummaryCounts, durationMs: number): string;
   formatCounts(counts: SummaryCounts): string;
   formatHeading(name: string, level: HeadingLevel): string;
   formatHint(hint: string): string;
@@ -115,11 +110,6 @@ export interface LayoutEngine {
 
 /** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
-  /** Returns the bare rule closing a block, carrying no text so it reads as a rule rather than a heading. */
-  function formatBlockRule(): string {
-    return formatter.rules.section.repeat(HEADING_SIGIL_WIDTH);
-  }
-
   /**
    * Returns `segments` as one heading, each behind its role's glyph and parted by the segment separator.
    *
@@ -148,12 +138,12 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns `token <label or separator> counts (duration)`, led by the token for `counts.worstSeverity`.
+   * Returns `token Total: counts (duration)`, led by the token for `counts.worstSeverity`.
    *
    * The duration always appears, whatever its magnitude.
    */
-  function formatCountLine(counts: SummaryCounts, durationMs: number, label?: string): string {
-    return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs, label);
+  function formatCountLine(counts: SummaryCounts, durationMs: number): string {
+    return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs);
   }
 
   /**
@@ -210,7 +200,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
         formatCounts(row.counts),
       ].join(TABLE_CELL_GAP),
     }));
-    const totalBody = buildCountBody(totals, totalDurationMs, TOTAL_LABEL);
+    const totalBody = buildCountBody(totals, totalDurationMs);
 
     const bodyWidth = Math.max(...entries.map((entry) => entry.body.length), totalBody.length);
     const rule = formatter.rules.section.repeat(formatter.gutter + bodyWidth);
@@ -248,18 +238,12 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   // -- Helpers --
 
-  /**
-   * Returns everything a count line carries after its leading token.
-   *
-   * A label and the verdict separator occupy one slot, so a labelled line takes no separator: whichever
-   * fills the slot is what keeps the verdict from touching the first count.
-   */
-  function buildCountBody(counts: SummaryCounts, durationMs: number, label?: string): string {
-    return `${label ?? VERDICT_SEPARATOR} ${formatCounts(counts)} (${formatDuration(durationMs)})`;
+  /** Returns everything a count line carries after its leading token. */
+  function buildCountBody(counts: SummaryCounts, durationMs: number): string {
+    return `${TOTAL_LABEL} ${formatCounts(counts)} (${formatDuration(durationMs)})`;
   }
 
   return {
-    formatBlockRule,
     formatBreadcrumb,
     formatBreadcrumbLabel,
     formatCheckLine,
