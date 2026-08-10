@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import type { Plugin } from 'esbuild';
 
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { extractJsonPaths } from './extractJsonPaths.ts';
 
 /**

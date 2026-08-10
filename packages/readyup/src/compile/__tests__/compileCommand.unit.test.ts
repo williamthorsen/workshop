@@ -25,7 +25,7 @@ vi.mock(import('../validateCompiledOutput.ts'), () => ({
   validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
-vi.mock(import('../../loadConfig.ts'), () => ({
+vi.mock(import('../../config/loadConfig.ts'), () => ({
   loadConfig: mockLoadConfig,
 }));
 

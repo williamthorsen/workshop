@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../types.ts';
+import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../kits/types.ts';
 import * as compareLocalRefsModule from '../compare-local-refs.ts';
 import * as compareRefToRemoteModule from '../compare-ref-to-remote.ts';
 import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../factories.ts';

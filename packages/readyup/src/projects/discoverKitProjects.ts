@@ -3,14 +3,14 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { collectSourceFiles } from '../compile/collectSourceFiles.ts';
-import { READYUP_DIR } from '../kitsDir.ts';
+import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
+import { extractMessage } from '../errors/error-handling.ts';
+import { READYUP_DIR } from '../kits/kitsDir.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
-import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../loadConfig.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
-import type { ResolvedRdyConfig } from '../types.ts';
-import { extractMessage } from '../utils/error-handling.ts';
 
 /**
  * Glob naming the candidates a sweep considers: every directory holding a package manifest.

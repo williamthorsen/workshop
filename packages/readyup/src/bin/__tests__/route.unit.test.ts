@@ -11,13 +11,13 @@ const mockParseRunArgs = vi.hoisted(() => vi.fn());
 const mockResolveKitSources = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../cli.ts'), () => ({
+vi.mock(import('../../run/runCommand.ts'), () => ({
   parseRunArgs: mockParseRunArgs,
   resolveKitSources: mockResolveKitSources,
   runCommand: mockRunCommand,
 }));
 
-vi.mock(import('../../loadConfig.ts'), () => ({
+vi.mock(import('../../config/loadConfig.ts'), () => ({
   loadConfig: mockLoadConfig,
 }));
 
@@ -38,7 +38,7 @@ vi.mock('../../version.ts', () => ({
 }));
 
 import packageJson from '../../../package.json' with { type: 'json' };
-import { usageError } from '../../errors.ts';
+import { usageError } from '../../errors/RdyError.ts';
 import { DOCS_POINTER, routeCommand } from '../route.ts';
 
 /** Scratch project root for the tests that need a kit file on disk. */

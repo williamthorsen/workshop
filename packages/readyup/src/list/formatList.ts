@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { KITS_DIR } from '../kitsDir.ts';
+import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 

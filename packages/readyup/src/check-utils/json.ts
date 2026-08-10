@@ -1,6 +1,6 @@
-import { isRecord } from '../isRecord.ts';
-import { safeJsonParse } from '../safeJsonParse.ts';
-import type { CheckOutcome } from '../types.ts';
+import type { CheckOutcome } from '../kits/types.ts';
+import { isRecord } from '../portable/isRecord.ts';
+import { safeJsonParse } from '../portable/safeJsonParse.ts';
 import { readFile } from './filesystem.ts';
 import { getJsonValue } from './json-value.ts';
 import { missingFrom } from './missingFrom.ts';

@@ -3,9 +3,9 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { loadRdyKit } from '../../config.ts';
-import { runRdy } from '../../runRdy.ts';
-import type { RdyResult } from '../../types.ts';
+import { loadRdyKit } from '../../kits/loadRdyKit.ts';
+import type { RdyResult } from '../../kits/types.ts';
+import { runRdy } from '../../run/runRdy.ts';
 import { initCommand } from '../initCommand.ts';
 
 const TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-scaffold');

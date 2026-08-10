@@ -1,4 +1,4 @@
-import type { Severity, SummaryCounts } from '../types.ts';
+import type { Severity, SummaryCounts } from '../kits/types.ts';
 import { pluralizeWithCount } from '../utils/pluralize.ts';
 import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
 

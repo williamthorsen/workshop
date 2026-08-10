@@ -1,4 +1,4 @@
-import type { LocalRefsCompareResult } from '../../types.ts';
+import type { LocalRefsCompareResult } from '../../kits/types.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Compare two local git refs and return a discriminated-union result. */

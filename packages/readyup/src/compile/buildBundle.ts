@@ -1,7 +1,7 @@
 import path from 'node:path';
 
-import { isRecord } from '../isRecord.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractMessage } from '../errors/error-handling.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { VERSION } from '../version.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';

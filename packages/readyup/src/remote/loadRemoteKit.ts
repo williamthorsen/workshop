@@ -3,12 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { assertIsRdyKit } from '../assertIsRdyKit.ts';
-import type { LoadedRdyKit } from '../config.ts';
-import { isRecord } from '../isRecord.ts';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
-import { resolveKitExports } from '../resolveKitExports.ts';
-import { validateKit } from '../validateKit.ts';
+import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
+import type { LoadedRdyKit } from '../kits/loadRdyKit.ts';
+import { resolveKitExports } from '../kits/resolveKitExports.ts';
+import { validateKit } from '../kits/validateKit.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
 export interface LoadRemoteKitOptions {

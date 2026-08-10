@@ -8,7 +8,7 @@ vi.mock(import('../scaffold.ts'), () => ({
 
 const mockReportWriteResult = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../terminal.ts'), () => ({
+vi.mock(import('../../output/terminal.ts'), () => ({
   printError: vi.fn(),
   printSkip: vi.fn(),
   printStep: vi.fn(),

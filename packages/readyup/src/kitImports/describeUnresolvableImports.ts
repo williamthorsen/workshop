@@ -1,4 +1,4 @@
-import type { KitProvenance } from '../KitProvenance.ts';
+import type { KitProvenance } from '../kits/KitProvenance.ts';
 import { VERSION } from '../version.ts';
 import type { UnresolvableImports } from './UnresolvableKitImportsError.ts';
 

@@ -5,7 +5,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { RdyResult } from '../../../src/types.ts';
+import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
 import { FIXTURE_KITS_DIR, writeKit, writeKitManifest, writePackageJson } from '../test-utils/project-fixture.ts';

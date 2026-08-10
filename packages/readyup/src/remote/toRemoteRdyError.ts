@@ -1,5 +1,5 @@
-import { configError, kitLoadError, type RdyError } from '../errors.ts';
-import { extractMessage } from '../utils/error-handling.ts';
+import { extractMessage } from '../errors/error-handling.ts';
+import { configError, kitLoadError, type RdyError } from '../errors/RdyError.ts';
 import { RemoteManifestNotFoundError } from './loadRemoteManifest.ts';
 import type { RemoteProvider } from './remote-provider.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';

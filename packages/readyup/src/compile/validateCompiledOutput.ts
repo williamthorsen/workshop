@@ -1,13 +1,13 @@
 import { rmSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { assertIsRdyKit } from '../assertIsRdyKit.ts';
-import { isRecord } from '../isRecord.ts';
-import { resolveKitExports } from '../resolveKitExports.ts';
-import type { RdyKit } from '../types.ts';
+import { extractMessage } from '../errors/error-handling.ts';
+import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
+import { resolveKitExports } from '../kits/resolveKitExports.ts';
+import type { RdyKit } from '../kits/types.ts';
+import { validateKit } from '../kits/validateKit.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { toDisplayPath } from '../utils/display-path.ts';
-import { extractMessage } from '../utils/error-handling.ts';
-import { validateKit } from '../validateKit.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
 export interface KitMetadata {

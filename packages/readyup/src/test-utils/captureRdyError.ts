@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 
-import { RdyError } from '../errors.ts';
+import { RdyError } from '../errors/RdyError.ts';
 
 /**
  * Runs a command expected to fail and returns the `RdyError` it threw.

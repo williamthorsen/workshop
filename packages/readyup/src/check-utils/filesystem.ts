@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { CheckOutcome } from '../types.ts';
+import type { CheckOutcome } from '../kits/types.ts';
 import { missingFrom } from './missingFrom.ts';
 
 /** Regex matching only safe command names (alphanumeric, dash, underscore, dot). */

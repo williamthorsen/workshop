@@ -1,4 +1,4 @@
-import type { Severity } from '../types.ts';
+import type { Severity } from '../kits/types.ts';
 
 /** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
 export function worseSeverity(current: Severity | null, candidate: Severity | null): Severity | null {

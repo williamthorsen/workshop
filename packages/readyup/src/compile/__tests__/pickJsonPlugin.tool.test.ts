@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { isRecord } from '../../isRecord.ts';
+import { isRecord } from '../../portable/isRecord.ts';
 import { compileConfig } from '../compileConfig.ts';
 
 const FIXTURE_PATH = path.resolve(import.meta.dirname, 'fixtures/pick-json-fixture.ts');

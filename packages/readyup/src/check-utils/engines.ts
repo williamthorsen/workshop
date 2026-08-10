@@ -1,4 +1,4 @@
-import { isRecord } from '../isRecord.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import { compareVersions } from './semver.ts';
 
 /** Outcome of reading a manifest's `engines.node`. */
