@@ -1,5 +1,64 @@
 [
   {
+    "version": "0.27.0",
+    "date": "2026-08-10",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Export discoverKitPackages from readyup/check-utils (#282)",
+            "body": "`readyup` now exports a `discoverKitPackages` function, which allows a kit to list direct dependencies in the target repo that publish ReadyUp kits.",
+            "hash": "7fcb9e97273a34d8ff893846fa20f5c8c7f51d3a"
+          },
+          {
+            "description": "Compile kits under readyup's declared TypeScript settings (#284)",
+            "body": "Kit compilation no longer reads the host repository's TypeScript configuration. Kits now compile under a fixed, documented set of settings, so the same kit source compiles to identical bytes in every repository. A kit that imports through a TypeScript path alias no longer compiles; kit imports must now be relative paths or package specifiers.",
+            "hash": "7d2bce772b0058e36e3c6a59738a69692988acda"
+          },
+          {
+            "description": "Add a run-wide summary table to multi-kit runs (#287)",
+            "body": "A `rdy run` command that runs more than one kit now ends with a summary table: one row for every checklist that ran, and a total across all of them. A failing row points at the output block that explains it. The table is no longer suppressed if a kit fails to load.",
+            "hash": "1b28d91a07c01518003c8055c09a11e52d07873a"
+          },
+          {
+            "description": "Thin quiet-mode output and settle one grammar for run blocks (#288)",
+            "body": "A `rdy run` filtered with `--quiet` or `--report-on` no longer gives a block of its own to a checklist that has nothing left to report; the run's summary table accounts for it instead. An 11-checklist run that reported 11 blocks now reports 2. What remains reads the same way filtered or not. The total is now labeled to avoid visual confusion with checks.",
+            "hash": "470bc1c8c2fbea1570e5ca88018f2a6e88358293"
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Stop failing a kit-less project, and report check details as sentences (#278)",
+            "body": "Fixes the issue that a project that had `readyup` installed but no kits at its root was flagged as defective. Separately, the guidance on writing good kits now encourages the use of full-sentence messages for clarity, and ReadyUp's own kits have been revised accordingly.",
+            "hash": "b0edbe02b2797447c90afe9e9e96e3c8da8c8dfb"
+          },
+          {
+            "description": "Exempt a workspace specifier from the version floor (#283)",
+            "body": "Fixes an issue where a minimum-version check reported a repository as running an outdated version of a package that the repository builds itself. `hasMinDevDependencyVersion` now includes this exemption automatically, and kit authors can remove any custom checks to exempt `workspace:` from version requirements.",
+            "hash": "db64105e16f2edd4ef11bcb29841f58411cd09da"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Align ReadyUp's test layout and barrel imports with the layout rules (#286)",
+            "body": "Importing a single JSON payload type no longer pulls in every schema module alongside it.\n\nTest helpers are now included in coverage measurement. Test files are reorganized to follow the in-house file structure and naming conventions.",
+            "hash": "7bc387f9b50c4f5587ae5a9fe74c53551d6a6d97"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.26.0",
     "date": "2026-08-08",
     "sections": [

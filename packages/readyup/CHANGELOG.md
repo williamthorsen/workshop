@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.27.0 — 2026-08-10
+
+### 🎉 Features
+
+- Export discoverKitPackages from readyup/check-utils (#282)
+
+  `readyup` now exports a `discoverKitPackages` function, which allows a kit to list direct dependencies in the target repo that publish ReadyUp kits.
+
+- Compile kits under readyup's declared TypeScript settings (#284)
+
+  Kit compilation no longer reads the host repository's TypeScript configuration. Kits now compile under a fixed, documented set of settings, so the same kit source compiles to identical bytes in every repository. A kit that imports through a TypeScript path alias no longer compiles; kit imports must now be relative paths or package specifiers.
+
+- Add a run-wide summary table to multi-kit runs (#287)
+
+  A `rdy run` command that runs more than one kit now ends with a summary table: one row for every checklist that ran, and a total across all of them. A failing row points at the output block that explains it. The table is no longer suppressed if a kit fails to load.
+
+- Thin quiet-mode output and settle one grammar for run blocks (#288)
+
+  A `rdy run` filtered with `--quiet` or `--report-on` no longer gives a block of its own to a checklist that has nothing left to report; the run's summary table accounts for it instead. An 11-checklist run that reported 11 blocks now reports 2. What remains reads the same way filtered or not. The total is now labeled to avoid visual confusion with checks.
+
+### 🐛 Bug fixes
+
+- Stop failing a kit-less project, and report check details as sentences (#278)
+
+  Fixes the issue that a project that had `readyup` installed but no kits at its root was flagged as defective. Separately, the guidance on writing good kits now encourages the use of full-sentence messages for clarity, and ReadyUp's own kits have been revised accordingly.
+
+- Exempt a workspace specifier from the version floor (#283)
+
+  Fixes an issue where a minimum-version check reported a repository as running an outdated version of a package that the repository builds itself. `hasMinDevDependencyVersion` now includes this exemption automatically, and kit authors can remove any custom checks to exempt `workspace:` from version requirements.
+
+### ♻️ Refactoring
+
+- Align ReadyUp's test layout and barrel imports with the layout rules (#286)
+
+  Importing a single JSON payload type no longer pulls in every schema module alongside it.
+
+  Test helpers are now included in coverage measurement. Test files are reorganized to follow the in-house file structure and naming conventions.
+
 ## 0.26.0 — 2026-08-08
 
 ### 🎉 Features
