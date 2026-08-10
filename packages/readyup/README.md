@@ -406,7 +406,7 @@ Two consequences follow from the value being resolved at compile time:
 
 Kits compile with no `tsconfig.json`. Whatever config sits above a kit is ignored, so the same source compiles to the same bytes in any repository and a published bundle is the one its author built.
 
-The compiler defaults apply, with two settings declared:
+Kits are bundled by esbuild, and its defaults apply, with two settings declared:
 
 | Setting                   | Value   |
 | ------------------------- | ------- |
