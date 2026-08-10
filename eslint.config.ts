@@ -65,6 +65,27 @@ const config = defineConfig([
       'no-console': 'off',
     },
   },
+  {
+    // readyup's source is grouped by role, so a module at the root of `src/` belongs in a directory. The three
+    // exceptions name the package rather than a role within it. The selector matches every file the glob admits,
+    // which is the point: the finding is the file's presence, not anything it contains.
+    files: ['packages/readyup/src/*.ts'],
+    ignores: [
+      'packages/readyup/src/index.ts',
+      'packages/readyup/src/readyupResolverHook.ts',
+      'packages/readyup/src/version.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. Only index.ts, readyupResolverHook.ts, and version.ts belong at the root of readyup/src.',
+        },
+      ],
+    },
+  },
 ]);
 
 export default config;
