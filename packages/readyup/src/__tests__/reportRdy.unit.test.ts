@@ -363,8 +363,8 @@ describe(reportRdy, () => {
       const heading = indexNaming(output, 'Fixes');
 
       expect(lines[heading]).toBe('\u{2500}\u{2500} Fixes');
-      expect(lines[heading + 1]).toBe(`${FIX} broken`);
-      expect(lines[heading + 2]).toBe('   Run pnpm install');
+      expect(lines[heading + 1]).toBe(`${FAILED_ERROR} broken`);
+      expect(lines[heading + 2]).toBe(`   ${FIX} Run pnpm install`);
     });
 
     it('recaps a fix from each failed check', () => {
@@ -378,8 +378,8 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output).toContain(`${FIX} first`);
-      expect(output).toContain(`${FIX} second`);
+      expect(output).toContain(`${FIX} fix one`);
+      expect(output).toContain(`${FIX} fix two`);
     });
 
     it('keeps the fix out of the reason block', () => {
@@ -415,8 +415,30 @@ describe(reportRdy, () => {
         }),
       );
 
-      expect(output).toContain(`${FIX} child`);
-      expect(output).toContain('   fix child');
+      expect(output).toContain(`${FAILED_ERROR} child`);
+      expect(output).toContain(`   ${FIX} fix child`);
+    });
+
+    // The recap names the check with the token the tree gave it, so a reader scanning fixes sees which
+    // answer errors and which answer recommendations.
+    it('leads a recapped check with its own severity token', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'drifted', severity: 'recommend', fix: 'Rerun the sync' })],
+          passed: false,
+        }),
+      );
+
+      expect(output).toContain(`${FAILED_RECOMMEND} drifted`);
+    });
+
+    it('renders the shape an inline fix renders, less the reason', () => {
+      const results = [makeFailedResult({ name: 'broken', detail: 'two files drifted', fix: 'Run pnpm install' })];
+      const recapped = reportRdy(makeReport({ results, passed: false })).split('\n');
+      const inline = reportRdy(makeReport({ results, passed: false }), { fixLocation: 'inline' }).split('\n');
+      const heading = indexNaming(recapped.join('\n'), 'Fixes');
+
+      expect(recapped.slice(heading + 1, heading + 3)).toEqual([inline[0], inline[2]]);
     });
 
     it('is the default when no options are given', () => {
@@ -645,8 +667,8 @@ describe(reportRdy, () => {
         { quiet: true },
       );
 
-      expect(output).toContain(`${FIX} broken`);
-      expect(output).toContain('   Run install');
+      expect(output).toContain(`${FAILED_ERROR} broken`);
+      expect(output).toContain(`   ${FIX} Run install`);
     });
 
     it('composes with the reporting threshold rather than overriding it', () => {
@@ -706,8 +728,8 @@ describe(reportRdy, () => {
 
       expect(output).toContain('quiet-fail');
       expect(output).toContain('   two remain');
-      expect(output).toContain(`${FIX} quiet-fail`);
-      expect(output).toContain('   Run install');
+      expect(output).toContain(`${FAILED_ERROR} quiet-fail`);
+      expect(output).toContain(`   ${FIX} Run install`);
     });
 
     it('reports a quiet check that is skipped', () => {

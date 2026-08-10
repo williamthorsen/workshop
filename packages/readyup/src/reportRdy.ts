@@ -11,6 +11,7 @@ const FIXES_HEADING = 'Fixes';
 interface AttributedFix {
   fix: string;
   name: string;
+  severity: Severity;
 }
 
 /** Options controlling how the report is formatted. */
@@ -155,22 +156,34 @@ function collectReasons(result: RdyResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (includeFix && result.fix !== null) reasons.push(`${getLayout().token('fix')}${result.fix}`);
+  if (includeFix && result.fix !== null) reasons.push(formatFixReason(result.fix));
   return reasons;
 }
 
-/** Returns each failed result's fix paired with the name of the check carrying it. */
+/** Returns each failed result's fix paired with the name and severity of the check carrying it. */
 function collectFixes(results: RdyResult[]): AttributedFix[] {
   return results.flatMap((result) =>
-    result.status === 'failed' && result.fix !== null ? [{ name: result.name, fix: result.fix }] : [],
+    result.status === 'failed' && result.fix !== null
+      ? [{ fix: result.fix, name: result.name, severity: result.severity }]
+      : [],
   );
 }
 
-/** Returns two lines per fix: the check's name behind a token, then the fix indented beneath. */
+/** Returns a fix as one reason line, behind the token marking fix text wherever a kit places it. */
+function formatFixReason(fix: string): string {
+  return `${getLayout().token('fix')}${fix}`;
+}
+
+/**
+ * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
+ *
+ * A recapped fix and an inline one are then one shape, so the fix token marks fix text under either
+ * `fixLocation` rather than marking the check's name in the recap and the fix itself inline.
+ */
 function renderFixRecap(fixes: AttributedFix[]): string[] {
   return fixes.flatMap((entry) => [
-    `${getLayout().token('fix')}${entry.name}`,
-    ...getLayout().formatReasonBlock([entry.fix]),
+    getLayout().formatCheckLine({ token: resolveWorstToken(entry.severity), name: entry.name }),
+    ...getLayout().formatReasonBlock([formatFixReason(entry.fix)]),
   ]);
 }
 
