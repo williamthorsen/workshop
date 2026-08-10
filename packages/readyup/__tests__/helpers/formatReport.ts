@@ -4,7 +4,7 @@ import {
   type KitInput,
   type KitResultInput,
 } from '../../src/formatJsonReport.ts';
-import type { JsonKitErrorEntry } from '../../src/schemas/index.ts';
+import type { JsonKitErrorEntry } from '../../src/schemas/reportSchema.ts';
 
 /** A kit input as a test writes it: thresholds optional, filled in from the invocation's flags. */
 export type TestKitInput =

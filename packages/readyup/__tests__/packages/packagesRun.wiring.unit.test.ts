@@ -6,7 +6,7 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ResolvedKitEntry, resolveKitSources, runCommand } from '../../src/cli.ts';
-import { ReportSchema } from '../../src/schemas/index.ts';
+import { ReportSchema } from '../../src/schemas/reportSchema.ts';
 import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
 
 /**

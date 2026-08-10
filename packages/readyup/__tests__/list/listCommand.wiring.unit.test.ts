@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { listCommand } from '../../src/list/listCommand.ts';
-import { ListOutputSchema } from '../../src/schemas/index.ts';
+import { ListOutputSchema } from '../../src/schemas/listOutputSchema.ts';
 import { captureRdyError } from '../../src/test-utils/captureRdyError.ts';
 
 /**

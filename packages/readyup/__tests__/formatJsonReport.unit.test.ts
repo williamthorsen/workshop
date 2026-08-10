@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { formatJsonReport } from '../src/formatJsonReport.ts';
-import { ReportSchema } from '../src/schemas/index.ts';
+import { ReportSchema } from '../src/schemas/reportSchema.ts';
 import type { FailedResult, PassedResult, RdyReport, RdyResult, SkippedResult } from '../src/types.ts';
 import { VERSION } from '../src/version.ts';
 import { formatReport } from './helpers/formatReport.ts';

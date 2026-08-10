@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 import { compileConfig } from '../../src/compile/compileConfig.ts';
 import type { RdyManifestKit } from '../../src/manifest/manifestSchema.ts';
 import { ManifestSchema } from '../../src/manifest/manifestSchema.ts';
-import type { JsonVerifyOutput } from '../../src/schemas/index.ts';
-import { VerifyOutputSchema } from '../../src/schemas/index.ts';
+import type { JsonVerifyOutput } from '../../src/schemas/verifyOutputSchema.ts';
+import { VerifyOutputSchema } from '../../src/schemas/verifyOutputSchema.ts';
 import { hashFile } from '../../src/verify/targetHash.ts';
 import { verifyCommand } from '../../src/verify/verifyCommand.ts';
 import { VERSION } from '../../src/version.ts';

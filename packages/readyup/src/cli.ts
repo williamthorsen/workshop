@@ -27,7 +27,8 @@ import { countResults, reportRdy } from './reportRdy.ts';
 import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
-import type { JsonDetail, JsonKitOrigin, JsonWarning, RaisedWarning } from './schemas/index.ts';
+import type { JsonWarning, RaisedWarning } from './schemas/common.ts';
+import type { JsonDetail, JsonKitOrigin } from './schemas/reportSchema.ts';
 import type {
   ChecklistSummary,
   FixLocation,

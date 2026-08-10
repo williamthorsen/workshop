@@ -3,7 +3,7 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import type { RdyManifestKit } from '../src/manifest/manifestSchema.ts';
-import type { JsonWarning } from '../src/schemas/index.ts';
+import type { JsonWarning } from '../src/schemas/common.ts';
 import type { RdyKit } from '../src/types.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());

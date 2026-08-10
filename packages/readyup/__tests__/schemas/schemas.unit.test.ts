@@ -10,14 +10,12 @@ import type {
   JsonWarning,
   JsonWarningCode,
   RaisedWarning,
-} from '../../src/schemas/index.ts';
-import {
-  CompileOutputSchema,
-  ErrorEnvelopeSchema,
-  ListOutputSchema,
-  ReportSchema,
-  VerifyOutputSchema,
-} from '../../src/schemas/index.ts';
+} from '../../src/schemas/common.ts';
+import { CompileOutputSchema } from '../../src/schemas/compileOutputSchema.ts';
+import { ErrorEnvelopeSchema } from '../../src/schemas/errorEnvelopeSchema.ts';
+import { ListOutputSchema } from '../../src/schemas/listOutputSchema.ts';
+import { ReportSchema } from '../../src/schemas/reportSchema.ts';
+import { VerifyOutputSchema } from '../../src/schemas/verifyOutputSchema.ts';
 import type { Severity } from '../../src/types.ts';
 import {
   compilePayload,

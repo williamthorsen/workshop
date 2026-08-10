@@ -1,6 +1,5 @@
 import type { RdyError } from './errors.ts';
-import { SCHEMA_VERSION } from './schemas/errorEnvelopeSchema.ts';
-import type { JsonErrorEnvelope } from './schemas/index.ts';
+import { type JsonErrorEnvelope, SCHEMA_VERSION } from './schemas/errorEnvelopeSchema.ts';
 
 /** Serializes a failed invocation as the single-line JSON error envelope. */
 export function formatJsonError(error: RdyError): string {
