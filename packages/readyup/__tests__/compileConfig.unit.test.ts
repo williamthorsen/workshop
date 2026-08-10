@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { KIT_COMPILE_TARGET } from '../src/compile/buildBundle.ts';
+import { KIT_COMPILE_TARGET, KIT_TSCONFIG } from '../src/compile/buildBundle.ts';
 import { compileConfig } from '../src/compile/compileConfig.ts';
 import { VERSION } from '../src/version.ts';
 
@@ -52,6 +52,7 @@ describe(compileConfig, () => {
       format: 'esm',
       platform: 'node',
       target: KIT_COMPILE_TARGET,
+      tsconfigRaw: KIT_TSCONFIG,
       external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
