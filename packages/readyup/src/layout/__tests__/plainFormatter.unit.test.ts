@@ -157,7 +157,6 @@ function renderEverything(): string {
     ),
     engine.formatHeading('deploy', 'kit'),
     engine.formatHeading('build', 'section'),
-    engine.formatBlockRule(),
     engine.formatBreadcrumb(
       [
         { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },

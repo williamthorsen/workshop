@@ -962,12 +962,14 @@ describe(resolveKitSources, () => {
 });
 
 /**
- * Newline runs the block writer emits between blocks: one blank within a kit, two at a kit boundary.
+ * The blank line parting one block from the next, as it reads in concatenated stdout writes.
  *
- * Each count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
+ * The count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
  */
-const WITHIN_KIT_GAP = '\n'.repeat(2);
-const KIT_BOUNDARY_GAP = '\n'.repeat(3);
+const BLOCK_GAP = '\n'.repeat(2);
+
+/** A gap wider than one blank line, which no boundary opens. */
+const WIDER_GAP = '\n'.repeat(3);
 
 describe(runCommand, () => {
   let stdoutSpy: MockInstance;
@@ -976,7 +978,7 @@ describe(runCommand, () => {
   beforeEach(() => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    mockReportRdy.mockReturnValue('report output');
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
   });
 
@@ -1088,9 +1090,8 @@ describe(runCommand, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
-  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way. The
-  // wider gap is reserved for a kit boundary, which is the reader's only cue that the kit has changed.
-  it('parts blocks of one kit with a single blank line', async () => {
+  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way.
+  it('parts one block from the next with a single blank line', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -1101,9 +1102,9 @@ describe(runCommand, () => {
     });
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).not.toContain(KIT_BOUNDARY_GAP);
-    expect(allOutput).toContain(`${WITHIN_KIT_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
-    expect(allOutput).toContain(`${WITHIN_KIT_GAP}combined summary`);
+    expect(allOutput).not.toContain(WIDER_GAP);
+    expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
+    expect(allOutput).toContain(`${BLOCK_GAP}combined summary`);
   });
 
   // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one
@@ -1145,9 +1146,9 @@ describe(runCommand, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit2');
   });
 
-  // Two blanks at a kit boundary, none before the first block. Once headings stopped nesting, the wider
-  // gap is all that tells the reader one kit ended and the next began.
-  it('parts one kit from the next with two blank lines, opening with none', async () => {
+  // The heading below a gap names the kit it opens, so a kit boundary takes the same one blank line every
+  // other boundary takes. The run's first block opens with none.
+  it('parts one kit from the next with the same single blank line, opening with none', async () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
@@ -1164,8 +1165,63 @@ describe(runCommand, () => {
 
     const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
     expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F4D3} kit1')).toBe(true);
-    expect(allOutput).toContain(`${KIT_BOUNDARY_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
-    expect(allOutput).not.toContain(`${KIT_BOUNDARY_GAP}\n`);
+    expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
+    expect(allOutput).not.toContain(WIDER_GAP);
+  });
+
+  // A bodiless block states nothing its table row does not, so it goes and the row reports it.
+  it('leaves out a block whose tree rendered nothing', async () => {
+    const kit = makeKit();
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).not.toContain('report output');
+    expect(allOutput).toContain('combined summary');
+  });
+
+  // Nothing tabulates a run of one checklist, so its block stands however little it has to say.
+  it('keeps a bodiless block when the run will tabulate nothing', async () => {
+    const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: singleKitEntry(),
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).toContain('report output');
+    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+  });
+
+  // The row is the only report a dropped block gets, so it is tabulated even with no sibling row beside it.
+  it('tabulates a dropped block even when one row is all that survives', async () => {
+    const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
+    mockLoadRdyKit.mockResolvedValueOnce({ kit, compileTimeVersion: undefined });
+    mockLoadRdyKit.mockRejectedValueOnce(new Error('kit2 cannot be read'));
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+    expect(allOutput).not.toContain('report output');
+    expect(allOutput).toContain('combined summary');
   });
 
   it('prints one combined summary covering every kit in a multi-kit run', async () => {

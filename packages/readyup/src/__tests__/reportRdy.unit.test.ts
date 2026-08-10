@@ -98,7 +98,7 @@ describe(reportRdy, () => {
       ['n/a-skipped', makeSkippedResult({ name: 'target', skipReason: 'n/a' }), SKIPPED_OPTIONAL],
       ['precondition-skipped', makeSkippedResult({ name: 'target', skipReason: 'precondition' }), BLOCKED],
     ])('leads a %s check with its token', (_case, result, token) => {
-      const output = reportRdy(makeReport({ results: [result], passed: false }));
+      const output = reportRdy(makeReport({ results: [result], passed: false })).body;
 
       expect(lineNaming(output, 'target')).toBe(`${token} target`);
     });
@@ -116,7 +116,7 @@ describe(reportRdy, () => {
             ],
             passed: false,
           }),
-        );
+        ).body;
 
         expect(output).not.toContain(retired);
       },
@@ -125,7 +125,9 @@ describe(reportRdy, () => {
 
   describe('inline detail', () => {
     it('separates a passed check detail with a middle dot', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }));
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }),
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target \u{00B7} up to date`);
     });
@@ -133,7 +135,7 @@ describe(reportRdy, () => {
     it('separates a skip reason with a middle dot', () => {
       const output = reportRdy(
         makeReport({ results: [makeSkippedResult({ name: 'target', skipReason: 'n/a', detail: 'no lockfile' })] }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${SKIPPED_OPTIONAL} target \u{00B7} no lockfile`);
     });
@@ -143,7 +145,7 @@ describe(reportRdy, () => {
         makeReport({
           results: [makePassedResult({ name: 'target', progress: { type: 'fraction', passedCount: 7, count: 10 } })],
         }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target [7 of 10]`);
     });
@@ -151,7 +153,7 @@ describe(reportRdy, () => {
     it('renders percent progress', () => {
       const output = reportRdy(
         makeReport({ results: [makePassedResult({ name: 'target', progress: { type: 'percent', percent: 85 } })] }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target [85%]`);
     });
@@ -167,13 +169,15 @@ describe(reportRdy, () => {
             }),
           ],
         }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target \u{00B7} all good [100%]`);
     });
 
     it('retires the em-dash separator', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }));
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'target', detail: 'up to date' })] }),
+      ).body;
 
       expect(output).not.toContain('\u{2014}');
     });
@@ -181,13 +185,15 @@ describe(reportRdy, () => {
 
   describe('duration', () => {
     it('omits a duration below the floor', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', durationMs: 10 })] }));
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', durationMs: 10 })] })).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target`);
     });
 
     it('shows a duration at or above the floor', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target', durationMs: SLOW_MS })] }));
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'target', durationMs: SLOW_MS })] }),
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target (250ms)`);
     });
@@ -195,15 +201,15 @@ describe(reportRdy, () => {
     it.each(['n/a', 'precondition'] as const)('omits the duration on a %s-skipped check', (skipReason) => {
       const output = reportRdy(
         makeReport({ results: [makeSkippedResult({ name: 'target', skipReason, durationMs: SLOW_MS })] }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).not.toContain('ms');
     });
 
     it('always shows the total duration on the count line', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult()], durationMs: 4 }));
+      const output = reportRdy(makeReport({ results: [makePassedResult()], durationMs: 4 })).body;
 
-      expect(output.split('\n').at(-1)).toBe(`${PASSED} | 1 passed (4ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${PASSED} Total: 1 passed (4ms)`);
     });
   });
 
@@ -211,7 +217,7 @@ describe(reportRdy, () => {
     it('leaves the failed line carrying only its claim', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale' })], passed: false }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${FAILED_ERROR} target`);
     });
@@ -219,7 +225,7 @@ describe(reportRdy, () => {
     it('renders the authored detail beneath, indented to the name column', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale' })], passed: false }),
-      );
+      ).body;
       const lines = output.split('\n');
 
       expect(lines[1]).toBe('   lockfile is stale');
@@ -231,7 +237,7 @@ describe(reportRdy, () => {
           results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale', error: new Error('ENOENT') })],
           passed: false,
         }),
-      );
+      ).body;
       const lines = output.split('\n');
 
       expect(lines[1]).toBe('   lockfile is stale');
@@ -241,7 +247,7 @@ describe(reportRdy, () => {
     it('renders an exception alone when no detail was authored', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'target', error: new Error('boom') })], passed: false }),
-      );
+      ).body;
 
       expect(output.split('\n', 2)[1]).toBe('   Error: boom');
     });
@@ -252,7 +258,7 @@ describe(reportRdy, () => {
           results: [makeFailedResult({ name: 'parent' }), makeFailedResult({ name: 'child', depth: 1 })],
           passed: false,
         }),
-      );
+      ).body;
 
       expect(output.split('\n').slice(0, 2)).toStrictEqual([`${FAILED_ERROR} parent`, `   ${FAILED_ERROR} child`]);
     });
@@ -267,7 +273,7 @@ describe(reportRdy, () => {
           ],
           passed: false,
         }),
-      );
+      ).body;
 
       expect(output.split('\n', 4)[3]).toBe('         went wrong');
     });
@@ -281,9 +287,9 @@ describe(reportRdy, () => {
           passed: false,
           durationMs: 142,
         }),
-      );
+      ).body;
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} | 1 warning, 1 passed (142ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_WARN} Total: 1 warning, 1 passed (142ms)`);
     });
 
     it('orders the fields by outcome, worst news first, and omits zeros', () => {
@@ -299,10 +305,10 @@ describe(reportRdy, () => {
           passed: false,
           durationMs: 500,
         }),
-      );
+      ).body;
 
       expect(output.split('\n').at(-1)).toBe(
-        `${FAILED_ERROR} | 1 error, 1 recommendation, 1 passed, 1 blocked, 1 skipped (500ms)`,
+        `${FAILED_ERROR} Total: 1 error, 1 recommendation, 1 passed, 1 blocked, 1 skipped (500ms)`,
       );
     });
 
@@ -315,23 +321,57 @@ describe(reportRdy, () => {
           ],
         }),
         { reportOn: 'error' },
-      );
+      ).body;
 
       expect(output).not.toContain('pruned');
       expect(output.split('\n').at(-1)).toContain('2 passed');
     });
 
-    it('parts the count line from the tree with a bare rule', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }));
+    // The label is what tells the tally from the check lines above it, which lead with a token in the
+    // same column.
+    it('labels the count line so it does not read as a check', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] })).body;
 
-      expect(output.split('\n', 2)[1]).toBe('\u{2500}\u{2500}');
+      expect(output.split('\n').at(-1)).toBe(`${PASSED} Total: 1 passed (100ms)`);
     });
 
-    // Nothing to part it from, and a rule under a heading would read as a tree that rendered empty.
-    it('omits the rule when every result is hidden', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }), { quiet: true });
+    it('carries no bare rule between the tree and the count line', () => {
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] })).body;
 
       expect(output).not.toContain('\u{2500}\u{2500}\n');
+    });
+
+    it('closes the block with the count line, after the fix recap', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run pnpm install' })], passed: false }),
+      ).body;
+      const lines = output.split('\n');
+
+      expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 1 error (100ms)`);
+      expect(indexNaming(output, 'Fixes')).toBeLessThan(lines.length - 1);
+    });
+
+    it('carries no blank line inside the block', () => {
+      const output = reportRdy(
+        makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run pnpm install' })], passed: false }),
+      ).body;
+
+      expect(output.split('\n')).not.toContain('');
+    });
+  });
+
+  describe('visible-result reporting', () => {
+    it('reports an empty tree when every result is hidden', () => {
+      const rendered = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] }), { quiet: true });
+
+      expect(rendered.hasVisibleResults).toBe(false);
+      expect(rendered.body).toBe(`${PASSED} Total: 1 passed (100ms)`);
+    });
+
+    it('reports a rendered tree when a result survives', () => {
+      const rendered = reportRdy(makeReport({ results: [makeFailedResult({ name: 'broken' })], passed: false }));
+
+      expect(rendered.hasVisibleResults).toBe(true);
     });
   });
 
@@ -339,13 +379,13 @@ describe(reportRdy, () => {
     it('attributes each fix to the check that raised it', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run pnpm install' })], passed: false }),
-      );
+      ).body;
       const lines = output.split('\n');
       const heading = indexNaming(output, 'Fixes');
 
       expect(lines[heading]).toBe('\u{2500}\u{2500} Fixes');
-      expect(lines[heading + 1]).toBe(`${FIX} broken`);
-      expect(lines[heading + 2]).toBe('   Run pnpm install');
+      expect(lines[heading + 1]).toBe(`${FAILED_ERROR} broken`);
+      expect(lines[heading + 2]).toBe(`   ${FIX} Run pnpm install`);
     });
 
     it('recaps a fix from each failed check', () => {
@@ -357,10 +397,10 @@ describe(reportRdy, () => {
           ],
           passed: false,
         }),
-      );
+      ).body;
 
-      expect(output).toContain(`${FIX} first`);
-      expect(output).toContain(`${FIX} second`);
+      expect(output).toContain(`${FIX} fix one`);
+      expect(output).toContain(`${FIX} fix two`);
     });
 
     it('keeps the fix out of the reason block', () => {
@@ -369,7 +409,7 @@ describe(reportRdy, () => {
           results: [makeFailedResult({ name: 'broken', error: new Error('bad'), fix: 'Update config' })],
           passed: false,
         }),
-      );
+      ).body;
       const checkLine = indexNaming(output, 'broken');
 
       expect(output.split('\n')[checkLine + 1]).toBe('   Error: bad');
@@ -379,7 +419,7 @@ describe(reportRdy, () => {
     it('omits the recap when no failed check carries a fix', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', error: new Error('bad') })], passed: false }),
-      );
+      ).body;
 
       expect(output).not.toContain('Fixes');
       expect(output).not.toContain(FIX);
@@ -394,16 +434,40 @@ describe(reportRdy, () => {
           ],
           passed: false,
         }),
-      );
+      ).body;
 
-      expect(output).toContain(`${FIX} child`);
-      expect(output).toContain('   fix child');
+      // The tree's own `   🔴 child` satisfies a substring match, so the recapped line is pinned by its
+      // exact form: the recap flattens nesting rather than mirroring the tree's indent.
+      expect(output.split('\n')).toContain(`${FAILED_ERROR} child`);
+      expect(output.split('\n')).toContain(`   ${FIX} fix child`);
+    });
+
+    // The recap names the check with the token the tree gave it, so a reader scanning fixes sees which
+    // answer errors and which answer recommendations.
+    it('leads a recapped check with its own severity token', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makeFailedResult({ name: 'drifted', severity: 'recommend', fix: 'Rerun the sync' })],
+          passed: false,
+        }),
+      ).body;
+
+      expect(output).toContain(`${FAILED_RECOMMEND} drifted`);
+    });
+
+    it('renders the shape an inline fix renders, less the reason', () => {
+      const results = [makeFailedResult({ name: 'broken', detail: 'two files drifted', fix: 'Run pnpm install' })];
+      const recapped = reportRdy(makeReport({ results, passed: false })).body.split('\n');
+      const inline = reportRdy(makeReport({ results, passed: false }), { fixLocation: 'inline' }).body.split('\n');
+      const heading = indexNaming(recapped.join('\n'), 'Fixes');
+
+      expect(recapped.slice(heading + 1, heading + 3)).toStrictEqual([inline[0], inline[2]]);
     });
 
     it('is the default when no options are given', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Fix it' })], passed: false }),
-      );
+      ).body;
 
       expect(output).toContain('\u{2500}\u{2500} Fixes');
     });
@@ -417,7 +481,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { fixLocation: 'inline' },
-      );
+      ).body;
 
       expect(output.split('\n').slice(0, 3)).toStrictEqual([
         `${FAILED_ERROR} broken`,
@@ -430,7 +494,7 @@ describe(reportRdy, () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run install' })], passed: false }),
         { fixLocation: 'inline' },
-      );
+      ).body;
 
       expect(output.split('\n', 2)[1]).toBe(`   ${FIX} Run install`);
       expect(output).not.toContain('Error:');
@@ -443,7 +507,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { fixLocation: 'inline' },
-      );
+      ).body;
 
       expect(output).toContain('Error: Missing file');
       expect(output).not.toContain(FIX);
@@ -453,7 +517,7 @@ describe(reportRdy, () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run install' })], passed: false }),
         { fixLocation: 'inline' },
-      );
+      ).body;
 
       expect(output).not.toContain('Fixes');
     });
@@ -468,7 +532,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { fixLocation: 'inline' },
-      );
+      ).body;
       const lines = output.split('\n');
 
       expect(lines[2]).toBe('      Error: child error');
@@ -487,7 +551,7 @@ describe(reportRdy, () => {
             makePassedResult({ name: 'great-grandchild', depth: 3 }),
           ],
         }),
-      );
+      ).body;
 
       expect(output.split('\n').slice(0, 4)).toStrictEqual([
         `${PASSED} parent`,
@@ -507,7 +571,7 @@ describe(reportRdy, () => {
             makePassedResult({ name: 'sibling', depth: 1 }),
           ],
         }),
-      );
+      ).body;
 
       expect(output).toContain('na-check');
       expect(output).toContain('deeper');
@@ -526,9 +590,9 @@ describe(reportRdy, () => {
           passed: false,
           durationMs: 50,
         }),
-      );
+      ).body;
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (50ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 1 error, 2 passed (50ms)`);
     });
   });
 
@@ -540,7 +604,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true },
-      );
+      ).body;
 
       expect(output).not.toContain('quiet-pass');
       expect(output).toContain('loud-fail');
@@ -558,7 +622,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true },
-      );
+      ).body;
 
       expect(output).not.toContain('hidden');
       for (const name of ['failure', 'optional-skip', 'blocked-skip']) {
@@ -577,7 +641,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true },
-      );
+      ).body;
 
       expect(output.split('\n').slice(0, 3)).toStrictEqual([
         `${PASSED} passed-parent`,
@@ -597,7 +661,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true },
-      );
+      ).body;
 
       expect(output).not.toContain('clean-parent');
       expect(output).not.toContain('clean-child');
@@ -612,9 +676,9 @@ describe(reportRdy, () => {
           durationMs: 90,
         }),
         { quiet: true },
-      );
+      ).body;
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (90ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 1 error, 2 passed (90ms)`);
     });
 
     it('keeps the fix recap', () => {
@@ -624,10 +688,10 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true },
-      );
+      ).body;
 
-      expect(output).toContain(`${FIX} broken`);
-      expect(output).toContain('   Run install');
+      expect(output).toContain(`${FAILED_ERROR} broken`);
+      expect(output).toContain(`   ${FIX} Run install`);
     });
 
     it('composes with the reporting threshold rather than overriding it', () => {
@@ -641,7 +705,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { quiet: true, reportOn: 'error' },
-      );
+      ).body;
 
       // Hidden by quiet (passed), by the threshold (warn), and shown by both (error failure).
       expect(output).not.toContain('passed-error-sev');
@@ -650,7 +714,7 @@ describe(reportRdy, () => {
     });
 
     it('shows every passed check when off', () => {
-      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'visible' })] }), { quiet: false });
+      const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'visible' })] }), { quiet: false }).body;
 
       expect(output).toContain('visible');
     });
@@ -659,9 +723,9 @@ describe(reportRdy, () => {
       const output = reportRdy(
         makeReport({ results: [makePassedResult({ name: 'a' }), makePassedResult({ name: 'b' })], durationMs: 30 }),
         { quiet: true },
-      );
+      ).body;
 
-      expect(output).toBe(`${PASSED} | 2 passed (30ms)`);
+      expect(output).toBe(`${PASSED} Total: 2 passed (30ms)`);
     });
   });
 
@@ -671,7 +735,7 @@ describe(reportRdy, () => {
         makeReport({
           results: [makePassedResult({ name: 'quiet-pass', quiet: true }), makePassedResult({ name: 'loud-pass' })],
         }),
-      );
+      ).body;
 
       expect(output).not.toContain('quiet-pass');
       expect(output).toContain('loud-pass');
@@ -683,12 +747,12 @@ describe(reportRdy, () => {
           results: [makeFailedResult({ name: 'quiet-fail', quiet: true, detail: 'two remain', fix: 'Run install' })],
           passed: false,
         }),
-      );
+      ).body;
 
       expect(output).toContain('quiet-fail');
       expect(output).toContain('   two remain');
-      expect(output).toContain(`${FIX} quiet-fail`);
-      expect(output).toContain('   Run install');
+      expect(output).toContain(`${FAILED_ERROR} quiet-fail`);
+      expect(output).toContain(`   ${FIX} Run install`);
     });
 
     it('reports a quiet check that is skipped', () => {
@@ -699,7 +763,7 @@ describe(reportRdy, () => {
             makeSkippedResult({ name: 'quiet-blocked', quiet: true, skipReason: 'precondition' }),
           ],
         }),
-      );
+      ).body;
 
       expect(lineNaming(output, 'quiet-optional')).toBe(`${SKIPPED_OPTIONAL} quiet-optional \u{00B7} no target`);
       expect(lineNaming(output, 'quiet-blocked')).toBe(`${BLOCKED} quiet-blocked`);
@@ -716,9 +780,9 @@ describe(reportRdy, () => {
           passed: false,
           durationMs: 90,
         }),
-      );
+      ).body;
 
-      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} | 1 error, 2 passed (90ms)`);
+      expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 1 error, 2 passed (90ms)`);
     });
 
     it('retains a quiet passing parent so a deep failure stays reachable', () => {
@@ -730,7 +794,7 @@ describe(reportRdy, () => {
           ],
           passed: false,
         }),
-      );
+      ).body;
 
       expect(output.split('\n').slice(0, 2)).toStrictEqual([
         `${PASSED} quiet-parent`,
@@ -746,7 +810,7 @@ describe(reportRdy, () => {
             makePassedResult({ name: 'quiet-child', depth: 1, quiet: true }),
           ],
         }),
-      );
+      ).body;
 
       expect(output).toContain('loud-parent');
       expect(output).not.toContain('quiet-child');
@@ -763,10 +827,10 @@ describe(reportRdy, () => {
 
       const byFlag = reportRdy(makeReport({ results: buildResults(false), passed: false, durationMs: 90 }), {
         quiet: true,
-      });
+      }).body;
       const byField = reportRdy(makeReport({ results: buildResults(true), passed: false, durationMs: 90 }), {
         quiet: false,
-      });
+      }).body;
 
       expect(byField).toBe(byFlag);
       expect(byField).not.toContain('clean');
@@ -784,7 +848,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { reportOn: 'error' },
-      );
+      ).body;
 
       expect(output).toContain('error-check');
       expect(output).not.toContain('recommend-check');
@@ -800,9 +864,9 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { reportOn: 'error' },
-      );
+      ).body;
 
-      expect(output.split('\n').at(-1)).toContain(`${FAILED_WARN} | 1 warning, 1 passed`);
+      expect(output.split('\n').at(-1)).toContain(`${FAILED_WARN} Total: 1 warning, 1 passed`);
       expect(output).not.toContain('warn-fail');
     });
 
@@ -816,7 +880,7 @@ describe(reportRdy, () => {
           passed: false,
         }),
         { reportOn: 'error' },
-      );
+      ).body;
 
       expect(output).toContain('error-check');
       expect(output).not.toContain('precond');
@@ -831,7 +895,7 @@ describe(reportRdy, () => {
           ],
         }),
         { reportOn: 'warn' },
-      );
+      ).body;
 
       expect(output).toContain('high-sev-dep');
       expect(output).not.toContain('low-sev-dep');
@@ -840,7 +904,7 @@ describe(reportRdy, () => {
     it('defaults reportOn to recommend, showing everything', () => {
       const output = reportRdy(
         makeReport({ results: [makePassedResult({ name: 'recommend-check', severity: 'recommend' })] }),
-      );
+      ).body;
 
       expect(output).toContain('recommend-check');
     });

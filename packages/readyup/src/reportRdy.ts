@@ -11,6 +11,13 @@ const FIXES_HEADING = 'Fixes';
 interface AttributedFix {
   fix: string;
   name: string;
+  severity: Severity;
+}
+
+/** A rendered report, alongside whether its check tree rendered anything at all. */
+export interface RenderedReport {
+  body: string;
+  hasVisibleResults: boolean;
 }
 
 /** Options controlling how the report is formatted. */
@@ -21,32 +28,33 @@ export interface ReportRdyOptions {
 }
 
 /**
- * Returns a report rendered for a terminal: a tree of check lines, a count line, and any fix recap.
+ * Returns a report rendered for a terminal: a tree of check lines, any fix recap, then the count line.
  *
  * A failed check contributes its claim plus a reason block; every other status contributes one line.
  * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
- * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree.
+ * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree, and it
+ * closes the block: the last line a reader meets before the blank parting one block from the next.
+ *
+ * Reports whether the tree rendered anything, so a caller placing the block in a sequence can decide
+ * whether a report that is nothing but its count line has earned its place there.
  */
-export function reportRdy(report: RdyReport, options?: ReportRdyOptions): string {
+export function reportRdy(report: RdyReport, options?: ReportRdyOptions): RenderedReport {
   const fixLocation = options?.fixLocation ?? 'end';
   const reportOn = options?.reportOn ?? 'recommend';
 
   const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
   const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
 
-  // The rule parts the count line from the tree it tallies, so an empty tree needs none: a checklist whose
-  // every result is hidden closes with its count line sitting directly under its heading.
-  if (lines.length > 0) lines.push(getLayout().formatBlockRule());
-  lines.push(getLayout().formatCountLine(countResults(report.results), report.durationMs));
-
   if (fixLocation === 'end') {
     const fixes = collectFixes(visibleResults);
     if (fixes.length > 0) {
-      lines.push('', getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
+      lines.push(getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
     }
   }
 
-  return lines.join('\n');
+  const countLine = getLayout().formatCountLine(countResults(report.results), report.durationMs);
+
+  return { body: [...lines, countLine].join('\n'), hasVisibleResults: visibleResults.length > 0 };
 }
 
 /** Returns counts with every field at zero and no worst severity. */
@@ -157,22 +165,34 @@ function collectReasons(result: RdyResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (includeFix && result.fix !== null) reasons.push(`${getLayout().token('fix')}${result.fix}`);
+  if (includeFix && result.fix !== null) reasons.push(formatFixReason(result.fix));
   return reasons;
 }
 
-/** Returns each failed result's fix paired with the name of the check carrying it. */
+/** Returns each failed result's fix paired with the name and severity of the check carrying it. */
 function collectFixes(results: RdyResult[]): AttributedFix[] {
   return results.flatMap((result) =>
-    result.status === 'failed' && result.fix !== null ? [{ name: result.name, fix: result.fix }] : [],
+    result.status === 'failed' && result.fix !== null
+      ? [{ fix: result.fix, name: result.name, severity: result.severity }]
+      : [],
   );
 }
 
-/** Returns two lines per fix: the check's name behind a token, then the fix indented beneath. */
+/** Returns a fix as one reason line, behind the token marking fix text wherever a kit places it. */
+function formatFixReason(fix: string): string {
+  return `${getLayout().token('fix')}${fix}`;
+}
+
+/**
+ * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
+ *
+ * A recapped fix and an inline one are then one shape, so the fix token marks fix text under either
+ * `fixLocation` rather than marking the check's name in the recap and the fix itself inline.
+ */
 function renderFixRecap(fixes: AttributedFix[]): string[] {
   return fixes.flatMap((entry) => [
-    `${getLayout().token('fix')}${entry.name}`,
-    ...getLayout().formatReasonBlock([entry.fix]),
+    getLayout().formatCheckLine({ token: resolveWorstToken(entry.severity), name: entry.name }),
+    ...getLayout().formatReasonBlock([formatFixReason(entry.fix)]),
   ]);
 }
 

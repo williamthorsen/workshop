@@ -87,7 +87,7 @@ describe('staleness warnings', () => {
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-    mockReportRdy.mockReturnValue('report output');
+    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('');
     mockFormatJsonReport.mockReturnValue('{}');
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
