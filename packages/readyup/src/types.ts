@@ -263,12 +263,6 @@ export interface SummaryCounts {
   worstSeverity: Severity | null;
 }
 
-/** Per-checklist aggregate for the combined summary table. */
-export interface ChecklistSummary extends SummaryCounts {
-  name: string;
-  durationMs: number;
-}
-
 // -- Checklists --
 
 /** A flat checklist where all checks run concurrently. */
