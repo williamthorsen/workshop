@@ -7,6 +7,22 @@ import { pickJsonPlugin } from './pickJsonPlugin.ts';
 /** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
 export const KIT_COMPILE_TARGET = 'es2025';
 
+/**
+ * TypeScript settings kits compile under.
+ *
+ * Supplying this at all is what stops esbuild searching for a `tsconfig.json` above the kit, so a kit's
+ * bytes are a function of its own sources rather than of whatever configuration the host repo happens to
+ * keep above it. The two settings are the ones esbuild derives rather than fixes; stating them keeps a
+ * version bump from moving kit semantics quietly. Everything else stays at esbuild's default.
+ *
+ * `target` is left undeclared, which is what keeps class-field semantics independent of
+ * `KIT_COMPILE_TARGET`: esbuild derives `useDefineForClassFields` from the TypeScript `target`, so
+ * declaring one here would tie the two back together.
+ */
+export const KIT_TSCONFIG = {
+  compilerOptions: { experimentalDecorators: false, useDefineForClassFields: true },
+};
+
 /** How to obtain esbuild, named wherever its absence is reported so every path prescribes one remedy. */
 export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuild';
 
@@ -59,6 +75,7 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
     format: 'esm',
     platform: 'node',
     target: KIT_COMPILE_TARGET,
+    tsconfigRaw: KIT_TSCONFIG,
     external: ['node:*', 'readyup', 'readyup/*'],
     plugins: [pickJsonPlugin()],
     banner: { js: GENERATED_HEADER },
