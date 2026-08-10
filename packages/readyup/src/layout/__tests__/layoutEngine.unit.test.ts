@@ -215,6 +215,30 @@ describe('formatBreadcrumb', () => {
   });
 });
 
+describe('formatBreadcrumbLabel', () => {
+  const segments: SummaryRow['segments'] = [
+    { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+    { role: 'kit', text: 'npm-auto-publish' },
+    { role: 'checklist', text: 'repo' },
+  ];
+
+  it('parts the segments as a heading does, carrying none of their glyphs', () => {
+    expect(engine.formatBreadcrumbLabel(segments)).toBe('@acme/release-kit@2.1.0 / npm-auto-publish / repo');
+  });
+
+  it('renders a lone segment as its bare text', () => {
+    expect(engine.formatBreadcrumbLabel([{ role: 'checklist', text: 'repo' }])).toBe('repo');
+  });
+
+  // The label is the heading with the glyphs taken out, so the two cannot drift into naming one thing twice.
+  it('renders what the heading renders once the sigil and glyphs are removed', () => {
+    const heading = engine.formatBreadcrumb(segments, 'kit');
+    const withoutGlyphs = heading.replace(/^\u{2501}\u{2501} /u, '').replaceAll(/\p{Emoji_Presentation} /gu, '');
+
+    expect(engine.formatBreadcrumbLabel(segments)).toBe(withoutGlyphs);
+  });
+});
+
 describe('formatCounts', () => {
   it('joins non-zero fields with commas in the fixed order', () => {
     const counts = makeCounts({
@@ -373,6 +397,42 @@ describe('formatSummaryTable', () => {
     expect(lines[3]?.startsWith(PASSED)).toBe(true);
   });
 
+  it('names a row by its breadcrumb, carrying no role glyphs', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({
+          segments: [
+            { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
+            { role: 'kit', text: 'default' },
+            { role: 'checklist', text: 'repo' },
+          ],
+        }),
+      ],
+      totals: makeCounts({ passed: 1 }),
+      totalDurationMs: 100,
+    });
+
+    expect(lines[2]).toBe(`${PASSED} @acme/release-kit@2.1.0 / default / repo  100ms  1 passed`);
+  });
+
+  it('pads to the widest breadcrumb when rows carry different segment counts', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({
+          segments: [
+            { role: 'sourcePackage', text: '@acme/long-package-name' },
+            { role: 'kit', text: 'default' },
+          ],
+        }),
+        makeRow({ segments: [{ role: 'checklist', text: 'short' }] }),
+      ],
+      totals: makeCounts({ passed: 2 }),
+      totalDurationMs: 200,
+    });
+
+    expect(lines[2]?.indexOf('1 passed')).toBe(lines[3]?.indexOf('1 passed'));
+  });
+
   it('handles a single row', () => {
     const lines = engine.formatSummaryTable({
       rows: [makeRow({ name: 'only', counts: makeCounts({ passed: 1 }), durationMs: 100 })],
@@ -459,8 +519,13 @@ function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
   };
 }
 
-function makeRow(overrides?: Partial<SummaryRow>): SummaryRow {
-  return { name: 'checklist', counts: makeCounts({ passed: 1 }), durationMs: 100, ...overrides };
+function makeRow({ name = 'checklist', ...overrides }: Partial<SummaryRow> & { name?: string } = {}): SummaryRow {
+  return {
+    counts: makeCounts({ passed: 1 }),
+    durationMs: 100,
+    segments: [{ role: 'checklist', text: name }],
+    ...overrides,
+  };
 }
 
 /**

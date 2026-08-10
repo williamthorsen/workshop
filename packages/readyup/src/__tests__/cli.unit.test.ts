@@ -4,13 +4,14 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import type { SummaryRow } from '../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../remote/RemoteFetchError.ts';
 import type { FailedResult, PassedResult, RdyKit, Severity } from '../types.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
 const mockRunRdy = vi.hoisted(() => vi.fn());
 const mockReportRdy = vi.hoisted(() => vi.fn());
-const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
+const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) => string>());
 const mockFormatJsonReport = vi.hoisted(() => vi.fn());
 const mockFormatJsonError = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
@@ -1167,7 +1168,7 @@ describe(runCommand, () => {
     expect(allOutput).not.toContain(`${KIT_BOUNDARY_GAP}\n`);
   });
 
-  it('does not print combined summary when running multiple kits', async () => {
+  it('prints one combined summary covering every kit in a multi-kit run', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -1180,7 +1181,47 @@ describe(runCommand, () => {
       json: false,
     });
 
-    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+    expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
+    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+      [
+        { role: 'kit', text: 'kit1' },
+        { role: 'checklist', text: 'deploy' },
+      ],
+      [
+        { role: 'kit', text: 'kit1' },
+        { role: 'checklist', text: 'infra' },
+      ],
+      [
+        { role: 'kit', text: 'kit2' },
+        { role: 'checklist', text: 'deploy' },
+      ],
+      [
+        { role: 'kit', text: 'kit2' },
+        { role: 'checklist', text: 'infra' },
+      ],
+    ]);
+  });
+
+  // A kit running one checklist heads its block without naming it, and still belongs in the run's tally.
+  it('gives a single-checklist kit a row of its own in a multi-kit run', async () => {
+    mockLoadRdyKit.mockResolvedValue({
+      kit: makeKit({ checklists: [{ name: 'only', checks: [{ name: 'a', check: () => true }] }] }),
+      compileTimeVersion: undefined,
+    });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runCommand({
+      kitEntries: [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      json: false,
+    });
+
+    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+      [{ role: 'kit', text: 'kit1' }],
+      [{ role: 'kit', text: 'kit2' }],
+    ]);
   });
 
   it('uses per-checklist fixLocation over kit default', async () => {
@@ -1236,9 +1277,10 @@ describe(runCommand, () => {
     });
 
     expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
-    expect(mockFormatCombinedSummary).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ name: 'deploy' }), expect.objectContaining({ name: 'infra' })]),
-    );
+    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+      [{ role: 'checklist', text: 'deploy' }],
+      [{ role: 'checklist', text: 'infra' }],
+    ]);
   });
 
   it('counts results pruned by the reporting threshold in each combined-summary row', async () => {
@@ -1257,8 +1299,14 @@ describe(runCommand, () => {
     });
 
     expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
-      expect.objectContaining({ name: 'deploy', passed: 1, warnings: 1, worstSeverity: 'warn' }),
-      expect.objectContaining({ name: 'infra', passed: 1, warnings: 1, worstSeverity: 'warn' }),
+      expect.objectContaining({
+        counts: expect.objectContaining({ passed: 1, warnings: 1, worstSeverity: 'warn' }),
+        segments: [{ role: 'checklist', text: 'deploy' }],
+      }),
+      expect.objectContaining({
+        counts: expect.objectContaining({ passed: 1, warnings: 1, worstSeverity: 'warn' }),
+        segments: [{ role: 'checklist', text: 'infra' }],
+      }),
     ]);
   });
 

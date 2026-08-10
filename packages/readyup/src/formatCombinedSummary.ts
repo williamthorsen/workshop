@@ -1,29 +1,28 @@
 import { getLayout } from './layout/engine.ts';
+import type { SummaryRow } from './layout/layoutEngine.ts';
 import { emptyCounts, mergeCounts } from './reportRdy.ts';
-import type { ChecklistSummary, SummaryCounts } from './types.ts';
+import type { SummaryCounts } from './types.ts';
 
-/** Returns the summary table for `summaries`, one row each, carrying no separation of its own. */
-export function formatCombinedSummary(summaries: ChecklistSummary[]): string {
-  const rows = summaries.map((summary) => ({
-    name: summary.name,
-    counts: summary,
-    durationMs: summary.durationMs,
-  }));
-
+/** Returns the summary table for `rows`, one row each, carrying no separation of its own. */
+export function formatCombinedSummary(rows: SummaryRow[]): string {
   return getLayout()
     .formatSummaryTable({
       rows,
-      totals: aggregateCounts(summaries),
-      totalDurationMs: summaries.reduce((sum, summary) => sum + summary.durationMs, 0),
+      totals: aggregateCounts(rows),
+      totalDurationMs: rows.reduce((sum, row) => sum + row.durationMs, 0),
     })
     .join('\n');
 }
 
-/** Returns the sum of every summary's counts, carrying the worst severity among them. */
-function aggregateCounts(summaries: ChecklistSummary[]): SummaryCounts {
+// region | Helpers
+
+/** Returns the sum of every row's counts, carrying the worst severity among them. */
+function aggregateCounts(rows: SummaryRow[]): SummaryCounts {
   const totals = emptyCounts();
-  for (const summary of summaries) {
-    mergeCounts(totals, summary);
+  for (const row of rows) {
+    mergeCounts(totals, row.counts);
   }
   return totals;
 }
+
+// endregion | Helpers
