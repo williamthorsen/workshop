@@ -459,7 +459,7 @@ describe(reportRdy, () => {
       const inline = reportRdy(makeReport({ results, passed: false }), { fixLocation: 'inline' }).body.split('\n');
       const heading = indexNaming(recapped.join('\n'), 'Fixes');
 
-      expect(recapped.slice(heading + 1, heading + 3)).toEqual([inline[0], inline[2]]);
+      expect(recapped.slice(heading + 1, heading + 3)).toStrictEqual([inline[0], inline[2]]);
     });
 
     it('is the default when no options are given', () => {
