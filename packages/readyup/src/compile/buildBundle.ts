@@ -1,5 +1,7 @@
 import path from 'node:path';
 
+import { isRecord } from '../isRecord.ts';
+import { extractMessage } from '../utils/error-handling.ts';
 import { VERSION } from '../version.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
@@ -25,6 +27,16 @@ export const KIT_TSCONFIG = {
 
 /** How to obtain esbuild, named wherever its absence is reported so every path prescribes one remedy. */
 export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuild';
+
+/**
+ * Why an import a kit resolved under the host repo's configuration no longer resolves.
+ *
+ * esbuild answers an unresolved import by suggesting the path be marked external, which for a kit
+ * yields a bundle that fails at run time instead of at compile time. This names the cause its
+ * suggestion cannot: `KIT_TSCONFIG` leaves kits with no `paths` aliases to resolve through.
+ */
+const UNRESOLVED_SPECIFIER_HINT =
+  'Kits compile without a tsconfig.json, so tsconfig path aliases do not resolve. Import by relative path or package specifier, and check that any package imported is installed.';
 
 /**
  * Generated-file header prepended to compiled output.
@@ -69,18 +81,24 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
     });
   }
 
-  const result = await esbuild.build({
-    entryPoints: [resolvedInput],
-    bundle: true,
-    format: 'esm',
-    platform: 'node',
-    target: KIT_COMPILE_TARGET,
-    tsconfigRaw: KIT_TSCONFIG,
-    external: ['node:*', 'readyup', 'readyup/*'],
-    plugins: [pickJsonPlugin()],
-    banner: { js: GENERATED_HEADER },
-    write: false,
-  });
+  let result;
+  try {
+    result = await esbuild.build({
+      entryPoints: [resolvedInput],
+      bundle: true,
+      format: 'esm',
+      platform: 'node',
+      target: KIT_COMPILE_TARGET,
+      tsconfigRaw: KIT_TSCONFIG,
+      external: ['node:*', 'readyup', 'readyup/*'],
+      plugins: [pickJsonPlugin()],
+      banner: { js: GENERATED_HEADER },
+      write: false,
+    });
+  } catch (error: unknown) {
+    if (!hasUnresolvedSpecifier(error)) throw error;
+    throw new Error(`${extractMessage(error)}\n\n${UNRESOLVED_SPECIFIER_HINT}`, { cause: error });
+  }
 
   const outputFile = result.outputFiles[0];
   if (outputFile === undefined) {
@@ -89,3 +107,25 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
 
   return Buffer.from(outputFile.contents);
 }
+
+// region | Helpers
+
+/**
+ * Reports whether an esbuild failure carries an import esbuild could not resolve.
+ *
+ * Reads the failure's own error list rather than its rendered message, and matches on message text
+ * because esbuild leaves the machine-readable `id` empty on a resolve error.
+ */
+function hasUnresolvedSpecifier(error: unknown): boolean {
+  if (!isRecord(error)) return false;
+  const errors = error['errors'];
+  return (
+    Array.isArray(errors) &&
+    errors.some(
+      (message: unknown) =>
+        isRecord(message) && typeof message['text'] === 'string' && message['text'].startsWith('Could not resolve '),
+    )
+  );
+}
+
+// endregion | Helpers
