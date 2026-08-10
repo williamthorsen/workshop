@@ -83,12 +83,10 @@ With `NODE_ENV` unset:
 ```
 🔴 NODE_ENV is set
    NODE_ENV has no value in the environment
-──
-🔴 1 error (0ms)
-
 ── Fixes
-💊 NODE_ENV is set
-   Set NODE_ENV before deploying
+🔴 NODE_ENV is set
+   💊 Set NODE_ENV before deploying
+🔴 Total: 1 error (0ms)
 ```
 
 `rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits stay the vetted artifact: they are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
@@ -314,12 +312,10 @@ It produces:
       🔴 No dependency has duplicated majors
          react resolves to both 18.3.1 and 19.0.0
    ⚪ Native modules are rebuilt · This workspace has no native dependencies
-──
-🔴 | 1 error, 3 passed, 1 skipped (0ms)
-
 ── Fixes
-💊 No dependency has duplicated majors
-   Run `pnpm dedupe`, then commit the lockfile
+🔴 No dependency has duplicated majors
+   💊 Run `pnpm dedupe`, then commit the lockfile
+🔴 Total: 1 error, 3 passed, 1 skipped (0ms)
 ```
 
 A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence.
@@ -470,6 +466,8 @@ rdy run -- "--odd-kit-name"
 
 `--quiet` filters by status where `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
 
+A checklist either filter empties renders no block at all: its summary-table row states the same counts in a column the reader can compare across the run. A block is withheld only where a table will carry its row, so a run of one checklist reports its block however little it has to say, and a run that withholds one always ends with the table.
+
 A check's own [`quiet`](#checks) is this flag narrowed to that one check, and a kit whose every check declares it renders what `--quiet` renders. It is not `skip`, which reports that the check did not run and why: a quiet check runs, and its pass reaches the count line and the exit code like any other -- only the line is withheld. `--json` is unaffected, so `rdy run --json --detail full` shows a quiet check that passed.
 
 ### Global options
@@ -503,30 +501,27 @@ A check line reads `token name <separator> detail [progress] (duration)`. The se
 
 **A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. Passes and skips keep their detail inline.
 
-Tail and total lines lead with the run's worst severity, then report counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero. Commas part the counts from one another, and a `|` parts the verdict from the list wherever no label already does, so the verdict is never read as a label on the count beside it.
+**Every block closes with its count line.** A count line is labelled `Total:`, leads with the run's worst severity, and reports counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero, parted by commas. The label is what tells the line from the check lines above it, which lead with a token in the same column. It is the block's last line, following any `Fixes` recap.
 
-**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, and a bare `──` closes a block above its count line.
+**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, which heads a section and nothing else.
 
-Blank lines part blocks rather than decorate headings: none opens a command's output or follows a heading, one parts one block from the next, and two appear only where one kit ends and the next begins. More than one checklist anywhere in the run adds a summary table:
+Blank lines part blocks rather than decorate headings: none opens a command's output, follows a heading, or falls inside a block, and exactly one parts one block from the next, a kit boundary included. More than one checklist anywhere in the run adds a summary table:
 
 ```
 ━━ 📋 build
 🟢 Types check cleanly (343ms)
 🟢 Bundle is within budget · 42kB of a 50kB budget [84%]
-──
-🟢 | 2 passed (343ms)
+🟢 Total: 2 passed (343ms)
 
 ━━ 📋 integration
 🟢 Database is reachable
 🔴 Migrations are applied (151ms)
    2 migrations pending: add_users, add_index
 ⚪ Seed data is loaded · seeding is disabled outside CI
-──
-🔴 | 1 error, 1 passed, 1 skipped (151ms)
-
 ── Fixes
-💊 Migrations are applied
-   Run `pnpm migrate` against the target database
+🔴 Migrations are applied
+   💊 Run `pnpm migrate` against the target database
+🔴 Total: 1 error, 1 passed, 1 skipped (151ms)
 
 ━━ Summary
 ───────────────────────────────────────────────────
@@ -577,8 +572,7 @@ PASS  Database is reachable
 FAIL  Migrations are applied (151ms)
       2 migrations pending: add_users, add_index
 SKIP  Seed data is loaded - seeding is disabled outside CI
---
-FAIL  | 1 error, 1 passed, 1 skipped (151ms)
+FAIL  Total: 1 error, 1 passed, 1 skipped (151ms)
 ```
 
 ```
