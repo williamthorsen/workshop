@@ -3,8 +3,7 @@ export type {
   OverlayCounts,
   OverlayEntry,
   OverlayMode,
-  OverlayOptions,
   OverlayResult,
   ScriptsSummary,
 } from './modes/types.ts';
-export { overlay } from './overlay.ts';
+export { overlay, type OverlayOptions } from './overlay.ts';
