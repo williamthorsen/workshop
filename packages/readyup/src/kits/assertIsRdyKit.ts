@@ -1,7 +1,7 @@
 import type { ZodError } from 'zod';
 import { z } from 'zod';
 
-import { describeType, previewValue } from '../utils/describe-value.ts';
+import { describeType, previewValue } from '../portable/describe-value.ts';
 import type { RdyKit } from './types.ts';
 
 /** Schema for valid severity levels. */

@@ -8,7 +8,7 @@ import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import type { RdyKit } from '../kits/types.ts';
 import { validateKit } from '../kits/validateKit.ts';
 import { isRecord } from '../portable/isRecord.ts';
-import { toDisplayPath } from '../utils/display-path.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
 export interface KitMetadata {

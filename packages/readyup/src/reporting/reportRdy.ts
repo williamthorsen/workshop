@@ -3,8 +3,8 @@ import { isPercentProgress } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import { resolveWorstToken } from '../layout/layoutEngine.ts';
-import { meetsThreshold } from '../run/runRdy.ts';
-import { worseSeverity } from '../utils/severity.ts';
+import { meetsThreshold } from '../severity/meetsThreshold.ts';
+import { worseSeverity } from '../severity/worseSeverity.ts';
 
 const FIXES_HEADING = 'Fixes';
 

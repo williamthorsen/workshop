@@ -23,15 +23,6 @@ vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
 }));
 
 vi.mock(import('../runRdy.ts'), () => ({
-  meetsThreshold: (severity: string, threshold: string) => {
-    const rank: Record<string, number> = { error: 0, warn: 1, recommend: 2 };
-    const severityRank = rank[severity];
-    const thresholdRank = rank[threshold];
-    if (severityRank === undefined || thresholdRank === undefined) {
-      throw new Error(`Invalid severity in meetsThreshold mock: severity="${severity}", threshold="${threshold}"`);
-    }
-    return severityRank <= thresholdRank;
-  },
   runRdy: mockRunRdy,
 }));
 

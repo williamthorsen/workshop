@@ -3,8 +3,8 @@ import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { configError } from '../errors/RdyError.ts';
 import { printStep, reportWriteResult } from '../output/terminal.ts';
-import { buildInstallCommand } from '../utils/install-command.ts';
-import { isPackageInstalled } from '../utils/resolve-package.ts';
+import { isPackageInstalled } from '../packages/isPackageInstalled.ts';
+import { buildInstallCommand } from '../portable/buildInstallCommand.ts';
 import { scaffoldConfig } from './scaffold.ts';
 
 /** Steps that follow scaffolding regardless of whether readyup is already installed. */
