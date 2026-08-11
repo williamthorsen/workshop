@@ -1149,4 +1149,4 @@ Compiled kits embed nothing of ReadyUp itself -- the runner satisfies `readyup` 
 
 ## License
 
-MIT
+ISC

@@ -1,4 +1,4 @@
-# Configuratino: https://lefthook.dev/configuration/
+# Configuration: https://lefthook.dev/configuration/
 pre-commit:
   commands:
     format:

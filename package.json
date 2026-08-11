@@ -19,6 +19,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "codeassembly sync --warn-only",
     "prepare": "lefthook install"
   },
   "devDependencies": {
