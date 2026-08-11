@@ -1,6 +1,6 @@
+import assert from 'node:assert';
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { loadConfig, type TierFile } from '../loadConfig.ts';
@@ -87,10 +87,9 @@ describe(loadConfig, () => {
 
     const error = await captureError(() => loadConfig([buildTierFile(dir, 'project')]));
 
-    expect(error.cause).toBeInstanceOf(Error);
-    expect(error.message).toBe(
-      `Config file "${path.join(dir, 'project.yaml')}" is not valid YAML: ${describeError(error.cause)}`,
-    );
+    const { cause } = error;
+    assert.ok(cause instanceof Error);
+    expect(error.message).toBe(`Config file "${path.join(dir, 'project.yaml')}" is not valid YAML: ${cause.message}`);
   });
 
   it('fails on a tier declaring an unrecognized key, naming the file', async () => {

@@ -1,6 +1,5 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 
@@ -176,7 +175,7 @@ describe(loadConfig, () => {
 
     const error = await captureError(() => loadConfig({ overridePath: 'config.ts' }));
 
-    expect(describeError(error)).toBe(
+    expect(error.message).toBe(
       "Cannot resolve 'some-lib' while evaluating config.ts. External packages imported by the config file " +
         'must be installed in the project.',
     );

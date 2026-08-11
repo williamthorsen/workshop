@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -64,9 +65,10 @@ describe(validateCompiledOutput, () => {
 
     const error = await captureError(() => validateCompiledOutput(filePath));
 
-    expect(error.message).toContain('Failed to load compiled output for validation');
-    expect(error.cause).toBeInstanceOf(Error);
-    expect(error.cause).toHaveProperty('message', expect.stringContaining('parse error'));
+    const { cause } = error;
+    assert.ok(cause instanceof Error);
+    expect(cause.message).toContain('parse error');
+    expect(error.message).toBe(`Failed to load compiled output for validation: ${cause.message}`);
   });
 
   it('deletes the output file and throws when the kit is structurally invalid', async () => {

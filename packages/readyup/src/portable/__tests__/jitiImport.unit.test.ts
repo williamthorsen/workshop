@@ -1,6 +1,5 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -47,7 +46,7 @@ describe(jitiImport, () => {
     const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
     expect(extractHint(error)).toBe('Install it with: pnpm add --save-dev readyup');
-    expect(describeError(error)).not.toContain('Install it with');
+    expect(error.message).not.toContain('Install it with');
   });
 
   it('omits the install command for a specifier that names a file rather than a package', async () => {

@@ -1,6 +1,6 @@
+import assert from 'node:assert';
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { locatePackage } from '../locatePackage.ts';
@@ -74,8 +74,9 @@ describe(locatePackage, () => {
 
     const error = await captureError(() => locatePackage('guidance', { baseDir, contentKeyPath }));
 
-    expect(error.cause).toBeInstanceOf(Error);
-    expect(error.message).toBe(`Package "guidance" has an unreadable package.json: ${describeError(error.cause)}`);
+    const { cause } = error;
+    assert.ok(cause instanceof Error);
+    expect(error.message).toBe(`Package "guidance" has an unreadable package.json: ${cause.message}`);
   });
 
   it.each(['./content', '../sibling', '/srv/content'])(

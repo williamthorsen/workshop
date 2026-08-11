@@ -1,3 +1,5 @@
+import assert from 'node:assert';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.hoisted(() => vi.fn());
@@ -76,8 +78,9 @@ describe(loadRemoteManifest, () => {
 
     const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
 
-    expect(error.message).toMatch(/Manifest at https:\/\/example\.com\/manifest\.json is malformed:/);
-    expect(error.cause).toBeInstanceOf(SyntaxError);
+    const { cause } = error;
+    assert.ok(cause instanceof SyntaxError);
+    expect(error.message).toBe(`Manifest at https://example.com/manifest.json is malformed: ${cause.message}`);
   });
 
   it('throws Error containing URL and "malformed" for schema-invalid JSON', async () => {
