@@ -2,8 +2,8 @@ import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { configError } from '../errors/RdyError.ts';
+import { isPackageInstalled } from '../installed-packages/isPackageInstalled.ts';
 import { printStep, reportWriteResult } from '../output/terminal.ts';
-import { isPackageInstalled } from '../packages/isPackageInstalled.ts';
 import { buildInstallCommand } from '../portable/buildInstallCommand.ts';
 import { scaffoldConfig } from './scaffold.ts';
 

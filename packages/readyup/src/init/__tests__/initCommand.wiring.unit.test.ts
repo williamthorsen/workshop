@@ -23,7 +23,7 @@ vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
   buildInstallCommand: mockBuildInstallCommand,
 }));
 
-vi.mock(import('../../packages/isPackageInstalled.ts'), () => ({
+vi.mock(import('../../installed-packages/isPackageInstalled.ts'), () => ({
   isPackageInstalled: mockIsPackageInstalled,
 }));
 
