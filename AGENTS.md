@@ -18,6 +18,7 @@ Key files:
 - `.config/readyup.config.ts`: Readyup compile settings, plus the `packages` list whose kits audit this repo.
 - `.readyup/kits/`: Kit files (TypeScript sources compiled to self-contained ESM bundles).
 - `packages/readyup/vitest.config.ts`: Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection.
+- `pnpm-workspace.yaml`: Its `catalog` block is the single declaration site for every version shared across manifests, so a package it names is declared as `catalog:` rather than a literal version. Nothing enforces this yet; node-monorepo-tools#654 tracks the check.
 - `vitest.config.ts` and `vitest.root.config.ts`: Vitest projects for packages and for root-level tests respectively; the root variant excludes every workspace package.
 
 ## Commands
