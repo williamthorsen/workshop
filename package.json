@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "OSS utilities by William Thorsen",
-  "keywords": [],
   "homepage": "https://github.com/williamthorsen/workshop#readme",
   "bugs": {
     "url": "https://github.com/williamthorsen/workshop/issues"
@@ -29,11 +28,11 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "4.1.10",
     "@vitest/eslint-plugin": "1.6.26",
-    "@williamthorsen/eslint-config-typescript": "8.7.0",
+    "@williamthorsen/eslint-config-typescript": "9.0.0",
     "@williamthorsen/nmr": "0.30.0",
     "@williamthorsen/release-kit": "10.3.1",
-    "@williamthorsen/strict-lint": "9.4.0",
-    "@williamthorsen/tsconfig": "0.4.0",
+    "@williamthorsen/strict-lint": "10.0.0",
+    "@williamthorsen/tsconfig": "0.5.0",
     "codeassembly": "0.8.0",
     "esbuild": "0.28.1",
     "eslint": "10.8.0",
