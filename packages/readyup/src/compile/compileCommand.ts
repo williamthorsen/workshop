@@ -3,9 +3,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { loadConfig } from '../config/loadConfig.ts';
-import { extractHint, extractMessage } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { getLayout } from '../layout/engine.ts';
@@ -127,7 +129,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     metadata = await validateCompiledOutput(result.outputPath);
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
-    const message = extractMessage(error);
+    const message = describeError(error);
     process.stderr.write(`Error: ${message}\n`);
     return finishCompile([{ name: kitName, status: 'failed', error: message }], json);
   }
@@ -146,7 +148,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
         targetHash: result.targetHash,
       });
     } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
+      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
@@ -202,7 +204,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error, hint: extractHint(error) });
+    throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 
   const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
@@ -216,7 +218,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     try {
       tsFiles = collectSourceFiles(srcDir, config.compile.include);
     } catch (error: unknown) {
-      throw configError(`Failed to read source directory: ${extractMessage(error)}`, { cause: error });
+      throw configError(`Failed to read source directory: ${describeError(error)}`, { cause: error });
     }
   }
 
@@ -279,7 +281,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       const existingKit = existingKitsByName.get(kitName);
       if (existingKit !== undefined) kitEntries.push(existingKit);
 
-      const message = extractMessage(error);
+      const message = describeError(error);
       process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
       kitResults.push({ name: kitName, status: 'failed', error: message });
       failedCount += 1;
@@ -303,7 +305,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitEntries.sort((a, b) => a.name.localeCompare(b.name));
       writeManifest(manifestPath, { version: 1, kits: kitEntries });
     } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
+      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
@@ -339,7 +341,7 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
     try {
       writeManifest(manifestPath, { version: 1, kits: [] });
     } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${extractMessage(error)}`, { cause: error });
+      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
@@ -368,7 +370,7 @@ function upsertManifest(
   } catch (error: unknown) {
     // Missing manifest is expected for first compile; other failures should surface.
     if (!(error instanceof ManifestNotFoundError)) {
-      const message = extractMessage(error);
+      const message = describeError(error);
       process.stderr.write(`Warning: ${message}; starting with empty manifest\n`);
     }
   }
@@ -401,7 +403,7 @@ function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKi
     }
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) {
-      const message = extractMessage(error);
+      const message = describeError(error);
       process.stderr.write(`Warning: ${message}; drift gate skipped\n`);
     }
   }

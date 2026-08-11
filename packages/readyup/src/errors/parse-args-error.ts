@@ -1,4 +1,4 @@
-import { extractMessage } from './error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
 /**
  * Translate a caught `node:util.parseArgs` error into a user-facing message.
@@ -11,7 +11,7 @@ import { extractMessage } from './error-handling.ts';
  */
 export function translateParseArgsError(error: unknown, command: string, hints: Record<string, string> = {}): string {
   if (!(error instanceof Error) || !('code' in error)) {
-    return extractMessage(error);
+    return describeError(error);
   }
 
   if (error.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION') {
@@ -28,5 +28,5 @@ export function translateParseArgsError(error: unknown, command: string, hints: 
     }
   }
 
-  return extractMessage(error);
+  return describeError(error);
 }

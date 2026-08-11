@@ -1,3 +1,5 @@
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { collectIds } from '../consistency/collectIds.ts';
 import { ConsistencyError } from '../consistency/ConsistencyError.ts';
 import { countCaptureGroups } from '../consistency/countCaptureGroups.ts';
@@ -132,7 +134,7 @@ function collectMarkerFaults(markers: MarkerPair, path: string, violations: Arra
   try {
     assertMarkersAreUsable(markers);
   } catch (error: unknown) {
-    violations.push({ path, message: error instanceof Error ? error.message : String(error) });
+    violations.push({ path, message: describeError(error) });
   }
 }
 

@@ -1,9 +1,10 @@
 import process from 'node:process';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { formatJsonError } from '../formatJsonError.ts';
 import { formatReport } from '../formatReport.ts';
 import { overlay } from '../overlay.ts';
-import { extractMessage } from '../utils/error-handling.ts';
 import { parseArgs } from './parseArgs.ts';
 
 export const HELP = `overlay — overlay a chezmoi source tree onto a target directory
@@ -62,7 +63,7 @@ export async function run(argv: string[]): Promise<number> {
     }
     return result.exitCode;
   } catch (error: unknown) {
-    const message = extractMessage(error);
+    const message = describeError(error);
     process.stderr.write(`${formatJsonError(message)}\n`);
     return 2;
   }

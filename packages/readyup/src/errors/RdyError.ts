@@ -1,4 +1,6 @@
-import { extractHint, extractMessage } from './error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
+import { extractHint } from './error-handling.ts';
 
 /**
  * Diagnosis of a failure that prevented rdy from completing an invocation.
@@ -70,5 +72,5 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  */
 export function toRdyError(error: unknown): RdyError {
   if (error instanceof RdyError) return error;
-  return internalError(extractMessage(error), { cause: error, hint: extractHint(error) });
+  return internalError(describeError(error), { cause: error, hint: extractHint(error) });
 }

@@ -2,10 +2,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { ESBUILD_INSTALL_HINT } from '../compile/buildBundle.ts';
 import { loadEsbuild } from '../compile/loadEsbuild.ts';
-import { extractMessage } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { getLayout } from '../layout/engine.ts';
@@ -73,7 +74,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
   try {
     manifest = readManifest(manifestPath);
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(describeError(error), { cause: error });
   }
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);

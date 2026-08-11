@@ -2,9 +2,10 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { collectSourceFiles } from '../compile/collectSourceFiles.ts';
 import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
-import { extractMessage } from '../errors/error-handling.ts';
 import { READYUP_DIR } from '../kits/kitsDir.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
@@ -117,7 +118,7 @@ async function readProjectConfig(absolutePath: string, dir: string): Promise<Res
   try {
     return await loadConfig({ fromDir: absolutePath });
   } catch (error: unknown) {
-    const detail = extractMessage(error).replace(/\.$/, '');
+    const detail = describeError(error).replace(/\.$/, '');
     process.stderr.write(`Warning: ${detail}. Reading ${dir} with default settings.\n`);
     return { ...DEFAULT_CONFIG };
   }

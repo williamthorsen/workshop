@@ -3,10 +3,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { discoverKitPackages } from '../check-utils/discoverKitPackages.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
-import { extractHint, extractMessage } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
@@ -123,7 +125,7 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
   try {
     source = parseFromValue(fromArg);
   } catch (error: unknown) {
-    throw usageError(extractMessage(error), { cause: error });
+    throw usageError(describeError(error), { cause: error });
   }
 
   if (source.type === 'github') {
@@ -214,7 +216,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
   try {
     config = await loadConfig();
   } catch (error: unknown) {
-    const detail = extractMessage(error).replace(/\.$/, '');
+    const detail = describeError(error).replace(/\.$/, '');
     process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
     const hint = extractHint(error);
     if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
@@ -228,7 +230,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
   try {
     internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(describeError(error), { cause: error });
   }
 
   const manifestPath = path.resolve(cwd, DEFAULT_MANIFEST_PATH);
@@ -240,7 +242,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
     // own: the empty-listing hint belongs to the view, which sees the package sections too. Anything
     // else is a manifest that exists and cannot be read, which the reader should hear about.
     if (!(error instanceof ManifestNotFoundError)) {
-      process.stderr.write(`Warning: ${extractMessage(error)}\n`);
+      process.stderr.write(`Warning: ${describeError(error)}\n`);
     }
   }
 
@@ -342,7 +344,7 @@ function readProjectManifest(manifestPath: string): RdyManifest | undefined {
     return readManifest(manifestPath);
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) {
-      process.stderr.write(`Warning: ${extractMessage(error)}\n`);
+      process.stderr.write(`Warning: ${describeError(error)}\n`);
     }
     return undefined;
   }
@@ -360,7 +362,7 @@ function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
     try {
       return expandConfiguredPackages([packageName], '.js');
     } catch (error: unknown) {
-      process.stderr.write(`Warning: ${extractMessage(error)}\n`);
+      process.stderr.write(`Warning: ${describeError(error)}\n`);
       return [];
     }
   });
@@ -458,7 +460,7 @@ function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListK
   try {
     names = enumerateKits({ dir: kitsDir, extension: '.js' });
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(describeError(error), { cause: error });
   }
 
   return names.map((name) => ({
@@ -474,7 +476,7 @@ function readLocalManifestIfPresent(manifestPath: string): RdyManifest | undefin
     return readManifest(manifestPath);
   } catch (error: unknown) {
     if (error instanceof ManifestNotFoundError) return undefined;
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(describeError(error), { cause: error });
   }
 }
 
@@ -483,7 +485,7 @@ function readManifestOrThrow(manifestPath: string): RdyManifest {
   try {
     return readManifest(manifestPath);
   } catch (error: unknown) {
-    throw configError(extractMessage(error), { cause: error });
+    throw configError(describeError(error), { cause: error });
   }
 }
 

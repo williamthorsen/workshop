@@ -48,7 +48,7 @@ describe(readManifest, () => {
 
     const error = await captureError(() => readManifest('/locked/manifest.json'));
 
-    expect(error.message).toContain('Failed to read manifest file');
+    expect(error.message).toBe(`Failed to read manifest file /locked/manifest.json: ${readFailure.message}`);
     expect(error.cause).toBe(readFailure);
   });
 

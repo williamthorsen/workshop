@@ -1,6 +1,8 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
+import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
 
 /** Where to look for a package, and where that package declares the content directory it ships. */
@@ -80,8 +82,7 @@ function parseManifest(name: string, raw: string): unknown {
   try {
     return JSON.parse(raw);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Package "${name}" has an unreadable package.json: ${message}`, { cause: error });
+    throw chainError(`Package "${name}" has an unreadable package.json`, error);
   }
 }
 

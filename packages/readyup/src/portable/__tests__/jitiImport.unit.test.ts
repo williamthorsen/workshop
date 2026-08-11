@@ -13,7 +13,7 @@ vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockImport }),
 }));
 
-import { extractHint, extractMessage } from '../../errors/error-handling.ts';
+import { extractHint } from '../../errors/error-handling.ts';
 import { captureError } from '../../test-utils/captureError.ts';
 import { jitiImport } from '../jitiImport.ts';
 
@@ -46,7 +46,7 @@ describe(jitiImport, () => {
     const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
     expect(extractHint(error)).toBe('Install it with: pnpm add --save-dev readyup');
-    expect(extractMessage(error)).not.toContain('Install it with');
+    expect(error.message).not.toContain('Install it with');
   });
 
   it('omits the install command for a specifier that names a file rather than a package', async () => {

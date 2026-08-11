@@ -1,6 +1,26 @@
 import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
+/**
+ * Every `no-restricted-syntax` entry that applies to TypeScript repo-wide.
+ *
+ * Shared because ESLint substitutes a rule's options across config objects instead of merging them, so an object
+ * that sets this rule for a narrower glob discards every entry it does not restate. The three statement bans come
+ * from the shared config and would be lost the same way.
+ */
+const RESTRICTED_SYNTAX = [
+  'DebuggerStatement',
+  'LabeledStatement',
+  'WithStatement',
+  {
+    // Constraining the consequent to a `.message` read is what leaves the other `instanceof Error` shapes alone: an
+    // `if` that narrows before reading an errno, and the ternary that coerces an unknown value into an `Error`.
+    selector:
+      'ConditionalExpression[test.operator="instanceof"][test.right.name="Error"][consequent.property.name="message"]',
+    message: 'Use `describeError` from @williamthorsen/toolbelt.errors to read a message off an unknown thrown value.',
+  },
+];
+
 const config = defineConfig([
   ...baseConfig,
   {
@@ -66,6 +86,12 @@ const config = defineConfig([
     },
   },
   {
+    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX],
+    },
+  },
+  {
     // readyup's source is grouped by role, so a module at the root of `src/` belongs in a directory. The three
     // exceptions name the package rather than a role within it. The selector matches every file the glob admits,
     // which is the point: the finding is the file's presence, not anything it contains.
@@ -78,6 +104,7 @@ const config = defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        ...RESTRICTED_SYNTAX,
         {
           selector: 'Program',
           message:
