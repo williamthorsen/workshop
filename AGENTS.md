@@ -14,57 +14,37 @@ Packages live under `packages/`:
 
 Key files:
 
-- `.config/nmr.config.ts` — Per-repo nmr script overrides
-- `.config/readyup.config.ts` — Readyup compile settings
-- `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles)
-- `packages/readyup/vitest.config.ts` — Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection
-- `tsconfig.json` — Extends `@williamthorsen/tsconfig`; declares only the `paths`, `types`, and `include` the shared base leaves to the consumer
-- `vitest.config.ts` — Vitest projects for packages, built on `@williamthorsen/nmr/vitest`
-- `vitest.root.config.ts` — Vitest projects for root-level tests, which exclude every workspace package
+- `.config/nmr.config.ts` — Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
+- `.config/readyup.config.ts` — Readyup compile settings, plus the `packages` list whose kits audit this repo.
+- `.readyup/kits/` — Kit files (TypeScript sources compiled to self-contained ESM bundles).
+- `packages/readyup/vitest.config.ts` — Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection.
+- `vitest.config.ts` and `vitest.root.config.ts` — Vitest projects for packages and for root-level tests respectively; the root variant excludes every workspace package.
 
 ## Commands
 
-Use `nmr {command}` for monorepo scripts. Use `pnpm run {script}` only for scripts defined directly in a package's `package.json`.
-
-**Root-level (from repo root):**
-
-- `pnpm install` — Install all dependencies
-- `nmr ci` — The code-quality gate CI runs (kit-freshness check + build + strict checks)
-- `nmr prepush` — Everything the remote runs (`nmr ci` plus the dependency audit)
-- `nmr check` — Typecheck, format check, lint check, and tests
-- `nmr build` — Build all packages
-- `nmr test` — Run tests across all packages
-
-**Package-level (from any package directory):**
-
-- `nmr build` — Build current package (compile `src` to `dist/esm`, including `.d.ts`)
-- `nmr test` — Run tests for current package
-- `nmr test:watch` — Tests in watch mode
-- `nmr test:coverage` — Tests with coverage
+From the repo root, `pnpm exec rdy run --packages` runs the default kit of every package `.config/readyup.config.ts` names, auditing this repo against the conventions those packages own — including `codeassembly`'s `guidance` checklist over the agent-guidance wiring. Nothing in CI runs it; run it by hand after a dependency upgrade.
 
 ## Architecture
 
-### Build system
-
-- `nmr-compile` (from `@williamthorsen/nmr`) compiles each package's `src` to `dist/esm`, emitting `.js` and `.d.ts` in one pass; run via `nmr build` (CI) and each package's `prepare` script
-- Content-hash caching in `dist/esm/.cache` (written by `nmr-compile`) — skips rebuild when sources haven't changed
-- ESM-only output (`type: "module"` in all packages)
-
 ### Testing
 
-- Vitest with v8 coverage provider
-- Typecheck uses `tsgo` (TypeScript native preview)
 - Suites are Vitest projects on an isolation ladder, named for the furthest thing a test reaches and selected by `--project`, not by naming a config file. `nmr test` runs `unit` and `tool`, the two tiers a bare install can run; `nmr test:unit` and `nmr test:tool` run one apiece; `nmr test:all` adds `localhost` and `remote`, which this repo declares but does not use.
 - The tier a test file lands in is decided by the infix nearest `.test.ts`: `*.tool.test.ts` reaches a program the environment supplies (a spawned binary, or esbuild through its API). `unit` is the residual and claims every file the named tiers don't, so the filesystem is not a tier boundary — a tmpdir test is a unit test.
 - Test files are named `<subject>[.<aspect>].<tier>.test.ts`. The tier tail is mandatory; a bare `*.test.ts` is drift, as is a tail naming anything but a tier. Any token before the tail documents intent: `.app.` covers something about the repo itself, `.wiring.` a seam whose branches unit tests already cover, `.roundtrip.` a value surviving serialization and reparsing. The root suite's `test-tier-infixes` test enforces the tail across every package.
 
 ### Code quality
 
-- Lefthook pre-commit hook auto-formats staged files with Prettier
-- ESLint with `@williamthorsen/eslint-config-typescript`; optional strict linting via `@williamthorsen/strict-lint`
+Lefthook's pre-commit hook formats staged files with Prettier and restages them, so a commit can carry bytes you did not write.
+
+## Commit conventions
+
+The scope values this repo uses are `compositor`, `overlay`, `readyup`, and `root`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+
+## Releases
+
+Releases run through the **Release** GitHub Actions workflow (`workflow_dispatch`), which bumps versions, regenerates CHANGELOGs, and pushes tags; the resulting `<workspace>-v<semver>` tag pushes trigger **Publish** and **Create GitHub Release**. Never push a release tag by hand.
 
 ## Gotchas
 
-- **Build caching**: `nmr-compile`'s content-hash cache (`dist/esm/.cache`) means a rebuild won't run if only non-source files change. Delete the cache file to force a rebuild.
-- **Check caching**: a check that already passed on the current working tree reports a pass without running again. Use `nmr --no-cache {command}` when the run has to produce an artifact rather than an exit status (a fresh `coverage/`), and `nmr clean` to forget every recorded pass.
+- **Build caching**: `nmr build` skips a package whose sources are unchanged, keyed on a hash under `node_modules/.cache/nmr-compile/`. This is not the check-result cache, and `--no-cache` does not reach it — removing the output is what forces a rebuild (`nmr clean`, or deleting `dist` by any means).
 - **Kit freshness**: the tracked kit bundles embed the readyup version that compiled them, so a readyup version bump leaves them stale until `rdy compile` runs. `nmr ci` verifies them by recompiling, and does so before its build step, which would otherwise regenerate a stale bundle in place.
