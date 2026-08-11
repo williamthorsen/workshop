@@ -114,9 +114,25 @@ const config = defineConfig([
     },
   },
   {
-    // `utils` names no role, so a directory of that name under readyup's source is the same defect one level down.
-    // The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
-    files: ['packages/readyup/src/**/utils/**'],
+    // overlay's source is grouped by role on the same terms, and its two exceptions likewise name the package.
+    files: ['packages/overlay/src/*.ts'],
+    ignores: ['packages/overlay/src/index.ts', 'packages/overlay/src/overlay.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. Only index.ts and overlay.ts belong at the root of overlay/src.',
+        },
+      ],
+    },
+  },
+  {
+    // `utils` names no role, so a directory of that name under any package's source is the same defect one level
+    // down. The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
+    files: ['packages/*/src/**/utils/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
