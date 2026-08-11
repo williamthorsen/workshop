@@ -5,8 +5,8 @@ import type { ChezmoiContext } from './chezmoi/runChezmoi.ts';
 import { assertChezmoiVersion } from './chezmoi/version.ts';
 import { runCreate } from './modes/create.ts';
 import { runForce } from './modes/force.ts';
+import type { OverlayMode, OverlayOptions, OverlayResult } from './modes/types.ts';
 import { runVerify } from './modes/verify.ts';
-import type { OverlayMode, OverlayOptions, OverlayResult } from './types.ts';
 
 /**
  * Converge a target directory toward a chezmoi source tree.

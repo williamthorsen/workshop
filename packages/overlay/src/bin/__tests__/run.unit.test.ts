@@ -2,9 +2,9 @@ import process from 'node:process';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { formatReport } from '../../formatReport.ts';
+import type { OverlayResult } from '../../modes/types.ts';
 import * as overlayModule from '../../overlay.ts';
-import type { OverlayResult } from '../../types.ts';
+import { formatReport } from '../../reporting/formatReport.ts';
 import { run } from '../run.ts';
 
 const stubResult: OverlayResult = {

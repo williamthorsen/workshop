@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { OverlayResult } from '../../modes/types.ts';
 import { formatReport } from '../formatReport.ts';
-import type { OverlayResult } from '../types.ts';
 
 describe(formatReport, () => {
   it('reports a converged target under verify', () => {

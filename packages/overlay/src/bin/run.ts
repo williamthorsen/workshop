@@ -2,9 +2,9 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
-import { formatJsonError } from '../formatJsonError.ts';
-import { formatReport } from '../formatReport.ts';
 import { overlay } from '../overlay.ts';
+import { formatJsonError } from '../reporting/formatJsonError.ts';
+import { formatReport } from '../reporting/formatReport.ts';
 import { parseArgs } from './parseArgs.ts';
 
 export const HELP = `overlay — overlay a chezmoi source tree onto a target directory

@@ -1,5 +1,5 @@
-import type { EntryOutcome, OverlayResult } from './types.ts';
-import { pluralizeWithCount } from './utils/pluralize.ts';
+import type { EntryOutcome, OverlayResult } from '../modes/types.ts';
+import { pluralizeWithCount } from '../portable/pluralize.ts';
 
 /**
  * Render an `OverlayResult` as human-readable report text for stdout.

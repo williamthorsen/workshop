@@ -2,8 +2,8 @@ import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/runChezmoi.ts';
 import { runChezmoiStreamed } from '../chezmoi/runChezmoi.ts';
-import type { OverlayResult } from '../types.ts';
 import { countOutcome, partitionStatus } from './buildEntries.ts';
+import type { OverlayResult } from './types.ts';
 
 /**
  * Full-convergence mode: a complete `chezmoi apply` that overwrites differing
