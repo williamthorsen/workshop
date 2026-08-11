@@ -1,7 +1,8 @@
 import { rmSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { extractMessage } from '../errors/error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import type { RdyKit } from '../kits/types.ts';
@@ -28,7 +29,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
     imported = await import(fileUrl);
   } catch (error: unknown) {
     rmSync(outputPath, { force: true });
-    const detail = extractMessage(error);
+    const detail = describeError(error);
     throw new Error(`Failed to load compiled output for validation: ${detail}`, { cause: error });
   }
 

@@ -1,6 +1,7 @@
 import path from 'node:path';
 
-import { extractMessage } from '../errors/error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { isRecord } from '../portable/isRecord.ts';
 import { VERSION } from '../version.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
@@ -97,7 +98,7 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
     });
   } catch (error: unknown) {
     if (!hasUnresolvedSpecifier(error)) throw error;
-    throw new Error(`${extractMessage(error)}\n\n${UNRESOLVED_SPECIFIER_HINT}`, { cause: error });
+    throw new Error(`${describeError(error)}\n\n${UNRESOLVED_SPECIFIER_HINT}`, { cause: error });
   }
 
   const outputFile = result.outputFiles[0];

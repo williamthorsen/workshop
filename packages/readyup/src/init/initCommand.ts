@@ -1,5 +1,6 @@
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { EXIT_OK } from '../bin/exitCodes.ts';
-import { extractMessage } from '../errors/error-handling.ts';
 import { configError } from '../errors/RdyError.ts';
 import { printStep, reportWriteResult } from '../output/terminal.ts';
 import { buildInstallCommand } from '../utils/install-command.ts';
@@ -36,7 +37,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   try {
     result = scaffoldConfig({ dryRun, force });
   } catch (error: unknown) {
-    throw configError(`Failed to scaffold config: ${extractMessage(error)}`, { cause: error });
+    throw configError(`Failed to scaffold config: ${describeError(error)}`, { cause: error });
   }
 
   reportWriteResult(result.configResult, dryRun);

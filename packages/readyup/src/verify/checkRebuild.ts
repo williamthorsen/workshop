@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { buildBundle } from '../compile/buildBundle.ts';
-import { extractMessage } from '../errors/error-handling.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { VERSION } from '../version.ts';
 import { hashBytes } from './targetHash.ts';
@@ -56,7 +57,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
   } catch (error: unknown) {
     // A source that no longer compiles is a finding about the kit, not a failure of the invocation,
     // so the sweep carries on to the kits after it.
-    return { kind: 'failed', message: extractMessage(error) };
+    return { kind: 'failed', message: describeError(error) };
   }
 
   const onDisk = readFileSync(targetPath);

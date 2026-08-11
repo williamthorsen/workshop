@@ -1,3 +1,5 @@
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import { composeLocationKey } from './composeLocationKey.ts';
 import { locatePackage } from './locatePackage.ts';
@@ -71,7 +73,7 @@ async function locateOne(
       outcome: 'failed',
       package: name,
       baseDir,
-      reason: error instanceof Error ? error.message : String(error),
+      reason: describeError(error),
     };
   }
 }

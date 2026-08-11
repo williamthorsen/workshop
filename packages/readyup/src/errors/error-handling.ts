@@ -8,8 +8,3 @@ export function extractHint(error: unknown): string | undefined {
   if (error instanceof Error && 'hint' in error && typeof error.hint === 'string') return error.hint;
   return undefined;
 }
-
-/** Extract a displayable message from an unknown thrown value. */
-export function extractMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

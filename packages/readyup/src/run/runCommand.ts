@@ -2,8 +2,10 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCodes.ts';
-import { extractHint, extractMessage } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { kitLoadError, type RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
@@ -288,7 +290,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   try {
     kitSpecifiers = parseKitSpecifiers(positionals);
   } catch (error: unknown) {
-    throw usageError(extractMessage(error), { cause: error });
+    throw usageError(describeError(error), { cause: error });
   }
 
   validateFlagConstraints(parsed, kitSpecifiers);
@@ -385,7 +387,7 @@ export function resolveKitSources({
     try {
       source = parseFromValue(fromValue);
     } catch (error: unknown) {
-      throw usageError(extractMessage(error), { cause: error });
+      throw usageError(describeError(error), { cause: error });
     }
     return resolveFromSource(source, specs, extension);
   }
@@ -630,7 +632,7 @@ async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedR
         cause: error,
       });
     }
-    throw kitLoadError(extractMessage(error), { cause: error, hint: extractHint(error) });
+    throw kitLoadError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 }
 
@@ -1052,7 +1054,7 @@ function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChec
   try {
     resolvedNames = resolveRequestedNames(checklistFilter, kit);
   } catch (error: unknown) {
-    throw usageError(extractMessage(error), { cause: error });
+    throw usageError(describeError(error), { cause: error });
   }
 
   const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));

@@ -3,9 +3,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
-import { extractHint, extractMessage } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { initCommand } from '../init/initCommand.ts';
@@ -338,7 +340,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     try {
       config = await loadConfig();
     } catch (error: unknown) {
-      throw configError(extractMessage(error), { cause: error, hint: extractHint(error) });
+      throw configError(describeError(error), { cause: error, hint: extractHint(error) });
     }
     configFields = {
       internalDir: config.internal.dir,

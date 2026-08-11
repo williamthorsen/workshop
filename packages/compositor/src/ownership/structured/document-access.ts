@@ -1,5 +1,6 @@
 /** Document access: the one place a structured host's format decides how it is read, edited, and written back. */
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLMap, YAMLSeq } from 'yaml';
 
 import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
@@ -107,7 +108,7 @@ function openJsonDocument(content: string): { readonly document: DocumentAccess 
     try {
       root = JSON.parse(content);
     } catch (error: unknown) {
-      return { reason: `The host is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
+      return { reason: `The host is not valid JSON: ${describeError(error)}` };
     }
   }
 

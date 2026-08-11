@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { extractMessage } from '../errors/error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
 /** Outcome of a `writeFileWithCheck` call. */
 export type WriteOutcome = 'created' | 'overwritten' | 'up-to-date' | 'skipped' | 'failed';
@@ -45,7 +45,7 @@ export function writeFileWithCheck(
         return { filePath, outcome: 'up-to-date' };
       }
     } catch (error: unknown) {
-      const message = extractMessage(error);
+      const message = describeError(error);
       return { filePath, outcome: 'skipped', error: message };
     }
     return { filePath, outcome: 'skipped' };
@@ -60,14 +60,14 @@ export function writeFileWithCheck(
   try {
     mkdirSync(dirname(filePath), { recursive: true });
   } catch (error: unknown) {
-    const message = extractMessage(error);
+    const message = describeError(error);
     return { filePath, outcome: 'failed', error: message };
   }
 
   try {
     writeFileSync(filePath, content, 'utf8');
   } catch (error: unknown) {
-    const message = extractMessage(error);
+    const message = describeError(error);
     return { filePath, outcome: 'failed', error: message };
   }
 

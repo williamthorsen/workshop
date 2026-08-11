@@ -1,7 +1,8 @@
 import { parseArgs as nodeParseArgs } from 'node:util';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import type { OverlayMode } from '../types.ts';
-import { extractMessage } from '../utils/error-handling.ts';
 
 /** The CLI invocation parsed from argv: either a request to show help or a resolved overlay command. */
 export type ParsedCommand =
@@ -67,7 +68,7 @@ function describeParseFailure(argv: string[], error: unknown): string {
     return `option takes no value: ${valued.rawName}`;
   }
 
-  return extractMessage(error);
+  return describeError(error);
 }
 
 /** Parses argv in strict mode, restating any rejection as an overlay message that keeps the original as `cause`. */

@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 
@@ -14,7 +15,7 @@ vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockJitiImport }),
 }));
 
-import { extractHint, extractMessage } from '../../errors/error-handling.ts';
+import { extractHint } from '../../errors/error-handling.ts';
 import { captureError } from '../../test-utils/captureError.ts';
 import { loadConfig } from '../loadConfig.ts';
 
@@ -175,7 +176,7 @@ describe(loadConfig, () => {
 
     const error = await captureError(() => loadConfig({ overridePath: 'config.ts' }));
 
-    expect(extractMessage(error)).toBe(
+    expect(describeError(error)).toBe(
       "Cannot resolve 'some-lib' while evaluating config.ts. External packages imported by the config file " +
         'must be installed in the project.',
     );

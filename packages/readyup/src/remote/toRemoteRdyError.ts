@@ -1,4 +1,5 @@
-import { extractMessage } from '../errors/error-handling.ts';
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { configError, kitLoadError, type RdyError } from '../errors/RdyError.ts';
 import { RemoteManifestNotFoundError } from './loadRemoteManifest.ts';
 import type { RemoteProvider } from './remote-provider.ts';
@@ -51,7 +52,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
 
   // A transport failure carries no status to reason about and no URL of its own, so it is never
   // hinted and needs the URL supplied.
-  const message = extractMessage(error);
+  const message = describeError(error);
   const detail = message.includes(context.url) ? message : `Failed to reach ${context.url}: ${message}`;
   return build(detail, { cause: error });
 }

@@ -1,3 +1,5 @@
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestSchema } from '../manifest/manifestSchema.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
@@ -49,7 +51,7 @@ export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManife
   try {
     parsed = JSON.parse(body);
   } catch (error: unknown) {
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = describeError(error);
     throw new Error(`Manifest at ${url} is malformed: ${detail}`, { cause: error });
   }
 

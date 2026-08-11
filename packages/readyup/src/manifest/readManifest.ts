@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import type { RdyManifest } from './manifestSchema.ts';
 import { ManifestSchema } from './manifestSchema.ts';
 
@@ -24,7 +26,7 @@ export function readManifest(manifestPath: string): RdyManifest {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       throw new ManifestNotFoundError(manifestPath);
     }
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = describeError(error);
     throw new Error(`Failed to read manifest file ${manifestPath}: ${detail}`, { cause: error });
   }
 
