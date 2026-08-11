@@ -4,9 +4,10 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 
 ## Packages
 
-| Package                       | Description                                             |
-| ----------------------------- | ------------------------------------------------------- |
-| [`readyup`](packages/readyup) | Pre-deployment verification checks with TypeScript kits |
+| Package                       | Description                                                               |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| [`overlay`](packages/overlay) | Idempotent overlay of a canonical scaffolding file set, backed by chezmoi |
+| [`readyup`](packages/readyup) | Pre-deployment verification checks with TypeScript kits                   |
 
 ## Development
 
