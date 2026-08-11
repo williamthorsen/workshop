@@ -1,9 +1,11 @@
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { locatePackage } from '../locatePackage.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
+import { captureError } from '../test-utils/captureError.ts';
 
 const contentKeyPath = ['compositor', 'content'];
 
@@ -65,6 +67,15 @@ describe(locatePackage, () => {
     await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(
       /"guidance" has an unreadable/,
     );
+  });
+
+  it('appends the parser message to the unreadable-manifest failure and keeps the original as cause', async () => {
+    const baseDir = await buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
+
+    const error = await captureError(() => locatePackage('guidance', { baseDir, contentKeyPath }));
+
+    expect(error.cause).toBeInstanceOf(Error);
+    expect(error.message).toBe(`Package "guidance" has an unreadable package.json: ${describeError(error.cause)}`);
   });
 
   it.each(['./content', '../sibling', '/srv/content'])(

@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestSchema } from '../manifest/manifestSchema.ts';
@@ -51,8 +51,7 @@ export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManife
   try {
     parsed = JSON.parse(body);
   } catch (error: unknown) {
-    const detail = describeError(error);
-    throw new Error(`Manifest at ${url} is malformed: ${detail}`, { cause: error });
+    throw chainError(`Manifest at ${url} is malformed`, error);
   }
 
   const result = ManifestSchema.safeParse(parsed);

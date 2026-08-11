@@ -1,9 +1,11 @@
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { loadConfig, type TierFile } from '../loadConfig.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
+import { captureError } from '../test-utils/captureError.ts';
 
 const globalTier = `
 select:
@@ -78,6 +80,17 @@ describe(loadConfig, () => {
     const dir = await buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
 
     await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
+  });
+
+  it('appends the parser message to the malformed-YAML failure and keeps the original as cause', async () => {
+    const dir = await buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
+
+    const error = await captureError(() => loadConfig([buildTierFile(dir, 'project')]));
+
+    expect(error.cause).toBeInstanceOf(Error);
+    expect(error.message).toBe(
+      `Config file "${path.join(dir, 'project.yaml')}" is not valid YAML: ${describeError(error.cause)}`,
+    );
   });
 
   it('fails on a tier declaring an unrecognized key, naming the file', async () => {

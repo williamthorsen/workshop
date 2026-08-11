@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
@@ -29,8 +29,7 @@ export async function validateCompiledOutput(outputPath: string): Promise<KitMet
     imported = await import(fileUrl);
   } catch (error: unknown) {
     rmSync(outputPath, { force: true });
-    const detail = describeError(error);
-    throw new Error(`Failed to load compiled output for validation: ${detail}`, { cause: error });
+    throw chainError('Failed to load compiled output for validation', error);
   }
 
   const moduleRecord = isRecord(imported) ? imported : {};

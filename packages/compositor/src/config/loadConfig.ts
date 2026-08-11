@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
@@ -59,8 +59,7 @@ function parseTierBody(raw: string, filePath: string): TierBody {
   try {
     document = parseYaml(raw);
   } catch (error: unknown) {
-    const message = describeError(error);
-    throw new Error(`Config file "${filePath}" is not valid YAML: ${message}`, { cause: error });
+    throw chainError(`Config file "${filePath}" is not valid YAML`, error);
   }
 
   const result = TierBodySchema.safeParse(document ?? {});
