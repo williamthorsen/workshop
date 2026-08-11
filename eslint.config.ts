@@ -66,9 +66,31 @@ const config = defineConfig([
     },
   },
   {
+    // Constraining the consequent to a `.message` read is what leaves the other `instanceof Error` shapes alone: an
+    // `if` that narrows before reading an errno, and the ternary that coerces an unknown value into an `Error`.
+    // The three statement bans restate the shared config's, which assigning this rule here would otherwise discard:
+    // ESLint substitutes a rule's options across config objects instead of merging them.
+    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        'DebuggerStatement',
+        'LabeledStatement',
+        'WithStatement',
+        {
+          selector:
+            'ConditionalExpression[test.operator="instanceof"][test.right.name="Error"][consequent.property.name="message"]',
+          message:
+            'Use `describeError` from @williamthorsen/toolbelt.errors to read a message off an unknown thrown value.',
+        },
+      ],
+    },
+  },
+  {
     // readyup's source is grouped by role, so a module at the root of `src/` belongs in a directory. The three
     // exceptions name the package rather than a role within it. The selector matches every file the glob admits,
     // which is the point: the finding is the file's presence, not anything it contains.
+    // The other four entries are restated for the reason given above.
     files: ['packages/readyup/src/*.ts'],
     ignores: [
       'packages/readyup/src/index.ts',
@@ -78,6 +100,15 @@ const config = defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        'DebuggerStatement',
+        'LabeledStatement',
+        'WithStatement',
+        {
+          selector:
+            'ConditionalExpression[test.operator="instanceof"][test.right.name="Error"][consequent.property.name="message"]',
+          message:
+            'Use `describeError` from @williamthorsen/toolbelt.errors to read a message off an unknown thrown value.',
+        },
         {
           selector: 'Program',
           message:
