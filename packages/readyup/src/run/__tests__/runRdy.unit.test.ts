@@ -2,20 +2,14 @@ import assert from 'node:assert';
 
 import { describe, expect, it } from 'vitest';
 
-import type {
-  CheckReturnValue,
-  RdyCheck,
-  RdyChecklist,
-  RdyStagedChecklist,
-  Severity,
-  SkipResult,
-} from '../../kits/types.ts';
+import type { CheckReturnValue, RdyCheck, RdyChecklist, RdyStagedChecklist, SkipResult } from '../../kits/types.ts';
+import { asSeverity } from '../../test-utils/asSeverity.ts';
 import { runRdy } from '../runRdy.ts';
 
 /*
  * A kit runs as JavaScript, so its functions return whatever their author wrote and its fields hold
  * whatever they were assigned; neither jiti nor esbuild type-checks any of it. The authoring-error
- * tests exercise exactly the values the declared types forbid, so the three wrappers below restate
+ * tests exercise exactly the values the declared types forbid, so the two wrappers below restate
  * them as the types those declarations promise.
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
@@ -28,11 +22,6 @@ function returning(value: unknown): RdyCheck['check'] {
 /** Wrap a value as a skip function that returns it. */
 function skipReturning(value: unknown): NonNullable<RdyCheck['skip']> {
   return () => value as SkipResult;
-}
-
-/** Restate a string as a severity, standing in for a kit that declared one outside the enum. */
-function asSeverity(value: string): Severity {
-  return value as Severity;
 }
 
 /* eslint-enable @typescript-eslint/consistent-type-assertions */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Severity } from '../../kits/types.ts';
+import { asSeverity } from '../../test-utils/asSeverity.ts';
 import { meetsThreshold } from '../meetsThreshold.ts';
 
 describe(meetsThreshold, () => {
@@ -28,13 +28,3 @@ describe(meetsThreshold, () => {
     expect(() => meetsThreshold('error', asSeverity('info'))).toThrow('Unknown severity threshold "info"');
   });
 });
-
-// region | Helpers
-
-/** Restate a string as a severity, standing in for a kit that declared one outside the enum. */
-function asSeverity(value: string): Severity {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- the throw path is reachable only from a value the type forbids.
-  return value as Severity;
-}
-
-// endregion | Helpers
