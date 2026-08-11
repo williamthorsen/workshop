@@ -21,4 +21,4 @@ nmr check
 
 ## License
 
-MIT
+ISC
