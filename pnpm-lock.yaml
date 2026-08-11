@@ -4,6 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@williamthorsen/toolbelt.errors':
+      specifier: 0.2.0
+      version: 0.2.0
+    '@williamthorsen/toolbelt.packaging':
+      specifier: 0.2.0
+      version: 0.2.0
+    zod:
+      specifier: 4.4.3
+      version: 4.4.3
+
 importers:
 
   .:
@@ -69,27 +81,37 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       zod:
-        specifier: 4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
   packages/compositor:
     dependencies:
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.packaging':
-        specifier: 0.2.0
+        specifier: 'catalog:'
         version: 0.2.0
       yaml:
         specifier: 2.9.0
         version: 2.9.0
       zod:
-        specifier: 4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
 
-  packages/overlay: {}
+  packages/overlay:
+    dependencies:
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.2.0
 
   packages/readyup:
     dependencies:
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.packaging':
-        specifier: 0.2.0
+        specifier: 'catalog:'
         version: 0.2.0
       es-module-lexer:
         specifier: 2.3.1
@@ -107,7 +129,7 @@ importers:
         specifier: 4.0.5
         version: 4.0.5
       zod:
-        specifier: 4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
       '@types/picomatch':
@@ -813,6 +835,10 @@ packages:
     hasBin: true
     peerDependencies:
       eslint: '>=10'
+
+  '@williamthorsen/toolbelt.errors@0.2.0':
+    resolution: {integrity: sha512-DV4mjO8/KH5EylwQ8erGMzqX/DgWw9LXc9LSFJy/GRgM7J2gR99hgx6TOEHdmsvAlMaCe048JTU8cTpxzlx+vg==}
+    engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.filesystem@0.2.1':
     resolution: {integrity: sha512-vC+LkLEVBKaTcOsR6G8R0cGPnseX3IC3ZiWeYGuPcwOwypmWb8+CgG/a8P6fhaSU/aqXpszUFB41nTLsEeTyWw==}
@@ -2973,7 +2999,7 @@ snapshots:
 
   '@typescript-eslint/project-service@8.65.0(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.65.0(typescript@6.0.3)
+      '@typescript-eslint/tsconfig-utils': 8.66.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.66.0
       debug: 4.4.3(supports-color@7.2.0)
       typescript: 6.0.3
@@ -3243,6 +3269,8 @@ snapshots:
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.2.1
       eslint: 10.8.0(jiti@2.7.0)(supports-color@7.2.0)
+
+  '@williamthorsen/toolbelt.errors@0.2.0': {}
 
   '@williamthorsen/toolbelt.filesystem@0.2.1': {}
 

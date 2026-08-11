@@ -40,6 +40,9 @@
   "scripts": {
     "prepare": "nmr-compile"
   },
+  "dependencies": {
+    "@williamthorsen/toolbelt.errors": "catalog:"
+  },
   "engines": {
     "node": ">=24"
   },
