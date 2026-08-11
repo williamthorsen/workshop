@@ -1,13 +1,6 @@
 /** The convergence mode overlay runs in. */
 export type OverlayMode = 'verify' | 'create' | 'force';
 
-/** Options accepted by the `overlay()` core. */
-export interface OverlayOptions {
-  source: string;
-  target?: string;
-  mode?: OverlayMode;
-}
-
 /** What happened (or would happen) to a single managed entry. */
 export type EntryOutcome = 'created' | 'deleted' | 'forced' | 'conflict';
 

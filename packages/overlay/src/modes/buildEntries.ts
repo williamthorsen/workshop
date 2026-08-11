@@ -1,5 +1,5 @@
 import type { StatusCode, StatusEntry } from '../chezmoi/parseStatus.ts';
-import type { EntryOutcome, OverlayEntry } from '../types.ts';
+import type { EntryOutcome, OverlayEntry } from './types.ts';
 
 /** Maps each drift status code to the entry outcome a mode assigns it. `R` rows are handled separately. */
 export type OutcomeMap = Partial<Record<StatusCode, EntryOutcome>>;

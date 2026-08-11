@@ -1,8 +1,8 @@
 import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/runChezmoi.ts';
-import type { OverlayResult } from '../types.ts';
 import { partitionStatus } from './buildEntries.ts';
+import type { OverlayResult } from './types.ts';
 
 /**
  * Read-only mode: report drift from a parsed `chezmoi status` and exit non-zero when any exists. Drift is any

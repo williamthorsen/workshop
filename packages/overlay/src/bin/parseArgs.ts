@@ -2,7 +2,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
-import type { OverlayMode } from '../types.ts';
+import type { OverlayMode } from '../modes/types.ts';
 
 /** The CLI invocation parsed from argv: either a request to show help or a resolved overlay command. */
 export type ParsedCommand =

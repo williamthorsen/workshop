@@ -6,9 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as versionModule from '../chezmoi/version.ts';
 import * as createModule from '../modes/create.ts';
 import * as forceModule from '../modes/force.ts';
+import type { OverlayResult } from '../modes/types.ts';
 import * as verifyModule from '../modes/verify.ts';
 import { overlay } from '../overlay.ts';
-import type { OverlayResult } from '../types.ts';
 
 const stubResult: OverlayResult = {
   mode: 'verify',
