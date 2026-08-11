@@ -113,6 +113,21 @@ const config = defineConfig([
       ],
     },
   },
+  {
+    // `utils` names no role, so a directory of that name under readyup's source is the same defect one level down.
+    // The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
+    files: ['packages/readyup/src/**/utils/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message: 'Group this module into a directory named for its role. `utils` names no role.',
+        },
+      ],
+    },
+  },
 ]);
 
 export default config;

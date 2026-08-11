@@ -4,7 +4,7 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 import { parse as parseJsonc } from 'jsonc-parser';
 
-import { resolvePackageRoot } from '../packages/resolvePackageRoot.ts';
+import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { isRecord } from '../portable/isRecord.ts';
 
 /** A tsconfig's `extends` chain, resolved to the configs it reaches. */

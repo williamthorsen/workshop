@@ -4,7 +4,7 @@ import path from 'node:path';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { jitiImport } from '../portable/jitiImport.ts';
-import { toDisplayPath } from '../utils/display-path.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import { assertIsRdyKit } from './assertIsRdyKit.ts';
 import { KITS_DIR } from './kitsDir.ts';
 import { resolveKitExports } from './resolveKitExports.ts';

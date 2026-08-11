@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPackageInstalled } from '../resolve-package.ts';
+import { isPackageInstalled } from '../isPackageInstalled.ts';
 
 describe(isPackageInstalled, () => {
   it('reports a package the project depends on as installed', () => {

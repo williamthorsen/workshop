@@ -10,7 +10,7 @@ vi.mock(import('node:fs'), () => ({
   readFileSync: mockReadFileSync,
 }));
 
-import { buildInstallCommand } from '../install-command.ts';
+import { buildInstallCommand } from '../buildInstallCommand.ts';
 
 const PACKAGE_DIR = path.resolve('/repo/packages/readyup');
 const REPO_ROOT = path.resolve('/repo');

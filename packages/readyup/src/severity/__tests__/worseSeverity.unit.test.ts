@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { worseSeverity } from '../severity.ts';
+import { worseSeverity } from '../worseSeverity.ts';
 
 describe(worseSeverity, () => {
   it('returns null when both arguments are null', () => {

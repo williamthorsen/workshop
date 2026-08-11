@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { describe, expect, it } from 'vitest';
 
-import { toDisplayPath } from '../display-path.ts';
+import { toDisplayPath } from '../toDisplayPath.ts';
 
 describe(toDisplayPath, () => {
   it('relativizes a path inside the current directory', () => {

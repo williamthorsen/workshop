@@ -19,11 +19,11 @@ vi.mock(import('../../output/terminal.ts'), () => ({
 const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
 const mockIsPackageInstalled = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../utils/install-command.ts'), () => ({
+vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
   buildInstallCommand: mockBuildInstallCommand,
 }));
 
-vi.mock(import('../../utils/resolve-package.ts'), () => ({
+vi.mock(import('../../installed-packages/isPackageInstalled.ts'), () => ({
   isPackageInstalled: mockIsPackageInstalled,
 }));
 

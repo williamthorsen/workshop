@@ -6,7 +6,7 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
 const mockDiscoverKitPackages = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../packages/expandConfiguredPackages.ts'), () => ({
+vi.mock(import('../../installed-packages/expandConfiguredPackages.ts'), () => ({
   expandConfiguredPackages: mockExpandConfiguredPackages,
 }));
 

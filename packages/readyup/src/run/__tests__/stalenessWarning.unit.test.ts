@@ -28,7 +28,6 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 }));
 
 vi.mock(import('../runRdy.ts'), () => ({
-  meetsThreshold: () => true,
   runRdy: mockRunRdy,
 }));
 

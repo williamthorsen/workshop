@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { isRecord } from '../portable/isRecord.ts';
+import { isRecord } from './isRecord.ts';
 
 /** Dev-dependency install commands, keyed by the package manager that runs them. */
 const INSTALL_COMMANDS = new Map([

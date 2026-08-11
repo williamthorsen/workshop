@@ -16,7 +16,6 @@ vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
 }));
 
 vi.mock(import('../runRdy.ts'), () => ({
-  meetsThreshold: () => true,
   runRdy: mockRunRdy,
 }));
 

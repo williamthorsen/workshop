@@ -8,6 +8,8 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCode
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { kitLoadError, type RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
+import { readPackageVersion, resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
@@ -21,8 +23,6 @@ import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
-import { expandConfiguredPackages, type PackageKit } from '../packages/expandConfiguredPackages.ts';
-import { readPackageVersion, resolvePackageRoot } from '../packages/resolvePackageRoot.ts';
 import { loadRemoteKit, type LoadRemoteKitOptions } from '../remote/loadRemoteKit.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';

@@ -1,6 +1,6 @@
-import { toDisplayPath } from '../utils/display-path.ts';
-import { buildInstallCommand } from '../utils/install-command.ts';
+import { buildInstallCommand } from './buildInstallCommand.ts';
 import { isRecord } from './isRecord.ts';
+import { toDisplayPath } from './toDisplayPath.ts';
 
 /** Prefixes marking a specifier that names a file or an internal import rather than a package. */
 const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
