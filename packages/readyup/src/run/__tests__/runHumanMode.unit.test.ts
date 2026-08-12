@@ -99,8 +99,6 @@ describe(runHumanMode, () => {
     return stderrSpy.mock.calls.map((c) => String(c[0])).join('');
   }
 
-  // `--packages` reaches an empty selection when no configured package publishes the requested kit. A blank
-  // screen reads as a tool that failed to start rather than as a pass.
   it('says the run selected no kits rather than printing nothing', async () => {
     const exitCode = await runHuman([]);
 

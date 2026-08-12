@@ -3,8 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockRunHumanMode = vi.hoisted(() => vi.fn());
 const mockRunJsonMode = vi.hoisted(() => vi.fn());
 
-// Both modes are mocked: what the dispatch owns is the choice between them and the settings it hands over,
-// and each mode's own behavior is covered by the suite named for it.
+// Both modes are mocked: what the dispatch owns is the choice between them and the settings it hands over.
 vi.mock(import('../runHumanMode.ts'), () => ({
   runHumanMode: mockRunHumanMode,
 }));

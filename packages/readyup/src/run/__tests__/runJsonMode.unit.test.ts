@@ -29,8 +29,8 @@ vi.mock(import('../../reporting/formatJsonReport.ts'), () => ({
   formatJsonReport: mockFormatJsonReport,
 }));
 
-// The two human-mode renderers are mocked so the case asserting that no human output appears has something
-// to watch: an assertion against the real functions could not tell a silent mode from an absent one.
+// The two human-mode renderers below are mocked only to give the case asserting that no human output
+// appears something to watch.
 vi.mock(import('../../reporting/reportRdy.ts'), async () => {
   const actual = await vi.importActual<typeof import('../../reporting/reportRdy.ts')>('../../reporting/reportRdy.ts');
   return {
