@@ -2,6 +2,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { FailedResult, PassedResult, Severity } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
@@ -191,9 +192,8 @@ describe(runHumanMode, () => {
     expect(allOutput).toContain(`${BLOCK_GAP}combined summary`);
   });
 
-  // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one
-  // checklist to report, so its breadcrumb would carry no segment at all. It heads nothing, and it opens
-  // with no blank line either.
+  // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one checklist to
+  // report, so its breadcrumb would carry no segment at all.
   it('heads nothing at all for a lone local kit running one checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -224,6 +224,53 @@ describe(runHumanMode, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit2');
   });
 
+  describe('provenance in the block heading', () => {
+    /** Runs one kit carrying the given provenance, returning everything it wrote to stdout. */
+    async function headingFor(provenance: KitProvenance): Promise<string> {
+      const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
+      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runHuman([{ name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [], provenance }]);
+
+      return stdoutText();
+    }
+
+    it('names a remote kit by the source it was fetched from', async () => {
+      await expect(headingFor({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
+        '\u{1F310} github:org/repo@main / \u{1F4D3} deploy',
+      );
+    });
+
+    it('names a kit resolved from another directory by that directory', async () => {
+      await expect(headingFor({ kind: 'directory', label: '../sibling-repo/.readyup/kits' })).resolves.toContain(
+        '\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy',
+      );
+    });
+
+    // The label is what `path.dirname` yields for a bare filename, and the only form the producer emits that
+    // normalizes to the working directory.
+    it('names no directory for a kit resolved from the working directory', async () => {
+      const allOutput = await headingFor({ kind: 'directory', label: '.' });
+
+      expect(allOutput).not.toContain('\u{1F4C1}');
+      expect(allOutput).not.toContain('\u{1F4D3} deploy');
+    });
+
+    it('names a package kit by its package and version', async () => {
+      await expect(headingFor({ kind: 'package', packageName: '@acme/kits', version: '2.1.0' })).resolves.toContain(
+        '\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} deploy',
+      );
+    });
+
+    it('names a package kit by its package alone when it declares no version', async () => {
+      const allOutput = await headingFor({ kind: 'package', packageName: '@acme/kits', version: undefined });
+
+      expect(allOutput).toContain('\u{1F4E6} @acme/kits / \u{1F4D3} deploy');
+      expect(allOutput).not.toContain('@acme/kits@');
+    });
+  });
+
   // The heading below a gap names the kit it opens, so a kit boundary takes the same one blank line every
   // other boundary takes. The run's first block opens with none.
   it('parts one kit from the next with the same single blank line, opening with none', async () => {
@@ -244,7 +291,6 @@ describe(runHumanMode, () => {
     expect(allOutput).not.toContain(WIDER_GAP);
   });
 
-  // A bodiless block states nothing its table row does not, so it goes and the row reports it.
   it('leaves out a block whose tree rendered nothing', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -258,7 +304,6 @@ describe(runHumanMode, () => {
     expect(allOutput).toContain('combined summary');
   });
 
-  // Nothing tabulates a run of one checklist, so its block stands however little it has to say.
   it('keeps a bodiless block when the run will tabulate nothing', async () => {
     const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -272,7 +317,6 @@ describe(runHumanMode, () => {
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
   });
 
-  // The row is the only report a dropped block gets, so it is tabulated even with no sibling row beside it.
   it('tabulates a dropped block even when one row is all that survives', async () => {
     const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
     mockLoadRdyKit.mockResolvedValueOnce({ kit, compileTimeVersion: undefined });
@@ -321,7 +365,6 @@ describe(runHumanMode, () => {
     ]);
   });
 
-  // A kit running one checklist heads its block without naming it, and still belongs in the run's tally.
   it('gives a single-checklist kit a row of its own in a multi-kit run', async () => {
     mockLoadRdyKit.mockResolvedValue({
       kit: makeKit({ checklists: [{ name: 'only', checks: [{ name: 'a', check: () => true }] }] }),
