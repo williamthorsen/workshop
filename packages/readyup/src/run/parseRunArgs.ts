@@ -57,7 +57,7 @@ const runOptions = {
 /** Guidance shown for every spelling of `--checklists` that names no checklist. */
 const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
 
-/** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
+/** Maps generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
   '--detail': '--detail requires a projection (summary, full)',
@@ -68,7 +68,7 @@ const flagErrorHints: Record<string, string> = {
   '--url': '--url requires a URL argument',
 };
 
-/** Parse run-subcommand flags into a structured object. */
+/** Parses run-subcommand flags into a structured object. */
 export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const { values, positionals } = parseRunFlags(flags);
 
@@ -138,13 +138,13 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 
 // region | Helpers
 
-/** Validate and narrow a string to a detail projection. */
+/** Validates and narrows a string to a detail projection. */
 function parseDetailFlag(value: string): JsonDetail {
   if (value === 'full' || value === 'summary') return value;
   throw usageError(`--detail must be one of: summary, full (got "${value}")`);
 }
 
-/** Tokenize run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
+/** Tokenizes run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
 function parseRunFlags(flags: string[]) {
   try {
     return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
@@ -153,7 +153,7 @@ function parseRunFlags(flags: string[]) {
   }
 }
 
-/** Validate and narrow a string to a Severity value. */
+/** Validates and narrows a string to a Severity value. */
 function parseSeverityFlag(flagName: string, value: string): Severity {
   if (!VALID_SEVERITIES.has(value)) {
     throw usageError(`${flagName} must be one of: error, warn, recommend (got "${value}")`);

@@ -31,6 +31,15 @@ describe(parseRunArgs, () => {
     expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: ['check1', 'check2'] }]);
   });
 
+  it('rewraps a malformed kit specifier as a usage error', () => {
+    expect(() => parseRunArgs(['deploy:'])).toThrow(
+      expect.objectContaining({
+        code: 'usage',
+        message: expect.stringContaining('checklist list after ":" must not be empty'),
+      }),
+    );
+  });
+
   // --checklists flag
   it('parses --checklists with --file', () => {
     const result = parseRunArgs(['--checklists', 'check1,check2', '--file', 'path.ts']);
@@ -295,28 +304,28 @@ describe(parseRunArgs, () => {
   it('omits detail when not specified', () => {
     expect(parseRunArgs(['--json'])).not.toHaveProperty('detail');
   });
-});
 
-describe('--quiet', () => {
-  it('parses as a boolean', () => {
-    expect(parseRunArgs(['--quiet']).quiet).toBe(true);
-  });
+  describe('--quiet', () => {
+    it('parses as a boolean', () => {
+      expect(parseRunArgs(['--quiet']).quiet).toBe(true);
+    });
 
-  it('defaults to false', () => {
-    expect(parseRunArgs([]).quiet).toBe(false);
-  });
+    it('defaults to false', () => {
+      expect(parseRunArgs([]).quiet).toBe(false);
+    });
 
-  it('composes with --report-on, which filters on a different axis', () => {
-    const parsed = parseRunArgs(['--quiet', '--report-on', 'warn']);
+    it('composes with --report-on, which filters on a different axis', () => {
+      const parsed = parseRunArgs(['--quiet', '--report-on', 'warn']);
 
-    expect(parsed.quiet).toBe(true);
-    expect(parsed.reportOn).toBe('warn');
-  });
+      expect(parsed.quiet).toBe(true);
+      expect(parsed.reportOn).toBe('warn');
+    });
 
-  it('composes with a kit selection', () => {
-    const parsed = parseRunArgs(['--quiet', 'deploy']);
+    it('composes with a kit selection', () => {
+      const parsed = parseRunArgs(['--quiet', 'deploy']);
 
-    expect(parsed.quiet).toBe(true);
-    expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+      expect(parsed.quiet).toBe(true);
+      expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+    });
   });
 });

@@ -4,8 +4,8 @@ import type { KitSpecifier } from '../parseKitSpecifiers.ts';
 import { type RunFlagConstraints, validateRunFlags } from '../validateRunFlags.ts';
 
 describe(validateRunFlags, () => {
-  it('returns undefined when the invocation carries no source flag', () => {
-    expect(validateRunFlags(buildConstraints(), [])).toBeUndefined();
+  it('accepts an invocation carrying no flags', () => {
+    expect(() => validateRunFlags(buildConstraints(), [])).not.toThrow();
   });
 
   it.each([
@@ -13,8 +13,8 @@ describe(validateRunFlags, () => {
     { flag: '--from', overrides: { from: '/path' } },
     { flag: '--packages', overrides: { packages: true } },
     { flag: '--url', overrides: { url: 'https://example.com/kit.js' } },
-  ])('returns $flag as the active source flag', ({ flag, overrides }) => {
-    expect(validateRunFlags(buildConstraints(overrides), [])).toBe(flag);
+  ])('accepts $flag on its own', ({ overrides }) => {
+    expect(() => validateRunFlags(buildConstraints(overrides), [])).not.toThrow();
   });
 
   describe('output flags', () => {

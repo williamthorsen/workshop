@@ -19,8 +19,8 @@ export interface RunFlagConstraints {
 const PACKAGES_CHECKLISTS_REASON =
   'several configured packages may publish the named kit, so the checklists select within no single one';
 
-/** Enforces output, exclusivity, mode-flag, and selection constraints, returning the active source flag. */
-export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
+/** Enforces output, exclusivity, mode-flag, and selection constraints. */
+export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): void {
   validateOutputFlags(parsed);
 
   const sourceFlags = collectSourceFlags(parsed);
@@ -59,8 +59,6 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
   if (parsed.checklists !== undefined) {
     validateChecklistsSelection(sourceType, kitSpecifiers);
   }
-
-  return sourceType;
 }
 
 // region | Helpers
