@@ -13,7 +13,7 @@ interface RunCommandOptions {
   reportOn?: Severity;
 }
 
-/** Run rdy checklists across one or more kits. Returns a numeric exit code. */
+/** Runs rdy checklists across one or more kits. Returns a numeric exit code. */
 export async function runCommand(
   { kitEntries, json, detail, failOn, quiet, reportOn }: RunCommandOptions,
   isJit = false,

@@ -268,7 +268,7 @@ describe(runJsonMode, () => {
       remedy: 'Run `rdy compile --force` to rebuild it from source.',
     };
 
-    /** Two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */
+    /** Builds two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */
     function twoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },

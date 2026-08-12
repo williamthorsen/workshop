@@ -144,7 +144,7 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
 }
 
-/** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */
+/** Resolves the effective fixLocation for a checklist, falling back to the kit-level default. */
 function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDefault?: FixLocation): FixLocation {
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
@@ -163,7 +163,7 @@ interface KitRunResult {
   rows: SummaryRow[];
 }
 
-/** Run checklists from a single kit in human-readable mode. */
+/** Runs the checklists of a single kit in human-readable mode. */
 async function runKit(
   kit: RdyKit,
   checklistFilter: string[],

@@ -30,10 +30,10 @@ interface JsonRunSettings {
  */
 export async function runJsonMode(
   kitEntries: ResolvedKitEntry[],
-  runSettings: JsonRunSettings,
+  settings: JsonRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const { detail, failOn, reportOn } = runSettings;
+  const { detail, failOn, reportOn } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const tracking = readManifestTracking(isJit);
