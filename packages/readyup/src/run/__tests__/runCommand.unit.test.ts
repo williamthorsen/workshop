@@ -509,22 +509,8 @@ describe(runCommand, () => {
     expect(stderrText()).toBe('Error: Syntax error in kit\n');
   });
 
-  describe('threshold cascade', () => {
-    it('uses CLI --fail-on flag over kit default', async () => {
-      const kit = makeKit({ failOn: 'error' });
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runCommand({
-        kitEntries: singleKitEntry(['deploy']),
-        json: false,
-        failOn: 'warn',
-      });
-
-      expect(mockRunRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ failOn: 'warn' }));
-    });
-
-    it('falls back to kit failOn when CLI flag is absent', async () => {
+  describe('resolved thresholds', () => {
+    it('passes failOn to runRdy', async () => {
       const kit = makeKit({ failOn: 'recommend' });
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -535,19 +521,6 @@ describe(runCommand, () => {
       });
 
       expect(mockRunRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ failOn: 'recommend' }));
-    });
-
-    it('falls back to kit reportOn when CLI flag is absent', async () => {
-      const kit = makeKit({ reportOn: 'warn' });
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runCommand({
-        kitEntries: singleKitEntry(['deploy']),
-        json: false,
-      });
-
-      expect(mockReportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ reportOn: 'warn' }));
     });
 
     it('passes reportOn to reportRdy', async () => {

@@ -3,9 +3,9 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
-import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCodes.ts';
+import { EXIT_OK } from '../bin/exitCodes.ts';
 import { extractHint } from '../errors/error-handling.ts';
-import { kitLoadError, type RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { kitLoadError, type RdyError, toRdyError } from '../errors/RdyError.ts';
 import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
@@ -27,8 +27,10 @@ import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
 import type { KitSource, ResolvedKitEntry } from './ResolvedKitEntry.ts';
-import { resolveRequestedNames } from './resolveRequestedNames.ts';
+import { resolveRunExitCode } from './resolveRunExitCode.ts';
+import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
+import { selectChecklists } from './selectChecklists.ts';
 
 /** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */
 function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDefault?: FixLocation): FixLocation {
@@ -38,19 +40,6 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
 /** Builds a summary row from a report, named by the breadcrumb heading the block the report renders into. */
 function toSummaryRow(segments: BreadcrumbSegment[], report: RdyReport): SummaryRow {
   return { counts: countResults(report.results), durationMs: report.durationMs, segments };
-}
-
-/** Resolve threshold values from the cascade: CLI flag > kit field > default. */
-function resolveThresholds(
-  kit: RdyKit,
-  cliFailOn: Severity | undefined,
-  cliReportOn: Severity | undefined,
-): { defaultSeverity: Severity; failOn: Severity; reportOn: Severity } {
-  return {
-    defaultSeverity: kit.defaultSeverity ?? 'error',
-    failOn: cliFailOn ?? kit.failOn ?? 'error',
-    reportOn: cliReportOn ?? kit.reportOn ?? 'recommend',
-  };
 }
 
 interface RunCommandOptions {
@@ -506,31 +495,4 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
 
   const version = provenance.version === undefined ? '' : `@${provenance.version}`;
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
-}
-
-/** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */
-function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChecklist | RdyStagedChecklist> {
-  let resolvedNames: string[];
-  try {
-    resolvedNames = resolveRequestedNames(checklistFilter, kit);
-  } catch (error: unknown) {
-    throw usageError(describeError(error), { cause: error });
-  }
-
-  const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));
-  return resolvedNames.flatMap((name) => {
-    const checklist = checklistByName.get(name);
-    return checklist !== undefined ? [checklist] : [];
-  });
-}
-
-/**
- * Reduces a run's outcomes to one exit code, worst first.
- *
- * A kit that never ran outranks failed checks: part of the invocation was not completed, so
- * reporting "ran, found problems" would be false.
- */
-function resolveRunExitCode(anyKitFailed: boolean, allPassed: boolean): number {
-  if (anyKitFailed) return EXIT_TOOL_FAILURE;
-  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
