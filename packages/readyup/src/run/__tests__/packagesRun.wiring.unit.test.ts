@@ -11,10 +11,10 @@ import { resolveKitSources } from '../resolveKitSources.ts';
 import { runCommand } from '../runCommand.ts';
 
 /**
- * Joins `--packages` to the kits an installed package publishes, against a real fixture project. The
- * unit tests cover the expansion and the resolver separately; this locks in the seam between them —
- * that a configured package becomes a run entry carrying the provenance the report and the headings
- * render, and that the kit name selects which of its kits run.
+ * Joins `--packages` to the kits an installed package publishes, against a real fixture project.
+ * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
+ * that a configured package becomes a run entry carrying the provenance the report and the headings render,
+ * and that the kit name selects which of its kits run.
  */
 describe('--packages run path wiring', () => {
   let projectRoot: string;
@@ -54,7 +54,6 @@ describe('--packages run path wiring', () => {
     ]);
   });
 
-  // The defect #215 reports: a kit needing credentials failed a run that never asked for it.
   it('runs only the default kit when the invocation names none', () => {
     installPackage('@acme/kits', ['default', 'preflight'], { version: '2.1.0' });
 
