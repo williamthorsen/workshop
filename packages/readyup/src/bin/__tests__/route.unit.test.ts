@@ -11,8 +11,11 @@ const mockParseRunArgs = vi.hoisted(() => vi.fn());
 const mockResolveKitSources = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../run/runCommand.ts'), () => ({
+vi.mock(import('../../run/parseRunArgs.ts'), () => ({
   parseRunArgs: mockParseRunArgs,
+}));
+
+vi.mock(import('../../run/runCommand.ts'), () => ({
   resolveKitSources: mockResolveKitSources,
   runCommand: mockRunCommand,
 }));

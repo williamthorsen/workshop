@@ -1,12 +1,10 @@
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCodes.ts';
 import { extractHint } from '../errors/error-handling.ts';
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { kitLoadError, type RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { readPackageVersion, resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
@@ -33,15 +31,12 @@ import type { JsonWarning, RaisedWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
-import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
+import type { KitSpecifier } from './parseKitSpecifiers.ts';
 import { resolveRequestedNames } from './resolveRequestedNames.ts';
 import { runRdy } from './runRdy.ts';
 
 /** The kit every source runs when the invocation names none. */
 const DEFAULT_KIT_NAME = 'default';
-
-/** Valid severity values for CLI flag validation. */
-const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 
 /** Discriminated union describing how to locate the rdy kit. */
 export type KitSource = { path: string } | { url: string };
@@ -54,63 +49,6 @@ export interface ResolvedKitEntry {
   provenance?: KitProvenance;
 }
 
-export interface ParsedRunArgs {
-  checklists: string[] | undefined;
-  detail?: JsonDetail;
-  failOn?: Severity;
-  filePath: string | undefined;
-  fromValue: string | undefined;
-  internal: boolean;
-  jit: boolean;
-  json: boolean;
-  kitSpecifiers: KitSpecifier[];
-  packages: boolean;
-  quiet: boolean;
-  reportOn?: Severity;
-  urlValue: string | undefined;
-}
-
-/**
- * Options accepted by the `run` subcommand.
- *
- * A letter earns a short flag only when it carries no dominant conflicting meaning in comparable
- * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
- * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: a
- * shift-key slip must not be able to change what runs.
- */
-const runOptions = {
-  checklists: { type: 'string', short: 'c' },
-  detail: { type: 'string' },
-  'fail-on': { type: 'string' },
-  file: { type: 'string', short: 'f' },
-  from: { type: 'string' },
-  internal: { type: 'boolean' },
-  jit: { type: 'boolean' },
-  json: { type: 'boolean' },
-  packages: { type: 'boolean' },
-  quiet: { type: 'boolean' },
-  'report-on': { type: 'string' },
-  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-  style: { type: 'string' },
-  url: { type: 'string' },
-} as const;
-
-/** Validate and narrow a string to a Severity value. */
-function parseSeverityFlag(flagName: string, value: string): Severity {
-  if (!VALID_SEVERITIES.has(value)) {
-    throw usageError(`${flagName} must be one of: error, warn, recommend (got "${value}")`);
-  }
-  if (value === 'error') return 'error';
-  if (value === 'warn') return 'warn';
-  return 'recommend';
-}
-
-/** Validate and narrow a string to a detail projection. */
-function parseDetailFlag(value: string): JsonDetail {
-  if (value === 'full' || value === 'summary') return value;
-  throw usageError(`--detail must be one of: summary, full (got "${value}")`);
-}
-
 /** Build the GitHub raw content URL for a kit. */
 function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {
   return `https://raw.githubusercontent.com/${org}/${repo}/${ref}/${KITS_DIR}/${kit}${extension}`;
@@ -119,210 +57,6 @@ function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, 
 /** Build the Bitbucket Cloud API source URL for a kit. */
 function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit: string, extension: string): string {
   return `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/src/${ref}/${KITS_DIR}/${kit}${extension}`;
-}
-
-/** Guidance shown for every spelling of `--checklists` that names no checklist. */
-const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checklist names';
-
-/** Why checklist selection is rejected under `--packages`, whichever spelling expressed it. */
-const PACKAGES_CHECKLISTS_REASON =
-  'several configured packages may publish the named kit, so the checklists select within no single one';
-
-/** Map generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
-const flagErrorHints: Record<string, string> = {
-  '--checklists': CHECKLISTS_HINT,
-  '--detail': '--detail requires a projection (summary, full)',
-  '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
-  '--file': '--file requires a path argument',
-  '--from': '--from requires a source argument (path, github:org/repo, npm:package, global, dir:path)',
-  '--report-on': '--report-on requires a severity level (error, warn, recommend)',
-  '--url': '--url requires a URL argument',
-};
-
-/** The subset of parsed run flags whose combinations are constrained. */
-interface RunFlagConstraints {
-  checklists: string | undefined;
-  detail: string | undefined;
-  file: string | undefined;
-  from: string | undefined;
-  internal: boolean;
-  jit: boolean;
-  json: boolean;
-  packages: boolean;
-  quiet: boolean;
-  url: string | undefined;
-}
-
-/** Enforces output, exclusivity, mode-flag, and selection constraints, returning the active source flag. */
-function validateFlagConstraints(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): string | undefined {
-  validateOutputFlags(parsed);
-
-  const sourceFlags = collectSourceFlags(parsed);
-
-  if (sourceFlags.length > 1) {
-    throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
-  }
-
-  // A positional names the kit to select in every configured package, so it narrows the run. Checklist
-  // selection cannot: it names checklists within one kit, and `--packages` may reach several packages'
-  // copies of the name. Both spellings of that selection are rejected for the same reason.
-  if (parsed.packages && parsed.checklists !== undefined) {
-    throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
-  }
-  const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
-  if (parsed.packages && filteredSpec !== undefined) {
-    throw usageError(
-      `--packages cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
-        PACKAGES_CHECKLISTS_REASON,
-    );
-  }
-
-  const sourceType = sourceFlags[0];
-
-  if (parsed.jit && sourceType !== undefined) {
-    throw usageError(`--jit cannot be combined with ${sourceType}`);
-  }
-  if (parsed.internal && sourceType !== undefined) {
-    throw usageError(`--internal cannot be combined with ${sourceType}`);
-  }
-
-  if ((sourceType === '--file' || sourceType === '--url') && kitSpecifiers.length > 0) {
-    throw usageError(`${sourceType} cannot be combined with positional kit arguments`);
-  }
-
-  if (parsed.checklists !== undefined) {
-    validateChecklistsSelection(sourceType, kitSpecifiers);
-  }
-
-  return sourceType;
-}
-
-/**
- * Rejects an output flag that contradicts the report being emitted.
- *
- * Erroring beats ignoring: a caller that passed either flag meant to change the output, and dropping it
- * silently would leave them reading a report they did not ask for.
- */
-function validateOutputFlags(parsed: RunFlagConstraints): void {
-  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.
-  if (parsed.detail !== undefined && !parsed.json) {
-    throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
-  }
-
-  // `--quiet` thins the human detail tree, which `--json` does not emit.
-  if (parsed.quiet && parsed.json) {
-    throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
-  }
-}
-
-/** Names the source flags this invocation carries, alphabetically, as the exclusivity error lists them. */
-function collectSourceFlags(parsed: RunFlagConstraints): string[] {
-  const sourceFlags: string[] = [];
-  if (parsed.file !== undefined) sourceFlags.push('--file');
-  if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.packages) sourceFlags.push('--packages');
-  if (parsed.url !== undefined) sourceFlags.push('--url');
-  return sourceFlags;
-}
-
-/**
- * Rejects `--checklists` when the selection it expresses is ambiguous.
- *
- * The flag names checklists within one kit, so it needs exactly one kit and no competing per-kit
- * filter. `--file` and `--url` each name their one kit implicitly; a bare invocation names the
- * default kit. Conflicting selections error rather than merging: an invocation carrying both is a
- * bug in whatever generated it, and no merge rule for "run `deploy:build`, filtered to `test`" is
- * obviously right.
- */
-function validateChecklistsSelection(sourceType: string | undefined, kitSpecifiers: KitSpecifier[]): void {
-  if (sourceType === '--file' || sourceType === '--url') return;
-
-  if (kitSpecifiers.length > 1) {
-    const names = kitSpecifiers.map((spec) => spec.kitName).join(', ');
-    throw usageError(`--checklists requires a single kit, but ${kitSpecifiers.length} were given: ${names}`);
-  }
-
-  const spec = kitSpecifiers[0];
-  if (spec !== undefined && spec.checklists.length > 0) {
-    throw usageError(`--checklists cannot be combined with the ":" checklist filter on "${spec.kitName}"`);
-  }
-}
-
-/** Tokenize run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
-function parseRunFlags(flags: string[]) {
-  try {
-    return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'run', flagErrorHints), { cause: error });
-  }
-}
-
-/** Parse run-subcommand flags into a structured object. */
-export function parseRunArgs(flags: string[]): ParsedRunArgs {
-  const { values, positionals } = parseRunFlags(flags);
-
-  // parseArgs accepts `--flag=` as an empty string; the CLI treats an empty value as missing.
-  for (const [name, value] of Object.entries(values)) {
-    if (value === '') {
-      const flag = `--${name}`;
-      throw usageError(flagErrorHints[flag] ?? `${flag} requires a value`);
-    }
-  }
-
-  const parsed = {
-    checklists: values.checklists,
-    detail: values.detail,
-    file: values.file,
-    from: values.from,
-    internal: values.internal === true,
-    jit: values.jit === true,
-    json: values.json === true,
-    packages: values.packages === true,
-    quiet: values.quiet === true,
-    url: values.url,
-    failOn: values['fail-on'],
-    reportOn: values['report-on'],
-  };
-
-  // Parse kit specifiers from positional args. This precedes validation because `--checklists`
-  // is constrained by how many kits were named and whether the one named carries its own filter.
-  let kitSpecifiers: KitSpecifier[];
-  try {
-    kitSpecifiers = parseKitSpecifiers(positionals);
-  } catch (error: unknown) {
-    throw usageError(describeError(error), { cause: error });
-  }
-
-  validateFlagConstraints(parsed, kitSpecifiers);
-
-  // Parse checklists from the flag value. An empty list selects every checklist, so a value that
-  // names none — `,,,` — would invert what an explicit filter asks for.
-  const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
-  if (checklists?.length === 0) {
-    throw usageError(CHECKLISTS_HINT);
-  }
-
-  // Validate severity and projection flags.
-  const failOn = parsed.failOn !== undefined ? parseSeverityFlag('--fail-on', parsed.failOn) : undefined;
-  const reportOn = parsed.reportOn !== undefined ? parseSeverityFlag('--report-on', parsed.reportOn) : undefined;
-  const detail = parsed.detail !== undefined ? parseDetailFlag(parsed.detail) : undefined;
-
-  const parsedArgs: ParsedRunArgs = {
-    checklists,
-    filePath: parsed.file,
-    fromValue: parsed.from,
-    internal: parsed.internal,
-    jit: parsed.jit,
-    json: parsed.json,
-    kitSpecifiers,
-    packages: parsed.packages,
-    quiet: parsed.quiet,
-    urlValue: parsed.url,
-  };
-  if (detail !== undefined) parsedArgs.detail = detail;
-  if (failOn !== undefined) parsedArgs.failOn = failOn;
-  if (reportOn !== undefined) parsedArgs.reportOn = reportOn;
-  return parsedArgs;
 }
 
 /** Resolve parsed flags into an array of kit entries to execute. */
