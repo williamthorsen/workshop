@@ -3,11 +3,12 @@ import assert from 'node:assert';
 import { RdyError } from '../errors/RdyError.ts';
 
 /**
- * Runs a command expected to fail and returns the `RdyError` it threw.
+ * Runs a call expected to fail and returns the `RdyError` it threw or rejected with.
  *
- * Fails the test when the command completes normally or throws anything else.
+ * Accepts a synchronous or an asynchronous call. Fails the test when the call completes normally or
+ * throws anything else.
  */
-export async function captureRdyError(run: () => number | Promise<number>): Promise<RdyError> {
+export async function captureRdyError(run: () => unknown): Promise<RdyError> {
   try {
     await run();
   } catch (error: unknown) {

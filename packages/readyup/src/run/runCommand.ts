@@ -1,34 +1,24 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
-
-import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCodes.ts';
-import { extractHint } from '../errors/error-handling.ts';
-import { kitLoadError, type RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
-import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
-import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
+import { EXIT_OK } from '../bin/exitCodes.ts';
+import { toRdyError } from '../errors/RdyError.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
-import { type LoadedRdyKit, loadRdyKit } from '../kits/loadRdyKit.ts';
 import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
-import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
-import type { RdyManifest } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
-import { loadRemoteKit, type LoadRemoteKitOptions } from '../remote/loadRemoteKit.ts';
-import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
-import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatJsonReport, type KitInput } from '../reporting/formatJsonReport.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
-import type { JsonWarning, RaisedWarning } from '../schemas/common.ts';
+import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
-import { checkDrift } from '../verify/checkDrift.ts';
-import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
-import type { KitSource, ResolvedKitEntry } from './ResolvedKitEntry.ts';
-import { resolveRequestedNames } from './resolveRequestedNames.ts';
+import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
+import { loadKit } from './loadKit.ts';
+import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
+import { resolveRunExitCode } from './resolveRunExitCode.ts';
+import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
+import { selectChecklists } from './selectChecklists.ts';
 
 /** Resolve the effective fixLocation for a checklist, falling back to the kit-level default. */
 function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDefault?: FixLocation): FixLocation {
@@ -38,19 +28,6 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
 /** Builds a summary row from a report, named by the breadcrumb heading the block the report renders into. */
 function toSummaryRow(segments: BreadcrumbSegment[], report: RdyReport): SummaryRow {
   return { counts: countResults(report.results), durationMs: report.durationMs, segments };
-}
-
-/** Resolve threshold values from the cascade: CLI flag > kit field > default. */
-function resolveThresholds(
-  kit: RdyKit,
-  cliFailOn: Severity | undefined,
-  cliReportOn: Severity | undefined,
-): { defaultSeverity: Severity; failOn: Severity; reportOn: Severity } {
-  return {
-    defaultSeverity: kit.defaultSeverity ?? 'error',
-    failOn: cliFailOn ?? kit.failOn ?? 'error',
-    reportOn: cliReportOn ?? kit.reportOn ?? 'recommend',
-  };
 }
 
 interface RunCommandOptions {
@@ -66,159 +43,6 @@ interface HumanRunSettings {
   failOn: Severity | undefined;
   quiet: boolean;
   reportOn: Severity | undefined;
-}
-
-/**
- * Loads a rdy kit from a path or URL source.
- *
- * Takes the whole entry rather than its source alone: a kit whose readyup imports the runner cannot satisfy is
- * reported with a remedy chosen from the kit's provenance, which the source by itself does not carry.
- */
-async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
-  const { source } = entry;
-
-  if ('url' in source) {
-    const provider = resolveRemoteProvider(source.url);
-    const headers = resolveRemoteAuthHeaders(provider);
-    const options: LoadRemoteKitOptions = { url: source.url, ...(headers !== undefined && { headers }) };
-
-    try {
-      return await loadRemoteKit(options);
-    } catch (error: unknown) {
-      // Catch ahead of the remote wrapper: a kit that fetched cleanly and binds symbols the runner lacks is a
-      // diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
-      if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
-      throw toRemoteRdyError(error, {
-        code: 'kit-load',
-        provider,
-        tokenForwarded: headers !== undefined,
-        url: source.url,
-      });
-    }
-  }
-
-  try {
-    return await loadRdyKit(source.path);
-  } catch (error: unknown) {
-    if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
-    if (isJit && isModuleNotFoundError(error, 'readyup')) {
-      throw kitLoadError('Running from source requires readyup to be installed as a project dependency.', {
-        cause: error,
-      });
-    }
-    throw kitLoadError(describeError(error), { cause: error, hint: extractHint(error) });
-  }
-}
-
-/** Turns unresolvable readyup imports into the kit-load failure a reader sees, named for where the kit came from. */
-function toUnresolvableImportsError(error: UnresolvableKitImportsError, entry: ResolvedKitEntry): RdyError {
-  const { hint, message } = describeUnresolvableImports(error.findings, {
-    kitName: entry.name,
-    provenance: entry.provenance,
-  });
-  return kitLoadError(message, { cause: error, hint });
-}
-
-/** The manifest an invocation checks its kits against, read once and shared by every kit in the run. */
-interface ManifestTracking {
-  manifest: RdyManifest;
-  manifestDir: string;
-}
-
-/**
- * Read the default manifest for the run's advisories, best effort.
- *
- * Every failure here answers with no manifest at all: a missing one is the normal state of a
- * project that never compiled, and an unreadable or unrecognized one says nothing about any kit. A
- * verification tool that refused to run because its own bookkeeping was unreadable would be worse
- * than one that runs and stays quiet. `--jit` runs from source, which the manifest does not
- * describe, so they skip the read entirely.
- */
-function readManifestTracking(isJit: boolean): ManifestTracking | undefined {
-  if (isJit) return undefined;
-  const manifestPath = path.resolve(process.cwd(), DEFAULT_MANIFEST_PATH);
-  try {
-    return { manifest: readManifest(manifestPath), manifestDir: path.dirname(manifestPath) };
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Emit advisory stderr warnings when the manifest disagrees with the kit that is about to run.
- *
- * `target-drift` says the compiled bundle is not the one the manifest recorded, so someone edited
- * it by hand. `source-stale` says the TypeScript it was built from has moved on, so the run is
- * about to execute checks that no longer match their source. Both can hold at once.
- *
- * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code. A
- * kit no entry describes, an entry recording no hash, a remote or just-in-time source, and a file
- * that cannot be hashed are all silent, because none of them is evidence that anything is stale.
- *
- * The stderr lines are written in both modes; the returned entries are what JSON mode captures into
- * the report, so a consumer that owns only stdout still learns the run was advised of something.
- */
-function warnOnKitStaleness(
-  kitName: string,
-  source: KitSource,
-  tracking: ManifestTracking | undefined,
-): RaisedWarning[] {
-  if (tracking === undefined || 'url' in source) return [];
-
-  const entry = findManifestEntry(source.path, tracking);
-  if (entry === undefined) return [];
-
-  const warnings: RaisedWarning[] = [];
-  if (hasVerdict(() => checkDrift(entry, tracking.manifestDir), 'drift')) {
-    warnings.push({
-      code: 'target-drift',
-      message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
-      remedy: 'Run `rdy compile --force` to rebuild it from source.',
-    });
-  }
-  if (hasVerdict(() => checkSourceDrift(entry, tracking.manifestDir), 'stale')) {
-    warnings.push({
-      code: 'source-stale',
-      message: `kit "${kitName}" was compiled from an older source than the one on disk.`,
-      remedy: 'Run `rdy compile` to rebuild it.',
-    });
-  }
-
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
-  return warnings;
-}
-
-/**
- * Find the manifest entry describing a kit, matching on resolved compiled path.
- *
- * Matching by name instead would misfire wherever a kit's name and its file part company: `--file`
- * names a kit by an arbitrary path, and a custom `outDir` puts a differently-named entry's output
- * where this one's would go.
- */
-function findManifestEntry(kitPath: string, tracking: ManifestTracking): RdyManifest['kits'][number] | undefined {
-  const resolvedKitPath = path.resolve(process.cwd(), kitPath);
-  return tracking.manifest.kits.find(
-    (kit) => kit.path !== undefined && path.resolve(tracking.manifestDir, kit.path) === resolvedKitPath,
-  );
-}
-
-/** Report whether a staleness predicate reaches the given verdict, treating a file it cannot hash as no. */
-function hasVerdict<TStatus extends { kind: string }>(check: () => TStatus, kind: TStatus['kind']): boolean {
-  try {
-    return check().kind === kind;
-  } catch {
-    return false;
-  }
-}
-
-/** Detect module-not-found errors that mention a specific package name. */
-function isModuleNotFoundError(error: unknown, packageName: string): boolean {
-  if (!(error instanceof Error)) return false;
-  if (!('code' in error)) return false;
-  if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
-  return error.message.includes(packageName);
 }
 
 /** Run rdy checklists across one or more kits. Returns a numeric exit code. */
@@ -506,31 +330,4 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
 
   const version = provenance.version === undefined ? '' : `@${provenance.version}`;
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
-}
-
-/** Resolves a kit's requested checklist names to the checklists themselves, in requested order. */
-function selectChecklists(kit: RdyKit, checklistFilter: string[]): Array<RdyChecklist | RdyStagedChecklist> {
-  let resolvedNames: string[];
-  try {
-    resolvedNames = resolveRequestedNames(checklistFilter, kit);
-  } catch (error: unknown) {
-    throw usageError(describeError(error), { cause: error });
-  }
-
-  const checklistByName = new Map(kit.checklists.map((c) => [c.name, c]));
-  return resolvedNames.flatMap((name) => {
-    const checklist = checklistByName.get(name);
-    return checklist !== undefined ? [checklist] : [];
-  });
-}
-
-/**
- * Reduces a run's outcomes to one exit code, worst first.
- *
- * A kit that never ran outranks failed checks: part of the invocation was not completed, so
- * reporting "ran, found problems" would be false.
- */
-function resolveRunExitCode(anyKitFailed: boolean, allPassed: boolean): number {
-  if (anyKitFailed) return EXIT_TOOL_FAILURE;
-  return allPassed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
