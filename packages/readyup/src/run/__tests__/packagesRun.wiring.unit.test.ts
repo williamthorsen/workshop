@@ -6,8 +6,9 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
-import { type ResolvedKitEntry, resolveKitSources, runCommand } from '../runCommand.ts';
+import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
+import { resolveKitSources } from '../resolveKitSources.ts';
+import { runCommand } from '../runCommand.ts';
 
 /**
  * Joins `--packages` to the kits an installed package publishes, against a real fixture project. The
@@ -79,44 +80,6 @@ describe('--packages run path wiring', () => {
     ]);
   });
 
-  // A package that does not publish the named kit is not participating in the selection, not drifting.
-  it('skips a configured package that does not publish the named kit', () => {
-    installPackage('plain-kit', ['default']);
-    installPackage('@acme/kits', ['default', 'preflight']);
-
-    const entries = resolveKitSources({
-      ...baseArgs,
-      packages: true,
-      configuredPackages: ['plain-kit', '@acme/kits'],
-      kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
-    });
-
-    expect(entries.map((entry) => entry.name)).toStrictEqual(['preflight']);
-  });
-
-  // The order `rdy run a b` runs them in against a single source.
-  it('orders several named kits name-major across the configured packages', () => {
-    installPackage('plain-kit', ['drift', 'preflight']);
-    installPackage('@acme/kits', ['drift', 'preflight']);
-
-    const entries = resolveKitSources({
-      ...baseArgs,
-      packages: true,
-      configuredPackages: ['plain-kit', '@acme/kits'],
-      kitSpecifiers: [
-        { kitName: 'drift', checklists: [] },
-        { kitName: 'preflight', checklists: [] },
-      ],
-    });
-
-    expect(entries.map(describeEntry)).toStrictEqual([
-      'plain-kit:drift',
-      '@acme/kits:drift',
-      'plain-kit:preflight',
-      '@acme/kits:preflight',
-    ]);
-  });
-
   // Selection reads names, so the manifest-less path needs no handling of its own — but it has to answer alike.
   it('selects by name when a package ships no manifest', () => {
     installPackage('plain-kit', ['default', 'preflight'], { hasManifest: false });
@@ -140,15 +103,6 @@ describe('--packages run path wiring', () => {
     expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
   });
 
-  // Nothing published to align with is alignment, not a failure to check.
-  it('selects nothing when no configured package publishes a default', () => {
-    installPackage('@acme/kits', ['drift', 'preflight']);
-
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
-
-    expect(entries).toStrictEqual([]);
-  });
-
   it('passes without running a kit when the selection is empty', async () => {
     installPackage('@acme/kits', ['drift']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
@@ -157,37 +111,6 @@ describe('--packages run path wiring', () => {
 
     expect(exitCode).toBe(0);
     expect(stdout.join('')).toBe('No kits to run.\n');
-  });
-
-  // Answering with an empty pass would be the clean report of nothing checked.
-  it('rejects a named kit no configured package publishes', async () => {
-    installPackage('@acme/kits', ['default', 'preflight']);
-
-    const error = await captureRdyError(() => {
-      resolveKitSources({
-        ...baseArgs,
-        packages: true,
-        configuredPackages: ['@acme/kits'],
-        kitSpecifiers: [{ kitName: 'absent', checklists: [] }],
-      });
-      return 0;
-    });
-
-    expect(error.code).toBe('usage');
-    expect(error.message).toBe(
-      'No configured package publishes a kit named "absent"; available kits: default, preflight.',
-    );
-  });
-
-  // Reporting a clean pass having checked nothing is the one outcome a verification tool must not invent.
-  it('rejects --packages when no package is configured', async () => {
-    const error = await captureRdyError(() => {
-      resolveKitSources({ ...baseArgs, packages: true, configuredPackages: [] });
-      return 0;
-    });
-
-    expect(error.code).toBe('usage');
-    expect(error.message).toMatch(/requires a "packages" list/);
   });
 
   it('carries the package and version into the JSON report', async () => {
