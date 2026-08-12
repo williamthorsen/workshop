@@ -13,7 +13,8 @@ import type { RdyManifestKit } from '../../../src/manifest/manifestSchema.ts';
 import { ListOutputSchema } from '../../../src/schemas/listOutputSchema.ts';
 import type { JsonKitResultEntry, JsonReport } from '../../../src/schemas/reportSchema.ts';
 import { ReportSchema } from '../../../src/schemas/reportSchema.ts';
-import { resolveKitSources, runCommand } from '../../../src/run/runCommand.ts';
+import { resolveKitSources } from '../../../src/run/resolveKitSources.ts';
+import { runCommand } from '../../../src/run/runCommand.ts';
 import { hashFile } from '../../../src/verify/targetHash.ts';
 
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..', '..');

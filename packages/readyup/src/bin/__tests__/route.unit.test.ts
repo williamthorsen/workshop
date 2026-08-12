@@ -15,8 +15,11 @@ vi.mock(import('../../run/parseRunArgs.ts'), () => ({
   parseRunArgs: mockParseRunArgs,
 }));
 
-vi.mock(import('../../run/runCommand.ts'), () => ({
+vi.mock(import('../../run/resolveKitSources.ts'), () => ({
   resolveKitSources: mockResolveKitSources,
+}));
+
+vi.mock(import('../../run/runCommand.ts'), () => ({
   runCommand: mockRunCommand,
 }));
 

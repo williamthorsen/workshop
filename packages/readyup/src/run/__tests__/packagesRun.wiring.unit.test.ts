@@ -7,7 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
-import { type ResolvedKitEntry, resolveKitSources, runCommand } from '../runCommand.ts';
+import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
+import { resolveKitSources } from '../resolveKitSources.ts';
+import { runCommand } from '../runCommand.ts';
 
 /**
  * Joins `--packages` to the kits an installed package publishes, against a real fixture project. The
