@@ -4,24 +4,6 @@ import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 
 describe(resolveKitSources, () => {
-  /** Builds args with defaults for internal config. */
-  function resolve(
-    overrides: Partial<Parameters<typeof resolveKitSources>[0]> = {},
-  ): ReturnType<typeof resolveKitSources> {
-    return resolveKitSources({
-      filePath: undefined,
-      fromValue: undefined,
-      urlValue: undefined,
-      kitSpecifiers: [],
-      checklists: undefined,
-      jit: false,
-      internal: false,
-      internalDir: '.',
-      internalInfix: undefined,
-      ...overrides,
-    });
-  }
-
   // -- Default resolution (compiled .js) --
 
   it('resolves default kit path to .js', () => {
@@ -303,3 +285,25 @@ describe(resolveKitSources, () => {
     ]);
   });
 });
+
+// region | Helpers
+
+/** Builds args with defaults for internal config. */
+function resolve(
+  overrides: Partial<Parameters<typeof resolveKitSources>[0]> = {},
+): ReturnType<typeof resolveKitSources> {
+  return resolveKitSources({
+    filePath: undefined,
+    fromValue: undefined,
+    urlValue: undefined,
+    kitSpecifiers: [],
+    checklists: undefined,
+    jit: false,
+    internal: false,
+    internalDir: '.',
+    internalInfix: undefined,
+    ...overrides,
+  });
+}
+
+// endregion | Helpers

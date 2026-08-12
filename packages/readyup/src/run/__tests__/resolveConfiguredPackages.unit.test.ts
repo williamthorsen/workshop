@@ -54,6 +54,7 @@ describe(resolveConfiguredPackages, () => {
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.js')).toStrictEqual([]);
   });
 
+  // Answering with an empty pass would be the clean report of nothing checked.
   it('rejects a named kit no configured package publishes', async () => {
     installPackage('@acme/kits', ['default', 'preflight']);
 
