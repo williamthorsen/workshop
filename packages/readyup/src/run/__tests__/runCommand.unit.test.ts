@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import type { FailedResult, PassedResult, RdyKit, Severity } from '../../kits/types.ts';
+import type { FailedResult, PassedResult, Severity } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 
@@ -61,6 +61,7 @@ vi.mock(import('../kit-staleness.ts'), () => ({
 }));
 
 import { runCommand } from '../runCommand.ts';
+import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
 /**
  * The blank line parting one block from the next, as it reads in concatenated stdout writes.
@@ -98,11 +99,6 @@ describe(runCommand, () => {
     mockReadManifestTracking.mockReset();
     mockWarnOnKitStaleness.mockReset();
   });
-
-  /** Build a single-kit entry for convenience. */
-  function singleKitEntry(checklists: string[] = []) {
-    return [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists }];
-  }
 
   /** Every stderr write concatenated into one string. */
   function stderrText(): string {
@@ -853,17 +849,6 @@ describe(runCommand, () => {
     });
   });
 });
-
-/** Builds a two-checklist kit named `deploy` and `infra`. */
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return {
-    checklists: [
-      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
-      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
-    ],
-    ...overrides,
-  };
-}
 
 /** Builds a passed result at the given severity. */
 function makePassedResult(name: string, severity: Severity): PassedResult {
