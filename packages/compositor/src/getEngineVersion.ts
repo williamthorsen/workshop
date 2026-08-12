@@ -1,4 +1,4 @@
-import { getSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
 /**
  * Returns the engine's own version, which every plan records as the thing that produced it.
@@ -6,5 +6,5 @@ import { getSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
  * Reads the manifest on each call.
  */
 export function getEngineVersion(): string {
-  return getSelfVersion(import.meta.url);
+  return resolveSelfVersion(import.meta.url);
 }

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { usageError } from '../errors/RdyError.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';

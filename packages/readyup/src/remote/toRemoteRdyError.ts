@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { configError, kitLoadError, type RdyError } from '../errors/RdyError.ts';
 import { RemoteManifestNotFoundError } from './loadRemoteManifest.ts';

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { collectSourceFiles } from '../compile/collectSourceFiles.ts';
 import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';

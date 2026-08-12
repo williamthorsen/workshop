@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { overlay } from '../overlay.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';

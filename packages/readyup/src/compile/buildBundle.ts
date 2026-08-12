@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { isRecord } from '../portable/isRecord.ts';
 import { VERSION } from '../version.ts';

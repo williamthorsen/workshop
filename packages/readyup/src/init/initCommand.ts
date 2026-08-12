@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { configError } from '../errors/RdyError.ts';

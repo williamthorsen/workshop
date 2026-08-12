@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { collectIds } from '../consistency/collectIds.ts';
 import { ConsistencyError } from '../consistency/ConsistencyError.ts';

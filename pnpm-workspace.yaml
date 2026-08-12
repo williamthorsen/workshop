@@ -6,8 +6,8 @@ allowBuilds:
   lefthook: true
 
 catalog:
-  '@williamthorsen/toolbelt.errors': 0.2.0
-  '@williamthorsen/toolbelt.packaging': 0.2.0
+  '@williamthorsen/toolbelt.errors': 0.3.0
+  '@williamthorsen/toolbelt.packaging': 0.3.0
   zod: 4.4.3
 
 savePrefix: ''

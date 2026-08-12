@@ -3,7 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { loadConfig } from '../config/loadConfig.ts';

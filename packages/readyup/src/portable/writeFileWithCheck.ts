@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 /** Outcome of a `writeFileWithCheck` call. */
 export type WriteOutcome = 'created' | 'overwritten' | 'up-to-date' | 'skipped' | 'failed';

@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { usageError } from '../errors/RdyError.ts';
 import type { RdyChecklist, RdyKit, RdyStagedChecklist } from '../kits/types.ts';

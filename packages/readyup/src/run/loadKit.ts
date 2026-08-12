@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { extractHint } from '../errors/error-handling.ts';
 import { kitLoadError, type RdyError } from '../errors/RdyError.ts';

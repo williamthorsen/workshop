@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import { composeLocationKey } from './composeLocationKey.ts';

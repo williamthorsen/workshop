@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { buildBundle } from '../compile/buildBundle.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';

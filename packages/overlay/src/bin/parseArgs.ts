@@ -1,6 +1,6 @@
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import type { OverlayMode } from '../modes/types.ts';
 

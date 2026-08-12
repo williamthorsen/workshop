@@ -1,6 +1,6 @@
 /** Document access: the one place a structured host's format decides how it is read, edited, and written back. */
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLMap, YAMLSeq } from 'yaml';
 
 import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';

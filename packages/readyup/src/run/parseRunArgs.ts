@@ -1,6 +1,6 @@
 import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { describeError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
