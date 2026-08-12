@@ -3,11 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { RdyKit } from '../../kits/types.ts';
 import { resolveThresholds } from '../resolveThresholds.ts';
 
-/** Build a minimal kit, optionally declaring thresholds of its own. */
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }], ...overrides };
-}
-
 describe(resolveThresholds, () => {
   describe('failOn', () => {
     it('takes the CLI flag over what the kit declares', () => {
@@ -47,3 +42,12 @@ describe(resolveThresholds, () => {
     });
   });
 });
+
+// region | Helpers
+
+/** Builds a minimal kit, optionally declaring thresholds of its own. */
+function makeKit(overrides?: Partial<RdyKit>): RdyKit {
+  return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }], ...overrides };
+}
+
+// endregion | Helpers

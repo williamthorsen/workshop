@@ -4,18 +4,6 @@ import type { RdyKit } from '../../kits/types.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { selectChecklists } from '../selectChecklists.ts';
 
-/** Build a kit with three named checklists and optional suites. */
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return {
-    checklists: [
-      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
-      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
-      { name: 'lint', checks: [{ name: 'c', check: () => true }] },
-    ],
-    ...overrides,
-  };
-}
-
 describe(selectChecklists, () => {
   it('returns every checklist when the filter names none', () => {
     expect(selectChecklists(makeKit(), []).map((checklist) => checklist.name)).toStrictEqual([
@@ -51,3 +39,19 @@ describe(selectChecklists, () => {
     expect(error.message).toContain('Unknown name(s): missing');
   });
 });
+
+// region | Helpers
+
+/** Builds a kit with three named checklists and optional suites. */
+function makeKit(overrides?: Partial<RdyKit>): RdyKit {
+  return {
+    checklists: [
+      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
+      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
+      { name: 'lint', checks: [{ name: 'c', check: () => true }] },
+    ],
+    ...overrides,
+  };
+}
+
+// endregion | Helpers

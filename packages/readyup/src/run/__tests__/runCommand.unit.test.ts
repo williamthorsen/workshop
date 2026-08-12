@@ -13,7 +13,6 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) =>
 const mockFormatJsonReport = vi.hoisted(() => vi.fn());
 const mockFormatJsonError = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
-const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
@@ -50,14 +49,12 @@ vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
   resolveGitHubToken: mockResolveGitHubToken,
 }));
 
-vi.mock(import('../../remote/resolveBitbucketToken.ts'), () => ({
-  resolveBitbucketToken: mockResolveBitbucketToken,
-}));
-
 vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
+// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, its
+// errors being what the rendering cases assert.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
   warnOnKitStaleness: mockWarnOnKitStaleness,
@@ -97,7 +94,6 @@ describe(runCommand, () => {
     mockFormatJsonReport.mockReset();
     mockFormatJsonError.mockReset();
     mockResolveGitHubToken.mockReset();
-    mockResolveBitbucketToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
     mockWarnOnKitStaleness.mockReset();
@@ -553,26 +549,32 @@ describe(runCommand, () => {
   });
 
   describe('staleness advisories', () => {
+    const SOURCE_STALE = {
+      code: 'source-stale',
+      message: 'kit "beta" was compiled from an older source than the one on disk.',
+      remedy: 'Run `rdy compile` to rebuild it.',
+    };
     const TARGET_DRIFT = {
       code: 'target-drift',
-      message: 'compiled kit "default" does not match the hash the manifest recorded for it.',
+      message: 'compiled kit "alpha" does not match the hash the manifest recorded for it.',
       remedy: 'Run `rdy compile --force` to rebuild it from source.',
     };
+
+    /** Two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */
+    function twoKitEntries() {
+      return [
+        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
+        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
+      ];
+    }
 
     it('reads the manifest once per invocation, not once per kit', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runCommand({
-        kitEntries: [
-          { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
-          { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
-        ],
-        json: false,
-      });
+      await runCommand({ kitEntries: twoKitEntries(), json: false });
 
       expect(mockReadManifestTracking).toHaveBeenCalledTimes(1);
-      expect(mockWarnOnKitStaleness).toHaveBeenCalledTimes(2);
     });
 
     it('tells the manifest read whether the run is just-in-time', async () => {
@@ -590,9 +592,11 @@ describe(runCommand, () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runCommand({ kitEntries: singleKitEntry(['deploy']), json: false });
+      await runCommand({ kitEntries: twoKitEntries(), json: false });
 
-      expect(mockWarnOnKitStaleness).toHaveBeenCalledWith('default', { path: '.readyup/kits/default.js' }, tracking);
+      expect(mockWarnOnKitStaleness).toHaveBeenCalledTimes(2);
+      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
+      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
     });
 
     it('leaves the exit code alone, since verify is the enforcing gate', async () => {
@@ -606,16 +610,20 @@ describe(runCommand, () => {
     });
 
     it('carries every advisory the run raised into the JSON report', async () => {
-      mockWarnOnKitStaleness.mockReturnValue([TARGET_DRIFT]);
+      const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
+      mockReadManifestTracking.mockReturnValue(tracking);
+      mockWarnOnKitStaleness.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
       mockFormatJsonReport.mockReturnValue('{"kits":[]}');
 
-      const exitCode = await runCommand({ kitEntries: singleKitEntry(['deploy']), json: true });
+      const exitCode = await runCommand({ kitEntries: twoKitEntries(), json: true });
 
+      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
+      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ warnings: [TARGET_DRIFT] }),
+        expect.objectContaining({ warnings: [TARGET_DRIFT, SOURCE_STALE] }),
       );
       expect(exitCode).toBe(0);
     });

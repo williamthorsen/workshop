@@ -9,10 +9,9 @@ const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../manifest/readManifest.ts')>();
-  return { ManifestNotFoundError: actual.ManifestNotFoundError, readManifest: mockReadManifest };
-});
+vi.mock(import('../../manifest/readManifest.ts'), () => ({
+  readManifest: mockReadManifest,
+}));
 
 vi.mock(import('../../verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
@@ -234,7 +233,7 @@ describe(warnOnKitStaleness, () => {
 
   // region | Helpers
 
-  /** Report the source as edited without a recompile. */
+  /** Reports the source as edited without a recompile. */
   function arrangeSourceStale(): void {
     mockCheckSourceDrift.mockReturnValue({
       kind: 'stale',
@@ -244,7 +243,7 @@ describe(warnOnKitStaleness, () => {
     });
   }
 
-  /** Report the compiled bundle as edited by hand. */
+  /** Reports the compiled bundle as edited by hand. */
   function arrangeTargetDrift(): void {
     mockCheckDrift.mockReturnValue({
       kind: 'drift',

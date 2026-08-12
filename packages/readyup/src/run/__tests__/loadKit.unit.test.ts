@@ -297,12 +297,12 @@ describe(loadKit, () => {
 
 // region | Helpers
 
-/** Build an entry pointing at a compiled kit in the local kits directory. */
+/** Builds an entry pointing at a compiled kit in the local kits directory. */
 function localEntry(): ResolvedKitEntry {
   return { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] };
 }
 
-/** Build a minimal kit with one passing checklist. */
+/** Builds a minimal kit with one passing checklist. */
 function makeKit(): RdyKit {
   return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] };
 }
@@ -320,7 +320,7 @@ function moduleNotFoundError(packageName: string): Error {
   return Object.assign(new Error(`Cannot find package '${packageName}'`), { code: 'MODULE_NOT_FOUND' });
 }
 
-/** Build an entry pointing at a kit served over HTTP. */
+/** Builds an entry pointing at a kit served over HTTP. */
 function remoteEntry(url: string): ResolvedKitEntry {
   return { name: 'deploy', source: { url }, checklists: [] };
 }
