@@ -15,6 +15,8 @@ const mockFormatJsonError = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
+const mockReadManifestTracking = vi.hoisted(() => vi.fn());
+const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -56,6 +58,11 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
+vi.mock(import('../kit-staleness.ts'), () => ({
+  readManifestTracking: mockReadManifestTracking,
+  warnOnKitStaleness: mockWarnOnKitStaleness,
+}));
+
 import { runCommand } from '../runCommand.ts';
 
 /**
@@ -77,6 +84,8 @@ describe(runCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
+    mockReadManifestTracking.mockReturnValue(undefined);
+    mockWarnOnKitStaleness.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -90,6 +99,8 @@ describe(runCommand, () => {
     mockResolveGitHubToken.mockReset();
     mockResolveBitbucketToken.mockReset();
     mockLoadRemoteKit.mockReset();
+    mockReadManifestTracking.mockReset();
+    mockWarnOnKitStaleness.mockReset();
   });
 
   /** Build a single-kit entry for convenience. */
@@ -537,6 +548,88 @@ describe(runCommand, () => {
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ reportOn: 'error' }),
+      );
+    });
+  });
+
+  describe('staleness advisories', () => {
+    const TARGET_DRIFT = {
+      code: 'target-drift',
+      message: 'compiled kit "default" does not match the hash the manifest recorded for it.',
+      remedy: 'Run `rdy compile --force` to rebuild it from source.',
+    };
+
+    it('reads the manifest once per invocation, not once per kit', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({
+        kitEntries: [
+          { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
+          { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
+        ],
+        json: false,
+      });
+
+      expect(mockReadManifestTracking).toHaveBeenCalledTimes(1);
+      expect(mockWarnOnKitStaleness).toHaveBeenCalledTimes(2);
+    });
+
+    it('tells the manifest read whether the run is just-in-time', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(['deploy']), json: false }, true);
+
+      expect(mockReadManifestTracking).toHaveBeenCalledWith(true);
+    });
+
+    it('advises on each kit against the source that kit resolved to', async () => {
+      const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
+      mockReadManifestTracking.mockReturnValue(tracking);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runCommand({ kitEntries: singleKitEntry(['deploy']), json: false });
+
+      expect(mockWarnOnKitStaleness).toHaveBeenCalledWith('default', { path: '.readyup/kits/default.js' }, tracking);
+    });
+
+    it('leaves the exit code alone, since verify is the enforcing gate', async () => {
+      mockWarnOnKitStaleness.mockReturnValue([TARGET_DRIFT]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(['deploy']), json: false });
+
+      expect(exitCode).toBe(0);
+    });
+
+    it('carries every advisory the run raised into the JSON report', async () => {
+      mockWarnOnKitStaleness.mockReturnValue([TARGET_DRIFT]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
+
+      const exitCode = await runCommand({ kitEntries: singleKitEntry(['deploy']), json: true });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ warnings: [TARGET_DRIFT] }),
+      );
+      expect(exitCode).toBe(0);
+    });
+
+    it('omits the warnings field entirely when the run raised none', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      mockFormatJsonReport.mockReturnValue('{}');
+
+      await runCommand({ kitEntries: singleKitEntry(['deploy']), json: true });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.not.objectContaining({ warnings: expect.anything() }),
       );
     });
   });
