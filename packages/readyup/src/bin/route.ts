@@ -17,7 +17,8 @@ import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolv
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
-import { parseRunArgs, resolveKitSources, runCommand } from '../run/runCommand.ts';
+import { parseRunArgs } from '../run/parseRunArgs.ts';
+import { resolveKitSources, runCommand } from '../run/runCommand.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
