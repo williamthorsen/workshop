@@ -78,6 +78,22 @@ describe(loadKit, () => {
       expect(error.message).toBe('boom');
     });
 
+    it('passes through an error carrying an unrelated code under --jit', async () => {
+      mockLoadRdyKit.mockRejectedValue(Object.assign(new Error('boom'), { code: 'EACCES' }));
+
+      const error = await captureRdyError(() => loadKit(localEntry(), true));
+
+      expect(error.message).toBe('boom');
+    });
+
+    it('passes through a rejection that is no error at all under --jit', async () => {
+      mockLoadRdyKit.mockRejectedValue('boom');
+
+      const error = await captureRdyError(() => loadKit(localEntry(), true));
+
+      expect(error.code).toBe('kit-load');
+    });
+
     it('leaves a missing readyup undiagnosed outside --jit, where the kit is a compiled bundle', async () => {
       mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('readyup'));
 
