@@ -11,7 +11,7 @@ vi.mock(import('node:fs'), () => ({
 import { JsonProjectionError } from '../JsonProjectionError.ts';
 import { projectJsonFile } from '../projectJsonFile.ts';
 
-/** Run the projection and return the `JsonProjectionError` it raised. */
+/** Runs the projection over a file with the given contents and returns the `JsonProjectionError` it raised. */
 function captureProjectionError(fileContents: string | Error, paths: string[] = ['name']): JsonProjectionError {
   if (fileContents instanceof Error) {
     mockReadFileSync.mockImplementationOnce(() => {

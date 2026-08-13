@@ -57,7 +57,7 @@ export function createCompileRecorder(): CompileRecorder {
 
 // region | Helpers
 
-/** Files a compile reads more than once collapse to one record each. */
+/** Records an input, leaving a repeat read of the same path and kind with the record it already has. */
 function record(recorded: Map<string, CompiledInput>, input: CompiledInput): void {
   const key = identifyInput(input.kind, input.path);
   if (!recorded.has(key)) recorded.set(key, input);

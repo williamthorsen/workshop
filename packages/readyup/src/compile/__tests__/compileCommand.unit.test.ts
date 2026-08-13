@@ -74,7 +74,7 @@ const SRC_DIR = '.readyup/kits';
 /** The hash a compile records for its entry point, which is where a manifest entry's `sourceHash` comes from. */
 const SOURCE_HASH = '5c0urce1';
 
-/** Absolute path of a kit source in the directory a batch compile sweeps. */
+/** Returns the absolute path of a kit source in the directory a batch compile sweeps. */
 function kitSource(fileName: string): string {
   return path.resolve(process.cwd(), SRC_DIR, fileName);
 }
@@ -93,7 +93,7 @@ function compileResult(
   return { ...result, inputs: [{ hash, kind: 'module', path: path.resolve(entry) }] };
 }
 
-/** The `inputs` a manifest entry carries when its compile read only the entry point, stated against the manifest. */
+/** Returns the `inputs` an entry carries when its compile read only the entry point, stated against the manifest. */
 function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
   return [{ hash, kind: 'module', path: relativePath }];
 }
