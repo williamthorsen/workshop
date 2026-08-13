@@ -8,6 +8,13 @@
         "code-quality",
         "publishing-pipeline"
       ],
+      "inputs": [
+        {
+          "hash": "33b6ea59",
+          "kind": "module",
+          "path": "kits/demo.ts"
+        }
+      ],
       "name": "demo",
       "path": "kits/demo.js",
       "readyupVersion": "0.27.0",

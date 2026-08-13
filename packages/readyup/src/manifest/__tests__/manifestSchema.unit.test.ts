@@ -171,6 +171,59 @@ describe('ManifestSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('round-trips an entry carrying recorded inputs', () => {
+    const inputs = [
+      { hash: 'a1b2c3d4', kind: 'inline', path: '../package.json', paths: ['version', ['engines', 'node']] },
+      { hash: 'e5f6a7b8', kind: 'module', path: 'kits/checks/shared.ts' },
+    ];
+    const input = { version: 1, kits: [{ inputs, name: 'deploy' }] };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+    assert.ok(result.success);
+    expect(result.data.kits[0]?.inputs).toStrictEqual(inputs);
+  });
+
+  it('accepts an entry that records no inputs', () => {
+    const input = { version: 1, kits: [{ name: 'deploy', sourceHash: 'a1b2c3d4', targetHash: 'e5f6a7b8' }] };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(true);
+    assert.ok(result.success);
+    expect(result.data.kits[0]?.inputs).toBeUndefined();
+  });
+
+  it('rejects an inline input that records no paths', () => {
+    const input = {
+      version: 1,
+      kits: [{ inputs: [{ hash: 'a1b2c3d4', kind: 'inline', path: 'pkg.json' }], name: 'deploy' }],
+    };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a module input that records paths', () => {
+    const inputs = [{ hash: 'a1b2c3d4', kind: 'module', path: 'kits/shared.ts', paths: ['version'] }];
+    const input = { version: 1, kits: [{ inputs, name: 'deploy' }] };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects an input of an unrecognized kind', () => {
+    const inputs = [{ hash: 'a1b2c3d4', kind: 'asset', path: 'logo.png' }];
+    const input = { version: 1, kits: [{ inputs, name: 'deploy' }] };
+
+    const result = ManifestSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
+  });
+
   it('rejects a kit with an empty name', () => {
     const input = { version: 1, kits: [{ name: '' }] };
 
