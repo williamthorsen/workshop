@@ -196,6 +196,25 @@ describe('JSON payload schemas', () => {
       expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).not.toThrow();
     });
 
+    it('accepts a payload from a readyup that predates the inputs verdict', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+    });
+
+    it('rejects an inputs verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'missing' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+    });
+
+    it('rejects an input failure that names no cause the vocabulary knows', () => {
+      const inputFailures = [{ kind: 'module', path: 'kits/shared.ts', reason: 'drifted' }];
+      const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'stale', inputFailures }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).toThrow(ZodError);
+    });
+
     it('rejects a rebuild verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
 

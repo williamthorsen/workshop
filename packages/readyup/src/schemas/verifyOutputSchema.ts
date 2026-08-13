@@ -21,16 +21,44 @@ export const DriftStatusSchema = z.enum(['drift', 'missing', 'ok', 'unverified']
 export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified']).meta({ id: 'SourceStatus' });
 
 /**
+ * Outcome of reading one kit's recorded input closure back off disk.
+ *
+ * A vocabulary of its own rather than a widening of any above, for the reason `SourceStatus`
+ * records. One axis carries every kind of input, with `inputFailures` naming which inputs failed
+ * and why, so a consumer branches on the cause rather than on a status per kind of input.
+ */
+export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ id: 'InputsStatus' });
+
+/**
+ * One recorded input that no longer matches what the compile read.
+ *
+ * `path` is the file as the manifest records it, relative to the manifest directory, and `kind`
+ * separates a module the bundle inlined from a JSON projection `pickJson` substituted. `expected`
+ * and `actual` appear on `changed` alone; `detail` appears on `unprojectable` alone, where the file
+ * is present and the fields the kit pinned to are gone.
+ */
+export const InputFailureSchema = z
+  .object({
+    kind: z.enum(['inline', 'module']),
+    path: z.string(),
+    reason: z.enum(['changed', 'missing', 'unprojectable']),
+    expected: z.string().optional(),
+    actual: z.string().optional(),
+    detail: z.string().optional(),
+  })
+  .meta({ id: 'InputFailure' });
+
+/**
  * Outcome of recompiling one kit and comparing the result to the bundle on disk.
  *
- * A third vocabulary rather than a widening of either enum above, for the reason `SourceStatus`
+ * A fourth vocabulary rather than a widening of any enum above, for the reason `SourceStatus`
  * already records: the verdicts answer different questions, and widening a closed enum breaks a
  * consumer that switches exhaustively over it.
  *
- * It has no `unverified`. The other two axes admit one because a manifest with no recorded hash
- * says nothing about whether the kit changed; here there is no bookkeeping to be absent, only
- * inputs the check needs, and a kit exempted from an exactness check would make a passing run mean
- * less than it says. `missing` covers every such absence and fails.
+ * It has no `unverified`. The other axes admit one because a manifest with no recorded hash says
+ * nothing about whether the kit changed; here there is no bookkeeping to be absent, only inputs the
+ * check needs, and a kit exempted from an exactness check would make a passing run mean less than
+ * it says. `missing` covers every such absence and fails.
  */
 export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok']).meta({ id: 'RebuildStatus' });
 
@@ -40,8 +68,10 @@ export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok'
  * `expected` and `actual` are the manifest's hash and the on-disk hash of the compiled bundle; both
  * are present only on a `drift` verdict, since no other status has two hashes to compare.
  * `sourceExpected` and `sourceActual` are their counterparts for the source, present only on
- * `stale`. `sourceStatus` is optional so a consumer pinned to this schema still validates a payload
- * from the readyup that predates the source verdict.
+ * `stale`. `inputFailures` is the same idea for the recorded input closure, present only on a
+ * `stale` `inputsStatus` and carrying one entry per input rather than a pair of hashes, since a kit
+ * can be stale in several inputs at once. `sourceStatus` and `inputsStatus` are optional so a
+ * consumer pinned to this schema still validates a payload from a readyup that predates either.
  *
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
  * payload it always did. `rebuildExpected` is the hash of the recompiled bytes and `rebuildActual`
@@ -59,6 +89,8 @@ export const VerifyKitEntrySchema = z
     sourceStatus: SourceStatusSchema.optional(),
     sourceExpected: z.string().optional(),
     sourceActual: z.string().optional(),
+    inputsStatus: InputsStatusSchema.optional(),
+    inputFailures: z.array(InputFailureSchema).optional(),
     rebuildStatus: RebuildStatusSchema.optional(),
     rebuildExpected: z.string().optional(),
     rebuildActual: z.string().optional(),
@@ -70,8 +102,8 @@ export const VerifyKitEntrySchema = z
 /**
  * Top-level shape of `rdy verify --json`.
  *
- * `passed` is true when both of every kit's verdicts are `ok` or `unverified`, agreeing with exit
- * code 0. An unreadable manifest produces the error envelope instead of this payload.
+ * `passed` is true when every one of every kit's verdicts is `ok` or `unverified`, agreeing with
+ * exit code 0. An unreadable manifest produces the error envelope instead of this payload.
  */
 export const VerifyOutputSchema = z
   .object({
@@ -82,6 +114,8 @@ export const VerifyOutputSchema = z
   .meta({ id: 'VerifyOutput' });
 
 export type JsonDriftStatus = z.infer<typeof DriftStatusSchema>;
+export type JsonInputFailure = z.infer<typeof InputFailureSchema>;
+export type JsonInputsStatus = z.infer<typeof InputsStatusSchema>;
 export type JsonRebuildStatus = z.infer<typeof RebuildStatusSchema>;
 export type JsonSourceStatus = z.infer<typeof SourceStatusSchema>;
 export type JsonVerifyKitEntry = z.infer<typeof VerifyKitEntrySchema>;
