@@ -4,6 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { isRecord } from '../portable/isRecord.ts';
 import { VERSION } from '../version.ts';
+import { createCompileRecorder } from './createCompileRecorder.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 
@@ -82,6 +83,8 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
     });
   }
 
+  const recorder = createCompileRecorder();
+
   let result;
   try {
     result = await esbuild.build({
@@ -92,7 +95,7 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
       target: KIT_COMPILE_TARGET,
       tsconfigRaw: KIT_TSCONFIG,
       external: ['node:*', 'readyup', 'readyup/*'],
-      plugins: [pickJsonPlugin()],
+      plugins: [pickJsonPlugin(recorder)],
       banner: { js: GENERATED_HEADER },
       write: false,
     });

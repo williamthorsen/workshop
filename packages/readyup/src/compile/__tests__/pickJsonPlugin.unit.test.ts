@@ -10,6 +10,8 @@ vi.mock(import('node:fs'), () => ({
   writeFileSync: vi.fn(),
 }));
 
+import type { CompileRecorder } from '../createCompileRecorder.ts';
+import { createCompileRecorder } from '../createCompileRecorder.ts';
 import { pickJsonPlugin } from '../pickJsonPlugin.ts';
 
 type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
@@ -28,10 +30,10 @@ function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
   };
 }
 
-/** Capture the onLoad callback registered by the plugin. */
-function captureOnLoad(): OnLoadCallback {
+/** Capture the onLoad callback registered by the plugin, reading through a real recorder. */
+function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnLoadCallback {
   let captured: OnLoadCallback | undefined;
-  const plugin = pickJsonPlugin();
+  const plugin = pickJsonPlugin(recorder);
   void plugin.setup(
     stubBuild((_options, callback) => {
       captured = callback;
@@ -54,7 +56,7 @@ function runOnLoad(onLoad: OnLoadCallback, path: string): esbuild.OnLoadResult |
 
 describe(pickJsonPlugin, () => {
   it('returns a plugin with the name "pick-json"', () => {
-    const plugin = pickJsonPlugin();
+    const plugin = pickJsonPlugin(createCompileRecorder());
 
     expect(plugin.name).toBe('pick-json');
   });
@@ -212,9 +214,23 @@ describe(pickJsonPlugin, () => {
     expect(result?.contents).toContain('"name":"my-pkg"');
   });
 
+  it('records the module it loaded and the JSON file it projected', () => {
+    const recorder = createCompileRecorder();
+    const onLoad = captureOnLoad(recorder);
+    const sourceCode = `const meta = pickJson('./package.json', ['name']);`;
+    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(JSON.stringify({ name: 'my-pkg', x: 1 }));
+
+    runOnLoad(onLoad, '/project/src/kit.ts');
+
+    expect(recorder.inputs).toStrictEqual([
+      { hash: expect.any(String), kind: 'module', path: '/project/src/kit.ts' },
+      { hash: expect.any(String), kind: 'inline', path: '/project/src/package.json', paths: ['name'] },
+    ]);
+  });
+
   it('registers onLoad filter for TypeScript extensions only', () => {
     let capturedFilter: RegExp | undefined;
-    const plugin = pickJsonPlugin();
+    const plugin = pickJsonPlugin(createCompileRecorder());
     void plugin.setup(
       stubBuild((options, _callback) => {
         capturedFilter = options.filter;

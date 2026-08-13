@@ -3,15 +3,20 @@ import assert from 'node:assert';
 import { isRecord } from '../portable/isRecord.ts';
 
 /**
+ * A `pickJson` path specifier list: a top-level key as a string, a nested one as an array of keys.
+ *
+ * Mirrors `pickJson`'s second argument, and is the form a recorded inline input carries so a later reader
+ * can reproduce the projection the compile inlined.
+ */
+export type JsonPathSpec = Array<string | Array<string>>;
+
+/**
  * Extract selected paths from a parsed JSON object, preserving original nesting structure.
  *
  * Each path is either a single string (top-level key) or an array of strings (nested key path).
  * Throws if any requested path does not exist in the source object.
  */
-export function extractJsonPaths(
-  obj: Record<string, unknown>,
-  paths: Array<string | Array<string>>,
-): Record<string, unknown> {
+export function extractJsonPaths(obj: Record<string, unknown>, paths: JsonPathSpec): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const raw of paths) {

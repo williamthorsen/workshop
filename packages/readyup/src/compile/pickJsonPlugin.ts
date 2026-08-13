@@ -1,11 +1,11 @@
 import assert from 'node:assert';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { Plugin } from 'esbuild';
 
-import { isRecord } from '../portable/isRecord.ts';
-import { extractJsonPaths } from './extractJsonPaths.ts';
+import type { CompileRecorder } from './createCompileRecorder.ts';
+import type { JsonPathSpec } from './extractJsonPaths.ts';
+import { JsonProjectionError } from './JsonProjectionError.ts';
 
 /**
  * Regex that matches a `pickJson(...)` call expression in source text.
@@ -18,6 +18,77 @@ import { extractJsonPaths } from './extractJsonPaths.ts';
  */
 const PICK_JSON_RE = /\bpickJson\s*\((?<args>[^)]+)\)/g;
 
+/**
+ * Create an esbuild plugin that replaces `pickJson(...)` calls with inlined object literals.
+ *
+ * The plugin intercepts TypeScript file loads, scans for `pickJson` calls, resolves
+ * the referenced JSON file relative to the source file, extracts the requested paths,
+ * and substitutes the call with a static object expression.
+ *
+ * Every read goes through `recorder`, which is what puts the module and the JSON file it projected into
+ * the compile's input closure. This module imports no filesystem API of its own, so a read it performs
+ * cannot escape that closure.
+ */
+export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
+  return {
+    name: 'pick-json',
+    setup(build) {
+      build.onLoad({ filter: /\.[cm]?ts$/ }, (args) => {
+        let source: string;
+        try {
+          source = recorder.readModule(args.path);
+        } catch {
+          throw new Error(`pickJson: Cannot read source file "${args.path}"`);
+        }
+
+        // Fast bail: skip files that don't reference pickJson.
+        if (!source.includes('pickJson')) return null;
+
+        // Replace each pickJson(...) call with an inlined object literal.
+        const replaced = source.replace(PICK_JSON_RE, (_fullMatch, argsText: string) => {
+          const { relativePath, paths } = parsePickJsonArgs(argsText);
+          const jsonFilePath = path.resolve(path.dirname(args.path), relativePath);
+
+          try {
+            return recorder.readProjection(jsonFilePath, paths);
+          } catch (error: unknown) {
+            throw describeProjectionFailure(error, relativePath, jsonFilePath);
+          }
+        });
+
+        if (replaced === source) return null;
+
+        return { contents: replaced, loader: 'ts' };
+      });
+    },
+  };
+}
+
+// region | Helpers
+
+/**
+ * Returns the failure to raise for a projection that did not complete, worded as `pickJson` reports it.
+ *
+ * Names the path as the kit wrote it, which the projection cannot: by the time it reads the file, only
+ * the resolved path survives.
+ */
+function describeProjectionFailure(error: unknown, relativePath: string, jsonFilePath: string): unknown {
+  if (!(error instanceof JsonProjectionError)) return error;
+
+  switch (error.reason) {
+    case 'invalid-json':
+      return new Error(`pickJson: Invalid JSON in "${relativePath}" (resolved to ${jsonFilePath})`, { cause: error });
+    case 'not-an-object':
+      return new Error(`pickJson: Expected a JSON object in "${relativePath}", got ${error.detail}`, { cause: error });
+    case 'path-not-found':
+      return error;
+    case 'unreadable':
+      return new Error(`pickJson: Cannot read JSON file "${relativePath}" (resolved to ${jsonFilePath})`, {
+        cause: error,
+      });
+  }
+}
+
 /** Narrows a parsed JSON value to the nested-path form a path specifier may take. */
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
@@ -29,7 +100,7 @@ function isStringArray(value: unknown): value is string[] {
  * Expects a JSON file path string and an array of path specifiers (strings or string arrays).
  * Only static literals are supported; expressions or template literals produce an error.
  */
-function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Array<string | Array<string>> } {
+function parsePickJsonArgs(argsText: string): { relativePath: string; paths: JsonPathSpec } {
   // Trim and strip potential trailing comma.
   const trimmed = argsText.trim().replace(/,\s*$/, '');
 
@@ -63,7 +134,7 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Arr
     throw new TypeError(`pickJson paths argument must be an array. Got: ${rest}`);
   }
 
-  const paths: Array<string | Array<string>> = [];
+  const paths: JsonPathSpec = [];
   for (const item of parsed) {
     if (typeof item !== 'string' && !isStringArray(item)) {
       throw new Error(`Invalid path in pickJson paths array: ${JSON.stringify(item)}`);
@@ -74,59 +145,4 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Arr
   return { relativePath, paths };
 }
 
-/**
- * Create an esbuild plugin that replaces `pickJson(...)` calls with inlined object literals.
- *
- * The plugin intercepts TypeScript file loads, scans for `pickJson` calls, resolves
- * the referenced JSON file relative to the source file, extracts the requested paths,
- * and substitutes the call with a static object expression.
- */
-export function pickJsonPlugin(): Plugin {
-  return {
-    name: 'pick-json',
-    setup(build) {
-      build.onLoad({ filter: /\.[cm]?ts$/ }, (args) => {
-        let source: string;
-        try {
-          source = readFileSync(args.path, 'utf8');
-        } catch {
-          throw new Error(`pickJson: Cannot read source file "${args.path}"`);
-        }
-
-        // Fast bail: skip files that don't reference pickJson.
-        if (!source.includes('pickJson')) return null;
-
-        // Replace each pickJson(...) call with an inlined object literal.
-        const replaced = source.replace(PICK_JSON_RE, (_fullMatch, argsText: string) => {
-          const { relativePath, paths } = parsePickJsonArgs(argsText);
-          const jsonFilePath = path.resolve(path.dirname(args.path), relativePath);
-
-          let jsonContent: string;
-          try {
-            jsonContent = readFileSync(jsonFilePath, 'utf8');
-          } catch {
-            throw new Error(`pickJson: Cannot read JSON file "${relativePath}" (resolved to ${jsonFilePath})`);
-          }
-
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(jsonContent);
-          } catch {
-            throw new Error(`pickJson: Invalid JSON in "${relativePath}" (resolved to ${jsonFilePath})`);
-          }
-
-          if (!isRecord(parsed)) {
-            throw new Error(`pickJson: Expected a JSON object in "${relativePath}", got ${typeof parsed}`);
-          }
-
-          const extracted = extractJsonPaths(parsed, paths);
-          return JSON.stringify(extracted);
-        });
-
-        if (replaced === source) return null;
-
-        return { contents: replaced, loader: 'ts' };
-      });
-    },
-  };
-}
+// endregion | Helpers
