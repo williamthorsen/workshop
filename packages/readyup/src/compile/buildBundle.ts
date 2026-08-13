@@ -89,8 +89,9 @@ export interface BundleResult {
  * compile would have produced -- a property that holds by construction rather than by two option
  * objects being kept in agreement.
  *
- * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`, so
- * the bytes are a function of the entry point and the plugin alone.
+ * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`. The bytes
+ * are a function of the entry point, the plugin, and the working directory, against which esbuild renders
+ * each bundled module's path into the output.
  *
  * The one place a compile's input closure is known, which is why it returns the closure alongside the
  * bytes rather than leaving a later reader to reconstruct it.
@@ -156,11 +157,14 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
 function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workingDir: string): CompiledInput[] {
   const byIdentity = new Map<string, CompiledInput>();
   for (const input of recorded) {
+    if (isDependencyFile(input.path)) continue;
     byIdentity.set(identifyInput(input.kind, input.path), input);
   }
 
   for (const key of metafileKeys) {
     const resolvedPath = path.resolve(workingDir, key);
+    // Excluded before the hash, so a dependency tree is never read from disk: one `import zod` inlines 79 files.
+    if (isDependencyFile(resolvedPath)) continue;
     const identity = identifyInput('module', resolvedPath);
     if (byIdentity.has(identity)) continue;
     byIdentity.set(identity, { hash: hashFile(resolvedPath), kind: 'module', path: resolvedPath });
@@ -168,7 +172,6 @@ function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workin
 
   return byIdentity
     .values()
-    .filter((input) => !input.path.split(path.sep).includes(EXCLUDED_DIRECTORY))
     .toArray()
     .toSorted((a, b) => a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind));
 }
@@ -189,6 +192,11 @@ function hasUnresolvedSpecifier(error: unknown): boolean {
         isRecord(message) && typeof message['text'] === 'string' && message['text'].startsWith('Could not resolve '),
     )
   );
+}
+
+/** Reports whether a path lies under a dependency directory, whose contents the closure does not record. */
+function isDependencyFile(filePath: string): boolean {
+  return filePath.split(path.sep).includes(EXCLUDED_DIRECTORY);
 }
 
 // endregion | Helpers
