@@ -8,7 +8,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
-import { FIXTURE_KITS_DIR, writeKit, writeKitManifest, writePackageJson } from '../test-utils/project-fixture.ts';
+import {
+  FIXTURE_KITS_DIR,
+  writeKit,
+  writeKitManifest,
+  writeModuleInput,
+  writePackageJson,
+} from '../test-utils/project-fixture.ts';
+
+/** Module a fixture kit inlines, as the manifest records it: relative to the manifest's own directory. */
+const INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
 
 /** Bundle reaching for a package that only the publishing project has installed. */
 const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { checklists: [] };\n';
@@ -183,6 +192,20 @@ describe('publishing kit', () => {
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 
     expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed', severity: 'error' });
+  });
+
+  // A module the bundle inlined is as much a part of what a consumer runs as the kit source is, and
+  // neither recorded hash describes it.
+  it('blocks on a kit whose inlined module has since moved on', async () => {
+    writePackageJson(projectRoot, { files: ['.readyup'] });
+    const entry = writeKit(projectRoot, 'default');
+    const helper = writeModuleInput(projectRoot, INLINED_MODULE_PATH, 'export const helper = 1;\n');
+    writeKitManifest(projectRoot, [{ ...entry, inputs: [...entry.inputs, helper] }]);
+    writeModuleInput(projectRoot, INLINED_MODULE_PATH, 'export const helper = 2;\n');
+
+    const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
+
+    expect(pickResult(results, 'Everything it inlined')).toMatchObject({ status: 'failed', severity: 'error' });
   });
 });
 

@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { hashFile } from '../../../src/verify/targetHash.ts';
+import type { JsonPathSpec } from '../../../src/compile/extractJsonPaths.ts';
+import { projectJsonFile } from '../../../src/compile/projectJsonFile.ts';
+import { hashFile, hashProjection } from '../../../src/verify/targetHash.ts';
 
 /** Kit directory a fixture project holds, relative to its root. */
 export const FIXTURE_KITS_DIR = path.join('.readyup', 'kits');
@@ -11,11 +13,20 @@ export const FIXTURE_MANIFEST_PATH = path.join('.readyup', 'manifest.json');
 
 /** A manifest kit entry, as `rdy compile` records one. */
 export interface FixtureManifestEntry {
+  inputs: FixtureManifestInput[];
   name: string;
   path: string;
   source: string;
   sourceHash: string;
   targetHash: string;
+}
+
+/** A recorded input, as `rdy compile` writes one. */
+export interface FixtureManifestInput {
+  hash: string;
+  kind: 'inline' | 'module';
+  path: string;
+  paths?: JsonPathSpec;
 }
 
 /** Text of a bundle importing nothing beyond what the runner supplies. */
@@ -24,6 +35,22 @@ export const SELF_CONTAINED_BUNDLE = [
   'export default { checklists: [{ name: "demo", checks: [{ name: "ok", check: () => fileExists(".") }] }] };',
   '',
 ].join('\n');
+
+/**
+ * Writes a JSON file a compile would have projected, and returns the record of that projection.
+ *
+ * The projection and its hash come from the same helpers `rdy compile` records through, so a test says a
+ * projection has moved by editing a picked field rather than by writing a hash of its own.
+ */
+export function writeInlineInput(
+  projectRoot: string,
+  recordedPath: string,
+  data: Record<string, unknown>,
+  paths: JsonPathSpec,
+): FixtureManifestInput {
+  const filePath = writeInputFile(projectRoot, recordedPath, `${JSON.stringify(data, undefined, 2)}\n`);
+  return { hash: hashProjection(projectJsonFile(filePath, paths)), kind: 'inline', path: recordedPath, paths };
+}
 
 /**
  * Writes a kit source and the bundle compiled from it, and returns the entry recording both.
@@ -41,11 +68,16 @@ export function writeKit(projectRoot: string, name: string, options: WriteKitOpt
   writeFileSync(sourcePath, source);
   writeFileSync(bundlePath, bundle);
 
+  const recordedSource = path.join('kits', `${name}.ts`);
+  const sourceHash = hashFile(sourcePath);
+
   return {
+    // A compile records the entry module in its closure and reads `sourceHash` back out of that record.
+    inputs: [{ hash: sourceHash, kind: 'module', path: recordedSource }],
     name,
     path: path.join('kits', `${name}.js`),
-    source: path.join('kits', `${name}.ts`),
-    sourceHash: hashFile(sourcePath),
+    source: recordedSource,
+    sourceHash,
     targetHash: hashFile(bundlePath),
   };
 }
@@ -55,6 +87,12 @@ export function writeKitManifest(projectRoot: string, entries: Array<Partial<Fix
   const manifestPath = path.join(projectRoot, FIXTURE_MANIFEST_PATH);
   mkdirSync(path.dirname(manifestPath), { recursive: true });
   writeFileSync(manifestPath, JSON.stringify({ version: 1, kits: entries }));
+}
+
+/** Writes a module a compile would have inlined, and returns the record of it. */
+export function writeModuleInput(projectRoot: string, recordedPath: string, contents: string): FixtureManifestInput {
+  const filePath = writeInputFile(projectRoot, recordedPath, contents);
+  return { hash: hashFile(filePath), kind: 'module', path: recordedPath };
 }
 
 /** Writes the fixture project's manifest of record, which the publishing kit reads for its `files` list. */
@@ -78,6 +116,14 @@ const DEFAULT_SOURCE = [
   'export default defineRdyKit({ checklists: [] });',
   '',
 ].join('\n');
+
+/** Writes a file at a path the manifest would record, relative to the manifest's own directory. */
+function writeInputFile(projectRoot: string, recordedPath: string, contents: string): string {
+  const filePath = path.join(projectRoot, path.dirname(FIXTURE_MANIFEST_PATH), recordedPath);
+  mkdirSync(path.dirname(filePath), { recursive: true });
+  writeFileSync(filePath, contents);
+  return filePath;
+}
 
 /** Overrides for the two files `writeKit` lays down. */
 interface WriteKitOptions {
