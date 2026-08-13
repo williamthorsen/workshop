@@ -4,9 +4,6 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-/** Modules registered as esbuild plugins, which read files through a `CompileRecorder` instead of `node:fs`. */
-const PLUGIN_MODULES = ['pickJsonPlugin.ts'];
-
 /** Specifiers that reach the filesystem directly. A plugin reaching one of these can read outside the closure. */
 const FILESYSTEM_SPECIFIERS = new Set(['fs', 'fs/promises', 'node:fs', 'node:fs/promises']);
 
@@ -18,7 +15,14 @@ interface Offender {
   specifier: string;
 }
 
+const PLUGIN_MODULES = findPluginModules();
+
 describe('esbuild plugins are isolated from the filesystem', () => {
+  // Derived rather than listed, so a plugin added to the build is covered without anyone extending a set here.
+  it('reads every plugin the build registers', () => {
+    expect(PLUGIN_MODULES).not.toStrictEqual([]);
+  });
+
   it.each(PLUGIN_MODULES)('%s reaches no filesystem API', (fileName) => {
     const offenders = findFilesystemImports(path.join(COMPILE_DIR, fileName));
     const formatted = offenders.map((offender) => `  ${offender.module} imports ${offender.specifier}`).join('\n');
@@ -35,6 +39,29 @@ describe('esbuild plugins are isolated from the filesystem', () => {
 });
 
 // region | Helpers
+
+/** Returns the names of the factories called inside an esbuild `plugins` array. */
+function collectPluginFactoryNames(source: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isPropertyAssignment(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'plugins' &&
+      ts.isArrayLiteralExpression(node.initializer)
+    ) {
+      for (const element of node.initializer.elements) {
+        if (ts.isCallExpression(element) && ts.isIdentifier(element.expression)) names.add(element.expression.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+
+  return names;
+}
 
 /** Walks a module's value imports transitively and returns every filesystem import reachable from it. */
 function findFilesystemImports(entryPath: string): Offender[] {
@@ -59,28 +86,22 @@ function findFilesystemImports(entryPath: string): Offender[] {
   return offenders.toSorted((a, b) => a.module.localeCompare(b.module) || a.specifier.localeCompare(b.specifier));
 }
 
-/**
- * Returns the specifiers a module imports for their values, in source order.
- *
- * Type-only imports are left out because they are erased: a type reaching a module that reads files says
- * nothing about what the importer can do at run time.
- */
-function readValueImports(modulePath: string): string[] {
-  const text = readFileSync(modulePath, 'utf8');
-  const source = ts.createSourceFile(modulePath, text, ts.ScriptTarget.Latest, true);
-  const specifiers: string[] = [];
+/** Returns the modules `buildBundle` registers as esbuild plugins, named by their file. */
+function findPluginModules(): string[] {
+  const source = parseModule(path.join(COMPILE_DIR, 'buildBundle.ts'));
+  const factoryNames = collectPluginFactoryNames(source);
+  const fileNames: string[] = [];
 
   for (const statement of source.statements) {
-    if (ts.isImportDeclaration(statement)) {
-      if (!importsValues(statement.importClause)) continue;
-      if (ts.isStringLiteral(statement.moduleSpecifier)) specifiers.push(statement.moduleSpecifier.text);
-    } else if (ts.isExportDeclaration(statement) && statement.moduleSpecifier !== undefined) {
-      if (statement.isTypeOnly) continue;
-      if (ts.isStringLiteral(statement.moduleSpecifier)) specifiers.push(statement.moduleSpecifier.text);
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings === undefined || !ts.isNamedImports(bindings)) continue;
+    if (bindings.elements.some((element) => factoryNames.has(element.name.text))) {
+      fileNames.push(path.basename(statement.moduleSpecifier.text));
     }
   }
 
-  return specifiers;
+  return fileNames.toSorted((a, b) => a.localeCompare(b));
 }
 
 /** Reports whether an import clause binds anything that survives to run time. */
@@ -95,6 +116,34 @@ function importsValues(importClause: ts.ImportClause | undefined): boolean {
   if (ts.isNamespaceImport(bindings)) return true;
 
   return bindings.elements.some((element) => !element.isTypeOnly);
+}
+
+/** Parses a TypeScript module into a syntax tree. */
+function parseModule(modulePath: string): ts.SourceFile {
+  return ts.createSourceFile(modulePath, readFileSync(modulePath, 'utf8'), ts.ScriptTarget.Latest, true);
+}
+
+/**
+ * Returns the specifiers a module imports for their values, in source order.
+ *
+ * Type-only imports are left out because they are erased: a type reaching a module that reads files says
+ * nothing about what the importer can do at run time.
+ */
+function readValueImports(modulePath: string): string[] {
+  const source = parseModule(modulePath);
+  const specifiers: string[] = [];
+
+  for (const statement of source.statements) {
+    if (ts.isImportDeclaration(statement)) {
+      if (!importsValues(statement.importClause)) continue;
+      if (ts.isStringLiteral(statement.moduleSpecifier)) specifiers.push(statement.moduleSpecifier.text);
+    } else if (ts.isExportDeclaration(statement) && statement.moduleSpecifier !== undefined) {
+      if (statement.isTypeOnly) continue;
+      if (ts.isStringLiteral(statement.moduleSpecifier)) specifiers.push(statement.moduleSpecifier.text);
+    }
+  }
+
+  return specifiers;
 }
 
 // endregion | Helpers

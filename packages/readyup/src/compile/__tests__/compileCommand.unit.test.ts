@@ -925,6 +925,60 @@ describe(compileCommand, () => {
     });
   });
 
+  // esbuild reports the path it resolved a module to, so a symlink above the kit leaves the closure keyed
+  // on a path the command was never handed.
+  it('finds the entry point record under the real path of the source it was given', async () => {
+    const realEntryPath = path.resolve('/real/kits/deploy.ts');
+    mockRealpathSync.mockReturnValue(realEntryPath);
+    mockCompileConfig.mockResolvedValue(
+      compileResult(realEntryPath, { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }, 'r34lp47h'),
+    );
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ kits: [expect.objectContaining({ sourceHash: 'r34lp47h' })] }),
+    );
+  });
+
+  it('records an inlined JSON file with the specifier that produced its projection', async () => {
+    const result = compileResult('deploy.ts', {
+      outputPath: '/abs/deploy.js',
+      changed: true,
+      targetHash: 'deadbeef',
+    });
+    result.inputs.push({
+      hash: '1nl1n3d0',
+      kind: 'inline',
+      path: path.resolve('package.json'),
+      paths: ['version', ['engines', 'node']],
+    });
+    mockCompileConfig.mockResolvedValue(result);
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+    });
+
+    await compileCommand(['deploy.ts']);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        kits: [
+          expect.objectContaining({
+            inputs: [
+              { hash: SOURCE_HASH, kind: 'module', path: '../deploy.ts' },
+              { hash: '1nl1n3d0', kind: 'inline', path: '../package.json', paths: ['version', ['engines', 'node']] },
+            ],
+          }),
+        ],
+      }),
+    );
+  });
+
   it('takes the source hash of a single-file compile from the entry point record', async () => {
     const result = compileResult(
       'deploy.ts',
