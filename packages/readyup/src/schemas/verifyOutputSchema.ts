@@ -33,19 +33,26 @@ export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ i
  * One recorded input that no longer matches what the compile read.
  *
  * `path` is the file as the manifest records it, relative to the manifest directory, and `kind`
- * separates a module the bundle inlined from a JSON projection `pickJson` substituted. `expected`
- * and `actual` appear on `changed` alone; `detail` appears on `unprojectable` alone, where the file
- * is present and the fields the kit pinned to are gone.
+ * separates a module the bundle inlined from a JSON projection `pickJson` substituted.
+ *
+ * Discriminated on `reason` so each cause carries exactly what it compared, as `ManifestInputSchema`
+ * discriminates the record this reads back: `changed` carries the hash pair, `missing` carries
+ * neither, and `unprojectable` carries a diagnosis instead and is inline-only, since only a
+ * projection can fail to be reproduced. A consumer generating types from this narrows by `reason`
+ * rather than by hand over three fields that are independently optional.
  */
 export const InputFailureSchema = z
-  .object({
-    kind: z.enum(['inline', 'module']),
-    path: z.string(),
-    reason: z.enum(['changed', 'missing', 'unprojectable']),
-    expected: z.string().optional(),
-    actual: z.string().optional(),
-    detail: z.string().optional(),
-  })
+  .discriminatedUnion('reason', [
+    z.object({
+      kind: z.enum(['inline', 'module']),
+      path: z.string(),
+      reason: z.literal('changed'),
+      expected: z.string(),
+      actual: z.string(),
+    }),
+    z.object({ kind: z.enum(['inline', 'module']), path: z.string(), reason: z.literal('missing') }),
+    z.object({ kind: z.literal('inline'), path: z.string(), reason: z.literal('unprojectable'), detail: z.string() }),
+  ])
   .meta({ id: 'InputFailure' });
 
 /**

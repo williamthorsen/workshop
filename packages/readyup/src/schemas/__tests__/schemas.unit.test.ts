@@ -5,12 +5,13 @@ import { ZodError } from 'zod';
 
 import type { RdyErrorCode } from '../../errors/RdyError.ts';
 import type { Severity } from '../../kits/types.ts';
+import type { InputFailure } from '../../verify/checkInputDrift.ts';
 import type { JsonErrorCode, JsonSeverity, JsonWarning, JsonWarningCode, RaisedWarning } from '../common.ts';
 import { CompileOutputSchema } from '../compileOutputSchema.ts';
 import { ErrorEnvelopeSchema } from '../errorEnvelopeSchema.ts';
 import { ListOutputSchema } from '../listOutputSchema.ts';
 import { ReportSchema } from '../reportSchema.ts';
-import { VerifyOutputSchema } from '../verifyOutputSchema.ts';
+import { type JsonInputFailure, VerifyOutputSchema } from '../verifyOutputSchema.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
@@ -237,6 +238,10 @@ describe('JSON payload schemas', () => {
   describe('derived types', () => {
     it('keeps the wire severity vocabulary in step with the runner type', () => {
       expectTypeOf<JsonSeverity>().toEqualTypeOf<Severity>();
+    });
+
+    it('keeps the published input failure in step with the verdict that produces it', () => {
+      expectTypeOf<JsonInputFailure>().toEqualTypeOf<InputFailure>();
     });
 
     it('keeps the wire error taxonomy in step with RdyErrorCode', () => {
