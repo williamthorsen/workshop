@@ -64,7 +64,8 @@
   },
   "devDependencies": {
     "@types/picomatch": "4.0.3",
-    "ajv": "8.20.0"
+    "ajv": "8.20.0",
+    "esbuild": "catalog:"
   },
   "peerDependencies": {
     "esbuild": ">=0.28.1"

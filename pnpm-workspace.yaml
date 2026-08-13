@@ -8,6 +8,7 @@ allowBuilds:
 catalog:
   '@williamthorsen/toolbelt.errors': 0.3.0
   '@williamthorsen/toolbelt.packaging': 0.3.0
+  esbuild: 0.28.1
   zod: 4.4.3
 
 savePrefix: ''
