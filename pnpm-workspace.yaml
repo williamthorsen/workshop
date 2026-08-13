@@ -6,8 +6,8 @@ allowBuilds:
   lefthook: true
 
 catalog:
-  '@williamthorsen/toolbelt.errors': 0.3.0
-  '@williamthorsen/toolbelt.packaging': 0.3.0
+  '@williamthorsen/toolbelt.errors': 0.4.0
+  '@williamthorsen/toolbelt.packaging': 0.3.1
   esbuild: 0.28.1
   zod: 4.4.3
 
