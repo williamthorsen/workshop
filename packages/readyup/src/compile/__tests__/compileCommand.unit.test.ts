@@ -11,11 +11,11 @@ const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
+const mockRealpathSync = vi.hoisted(() => Object.assign(vi.fn(), { native: vi.fn() }));
 const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
-const mockHashFile = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
@@ -32,6 +32,7 @@ vi.mock(import('../../config/loadConfig.ts'), () => ({
 vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   readdirSync: mockReaddirSync,
+  realpathSync: mockRealpathSync,
 }));
 
 vi.mock('picomatch', () => ({
@@ -54,21 +55,48 @@ vi.mock(import('../../verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
 }));
 
-vi.mock(import('../../verify/targetHash.ts'), () => ({
-  hashFile: mockHashFile,
-}));
-
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { VERSION } from '../../version.ts';
 import { compileCommand } from '../compileCommand.ts';
+import type { CompileResult } from '../compileConfig.ts';
 import type { KitMetadata } from '../validateCompiledOutput.ts';
 
 const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.glyph;
 const ICON_COMPILED = richFormatter.tokens.passed.glyph;
 const ICON_DRIFT = richFormatter.tokens.failedWarn.glyph;
 const GLYPH_OUTPUT = richFormatter.tokens.kit.glyph;
+
+/** Directory the batch tests sweep, matching the `srcDir` the config they mock declares. */
+const SRC_DIR = '.readyup/kits';
+
+/** The hash a compile records for its entry point, which is where a manifest entry's `sourceHash` comes from. */
+const SOURCE_HASH = '5c0urce1';
+
+/** Absolute path of a kit source in the directory a batch compile sweeps. */
+function kitSource(fileName: string): string {
+  return path.resolve(process.cwd(), SRC_DIR, fileName);
+}
+
+/**
+ * Builds a `compileConfig` result whose closure records `entry` as the module the bundle was built from.
+ *
+ * A test that cares which file supplied `sourceHash` says so by naming the entry, because the command
+ * reads the hash back out of the closure rather than hashing the source itself.
+ */
+function compileResult(
+  entry: string,
+  result: { outputPath: string; changed: boolean; targetHash: string },
+  hash: string = SOURCE_HASH,
+): CompileResult {
+  return { ...result, inputs: [{ hash, kind: 'module', path: path.resolve(entry) }] };
+}
+
+/** The `inputs` a manifest entry carries when its compile read only the entry point, stated against the manifest. */
+function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
+  return [{ hash, kind: 'module', path: relativePath }];
+}
 
 /** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
@@ -84,7 +112,8 @@ describe(compileCommand, () => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    mockHashFile.mockReturnValue('5c0urce1');
+    // No path these tests name holds a symlink, so a real path is the path itself.
+    mockRealpathSync.mockImplementation((target: string) => target);
   });
 
   afterEach(() => {
@@ -94,16 +123,18 @@ describe(compileCommand, () => {
     mockLoadConfig.mockReset();
     mockExistsSync.mockReset();
     mockReaddirSync.mockReset();
+    mockRealpathSync.mockReset();
     mockPicomatch.mockReset();
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
     mockCheckDrift.mockReset();
-    mockHashFile.mockReset();
   });
 
   // Explicit input file tests
   it('returns 0 and writes a section heading for single file', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     const exitCode = await compileCommand(['input.ts']);
 
@@ -113,7 +144,9 @@ describe(compileCommand, () => {
   });
 
   it('shows compiled indicator for a changed single file', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand(['input.ts']);
 
@@ -122,7 +155,9 @@ describe(compileCommand, () => {
   });
 
   it('shows no-changes indicator for an unchanged single file', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: false, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/out.js', changed: false, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand(['input.ts']);
 
@@ -131,7 +166,9 @@ describe(compileCommand, () => {
   });
 
   it('passes --output value to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     const exitCode = await compileCommand(['input.ts', '--output', 'custom.js']);
 
@@ -140,7 +177,9 @@ describe(compileCommand, () => {
   });
 
   it('passes --output=value inline form to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     const exitCode = await compileCommand(['input.ts', '--output=custom.js']);
 
@@ -149,7 +188,9 @@ describe(compileCommand, () => {
   });
 
   it('passes -o value short form to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     const exitCode = await compileCommand(['input.ts', '-o', 'custom.js']);
 
@@ -214,7 +255,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -234,7 +277,9 @@ describe(compileCommand, () => {
       return !target.endsWith('.git');
     });
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -253,7 +298,9 @@ describe(compileCommand, () => {
     );
     mockReaddirSync.mockReturnValue(['a.ts']);
 
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -266,7 +313,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -281,8 +330,12 @@ describe(compileCommand, () => {
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts', 'b.ts', 'readme.md']);
     mockCompileConfig
-      .mockResolvedValueOnce({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' })
-      .mockResolvedValueOnce({ outputPath: '/abs/b.js', changed: false, targetHash: 'bbbb2222' });
+      .mockResolvedValueOnce(
+        compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+      )
+      .mockResolvedValueOnce(
+        compileResult(kitSource('b.ts'), { outputPath: '/abs/b.js', changed: false, targetHash: 'bbbb2222' }),
+      );
 
     const exitCode = await compileCommand([]);
 
@@ -316,7 +369,21 @@ describe(compileCommand, () => {
     mockReaddirSync.mockReturnValue(['shared/deploy.ts', 'shared/infra.ts', 'other.ts']);
     const matchFn = vi.fn((name: string) => name.startsWith('shared/'));
     mockPicomatch.mockReturnValue(matchFn);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig
+      .mockResolvedValueOnce(
+        compileResult(kitSource('shared/deploy.ts'), {
+          outputPath: '/abs/deploy.js',
+          changed: true,
+          targetHash: 'aaaa1111',
+        }),
+      )
+      .mockResolvedValueOnce(
+        compileResult(kitSource('shared/infra.ts'), {
+          outputPath: '/abs/infra.js',
+          changed: true,
+          targetHash: 'bbbb2222',
+        }),
+      );
 
     const exitCode = await compileCommand([]);
 
@@ -418,7 +485,9 @@ describe(compileCommand, () => {
 
   // Post-compile validation tests
   it('returns 1 when post-compile validation fails for explicit input', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
+    );
     mockValidateCompiledOutput.mockRejectedValue(new Error('Suite name(s) collide with checklist name(s): deploy'));
 
     const exitCode = await compileCommand(['input.ts']);
@@ -433,7 +502,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
     mockValidateCompiledOutput.mockRejectedValue(new Error('suite "ci" references unknown checklist "missing"'));
 
     const exitCode = await compileCommand([]);
@@ -452,7 +523,9 @@ describe(compileCommand, () => {
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
       mockCompileConfig
         .mockRejectedValueOnce(new Error('alpha is not valid TypeScript'))
-        .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+        .mockResolvedValueOnce(
+          compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+        );
     }
 
     it('compiles the kits after a failed one instead of abandoning the sweep', async () => {
@@ -536,7 +609,9 @@ describe(compileCommand, () => {
 
   describe('manifest checklist names', () => {
     it('records the checklist names the compiled kit declares', async () => {
-      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockCompileConfig.mockResolvedValue(
+        compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
+      );
       mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ checklists: ['preflight', 'deploy'] }));
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('missing');
@@ -551,7 +626,9 @@ describe(compileCommand, () => {
     });
 
     it('omits the field for a kit with no checklists to record', async () => {
-      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockCompileConfig.mockResolvedValue(
+        compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
+      );
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('missing');
       });
@@ -575,7 +652,9 @@ describe(compileCommand, () => {
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
       mockCompileConfig
         .mockRejectedValueOnce(new Error('alpha is not valid TypeScript'))
-        .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+        .mockResolvedValueOnce(
+          compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+        );
 
       const exitCode = await compileCommand(['--json']);
 
@@ -594,7 +673,9 @@ describe(compileCommand, () => {
     });
 
     it('reports a clean single-file compile as passed', async () => {
-      mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' });
+      mockCompileConfig.mockResolvedValue(
+        compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
+      );
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('missing');
       });
@@ -665,15 +746,21 @@ describe(compileCommand, () => {
   });
 
   /** A two-kit batch in which both kits compile successfully. */
-  function arrangeTwoKitBatch(): void {
+  function arrangeTwoKitBatch(hashes: { alphaHash?: string; betaHash?: string } = {}): void {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
-    mockCompileConfig
-      .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' })
-      .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+    // Keyed by the source rather than queued, so a kit the sweep skips does not hand its result to the next one.
+    mockCompileConfig.mockImplementation((inputPath: string) => {
+      const isAlpha = path.basename(inputPath) === 'alpha.ts';
+      const result = isAlpha
+        ? { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }
+        : { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' };
+
+      return Promise.resolve(compileResult(inputPath, result, isAlpha ? hashes.alphaHash : hashes.betaHash));
+    });
   }
 
   // Manifest generation tests
@@ -689,6 +776,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          inputs: recordedEntry('kits/alpha.ts'),
           name: 'alpha',
           description: 'Alpha checks',
           path: expect.stringContaining('alpha.js'),
@@ -698,6 +786,7 @@ describe(compileCommand, () => {
           targetHash: 'aaaa1111',
         },
         {
+          inputs: recordedEntry('kits/beta.ts'),
           name: 'beta',
           path: expect.stringContaining('beta.js'),
           readyupVersion: VERSION,
@@ -726,7 +815,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand(['--skip-manifest']);
 
@@ -739,7 +830,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand(['--manifest=custom/manifest.json']);
 
@@ -747,7 +840,9 @@ describe(compileCommand, () => {
   });
 
   it('upserts manifest entry for single-file compile with location fields', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ description: 'Deploy checks' }));
     mockReadManifest.mockReturnValue({
       version: 1,
@@ -761,6 +856,7 @@ describe(compileCommand, () => {
       kits: [
         { name: 'default', description: 'Default checks' },
         {
+          inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Deploy checks',
           path: expect.stringContaining('deploy.js'),
@@ -774,7 +870,9 @@ describe(compileCommand, () => {
   });
 
   it('creates new manifest for single-file compile when no manifest exists', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
@@ -786,6 +884,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           path: expect.stringContaining('deploy.js'),
           readyupVersion: VERSION,
@@ -798,7 +897,9 @@ describe(compileCommand, () => {
   });
 
   it('replaces existing entry when upserting for single-file compile', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata({ description: 'Updated' }));
     mockReadManifest.mockReturnValue({
       version: 1,
@@ -811,6 +912,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Updated',
           path: expect.stringContaining('deploy.js'),
@@ -823,20 +925,27 @@ describe(compileCommand, () => {
     });
   });
 
-  it('hashes the source that a single-file compile was given', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+  it('takes the source hash of a single-file compile from the entry point record', async () => {
+    const result = compileResult(
+      'deploy.ts',
+      { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' },
+      'e47r1e50',
+    );
+    mockCompileConfig.mockResolvedValue(result);
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
     await compileCommand(['deploy.ts']);
 
-    expect(mockHashFile).toHaveBeenCalledWith(expect.stringContaining('deploy.ts'));
+    expect(mockWriteManifest).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ kits: [expect.objectContaining({ sourceHash: 'e47r1e50' })] }),
+    );
   });
 
   it('records a distinct source hash per kit in a batch compile', async () => {
-    arrangeTwoKitBatch();
-    mockHashFile.mockReturnValueOnce('a1a1a1a1').mockReturnValueOnce('b2b2b2b2');
+    arrangeTwoKitBatch({ alphaHash: 'a1a1a1a1', betaHash: 'b2b2b2b2' });
 
     await compileCommand([]);
 
@@ -872,7 +981,9 @@ describe(compileCommand, () => {
   });
 
   it('skips manifest for single-file compile when --skip-manifest is set', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand(['input.ts', '--skip-manifest']);
 
@@ -886,7 +997,9 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
     mockWriteManifest.mockImplementation(() => {
       throw new Error('EACCES: permission denied');
     });
@@ -899,7 +1012,9 @@ describe(compileCommand, () => {
   });
 
   it('writes warning to stderr when upsert encounters non-missing-file error', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new Error('Invalid manifest schema in .readyup/manifest.json: bad data');
@@ -914,7 +1029,9 @@ describe(compileCommand, () => {
   });
 
   it('uses custom manifest path from --manifest flag for single-file compile', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
@@ -933,8 +1050,12 @@ describe(compileCommand, () => {
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
     mockCompileConfig
-      .mockResolvedValueOnce({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' })
-      .mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+      .mockResolvedValueOnce(
+        compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
+      )
+      .mockResolvedValueOnce(
+        compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+      );
 
     await compileCommand([]);
 
@@ -947,7 +1068,9 @@ describe(compileCommand, () => {
   });
 
   it('populates readyupVersion when upserting a single-file compile entry', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'deadbeef' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
@@ -964,7 +1087,9 @@ describe(compileCommand, () => {
   });
 
   it('maintains alphabetical order when upserting manifest entries', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('alpha.ts', { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockReturnValue({
       version: 1,
@@ -1004,7 +1129,9 @@ describe(compileCommand, () => {
   });
 
   it('bypasses drift gate with --force on single-file compile', async () => {
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/deploy.js', changed: true, targetHash: 'bbbb2222' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'bbbb2222' }),
+    );
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockReadManifest.mockReturnValue({
       version: 1,
@@ -1047,7 +1174,9 @@ describe(compileCommand, () => {
         resolvedPath: '/abs/alpha.js',
       })
       .mockReturnValueOnce({ kind: 'ok', targetHash: 'bbbb0000' });
-    mockCompileConfig.mockResolvedValueOnce({ outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' });
+    mockCompileConfig.mockResolvedValueOnce(
+      compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+    );
 
     const exitCode = await compileCommand([]);
 
@@ -1083,7 +1212,9 @@ describe(compileCommand, () => {
       actual: 'aaaa9999',
       resolvedPath: '/abs/alpha.js',
     });
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa9999' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa9999' }),
+    );
 
     const exitCode = await compileCommand(['--force']);
 
@@ -1100,7 +1231,9 @@ describe(compileCommand, () => {
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
     mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -1116,7 +1249,9 @@ describe(compileCommand, () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Unexpected token in JSON at position 0');
     });
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 
@@ -1133,7 +1268,9 @@ describe(compileCommand, () => {
     mockReadManifest.mockImplementation(() => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
-    mockCompileConfig.mockResolvedValue({ outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' });
+    mockCompileConfig.mockResolvedValue(
+      compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
+    );
 
     await compileCommand([]);
 

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
@@ -9,10 +9,10 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
-import { configError, usageError } from '../errors/RdyError.ts';
+import { configError, internalError, usageError } from '../errors/RdyError.ts';
 import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
-import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
@@ -20,10 +20,10 @@ import { pluralizeWithCount } from '../portable/pluralize.ts';
 import { type JsonCompileKitEntry, type JsonCompileOutput, SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
-import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
+import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 import type { KitMetadata } from './validateCompiledOutput.ts';
 import { validateCompiledOutput } from './validateCompiledOutput.ts';
@@ -141,10 +141,12 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     try {
       const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
       const relSourcePath = path.relative(manifestDir, resolvedInputPath);
+      const closure = deriveClosureFields(result.inputs, resolvedInputPath, manifestDir);
       upsertManifest(manifestPath, kitName, metadata, {
+        inputs: closure.inputs,
         path: relOutputPath,
         source: relSourcePath,
-        sourceHash: hashFile(resolvedInputPath),
+        sourceHash: closure.sourceHash,
         targetHash: result.targetHash,
       });
     } catch (error: unknown) {
@@ -262,12 +264,14 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
 
       const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
       const relSourcePath = path.relative(manifestDir, srcFile);
+      const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
       kitEntries.push({
+        inputs: closure.inputs,
         name: kitName,
         path: relOutputPath,
         readyupVersion: VERSION,
         source: relSourcePath,
-        sourceHash: hashFile(srcFile),
+        sourceHash: closure.sourceHash,
         targetHash: result.targetHash,
         ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
         ...(metadata.description !== undefined && { description: metadata.description }),
@@ -350,10 +354,50 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
 
 /** Location fields for a manifest kit entry. */
 interface KitLocationFields {
+  inputs: RdyManifestInput[];
   path: string;
   source: string;
   sourceHash: string;
   targetHash: string;
+}
+
+/** The manifest fields a compile's input closure supplies. */
+interface ClosureFields {
+  inputs: RdyManifestInput[];
+  sourceHash: string;
+}
+
+/**
+ * Returns the manifest fields a compile's closure supplies, with paths stated against the manifest.
+ *
+ * `sourceHash` is the entry's own record rather than a second reading of the file, so the two cannot
+ * disagree. A closure holding no record of the entry is a defect in rdy rather than an occasion to hash
+ * the file again: deriving is the point, and hashing separately would restore exactly the disagreement
+ * deriving prevents.
+ *
+ * The entry is matched by its real path, because esbuild reports the path it resolved a module to, which
+ * differs from the path a compile was handed wherever a directory above it is a symlink.
+ */
+function deriveClosureFields(inputs: CompiledInput[], entryPath: string, manifestDir: string): ClosureFields {
+  const realEntryPath = realpathSync(entryPath);
+  const entry = inputs.find((input) => input.kind === 'module' && input.path === realEntryPath);
+  if (entry === undefined) {
+    throw internalError(`Compile recorded no input for its entry point ${entryPath}`);
+  }
+
+  return {
+    inputs: inputs.map((input) => relativizeInput(input, manifestDir)),
+    sourceHash: entry.hash,
+  };
+}
+
+/** Returns a recorded input with its path stated relative to the manifest directory, as `path` and `source` are. */
+function relativizeInput(input: CompiledInput, manifestDir: string): RdyManifestInput {
+  const relativePath = path.relative(manifestDir, input.path);
+
+  return input.kind === 'inline'
+    ? { hash: input.hash, kind: 'inline', path: relativePath, paths: input.paths }
+    : { hash: input.hash, kind: 'module', path: relativePath };
 }
 
 /** Read an existing manifest (if any), upsert a kit entry, and write back. */
@@ -376,6 +420,7 @@ function upsertManifest(
   }
 
   const entry: RdyManifestKit = {
+    inputs: location.inputs,
     name: kitName,
     path: location.path,
     readyupVersion: VERSION,
