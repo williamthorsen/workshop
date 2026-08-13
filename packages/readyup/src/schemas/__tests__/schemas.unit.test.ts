@@ -5,12 +5,13 @@ import { ZodError } from 'zod';
 
 import type { RdyErrorCode } from '../../errors/RdyError.ts';
 import type { Severity } from '../../kits/types.ts';
+import type { InputFailure } from '../../verify/checkInputDrift.ts';
 import type { JsonErrorCode, JsonSeverity, JsonWarning, JsonWarningCode, RaisedWarning } from '../common.ts';
 import { CompileOutputSchema } from '../compileOutputSchema.ts';
 import { ErrorEnvelopeSchema } from '../errorEnvelopeSchema.ts';
 import { ListOutputSchema } from '../listOutputSchema.ts';
 import { ReportSchema } from '../reportSchema.ts';
-import { VerifyOutputSchema } from '../verifyOutputSchema.ts';
+import { type JsonInputFailure, VerifyOutputSchema } from '../verifyOutputSchema.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
@@ -196,6 +197,25 @@ describe('JSON payload schemas', () => {
       expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).not.toThrow();
     });
 
+    it('accepts a payload from a readyup that predates the inputs verdict', () => {
+      const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+    });
+
+    it('rejects an inputs verdict outside the vocabulary', () => {
+      const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'missing' }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+    });
+
+    it('rejects an input failure that names no cause the vocabulary knows', () => {
+      const inputFailures = [{ kind: 'module', path: 'kits/shared.ts', reason: 'drifted' }];
+      const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'stale', inputFailures }];
+
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).toThrow(ZodError);
+    });
+
     it('rejects a rebuild verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
 
@@ -220,13 +240,17 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonSeverity>().toEqualTypeOf<Severity>();
     });
 
+    it('keeps the published input failure in step with the verdict that produces it', () => {
+      expectTypeOf<JsonInputFailure>().toEqualTypeOf<InputFailure>();
+    });
+
     it('keeps the wire error taxonomy in step with RdyErrorCode', () => {
       expectTypeOf<JsonErrorCode>().toEqualTypeOf<RdyErrorCode>();
     });
 
     it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
-      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'source-stale' | 'target-drift'>();
-      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'source-stale' | 'target-drift'>();
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'input-stale' | 'source-stale' | 'target-drift'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'input-stale' | 'source-stale' | 'target-drift'>();
     });
 
     it('publishes the known warning codes as distinguishable members of an open set', () => {
@@ -235,6 +259,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
       expectTypeOf<'target-drift'>().toExtend<JsonWarningCode>();
       expectTypeOf<'source-stale'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'input-stale'>().toExtend<JsonWarningCode>();
       expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
     });
   });

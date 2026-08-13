@@ -139,9 +139,38 @@ export const verifyPayload = {
   schemaVersion: 1,
   passed: false,
   kits: [
-    { name: 'deploy', status: 'ok', sourceStatus: 'ok' },
-    { name: 'release', status: 'drift', expected: 'abc123', actual: 'def456', sourceStatus: 'unverified' },
-    { name: 'preflight', status: 'ok', sourceStatus: 'stale', sourceExpected: '111aaa', sourceActual: '222bbb' },
+    { name: 'deploy', status: 'ok', sourceStatus: 'ok', inputsStatus: 'ok' },
+    {
+      name: 'release',
+      status: 'drift',
+      expected: 'abc123',
+      actual: 'def456',
+      sourceStatus: 'unverified',
+      inputsStatus: 'unverified',
+    },
+    {
+      name: 'preflight',
+      status: 'ok',
+      sourceStatus: 'stale',
+      sourceExpected: '111aaa',
+      sourceActual: '222bbb',
+      inputsStatus: 'ok',
+    },
+    {
+      name: 'publish',
+      status: 'ok',
+      sourceStatus: 'ok',
+      inputsStatus: 'stale',
+      inputFailures: [
+        { kind: 'module', path: 'kits/shared.ts', reason: 'changed', expected: '333ccc', actual: '444ddd' },
+        {
+          kind: 'inline',
+          path: '../../package.json',
+          reason: 'unprojectable',
+          detail: 'Path not found in JSON: version',
+        },
+      ],
+    },
   ],
 };
 

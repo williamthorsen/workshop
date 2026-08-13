@@ -19,10 +19,20 @@ import { type JsonVerifyKitEntry, type JsonVerifyOutput, SCHEMA_VERSION } from '
 import { VERSION } from '../version.ts';
 import type { DriftStatus } from './checkDrift.ts';
 import { checkDrift } from './checkDrift.ts';
+import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
+import { checkInputDrift } from './checkInputDrift.ts';
 import type { RebuildStatus } from './checkRebuild.ts';
 import { checkRebuild } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { checkSourceDrift } from './checkSourceDrift.ts';
+
+/** Every verdict one kit reached, gathered so each pass over a kit reads the same set. */
+interface KitVerdicts {
+  drift: DriftStatus;
+  inputs: InputsStatus;
+  rebuild: RebuildStatus | undefined;
+  source: SourceStatus;
+}
 
 const verifyOptions = {
   json: { type: 'boolean' },
@@ -36,7 +46,7 @@ const verifyOptions = {
  * Handles the `verify` subcommand: reads the manifest, hashes each kit's source and compiled
  * output, and reports what no longer matches.
  *
- * Each kit carries two independent verdicts, and a third under `--rebuild`. Returns 0 when every
+ * Each kit carries three independent verdicts, and a fourth under `--rebuild`. Returns 0 when every
  * verdict is `ok` or `unverified`; 1 when any kit has drifted, gone stale, lost a file, or failed
  * to reproduce. An unreadable manifest is a config failure and is thrown rather than reported as
  * drift, as is a `--rebuild` run with no esbuild to rebuild with.
@@ -88,12 +98,15 @@ export async function verifyCommand(args: string[]): Promise<number> {
   const entries: JsonVerifyKitEntry[] = [];
   let failed = 0;
   for (const kit of manifest.kits) {
-    const status = checkDrift(kit, manifestDir);
-    const sourceStatus = checkSourceDrift(kit, manifestDir);
-    const rebuildStatus = rebuild ? await checkRebuild(kit, manifestDir) : undefined;
-    writeHuman(formatStatusLine(kit, status, sourceStatus, rebuildStatus), json);
-    entries.push(buildVerifyEntry(kit.name, status, sourceStatus, rebuildStatus));
-    if (!isPassingVerdict(status, sourceStatus, rebuildStatus)) {
+    const verdicts: KitVerdicts = {
+      drift: checkDrift(kit, manifestDir),
+      inputs: checkInputDrift(kit, manifestDir),
+      rebuild: rebuild ? await checkRebuild(kit, manifestDir) : undefined,
+      source: checkSourceDrift(kit, manifestDir),
+    };
+    writeHuman(formatStatusLine(kit, verdicts), json);
+    entries.push(buildVerifyEntry(kit.name, verdicts));
+    if (!isPassingVerdict(verdicts)) {
       failed += 1;
     }
   }
@@ -139,45 +152,39 @@ function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean
  * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
  * predate it, and a verdict derived from an optional field has an absent case to get wrong.
  *
- * `unverified` passes on either hash axis: a manifest entry with no recorded hash predates the
- * feature or was written with `--skip-manifest`, which says nothing about whether the kit has
+ * `unverified` passes on every recorded-hash axis: a manifest entry with no recorded hash predates
+ * the feature or was written with `--skip-manifest`, which says nothing about whether the kit has
  * changed. The rebuild axis has no such case -- only `ok` passes there, and a kit the rebuild could
  * not reach an answer for fails rather than being waived.
  */
-function isPassingVerdict(
-  status: DriftStatus,
-  sourceStatus: SourceStatus,
-  rebuildStatus: RebuildStatus | undefined,
-): boolean {
-  const targetPasses = status.kind === 'ok' || status.kind === 'unverified';
-  const sourcePasses = sourceStatus.kind === 'ok' || sourceStatus.kind === 'unverified';
-  const rebuildPasses = rebuildStatus === undefined || rebuildStatus.kind === 'ok';
-  return targetPasses && sourcePasses && rebuildPasses;
+function isPassingVerdict({ drift, inputs, rebuild, source }: KitVerdicts): boolean {
+  const targetPasses = drift.kind === 'ok' || drift.kind === 'unverified';
+  const sourcePasses = source.kind === 'ok' || source.kind === 'unverified';
+  const inputsPass = inputs.kind === 'ok' || inputs.kind === 'unverified';
+  const rebuildPasses = rebuild === undefined || rebuild.kind === 'ok';
+  return targetPasses && sourcePasses && inputsPass && rebuildPasses;
 }
 
-/** Builds a kit's JSON entry, carrying a pair of hashes only on a verdict that compared them. */
-function buildVerifyEntry(
-  name: string,
-  status: DriftStatus,
-  sourceStatus: SourceStatus,
-  rebuildStatus: RebuildStatus | undefined,
-): JsonVerifyKitEntry {
+/** Builds a kit's JSON entry, carrying what a verdict compared only where it compared something. */
+function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitVerdicts): JsonVerifyKitEntry {
   return {
     name,
-    status: status.kind,
-    ...(status.kind === 'drift' && { expected: status.expected, actual: status.actual }),
-    sourceStatus: sourceStatus.kind,
-    ...(sourceStatus.kind === 'stale' && {
-      sourceExpected: sourceStatus.expected,
-      sourceActual: sourceStatus.actual,
+    status: drift.kind,
+    ...(drift.kind === 'drift' && { expected: drift.expected, actual: drift.actual }),
+    sourceStatus: source.kind,
+    ...(source.kind === 'stale' && {
+      sourceExpected: source.expected,
+      sourceActual: source.actual,
     }),
-    ...(rebuildStatus !== undefined && { rebuildStatus: rebuildStatus.kind }),
-    ...(rebuildStatus?.kind === 'mismatch' && {
-      rebuildExpected: rebuildStatus.expected,
-      rebuildActual: rebuildStatus.actual,
-      ...(rebuildStatus.compiledWith !== undefined && { rebuildCompiledWith: rebuildStatus.compiledWith }),
+    inputsStatus: inputs.kind,
+    ...(inputs.kind === 'stale' && { inputFailures: inputs.failures }),
+    ...(rebuild !== undefined && { rebuildStatus: rebuild.kind }),
+    ...(rebuild?.kind === 'mismatch' && {
+      rebuildExpected: rebuild.expected,
+      rebuildActual: rebuild.actual,
+      ...(rebuild.compiledWith !== undefined && { rebuildCompiledWith: rebuild.compiledWith }),
     }),
-    ...(rebuildStatus?.kind === 'failed' && { rebuildError: rebuildStatus.message }),
+    ...(rebuild?.kind === 'failed' && { rebuildError: rebuild.message }),
   };
 }
 
@@ -187,18 +194,16 @@ function buildVerifyEntry(
  * A failing kit carries each verdict on its own line beneath its name; any other kit carries them
  * inline. A kit that passes every verdict carries none, leaving its token to report the outcome.
  */
-function formatStatusLine(
-  kit: RdyManifestKit,
-  status: DriftStatus,
-  sourceStatus: SourceStatus,
-  rebuildStatus: RebuildStatus | undefined,
-): string {
-  const token = resolveToken(status, sourceStatus, rebuildStatus);
-  const hashesConfirmed = status.kind === 'ok' && sourceStatus.kind === 'ok';
+function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
+  const { drift, inputs, rebuild, source } = verdicts;
+  const token = resolveToken(verdicts);
+  // An unverified closure counts as confirmed, so an entry predating it carries the line it always did.
+  const hashesConfirmed = drift.kind === 'ok' && source.kind === 'ok' && inputs.kind !== 'stale';
   const clauses = [
-    describeDriftStatus(kit, status),
-    describeSourceStatus(kit, sourceStatus),
-    describeRebuildStatus(rebuildStatus, hashesConfirmed),
+    describeDriftStatus(kit, drift),
+    describeSourceStatus(kit, source),
+    ...describeInputsStatus(inputs),
+    describeRebuildStatus(rebuild, hashesConfirmed),
   ].filter((clause): clause is string => clause !== undefined);
 
   if (token === 'failedError') {
@@ -217,14 +222,11 @@ function formatStatusLine(
  * target and no answer from the rebuild: a rebuild that reproduced the bundle has checked the kit
  * more exactly than the absent hash would have, so the kit passed rather than went unchecked.
  */
-function resolveToken(
-  status: DriftStatus,
-  sourceStatus: SourceStatus,
-  rebuildStatus: RebuildStatus | undefined,
-): TokenName {
-  const rebuildFailed = rebuildStatus !== undefined && rebuildStatus.kind !== 'ok';
-  if (hasTargetFailed(status) || hasSourceFailed(sourceStatus) || rebuildFailed) return 'failedError';
-  if (status.kind === 'unverified' && rebuildStatus?.kind !== 'ok') return 'skippedOptional';
+function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenName {
+  const rebuildFailed = rebuild !== undefined && rebuild.kind !== 'ok';
+  const anyFailed = hasTargetFailed(drift) || hasSourceFailed(source) || inputs.kind === 'stale' || rebuildFailed;
+  if (anyFailed) return 'failedError';
+  if (drift.kind === 'unverified' && rebuild?.kind !== 'ok') return 'skippedOptional';
   return 'passed';
 }
 
@@ -265,10 +267,27 @@ function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string
   }
 }
 
+/** Returns one clause per failed input, and none when the verdict is `ok` or `unverified`. */
+function describeInputsStatus(status: InputsStatus): string[] {
+  return status.kind === 'stale' ? status.failures.map(describeInputFailure) : [];
+}
+
+/** Returns a clause naming one input the compile read and what has happened to it since. */
+function describeInputFailure(failure: InputFailure): string {
+  switch (failure.reason) {
+    case 'changed':
+      return `input stale: ${failure.path} (${failure.kind}, expected ${failure.expected}, got ${failure.actual})`;
+    case 'missing':
+      return `input missing: ${failure.path} (${failure.kind})`;
+    case 'unprojectable':
+      return `input unprojectable: ${failure.path} (${failure.detail})`;
+  }
+}
+
 /**
  * Returns a clause describing the rebuild verdict, or nothing when there is nothing to add.
  *
- * A passing rebuild is silent only where both hash verdicts already reached `ok` and it would
+ * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
  * restate them. Anywhere else it speaks, because it then carries the line's strongest answer: over
  * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
  * wrong, and over an unverified one it supplies the answer the absent hash could not.

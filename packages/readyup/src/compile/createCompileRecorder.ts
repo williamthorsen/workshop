@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { hashBytes } from '../verify/targetHash.ts';
+import { hashBytes, hashProjection } from '../verify/targetHash.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { identifyInput } from './CompiledInput.ts';
 import type { JsonPathSpec } from './extractJsonPaths.ts';
@@ -49,7 +49,7 @@ export function createCompileRecorder(): CompileRecorder {
     readProjection(filePath: string, paths: JsonPathSpec): string {
       const resolvedPath = path.resolve(filePath);
       const projection = projectJsonFile(resolvedPath, paths);
-      record(recorded, { hash: hashBytes(Buffer.from(projection, 'utf8')), kind: 'inline', path: resolvedPath, paths });
+      record(recorded, { hash: hashProjection(projection), kind: 'inline', path: resolvedPath, paths });
       return projection;
     },
   };

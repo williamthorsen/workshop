@@ -13,3 +13,13 @@ export function hashBytes(bytes: Buffer): string {
 export function hashFile(filePath: string): string {
   return hashBytes(readFileSync(filePath));
 }
+
+/**
+ * Returns the hash of a serialized JSON projection, which is what a recorded inline input carries.
+ *
+ * The compile and every reader of a recorded input hash the projection through here, so neither can
+ * encode it differently and report a file neither changed as stale.
+ */
+export function hashProjection(projection: string): string {
+  return hashBytes(Buffer.from(projection, 'utf8'));
+}

@@ -396,7 +396,7 @@ Both arguments must be literals written in place. They are read out of the sourc
 Two consequences follow from the value being resolved at compile time:
 
 - `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
-- Editing the JSON afterward leaves the bundle stale, and neither recorded hash changes -- the source did not move, and neither did the bundle. [`rdy verify --rebuild`](#verifying-by-recompiling) is what catches it.
+- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not move, and neither did the bundle -- but the compile records the projection it inlined, so [`rdy verify`](#verifying) names the file and [`rdy run`](#advisory-warnings) warns on it. [`rdy verify --rebuild`](#verifying-by-recompiling) is the exact answer, reading the file rather than a record of it.
 
 ### TypeScript settings
 
@@ -587,10 +587,11 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 
 | Code           | Raised when                                                              |
 | -------------- | ------------------------------------------------------------------------ |
+| `input-stale`  | A file the compile inlined changed since the bundle was built from it    |
 | `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it |
 | `target-drift` | The compiled bundle no longer matches the manifest's recorded hash       |
 
-They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes, or when a file cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
+They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
 ### Kit import compatibility
 
@@ -990,11 +991,19 @@ rdy verify --rebuild           Also recompile each kit and compare it to the com
 1 of 2 kits failed verification.
 ```
 
-Each kit carries two independent verdicts, because a kit is two artifacts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`. `drift` means someone edited the bundle by hand; `stale` means the source moved on and nobody recompiled. A kit can be both at once.
+Each kit carries three independent verdicts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`; the [recorded inputs](#what-a-manifest-entry-records) are `ok`, `stale`, or `unverified`. `drift` means someone edited the bundle by hand; a stale source means the TypeScript moved on and nobody recompiled; stale inputs mean the same of a module the bundle inlined or a JSON projection it substituted. A kit can be all three at once.
 
-Anything other than `ok` or `unverified` on either axis fails the run. `unverified` does not, since an entry with no recorded hash says nothing about whether the kit changed.
+The inputs verdict names every input that failed rather than the first, each on its own line, separating a changed module from a changed inline projection. A projected file that is still present while the fields the kit picked are gone is reported as `unprojectable`, which says something about the kit rather than about the file:
 
-Under `--json`, each kit reports `status` and `sourceStatus`. A `drift` verdict carries `expected` and `actual`; a `stale` verdict carries `sourceExpected` and `sourceActual`.
+```
+🔴 deploy
+   input stale: checks/shared.ts (module, expected 6f58905a, got eb104f57)
+   input unprojectable: ../../package.json (Path not found in JSON: version)
+```
+
+Anything other than `ok` or `unverified` on any axis fails the run. `unverified` does not, since an entry with no recorded hash -- or one compiled before readyup recorded the input closure -- says nothing about whether the kit changed.
+
+Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict carries `expected` and `actual`; a stale source carries `sourceExpected` and `sourceActual`; stale inputs carry `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has.
 
 In CI:
 
@@ -1006,7 +1015,7 @@ In CI:
 
 #### Verifying by recompiling
 
-The two hashes record two of a bundle's inputs. A bundle is a function of many more: every module it inlines past the entry, every JSON file [`pickJson`](#inlining-json-at-compile-time) inlines at compile time, the bundler's version, and the compile options. None of those is recorded, so a bundle stale in any of them still hashes as `ok`.
+The three verdicts cover what the compile read and recorded. A bundle is a function of more than that: the bundler's version, the compile options, and the contents of every dependency, which the manifest records none of, since [the closure stops at `node_modules`](#what-a-manifest-entry-records). A bundle stale in any of them still hashes as `ok`.
 
 `--rebuild` answers the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
 

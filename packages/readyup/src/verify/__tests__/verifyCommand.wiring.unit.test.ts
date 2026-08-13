@@ -5,7 +5,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { richFormatter } from '../../layout/richFormatter.ts';
-import { hashBytes } from '../targetHash.ts';
+import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
+import { hashBytes, hashProjection } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
 /**
@@ -159,6 +160,121 @@ describe('verifyCommand wiring', () => {
     });
   });
 
+  describe('input staleness', () => {
+    const SHARED_MODULE = Buffer.from('export const shared = 1;\n');
+    const PACKAGE_JSON = { name: 'demo', version: '3.1.0' };
+
+    /**
+     * Writes a kit whose compile read a sibling module and a version out of `package.json`, and a
+     * manifest recording all of it.
+     *
+     * The two hash verdicts are arranged to pass, so whatever the run reports comes from the closure.
+     */
+    function writeRecordedClosure(): void {
+      const compiled = Buffer.from('export default { checklists: [] };\n');
+      const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
+      writeFileSync(path.join(tempDir, 'demo.js'), compiled);
+      writeFileSync(path.join(tempDir, 'demo.ts'), source);
+      writeFileSync(path.join(tempDir, 'shared.ts'), SHARED_MODULE);
+      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify(PACKAGE_JSON));
+      writeFileSync(
+        path.join(tempDir, 'manifest.json'),
+        JSON.stringify({
+          version: 1,
+          kits: [
+            {
+              name: 'demo',
+              path: 'demo.js',
+              source: 'demo.ts',
+              sourceHash: hashBytes(source),
+              targetHash: hashBytes(compiled),
+              inputs: [
+                { hash: hashBytes(SHARED_MODULE), kind: 'module', path: 'shared.ts' },
+                {
+                  hash: hashProjection(JSON.stringify({ version: PACKAGE_JSON.version })),
+                  kind: 'inline',
+                  path: 'package.json',
+                  paths: ['version'],
+                },
+              ],
+            },
+          ],
+        }),
+      );
+    }
+
+    it('returns 0 when every file the compile read still matches', async () => {
+      writeRecordedClosure();
+
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
+    });
+
+    it('returns 1 when a module the bundle inlined was edited without a recompile', async () => {
+      writeRecordedClosure();
+      writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
+
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`${FAILED} demo\n   input stale: shared.ts (module`),
+      );
+    });
+
+    it('returns 1 when the version the kit pinned to has moved', async () => {
+      writeRecordedClosure();
+      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, version: '4.0.0' }));
+
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`${FAILED} demo\n   input stale: package.json (inline`),
+      );
+    });
+
+    it('returns 0 when a field the kit did not pick was edited', async () => {
+      writeRecordedClosure();
+      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, name: 'renamed' }));
+
+      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
+    });
+
+    it('carries the axis and every failure into the JSON entry, at the schema version it always emitted', async () => {
+      writeRecordedClosure();
+      writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
+      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'demo' }));
+
+      await verifyCommand(['--manifest', 'manifest.json', '--json']);
+
+      expect(VerifyOutputSchema.parse(JSON.parse(stdout.join('')))).toMatchObject({
+        schemaVersion: 1,
+        passed: false,
+        kits: [
+          {
+            name: 'demo',
+            inputsStatus: 'stale',
+            inputFailures: [
+              { kind: 'module', path: 'shared.ts', reason: 'changed', expected: hashBytes(SHARED_MODULE) },
+              {
+                kind: 'inline',
+                path: 'package.json',
+                reason: 'unprojectable',
+                detail: 'Path not found in JSON: version',
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
   describe('--json', () => {
     /** Write a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
     function writeMixedManifest(): void {
@@ -189,16 +305,17 @@ describe('verifyCommand wiring', () => {
         schemaVersion: 1,
         passed: false,
         kits: [
-          { name: 'clean', status: 'ok', sourceStatus: 'unverified' },
+          { name: 'clean', status: 'ok', sourceStatus: 'unverified', inputsStatus: 'unverified' },
           {
             name: 'edited',
             status: 'drift',
             expected: 'deadbeef',
             actual: expect.any(String),
             sourceStatus: 'unverified',
+            inputsStatus: 'unverified',
           },
-          { name: 'gone', status: 'missing', sourceStatus: 'unverified' },
-          { name: 'unhashed', status: 'unverified', sourceStatus: 'unverified' },
+          { name: 'gone', status: 'missing', sourceStatus: 'unverified', inputsStatus: 'unverified' },
+          { name: 'unhashed', status: 'unverified', sourceStatus: 'unverified', inputsStatus: 'unverified' },
         ],
       });
     });

@@ -50,7 +50,7 @@ export const CountsSchema = z
   .meta({ id: 'Counts' });
 
 /** The advisory vocabulary this version raises. `RaisedWarning` binds producers to it. */
-export const WarningCodeSchema = z.enum(['source-stale', 'target-drift']);
+export const WarningCodeSchema = z.enum(['input-stale', 'source-stale', 'target-drift']);
 
 /**
  * The wire form of a warning code: a known value, or any other string.

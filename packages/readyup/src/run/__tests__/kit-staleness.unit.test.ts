@@ -7,6 +7,7 @@ import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
+const mockCheckInputDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../manifest/readManifest.ts'), () => ({
@@ -15,6 +16,10 @@ vi.mock(import('../../manifest/readManifest.ts'), () => ({
 
 vi.mock(import('../../verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
+}));
+
+vi.mock(import('../../verify/checkInputDrift.ts'), () => ({
+  checkInputDrift: mockCheckInputDrift,
 }));
 
 vi.mock(import('../../verify/checkSourceDrift.ts'), () => ({
@@ -72,12 +77,14 @@ describe(warnOnKitStaleness, () => {
   beforeEach(() => {
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+    mockCheckInputDrift.mockReturnValue({ kind: 'ok' });
     mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555bbbb' });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     mockCheckDrift.mockReset();
+    mockCheckInputDrift.mockReset();
     mockCheckSourceDrift.mockReset();
   });
 
@@ -103,6 +110,44 @@ describe(warnOnKitStaleness, () => {
           message: 'kit "default" was compiled from an older source than the one on disk.',
           remedy: 'Run `rdy compile` to rebuild it.',
         },
+      ]);
+    });
+
+    it('advises recompiling when a file the compile inlined has changed', () => {
+      arrangeInputStale();
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([
+        {
+          code: 'input-stale',
+          message: 'kit "default" inlined files that no longer match the ones on disk.',
+          remedy: 'Run `rdy compile` to rebuild it.',
+        },
+      ]);
+    });
+
+    it('advises on a changed input sitting beside one that is merely gone', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [
+          { kind: 'module', path: 'kits/gone.ts', reason: 'missing' },
+          { kind: 'module', path: 'kits/shared.ts', reason: 'changed', expected: '7777dddd', actual: '8888eeee' },
+        ],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code)).toStrictEqual([
+        'input-stale',
+      ]);
+    });
+
+    it('raises all three advisories when every axis has parted from the manifest', () => {
+      arrangeTargetDrift();
+      arrangeSourceStale();
+      arrangeInputStale();
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code)).toStrictEqual([
+        'target-drift',
+        'source-stale',
+        'input-stale',
       ]);
     });
 
@@ -205,8 +250,40 @@ describe(warnOnKitStaleness, () => {
       expect(stderrText()).toBe('');
     });
 
+    it('stays silent for an input the compile read that is gone, as it is for a deleted source', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+    });
+
+    it('stays silent for a projection it can no longer reproduce', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [
+          {
+            kind: 'inline',
+            path: '../../package.json',
+            reason: 'unprojectable',
+            detail: 'Path not found in JSON: version',
+          },
+        ],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+    });
+
+    it('stays silent for an entry that predates the recorded closure', () => {
+      mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+    });
+
     it('stays silent when the manifest entry records no hashes to compare', () => {
       mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+      mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'unverified' });
 
       expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
@@ -219,9 +296,12 @@ describe(warnOnKitStaleness, () => {
       expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
     });
 
-    it('stays silent when neither file can be hashed', () => {
+    it('stays silent when no file it would compare can be read', () => {
       mockCheckDrift.mockImplementation(() => {
         throw new Error('EACCES: permission denied, open /abs/default.js');
+      });
+      mockCheckInputDrift.mockImplementation(() => {
+        throw new Error('EACCES: permission denied, open /abs/shared.ts');
       });
       mockCheckSourceDrift.mockImplementation(() => {
         throw new Error('EACCES: permission denied, open /abs/default.ts');
@@ -232,6 +312,16 @@ describe(warnOnKitStaleness, () => {
   });
 
   // region | Helpers
+
+  /** Reports a file the compile inlined as edited without a recompile. */
+  function arrangeInputStale(): void {
+    mockCheckInputDrift.mockReturnValue({
+      kind: 'stale',
+      failures: [
+        { kind: 'module', path: 'kits/shared.ts', reason: 'changed', expected: '7777dddd', actual: '8888eeee' },
+      ],
+    });
+  }
 
   /** Reports the source as edited without a recompile. */
   function arrangeSourceStale(): void {
