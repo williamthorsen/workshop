@@ -6,6 +6,7 @@ import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { readManifest } from '../manifest/readManifest.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
+import type { InputsStatus } from '../verify/checkInputDrift.ts';
 import { checkInputDrift } from '../verify/checkInputDrift.ts';
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
 import type { KitSource } from './ResolvedKitEntry.ts';
@@ -44,10 +45,11 @@ export function readManifestTracking(isJit: boolean): ManifestTracking | undefin
  * the compile read and inlined, which is the staleness neither hash can see. All three can hold at
  * once.
  *
- * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code. A
+ * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code.
+ * Every axis speaks only where it compared a recorded hash against a file and the two differed. A
  * kit no entry describes, an entry recording no hash or no closure, a remote or just-in-time
- * source, and a file that cannot be read are all silent, because none of them is evidence that
- * anything is stale.
+ * source, and a file that is gone or cannot be read are all silent, because none of them is
+ * evidence that anything changed.
  *
  * The stderr lines are written in both modes; the returned entries are what JSON mode captures into
  * the report, so a consumer that owns only stdout still learns the run was advised of something.
@@ -63,21 +65,21 @@ export function warnOnKitStaleness(
   if (entry === undefined) return [];
 
   const warnings: RaisedWarning[] = [];
-  if (hasVerdict(() => checkDrift(entry, tracking.manifestDir), 'drift')) {
+  if (readVerdict(() => checkDrift(entry, tracking.manifestDir))?.kind === 'drift') {
     warnings.push({
       code: 'target-drift',
       message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
       remedy: 'Run `rdy compile --force` to rebuild it from source.',
     });
   }
-  if (hasVerdict(() => checkSourceDrift(entry, tracking.manifestDir), 'stale')) {
+  if (readVerdict(() => checkSourceDrift(entry, tracking.manifestDir))?.kind === 'stale') {
     warnings.push({
       code: 'source-stale',
       message: `kit "${kitName}" was compiled from an older source than the one on disk.`,
       remedy: 'Run `rdy compile` to rebuild it.',
     });
   }
-  if (hasVerdict(() => checkInputDrift(entry, tracking.manifestDir), 'stale')) {
+  if (hasChangedInput(readVerdict(() => checkInputDrift(entry, tracking.manifestDir)))) {
     warnings.push({
       code: 'input-stale',
       message: `kit "${kitName}" inlined files that no longer match the ones on disk.`,
@@ -107,12 +109,23 @@ function findManifestEntry(kitPath: string, tracking: ManifestTracking): RdyMani
   );
 }
 
-/** Reports whether a staleness predicate reaches the given verdict, treating a file it cannot hash as no. */
-function hasVerdict<TStatus extends { kind: string }>(check: () => TStatus, kind: TStatus['kind']): boolean {
+/**
+ * Reports whether a closure verdict names an input whose content moved since the compile read it.
+ *
+ * An input that is gone, or that no longer yields the projection a kit picked, says nothing about
+ * whether the kit is stale -- a published kit legitimately ships without the sources it was built
+ * from -- so only a hash the check compared and found different raises the advisory.
+ */
+function hasChangedInput(status: InputsStatus | undefined): boolean {
+  return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');
+}
+
+/** Returns a staleness verdict, or nothing when reaching one needed a file that cannot be read. */
+function readVerdict<TStatus>(check: () => TStatus): TStatus | undefined {
   try {
-    return check().kind === kind;
+    return check();
   } catch {
-    return false;
+    return undefined;
   }
 }
 

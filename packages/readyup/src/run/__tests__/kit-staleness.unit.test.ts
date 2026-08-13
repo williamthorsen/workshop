@@ -113,7 +113,7 @@ describe(warnOnKitStaleness, () => {
       ]);
     });
 
-    it('advises recompiling when a file the compile inlined no longer matches', () => {
+    it('advises recompiling when a file the compile inlined has changed', () => {
       arrangeInputStale();
 
       expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([
@@ -122,6 +122,20 @@ describe(warnOnKitStaleness, () => {
           message: 'kit "default" inlined files that no longer match the ones on disk.',
           remedy: 'Run `rdy compile` to rebuild it.',
         },
+      ]);
+    });
+
+    it('advises on a changed input sitting beside one that is merely gone', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [
+          { kind: 'module', path: 'kits/gone.ts', reason: 'missing' },
+          { kind: 'module', path: 'kits/shared.ts', reason: 'changed', expected: '7777dddd', actual: '8888eeee' },
+        ],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code)).toStrictEqual([
+        'input-stale',
       ]);
     });
 
@@ -234,6 +248,31 @@ describe(warnOnKitStaleness, () => {
     it('stays silent when both artifacts match the manifest', () => {
       expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
       expect(stderrText()).toBe('');
+    });
+
+    it('stays silent for an input the compile read that is gone, as it is for a deleted source', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+    });
+
+    it('stays silent for a projection it can no longer reproduce', () => {
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [
+          {
+            kind: 'inline',
+            path: '../../package.json',
+            reason: 'unprojectable',
+            detail: 'Path not found in JSON: version',
+          },
+        ],
+      });
+
+      expect(warnOnKitStaleness('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent for an entry that predates the recorded closure', () => {

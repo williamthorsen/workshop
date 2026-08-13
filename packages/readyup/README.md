@@ -591,7 +591,7 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 | `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it |
 | `target-drift` | The compiled bundle no longer matches the manifest's recorded hash       |
 
-They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
+They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
 ### Kit import compatibility
 

@@ -134,6 +134,15 @@ describe(checkInputDrift, () => {
       });
     });
 
+    it('reports a file that is present but cannot be read', () => {
+      mkdirSync(path.join(tempDir, 'package.json'), { recursive: true });
+
+      expect(checkInputDrift(kitWith([RECORDED_PICK]), tempDir)).toStrictEqual({
+        kind: 'stale',
+        failures: [{ kind: 'inline', path: 'package.json', reason: 'unprojectable', detail: 'unreadable' }],
+      });
+    });
+
     it('reports a projected file that is no longer on disk', () => {
       expect(checkInputDrift(kitWith([RECORDED_PICK]), tempDir)).toStrictEqual({
         kind: 'stale',
