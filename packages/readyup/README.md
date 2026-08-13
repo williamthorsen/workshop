@@ -853,6 +853,26 @@ A sweep that finds no kits writes a manifest only where one already exists, empt
 
 Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed.
 
+#### What a manifest entry records
+
+| Field            | Meaning                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `checklists`     | The checklist names the kit declares, so `rdy list` reports them without running the bundle |
+| `description`    | The kit's own description, where it declares one                                            |
+| `inputs`         | Every file the compile read, each with the hash of what was consumed from it                |
+| `name`           | The kit's name, which is its compiled file's basename                                       |
+| `path`           | The compiled bundle, relative to the manifest                                               |
+| `readyupVersion` | The readyup that compiled the kit                                                           |
+| `source`         | The TypeScript the bundle was built from, relative to the manifest                          |
+| `sourceHash`     | Hash of that source, read back out of its own `inputs` record                               |
+| `targetHash`     | Hash of the compiled bundle                                                                 |
+
+`inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its bytes. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
+
+The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.
+
+An entry compiled before readyup recorded the closure carries no `inputs`.
+
 ### Package-hosted kits
 
 A package can publish the kit that checks its own configuration, which keeps the check with the thing it describes. The consumer then runs it against the version they actually have, rather than naming a ref and hoping it matches.
