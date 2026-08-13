@@ -1,6 +1,6 @@
 import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import type { CheckOutcome, FractionProgress, RdyCheck } from 'readyup';
-import { computeHash, projectJsonFile, readFile } from 'readyup/check-utils';
+import { computeHash, describeJsonProjectionFailure, fileExists, projectJsonFile, readFile } from 'readyup/check-utils';
 
 import type { ManifestEntry, ManifestInput } from './kit-layout.ts';
 import { readManifestEntries, resolveRecordedPath, skipWithoutBundles } from './kit-layout.ts';
@@ -82,7 +82,7 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
   const content = readFile(filePath);
   if (content === undefined) return { ok: false, detail: `${filePath} is missing` };
 
-  const drift = describeHashDrift(filePath, content, expected);
+  const drift = describeHashDrift(filePath, content, expected, 'hashes to');
   if (drift !== undefined) return { ok: false, detail: drift };
 
   return { ok: true, detail: `${filePath} matches the recorded hash` };
@@ -106,11 +106,16 @@ function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
   return { ok: false, detail: failures.join('; '), progress };
 }
 
-/** Compares content against the hash recorded for it, and reports how it differs. */
-function describeHashDrift(filePath: string, content: string, expected: string): string | undefined {
-  const actual = computeHash(content).slice(0, expected.length);
+/**
+ * Compares what was hashed against the hash recorded for it, and reports how it differs.
+ *
+ * `verb` names what the digest covers: an inline input's is over the projection substituted into the
+ * bundle, not over the bytes of the file holding it.
+ */
+function describeHashDrift(filePath: string, hashed: string, expected: string, verb: string): string | undefined {
+  const actual = computeHash(hashed).slice(0, expected.length);
   if (actual === expected) return undefined;
-  return `${filePath} hashes to ${actual}, not the recorded ${expected}`;
+  return `${filePath} ${verb} ${actual}, not the recorded ${expected}`;
 }
 
 /**
@@ -131,19 +136,20 @@ function describeInputDrift(input: ManifestInput): string | undefined {
   if (kind === 'module') {
     const content = readFile(filePath);
     if (content === undefined) return `${filePath} is missing`;
-    return describeHashDrift(filePath, content, hash);
+    return describeHashDrift(filePath, content, hash, 'hashes to');
   }
 
   if (paths === undefined) return `${filePath} records no paths to project it by`;
+  if (!fileExists(filePath)) return `${filePath} is missing`;
 
   let projection: string;
   try {
     projection = projectJsonFile(filePath, paths);
   } catch (error: unknown) {
-    return `${filePath} no longer projects: ${error instanceof Error ? error.message : String(error)}`;
+    return `${filePath} no longer projects: ${describeJsonProjectionFailure(error)}`;
   }
 
-  return describeHashDrift(filePath, projection, hash);
+  return describeHashDrift(filePath, projection, hash, 'projects to');
 }
 
 /** Reports which of a manifest entry's two hash records are absent. */

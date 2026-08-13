@@ -8,19 +8,19 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
-import type { FixtureManifestEntry, FixtureManifestInput } from '../test-utils/project-fixture.ts';
+import type { FixtureManifestInput } from '../test-utils/project-fixture.ts';
 import {
+  FIXTURE_INLINED_MODULE_PATH,
   FIXTURE_KITS_DIR,
+  withInputs,
   writeInlineInput,
   writeKit,
   writeKitManifest,
   writeModuleInput,
   writePackageJson,
+  writeRawKitManifest,
   writeRdyConfig,
 } from '../test-utils/project-fixture.ts';
-
-/** Module a fixture kit inlines, as the manifest records it: relative to the manifest's own directory. */
-const INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
 
 /** JSON file a fixture kit projects. It sits above the manifest directory, as the canonical `../package.json` does. */
 const PROJECTED_JSON_PATH = path.join('..', 'package.json');
@@ -177,7 +177,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
-        detail: expect.stringContaining(path.join('.readyup', INLINED_MODULE_PATH)),
+        detail: expect.stringContaining(path.join('.readyup', FIXTURE_INLINED_MODULE_PATH)),
       });
     });
 
@@ -224,7 +224,7 @@ describe('default kit', () => {
 
     it('reports an inlined module that is no longer there', async () => {
       writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
-      rmSync(path.join(projectRoot, '.readyup', INLINED_MODULE_PATH));
+      rmSync(path.join(projectRoot, '.readyup', FIXTURE_INLINED_MODULE_PATH));
 
       const results = await runFreshness();
 
@@ -244,6 +244,47 @@ describe('default kit', () => {
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'skipped',
         detail: 'The manifest records no inputs for it',
+      });
+    });
+
+    it('reports an inlined JSON file that is no longer there', async () => {
+      writeKitManifest(projectRoot, [
+        withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
+      ]);
+      rmSync(path.join(projectRoot, 'package.json'));
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'failed',
+        detail: 'package.json is missing',
+      });
+    });
+
+    // The kit reads raw JSON rather than the manifest schema, so a record no compile would have written
+    // reaches these two guards instead of failing validation.
+    it('reports an inline record whose path specifier is not one', async () => {
+      const entry = writeKit(projectRoot, 'default');
+      const input = { hash: '0badcafe', kind: 'inline', path: PROJECTED_JSON_PATH, paths: [42] };
+      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [input] }]);
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'failed',
+        detail: 'package.json records no paths to project it by',
+      });
+    });
+
+    it('reports an input recording no path, kind, or hash', async () => {
+      const entry = writeKit(projectRoot, 'default');
+      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [{ kind: 'module' }] }]);
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'failed',
+        detail: 'The manifest records an input with no path, kind, or hash',
       });
     });
 
@@ -281,7 +322,7 @@ describe('default kit', () => {
 
 /** Writes the module a fixture kit inlines, and returns the record of it. */
 function inlineHelper(projectRoot: string, value: string): FixtureManifestInput {
-  return writeModuleInput(projectRoot, INLINED_MODULE_PATH, `export const helper = ${value};\n`);
+  return writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, `export const helper = ${value};\n`);
 }
 
 /** Writes the JSON file a fixture kit projects, and returns the record of the projection over `version`. */
@@ -297,11 +338,6 @@ async function runFreshness(): Promise<RdyResult[]> {
 /** Runs the `setup` checklist against the fixture as it now stands. */
 async function runSetup(): Promise<RdyResult[]> {
   return runChecklist(await loadOwnKit('default'), 'setup');
-}
-
-/** Adds recorded inputs to a fixture entry, beside the entry module `writeKit` already records. */
-function withInputs(entry: FixtureManifestEntry, ...inputs: FixtureManifestInput[]): FixtureManifestEntry {
-  return { ...entry, inputs: [...entry.inputs, ...inputs] };
 }
 
 // endregion | Helpers

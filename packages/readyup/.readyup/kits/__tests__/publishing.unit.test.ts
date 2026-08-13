@@ -9,15 +9,14 @@ import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
 import {
+  FIXTURE_INLINED_MODULE_PATH,
   FIXTURE_KITS_DIR,
+  withInputs,
   writeKit,
   writeKitManifest,
   writeModuleInput,
   writePackageJson,
 } from '../test-utils/project-fixture.ts';
-
-/** Module a fixture kit inlines, as the manifest records it: relative to the manifest's own directory. */
-const INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
 
 /** Bundle reaching for a package that only the publishing project has installed. */
 const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { checklists: [] };\n';
@@ -199,9 +198,9 @@ describe('publishing kit', () => {
   it('blocks on a kit whose inlined module has since moved on', async () => {
     writePackageJson(projectRoot, { files: ['.readyup'] });
     const entry = writeKit(projectRoot, 'default');
-    const helper = writeModuleInput(projectRoot, INLINED_MODULE_PATH, 'export const helper = 1;\n');
-    writeKitManifest(projectRoot, [{ ...entry, inputs: [...entry.inputs, helper] }]);
-    writeModuleInput(projectRoot, INLINED_MODULE_PATH, 'export const helper = 2;\n');
+    const helper = writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 1;\n');
+    writeKitManifest(projectRoot, [withInputs(entry, helper)]);
+    writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 2;\n');
 
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { describeType } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import type { JsonPathSpec } from './extractJsonPaths.ts';
 import { extractJsonPaths } from './extractJsonPaths.ts';
@@ -33,7 +34,7 @@ export function projectJsonFile(filePath: string, paths: JsonPathSpec): string {
   }
 
   if (!isRecord(parsed)) {
-    const detail = typeof parsed;
+    const detail = describeType(parsed);
     throw new JsonProjectionError('not-an-object', filePath, `Expected a JSON object in ${filePath}, got ${detail}`, {
       detail,
     });

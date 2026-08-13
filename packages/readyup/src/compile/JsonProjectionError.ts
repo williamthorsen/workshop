@@ -1,3 +1,5 @@
+import { describeError } from '@williamthorsen/toolbelt.errors';
+
 /**
  * Why a JSON file could not be projected onto a path specifier.
  *
@@ -40,5 +42,27 @@ export class JsonProjectionError extends Error {
     this.detail = options.detail;
     this.filePath = filePath;
     this.reason = reason;
+  }
+}
+
+/**
+ * Returns why a JSON file could not be projected, in a form that does not repeat the path beside it.
+ *
+ * A `JsonProjectionError`'s own message names the file absolutely, which a caller reporting the failure
+ * has usually already named as it knows it. Reading the diagnosis off `reason` is what keeps the two
+ * from disagreeing about the path.
+ */
+export function describeJsonProjectionFailure(error: unknown): string {
+  if (!(error instanceof JsonProjectionError)) return describeError(error);
+
+  switch (error.reason) {
+    case 'invalid-json':
+      return 'invalid JSON';
+    case 'not-an-object':
+      return `expected a JSON object, got ${error.detail ?? 'something else'}`;
+    case 'path-not-found':
+      return error.message;
+    case 'unreadable':
+      return 'unreadable';
   }
 }

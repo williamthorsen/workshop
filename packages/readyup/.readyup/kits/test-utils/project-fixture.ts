@@ -5,6 +5,9 @@ import type { JsonPathSpec } from '../../../src/compile/extractJsonPaths.ts';
 import { projectJsonFile } from '../../../src/compile/projectJsonFile.ts';
 import { hashFile, hashProjection } from '../../../src/verify/targetHash.ts';
 
+/** Path a fixture kit's inlined module is recorded at, relative to the manifest's own directory. */
+export const FIXTURE_INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
+
 /** Kit directory a fixture project holds, relative to its root. */
 export const FIXTURE_KITS_DIR = path.join('.readyup', 'kits');
 
@@ -35,6 +38,11 @@ export const SELF_CONTAINED_BUNDLE = [
   'export default { checklists: [{ name: "demo", checks: [{ name: "ok", check: () => fileExists(".") }] }] };',
   '',
 ].join('\n');
+
+/** Adds recorded inputs to a fixture entry, beside the entry module `writeKit` already records. */
+export function withInputs(entry: FixtureManifestEntry, ...inputs: FixtureManifestInput[]): FixtureManifestEntry {
+  return { ...entry, inputs: [...entry.inputs, ...inputs] };
+}
 
 /**
  * Writes a JSON file a compile would have projected, and returns the record of that projection.
@@ -84,9 +92,7 @@ export function writeKit(projectRoot: string, name: string, options: WriteKitOpt
 
 /** Writes the manifest recording the given entries, each of which may be edited to describe drift. */
 export function writeKitManifest(projectRoot: string, entries: Array<Partial<FixtureManifestEntry>>): void {
-  const manifestPath = path.join(projectRoot, FIXTURE_MANIFEST_PATH);
-  mkdirSync(path.dirname(manifestPath), { recursive: true });
-  writeFileSync(manifestPath, JSON.stringify({ version: 1, kits: entries }));
+  writeRawKitManifest(projectRoot, entries);
 }
 
 /** Writes a module a compile would have inlined, and returns the record of it. */
@@ -98,6 +104,18 @@ export function writeModuleInput(projectRoot: string, recordedPath: string, cont
 /** Writes the fixture project's manifest of record, which the publishing kit reads for its `files` list. */
 export function writePackageJson(projectRoot: string, packageJson: Record<string, unknown>): void {
   writeFileSync(path.join(projectRoot, 'package.json'), JSON.stringify({ name: 'fixture', ...packageJson }));
+}
+
+/**
+ * Writes the manifest recording the given kits exactly as given, records no schema would produce included.
+ *
+ * The door for a manifest a hand edit or a foreign tool wrote, which is what the kits' defensive narrowing
+ * exists for and what a schema-typed entry cannot express.
+ */
+export function writeRawKitManifest(projectRoot: string, kits: Array<Record<string, unknown>>): void {
+  const manifestPath = path.join(projectRoot, FIXTURE_MANIFEST_PATH);
+  mkdirSync(path.dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify({ version: 1, kits }));
 }
 
 /** Writes a readyup config at the one path `loadConfig` looks in. */

@@ -1074,18 +1074,19 @@ import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 
 ### JSON
 
-| Function                            | Returns                                   |
-| ----------------------------------- | ----------------------------------------- |
-| `readJsonFile(path)`                | Parsed object, or `undefined`             |
-| `readJsonValue(path, ...keys)`      | Value at a key path within a file         |
-| `hasJsonField(path, field, value?)` | Field exists, optionally matching a value |
-| `hasJsonFields(path, fields)`       | `CheckOutcome` over several fields        |
-| `projectJsonFile(path, paths)`      | Serialized projection of a JSON file      |
-| `getJsonValue(obj, ...keys)`        | Value at a key path within an object      |
-| `hasJsonValue(obj, ...keys)`        | Key path is present                       |
-| `isRecord(value)`                   | Type guard for `Record<string, unknown>`  |
+| Function                               | Returns                                   |
+| -------------------------------------- | ----------------------------------------- |
+| `readJsonFile(path)`                   | Parsed object, or `undefined`             |
+| `readJsonValue(path, ...keys)`         | Value at a key path within a file         |
+| `hasJsonField(path, field, value?)`    | Field exists, optionally matching a value |
+| `hasJsonFields(path, fields)`          | `CheckOutcome` over several fields        |
+| `projectJsonFile(path, paths)`         | Serialized projection of a JSON file      |
+| `describeJsonProjectionFailure(error)` | Why a projection failed, without the path |
+| `getJsonValue(obj, ...keys)`           | Value at a key path within an object      |
+| `hasJsonValue(obj, ...keys)`           | Key path is present                       |
+| `isRecord(value)`                      | Type guard for `Record<string, unknown>`  |
 
-`projectJsonFile` returns what [`pickJson`](#inlining-json-at-compile-time) inlines: the paths it names projected out of the file, serialized. It is the one implementation of that projection, so a check reading an entry's [recorded inputs](#what-a-manifest-entry-records) decides an inlined JSON file the same way the compile that recorded it did. It throws when the file is unreadable, holds invalid JSON, holds something other than an object, or no longer holds a path the specifier names.
+`projectJsonFile` returns what [`pickJson`](#inlining-json-at-compile-time) inlines: the paths it names projected out of the file, serialized. It is the one implementation of that projection, so a check reading an entry's [recorded inputs](#what-a-manifest-entry-records) decides an inlined JSON file the same way the compile that recorded it did. It throws when the file is unreadable, holds invalid JSON, holds something other than an object, or no longer holds a path the specifier names. `describeJsonProjectionFailure` words any of those four for a report, and words them without the file path, so a check that already names the file does not name it twice.
 
 ### Package manifests
 

@@ -1,4 +1,5 @@
 export type { JsonPathSpec } from '../compile/extractJsonPaths.ts';
+export { describeJsonProjectionFailure } from '../compile/JsonProjectionError.ts';
 export { projectJsonFile } from '../compile/projectJsonFile.ts';
 export { isRecord } from '../portable/isRecord.ts';
 export { discoverKitPackages } from './discoverKitPackages.ts';
