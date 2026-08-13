@@ -283,7 +283,7 @@ describe(verifyCommand, () => {
             kind: 'inline',
             path: '../../package.json',
             reason: 'unprojectable',
-            detail: 'Path not found in JSON: version',
+            detail: 'path not found: version',
           },
         ],
       });
@@ -292,7 +292,7 @@ describe(verifyCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('input unprojectable: ../../package.json (Path not found in JSON: version)'),
+        expect.stringContaining('input unprojectable: ../../package.json (path not found: version)'),
       );
     });
 

@@ -13,7 +13,7 @@ export type JsonProjectionFailure = 'invalid-json' | 'not-an-object' | 'path-not
 export interface JsonProjectionErrorOptions {
   cause?: unknown;
 
-  /** What the failure found, where `reason` alone does not say it: the root's type for `not-an-object`. */
+  /** What the failure found, where `reason` alone does not say it: the root's type, or the key path. */
   detail?: string | undefined;
 }
 
@@ -61,7 +61,7 @@ export function describeJsonProjectionFailure(error: unknown): string {
     case 'not-an-object':
       return `expected a JSON object, got ${error.detail ?? 'something else'}`;
     case 'path-not-found':
-      return error.message;
+      return `path not found: ${error.detail ?? 'unknown path'}`;
     case 'unreadable':
       return 'unreadable';
   }

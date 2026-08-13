@@ -10,6 +10,18 @@ import { isRecord } from '../portable/isRecord.ts';
  */
 export type JsonPathSpec = Array<string | Array<string>>;
 
+/** A key path a `pickJson` specifier named that the JSON object does not hold. */
+export class JsonPathNotFoundError extends Error {
+  /** The key path, dot-joined as `extractJsonPaths` walked it. */
+  readonly keyPath: string;
+
+  constructor(keyPath: string) {
+    super(`Path not found in JSON: ${keyPath}`);
+    this.name = 'JsonPathNotFoundError';
+    this.keyPath = keyPath;
+  }
+}
+
 /**
  * Extract selected paths from a parsed JSON object, preserving original nesting structure.
  *
@@ -27,7 +39,7 @@ export function extractJsonPaths(obj: Record<string, unknown>, paths: JsonPathSp
     let current: unknown = obj;
     for (const key of keys) {
       if (!isRecord(current) || !Object.hasOwn(current, key)) {
-        throw new Error(`Path not found in JSON: ${keys.join('.')}`);
+        throw new JsonPathNotFoundError(keys.join('.'));
       }
       current = current[key];
     }

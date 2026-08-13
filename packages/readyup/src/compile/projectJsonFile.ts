@@ -5,7 +5,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { describeType } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import type { JsonPathSpec } from './extractJsonPaths.ts';
-import { extractJsonPaths } from './extractJsonPaths.ts';
+import { extractJsonPaths, JsonPathNotFoundError } from './extractJsonPaths.ts';
 import { JsonProjectionError } from './JsonProjectionError.ts';
 
 /**
@@ -43,6 +43,7 @@ export function projectJsonFile(filePath: string, paths: JsonPathSpec): string {
   try {
     return JSON.stringify(extractJsonPaths(parsed, paths));
   } catch (error: unknown) {
-    throw new JsonProjectionError('path-not-found', filePath, describeError(error), { cause: error });
+    const detail = error instanceof JsonPathNotFoundError ? error.keyPath : undefined;
+    throw new JsonProjectionError('path-not-found', filePath, describeError(error), { cause: error, detail });
   }
 }

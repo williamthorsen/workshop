@@ -267,7 +267,7 @@ describe(warnOnKitStaleness, () => {
             kind: 'inline',
             path: '../../package.json',
             reason: 'unprojectable',
-            detail: 'Path not found in JSON: version',
+            detail: 'path not found: version',
           },
         ],
       });

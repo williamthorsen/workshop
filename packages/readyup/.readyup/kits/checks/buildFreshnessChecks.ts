@@ -119,6 +119,23 @@ function describeHashDrift(filePath: string, hashed: string, expected: string, v
 }
 
 /**
+ * Reports which of a recorded input's three required fields are absent.
+ *
+ * Leads with the path where the record carries one, so several incomplete records stay distinguishable
+ * in a detail that joins them.
+ */
+function describeIncompleteInput(input: ManifestInput): string {
+  const unrecorded: string[] = [];
+  if (input.path === undefined) unrecorded.push('path');
+  if (input.kind === undefined) unrecorded.push('kind');
+  if (input.hash === undefined) unrecorded.push('hash');
+
+  const absent = unrecorded.join(' or ');
+  if (input.path === undefined) return `The manifest records an input with no ${absent}`;
+  return `${resolveRecordedPath(input.path)} records no ${absent}`;
+}
+
+/**
  * Reports how one recorded input differs from what the compile read, or nothing when it still matches.
  *
  * An inline input is decided by the projection `rdy compile` recorded rather than by the file holding
@@ -129,7 +146,7 @@ function describeHashDrift(filePath: string, hashed: string, expected: string, v
 function describeInputDrift(input: ManifestInput): string | undefined {
   const { hash, kind, path: recordedPath, paths } = input;
   if (hash === undefined || kind === undefined || recordedPath === undefined) {
-    return 'The manifest records an input with no path, kind, or hash';
+    return describeIncompleteInput(input);
   }
 
   const filePath = resolveRecordedPath(recordedPath);
@@ -146,7 +163,7 @@ function describeInputDrift(input: ManifestInput): string | undefined {
   try {
     projection = projectJsonFile(filePath, paths);
   } catch (error: unknown) {
-    return `${filePath} no longer projects: ${describeJsonProjectionFailure(error)}`;
+    return `${filePath} no longer projects (${describeJsonProjectionFailure(error)})`;
   }
 
   return describeHashDrift(filePath, projection, hash, 'projects to');

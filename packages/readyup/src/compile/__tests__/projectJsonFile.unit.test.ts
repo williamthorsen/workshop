@@ -90,6 +90,7 @@ describe(projectJsonFile, () => {
     const error = captureProjectionError(JSON.stringify({ name: 'my-pkg' }), ['version']);
 
     expect(error.reason).toBe('path-not-found');
+    expect(error.detail).toBe('version');
     expect(error.message).toBe('Path not found in JSON: version');
   });
 });

@@ -257,7 +257,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
-        detail: 'package.json is missing',
+        detail: expect.stringContaining('package.json is missing'),
       });
     });
 
@@ -272,19 +272,20 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
-        detail: 'package.json records no paths to project it by',
+        detail: expect.stringContaining('records no paths'),
       });
     });
 
-    it('reports an input recording no path, kind, or hash', async () => {
+    it('names only the fields an incomplete input record is missing', async () => {
       const entry = writeKit(projectRoot, 'default');
-      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [{ kind: 'module' }] }]);
+      const input = { path: path.join('kits', 'demo.ts'), hash: '0badcafe' };
+      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [input] }]);
 
       const results = await runFreshness();
 
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
-        detail: 'The manifest records an input with no path, kind, or hash',
+        detail: expect.stringContaining('.readyup/kits/demo.ts records no kind'),
       });
     });
 
