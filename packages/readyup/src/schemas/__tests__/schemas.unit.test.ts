@@ -244,8 +244,8 @@ describe('JSON payload schemas', () => {
     });
 
     it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
-      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'source-stale' | 'target-drift'>();
-      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'source-stale' | 'target-drift'>();
+      expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<'input-stale' | 'source-stale' | 'target-drift'>();
+      expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<'input-stale' | 'source-stale' | 'target-drift'>();
     });
 
     it('publishes the known warning codes as distinguishable members of an open set', () => {
@@ -254,6 +254,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonWarningCode>().not.toEqualTypeOf<string>();
       expectTypeOf<'target-drift'>().toExtend<JsonWarningCode>();
       expectTypeOf<'source-stale'>().toExtend<JsonWarningCode>();
+      expectTypeOf<'input-stale'>().toExtend<JsonWarningCode>();
       expectTypeOf<'kit-deprecated'>().toExtend<JsonWarningCode>();
     });
   });
