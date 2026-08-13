@@ -1,12 +1,25 @@
 import path from 'node:path';
+import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { isRecord } from '../portable/isRecord.ts';
+import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
+import type { CompiledInput } from './CompiledInput.ts';
+import { identifyInput } from './CompiledInput.ts';
 import { createCompileRecorder } from './createCompileRecorder.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
+
+/**
+ * Directory whose contents stay out of a kit's recorded closure.
+ *
+ * Dependency contents are pinned by the lockfile and read exactly by `rdy verify --rebuild`, while
+ * recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather
+ * than to the kit: one `import zod` inlines 79 files.
+ */
+const EXCLUDED_DIRECTORY = 'node_modules';
 
 /** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
 export const KIT_COMPILE_TARGET = 'es2025';
@@ -55,6 +68,14 @@ const GENERATED_HEADER = [
   '',
 ].join('\n');
 
+/** A kit's compiled bytes and the closure of files the compile read to produce them. */
+export interface BundleResult {
+  bytes: Buffer;
+
+  /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
+  inputs: CompiledInput[];
+}
+
 /**
  * Bundles a TypeScript checklist file into a self-contained ESM bundle and returns its bytes.
  *
@@ -70,9 +91,13 @@ const GENERATED_HEADER = [
  *
  * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`, so
  * the bytes are a function of the entry point and the plugin alone.
+ *
+ * The one place a compile's input closure is known, which is why it returns the closure alongside the
+ * bytes rather than leaving a later reader to reconstruct it.
  */
-export async function buildBundle(inputPath: string): Promise<Buffer> {
+export async function buildBundle(inputPath: string): Promise<BundleResult> {
   const resolvedInput = path.resolve(inputPath);
+  const workingDir = process.cwd();
 
   let esbuild: typeof import('esbuild');
   try {
@@ -89,6 +114,7 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
   try {
     result = await esbuild.build({
       entryPoints: [resolvedInput],
+      absWorkingDir: workingDir,
       bundle: true,
       format: 'esm',
       platform: 'node',
@@ -97,6 +123,7 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
       external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [pickJsonPlugin(recorder)],
       banner: { js: GENERATED_HEADER },
+      metafile: true,
       write: false,
     });
   } catch (error: unknown) {
@@ -109,10 +136,42 @@ export async function buildBundle(inputPath: string): Promise<Buffer> {
     throw new Error(`esbuild produced no output for ${resolvedInput}`);
   }
 
-  return Buffer.from(outputFile.contents);
+  return {
+    bytes: Buffer.from(outputFile.contents),
+    inputs: collectInputs(recorder.inputs, Object.keys(result.metafile.inputs), workingDir),
+  };
 }
 
 // region | Helpers
+
+/**
+ * Returns the closure of a compile, merging what the recorder read with what esbuild resolved.
+ *
+ * A recorded read wins over the metafile's account of the same file, because only the recorder knows an
+ * inline input's path specifier. The metafile keys are relative to the working directory esbuild ran
+ * under, which is pinned rather than defaulted so that resolving them cannot drift.
+ *
+ * Sorted so that recompiling a kit whose inputs have not moved rewrites the manifest identically.
+ */
+function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workingDir: string): CompiledInput[] {
+  const byIdentity = new Map<string, CompiledInput>();
+  for (const input of recorded) {
+    byIdentity.set(identifyInput(input.kind, input.path), input);
+  }
+
+  for (const key of metafileKeys) {
+    const resolvedPath = path.resolve(workingDir, key);
+    const identity = identifyInput('module', resolvedPath);
+    if (byIdentity.has(identity)) continue;
+    byIdentity.set(identity, { hash: hashFile(resolvedPath), kind: 'module', path: resolvedPath });
+  }
+
+  return byIdentity
+    .values()
+    .filter((input) => !input.path.split(path.sep).includes(EXCLUDED_DIRECTORY))
+    .toArray()
+    .toSorted((a, b) => a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind));
+}
 
 /**
  * Reports whether an esbuild failure carries an import esbuild could not resolve.

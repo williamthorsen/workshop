@@ -40,6 +40,13 @@ describe('verifyCommand --rebuild', () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '1.0.0' }));
     writeFileSync(path.join(tempDir, 'kit.ts'), KIT_SOURCE);
 
+    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    originalCwd = process.cwd();
+    // esbuild renders each module's path against the working directory, so the fixture is compiled from
+    // the directory it is verified from, as a real project is.
+    process.chdir(tempDir);
+
     // Record the manifest from a real compile, so its hashes are the ones the pipeline produces.
     const result = await compileConfig(path.join(tempDir, 'kit.ts'), path.join(tempDir, 'kit.js'));
     writeFileSync(
@@ -58,11 +65,6 @@ describe('verifyCommand --rebuild', () => {
         ],
       }),
     );
-
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    originalCwd = process.cwd();
-    process.chdir(tempDir);
   });
 
   afterEach(() => {

@@ -53,7 +53,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
 
   let rebuilt: Buffer;
   try {
-    rebuilt = await buildBundle(sourcePath);
+    rebuilt = (await buildBundle(sourcePath)).bytes;
   } catch (error: unknown) {
     // A source that no longer compiles is a finding about the kit, not a failure of the invocation,
     // so the sweep carries on to the kits after it.

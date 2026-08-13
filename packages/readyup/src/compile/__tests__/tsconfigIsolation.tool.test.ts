@@ -44,12 +44,12 @@ describe(buildBundle, () => {
     writeHostTsconfig(entryPath);
     const withHostConfig = await buildBundle(entryPath);
 
-    expect(withHostConfig.equals(withoutHostConfig)).toBe(true);
+    expect(withHostConfig.bytes.equals(withoutHostConfig.bytes)).toBe(true);
   });
 
   it('compiles class fields and decorators under the declared settings', async () => {
-    const fieldBundle = (await buildBundle(writeKitTree(FIELD_SOURCE))).toString('utf8');
-    const decoratorBundle = (await buildBundle(writeKitTree(KIT_SOURCE))).toString('utf8');
+    const fieldBundle = (await buildBundle(writeKitTree(FIELD_SOURCE))).bytes.toString('utf8');
+    const decoratorBundle = (await buildBundle(writeKitTree(KIT_SOURCE))).bytes.toString('utf8');
 
     // esbuild names no setting in its output, so the declared values are read back from the lowering
     // they produce: a defined field stays in the class body where an assigned one moves into the

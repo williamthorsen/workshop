@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,6 +49,7 @@ describe(compileConfig, () => {
 
     expect(mockBuild).toHaveBeenCalledWith({
       entryPoints: [path.resolve('config/readyup.config.ts')],
+      absWorkingDir: process.cwd(),
       bundle: true,
       format: 'esm',
       platform: 'node',
@@ -56,6 +58,7 @@ describe(compileConfig, () => {
       external: ['node:*', 'readyup', 'readyup/*'],
       plugins: [expect.objectContaining({ name: 'pick-json' })],
       banner: { js: expect.stringContaining('@generated') },
+      metafile: true,
       write: false,
     });
   });
@@ -160,7 +163,7 @@ describe(compileConfig, () => {
   });
 });
 
-/** Builds a mock esbuild result with the given output text. */
+/** Builds a mock esbuild result with the given output text and no resolved modules. */
 function buildResult(text: string) {
-  return { outputFiles: [{ contents: new TextEncoder().encode(text) }] };
+  return { metafile: { inputs: {} }, outputFiles: [{ contents: new TextEncoder().encode(text) }] };
 }

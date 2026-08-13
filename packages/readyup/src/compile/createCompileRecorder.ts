@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
 import type { CompiledInput } from './CompiledInput.ts';
+import { identifyInput } from './CompiledInput.ts';
 import type { JsonPathSpec } from './extractJsonPaths.ts';
 import { projectJsonFile } from './projectJsonFile.ts';
 
@@ -56,9 +57,9 @@ export function createCompileRecorder(): CompileRecorder {
 
 // region | Helpers
 
-/** Files a compile reads more than once, and the same file read as two kinds, collapse to one record each. */
+/** Files a compile reads more than once collapse to one record each. */
 function record(recorded: Map<string, CompiledInput>, input: CompiledInput): void {
-  const key = `${input.kind}\0${input.path}`;
+  const key = identifyInput(input.kind, input.path);
   if (!recorded.has(key)) recorded.set(key, input);
 }
 

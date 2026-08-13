@@ -12,3 +12,13 @@ import type { JsonPathSpec } from './extractJsonPaths.ts';
  */
 export type CompiledInput =
   { hash: string; kind: 'inline'; path: string; paths: JsonPathSpec } | { hash: string; kind: 'module'; path: string };
+
+/**
+ * Returns a recorded input's identity, which is its path and its kind together.
+ *
+ * A JSON file a kit both imports and projects is two inputs, not one, because the two record different
+ * bytes about it.
+ */
+export function identifyInput(kind: CompiledInput['kind'], filePath: string): string {
+  return `${kind}\u{0}${filePath}`;
+}

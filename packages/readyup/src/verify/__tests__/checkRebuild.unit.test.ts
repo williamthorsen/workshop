@@ -29,7 +29,7 @@ describe(checkRebuild, () => {
   it('returns ok when the recompiled bytes match the bundle on disk', async () => {
     const bundle = Buffer.from('compiled output');
     writeKitFiles(tempDir, bundle);
-    mockBuildBundle.mockResolvedValue(bundle);
+    mockBuildBundle.mockResolvedValue({ bytes: bundle, inputs: [] });
 
     const status = await checkRebuild(kit(), tempDir);
 
@@ -40,7 +40,7 @@ describe(checkRebuild, () => {
     const onDisk = Buffer.from('stale output');
     const rebuilt = Buffer.from('fresh output');
     writeKitFiles(tempDir, onDisk);
-    mockBuildBundle.mockResolvedValue(rebuilt);
+    mockBuildBundle.mockResolvedValue({ bytes: rebuilt, inputs: [] });
 
     const status = await checkRebuild(kit(), tempDir);
 
@@ -54,7 +54,7 @@ describe(checkRebuild, () => {
   it('compares against the on-disk bytes rather than the recorded targetHash', async () => {
     const bundle = Buffer.from('compiled output');
     writeKitFiles(tempDir, bundle);
-    mockBuildBundle.mockResolvedValue(bundle);
+    mockBuildBundle.mockResolvedValue({ bytes: bundle, inputs: [] });
 
     const status = await checkRebuild({ ...kit(), targetHash: 'deadbeef' }, tempDir);
 
@@ -63,7 +63,7 @@ describe(checkRebuild, () => {
 
   it('names the compiling version on a mismatch when it differs from the runner', async () => {
     writeKitFiles(tempDir, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(Buffer.from('fresh output'));
+    mockBuildBundle.mockResolvedValue({ bytes: Buffer.from('fresh output'), inputs: [] });
 
     const status = await checkRebuild({ ...kit(), readyupVersion: '0.0.1-old' }, tempDir);
 
@@ -72,7 +72,7 @@ describe(checkRebuild, () => {
 
   it('omits the compiling version on a mismatch when it matches the runner', async () => {
     writeKitFiles(tempDir, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(Buffer.from('fresh output'));
+    mockBuildBundle.mockResolvedValue({ bytes: Buffer.from('fresh output'), inputs: [] });
 
     const status = await checkRebuild({ ...kit(), readyupVersion: VERSION }, tempDir);
 

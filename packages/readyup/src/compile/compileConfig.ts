@@ -3,12 +3,17 @@ import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
 import { buildBundle } from './buildBundle.ts';
+import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
-  outputPath: string;
   changed: boolean;
+
+  /** Every file the compile read outside `node_modules`, with absolute paths. */
+  inputs: CompiledInput[];
+
+  outputPath: string;
   targetHash: string;
 }
 
@@ -22,14 +27,14 @@ export interface CompileResult {
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
   const resolvedOutput = path.resolve(outputPath ?? deriveJsPath(inputPath));
 
-  const compiled = await buildBundle(inputPath);
+  const { bytes, inputs } = await buildBundle(inputPath);
   const existing = existsSync(resolvedOutput) ? readFileSync(resolvedOutput) : undefined;
-  const changed = existing === undefined || !compiled.equals(existing);
+  const changed = existing === undefined || !bytes.equals(existing);
 
   if (changed) {
     mkdirSync(path.dirname(resolvedOutput), { recursive: true });
-    writeFileSync(resolvedOutput, compiled);
+    writeFileSync(resolvedOutput, bytes);
   }
 
-  return { outputPath: resolvedOutput, changed, targetHash: hashBytes(compiled) };
+  return { changed, inputs, outputPath: resolvedOutput, targetHash: hashBytes(bytes) };
 }
