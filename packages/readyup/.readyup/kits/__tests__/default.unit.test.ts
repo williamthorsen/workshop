@@ -163,7 +163,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, 'recorded with a source and a bundle hash')).toMatchObject({
         status: 'failed',
-        detail: 'The manifest records no source or bundle hash',
+        detail: expect.stringContaining('records no source or bundle hash'),
       });
       expect(pickResult(results, 'Its source')).toMatchObject({ status: 'skipped' });
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
@@ -286,6 +286,19 @@ describe('default kit', () => {
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('.readyup/kits/demo.ts records no kind'),
+      });
+    });
+
+    // A record with no path has nothing to lead with, so the message names the input instead.
+    it('names every absent field of an input record that has no path to lead with', async () => {
+      const entry = writeKit(projectRoot, 'default');
+      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [{ kind: 'module' }] }]);
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'failed',
+        detail: expect.stringContaining('records an input with no path or hash'),
       });
     });
 
