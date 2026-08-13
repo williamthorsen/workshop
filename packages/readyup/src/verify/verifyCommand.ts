@@ -197,6 +197,7 @@ function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitV
 function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
   const { drift, inputs, rebuild, source } = verdicts;
   const token = resolveToken(verdicts);
+  // An unverified closure counts as confirmed, so an entry predating it carries the line it always did.
   const hashesConfirmed = drift.kind === 'ok' && source.kind === 'ok' && inputs.kind !== 'stale';
   const clauses = [
     describeDriftStatus(kit, drift),

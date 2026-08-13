@@ -15,7 +15,7 @@ export function hashFile(filePath: string): string {
 }
 
 /**
- * Return the hash of a serialized JSON projection, which is what a recorded inline input carries.
+ * Returns the hash of a serialized JSON projection, which is what a recorded inline input carries.
  *
  * The compile and every reader of a recorded input hash the projection through here, so neither can
  * encode it differently and report a file neither changed as stale.
