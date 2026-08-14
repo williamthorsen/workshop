@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { assertKitImportsResolve } from '../assertKitImportsResolve.ts';
@@ -13,13 +14,7 @@ const COMPILED_KIT_PATHS = ['default.js', 'publishing.js'].map((name) =>
 
 /** Runs the assertion and returns the findings it threw, failing the test when it did not throw. */
 async function captureFindings(bundle: string) {
-  try {
-    await assertKitImportsResolve(bundle);
-  } catch (error: unknown) {
-    if (error instanceof UnresolvableKitImportsError) return error.findings;
-    throw error;
-  }
-  throw new Error('expected assertKitImportsResolve to throw');
+  return (await captureError(UnresolvableKitImportsError, () => assertKitImportsResolve(bundle))).findings;
 }
 
 describe(assertKitImportsResolve, () => {

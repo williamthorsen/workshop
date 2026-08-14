@@ -1,16 +1,11 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { assertIsRdyKit } from '../assertIsRdyKit.ts';
 
-/** Run the assertion and return the message it threw, failing the test when it accepted the value. */
-function messageFrom(raw: unknown, source?: string): string {
-  try {
-    assertIsRdyKit(raw, source);
-  } catch (error) {
-    if (!(error instanceof Error)) throw error;
-    return error.message;
-  }
-  return expect.unreachable('Expected assertIsRdyKit to throw');
+/** Runs the assertion and returns the message it threw, failing the test when it accepted the value. */
+async function messageFrom(raw: unknown, source?: string): Promise<string> {
+  return (await captureError(() => assertIsRdyKit(raw, source))).message;
 }
 
 describe(assertIsRdyKit, () => {
@@ -23,18 +18,18 @@ describe(assertIsRdyKit, () => {
       expect(() => assertIsRdyKit([])).toThrow('Invalid kit');
     });
 
-    it('throws when checklists is missing', () => {
-      expect(messageFrom({})).toContain('checklists:');
+    it('throws when checklists is missing', async () => {
+      await expect(messageFrom({})).resolves.toContain('checklists:');
     });
 
-    it('throws when a checklist has neither checks nor groups', () => {
-      expect(messageFrom({ checklists: [{ name: 'bad' }] })).toContain(
+    it('throws when a checklist has neither checks nor groups', async () => {
+      await expect(messageFrom({ checklists: [{ name: 'bad' }] })).resolves.toContain(
         "checklists[0]: Checklist must have either 'checks' or 'groups'",
       );
     });
 
-    it('throws when a checklist has both checks and groups', () => {
-      expect(messageFrom({ checklists: [{ name: 'bad', checks: [], groups: [] }] })).toContain(
+    it('throws when a checklist has both checks and groups', async () => {
+      await expect(messageFrom({ checklists: [{ name: 'bad', checks: [], groups: [] }] })).resolves.toContain(
         "checklists[0]: Checklist cannot have both 'checks' and 'groups'",
       );
     });
@@ -45,93 +40,97 @@ describe(assertIsRdyKit, () => {
     it.each([
       ['checks is undefined beside a populated groups', { name: 'bad', checks: undefined, groups: [[]] }],
       ['groups is undefined beside a populated checks', { name: 'bad', checks: [], groups: undefined }],
-    ])('rejects a checklist where %s', (_label, checklist) => {
-      expect(messageFrom({ checklists: [checklist] })).toContain(
+    ])('rejects a checklist where %s', async (_label, checklist) => {
+      await expect(messageFrom({ checklists: [checklist] })).resolves.toContain(
         "checklists[0]: Checklist cannot have both 'checks' and 'groups'",
       );
     });
 
-    it('throws when the only collection a checklist declares is undefined', () => {
-      expect(messageFrom({ checklists: [{ name: 'bad', checks: undefined }] })).toContain(
+    it('throws when the only collection a checklist declares is undefined', async () => {
+      await expect(messageFrom({ checklists: [{ name: 'bad', checks: undefined }] })).resolves.toContain(
         "checklists[0]: Checklist must have either 'checks' or 'groups'",
       );
     });
 
-    it('throws when a checklist entry is not an object', () => {
-      expect(messageFrom({ checklists: ['not-an-object'] })).toContain('checklists[0]:');
+    it('throws when a checklist entry is not an object', async () => {
+      await expect(messageFrom({ checklists: ['not-an-object'] })).resolves.toContain('checklists[0]:');
     });
 
-    it('throws when a checklist name is missing', () => {
-      expect(messageFrom({ checklists: [{ checks: [] }] })).toContain(
+    it('throws when a checklist name is missing', async () => {
+      await expect(messageFrom({ checklists: [{ checks: [] }] })).resolves.toContain(
         'checklists[0].name: expected a non-empty string',
       );
     });
 
-    it('throws when a checklist name is empty', () => {
-      expect(messageFrom({ checklists: [{ name: '', checks: [] }] })).toContain(
+    it('throws when a checklist name is empty', async () => {
+      await expect(messageFrom({ checklists: [{ name: '', checks: [] }] })).resolves.toContain(
         'checklists[0].name: expected a non-empty string',
       );
     });
 
-    it('throws when a checklist fixLocation is invalid', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [], fixLocation: 'INLINE' }] })).toContain(
-        'checklists[0].fixLocation: expected one of "inline", "end", got "INLINE"',
-      );
+    it('throws when a checklist fixLocation is invalid', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [], fixLocation: 'INLINE' }] }),
+      ).resolves.toContain('checklists[0].fixLocation: expected one of "inline", "end", got "INLINE"');
     });
   });
 
   describe('check validation', () => {
-    it("throws when a flat check has a typo'd severity", () => {
+    it("throws when a flat check has a typo'd severity", async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, severity: 'info' }] }] };
 
-      expect(messageFrom(raw)).toContain(
+      await expect(messageFrom(raw)).resolves.toContain(
         'checklists[0].checks[0].severity: expected one of "error", "warn", "recommend", got "info"',
       );
     });
 
-    it('throws when a check name is missing', () => {
+    it('throws when a check name is missing', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ check: () => true }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].name: expected a non-empty string');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].name: expected a non-empty string');
     });
 
-    it('throws when a check name is empty', () => {
+    it('throws when a check name is empty', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: '', check: () => true }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].name: expected a non-empty string');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].name: expected a non-empty string');
     });
 
-    it('names the type supplied when check is not a function', () => {
+    it('names the type supplied when check is not a function', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope' }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].check: expected a function, got string');
+      await expect(messageFrom(raw)).resolves.toContain(
+        'checklists[0].checks[0].check: expected a function, got string',
+      );
     });
 
-    it('names the type supplied when check is null', () => {
+    it('names the type supplied when check is null', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: null }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].check: expected a function, got null');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].check: expected a function, got null');
     });
 
-    it('throws when skip is not a function', () => {
+    it('throws when skip is not a function', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, skip: true }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].skip: expected a function, got boolean');
+      await expect(messageFrom(raw)).resolves.toContain(
+        'checklists[0].checks[0].skip: expected a function, got boolean',
+      );
     });
 
-    it('throws when fix is not a string', () => {
+    it('throws when fix is not a string', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, fix: 42 }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].fix:');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].fix:');
     });
 
-    it('throws when quiet is not a boolean', () => {
+    it('throws when quiet is not a boolean', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, quiet: 'true' }] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].quiet:');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].quiet:');
     });
 
-    it('locates a bad quiet on a check nested under a parent', () => {
+    it('locates a bad quiet on a check nested under a parent', async () => {
       const raw = {
         checklists: [
           {
@@ -141,10 +140,10 @@ describe(assertIsRdyKit, () => {
         ],
       };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].checks[0].quiet:');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].checks[0].quiet:');
     });
 
-    it('validates checks nested under a parent check', () => {
+    it('validates checks nested under a parent check', async () => {
       const raw = {
         checklists: [
           {
@@ -154,26 +153,30 @@ describe(assertIsRdyKit, () => {
         ],
       };
 
-      expect(messageFrom(raw)).toContain('checklists[0].checks[0].checks[0].check: expected a function, got string');
+      await expect(messageFrom(raw)).resolves.toContain(
+        'checklists[0].checks[0].checks[0].check: expected a function, got string',
+      );
     });
 
-    it('validates checks inside a staged checklist group', () => {
+    it('validates checks inside a staged checklist group', async () => {
       const raw = { checklists: [{ name: 'test', groups: [[{ name: 'a', check: () => true }], [{ name: 'b' }]] }] };
 
-      expect(messageFrom(raw)).toContain('checklists[0].groups[1][0].check: expected a function, got undefined');
+      await expect(messageFrom(raw)).resolves.toContain(
+        'checklists[0].groups[1][0].check: expected a function, got undefined',
+      );
     });
 
-    it('validates preconditions', () => {
+    it('validates preconditions', async () => {
       const raw = {
         checklists: [
           { name: 'test', preconditions: [{ name: 'gate', check: () => true, severity: 'blocker' }], checks: [] },
         ],
       };
 
-      expect(messageFrom(raw)).toContain('checklists[0].preconditions[0].severity:');
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].preconditions[0].severity:');
     });
 
-    it('reports every offending check, not only the first', () => {
+    it('reports every offending check, not only the first', async () => {
       const raw = {
         checklists: [
           {
@@ -185,7 +188,7 @@ describe(assertIsRdyKit, () => {
           },
         ],
       };
-      const message = messageFrom(raw);
+      const message = await messageFrom(raw);
 
       expect(message).toContain('checklists[0].checks[0].check:');
       expect(message).toContain('checklists[0].checks[1].name:');
@@ -193,25 +196,25 @@ describe(assertIsRdyKit, () => {
   });
 
   describe('error message', () => {
-    it('names the kit source when one is supplied', () => {
-      const message = messageFrom({}, '.readyup/kits/default.js');
+    it('names the kit source when one is supplied', async () => {
+      const message = await messageFrom({}, '.readyup/kits/default.js');
 
       expect(message).toContain('Invalid kit at .readyup/kits/default.js:');
     });
 
-    it('omits the location clause when no source is supplied', () => {
-      expect(messageFrom({})).toContain('Invalid kit:');
+    it('omits the location clause when no source is supplied', async () => {
+      await expect(messageFrom({})).resolves.toContain('Invalid kit:');
     });
 
-    it('does not expose raw Zod output', () => {
-      const message = messageFrom({ checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope' }] }] });
+    it('does not expose raw Zod output', async () => {
+      const message = await messageFrom({ checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope' }] }] });
 
       expect(message).not.toContain('"code"');
       expect(message).not.toContain('invalid_type');
     });
 
-    it('locates an issue on the kit itself at the root', () => {
-      expect(messageFrom('string')).toContain('(kit root):');
+    it('locates an issue on the kit itself at the root', async () => {
+      await expect(messageFrom('string')).resolves.toContain('(kit root):');
     });
   });
 
@@ -319,46 +322,52 @@ describe(assertIsRdyKit, () => {
   });
 
   describe('kit-level fields', () => {
-    it('throws when suites is not an object', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: 'not-a-record' })).toContain('suites:');
+    it('throws when suites is not an object', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: 'not-a-record' }),
+      ).resolves.toContain('suites:');
     });
 
-    it('throws when a suite value is not an array', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: { ci: 'not-an-array' } })).toContain(
-        'suites.ci:',
+    it('throws when a suite value is not an array', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: { ci: 'not-an-array' } }),
+      ).resolves.toContain('suites.ci:');
+    });
+
+    it('throws when a suite contains non-string entries', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: { ci: [42] } }),
+      ).resolves.toContain('suites.ci[0]:');
+    });
+
+    it('throws when fixLocation is invalid', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], fixLocation: 'WRONG' }),
+      ).resolves.toContain('fixLocation: expected one of "inline", "end", got "WRONG"');
+    });
+
+    it('throws when fixLocation uses old uppercase casing', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], fixLocation: 'INLINE' }),
+      ).resolves.toContain('fixLocation:');
+    });
+
+    it('throws when defaultSeverity is invalid', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], defaultSeverity: 'critical' }),
+      ).resolves.toContain('defaultSeverity: expected one of "error", "warn", "recommend", got "critical"');
+    });
+
+    it('throws when failOn is invalid', async () => {
+      await expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], failOn: 'none' })).resolves.toContain(
+        'failOn:',
       );
     });
 
-    it('throws when a suite contains non-string entries', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], suites: { ci: [42] } })).toContain(
-        'suites.ci[0]:',
+    it('throws when reportOn is invalid', async () => {
+      await expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], reportOn: 'verbose' })).resolves.toContain(
+        'reportOn:',
       );
-    });
-
-    it('throws when fixLocation is invalid', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], fixLocation: 'WRONG' })).toContain(
-        'fixLocation: expected one of "inline", "end", got "WRONG"',
-      );
-    });
-
-    it('throws when fixLocation uses old uppercase casing', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], fixLocation: 'INLINE' })).toContain(
-        'fixLocation:',
-      );
-    });
-
-    it('throws when defaultSeverity is invalid', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], defaultSeverity: 'critical' })).toContain(
-        'defaultSeverity: expected one of "error", "warn", "recommend", got "critical"',
-      );
-    });
-
-    it('throws when failOn is invalid', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], failOn: 'none' })).toContain('failOn:');
-    });
-
-    it('throws when reportOn is invalid', () => {
-      expect(messageFrom({ checklists: [{ name: 'test', checks: [] }], reportOn: 'verbose' })).toContain('reportOn:');
     });
   });
 });
