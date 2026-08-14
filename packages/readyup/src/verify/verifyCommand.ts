@@ -313,9 +313,9 @@ function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirme
 }
 
 /**
- * Returns the clauses naming what moved between the compile and the rebuild, one per cause.
+ * Returns one clause per cause, naming which versions changed between the compile and the rebuild.
  *
- * When the entry carries the toolchain record and nothing in it moved, the single clause says so and
+ * When the entry carries the toolchain record and nothing in it changed, the single clause says so and
  * names what the record cannot see: an edited bundle, a changed input, or a dependency whose content
  * changed without a version change.
  */

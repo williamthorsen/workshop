@@ -47,7 +47,7 @@ export interface EsbuildComparison {
  * compile read outside `node_modules`, but a bundle is also a function of every dependency module it
  * inlines, the esbuild version, and the compile options. Recompiling reads all of them, and a
  * mismatch compares the entry's recorded `esbuildVersion` and `bundledDependencies` against the
- * rebuild's own record to name what moved.
+ * rebuild's own record to name which versions changed.
  *
  * Compares against the on-disk bytes and never against `targetHash`, so the verdict is independent
  * of the manifest's bookkeeping and can contradict it. A kit whose recorded hash has gone wrong
