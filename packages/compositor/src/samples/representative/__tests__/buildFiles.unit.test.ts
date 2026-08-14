@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { FileEntry } from '../../../schemas/file-schemas.ts';
 import { buildFiles } from '../buildFiles.ts';
-import { createBlobStore } from '../createBlobStore.ts';
+import { createBlobStore } from '../../../portable/createBlobStore.ts';
 
 const blobs = createBlobStore();
 const files = buildFiles(blobs);
