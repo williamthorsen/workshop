@@ -856,23 +856,27 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 
 #### What a manifest entry records
 
-| Field            | Meaning                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `checklists`     | The checklist names the kit declares, so `rdy list` reports them without running the bundle |
-| `description`    | The kit's own description, where it declares one                                            |
-| `inputs`         | Every file the compile read, each with the hash of what was consumed from it                |
-| `name`           | The kit's name, which is its compiled file's basename                                       |
-| `path`           | The compiled bundle, relative to the manifest                                               |
-| `readyupVersion` | The readyup that compiled the kit                                                           |
-| `source`         | The TypeScript the bundle was built from, relative to the manifest                          |
-| `sourceHash`     | Hash of that source, read back out of its own `inputs` record                               |
-| `targetHash`     | Hash of the compiled bundle                                                                 |
+| Field                 | Meaning                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `bundledDependencies` | Each package the bundle inlined, by name, with the version its `package.json` declares      |
+| `checklists`          | The checklist names the kit declares, so `rdy list` reports them without running the bundle |
+| `description`         | The kit's own description, where it declares one                                            |
+| `esbuildVersion`      | The esbuild that produced the bundle                                                        |
+| `inputs`              | Every file the compile read, each with the hash of what was consumed from it                |
+| `name`                | The kit's name, which is its compiled file's basename                                       |
+| `path`                | The compiled bundle, relative to the manifest                                               |
+| `readyupVersion`      | The readyup that compiled the kit                                                           |
+| `source`              | The TypeScript the bundle was built from, relative to the manifest                          |
+| `sourceHash`          | Hash of that source, read back out of its own `inputs` record                               |
+| `targetHash`          | Hash of the compiled bundle                                                                 |
 
 `inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its bytes. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
 
 The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.
 
-An entry compiled before readyup recorded the closure carries no `inputs`.
+What the closure leaves out is recorded as versions instead: `esbuildVersion` names the bundler and `bundledDependencies` each inlined package, one entry per package rather than one per file. A package a bundle inlines at two versions at once records both, sorted and comma-separated. `bundledDependencies` is absent for a kit that bundles nothing, so `esbuildVersion` is the marker that an entry carries the record at all.
+
+An entry compiled before readyup recorded the closure carries no `inputs`; one compiled before the version record carries no `esbuildVersion`.
 
 ### Package-hosted kits
 
@@ -1015,7 +1019,7 @@ In CI:
 
 #### Verifying by recompiling
 
-The three verdicts cover what the compile read and recorded. A bundle is a function of more than that: the bundler's version, the compile options, and the contents of every dependency, which the manifest records none of, since [the closure stops at `node_modules`](#what-a-manifest-entry-records). A bundle stale in any of them still hashes as `ok`.
+The three verdicts cover what the compile read and recorded as hashes. A bundle is a function of more than that: the bundler's version, the compile options, and the contents of every dependency, none of which the hash verdicts cover, since [the closure stops at `node_modules`](#what-a-manifest-entry-records). A bundle stale in any of them still hashes as `ok`.
 
 `--rebuild` answers the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
 
@@ -1023,9 +1027,11 @@ The three verdicts cover what the compile read and recorded. A bundle is a funct
 ── Verifying kits against .readyup/manifest.json
 
 🔴 deploy
-   rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a)
+   rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a; esbuild 0.28.1 -> 0.29.0; zod 3.24.1 -> 4.0.0)
 🟢 smoke
 ```
+
+A mismatch names what moved, read from the versions the manifest records: the readyup that compiled the bundle, the esbuild, and each bundled package whose version the rebuild does not reproduce. When every recorded version matches, the mismatch says so, which leaves an edited bundle, a changed input, or dependency content changed without a version bump. The comparison reads the rebuild's own record on both sides, so nothing is resolved from the installed tree, and an entry compiled before the version record renders the bare hashes.
 
 The comparison is against the bundle on disk, never the recorded hash, so the verdict is independent of the manifest's bookkeeping and can contradict it. A bundle that reproduces exactly while its recorded hash does not match says the record is what went wrong, not the kit:
 
@@ -1037,9 +1043,9 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
 
 The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
 
-Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
+Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
 
-Three things to know before wiring it into CI: It requires esbuild. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
+Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
 
 ```yaml
 - run: npx rdy verify --rebuild
