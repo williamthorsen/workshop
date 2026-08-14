@@ -8,7 +8,13 @@ import { deriveJsPath } from './deriveJsPath.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
+  /** Every package the bundle inlined, by name, with the version its `package.json` declares. */
+  bundledDependencies: Record<string, string>;
+
   changed: boolean;
+
+  /** The esbuild that produced the bundle. */
+  esbuildVersion: string;
 
   /** Every file the compile read outside `node_modules`, with absolute paths. */
   inputs: CompiledInput[];
@@ -27,7 +33,7 @@ export interface CompileResult {
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
   const resolvedOutput = path.resolve(outputPath ?? deriveJsPath(inputPath));
 
-  const { bytes, inputs } = await buildBundle(inputPath);
+  const { bundledDependencies, bytes, esbuildVersion, inputs } = await buildBundle(inputPath);
   const existing = existsSync(resolvedOutput) ? readFileSync(resolvedOutput) : undefined;
   const changed = existing === undefined || !bytes.equals(existing);
 
@@ -36,5 +42,12 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     writeFileSync(resolvedOutput, bytes);
   }
 
-  return { changed, inputs, outputPath: resolvedOutput, targetHash: hashBytes(bytes) };
+  return {
+    bundledDependencies,
+    changed,
+    esbuildVersion,
+    inputs,
+    outputPath: resolvedOutput,
+    targetHash: hashBytes(bytes),
+  };
 }

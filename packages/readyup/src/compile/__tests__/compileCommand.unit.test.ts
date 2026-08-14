@@ -74,6 +74,9 @@ const SRC_DIR = '.readyup/kits';
 /** The hash a compile records for its entry point, which is where a manifest entry's `sourceHash` comes from. */
 const SOURCE_HASH = '5c0urce1';
 
+/** The esbuild version every mocked compile reports, which is where an entry's `esbuildVersion` comes from. */
+const ESBUILD_VERSION = '0.99.0-test';
+
 /** Returns the absolute path of a kit source in the directory a batch compile sweeps. */
 function kitSource(fileName: string): string {
   return path.resolve(process.cwd(), SRC_DIR, fileName);
@@ -90,7 +93,12 @@ function compileResult(
   result: { outputPath: string; changed: boolean; targetHash: string },
   hash: string = SOURCE_HASH,
 ): CompileResult {
-  return { ...result, inputs: [{ hash, kind: 'module', path: path.resolve(entry) }] };
+  return {
+    ...result,
+    bundledDependencies: {},
+    esbuildVersion: ESBUILD_VERSION,
+    inputs: [{ hash, kind: 'module', path: path.resolve(entry) }],
+  };
 }
 
 /** Returns the `inputs` an entry carries when its compile read only the entry point, stated against the manifest. */
@@ -643,6 +651,42 @@ describe(compileCommand, () => {
     });
   });
 
+  describe('manifest toolchain record', () => {
+    it('records bundled dependencies on the entry when the compile reports them', async () => {
+      mockCompileConfig.mockResolvedValue({
+        ...compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
+        bundledDependencies: { picomatch: '4.0.2', zod: '4.0.5' },
+      });
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+
+      await compileCommand(['deploy.ts']);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [expect.objectContaining({ bundledDependencies: { picomatch: '4.0.2', zod: '4.0.5' } })],
+      });
+    });
+
+    it('omits the bundledDependencies field for a kit that bundles nothing', async () => {
+      mockCompileConfig.mockResolvedValue(
+        compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
+      );
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+
+      await compileCommand(['deploy.ts']);
+
+      const [call] = mockWriteManifest.mock.calls;
+      assert.ok(call);
+      const manifest: RdyManifest = call[1];
+
+      expect(manifest.kits[0]).not.toHaveProperty('bundledDependencies');
+    });
+  });
+
   describe('--json', () => {
     it('reports every kit status on stdout and keeps prose on stderr', async () => {
       mockLoadConfig.mockResolvedValue({
@@ -776,6 +820,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          esbuildVersion: ESBUILD_VERSION,
           inputs: recordedEntry('kits/alpha.ts'),
           name: 'alpha',
           description: 'Alpha checks',
@@ -786,6 +831,7 @@ describe(compileCommand, () => {
           targetHash: 'aaaa1111',
         },
         {
+          esbuildVersion: ESBUILD_VERSION,
           inputs: recordedEntry('kits/beta.ts'),
           name: 'beta',
           path: expect.stringContaining('beta.js'),
@@ -856,6 +902,7 @@ describe(compileCommand, () => {
       kits: [
         { name: 'default', description: 'Default checks' },
         {
+          esbuildVersion: ESBUILD_VERSION,
           inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Deploy checks',
@@ -884,6 +931,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          esbuildVersion: ESBUILD_VERSION,
           inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           path: expect.stringContaining('deploy.js'),
@@ -912,6 +960,7 @@ describe(compileCommand, () => {
       version: 1,
       kits: [
         {
+          esbuildVersion: ESBUILD_VERSION,
           inputs: recordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Updated',
