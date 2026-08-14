@@ -1,11 +1,11 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { locatePackage } from '../locatePackage.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
-import { captureError } from '../test-utils/captureError.ts';
 
 const contentKeyPath = ['compositor', 'content'];
 

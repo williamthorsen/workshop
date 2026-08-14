@@ -3,9 +3,9 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { captureError } from '../../test-utils/captureError.ts';
 import { validateCompiledOutput } from '../validateCompiledOutput.ts';
 
 /** Create a temporary ESM bundle that exports the given kit fields. */

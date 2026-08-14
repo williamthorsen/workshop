@@ -1,11 +1,11 @@
 import assert from 'node:assert';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
-import { captureError } from '../../test-utils/captureError.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
@@ -67,9 +67,10 @@ describe(loadRemoteManifest, () => {
   it.each([401, 403, 500])('throws RemoteFetchError carrying the %i status', async (status) => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Nope' }));
 
-    const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
+    const error = await captureError(RemoteFetchError, () =>
+      loadRemoteManifest({ url: 'https://example.com/manifest.json' }),
+    );
 
-    expect(error).toBeInstanceOf(RemoteFetchError);
     expect(error).toHaveProperty('status', status);
   });
 

@@ -1,7 +1,7 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { RdyKit } from '../../kits/types.ts';
-import { captureError } from '../../test-utils/captureError.ts';
 import { resolveRequestedNames } from '../resolveRequestedNames.ts';
 
 /** Build a minimal kit with named checklists and optional suites. */

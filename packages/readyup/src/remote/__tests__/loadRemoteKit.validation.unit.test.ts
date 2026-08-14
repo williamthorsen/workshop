@@ -1,12 +1,10 @@
-import assert from 'node:assert';
-
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
 
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
-import { captureError } from '../../test-utils/captureError.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
 
 /** Build a minimal mock Response with the given body and status. */
@@ -129,9 +127,10 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const error = await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js' }));
+    const error = await captureError(UnresolvableKitImportsError, () =>
+      loadRemoteKit({ url: 'https://example.com/config.js' }),
+    );
 
-    assert.ok(error instanceof UnresolvableKitImportsError);
     expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
   });
 
