@@ -152,9 +152,9 @@ describe(captureSnapshot, () => {
   it('reads what each target currently holds', async () => {
     const snapshot = await capture({ targetFiles: { 'skills/review/SKILL.md': '# Old review\n' } });
 
-    expect(snapshot.targetState?.[0]?.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
-      ['skills/review/SKILL.md', ['skill:review']],
-    ]);
+    expect(
+      snapshot.targetState?.[0]?.claimed.map(({ path, claims }) => [path, claims.map(({ id }) => id)]),
+    ).toStrictEqual([['skills/review/SKILL.md', ['skill:review']]]);
   });
 
   it('skips the destination scan where the caller has no deployment to plan', async () => {

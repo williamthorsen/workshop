@@ -42,7 +42,17 @@ describe(readTargetState, () => {
   it('claims a file whose name inverts through the kind’s template', async () => {
     const state = await readState({ 'rulebooks/consult-shell.md': 'Shell rules.\n' }, [rulebooks]);
 
-    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.artifactIds).toStrictEqual(['rulebook:shell']);
+    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.claims).toStrictEqual([
+      { id: 'rulebook:shell', kindId: 'rulebook', slug: 'shell' },
+    ]);
+  });
+
+  it('recovers the kind and slug behind a claimed id, which no catalog carries once the artifact is deleted', async () => {
+    const state = await readState({ 'skills/review/SKILL.md': '# Review\n' }, [skills]);
+
+    expect(claimOf(state.claimed, 'skills/review/SKILL.md')?.claims).toStrictEqual([
+      { id: 'skill:review', kindId: 'skill', slug: 'review' },
+    ]);
   });
 
   it('claims every file a claimed artifact directory holds, so an asset is planned beside its entry file', async () => {
@@ -54,7 +64,7 @@ describe(readTargetState, () => {
       [skills],
     );
 
-    expect(state.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
+    expect(state.claimed.map(({ path, claims }) => [path, claims.map(({ id }) => id)])).toStrictEqual([
       ['skills/review/SKILL.md', ['skill:review']],
       ['skills/review/assets/diagram.svg', ['skill:review']],
     ]);
@@ -77,9 +87,15 @@ describe(readTargetState, () => {
       [skills, consultSkills],
     );
 
-    expect(state.claimed.map(({ path, artifactIds }) => [path, artifactIds])).toStrictEqual([
-      ['skills/consult-shell/SKILL.md', ['rulebook:shell', 'skill:consult-shell']],
-      ['skills/review/SKILL.md', ['skill:review']],
+    expect(state.claimed.map(({ path, claims }) => [path, claims])).toStrictEqual([
+      [
+        'skills/consult-shell/SKILL.md',
+        [
+          { id: 'rulebook:shell', kindId: 'rulebook', slug: 'shell' },
+          { id: 'skill:consult-shell', kindId: 'skill', slug: 'consult-shell' },
+        ],
+      ],
+      ['skills/review/SKILL.md', [{ id: 'skill:review', kindId: 'skill', slug: 'review' }]],
     ]);
   });
 

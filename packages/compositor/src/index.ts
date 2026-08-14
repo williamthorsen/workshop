@@ -203,7 +203,13 @@ export type { CaptureSnapshotInput, CompositionSnapshot } from './snapshot/captu
 export { captureSnapshot } from './snapshot/captureSnapshot.ts';
 export type { ArtifactAsset } from './snapshot/readArtifactAssets.ts';
 export { readArtifactAssets } from './snapshot/readArtifactAssets.ts';
-export type { ClaimedFile, HostState, ReadTargetStateOptions, TargetState } from './snapshot/readTargetState.ts';
+export type {
+  ClaimedArtifact,
+  ClaimedFile,
+  HostState,
+  ReadTargetStateOptions,
+  TargetState,
+} from './snapshot/readTargetState.ts';
 export { readTargetState } from './snapshot/readTargetState.ts';
 export type { TokenKindViolation } from './tokens/assertTokenKindsAreConsistent.ts';
 export { assertTokenKindsAreConsistent, TokenKindConsistencyError } from './tokens/assertTokenKindsAreConsistent.ts';
