@@ -57,6 +57,8 @@ export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
 export type { TraversalIndex } from './plan/buildTraversalIndex.ts';
 export { buildTraversalIndex } from './plan/buildTraversalIndex.ts';
+export { composePlan } from './plan/composePlan.ts';
+export { computeFingerprint } from './plan/computeFingerprint.ts';
 export type { RenderTargetViolation } from './render/assertRenderTargetsAreConsistent.ts';
 export {
   assertRenderTargetsAreConsistent,
