@@ -167,11 +167,13 @@ The two faults are not the same kind of thing, which is why only one of them end
 
 A failed render blocks its artifact's whole file set at that target, assets included: an artifact with a fresh diagram beside a body a stale render left behind is worse than one left alone. Among a host's contributors, one failed render blocks the whole host, rebuilding the region without a contributor's block being something a reader cannot tell from a removal.
 
-Removal follows from a destination nothing plans, never from a render that failed, so a directive an author has just broken proposes no deletion. A path whose claim rules name more than one artifact is blocked whatever its status, its provenance being undecidable from shape.
+Removal follows from a destination nothing plans, never from a render that failed, so a directive an author has just broken proposes no deletion. A path whose claim rules name more than one artifact is blocked whatever its status, its provenance being undecidable from shape. Two deployments landing on one path is that same fact seen from the planning side: the entries collapse into one blocked entry naming each artifact that wanted the destination. Neither name resolution nor the render-target consistency pass can see such a collision -- one holds a single lookup with no artifact set to compare against, the other no catalog to learn which slugs a template will produce -- so composing is the first place it is visible at all.
 
 **An artifact's status measures its own content, not the files it lands in.** Several artifacts share one aggregated host, and a roll-up over files would move every contributor whenever any one of them moved; a region contributor is judged by its own block against the block the host carries for it. An artifact with nothing to judge -- a kind emitting no files, a kind no target deploys, an artifact blocked everywhere -- is `unchanged`, nothing recording where it previously stood.
 
-Contributions compose into a host in artifact-id order, the order every id-keyed table in a plan runs in and the only one two composes over one snapshot cannot disagree on. A region-routed kind ships no assets: its artifacts contribute a body to a host rather than a tree, and there is nowhere for one to land.
+Contributions compose into a host in artifact-id order, the order every id-keyed table in a plan runs in and the only one two composes over one snapshot cannot disagree on.
+
+A deployment with nowhere to put what an artifact ships beside its entry file places none of it. A region-routed kind contributes a body to a host rather than a tree, and a tree deployment laid out one file per artifact holds exactly one file. A kind's layout in a source and its layout at a target are separate declarations, so a kind that ships assets can be flattened at a destination with no room for them.
 
 ## What the schema checks, and what it does not
 

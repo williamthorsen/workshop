@@ -210,6 +210,57 @@ describe(assembleFiles, () => {
     expect(assembly.files.map(({ path }) => path)).toStrictEqual([HOST_PATH]);
   });
 
+  it('blocks a destination two deployments both write, naming each artifact that wanted it', async () => {
+    const { assembly } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/consult-naming/SKILL.md': '# Consult naming\n',
+      },
+      buildTargets: buildAmbiguousTargets,
+      targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
+    });
+    const contested = fileAt(assembly, 'skills/consult-naming/SKILL.md');
+
+    expect(assembly.files.filter(({ path }) => path === 'skills/consult-naming/SKILL.md')).toHaveLength(1);
+    expect(contested.status).toBe('unchanged');
+    expect(contested.blocked?.reason).toMatch(/"rulebook:naming", "skill:consult-naming".*undecidable/);
+  });
+
+  it('plans no contested destination at all where the target holds nothing there', async () => {
+    const { assembly } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/consult-naming/SKILL.md': '# Consult naming\n',
+      },
+      buildTargets: buildAmbiguousTargets,
+    });
+
+    expect(assembly.files.map(({ path }) => path)).not.toContain('skills/consult-naming/SKILL.md');
+  });
+
+  it('places no asset under a deployment laid out one file per artifact, which holds one file', async () => {
+    const { assembly } = await assemble({
+      buildTargets: (targetRoot) => [
+        {
+          ...buildClaudeTarget(targetRoot),
+          deployments: [{ form: 'tree', kindId: 'skill', layout: { form: 'file', root: 'skills', extension: '.md' } }],
+        },
+      ],
+    });
+
+    expect(assembly.files.map(({ path }) => path)).toStrictEqual(['skills/lint.md', 'skills/review.md']);
+  });
+
+  it('registers no body for a host it plans no file for, keeping a reader’s own file out of the table', async () => {
+    const { assembly, blobs } = await assemble({
+      select: {},
+      targetFiles: { [HOST_PATH]: '# My own guidance.\n' },
+    });
+
+    expect(assembly.files).toStrictEqual([]);
+    expect(blobs.toTable()).toStrictEqual({});
+  });
+
   it('gives an artifact deploying nowhere no verdict, nothing recording where it previously stood', async () => {
     const { assembly } = await assemble();
 

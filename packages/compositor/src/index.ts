@@ -17,7 +17,6 @@ export { locatePackage } from './config/locatePackage.ts';
 export type { LocateSourcePackagesOptions, PackageLocation } from './config/locateSourcePackages.ts';
 export { locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
-export type { UnlocatedPackage } from './config/StaleSnapshotError.ts';
 export { StaleSnapshotError } from './config/StaleSnapshotError.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
 export {

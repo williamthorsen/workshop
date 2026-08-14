@@ -12,6 +12,10 @@ import type { ArtifactVerdict, PlannedFiles, TargetPlanContext } from './TargetP
  * An artifact whose render failed is blocked across its whole file set here rather than per file. Its assets would
  * otherwise write cleanly, leaving a fresh diagram beside a body a stale render left behind, and a half-deployed
  * artifact is worse than one left alone.
+ *
+ * A deployment laid out one file per artifact places no assets, holding one file being the whole of what it can hold.
+ * The kind's layout in a source and its layout at a target are separate declarations, so a kind that ships assets can
+ * be flattened at a destination that has no room for them.
  */
 export function planTreeFiles(context: TargetPlanContext, deployment: TreeKindDeployment): PlannedFiles {
   const files: Array<FileEntry> = [];
@@ -76,7 +80,8 @@ function collectDestinations(
   render: ArtifactRender,
 ): Array<TreeDestination> {
   const soleContributor: FileContributors = { artifacts: [{ artifactId: artifact.id }], partials: [] };
-  const assets = context.assets.get(artifact.id) ?? [];
+  // A deployment landing one file per artifact has nowhere to put what that artifact ships beside its entry file.
+  const assets = deployment.layout.form === 'directory' ? (context.assets.get(artifact.id) ?? []) : [];
   const reason = render.status === 'rendered' ? '' : describeUnrenderable(render);
 
   return [

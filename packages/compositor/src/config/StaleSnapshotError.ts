@@ -11,6 +11,9 @@ export interface UnlocatedPackage {
  * One class covers both refusals -- a config adopting a package the snapshot never located, and a config whose folded
  * source list has moved away from the one the snapshot was captured over -- because they mean one thing to a caller:
  * locate and capture again. The message names which of the two it is.
+ *
+ * The unlocated package rides along as data beside that message, so a caller reporting the fault or re-locating the
+ * package reads a field rather than parsing prose.
  */
 export class StaleSnapshotError extends Error {
   override readonly name = 'StaleSnapshotError';

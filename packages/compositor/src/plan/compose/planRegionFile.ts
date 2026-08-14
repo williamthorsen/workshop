@@ -27,7 +27,7 @@ import type { ArtifactVerdict, PlannedFiles, TargetPlanContext } from './TargetP
  */
 export function planRegionFile(context: TargetPlanContext, deployment: RegionKindDeployment): PlannedFiles {
   const host = context.hosts.get(deployment.kindId);
-  const current = host?.state === 'present' ? context.blobs.addUtf8(host.content) : undefined;
+  const hostContent = host?.state === 'present' ? host.content : undefined;
   const routed = context.artifactsByKind.get(deployment.kindId) ?? [];
   const ownership: FileOwnership = {
     kind: 'region',
@@ -42,7 +42,7 @@ export function planRegionFile(context: TargetPlanContext, deployment: RegionKin
       ownership,
       contributors: nameContributors(deployment, routed, []),
       reason: read.reason,
-      current,
+      current: readHostSide(context, hostContent),
     });
     return { files: collect(blocked), verdicts: [] };
   }
@@ -53,32 +53,42 @@ export function planRegionFile(context: TargetPlanContext, deployment: RegionKin
     }
     const outcome = removeRegion(host.content, deployment.markers);
     const contributors: FileContributors = { artifacts: [], partials: [] };
-    return { files: collect(buildEntry(context, deployment, ownership, contributors, current, outcome)), verdicts: [] };
+    return {
+      files: collect(buildEntry(context, deployment, ownership, contributors, hostContent, outcome)),
+      verdicts: [],
+    };
   }
 
   const body = read.contributions
     .map(({ artifact, content }) => renderContribution(markersFor(deployment, artifact), content))
     .join('\n\n');
-  const outcome = injectRegion(host?.state === 'present' ? host.content : '', deployment.markers, body);
+  const outcome = injectRegion(hostContent ?? '', deployment.markers, body);
   const contributors = nameContributors(deployment, routed, read.contributions);
 
   return {
-    files: collect(buildEntry(context, deployment, ownership, contributors, current, outcome)),
+    files: collect(buildEntry(context, deployment, ownership, contributors, hostContent, outcome)),
     verdicts: 'blocked' in outcome ? [] : judgeContributions(deployment, read.contributions, host),
   };
 }
 
 // region | Helpers
 
-/** Assembles the host's entry from what a region transform produced, blocking where it refused. */
+/**
+ * Assembles the host's entry from what a region transform produced, blocking where it refused.
+ *
+ * The host's current body is registered here rather than by the caller, so a path that returns no file registers
+ * nothing and a host the engine has no content in stays out of the blob table.
+ */
 function buildEntry(
   context: TargetPlanContext,
   deployment: RegionKindDeployment,
   ownership: FileOwnership,
   contributors: FileContributors,
-  current: FileSide | undefined,
+  hostContent: string | undefined,
   outcome: OwnershipOutcome,
 ): FileEntry | undefined {
+  const current = readHostSide(context, hostContent);
+
   if ('blocked' in outcome) {
     return blockAtCurrent({
       ...position(context, deployment),
@@ -157,6 +167,11 @@ function nameContributors(
 /** Names the destination a region deployment writes, which is the host itself. */
 function position(context: TargetPlanContext, deployment: RegionKindDeployment): { targetId: TargetId; path: string } {
   return { targetId: context.targetId, path: deployment.host };
+}
+
+/** Registers the body a host holds now, or nothing where it holds none. */
+function readHostSide(context: TargetPlanContext, hostContent: string | undefined): FileSide | undefined {
+  return hostContent === undefined ? undefined : context.blobs.addUtf8(hostContent);
 }
 
 /** Reads every contributor's rendered body, stopping at the first whose render produced none. */
