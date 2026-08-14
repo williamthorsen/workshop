@@ -28,14 +28,12 @@ describe(findStatusDisagreements, () => {
     ]);
   });
 
-  it('if an unchanged file records a block, rejects the block that could not apply anyway', () => {
+  it('accepts a block on an unchanged file, which is a destination whose content could not be computed', () => {
     const plan = buildPlan();
     requireEntry(plan.files, 0).status = 'unchanged';
     requireEntry(plan.files, 0).planned = { hash: 'hash:review-current' };
     requireEntry(plan.files, 0).blocked = { reason: 'the region host is malformed' };
 
-    expect(findStatusDisagreements(plan)).toStrictEqual([
-      { path: 'files[0].blocked', message: 'is set on a file that would not be written anyway' },
-    ]);
+    expect(findStatusDisagreements(plan)).toStrictEqual([]);
   });
 });
