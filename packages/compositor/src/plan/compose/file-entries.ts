@@ -51,7 +51,8 @@ export function classifyStatus(current: FileSide | undefined, planned: FileSide)
 /** States why a path whose provenance is undecidable may be neither written nor removed. */
 export function describeAmbiguousClaim(claimed: ClaimedFile): string {
   const named = claimed.claims.map(({ id }) => `"${id}"`).join(', ');
-  return `The destination matches the claim rules of ${named}, so which artifact deployed it is undecidable from shape.`;
+  const matched = `The destination matches the claim rules of ${named}`;
+  return `${matched}, so which artifact deployed it is undecidable from shape.`;
 }
 
 /** Registers the body a destination holds now, or nothing where it holds none. */

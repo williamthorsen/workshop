@@ -47,7 +47,7 @@ describe(readTargetState, () => {
     ]);
   });
 
-  it('recovers the kind and slug behind a claimed id, which no catalog carries once the artifact is deleted', async () => {
+  it('recovers the kind and slug behind a claimed id, which no catalog answers once it is deleted', async () => {
     const state = await readState({ 'skills/review/SKILL.md': '# Review\n' }, [skills]);
 
     expect(claimOf(state.claimed, 'skills/review/SKILL.md')?.claims).toStrictEqual([

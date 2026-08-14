@@ -22,7 +22,7 @@ export function planTreeFiles(context: TargetPlanContext, deployment: TreeKindDe
   for (const artifact of deployed) {
     const deployedName = context.resolveDeployedName(context.targetId, artifact.id);
     const render = context.renders.get(artifact.id);
-    // A kind emitting no files is never rendered, and a name resolves for every kind a target declares a deployment for.
+    // A kind emitting no files is never rendered, and a name resolves for every kind a target deploys.
     if (deployedName === undefined || render === undefined) {
       continue;
     }

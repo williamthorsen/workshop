@@ -1,6 +1,10 @@
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
+import { loadConfig } from '../../config/loadConfig.ts';
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
+import { buildConfigDir } from '../../config/test-utils/buildConfigDir.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { computeFingerprint } from '../computeFingerprint.ts';
 import { captureComposition } from '../test-utils/captureComposition.ts';
@@ -42,6 +46,19 @@ describe(computeFingerprint, () => {
     expect(computeFingerprint(rebuilt, snapshot).config).toBe(computeFingerprint(config, snapshot).config);
   });
 
+  it('digests a config read from a file alike to the same config assembled in memory', async () => {
+    const { snapshot, sourceDir } = await captureComposition();
+    const dir = await buildConfigDir({
+      'compositor.yaml': ['sources:', '  use:', `    - name: team`, `      path: ${sourceDir}`, ''].join('\n'),
+    });
+    const loaded = await loadConfig([{ id: 'project', label: 'project', path: path.join(dir, 'compositor.yaml') }]);
+    const assembled = buildConfig([
+      { id: 'project', baseDir: dir, sources: { use: [{ name: 'team', path: sourceDir }] } },
+    ]);
+
+    expect(computeFingerprint(loaded, snapshot).config).toBe(computeFingerprint(assembled, snapshot).config);
+  });
+
   it('moves the composite when the config moves', async () => {
     const { config, snapshot } = await captureComposition();
     const edited = { ...config, tiers: config.tiers.map((tier) => ({ ...tier, select: [] })) };
@@ -49,7 +66,7 @@ describe(computeFingerprint, () => {
     expect(computeFingerprint(edited, snapshot).composite).not.toBe(computeFingerprint(config, snapshot).composite);
   });
 
-  it('refuses whatever composing refuses, a fingerprint over a turned-away snapshot comparing against nothing', async () => {
+  it('refuses whatever composing refuses, a turned-away snapshot comparing against nothing', async () => {
     const { config, snapshot } = await captureComposition({ input: { shouldReadTargetState: false } });
 
     expect(() => computeFingerprint(config, snapshot)).toThrow(StaleSnapshotError);

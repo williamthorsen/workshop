@@ -13,6 +13,7 @@ import { captureComposition } from '../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
   buildCompositionSourceFiles,
+  COMPOSITION_KINDS,
   HOST_PATH,
   REGION_MARKERS,
 } from '../../test-utils/composition-fixture.ts';
@@ -34,7 +35,7 @@ describe(assembleFiles, () => {
     ]);
   });
 
-  it('carries an asset byte for byte, no target transforming what an artifact ships beside its entry file', async () => {
+  it('carries an asset byte for byte, no target transforming what an artifact ships alongside', async () => {
     const { assembly, blobs } = await assemble();
 
     expect(bodyOf(blobs, assembly, 'skills/review/diagram.png')).toStrictEqual({
@@ -63,7 +64,7 @@ describe(assembleFiles, () => {
     );
   });
 
-  it('reads a destination holding exactly what is planned as unchanged, which is what makes a re-plan quiet', async () => {
+  it('reads a destination holding exactly what is planned as unchanged, keeping a re-plan quiet', async () => {
     const first = await assemble();
     const second = await assemble({ targetFiles: writeBack(first) });
 
@@ -193,6 +194,20 @@ describe(assembleFiles, () => {
 
     expect(ambiguous.blocked?.reason).toMatch(/undecidable from shape/);
     expect(ambiguous.contributors.artifacts).toStrictEqual([{ artifactId: 'rulebook:naming' }]);
+  });
+
+  it('places no asset for a region-routed kind, whose artifacts contribute a body rather than a tree', async () => {
+    const kinds = COMPOSITION_KINDS.map((kind) =>
+      kind.id === 'rulebook'
+        ? { ...kind, layout: { form: 'directory' as const, root: 'rulebooks', entryFile: 'RULEBOOK.md' } }
+        : kind,
+    );
+    const { assembly } = await assemble({
+      sourceFiles: { 'rulebooks/naming/RULEBOOK.md': 'Name things well.\n', 'rulebooks/naming/notes.md': '# Notes\n' },
+      input: { kinds },
+    });
+
+    expect(assembly.files.map(({ path }) => path)).toStrictEqual([HOST_PATH]);
   });
 
   it('gives an artifact deploying nowhere no verdict, nothing recording where it previously stood', async () => {
