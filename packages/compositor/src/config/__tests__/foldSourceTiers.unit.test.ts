@@ -3,7 +3,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { foldSourceTiers, StaleSnapshotError } from '../foldSourceTiers.ts';
+import { foldSourceTiers } from '../foldSourceTiers.ts';
+import { StaleSnapshotError } from '../StaleSnapshotError.ts';
 import type { PackageLocation } from '../locateSourcePackages.ts';
 
 const acme: PackageLocation = {
