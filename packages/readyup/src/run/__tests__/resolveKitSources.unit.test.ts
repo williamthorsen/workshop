@@ -1,6 +1,7 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { RdyError } from '../../errors/RdyError.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 
 describe(resolveKitSources, () => {
@@ -217,7 +218,7 @@ describe(resolveKitSources, () => {
   });
 
   it('reports a --from value that does not parse as a usage error', async () => {
-    const error = await captureRdyError(() => {
+    const error = await captureError(RdyError, () => {
       resolve({ fromValue: 'https://example.com/kit.js' });
       return 0;
     });
@@ -230,7 +231,7 @@ describe(resolveKitSources, () => {
 
   // The flag names a config key, so reaching here with no key read is the same case as an empty one.
   it('reports --packages against a config that declares no packages as a usage error', async () => {
-    const error = await captureRdyError(() => {
+    const error = await captureError(RdyError, () => {
       resolve({ packages: true });
       return 0;
     });

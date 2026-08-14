@@ -2,10 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { listCommand } from '../listCommand.ts';
 
 /**
@@ -92,7 +93,7 @@ describe('listCommand wiring', () => {
     });
 
     it('reports a source with neither a manifest nor a kit directory as a config error', async () => {
-      const error = await captureRdyError(() => listCommand(['--from', 'dir:absent']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'dir:absent']));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('no kit directory');

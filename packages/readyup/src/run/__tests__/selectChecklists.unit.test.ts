@@ -1,7 +1,8 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { RdyError } from '../../errors/RdyError.ts';
 import type { RdyKit } from '../../kits/types.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { selectChecklists } from '../selectChecklists.ts';
 
 describe(selectChecklists, () => {
@@ -33,7 +34,7 @@ describe(selectChecklists, () => {
   });
 
   it('reports an unknown name as a usage error', async () => {
-    const error = await captureRdyError(() => selectChecklists(makeKit(), ['missing']));
+    const error = await captureError(RdyError, () => selectChecklists(makeKit(), ['missing']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('Unknown name(s): missing');

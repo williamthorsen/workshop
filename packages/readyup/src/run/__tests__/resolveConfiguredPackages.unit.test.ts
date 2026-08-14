@@ -1,8 +1,9 @@
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { RdyError } from '../../errors/RdyError.ts';
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { resolveConfiguredPackages } from '../resolveConfiguredPackages.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
@@ -58,7 +59,7 @@ describe(resolveConfiguredPackages, () => {
   it('rejects a named kit no configured package publishes', async () => {
     installPackage('@acme/kits', ['default', 'preflight']);
 
-    const error = await captureRdyError(() => {
+    const error = await captureError(RdyError, () => {
       resolveConfiguredPackages(['@acme/kits'], ['absent'], '.js');
       return 0;
     });
@@ -70,7 +71,7 @@ describe(resolveConfiguredPackages, () => {
   });
 
   it('rejects an empty configured-packages list, which no config declared', async () => {
-    const error = await captureRdyError(() => {
+    const error = await captureError(RdyError, () => {
       resolveConfiguredPackages([], ['default'], '.js');
       return 0;
     });

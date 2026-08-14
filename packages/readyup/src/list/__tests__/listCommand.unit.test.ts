@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
@@ -34,8 +35,8 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
   };
 });
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { listCommand } from '../listCommand.ts';
 
 describe(listCommand, () => {
@@ -252,7 +253,7 @@ describe(listCommand, () => {
         throw permError;
       });
 
-      const error = await captureRdyError(() => listCommand([]));
+      const error = await captureError(RdyError, () => listCommand([]));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('permission denied');
@@ -356,7 +357,7 @@ describe(listCommand, () => {
         throw new Error('Manifest file not found: /nonexistent/.readyup/manifest.json');
       });
 
-      const error = await captureRdyError(() => listCommand(['--from', '/nonexistent']));
+      const error = await captureError(RdyError, () => listCommand(['--from', '/nonexistent']));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('Manifest file not found');
@@ -386,14 +387,16 @@ describe(listCommand, () => {
         throw new Error('Manifest file not found: /missing/manifest.json');
       });
 
-      const error = await captureRdyError(() => listCommand(['--manifest', '/missing/manifest.json']));
+      const error = await captureError(RdyError, () => listCommand(['--manifest', '/missing/manifest.json']));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('Manifest file not found');
     });
 
     it('reports a usage error when --from and --manifest are both provided', async () => {
-      const error = await captureRdyError(() => listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']));
+      const error = await captureError(RdyError, () =>
+        listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']),
+      );
 
       expect(error.code).toBe('usage');
       expect(error.message).toContain('mutually exclusive');
@@ -463,7 +466,7 @@ describe(listCommand, () => {
   });
 
   it('reports a usage error for unknown flags', async () => {
-    const error = await captureRdyError(() => listCommand(['--unknown']));
+    const error = await captureError(RdyError, () => listCommand(['--unknown']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--unknown'");

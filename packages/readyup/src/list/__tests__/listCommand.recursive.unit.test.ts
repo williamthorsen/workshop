@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
@@ -8,9 +9,9 @@ vi.mock(import('node:fs'), async (importOriginal) => {
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { listCommand } from '../listCommand.ts';
@@ -270,14 +271,16 @@ describe('list --recursive', () => {
 
   describe('flag exclusivity', () => {
     it('rejects --recursive alongside --from', async () => {
-      const error = await captureRdyError(() => listCommand(['--recursive', '--from', '.']));
+      const error = await captureError(RdyError, () => listCommand(['--recursive', '--from', '.']));
 
       expect(error.code).toBe('usage');
       expect(error.message).toBe('--recursive and --from are mutually exclusive');
     });
 
     it('rejects --recursive alongside --manifest', async () => {
-      const error = await captureRdyError(() => listCommand(['--recursive', '--manifest', '.readyup/manifest.json']));
+      const error = await captureError(RdyError, () =>
+        listCommand(['--recursive', '--manifest', '.readyup/manifest.json']),
+      );
 
       expect(error.code).toBe('usage');
       expect(error.message).toBe('--recursive and --manifest are mutually exclusive');
