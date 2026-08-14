@@ -36,6 +36,32 @@ export function buildCompositionSourceFiles(): Record<string, string | Uint8Arra
 }
 
 /**
+ * Builds a target whose two deployments are rooted at one directory, rulebooks deploying under a template among an
+ * untemplated kind's own artifacts.
+ *
+ * The overlap is what makes a claimed path's provenance undecidable and a planned destination contested, so one
+ * declaration serves both sides of that fact.
+ */
+export function buildOverlappingTargets(targetRoot: string): ReadonlyArray<RenderTarget> {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return [
+    {
+      ...claude,
+      deployments: [
+        ...claude.deployments.filter((deployment) => deployment.kindId !== 'rulebook'),
+        {
+          form: 'tree',
+          kindId: 'rulebook',
+          layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
+          nameTemplate: 'consult-{slug}',
+        },
+      ],
+    },
+  ];
+}
+
+/**
  * The kinds the plan tests are written against.
  *
  * Covers what composition has to tell apart: an aggregate producing no output, a kind laid out as a directory per

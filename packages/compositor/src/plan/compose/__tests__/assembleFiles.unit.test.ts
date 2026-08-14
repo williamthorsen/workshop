@@ -6,13 +6,13 @@ import { computeClosure } from '../../../closure/computeClosure.ts';
 import type { BlobStore } from '../../../portable/createBlobStore.ts';
 import { createBlobStore } from '../../../portable/createBlobStore.ts';
 import type { Blob, FileEntry } from '../../../schemas/file-schemas.ts';
-import type { RenderTarget } from '../../../schemas/render-target-schemas.ts';
 import { selectArtifacts } from '../../../selection/selectArtifacts.ts';
 import type { CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
   buildCompositionSourceFiles,
+  buildOverlappingTargets,
   COMPOSITION_KINDS,
   HOST_PATH,
   REGION_MARKERS,
@@ -187,7 +187,7 @@ describe(assembleFiles, () => {
 
   it('blocks a path two deployments both claim, its provenance being undecidable from shape', async () => {
     const { assembly } = await assemble({
-      buildTargets: buildAmbiguousTargets,
+      buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Naming\n' },
     });
     const ambiguous = fileAt(assembly, 'skills/consult-naming/SKILL.md');
@@ -216,7 +216,7 @@ describe(assembleFiles, () => {
         'rulebooks/naming.md': 'Name things well.\n',
         'skills/consult-naming/SKILL.md': '# Consult naming\n',
       },
-      buildTargets: buildAmbiguousTargets,
+      buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
     });
     const contested = fileAt(assembly, 'skills/consult-naming/SKILL.md');
@@ -232,7 +232,7 @@ describe(assembleFiles, () => {
         'rulebooks/naming.md': 'Name things well.\n',
         'skills/consult-naming/SKILL.md': '# Consult naming\n',
       },
-      buildTargets: buildAmbiguousTargets,
+      buildTargets: buildOverlappingTargets,
     });
 
     expect(assembly.files.map(({ path }) => path)).not.toContain('skills/consult-naming/SKILL.md');
@@ -294,26 +294,6 @@ function bodyOf(blobs: BlobStore, assembly: FileAssembly, path: string): Blob {
     throw new Error(`The assembly plans no body for "${path}".`);
   }
   return blob;
-}
-
-/** Builds a target whose rulebooks deploy under a template among an untemplated kind's own artifacts. */
-function buildAmbiguousTargets(targetRoot: string): ReadonlyArray<RenderTarget> {
-  const claude = buildClaudeTarget(targetRoot);
-
-  return [
-    {
-      ...claude,
-      deployments: [
-        ...claude.deployments.filter((deployment) => deployment.kindId !== 'rulebook'),
-        {
-          form: 'tree',
-          kindId: 'rulebook',
-          layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
-          nameTemplate: 'consult-{slug}',
-        },
-      ],
-    },
-  ];
 }
 
 /** Reads one destination's entry, failing where the assembly plans none. */

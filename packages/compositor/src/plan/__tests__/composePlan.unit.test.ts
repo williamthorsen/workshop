@@ -4,12 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { PlanSchema } from '../../schemas/plan-schemas.ts';
-import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
 import { composePlan } from '../composePlan.ts';
 import { captureComposition } from '../test-utils/captureComposition.ts';
-import { buildClaudeTarget, HOST_PATH } from '../test-utils/composition-fixture.ts';
+import { buildOverlappingTargets, HOST_PATH } from '../test-utils/composition-fixture.ts';
 
 describe(composePlan, () => {
   it('composes a plan the schema accepts', async () => {
@@ -142,7 +141,7 @@ describe(composePlan, () => {
         'rulebooks/naming.md': 'Name things well.\n',
         'skills/consult-naming/SKILL.md': '# Consult naming\n',
       },
-      buildTargets: buildContestedTargets,
+      buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
     });
     const plan = composePlan(config, snapshot);
@@ -157,7 +156,7 @@ describe(composePlan, () => {
         'rulebooks/naming.md': 'Name things well.\n',
         'skills/consult-naming/SKILL.md': '# Consult naming\n',
       },
-      buildTargets: buildContestedTargets,
+      buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
     });
     const plan = composePlan(config, snapshot);
@@ -184,27 +183,3 @@ describe(composePlan, () => {
     expect(() => composePlan(config, snapshot)).toThrow(StaleSnapshotError);
   });
 });
-
-// region | Helpers
-
-/** Builds a target whose rulebooks deploy under a template among an untemplated kind's own artifacts. */
-function buildContestedTargets(targetRoot: string): ReadonlyArray<RenderTarget> {
-  const claude = buildClaudeTarget(targetRoot);
-
-  return [
-    {
-      ...claude,
-      deployments: [
-        ...claude.deployments.filter((deployment) => deployment.kindId !== 'rulebook'),
-        {
-          form: 'tree',
-          kindId: 'rulebook',
-          layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
-          nameTemplate: 'consult-{slug}',
-        },
-      ],
-    },
-  ];
-}
-
-// endregion | Helpers
