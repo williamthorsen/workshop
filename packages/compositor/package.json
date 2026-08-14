@@ -35,6 +35,9 @@
     "yaml": "2.9.0",
     "zod": "catalog:"
   },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:"
+  },
   "engines": {
     "node": ">=24"
   }
