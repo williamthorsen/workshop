@@ -33,10 +33,21 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  * `inputs` records everything else the compile read, which is every module the bundle inlined past the
  * entry and every JSON file `pickJson` projected. It is optional on the same terms `checklists` is: an
  * entry written before the closure was recorded has none.
+ *
+ * `esbuildVersion` and `bundledDependencies` record the toolchain half of the compile: the esbuild
+ * that produced the bundle, and each package the bundle inlined with the version its `package.json`
+ * declares. A package inlined at two versions at once records both, sorted and comma-separated.
+ * Neither field is covered by `inputs`, whose closure stops at `node_modules`; `rdy verify
+ * --rebuild` reads both to name which versions changed when a rebuild mismatches. Each is
+ * optional on the same terms `checklists` is, and `bundledDependencies` is additionally absent
+ * when the kit bundles nothing, so `esbuildVersion` is the marker that an entry carries the
+ * record at all.
  */
 const ManifestKitSchema = z.object({
+  bundledDependencies: z.record(z.string(), z.string()).optional(),
   checklists: z.array(z.string()).optional(),
   description: z.string().optional(),
+  esbuildVersion: z.string().optional(),
   inputs: z.array(ManifestInputSchema).optional(),
   name: z.string().min(1),
   path: z.string().optional(),

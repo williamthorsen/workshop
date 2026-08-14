@@ -48,4 +48,4 @@ Releases run through the **Release** GitHub Actions workflow (`workflow_dispatch
 ## Gotchas
 
 - **Build caching**: `nmr build` skips a package whose sources are unchanged, keyed on a hash under `node_modules/.cache/nmr-compile/`. This is not the check-result cache, and `--no-cache` does not reach it; removing the output is what forces a rebuild (`nmr clean`, or deleting `dist` by any means).
-- **Kit freshness**: the tracked kit bundles embed the readyup version that compiled them, so a readyup version bump leaves them stale until `rdy compile` runs. `nmr ci` verifies them by recompiling, and does so before its build step, which would otherwise regenerate a stale bundle in place.
+- **Kit freshness**: the tracked kit bundles embed the readyup version that compiled them, and the manifest records the compile's toolchain (`esbuildVersion`, `bundledDependencies`), so a bump to readyup, to esbuild, or to a bundled dependency leaves them stale until `rdy compile` runs. `nmr ci` verifies them by recompiling, and does so before its build step, which would otherwise regenerate a stale bundle in place.

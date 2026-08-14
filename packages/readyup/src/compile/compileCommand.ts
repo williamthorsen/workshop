@@ -143,6 +143,8 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
       const relSourcePath = path.relative(manifestDir, resolvedInputPath);
       const closure = deriveClosureFields(result.inputs, resolvedInputPath, manifestDir);
       upsertManifest(manifestPath, kitName, metadata, {
+        bundledDependencies: result.bundledDependencies,
+        esbuildVersion: result.esbuildVersion,
         inputs: closure.inputs,
         path: relOutputPath,
         source: relSourcePath,
@@ -266,6 +268,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       const relSourcePath = path.relative(manifestDir, srcFile);
       const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
       kitEntries.push({
+        esbuildVersion: result.esbuildVersion,
         inputs: closure.inputs,
         name: kitName,
         path: relOutputPath,
@@ -273,6 +276,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
         source: relSourcePath,
         sourceHash: closure.sourceHash,
         targetHash: result.targetHash,
+        ...(Object.keys(result.bundledDependencies).length > 0 && {
+          bundledDependencies: result.bundledDependencies,
+        }),
         ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
         ...(metadata.description !== undefined && { description: metadata.description }),
       });
@@ -352,8 +358,10 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
   return finishCompile([], json);
 }
 
-/** Location fields for a manifest kit entry. */
-interface KitLocationFields {
+/** The fields a compile supplies to a manifest kit entry, with paths stated against the manifest. */
+interface KitCompileFields {
+  bundledDependencies: Record<string, string>;
+  esbuildVersion: string;
   inputs: RdyManifestInput[];
   path: string;
   source: string;
@@ -405,7 +413,7 @@ function upsertManifest(
   manifestPath: string,
   kitName: string,
   metadata: KitMetadata,
-  location: KitLocationFields,
+  compileFields: KitCompileFields,
 ): void {
   let existingKits: RdyManifestKit[] = [];
   try {
@@ -420,13 +428,17 @@ function upsertManifest(
   }
 
   const entry: RdyManifestKit = {
-    inputs: location.inputs,
+    esbuildVersion: compileFields.esbuildVersion,
+    inputs: compileFields.inputs,
     name: kitName,
-    path: location.path,
+    path: compileFields.path,
     readyupVersion: VERSION,
-    source: location.source,
-    sourceHash: location.sourceHash,
-    targetHash: location.targetHash,
+    source: compileFields.source,
+    sourceHash: compileFields.sourceHash,
+    targetHash: compileFields.targetHash,
+    ...(Object.keys(compileFields.bundledDependencies).length > 0 && {
+      bundledDependencies: compileFields.bundledDependencies,
+    }),
     ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
     ...(metadata.description !== undefined && { description: metadata.description }),
   };

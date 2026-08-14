@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -70,7 +71,13 @@ const GENERATED_HEADER = [
 
 /** A kit's compiled bytes and the closure of files the compile read to produce them. */
 export interface BundleResult {
+  /** Every package the bundle inlined, by name, with the version its `package.json` declares. */
+  bundledDependencies: Record<string, string>;
+
   bytes: Buffer;
+
+  /** The esbuild that produced the bundle. */
+  esbuildVersion: string;
 
   /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
   inputs: CompiledInput[];
@@ -137,13 +144,46 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
     throw new Error(`esbuild produced no output for ${resolvedInput}`);
   }
 
+  const metafileKeys = Object.keys(result.metafile.inputs);
+
   return {
+    bundledDependencies: collectBundledDependencies(metafileKeys, workingDir),
     bytes: Buffer.from(outputFile.contents),
-    inputs: collectInputs(recorder.inputs, Object.keys(result.metafile.inputs), workingDir),
+    esbuildVersion: esbuild.version,
+    inputs: collectInputs(recorder.inputs, metafileKeys, workingDir),
   };
 }
 
 // region | Helpers
+
+/**
+ * Returns the packages the bundle inlined, by name, from the metafile inputs the closure excludes.
+ *
+ * A tree can hold two versions of one package at once, and a bundle can inline both, so a name's value
+ * is every bundled version, sorted and comma-separated. A file whose package cannot be identified
+ * contributes nothing: the same derivation runs at compile time and at rebuild time, so an
+ * unidentifiable package cancels out of the comparison rather than producing a spurious difference.
+ */
+function collectBundledDependencies(metafileKeys: string[], workingDir: string): Record<string, string> {
+  const versionsByName = new Map<string, Set<string>>();
+  for (const key of metafileKeys) {
+    const resolvedPath = path.resolve(workingDir, key);
+    if (!isDependencyFile(resolvedPath)) continue;
+    const identity = identifyPackage(path.dirname(resolvedPath));
+    if (identity === undefined) continue;
+    const versions = versionsByName.get(identity.name) ?? new Set<string>();
+    versions.add(identity.version);
+    versionsByName.set(identity.name, versions);
+  }
+
+  return Object.fromEntries(
+    versionsByName
+      .entries()
+      .toArray()
+      .toSorted(([a], [b]) => a.localeCompare(b))
+      .map(([name, versions]) => [name, versions.values().toArray().toSorted().join(', ')]),
+  );
+}
 
 /**
  * Returns the closure of a compile, merging what the recorder read with what esbuild resolved.
@@ -194,9 +234,41 @@ function hasUnresolvedSpecifier(error: unknown): boolean {
   );
 }
 
+/**
+ * Returns the name and version of the package holding `directory`, walking up to the nearest
+ * `package.json` that declares both.
+ *
+ * The walk never leaves `node_modules`: a store path with no identifiable package returns nothing
+ * rather than climbing on and attributing the file to the host project.
+ */
+function identifyPackage(directory: string): { name: string; version: string } | undefined {
+  for (let current = directory; isDependencyFile(current); current = path.dirname(current)) {
+    const manifestPath = path.join(current, 'package.json');
+    if (!existsSync(manifestPath)) continue;
+    const identity = readPackageIdentity(manifestPath);
+    if (identity !== undefined) return identity;
+  }
+  return undefined;
+}
+
 /** Reports whether a path lies under a dependency directory, whose contents the closure does not record. */
 function isDependencyFile(filePath: string): boolean {
   return filePath.split(path.sep).includes(EXCLUDED_DIRECTORY);
+}
+
+/** Returns a package.json's name and version, or nothing when the file does not declare both readably. */
+function readPackageIdentity(manifestPath: string): { name: string; version: string } | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return undefined;
+  }
+
+  if (!isRecord(parsed) || typeof parsed['name'] !== 'string' || typeof parsed['version'] !== 'string') {
+    return undefined;
+  }
+  return { name: parsed['name'], version: parsed['version'] };
 }
 
 // endregion | Helpers

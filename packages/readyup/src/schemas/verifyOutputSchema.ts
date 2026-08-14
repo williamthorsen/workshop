@@ -69,6 +69,22 @@ export const InputFailureSchema = z
  */
 export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok']).meta({ id: 'RebuildStatus' });
 
+/** The esbuild version a mismatched bundle was compiled with against the one the rebuild ran. */
+export const RebuildEsbuildSchema = z
+  .object({ recorded: z.string(), rebuilt: z.string() })
+  .meta({ id: 'RebuildEsbuild' });
+
+/**
+ * One bundled package whose recorded version the rebuild does not reproduce.
+ *
+ * `recorded` is the version the compile bundled and `rebuilt` the one the rebuild bundled; a side is
+ * absent where the package was not bundled then or now. A side carrying several comma-separated
+ * versions is a package the bundle inlined at more than one version at once.
+ */
+export const RebuildDependencyChangeSchema = z
+  .object({ name: z.string(), recorded: z.string().optional(), rebuilt: z.string().optional() })
+  .meta({ id: 'RebuildDependencyChange' });
+
 /**
  * One kit's verdicts.
  *
@@ -86,6 +102,12 @@ export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok'
  * compile failure on `failed`. `rebuildCompiledWith` names the readyup a mismatched bundle was
  * built by, present only when it differs from the running one, which is what separates a mismatch
  * caused by a readyup upgrade from one caused by an edited bundle.
+ *
+ * `rebuildEsbuild` and `rebuildDependencyChanges` extend the same idea to the toolchain record: both
+ * appear only on `mismatch`, and only for a kit whose manifest entry records an `esbuildVersion`.
+ * `rebuildEsbuild` is present whenever that record exists, matching or not, so a consumer reads the
+ * comparison rather than reconstructing it from the manifest; `rebuildDependencyChanges` is present
+ * only when at least one bundled package's version moved.
  */
 export const VerifyKitEntrySchema = z
   .object({
@@ -102,6 +124,8 @@ export const VerifyKitEntrySchema = z
     rebuildExpected: z.string().optional(),
     rebuildActual: z.string().optional(),
     rebuildCompiledWith: z.string().optional(),
+    rebuildEsbuild: RebuildEsbuildSchema.optional(),
+    rebuildDependencyChanges: z.array(RebuildDependencyChangeSchema).optional(),
     rebuildError: z.string().optional(),
   })
   .meta({ id: 'VerifyKitEntry' });
@@ -123,6 +147,8 @@ export const VerifyOutputSchema = z
 export type JsonDriftStatus = z.infer<typeof DriftStatusSchema>;
 export type JsonInputFailure = z.infer<typeof InputFailureSchema>;
 export type JsonInputsStatus = z.infer<typeof InputsStatusSchema>;
+export type JsonRebuildDependencyChange = z.infer<typeof RebuildDependencyChangeSchema>;
+export type JsonRebuildEsbuild = z.infer<typeof RebuildEsbuildSchema>;
 export type JsonRebuildStatus = z.infer<typeof RebuildStatusSchema>;
 export type JsonSourceStatus = z.infer<typeof SourceStatusSchema>;
 export type JsonVerifyKitEntry = z.infer<typeof VerifyKitEntrySchema>;

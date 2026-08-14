@@ -447,6 +447,91 @@ describe(verifyCommand, () => {
       );
     });
 
+    it('names the esbuild move on a mismatch whose recorded version differs', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({
+        kind: 'mismatch',
+        expected: '1111aaaa',
+        actual: '2222bbbb',
+        esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' },
+      });
+
+      await verifyCommand(['--rebuild']);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('esbuild 0.28.1 -> 0.29.0'));
+    });
+
+    it('names each dependency change on a mismatch, one clause apiece', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({
+        kind: 'mismatch',
+        expected: '1111aaaa',
+        actual: '2222bbbb',
+        esbuild: { recorded: '0.29.0', rebuilt: '0.29.0' },
+        dependencyChanges: [
+          { name: 'glob', recorded: '10.0.0' },
+          { name: 'picomatch', rebuilt: '4.0.2' },
+          { name: 'zod', recorded: '3.24.1', rebuilt: '4.0.0' },
+        ],
+      });
+
+      await verifyCommand(['--rebuild']);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('glob 10.0.0 no longer bundled'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('picomatch 4.0.2 newly bundled'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('zod 3.24.1 -> 4.0.0'));
+    });
+
+    it('says the recorded versions match when the toolchain record clears every named cause', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({
+        kind: 'mismatch',
+        expected: '1111aaaa',
+        actual: '2222bbbb',
+        esbuild: { recorded: '0.29.0', rebuilt: '0.29.0' },
+      });
+
+      await verifyCommand(['--rebuild']);
+
+      expect(stdoutSpy).toHaveBeenCalledWith(
+        expect.stringContaining('recorded esbuild and dependency versions match the rebuild'),
+      );
+    });
+
+    it('carries the esbuild comparison and dependency changes in the JSON payload', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({
+        kind: 'mismatch',
+        expected: '1111aaaa',
+        actual: '2222bbbb',
+        esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' },
+        dependencyChanges: [{ name: 'zod', recorded: '3.24.1', rebuilt: '4.0.0' }],
+      });
+
+      await verifyCommand(['--rebuild', '--json']);
+
+      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      expect(payload).toMatchObject({
+        kits: [
+          {
+            rebuildEsbuild: { recorded: '0.28.1', rebuilt: '0.29.0' },
+            rebuildDependencyChanges: [{ name: 'zod', recorded: '3.24.1', rebuilt: '4.0.0' }],
+          },
+        ],
+      });
+    });
+
+    it('omits the toolchain fields from the JSON payload for a mismatch predating the record', async () => {
+      arrangeSingleKit();
+      mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
+
+      await verifyCommand(['--rebuild', '--json']);
+
+      const payload = String(stdoutSpy.mock.calls.at(-1)?.[0]);
+      expect(payload).not.toContain('rebuildEsbuild');
+      expect(payload).not.toContain('rebuildDependencyChanges');
+    });
+
     it('fails a kit whose source no longer compiles, carrying the compile error', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });

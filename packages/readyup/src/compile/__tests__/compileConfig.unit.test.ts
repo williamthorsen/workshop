@@ -29,7 +29,7 @@ describe(compileConfig, () => {
   beforeEach(() => {
     // Default: The esbuild import succeeds and exposes the mocked `build`.
     // Failure-path tests override this with `mockRejectedValue`.
-    mockLoadEsbuild.mockResolvedValue({ build: mockBuild });
+    mockLoadEsbuild.mockResolvedValue({ build: mockBuild, version: '0.99.0-test' });
   });
 
   afterEach(() => {
@@ -74,6 +74,24 @@ describe(compileConfig, () => {
         banner: { js: expect.stringContaining(`export const __readyupVersion = ${JSON.stringify(VERSION)};`) },
       }),
     );
+  });
+
+  it('returns the loaded esbuild module version as esbuildVersion', async () => {
+    mockBuild.mockResolvedValue(buildResult('compiled'));
+    mockExistsSync.mockReturnValue(false);
+
+    const result = await compileConfig('config/readyup.config.ts');
+
+    expect(result.esbuildVersion).toBe('0.99.0-test');
+  });
+
+  it('returns no bundled dependencies when the metafile names no node_modules input', async () => {
+    mockBuild.mockResolvedValue(buildResult('compiled'));
+    mockExistsSync.mockReturnValue(false);
+
+    const result = await compileConfig('config/readyup.config.ts');
+
+    expect(result.bundledDependencies).toStrictEqual({});
   });
 
   it('returns the resolved output path', async () => {

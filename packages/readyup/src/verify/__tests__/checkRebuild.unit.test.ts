@@ -79,6 +79,65 @@ describe(checkRebuild, () => {
     expect(status).not.toHaveProperty('compiledWith');
   });
 
+  it('compares the recorded esbuild version against the rebuild on a mismatch', async () => {
+    writeKitFiles(tempDir, Buffer.from('stale output'));
+    mockBuildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
+
+    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.28.1' }, tempDir);
+
+    expect(status).toMatchObject({ kind: 'mismatch', esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' } });
+  });
+
+  it('carries the esbuild comparison even when the recorded version matches the rebuild', async () => {
+    writeKitFiles(tempDir, Buffer.from('stale output'));
+    mockBuildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
+
+    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.29.0' }, tempDir);
+
+    expect(status).toMatchObject({ kind: 'mismatch', esbuild: { recorded: '0.29.0', rebuilt: '0.29.0' } });
+  });
+
+  it('names each bundled package whose recorded version the rebuild does not reproduce', async () => {
+    writeKitFiles(tempDir, Buffer.from('stale output'));
+    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { added: '2.0.0', zod: '4.0.0' } }));
+
+    const status = await checkRebuild(
+      { ...kit(), esbuildVersion: '0.29.0', bundledDependencies: { dropped: '1.0.0', zod: '3.24.1' } },
+      tempDir,
+    );
+
+    expect(status).toMatchObject({
+      kind: 'mismatch',
+      dependencyChanges: [
+        { name: 'added', rebuilt: '2.0.0' },
+        { name: 'dropped', recorded: '1.0.0' },
+        { name: 'zod', recorded: '3.24.1', rebuilt: '4.0.0' },
+      ],
+    });
+  });
+
+  it('omits dependencyChanges when the recorded versions match the rebuild', async () => {
+    writeKitFiles(tempDir, Buffer.from('stale output'));
+    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
+
+    const status = await checkRebuild(
+      { ...kit(), esbuildVersion: '0.29.0', bundledDependencies: { zod: '4.0.0' } },
+      tempDir,
+    );
+
+    expect(status).not.toHaveProperty('dependencyChanges');
+  });
+
+  it('omits the toolchain comparison for an entry recording no esbuild version', async () => {
+    writeKitFiles(tempDir, Buffer.from('stale output'));
+    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
+
+    const status = await checkRebuild(kit(), tempDir);
+
+    expect(status).not.toHaveProperty('esbuild');
+    expect(status).not.toHaveProperty('dependencyChanges');
+  });
+
   it('returns failed carrying the compile error when the source no longer compiles', async () => {
     writeKitFiles(tempDir, Buffer.from('compiled output'));
     mockBuildBundle.mockRejectedValue(new Error('Unexpected token'));
@@ -125,6 +184,17 @@ describe(checkRebuild, () => {
 /** Returns a manifest entry naming the source and bundle that `writeKitFiles` lays down. */
 function kit() {
   return { name: 'demo', path: 'demo.js', source: 'demo.ts' };
+}
+
+/** Returns a `buildBundle` result whose bytes mismatch the bundle `writeKitFiles` lays down. */
+function rebuildResult(overrides: { esbuildVersion?: string; bundledDependencies?: Record<string, string> } = {}) {
+  return {
+    bundledDependencies: {},
+    bytes: Buffer.from('fresh output'),
+    esbuildVersion: '0.29.0',
+    inputs: [],
+    ...overrides,
+  };
 }
 
 /** Writes a kit's source and its compiled bundle into `dir`. */
