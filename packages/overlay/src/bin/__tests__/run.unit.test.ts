@@ -40,7 +40,7 @@ describe(run, () => {
 
   it('propagates the result exit code', async () => {
     vi.spyOn(overlayModule, 'overlay').mockResolvedValue({ ...stubResult, exitCode: 1 });
-    using io = captureStdio();
+    using _io = captureStdio();
 
     await expect(run(['/src', '--create'])).resolves.toBe(1);
   });

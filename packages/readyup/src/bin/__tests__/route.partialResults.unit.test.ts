@@ -68,7 +68,7 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('exits 2 rather than 1 when a kit fails alongside failing checks', async () => {
-      using io = captureStdio();
+      using _io = captureStdio();
 
       await expect(routeCommand(['failing', 'absent', '--json'])).resolves.toBe(2);
     });

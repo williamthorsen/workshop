@@ -59,7 +59,7 @@ describe('exit codes', () => {
     { label: 'a missing manifest for verify', args: ['verify', '--manifest', 'absent.json'], expected: 2 },
     { label: 'listing an absent source', args: ['list', '--from', 'dir:/definitely/absent'], expected: 2 },
   ])('exits $expected for $label', async ({ args, expected }) => {
-    using io = captureStdio();
+    using _io = captureStdio();
 
     await expect(routeCommand(args)).resolves.toBe(expected);
   });
