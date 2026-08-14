@@ -1,12 +1,11 @@
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { version as installedEsbuildVersion } from 'esbuild';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { isRecord } from '../../portable/isRecord.ts';
+import { readInstalledPackageVersion } from '../../test-utils/readInstalledPackageVersion.ts';
 import type { BundleResult } from '../buildBundle.ts';
 import { buildBundle } from '../buildBundle.ts';
 
@@ -96,21 +95,11 @@ describe('buildBundle bundled dependencies', () => {
 
     const bundled = await buildBundle(path.join(treeRoot, 'pnpm-kit.ts'));
 
-    expect(bundled.bundledDependencies['zod']).toBe(readInstalledZodVersion());
+    expect(bundled.bundledDependencies['zod']).toBe(readInstalledPackageVersion('zod'));
   });
 });
 
 // region | Helpers
-
-/** Reads the version of the zod this package resolves, which is the one bundling `manifestSchema.ts` inlines. */
-function readInstalledZodVersion(): string {
-  const require = createRequire(import.meta.url);
-  const parsed: unknown = JSON.parse(readFileSync(require.resolve('zod/package.json'), 'utf8'));
-  if (!isRecord(parsed) || typeof parsed['version'] !== 'string') {
-    throw new Error('zod/package.json declares no readable version');
-  }
-  return parsed['version'];
-}
 
 /** Writes a package directory with the given package.json body and files. */
 function writePackage(

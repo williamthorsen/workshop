@@ -1,15 +1,18 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { version as installedEsbuildVersion } from 'esbuild';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import type { CompileResult } from '../../compile/compileConfig.ts';
 import { compileConfig } from '../../compile/compileConfig.ts';
 import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
 import { ManifestSchema } from '../../manifest/manifestSchema.ts';
 import type { JsonVerifyOutput } from '../../schemas/verifyOutputSchema.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
+import { readInstalledPackageVersion } from '../../test-utils/readInstalledPackageVersion.ts';
 import { VERSION } from '../../version.ts';
 import { hashFile } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
@@ -17,9 +20,14 @@ import { verifyCommand } from '../verifyCommand.ts';
 /** Absolute specifier for the `pickJson` marker, so a kit written into a tempdir can import it. */
 const PICK_JSON_MODULE = path.resolve(import.meta.dirname, '../../compile/pickJson.ts');
 
-const KIT_SOURCE = `import { pickJson } from ${JSON.stringify(PICK_JSON_MODULE)};
+/** Absolute specifier for an installed package, so the fixture's compile records a bundled dependency. */
+const PICOMATCH_MODULE = createRequire(import.meta.url).resolve('picomatch');
+
+const KIT_SOURCE = `import picomatch from ${JSON.stringify(PICOMATCH_MODULE)};
+import { pickJson } from ${JSON.stringify(PICK_JSON_MODULE)};
 
 export const metadata = pickJson('./data.json', ['name', 'version']);
+export const matchesEverything = picomatch('*');
 
 export default { checklists: [] };
 `;
@@ -35,6 +43,7 @@ describe('verifyCommand --rebuild', () => {
   let tempDir: string;
   let stdoutSpy: MockInstance;
   let originalCwd: string;
+  let compiled: CompileResult;
 
   beforeEach(async () => {
     tempDir = mkdtempSync(path.join(tmpdir(), 'verify-rebuild-'));
@@ -49,22 +58,22 @@ describe('verifyCommand --rebuild', () => {
     process.chdir(tempDir);
 
     // Record the manifest from a real compile, so its hashes are the ones the pipeline produces.
-    const result = await compileConfig(path.join(tempDir, 'kit.ts'), path.join(tempDir, 'kit.js'));
+    compiled = await compileConfig(path.join(tempDir, 'kit.ts'), path.join(tempDir, 'kit.js'));
     writeFileSync(
       path.join(tempDir, 'manifest.json'),
       JSON.stringify({
         version: 1,
         kits: [
           {
-            esbuildVersion: result.esbuildVersion,
+            esbuildVersion: compiled.esbuildVersion,
             name: 'demo',
             path: 'kit.js',
             readyupVersion: VERSION,
             source: 'kit.ts',
             sourceHash: hashFile(path.join(tempDir, 'kit.ts')),
-            targetHash: result.targetHash,
-            ...(Object.keys(result.bundledDependencies).length > 0 && {
-              bundledDependencies: result.bundledDependencies,
+            targetHash: compiled.targetHash,
+            ...(Object.keys(compiled.bundledDependencies).length > 0 && {
+              bundledDependencies: compiled.bundledDependencies,
             }),
           },
         ],
@@ -143,6 +152,22 @@ describe('verifyCommand --rebuild', () => {
 
     expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
       rebuildEsbuild: { recorded: '0.0.1-old', rebuilt: installedEsbuildVersion },
+    });
+  });
+
+  it('names a dependency whose recorded version the rebuild does not reproduce', async () => {
+    patchKits(path.join(tempDir, 'manifest.json'), {
+      bundledDependencies: { ...compiled.bundledDependencies, picomatch: '0.0.1-old' },
+    });
+    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+
+    await runVerify();
+
+    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+      rebuildStatus: 'mismatch',
+      rebuildDependencyChanges: [
+        { name: 'picomatch', recorded: '0.0.1-old', rebuilt: readInstalledPackageVersion('picomatch') },
+      ],
     });
   });
 
