@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { foldSourceTiers } from '../foldSourceTiers.ts';
-import { StaleSnapshotError } from '../StaleSnapshotError.ts';
 import type { PackageLocation } from '../locateSourcePackages.ts';
+import { StaleSnapshotError } from '../StaleSnapshotError.ts';
 
 const acme: PackageLocation = {
   outcome: 'located',

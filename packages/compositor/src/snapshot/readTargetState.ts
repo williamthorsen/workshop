@@ -237,7 +237,10 @@ async function readClaims(
   const gathered = [...byPath]
     .map(([filePath, claims]) => ({
       path: filePath,
-      claims: [...claims.values()].toSorted((left, right) => compareStrings(left.id, right.id)),
+      claims: claims
+        .values()
+        .toArray()
+        .toSorted((left, right) => compareStrings(left.id, right.id)),
     }))
     .toSorted((left, right) => compareStrings(left.path, right.path));
 

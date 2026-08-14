@@ -10,7 +10,12 @@ import { hashUtf8 } from './hash-content.ts';
  * incident, so it is preserved.
  */
 export function hashValue(value: unknown): Hash {
-  return hashUtf8(JSON.stringify(value, (_key, held: unknown) => (isPlainRecord(held) ? sortKeys(held) : held)) ?? '');
+  // `JSON.stringify` returns nothing at all for a bare `undefined`, which its own type does not say.
+  const json =
+    value === undefined
+      ? ''
+      : JSON.stringify(value, (_key, held: unknown) => (isPlainRecord(held) ? sortKeys(held) : held));
+  return hashUtf8(json);
 }
 
 // region | Helpers
