@@ -1,13 +1,14 @@
-import { version as installedEsbuildVersion } from 'esbuild';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { version as installedEsbuildVersion } from 'esbuild';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { buildBundle } from '../buildBundle.ts';
+import { isRecord } from '../../portable/isRecord.ts';
 import type { BundleResult } from '../buildBundle.ts';
+import { buildBundle } from '../buildBundle.ts';
 
 const KIT_SOURCE = [
   `import { broken } from 'broken-dep';`,
@@ -105,8 +106,10 @@ describe('buildBundle bundled dependencies', () => {
 function readInstalledZodVersion(): string {
   const require = createRequire(import.meta.url);
   const parsed: unknown = JSON.parse(readFileSync(require.resolve('zod/package.json'), 'utf8'));
-  // Test-only assertion shortcut; the shape of an installed package.json is not under test.
-  return (parsed as { version: string }).version;
+  if (!isRecord(parsed) || typeof parsed['version'] !== 'string') {
+    throw new Error('zod/package.json declares no readable version');
+  }
+  return parsed['version'];
 }
 
 /** Writes a package directory with the given package.json body and files. */

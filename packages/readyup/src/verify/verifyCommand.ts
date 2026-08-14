@@ -21,7 +21,7 @@ import type { DriftStatus } from './checkDrift.ts';
 import { checkDrift } from './checkDrift.ts';
 import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
 import { checkInputDrift } from './checkInputDrift.ts';
-import type { RebuildStatus } from './checkRebuild.ts';
+import type { DependencyChange, RebuildStatus } from './checkRebuild.ts';
 import { checkRebuild } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { checkSourceDrift } from './checkSourceDrift.ts';
@@ -183,6 +183,8 @@ function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitV
       rebuildExpected: rebuild.expected,
       rebuildActual: rebuild.actual,
       ...(rebuild.compiledWith !== undefined && { rebuildCompiledWith: rebuild.compiledWith }),
+      ...(rebuild.esbuild !== undefined && { rebuildEsbuild: rebuild.esbuild }),
+      ...(rebuild.dependencyChanges !== undefined && { rebuildDependencyChanges: rebuild.dependencyChanges }),
     }),
     ...(rebuild?.kind === 'failed' && { rebuildError: rebuild.message }),
   };
@@ -299,13 +301,50 @@ function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirme
     case 'ok':
       return hashesConfirmed ? undefined : 'rebuild ok';
     case 'mismatch': {
-      const versions =
-        status.compiledWith === undefined ? '' : `; compiled by readyup ${status.compiledWith}, rebuilt by ${VERSION}`;
-      return `rebuild mismatch (rebuilt ${status.expected}, on disk ${status.actual}${versions})`;
+      const causes = describeMismatchCauses(status);
+      const detail = causes.length === 0 ? '' : `; ${causes.join('; ')}`;
+      return `rebuild mismatch (rebuilt ${status.expected}, on disk ${status.actual}${detail})`;
     }
     case 'failed':
       return `rebuild failed (${status.message})`;
     case 'missing':
       return `cannot rebuild (${status.reason})`;
   }
+}
+
+/**
+ * Returns the clauses naming what moved between the compile and the rebuild, one per cause.
+ *
+ * When the entry carries the toolchain record and nothing in it moved, the single clause says so and
+ * names what the record cannot see: an edited bundle, a changed input, or a dependency whose content
+ * changed without a version change.
+ */
+function describeMismatchCauses(status: Extract<RebuildStatus, { kind: 'mismatch' }>): string[] {
+  const causes: string[] = [];
+  if (status.compiledWith !== undefined) {
+    causes.push(`compiled by readyup ${status.compiledWith}, rebuilt by ${VERSION}`);
+  }
+  if (status.esbuild !== undefined && status.esbuild.recorded !== status.esbuild.rebuilt) {
+    causes.push(`esbuild ${status.esbuild.recorded} -> ${status.esbuild.rebuilt}`);
+  }
+  const dependencyChanges = status.dependencyChanges ?? [];
+  for (const change of dependencyChanges) {
+    causes.push(describeDependencyChange(change));
+  }
+
+  if (causes.length === 0 && status.esbuild !== undefined) {
+    causes.push(
+      'recorded esbuild and dependency versions match the rebuild; the cause is an edited bundle, a changed input, or dependency content changed without a version bump',
+    );
+  }
+  return causes;
+}
+
+/** Returns a clause naming one bundled package and how its version moved since the compile. */
+function describeDependencyChange(change: DependencyChange): string {
+  const { name, rebuilt, recorded } = change;
+  if (recorded !== undefined && rebuilt !== undefined) return `${name} ${recorded} -> ${rebuilt}`;
+  if (rebuilt !== undefined) return `${name} ${rebuilt} newly bundled`;
+  if (recorded !== undefined) return `${name} ${recorded} no longer bundled`;
+  return name;
 }

@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { version as installedEsbuildVersion } from 'esbuild';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { compileConfig } from '../../compile/compileConfig.ts';
@@ -55,12 +56,16 @@ describe('verifyCommand --rebuild', () => {
         version: 1,
         kits: [
           {
+            esbuildVersion: result.esbuildVersion,
             name: 'demo',
             path: 'kit.js',
             readyupVersion: VERSION,
             source: 'kit.ts',
             sourceHash: hashFile(path.join(tempDir, 'kit.ts')),
             targetHash: result.targetHash,
+            ...(Object.keys(result.bundledDependencies).length > 0 && {
+              bundledDependencies: result.bundledDependencies,
+            }),
           },
         ],
       }),
@@ -116,6 +121,28 @@ describe('verifyCommand --rebuild', () => {
     expect(readPayload(stdoutSpy)).toMatchObject({
       passed: false,
       kits: [{ status: 'ok', sourceStatus: 'ok', rebuildStatus: 'mismatch', rebuildCompiledWith: PRIOR_VERSION }],
+    });
+  });
+
+  it('reports matching recorded versions on a mismatch the record cannot explain', async () => {
+    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+
+    await runVerify();
+
+    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+      rebuildStatus: 'mismatch',
+      rebuildEsbuild: { recorded: installedEsbuildVersion, rebuilt: installedEsbuildVersion },
+    });
+  });
+
+  it('names a recorded esbuild that differs from the one rebuilding', async () => {
+    patchKits(path.join(tempDir, 'manifest.json'), { esbuildVersion: '0.0.1-old' });
+    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+
+    await runVerify();
+
+    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+      rebuildEsbuild: { recorded: '0.0.1-old', rebuilt: installedEsbuildVersion },
     });
   });
 
