@@ -939,12 +939,12 @@ rdy list --from npm:readyup           # both, with the checklists each one carri
 
 `default` reports at `warn` and below, so it is safe to run mid-edit:
 
-| Checklist   | What it asserts                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                        |
-| `freshness` | Every kit the manifest records still matches the hashes recorded for it, on the source side and the bundle side. |
+| Checklist   | What it asserts                                                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                                          |
+| `freshness` | Every kit the manifest records still matches what was recorded for it: its source, its bundle, and everything the compile inlined. |
 
-Both `setup` checks stand down for a project that defines no kits of its own: a monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it holds either `.readyup/kits` or `.readyup/manifest.json`. The manifest check stands down for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit.
+Both `setup` checks stand down for a project that defines no kits of its own: a monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it holds either `.readyup/kits` or `.readyup/manifest.json`. The manifest check stands down for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit. Beneath each kit, the comparison over what it inlined stands down for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is decided by the projection that was substituted rather than by the file holding it, through the same `projectJsonFile` the compile recorded through.
 
 `publishing` reports at `error`, for a package that distributes its kits:
 
@@ -1074,15 +1074,19 @@ import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 
 ### JSON
 
-| Function                            | Returns                                   |
-| ----------------------------------- | ----------------------------------------- |
-| `readJsonFile(path)`                | Parsed object, or `undefined`             |
-| `readJsonValue(path, ...keys)`      | Value at a key path within a file         |
-| `hasJsonField(path, field, value?)` | Field exists, optionally matching a value |
-| `hasJsonFields(path, fields)`       | `CheckOutcome` over several fields        |
-| `getJsonValue(obj, ...keys)`        | Value at a key path within an object      |
-| `hasJsonValue(obj, ...keys)`        | Key path is present                       |
-| `isRecord(value)`                   | Type guard for `Record<string, unknown>`  |
+| Function                               | Returns                                   |
+| -------------------------------------- | ----------------------------------------- |
+| `readJsonFile(path)`                   | Parsed object, or `undefined`             |
+| `readJsonValue(path, ...keys)`         | Value at a key path within a file         |
+| `hasJsonField(path, field, value?)`    | Field exists, optionally matching a value |
+| `hasJsonFields(path, fields)`          | `CheckOutcome` over several fields        |
+| `projectJsonFile(path, paths)`         | Serialized projection of a JSON file      |
+| `describeJsonProjectionFailure(error)` | Why a projection failed, without the path |
+| `getJsonValue(obj, ...keys)`           | Value at a key path within an object      |
+| `hasJsonValue(obj, ...keys)`           | Key path is present                       |
+| `isRecord(value)`                      | Type guard for `Record<string, unknown>`  |
+
+`projectJsonFile` returns what [`pickJson`](#inlining-json-at-compile-time) inlines: the paths it names projected out of the file, serialized. It is the one implementation of that projection, so a check reading an entry's [recorded inputs](#what-a-manifest-entry-records) decides an inlined JSON file the same way the compile that recorded it did. It throws when the file is unreadable, holds invalid JSON, holds something other than an object, or no longer holds a path the specifier names. `describeJsonProjectionFailure` words any of those four for a report, and words them without the file path, so a check that already names the file does not name it twice.
 
 ### Package manifests
 

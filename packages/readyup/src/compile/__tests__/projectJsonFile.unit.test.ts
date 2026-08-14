@@ -71,17 +71,26 @@ describe(projectJsonFile, () => {
     expect(error.reason).toBe('invalid-json');
   });
 
+  // The detail names the root as JSON sees it, so an array and a null are distinguishable from an object.
   it('reports a non-object root as not-an-object, carrying the type it found', () => {
     const error = captureProjectionError('[1,2,3]');
 
     expect(error.reason).toBe('not-an-object');
-    expect(error.detail).toBe('object');
+    expect(error.detail).toBe('array');
+  });
+
+  it('names a null root as null rather than as an object', () => {
+    const error = captureProjectionError('null');
+
+    expect(error.reason).toBe('not-an-object');
+    expect(error.detail).toBe('null');
   });
 
   it('reports a picked path the file does not have as path-not-found, naming the path', () => {
     const error = captureProjectionError(JSON.stringify({ name: 'my-pkg' }), ['version']);
 
     expect(error.reason).toBe('path-not-found');
+    expect(error.detail).toBe('version');
     expect(error.message).toBe('Path not found in JSON: version');
   });
 });

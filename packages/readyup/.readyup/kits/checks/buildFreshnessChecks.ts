@@ -1,12 +1,15 @@
 import { DEFAULT_MANIFEST_PATH } from 'readyup';
-import type { CheckOutcome, RdyCheck } from 'readyup';
-import { computeHash, readFile } from 'readyup/check-utils';
+import type { CheckOutcome, FractionProgress, RdyCheck } from 'readyup';
+import { computeHash, describeJsonProjectionFailure, fileExists, projectJsonFile, readFile } from 'readyup/check-utils';
 
-import type { ManifestEntry } from './kit-layout.ts';
+import type { ManifestEntry, ManifestInput } from './kit-layout.ts';
 import { readManifestEntries, resolveRecordedPath, skipWithoutBundles } from './kit-layout.ts';
 
+/** Detail reported by a check that stands down for an entry compiled before readyup recorded a closure. */
+const NO_INPUTS_REASON = 'The manifest records no inputs for it';
+
 /**
- * Checks asserting that every kit the manifest records still matches the hashes recorded for it.
+ * Checks asserting that every kit the manifest records still matches what was recorded for it.
  *
  * The checks are built when the kit module is evaluated, so a drifted kit is named on its own line
  * rather than buried in one check's detail. Severity is left to the kit: freshness is advisory while
@@ -36,6 +39,14 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
         name: 'Its bundle is unchanged since it was compiled',
         check: () => compareToRecordedHash(entry.path, entry.targetHash),
         fix: `Move the edits into the source and run 'rdy compile --force'`,
+      },
+      {
+        // The axis the two hashes leave uncovered: a bundle is a function of every module it inlined
+        // and every JSON projection substituted into it, and neither hash describes any of them.
+        name: 'Everything it inlined is unchanged since it was compiled',
+        skip: () => (entry.inputs === undefined ? NO_INPUTS_REASON : false),
+        check: () => compareToRecordedInputs(entry.inputs ?? []),
+        fix: `Run 'rdy compile' to rebuild ${entry.name} from the files it now reads`,
       },
     ],
   };
@@ -71,12 +82,91 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
   const content = readFile(filePath);
   if (content === undefined) return { ok: false, detail: `${filePath} is missing` };
 
-  const actual = computeHash(content).slice(0, expected.length);
-  if (actual !== expected) {
-    return { ok: false, detail: `${filePath} hashes to ${actual}, not the recorded ${expected}` };
-  }
+  const drift = describeHashDrift(filePath, content, expected, 'hashes to');
+  if (drift !== undefined) return { ok: false, detail: drift };
 
   return { ok: true, detail: `${filePath} matches the recorded hash` };
+}
+
+/**
+ * Compares everything a kit's compile read against what was recorded for it.
+ *
+ * Names every input that no longer matches rather than the first, so one pass names everything to fix.
+ * The count stands as the evidence on a pass, since a kit records one input per file its compile read.
+ */
+function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
+  const failures = inputs.map(describeInputDrift).filter((failure) => failure !== undefined);
+  const progress: FractionProgress = {
+    type: 'fraction',
+    passedCount: inputs.length - failures.length,
+    count: inputs.length,
+  };
+
+  if (failures.length === 0) return { ok: true, progress };
+  return { ok: false, detail: failures.join('; '), progress };
+}
+
+/**
+ * Compares what was hashed against the hash recorded for it, and reports how it differs.
+ *
+ * `verb` names what the digest covers: an inline input's is over the projection substituted into the
+ * bundle, not over the bytes of the file holding it.
+ */
+function describeHashDrift(filePath: string, hashed: string, expected: string, verb: string): string | undefined {
+  const actual = computeHash(hashed).slice(0, expected.length);
+  if (actual === expected) return undefined;
+  return `${filePath} ${verb} ${actual}, not the recorded ${expected}`;
+}
+
+/**
+ * Reports which of a recorded input's three required fields are absent.
+ *
+ * Leads with the path where the record carries one, so several incomplete records stay distinguishable
+ * in a detail that joins them.
+ */
+function describeIncompleteInput(input: ManifestInput): string {
+  const unrecorded: string[] = [];
+  if (input.path === undefined) unrecorded.push('path');
+  if (input.kind === undefined) unrecorded.push('kind');
+  if (input.hash === undefined) unrecorded.push('hash');
+
+  const absent = unrecorded.join(' or ');
+  if (input.path === undefined) return `The manifest records an input with no ${absent}`;
+  return `${resolveRecordedPath(input.path)} records no ${absent}`;
+}
+
+/**
+ * Reports how one recorded input differs from what the compile read, or nothing when it still matches.
+ *
+ * An inline input is decided by the projection `rdy compile` recorded rather than by the file holding
+ * it, which is what keeps an edit to a field the kit did not pick from reading as staleness. That
+ * projection comes from readyup itself: once its serialization is hashed it is a format, and a second
+ * implementation of it would drift from the one that wrote the hash.
+ */
+function describeInputDrift(input: ManifestInput): string | undefined {
+  const { hash, kind, path: recordedPath, paths } = input;
+  if (hash === undefined || kind === undefined || recordedPath === undefined) {
+    return describeIncompleteInput(input);
+  }
+
+  const filePath = resolveRecordedPath(recordedPath);
+  if (kind === 'module') {
+    const content = readFile(filePath);
+    if (content === undefined) return `${filePath} is missing`;
+    return describeHashDrift(filePath, content, hash, 'hashes to');
+  }
+
+  if (paths === undefined) return `${filePath} records no paths to project it by`;
+  if (!fileExists(filePath)) return `${filePath} is missing`;
+
+  let projection: string;
+  try {
+    projection = projectJsonFile(filePath, paths);
+  } catch (error: unknown) {
+    return `${filePath} no longer projects (${describeJsonProjectionFailure(error)})`;
+  }
+
+  return describeHashDrift(filePath, projection, hash, 'projects to');
 }
 
 /** Reports which of a manifest entry's two hash records are absent. */

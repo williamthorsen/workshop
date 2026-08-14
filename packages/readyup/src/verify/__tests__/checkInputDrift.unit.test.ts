@@ -104,7 +104,7 @@ describe(checkInputDrift, () => {
       expect(checkInputDrift(kitWith([RECORDED_PICK]), tempDir)).toStrictEqual({
         kind: 'stale',
         failures: [
-          { kind: 'inline', path: 'package.json', reason: 'unprojectable', detail: 'Path not found in JSON: version' },
+          { kind: 'inline', path: 'package.json', reason: 'unprojectable', detail: 'path not found: version' },
         ],
       });
     });

@@ -1,9 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
-import { JsonProjectionError } from '../compile/JsonProjectionError.ts';
+import { describeJsonProjectionFailure } from '../compile/JsonProjectionError.ts';
 import { projectJsonFile } from '../compile/projectJsonFile.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { hashFile, hashProjection } from './targetHash.ts';
@@ -64,32 +62,11 @@ function checkInput(input: RdyManifestInput, manifestDir: string): InputFailure 
   try {
     actual = hashProjection(projectJsonFile(resolvedPath, input.paths));
   } catch (error: unknown) {
-    return { kind: 'inline', path: input.path, reason: 'unprojectable', detail: describeProjectionFailure(error) };
+    return { kind: 'inline', path: input.path, reason: 'unprojectable', detail: describeJsonProjectionFailure(error) };
   }
 
   if (actual === input.hash) return undefined;
   return { kind: 'inline', path: input.path, reason: 'changed', expected: input.hash, actual };
-}
-
-/**
- * Returns why a JSON file could not be projected, in a form that does not repeat the path beside it.
- *
- * The error's own message names the file absolutely, which the failure already names as the manifest
- * records it. Reading the diagnosis off `reason` is what keeps the two from disagreeing about the path.
- */
-function describeProjectionFailure(error: unknown): string {
-  if (!(error instanceof JsonProjectionError)) return describeError(error);
-
-  switch (error.reason) {
-    case 'invalid-json':
-      return 'invalid JSON';
-    case 'not-an-object':
-      return `expected a JSON object, got ${error.detail ?? 'something else'}`;
-    case 'path-not-found':
-      return error.message;
-    case 'unreadable':
-      return 'unreadable';
-  }
 }
 
 // endregion | Helpers
