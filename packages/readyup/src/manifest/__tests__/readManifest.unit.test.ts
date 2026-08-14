@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it, vi } from 'vitest';
 
 const mockReadFileSync = vi.hoisted(() => vi.fn());
@@ -6,7 +7,6 @@ vi.mock(import('node:fs'), () => ({
   readFileSync: mockReadFileSync,
 }));
 
-import { captureError } from '../../test-utils/captureError.ts';
 import { readManifest } from '../readManifest.ts';
 
 describe(readManifest, () => {

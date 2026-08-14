@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
@@ -40,7 +41,7 @@ vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
 
 vi.stubGlobal('fetch', mockFetch);
 
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
+import { RdyError } from '../../errors/RdyError.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { listCommand } from '../listCommand.ts';
 
@@ -120,7 +121,7 @@ describe(listCommand, () => {
   });
 
   it('reports a usage error for malformed --from values', async () => {
-    const error = await captureRdyError(() => listCommand(['--from', 'https://example.com']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'https://example.com']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('URLs are not accepted by --from');
@@ -176,7 +177,7 @@ describe(listCommand, () => {
   it('with --from github:... and a 404 response, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -187,7 +188,7 @@ describe(listCommand, () => {
   it('with --from github:... and an HTML soft-404 body, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -198,7 +199,7 @@ describe(listCommand, () => {
   it('with --from github:... and a malformed manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -209,7 +210,7 @@ describe(listCommand, () => {
   it('with --from github:... and a schema-invalid manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -222,7 +223,7 @@ describe(listCommand, () => {
       mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
     );
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -233,7 +234,7 @@ describe(listCommand, () => {
   it('with --from github:... and a network failure, reports a config error naming the URL', async () => {
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'github:williamthorsen/workshop']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'github:williamthorsen/workshop']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -249,7 +250,7 @@ describe(listCommand, () => {
     it.each([401, 403, 404])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBe(GITHUB_HINT);
     });
@@ -257,7 +258,7 @@ describe(listCommand, () => {
     it('hints on the HTML soft-404 GitHub serves for a private repository', async () => {
       mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBe(GITHUB_HINT);
     });
@@ -265,7 +266,7 @@ describe(listCommand, () => {
     it.each([401, 403, 404])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:acme/private']));
 
       expect(error.hint).toBe(BITBUCKET_HINT);
     });
@@ -273,7 +274,7 @@ describe(listCommand, () => {
     it('leaves the message untouched, carrying the hint beside it', async () => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status: 401, statusText: 'Unauthorized' }));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.message).toBe(
         'Failed to fetch manifest from https://raw.githubusercontent.com/acme/private/main/.readyup/manifest.json: 401 Unauthorized',
@@ -284,7 +285,7 @@ describe(listCommand, () => {
       mockResolveGitHubToken.mockReturnValue('my-token');
       mockFetch.mockResolvedValue(mockResponse('Nope', { status: 404, statusText: 'Not Found' }));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBeUndefined();
     });
@@ -292,7 +293,7 @@ describe(listCommand, () => {
     it.each([500, 502])('stays silent on a %i, which no credential would fix', async (status) => {
       mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Server Error' }));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBeUndefined();
     });
@@ -300,7 +301,7 @@ describe(listCommand, () => {
     it('stays silent on a malformed body, which arrived over an accepted request', async () => {
       mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBeUndefined();
     });
@@ -308,7 +309,7 @@ describe(listCommand, () => {
     it('stays silent on a network failure, which reached no host to be refused by', async () => {
       mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-      const error = await captureRdyError(() => listCommand(['--from', 'github:acme/private']));
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBeUndefined();
     });
@@ -376,7 +377,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:... and a 404 response, reports a config error naming the URL', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -387,7 +388,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:... and a malformed manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -398,7 +399,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:... and a schema-invalid manifest, reports a config error naming the URL and "malformed"', async () => {
     mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 1, kits: 'not-an-array' })));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -411,7 +412,7 @@ describe(listCommand, () => {
       mockResponse('Internal Server Error', { status: 500, statusText: 'Internal Server Error' }),
     );
 
-    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(
@@ -422,7 +423,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:... and a network failure, reports a config error naming the URL', async () => {
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const error = await captureRdyError(() => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
+    const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:tutorials/markdowndemo']));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(

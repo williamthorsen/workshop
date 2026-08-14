@@ -43,6 +43,9 @@
   "dependencies": {
     "@williamthorsen/toolbelt.errors": "catalog:"
   },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:"
+  },
   "engines": {
     "node": ">=24"
   },

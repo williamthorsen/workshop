@@ -1,7 +1,7 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { ConsistencyError } from '../../consistency/ConsistencyError.ts';
-import type { Plan } from '../../schemas/plan-schemas.ts';
 import { buildPlan } from '../../test-utils/buildPlan.ts';
 import { requireEntry } from '../../test-utils/requireEntry.ts';
 import { assertPlanIsConsistent, PlanConsistencyError } from '../assertPlanIsConsistent.ts';
@@ -16,31 +16,35 @@ describe(assertPlanIsConsistent, () => {
     }).not.toThrow();
   });
 
-  it('if the tier table carries one id twice, names the repeated id', () => {
+  it('if the tier table carries one id twice, names the repeated id', async () => {
     const plan = buildPlan();
     plan.tiers = [...plan.tiers, { id: 'project', label: 'Project, again' }];
 
-    expect(captureFailure(plan).violations).toStrictEqual([
-      { path: 'tiers', message: 'carries "project" more than once' },
-    ]);
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toStrictEqual([{ path: 'tiers', message: 'carries "project" more than once' }]);
   });
 
-  it('if two file entries claim one destination, names the repeated path', () => {
+  it('if two file entries claim one destination, names the repeated path', async () => {
     const plan = buildPlan();
     plan.files = [...plan.files, { ...requireEntry(plan.files, 0) }];
 
-    expect(captureFailure(plan).violations).toStrictEqual([
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toStrictEqual([
       { path: 'files[1]', message: 'repeats the destination "skills/review/SKILL.md" within target "claude"' },
     ]);
   });
 
-  it('if a non-token edge names a partial, rejects the edge', () => {
+  it('if a non-token edge names a partial, rejects the edge', async () => {
     const plan = buildPlan();
     requireEntry(plan.artifacts, 0).dependsOn = [
       { to: 'skill:review', via: 'member', partialId: 'team:_data/shared.md' },
     ];
 
-    expect(captureFailure(plan).violations).toStrictEqual([
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[0].dependsOn[0].partialId',
         message: 'is set on a "member" edge, and only a token edge is read from a partial',
@@ -48,7 +52,7 @@ describe(assertPlanIsConsistent, () => {
     ]);
   });
 
-  it('if a shadowed candidate outranks its winner, rejects the resolution order', () => {
+  it('if a shadowed candidate outranks its winner, rejects the resolution order', async () => {
     const plan = buildPlan();
     // `team` outranks `library`, so a resolution won by `library` cannot shadow `team`.
     requireEntry(plan.artifacts, 2).resolution = {
@@ -56,7 +60,9 @@ describe(assertPlanIsConsistent, () => {
       shadowed: [{ sourceId: 'team', path: 'skills/lint/SKILL.md', hash: 'hash:lint-team' }],
     };
 
-    expect(captureFailure(plan).violations).toStrictEqual([
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[2].resolution.shadowed[0].sourceId',
         message: 'names "team", which does not follow "library" in source precedence order',
@@ -64,14 +70,16 @@ describe(assertPlanIsConsistent, () => {
     ]);
   });
 
-  it('if a shadowed candidate names an unknown source, reports only the dangling reference', () => {
+  it('if a shadowed candidate names an unknown source, reports only the dangling reference', async () => {
     const plan = buildPlan();
     requireEntry(plan.artifacts, 1).resolution = {
       winner: { sourceId: 'team', path: 'skills/review/SKILL.md', hash: 'hash:review' },
       shadowed: [{ sourceId: 'absent', path: 'skills/review/SKILL.md', hash: 'hash:review-absent' }],
     };
 
-    expect(captureFailure(plan).violations).toStrictEqual([
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[1].resolution.shadowed[0].sourceId',
         message: 'references "absent", which is not an entry in sources',
@@ -79,39 +87,24 @@ describe(assertPlanIsConsistent, () => {
     ]);
   });
 
-  it('reports every violation in one throw', () => {
+  it('reports every violation in one throw', async () => {
     const plan = buildPlan();
     requireEntry(plan.files, 0).targetId = 'absent';
     requireEntry(plan.files, 0).planned = { hash: 'hash:review-current' };
     plan.blobs = {};
 
-    expect(captureFailure(plan).violations).toHaveLength(4);
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
+
+    expect(failure.violations).toHaveLength(4);
   });
 
-  it('raises a failure a consumer can catch alongside a catalog failure, under its own name', () => {
+  it('raises a failure a consumer can catch alongside a catalog failure, under its own name', async () => {
     const plan = buildPlan();
     plan.tiers = [];
-    const failure = captureFailure(plan);
+    const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
 
     expect(failure).toBeInstanceOf(ConsistencyError);
     expect(failure.name).toBe('PlanConsistencyError');
     expect(failure.message).toMatch(/^Plan is inconsistent:\n/);
   });
 });
-
-// region | Helpers
-
-/** Captures the failure `plan` raises, failing the test when it passes every check. */
-function captureFailure(plan: Plan): PlanConsistencyError {
-  try {
-    assertPlanIsConsistent(plan);
-  } catch (error: unknown) {
-    if (error instanceof PlanConsistencyError) {
-      return error;
-    }
-    throw error;
-  }
-  throw new Error('Expected the plan to be inconsistent, but it passed every check.');
-}
-
-// endregion | Helpers

@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 
@@ -15,7 +16,6 @@ vi.mock('jiti', () => ({
 }));
 
 import { extractHint } from '../../errors/error-handling.ts';
-import { captureError } from '../../test-utils/captureError.ts';
 import { loadConfig } from '../loadConfig.ts';
 
 describe(loadConfig, () => {

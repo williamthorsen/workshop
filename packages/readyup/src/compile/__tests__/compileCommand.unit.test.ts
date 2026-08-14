@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import type { RdyManifest } from '../../manifest/manifestSchema.ts';
@@ -55,9 +56,9 @@ vi.mock(import('../../verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
 }));
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { VERSION } from '../../version.ts';
 import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
@@ -207,21 +208,21 @@ describe(compileCommand, () => {
   });
 
   it('reports a usage error when --output is provided without a value', async () => {
-    const error = await captureRdyError(() => compileCommand(['input.ts', '--output']));
+    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--output']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires a path argument');
   });
 
   it('reports a usage error when --output is given an empty value', async () => {
-    const error = await captureRdyError(() => compileCommand(['input.ts', '--output=']));
+    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--output=']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires a path argument');
   });
 
   it('reports a usage error for unknown flags', async () => {
-    const error = await captureRdyError(() => compileCommand(['input.ts', '--verbose']));
+    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--verbose']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--verbose'");
@@ -237,7 +238,7 @@ describe(compileCommand, () => {
   });
 
   it('reports a usage error when multiple positional arguments are provided', async () => {
-    const error = await captureRdyError(() => compileCommand(['a.ts', 'b.ts']));
+    const error = await captureError(RdyError, () => compileCommand(['a.ts', 'b.ts']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('Too many arguments');
@@ -250,7 +251,7 @@ describe(compileCommand, () => {
       }),
     );
 
-    const error = await captureRdyError(() => compileCommand([]));
+    const error = await captureError(RdyError, () => compileCommand([]));
 
     expect(error.code).toBe('config');
     expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
@@ -356,14 +357,14 @@ describe(compileCommand, () => {
   });
 
   it('reports a usage error when --output is given without an input file', async () => {
-    const error = await captureRdyError(() => compileCommand(['--output', 'out.js']));
+    const error = await captureError(RdyError, () => compileCommand(['--output', 'out.js']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires an input file');
   });
 
   it('reports a usage error for --all (removed flag)', async () => {
-    const error = await captureRdyError(() => compileCommand(['--all']));
+    const error = await captureError(RdyError, () => compileCommand(['--all']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--all'");
@@ -768,7 +769,7 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const error = await captureRdyError(() => compileCommand([]));
+    const error = await captureError(RdyError, () => compileCommand([]));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Failed to read source directory');
@@ -1107,7 +1108,7 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const error = await captureRdyError(() => compileCommand([]));
+    const error = await captureError(RdyError, () => compileCommand([]));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Error writing manifest');

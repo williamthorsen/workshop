@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
@@ -35,8 +36,8 @@ vi.mock(import('../../compile/loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
 }));
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { VERSION } from '../../version.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
@@ -366,7 +367,7 @@ describe(verifyCommand, () => {
       throw new Error('Manifest file not found: /path/to/manifest.json');
     });
 
-    const error = await captureRdyError(() => verifyCommand([]));
+    const error = await captureError(RdyError, () => verifyCommand([]));
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Manifest file not found');
@@ -381,7 +382,7 @@ describe(verifyCommand, () => {
   });
 
   it('reports a usage error when positional arguments are supplied', async () => {
-    const error = await captureRdyError(() => verifyCommand(['unexpected']));
+    const error = await captureError(RdyError, () => verifyCommand(['unexpected']));
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('does not accept positional arguments');
@@ -661,7 +662,7 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-      const error = await captureRdyError(() => verifyCommand(['--rebuild']));
+      const error = await captureError(RdyError, () => verifyCommand(['--rebuild']));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('pnpm add --save-dev esbuild');
@@ -671,7 +672,7 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-      await captureRdyError(() => verifyCommand(['--rebuild']));
+      await captureError(RdyError, () => verifyCommand(['--rebuild']));
 
       expect(mockReadManifest).not.toHaveBeenCalled();
       expect(stdoutSpy).not.toHaveBeenCalled();

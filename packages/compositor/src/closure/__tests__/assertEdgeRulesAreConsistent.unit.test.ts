@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { Violation } from '../../consistency/Violation.ts';
@@ -25,26 +26,28 @@ describe(assertEdgeRulesAreConsistent, () => {
     expect(() => assertEdgeRulesAreConsistent([], {}, kinds)).not.toThrow();
   });
 
-  it('if a rule is keyed to a kind no descriptor carries, faults it, no artifact being read for it', () => {
-    expect(violationsOf([{ ...declared, kindId: 'rulebook' }])).toStrictEqual([
+  it('if a rule is keyed to a kind no descriptor carries, faults it, no artifact being read for it', async () => {
+    await expect(violationsOf([{ ...declared, kindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].kindId', message: 'references "rulebook", which is not an entry in kinds' },
     ]);
   });
 
-  it('if a flat rule targets a kind no descriptor carries, faults it', () => {
-    expect(violationsOf([{ ...injected, targetKindId: 'rulebook' }])).toStrictEqual([
+  it('if a flat rule targets a kind no descriptor carries, faults it', async () => {
+    await expect(violationsOf([{ ...injected, targetKindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].targetKindId', message: 'references "rulebook", which is not an entry in kinds' },
     ]);
   });
 
-  it('if two rules claim one key of one kind, faults the repeat, whichever loses never being read', () => {
-    expect(violationsOf([declared, { ...declared, via: 'member' }])).toStrictEqual([
+  it('if two rules claim one key of one kind, faults the repeat, whichever loses never being read', async () => {
+    await expect(violationsOf([declared, { ...declared, via: 'member' }])).resolves.toStrictEqual([
       { path: 'rules', message: 'claim "dependencies" of kind "skill" more than once' },
     ]);
   });
 
-  it('reports a key claimed three times once, the fault being the claim rather than each repeat', () => {
-    expect(violationsOf([declared, { ...declared, via: 'member' }, { ...declared, via: 'injected' }])).toHaveLength(1);
+  it('reports a key claimed three times once, the fault being the claim rather than each repeat', async () => {
+    await expect(
+      violationsOf([declared, { ...declared, via: 'member' }, { ...declared, via: 'injected' }]),
+    ).resolves.toHaveLength(1);
   });
 
   it('accepts one key claimed by two kinds, a key belonging to the kind that declares it', () => {
@@ -53,16 +56,16 @@ describe(assertEdgeRulesAreConsistent, () => {
     expect(() => assertEdgeRulesAreConsistent([declared, shared], kindKeys, kinds)).not.toThrow();
   });
 
-  it('if a declaration key names a kind no descriptor carries, faults it', () => {
-    expect(violationsOf([declared], { rulebooks: 'rulebook' })).toStrictEqual([
+  it('if a declaration key names a kind no descriptor carries, faults it', async () => {
+    await expect(violationsOf([declared], { rulebooks: 'rulebook' })).resolves.toStrictEqual([
       { path: 'kindKeys.rulebooks', message: 'references "rulebook", which is not an entry in kinds' },
     ]);
   });
 
-  it('reports every fault in one run', () => {
+  it('reports every fault in one run', async () => {
     const dangling: EdgeRule = { ...injected, targetKindId: 'rulebook' };
 
-    expect(violationsOf([declared, declared, dangling]).map(({ path }) => path)).toStrictEqual([
+    expect((await violationsOf([declared, declared, dangling])).map(({ path }) => path)).toStrictEqual([
       'rules',
       'rules[2].targetKindId',
     ]);
@@ -72,16 +75,12 @@ describe(assertEdgeRulesAreConsistent, () => {
 // region | Helpers
 
 /** Runs the assertion and returns the violations it raised, failing the test when it raised none. */
-function violationsOf(rules: ReadonlyArray<EdgeRule>, keys: KindKeys = kindKeys): ReadonlyArray<Violation> {
-  try {
-    assertEdgeRulesAreConsistent(rules, keys, kinds);
-  } catch (error) {
-    if (error instanceof EdgeRuleConsistencyError) {
-      return error.violations;
-    }
-    throw error;
-  }
-  throw new Error('Expected the assertion to fault, but it accepted the declarations.');
+async function violationsOf(
+  rules: ReadonlyArray<EdgeRule>,
+  keys: KindKeys = kindKeys,
+): Promise<ReadonlyArray<Violation>> {
+  return (await captureError(EdgeRuleConsistencyError, () => assertEdgeRulesAreConsistent(rules, keys, kinds)))
+    .violations;
 }
 
 // endregion | Helpers

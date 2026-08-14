@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -14,7 +15,6 @@ vi.mock('jiti', () => ({
 }));
 
 import { extractHint } from '../../errors/error-handling.ts';
-import { captureError } from '../../test-utils/captureError.ts';
 import { jitiImport } from '../jitiImport.ts';
 
 const KIT_PATH = path.resolve(process.cwd(), '.readyup/kits/default.ts');

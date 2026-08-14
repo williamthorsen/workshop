@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyKit } from '../../kits/types.ts';
@@ -26,8 +27,8 @@ vi.mock(import('../../remote/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
+import { RdyError } from '../../errors/RdyError.ts';
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
-import { captureRdyError } from '../../test-utils/captureRdyError.ts';
 import { VERSION } from '../../version.ts';
 import { loadKit } from '../loadKit.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
@@ -56,7 +57,7 @@ describe(loadKit, () => {
     it('advises installing readyup when a --jit kit cannot resolve it', async () => {
       mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('readyup'));
 
-      const error = await captureRdyError(() => loadKit(localEntry(), true));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), true));
 
       expect(error.code).toBe('kit-load');
       expect(error.message).toBe('Running from source requires readyup to be installed as a project dependency.');
@@ -65,7 +66,7 @@ describe(loadKit, () => {
     it('passes through a module error naming another package under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('chalk'));
 
-      const error = await captureRdyError(() => loadKit(localEntry(), true));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), true));
 
       expect(error.message).toBe("Cannot find package 'chalk'");
     });
@@ -73,7 +74,7 @@ describe(loadKit, () => {
     it('passes through an error carrying no module code under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('boom'));
 
-      const error = await captureRdyError(() => loadKit(localEntry(), true));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), true));
 
       expect(error.message).toBe('boom');
     });
@@ -81,7 +82,7 @@ describe(loadKit, () => {
     it('passes through an error carrying an unrelated code under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue(Object.assign(new Error('boom'), { code: 'EACCES' }));
 
-      const error = await captureRdyError(() => loadKit(localEntry(), true));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), true));
 
       expect(error.message).toBe('boom');
     });
@@ -89,7 +90,7 @@ describe(loadKit, () => {
     it('passes through a rejection that is no error at all under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue('boom');
 
-      const error = await captureRdyError(() => loadKit(localEntry(), true));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), true));
 
       expect(error.code).toBe('kit-load');
     });
@@ -97,7 +98,7 @@ describe(loadKit, () => {
     it('leaves a missing readyup undiagnosed outside --jit, where the kit is a compiled bundle', async () => {
       mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('readyup'));
 
-      const error = await captureRdyError(() => loadKit(localEntry(), false));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), false));
 
       expect(error.message).toBe("Cannot find package 'readyup'");
     });
@@ -109,7 +110,7 @@ describe(loadKit, () => {
         }),
       );
 
-      const error = await captureRdyError(() => loadKit(localEntry(), false));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), false));
 
       expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
     });
@@ -171,7 +172,7 @@ describe(loadKit, () => {
     it('keeps the URL a fetch failure already names', async () => {
       mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${BITBUCKET_URL}: 404 Not Found`));
 
-      const error = await captureRdyError(() => loadKit(remoteEntry(BITBUCKET_URL), false));
+      const error = await captureError(RdyError, () => loadKit(remoteEntry(BITBUCKET_URL), false));
 
       expect(error.message).toContain(BITBUCKET_URL);
     });
@@ -179,7 +180,7 @@ describe(loadKit, () => {
     it('names the URL a network failure does not carry', async () => {
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
-      const error = await captureRdyError(() => loadKit(remoteEntry(BITBUCKET_URL), false));
+      const error = await captureError(RdyError, () => loadKit(remoteEntry(BITBUCKET_URL), false));
 
       expect(error.message).toContain(BITBUCKET_URL);
     });
@@ -187,7 +188,7 @@ describe(loadKit, () => {
     it('prepends the URL to a kit-load message missing it', async () => {
       mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
-      const error = await captureRdyError(() => loadKit(remoteEntry(THIRD_PARTY_URL), false));
+      const error = await captureError(RdyError, () => loadKit(remoteEntry(THIRD_PARTY_URL), false));
 
       expect(error.message).toBe(`Failed to reach ${THIRD_PARTY_URL}: Failed to fetch remote kit`);
     });
@@ -197,7 +198,7 @@ describe(loadKit, () => {
     it('names every symbol the runner does not export', async () => {
       mockLoadRdyKit.mockRejectedValue(missingSymbolError());
 
-      const error = await captureRdyError(() => loadKit(localEntry(), false));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), false));
 
       expect(error.code).toBe('kit-load');
       expect(error.message).toBe(
@@ -208,7 +209,7 @@ describe(loadKit, () => {
     it('advises recompiling a kit the project owns', async () => {
       mockLoadRdyKit.mockRejectedValue(missingSymbolError());
 
-      const error = await captureRdyError(() => loadKit(localEntry(), false));
+      const error = await captureError(RdyError, () => loadKit(localEntry(), false));
 
       expect(error.hint).toBe(`Run 'rdy compile' to rebuild it against readyup ${VERSION}.`);
     });
@@ -222,7 +223,7 @@ describe(loadKit, () => {
         provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
       };
 
-      const error = await captureRdyError(() => loadKit(entry, false));
+      const error = await captureError(RdyError, () => loadKit(entry, false));
 
       expect(error.message).toContain('kit "drift" from @acme/kits cannot run against');
       expect(error.hint).toBe(`Upgrade @acme/kits to a release compiled against readyup ${VERSION}.`);
@@ -237,7 +238,7 @@ describe(loadKit, () => {
         provenance: { kind: 'remote', label: 'example.com/kits/deploy.js' },
       };
 
-      const error = await captureRdyError(() => loadKit(entry, false));
+      const error = await captureError(RdyError, () => loadKit(entry, false));
 
       expect(error.hint).toBe(
         `Ask the publisher of example.com/kits/deploy.js to recompile it against readyup ${VERSION}.`,
@@ -281,7 +282,7 @@ describe(loadKit, () => {
       mockResolveGitHubToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
-      const error = await captureRdyError(() => loadKit(remoteEntry(GITHUB_URL), false));
+      const error = await captureError(RdyError, () => loadKit(remoteEntry(GITHUB_URL), false));
 
       expect(error.hint).toBeUndefined();
     });
@@ -289,7 +290,7 @@ describe(loadKit, () => {
     /** Loads one kit from `url` against a fetch that failed with `status`, and answers with the hint raised. */
     async function hintFor(url: string, status: number): Promise<string | undefined> {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${url}`, status));
-      const error = await captureRdyError(() => loadKit(remoteEntry(url), false));
+      const error = await captureError(RdyError, () => loadKit(remoteEntry(url), false));
       return error.hint;
     }
   });

@@ -1,6 +1,6 @@
-import assert from 'node:assert';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -19,7 +19,6 @@ vi.mock('jiti', () => ({
 }));
 
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
-import { captureError } from '../../test-utils/captureError.ts';
 import { loadRdyKit } from '../loadRdyKit.ts';
 
 const KIT_PATH = '.readyup/kits/default.ts';
@@ -273,9 +272,8 @@ describe(loadRdyKit, () => {
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('import { retiredHelper } from "readyup/check-utils";');
 
-    const error = await captureError(() => loadRdyKit(COMPILED_KIT_PATH));
+    const error = await captureError(UnresolvableKitImportsError, () => loadRdyKit(COMPILED_KIT_PATH));
 
-    assert.ok(error instanceof UnresolvableKitImportsError);
     expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
     expect(mockJitiImport).not.toHaveBeenCalled();
   });

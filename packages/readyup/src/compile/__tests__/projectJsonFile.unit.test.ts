@@ -1,5 +1,4 @@
-import assert from 'node:assert';
-
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it, vi } from 'vitest';
 
 const mockReadFileSync = vi.hoisted(() => vi.fn());
@@ -12,7 +11,10 @@ import { JsonProjectionError } from '../JsonProjectionError.ts';
 import { projectJsonFile } from '../projectJsonFile.ts';
 
 /** Runs the projection over a file with the given contents and returns the `JsonProjectionError` it raised. */
-function captureProjectionError(fileContents: string | Error, paths: string[] = ['name']): JsonProjectionError {
+async function captureProjectionError(
+  fileContents: string | Error,
+  paths: string[] = ['name'],
+): Promise<JsonProjectionError> {
   if (fileContents instanceof Error) {
     mockReadFileSync.mockImplementationOnce(() => {
       throw fileContents;
@@ -21,13 +23,7 @@ function captureProjectionError(fileContents: string | Error, paths: string[] = 
     mockReadFileSync.mockReturnValueOnce(fileContents);
   }
 
-  try {
-    projectJsonFile('/project/data.json', paths);
-  } catch (error: unknown) {
-    assert.ok(error instanceof JsonProjectionError);
-    return error;
-  }
-  throw new Error('projectJsonFile did not throw');
+  return captureError(JsonProjectionError, () => projectJsonFile('/project/data.json', paths));
 }
 
 describe(projectJsonFile, () => {
@@ -57,37 +53,37 @@ describe(projectJsonFile, () => {
     expect(after).toBe(before);
   });
 
-  it('reports an unreadable file as unreadable, naming it', () => {
-    const error = captureProjectionError(new Error('ENOENT'));
+  it('reports an unreadable file as unreadable, naming it', async () => {
+    const error = await captureProjectionError(new Error('ENOENT'));
 
     expect(error.reason).toBe('unreadable');
     expect(error.filePath).toBe('/project/data.json');
     expect(error.message).toContain('/project/data.json');
   });
 
-  it('reports malformed JSON as invalid-json', () => {
-    const error = captureProjectionError('{broken');
+  it('reports malformed JSON as invalid-json', async () => {
+    const error = await captureProjectionError('{broken');
 
     expect(error.reason).toBe('invalid-json');
   });
 
   // The detail names the root as JSON sees it, so an array and a null are distinguishable from an object.
-  it('reports a non-object root as not-an-object, carrying the type it found', () => {
-    const error = captureProjectionError('[1,2,3]');
+  it('reports a non-object root as not-an-object, carrying the type it found', async () => {
+    const error = await captureProjectionError('[1,2,3]');
 
     expect(error.reason).toBe('not-an-object');
     expect(error.detail).toBe('array');
   });
 
-  it('names a null root as null rather than as an object', () => {
-    const error = captureProjectionError('null');
+  it('names a null root as null rather than as an object', async () => {
+    const error = await captureProjectionError('null');
 
     expect(error.reason).toBe('not-an-object');
     expect(error.detail).toBe('null');
   });
 
-  it('reports a picked path the file does not have as path-not-found, naming the path', () => {
-    const error = captureProjectionError(JSON.stringify({ name: 'my-pkg' }), ['version']);
+  it('reports a picked path the file does not have as path-not-found, naming the path', async () => {
+    const error = await captureProjectionError(JSON.stringify({ name: 'my-pkg' }), ['version']);
 
     expect(error.reason).toBe('path-not-found');
     expect(error.detail).toBe('version');

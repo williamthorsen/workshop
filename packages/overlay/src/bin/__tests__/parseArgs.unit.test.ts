@@ -1,3 +1,4 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { parseArgs } from '../parseArgs.ts';
@@ -59,28 +60,14 @@ describe(parseArgs, () => {
     expect(() => parseArgs(['./source', flag])).toThrow(/unknown option: --h/);
   });
 
-  it('keeps the underlying parse error as the cause', () => {
-    expect(catchError(() => parseArgs(['./source', '--nope']))).toHaveProperty(
+  it('keeps the underlying parse error as the cause', async () => {
+    await expect(captureError(() => parseArgs(['./source', '--nope']))).resolves.toHaveProperty(
       'cause.code',
       'ERR_PARSE_ARGS_UNKNOWN_OPTION',
     );
-    expect(catchError(() => parseArgs(['./source', '--json=x']))).toHaveProperty(
+    await expect(captureError(() => parseArgs(['./source', '--json=x']))).resolves.toHaveProperty(
       'cause.code',
       'ERR_PARSE_ARGS_INVALID_OPTION_VALUE',
     );
   });
 });
-
-// region | Helpers
-
-/** Returns the value `act` throws, or `undefined` when it returns normally. */
-function catchError(act: () => unknown): unknown {
-  try {
-    act();
-  } catch (error: unknown) {
-    return error;
-  }
-  return undefined;
-}
-
-// endregion | Helpers
