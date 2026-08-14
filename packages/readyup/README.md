@@ -1045,7 +1045,7 @@ The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `m
 
 Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
 
-Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
+Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled; an esbuild or dependency upgrade mismatches wherever it changes a bundle's bytes, and the mismatch clause names it. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
 
 ```yaml
 - run: npx rdy verify --rebuild

@@ -78,7 +78,8 @@ export const RebuildEsbuildSchema = z
  * One bundled package whose recorded version the rebuild does not reproduce.
  *
  * `recorded` is the version the compile bundled and `rebuilt` the one the rebuild bundled; a side is
- * absent where the package was not bundled then or now.
+ * absent where the package was not bundled then or now. A side carrying several comma-separated
+ * versions is a package the bundle inlined at more than one version at once.
  */
 export const RebuildDependencyChangeSchema = z
   .object({ name: z.string(), recorded: z.string().optional(), rebuilt: z.string().optional() })
