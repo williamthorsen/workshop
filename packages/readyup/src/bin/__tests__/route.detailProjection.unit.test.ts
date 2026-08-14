@@ -1,8 +1,8 @@
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { routeCommand } from '../route.ts';
-import { useCapturedStdio } from '../test-utils/capturedStdio.ts';
 
 /** A kit with one passing check and one failing check that carries a fix. */
 const MIXED_KIT =
@@ -18,10 +18,10 @@ const temp = useTempDir({
   setup: () => temp.write('.readyup/kits/default.js', MIXED_KIT),
 });
 
-const io = useCapturedStdio();
-
 describe('--detail projection', () => {
   it('defaults to the full tree, echoing the projection it used', async () => {
+    using io = captureStdio();
+
     await routeCommand(['--json']);
 
     expect(JSON.parse(io.stdout)).toMatchObject({
@@ -31,6 +31,8 @@ describe('--detail projection', () => {
   });
 
   it('reduces the tree to failed checks and their fixes under summary', async () => {
+    using io = captureStdio();
+
     await routeCommand(['--json', '--detail', 'summary']);
 
     expect(JSON.parse(io.stdout)).toMatchObject({
@@ -43,6 +45,8 @@ describe('--detail projection', () => {
   });
 
   it('reports --detail without --json as a usage error rather than ignoring it', async () => {
+    using io = captureStdio();
+
     const exitCode = await routeCommand(['--detail', 'summary']);
 
     expect(exitCode).toBe(2);
@@ -51,6 +55,8 @@ describe('--detail projection', () => {
   });
 
   it.for(['compile', 'init', 'list', 'verify'])('reports --detail on %s as a usage error', async (command) => {
+    using io = captureStdio();
+
     const exitCode = await routeCommand([command, '--detail', 'summary', '--json']);
 
     expect(exitCode).toBe(2);

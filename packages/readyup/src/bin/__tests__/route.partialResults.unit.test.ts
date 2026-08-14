@@ -1,8 +1,8 @@
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { routeCommand } from '../route.ts';
-import { useCapturedStdio } from '../test-utils/capturedStdio.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -20,11 +20,11 @@ const temp = useTempDir({
   },
 });
 
-const io = useCapturedStdio();
-
 describe('partial results when a kit fails after dispatch', () => {
   describe('JSON mode', () => {
     it('keeps results from the kits on either side of a failed kit', async () => {
+      using io = captureStdio();
+
       const exitCode = await routeCommand(['passing', 'absent', 'failing', '--json']);
 
       expect(exitCode).toBe(2);
@@ -38,6 +38,8 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('aggregates top-level counts over only the kits that ran', async () => {
+      using io = captureStdio();
+
       await routeCommand(['passing', 'absent', '--json']);
 
       expect(JSON.parse(io.stdout)).toMatchObject({
@@ -47,12 +49,16 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('reports the run as failed when a kit never ran, even though what ran passed', async () => {
+      using io = captureStdio();
+
       await routeCommand(['passing', 'absent', '--json']);
 
       expect(JSON.parse(io.stdout)).toMatchObject({ passed: false });
     });
 
     it('emits a report rather than an envelope when the only kit fails', async () => {
+      using io = captureStdio();
+
       const exitCode = await routeCommand(['absent', '--json']);
 
       expect(exitCode).toBe(2);
@@ -62,12 +68,16 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('exits 2 rather than 1 when a kit fails alongside failing checks', async () => {
+      using io = captureStdio();
+
       await expect(routeCommand(['failing', 'absent', '--json'])).resolves.toBe(2);
     });
   });
 
   describe('human mode', () => {
     it('reports the failure on stderr and continues to the next kit', async () => {
+      using io = captureStdio();
+
       const exitCode = await routeCommand(['absent', 'passing']);
 
       expect(exitCode).toBe(2);
@@ -76,6 +86,8 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('heads every requested kit on stdout, including one that never ran', async () => {
+      using io = captureStdio();
+
       await routeCommand(['passing', 'absent']);
 
       expect(io.stdout).toContain('\u{2501}\u{2501} \u{1F4D3} passing');
@@ -83,12 +95,16 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('keeps the failure off stdout, where a failed check would appear', async () => {
+      using io = captureStdio();
+
       await routeCommand(['passing', 'absent']);
 
       expect(io.stdout).not.toContain('Error [absent]:');
     });
 
     it('drops the kit label when a lone kit leaves nothing to disambiguate', async () => {
+      using io = captureStdio();
+
       await routeCommand(['absent']);
 
       expect(io.stderr).toMatch(/^Error: /);

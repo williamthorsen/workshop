@@ -1,9 +1,9 @@
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { VERSION } from '../../version.ts';
 import { routeCommand } from '../route.ts';
-import { useCapturedStdio } from '../test-utils/capturedStdio.ts';
 
 /** A kit whose single check passes, shared by every fixture here so only the stamp varies. */
 const KIT_BODY = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -19,10 +19,10 @@ const temp = useTempDir({
   },
 });
 
-const io = useCapturedStdio();
-
 describe('compile-time readyup version in the run report', () => {
   it('names the readyup a local bundle was built by, with no origin to nest it under', async () => {
+    using io = captureStdio();
+
     await routeCommand(['stamped', '--json']);
     const parsed: unknown = JSON.parse(io.stdout);
 
@@ -31,6 +31,8 @@ describe('compile-time readyup version in the run report', () => {
   });
 
   it('names it even where it matches the runner', async () => {
+    using io = captureStdio();
+
     await routeCommand(['current', '--json']);
     const parsed: unknown = JSON.parse(io.stdout);
 
@@ -38,6 +40,8 @@ describe('compile-time readyup version in the run report', () => {
   });
 
   it('omits the key for a bundle carrying no stamp', async () => {
+    using io = captureStdio();
+
     await routeCommand(['unstamped', '--json']);
     const parsed: unknown = JSON.parse(io.stdout);
 
@@ -46,6 +50,8 @@ describe('compile-time readyup version in the run report', () => {
   });
 
   it('withholds it from a kit that loaded and then failed', async () => {
+    using io = captureStdio();
+
     const exitCode = await routeCommand(['stamped:absent', '--json']);
     const parsed: unknown = JSON.parse(io.stdout);
 
