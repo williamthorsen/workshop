@@ -221,6 +221,11 @@ interface Removals {
  * lookup with no artifact set to compare against, and the other has no catalog to learn which slugs a template will
  * produce. The destination stands at what it holds, which is the answer the claim side already gives a path whose
  * provenance is undecidable.
+ *
+ * The contenders keep the verdicts their content earned, so an artifact whose body differs from what is deployed still
+ * reads as changed. An artifact's status measures its own content rather than the files it lands in, and withdrawing
+ * the verdict would report an artifact that genuinely moved as one with nothing to do. What will happen at the
+ * destination is the file's to say, and `blocked` is where it says it.
  */
 function resolveCollisions(context: TargetPlanContext, drafted: ReadonlyArray<FileEntry>): Array<FileEntry> {
   const byPath = new Map<string, Array<FileEntry>>();

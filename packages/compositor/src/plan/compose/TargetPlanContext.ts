@@ -20,7 +20,9 @@ export interface ArtifactVerdict {
  * What planning one deployment produced.
  *
  * A destination whose content could not be computed yields a file and no verdict: nothing was computed there for a
- * comparison to speak about, and an artifact blocked everywhere is one whose status rests on nothing.
+ * comparison to speak about, and an artifact blocked everywhere is one whose status rests on nothing. That is a
+ * narrower rule than "a blocked destination yields no verdict" -- a contested destination is blocked with its
+ * contenders' content computed, and each keeps the verdict that content earned.
  */
 export interface PlannedFiles {
   readonly files: ReadonlyArray<FileEntry>;

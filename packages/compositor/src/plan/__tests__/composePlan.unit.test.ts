@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { PlanSchema } from '../../schemas/plan-schemas.ts';
+import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
 import { composePlan } from '../composePlan.ts';
 import { captureComposition } from '../test-utils/captureComposition.ts';
-import { HOST_PATH } from '../test-utils/composition-fixture.ts';
+import { buildClaudeTarget, HOST_PATH } from '../test-utils/composition-fixture.ts';
 
 describe(composePlan, () => {
   it('composes a plan the schema accepts', async () => {
@@ -135,6 +136,41 @@ describe(composePlan, () => {
     ]);
   });
 
+  it('carries no body no file names, a discarded destination taking its bodies with it', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/consult-naming/SKILL.md': '# Consult naming\n',
+      },
+      buildTargets: buildContestedTargets,
+      targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
+    });
+    const plan = composePlan(config, snapshot);
+    const named = new Set(plan.files.flatMap(({ current, planned }) => [current?.hash, planned?.hash]));
+
+    expect(Object.keys(plan.blobs).filter((hash) => !named.has(hash))).toStrictEqual([]);
+  });
+
+  it('leaves a contested destination’s contenders at the status their own content earned', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/consult-naming/SKILL.md': '# Consult naming\n',
+      },
+      buildTargets: buildContestedTargets,
+      targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
+    });
+    const plan = composePlan(config, snapshot);
+
+    expect(plan.artifacts.map(({ id, status }) => [id, status])).toStrictEqual([
+      ['rulebook:naming', 'changed'],
+      ['skill:consult-naming', 'changed'],
+    ]);
+    expect(plan.files.map(({ path, status }) => [path, status])).toStrictEqual([
+      ['skills/consult-naming/SKILL.md', 'unchanged'],
+    ]);
+  });
+
   it('refuses a config whose adopted sources have moved away from the snapshot', async () => {
     const { snapshot } = await captureComposition();
     const remapped = buildConfig([{ id: 'project', sources: { use: [{ name: 'team', path: '/srv/elsewhere' }] } }]);
@@ -148,3 +184,27 @@ describe(composePlan, () => {
     expect(() => composePlan(config, snapshot)).toThrow(StaleSnapshotError);
   });
 });
+
+// region | Helpers
+
+/** Builds a target whose rulebooks deploy under a template among an untemplated kind's own artifacts. */
+function buildContestedTargets(targetRoot: string): ReadonlyArray<RenderTarget> {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return [
+    {
+      ...claude,
+      deployments: [
+        ...claude.deployments.filter((deployment) => deployment.kindId !== 'rulebook'),
+        {
+          form: 'tree',
+          kindId: 'rulebook',
+          layout: { form: 'directory', root: 'skills', entryFile: 'SKILL.md' },
+          nameTemplate: 'consult-{slug}',
+        },
+      ],
+    },
+  ];
+}
+
+// endregion | Helpers

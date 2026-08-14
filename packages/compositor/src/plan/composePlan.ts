@@ -1,12 +1,14 @@
 import { computeClosure } from '../closure/computeClosure.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
+import type { BlobStore } from '../portable/createBlobStore.ts';
 import { createBlobStore } from '../portable/createBlobStore.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
+import type { Blob, FileEntry } from '../schemas/file-schemas.ts';
 import type { PartialEntry } from '../schemas/graph-schemas.ts';
 import type { Plan } from '../schemas/plan-schemas.ts';
 import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
-import type { Id, PartialId } from '../schemas/scalar-schemas.ts';
+import type { Hash, Id, PartialId } from '../schemas/scalar-schemas.ts';
 import type { TargetEntry } from '../schemas/target-schemas.ts';
 import { selectArtifacts } from '../selection/selectArtifacts.ts';
 import type { CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
@@ -60,11 +62,23 @@ export function composePlan(config: CompositorConfig, snapshot: CompositionSnaps
     }),
     partials,
     files: [...assembly.files],
-    blobs: blobs.toTable(),
+    blobs: collectBlobs(assembly.files, blobs),
   };
 }
 
 // region | Helpers
+
+/**
+ * Collects the bodies the plan's files name, leaving behind whatever was registered for a destination none carries.
+ *
+ * A body is registered as its destination is planned, and a destination can still be discarded afterwards: a contested
+ * one collapses into a single blocked entry naming neither of the bodies computed for it. Deriving the table from the
+ * files is what makes `contentAvailability: 'complete'` exactly their bodies and nothing besides.
+ */
+function collectBlobs(files: ReadonlyArray<FileEntry>, blobs: BlobStore): Record<Hash, Blob> {
+  const named = new Set(files.flatMap((file) => [file.current?.hash, file.planned?.hash]));
+  return Object.fromEntries(Object.entries(blobs.toTable()).filter(([hash]) => named.has(hash)));
+}
 
 /**
  * Collects the partials a plan carries: those the closure's token edges name, and those transclusion drew into a file.
