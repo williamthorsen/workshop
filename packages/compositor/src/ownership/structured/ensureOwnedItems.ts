@@ -44,7 +44,7 @@ export function ensureOwnedItems(
     return { content: document.serialize() };
   }
 
-  const merged = spliceOwned(located.items, desired, (item) => isOwned(document, item, spec));
+  const merged = spliceOwned(located.items, desired, (item) => carriesSentinel(document.toPlain(item), spec.sentinel));
   if (readsIdentically(document, located.items, merged)) {
     return { content };
   }
@@ -53,11 +53,6 @@ export function ensureOwnedItems(
 }
 
 // region | Helpers
-
-/** True when the item carries the spec's sentinel, read through whatever form its document holds it in. */
-function isOwned(document: DocumentAccess, item: ItemHandle, spec: OwnedItemsSpec): boolean {
-  return carriesSentinel(document.toPlain(item), spec.sentinel);
-}
 
 /** True when two item lists carry the same data, which is how an ensure pass recognizes it has nothing to do. */
 function readsIdentically(
@@ -80,16 +75,16 @@ function renderItems(document: DocumentAccess, items: ReadonlyArray<ItemHandle>)
 function spliceOwned(
   current: ReadonlyArray<ItemHandle>,
   desired: ReadonlyArray<ItemHandle>,
-  isOwnedItem: (item: ItemHandle) => boolean,
+  carriesOwnership: (item: ItemHandle) => boolean,
 ): ReadonlyArray<ItemHandle> {
-  const firstOwned = current.findIndex((item) => isOwnedItem(item));
+  const firstOwned = current.findIndex((item) => carriesOwnership(item));
   if (firstOwned === -1) {
     return [...current, ...desired];
   }
   return [
     ...current.slice(0, firstOwned),
     ...desired,
-    ...current.slice(firstOwned + 1).filter((item) => !isOwnedItem(item)),
+    ...current.slice(firstOwned + 1).filter((item) => !carriesOwnership(item)),
   ];
 }
 
