@@ -7,8 +7,8 @@ import { PlanSchema } from '../../schemas/plan-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
 import { composePlan } from '../composePlan.ts';
-import { captureComposition } from '../test-utils/captureComposition.ts';
-import { buildOverlappingTargets, HOST_PATH } from '../test-utils/composition-fixture.ts';
+import { captureComposition } from '../../test-utils/captureComposition.ts';
+import { buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
 
 describe(composePlan, () => {
   it('composes a plan the schema accepts', async () => {

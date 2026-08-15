@@ -1,9 +1,9 @@
-import type { CompositorConfig } from '../../schemas/config-schemas.ts';
-import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
-import type { CaptureSnapshotInput, CompositionSnapshot } from '../../snapshot/captureSnapshot.ts';
-import { captureSnapshot } from '../../snapshot/captureSnapshot.ts';
-import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
+import type { CompositorConfig } from '../schemas/config-schemas.ts';
+import type { RenderTarget } from '../schemas/render-target-schemas.ts';
+import type { CaptureSnapshotInput, CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
+import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
+import { buildConfig } from './buildConfig.ts';
+import { buildTempTree } from './buildTempTree.ts';
 import { buildClaudeTarget, buildCompositionSourceFiles, COMPOSITION_KINDS } from './composition-fixture.ts';
 
 /** A captured composition, with the config it answers and the directories it was captured over. */

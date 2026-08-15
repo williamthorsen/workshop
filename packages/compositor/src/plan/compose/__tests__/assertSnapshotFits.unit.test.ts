@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { StaleSnapshotError } from '../../../config/StaleSnapshotError.ts';
 import { buildConfig } from '../../../test-utils/buildConfig.ts';
 import { buildTempTree } from '../../../test-utils/buildTempTree.ts';
-import { captureComposition } from '../../test-utils/captureComposition.ts';
+import { captureComposition } from '../../../test-utils/captureComposition.ts';
 import { assertSnapshotFits } from '../assertSnapshotFits.ts';
 
 describe(assertSnapshotFits, () => {

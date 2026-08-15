@@ -7,8 +7,8 @@ import type { BlobStore } from '../../../portable/createBlobStore.ts';
 import { createBlobStore } from '../../../portable/createBlobStore.ts';
 import type { Blob, FileEntry } from '../../../schemas/file-schemas.ts';
 import { selectArtifacts } from '../../../selection/selectArtifacts.ts';
-import type { CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
-import { captureComposition } from '../../test-utils/captureComposition.ts';
+import type { CaptureCompositionOptions } from '../../../test-utils/captureComposition.ts';
+import { captureComposition } from '../../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
   buildCompositionSourceFiles,
@@ -16,7 +16,7 @@ import {
   COMPOSITION_KINDS,
   HOST_PATH,
   REGION_MARKERS,
-} from '../../test-utils/composition-fixture.ts';
+} from '../../../test-utils/composition-fixture.ts';
 import type { FileAssembly } from '../assembleFiles.ts';
 import { assembleFiles } from '../assembleFiles.ts';
 import { assertSnapshotFits } from '../assertSnapshotFits.ts';
