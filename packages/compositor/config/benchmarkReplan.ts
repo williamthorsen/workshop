@@ -164,6 +164,12 @@ function dropSkill(config: CompositorConfig, index: number): CompositorConfig {
   };
 }
 
+/** Reads one percentile out of an ascending list of durations. */
+function percentile(sorted: ReadonlyArray<number>, fraction: number): number {
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
+  return sorted[index] ?? NaN;
+}
+
 /** Reads one count argument, refusing anything that is not a positive whole number. */
 function readCount(value: string, name: string): number {
   const count = Number(value);
@@ -191,12 +197,6 @@ function report(size: Size, captureMs: number, durations: ReadonlyArray<number>)
       '',
     ].join('\n'),
   );
-}
-
-/** Reads one percentile out of an ascending list of durations. */
-function percentile(sorted: ReadonlyArray<number>, fraction: number): number {
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
-  return sorted[index] ?? NaN;
 }
 
 /** How large a workspace the benchmark builds, and how many times it replans over it. */

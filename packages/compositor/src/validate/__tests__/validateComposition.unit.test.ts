@@ -6,7 +6,7 @@ import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import type { CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
-import { buildClaudeTarget, buildOverlappingTargets } from '../../test-utils/composition-fixture.ts';
+import { buildClaudeTarget, buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
 import { validateComposition } from '../validateComposition.ts';
 
 const MARKDOWN_LINK = String.raw`\[[^\]]*\]\(([^)]+)\)`;
@@ -142,6 +142,48 @@ describe(validateComposition, () => {
     ]);
   });
 
+  it('reports a tree destination landing on a region host, which the host itself never collides with', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: { 'rulebooks/naming.md': 'Name things well.\n', 'subagents/CLAUDE.md': '# Claude\n' },
+      select: { rulebook: { use: [{ source: 'team' }] }, subagent: { use: [{ source: 'team' }] } },
+      buildTargets: (targetRoot) => [buildHostCollidingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'deployment',
+        diagnostic: {
+          code: 'destination-collision',
+          message: expect.stringContaining('undecidable'),
+          at: { targetId: 'claude', path: HOST_PATH, artifactIds: ['rulebook:naming', 'subagent:CLAUDE'] },
+        },
+      },
+    ]);
+  });
+
+  it('orders collisions by target id, not by the order a config declared its targets in', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/consult-naming/SKILL.md': '# Consult naming\n',
+      },
+      select: { rulebook: { use: [{ source: 'team' }] }, skill: { use: [{ source: 'team' }] } },
+      buildTargets: (targetRoot) =>
+        buildOverlappingTargets(targetRoot).flatMap((target) => [
+          { ...target, id: 'zulu', label: 'Zulu' },
+          { ...target, id: 'alpha', label: 'Alpha' },
+        ]),
+    });
+
+    const { diagnostics } = validateComposition(config, snapshot);
+    const collidingAt = diagnostics.flatMap((entry) =>
+      entry.domain === 'deployment' ? [entry.diagnostic.at.targetId] : [],
+    );
+
+    expect(diagnostics.map(({ domain }) => domain)).toStrictEqual(['deployment', 'deployment']);
+    expect(collidingAt).toStrictEqual(['alpha', 'zulu']);
+  });
+
   it('reports the same faults whether or not the destination was scanned', async () => {
     const faulty: CaptureCompositionOptions = {
       sourceFiles: {
@@ -190,6 +232,19 @@ function buildRewritingTarget(targetRoot: string): RenderTarget {
     ...claude,
     tokenMappings: [{ kindId: 'tool', entries: [{ from: 'Read', to: 'view' }] }],
     stages: [...claude.stages, { kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }],
+  };
+}
+
+/** Builds a target whose subagents deploy at its root, so one of them lands on the host its rulebooks aggregate into. */
+function buildHostCollidingTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return {
+    ...claude,
+    deployments: [
+      ...claude.deployments.filter((deployment) => deployment.kindId === 'rulebook'),
+      { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
+    ],
   };
 }
 

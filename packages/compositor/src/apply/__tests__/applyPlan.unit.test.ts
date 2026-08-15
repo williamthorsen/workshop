@@ -127,6 +127,36 @@ describe(applyPlan, () => {
     await expect(statIfPresent(path.join(targetRoot, 'skills/retired'))).resolves.toBeDefined();
   });
 
+  it('finds the removal already done the second time, taking no directory a second time either', async () => {
+    const { config, snapshot, targetRoot } = await captureComposition({
+      sourceFiles: { 'rulebooks/naming.md': 'Name things well.\n' },
+      targetFiles: { 'skills/retired/SKILL.md': '# Retired\n' },
+    });
+    const plan = composePlan(config, snapshot);
+
+    await applyPlan(plan, { baseDir: targetRoot });
+    const second = await applyPlan(plan, { baseDir: targetRoot });
+
+    expect(second.files.map(({ action }) => action)).toStrictEqual(second.files.map(() => 'unchanged'));
+    expect(second.prunedDirs).toStrictEqual([]);
+    await expect(statIfPresent(path.join(targetRoot, 'skills'))).resolves.toBeDefined();
+  });
+
+  it('removes a destination that moved when forced', async () => {
+    const { config, snapshot, targetRoot } = await captureComposition({
+      sourceFiles: { 'rulebooks/naming.md': 'Name things well.\n' },
+      targetFiles: { 'skills/retired/SKILL.md': '# Retired\n' },
+    });
+    const plan = composePlan(config, snapshot);
+    await writeFile(path.join(targetRoot, 'skills/retired/SKILL.md'), '# Edited by hand\n');
+
+    const outcome = await applyPlan(plan, { baseDir: targetRoot, force: true });
+
+    expect(findAction(outcome.files, 'skills/retired/SKILL.md')).toBe('removed');
+    expect(outcome.prunedDirs).toStrictEqual([{ targetId: 'claude', path: 'skills/retired' }]);
+    await expect(statIfPresent(path.join(targetRoot, 'skills/retired'))).resolves.toBeUndefined();
+  });
+
   it('decides every action in a dry run and writes none of them', async () => {
     const { config, snapshot, targetRoot } = await captureComposition({
       sourceFiles: { 'rulebooks/naming.md': 'Name things well.\n', 'skills/lint/SKILL.md': '# Lint\n' },
@@ -159,6 +189,41 @@ describe(applyPlan, () => {
     expect(findAction(outcome.files, 'skills/retired/SKILL.md')).toBe('removed');
     expect(outcome.prunedDirs).toStrictEqual([]);
     await expect(statIfPresent(path.join(targetRoot, 'skills/retired'))).resolves.toBeDefined();
+  });
+
+  it('keeps a directory it empties and writes into, in a dry run as in the run itself', async () => {
+    const targetRoot = await buildTempTree({ 'skills/foo/SKILL.md': '# Foo\n' }, 'compositor-target');
+    const plan = buildPlan();
+    const emptied: Plan = {
+      ...plan,
+      targets: [{ id: 'claude', label: 'Claude', root: targetRoot, tokenMappings: [], containerDirs: ['skills'] }],
+      files: [
+        {
+          targetId: 'claude',
+          path: 'skills/foo/SKILL.md',
+          status: 'removed',
+          ownership: { kind: 'full' },
+          current: { hash: hashUtf8('# Foo\n') },
+          contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
+        },
+        {
+          targetId: 'claude',
+          path: 'skills/foo/AGENT.md',
+          status: 'added',
+          ownership: { kind: 'full' },
+          planned: { hash: PLANNED_HASH },
+          contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
+        },
+      ],
+      blobs: { [PLANNED_HASH]: { encoding: 'utf8', data: PLANNED_BODY } },
+    };
+
+    const dry = await applyPlan(emptied, { baseDir: targetRoot, dryRun: true });
+    const real = await applyPlan(emptied, { baseDir: targetRoot });
+
+    expect(dry.prunedDirs).toStrictEqual([]);
+    expect(dry.prunedDirs).toStrictEqual(real.prunedDirs);
+    await expect(statIfPresent(path.join(targetRoot, 'skills/foo/AGENT.md'))).resolves.toBeDefined();
   });
 
   it('passes over a blocked destination, which no force overrides', async () => {
@@ -247,6 +312,23 @@ describe(applyPlan, () => {
     });
 
     await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/no root resolves for it/);
+  });
+
+  it.each([
+    ['a path climbing out of the target', '../../.ssh/config'],
+    ['an absolute path', '/etc/hosts'],
+  ])('refuses %s, leaving what stands outside the target alone', async (_label, escaping) => {
+    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
+    const plan = buildSingleFilePlan(targetRoot, {
+      targetId: 'claude',
+      path: escaping,
+      status: 'added',
+      ownership: { kind: 'full' },
+      planned: { hash: PLANNED_HASH },
+      contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
+    });
+
+    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/inside the target's root/);
   });
 
   it('refuses entries ownership, which it would write whole, before writing the files beside it', async () => {

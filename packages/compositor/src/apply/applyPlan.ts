@@ -53,31 +53,24 @@ export async function applyPlan(plan: Plan, options: ApplyPlanOptions): Promise<
   const roots = new Map(plan.targets.map((target) => [target.id, expandPath(target.root, options.baseDir)]));
 
   const files: Array<AppliedFile> = [];
-  const removed = new Map<TargetId, Set<string>>();
+  const touched = new Map<TargetId, TouchedPaths>();
 
   for (const file of plan.files) {
     const root = requireRoot(roots, file);
     const applied = await applyFile({ blobs: plan.blobs, dryRun, file, force, root });
     files.push(applied);
 
-    if (applied.action === 'removed') {
-      removed.set(file.targetId, (removed.get(file.targetId) ?? new Set<string>()).add(file.path));
+    if (applied.action === 'removed' || applied.action === 'written') {
+      const paths = touched.get(file.targetId) ?? { removed: new Set<string>(), written: new Set<string>() };
+      paths[applied.action === 'removed' ? 'removed' : 'written'].add(file.path);
+      touched.set(file.targetId, paths);
     }
   }
 
-  return { fingerprint: plan.fingerprint, dryRun, files, prunedDirs: await pruneEmptied(plan, roots, removed, dryRun) };
+  return { fingerprint: plan.fingerprint, dryRun, files, prunedDirs: await pruneEmptied(plan, roots, touched, dryRun) };
 }
 
 // region | Helpers
-
-/** What applying one of a plan's files needs. */
-interface ApplyFileInput {
-  readonly blobs: Record<Hash, Blob>;
-  readonly dryRun: boolean;
-  readonly file: FileEntry;
-  readonly force: boolean;
-  readonly root: string;
-}
 
 /** Brings one destination to what the plan says it should hold, or reports why it was left as it is. */
 async function applyFile(input: ApplyFileInput): Promise<AppliedFile> {
@@ -117,6 +110,15 @@ async function applyFile(input: ApplyFileInput): Promise<AppliedFile> {
   return recordFile(file, 'written', file.planned.hash);
 }
 
+/** What applying one of a plan's files needs. */
+interface ApplyFileInput {
+  readonly blobs: Record<Hash, Blob>;
+  readonly dryRun: boolean;
+  readonly file: FileEntry;
+  readonly force: boolean;
+  readonly root: string;
+}
+
 /** States what a destination holds against what the plan recorded of it. */
 function describeDrift(file: FileEntry, held: Hash | undefined): string {
   const recorded = file.current === undefined ? 'nothing' : `"${file.current.hash}"`;
@@ -149,20 +151,25 @@ function isPopulatedDir(error: unknown): boolean {
 async function pruneEmptied(
   plan: Plan,
   roots: ReadonlyMap<TargetId, string>,
-  removed: ReadonlyMap<TargetId, ReadonlySet<string>>,
+  touched: ReadonlyMap<TargetId, TouchedPaths>,
   dryRun: boolean,
 ): Promise<Array<PrunedDirectory>> {
   const pruned: Array<PrunedDirectory> = [];
 
   for (const target of plan.targets) {
     const root = roots.get(target.id);
-    const paths = removed.get(target.id);
+    const paths = touched.get(target.id);
     // A target stating no container directories leaves the climb unbounded, so every directory it holds stands.
     if (root === undefined || paths === undefined || target.containerDirs === undefined) {
       continue;
     }
 
-    const dirs = await collectPrunableDirs({ root, removed: paths, containerDirs: new Set(target.containerDirs) });
+    const dirs = await collectPrunableDirs({
+      root,
+      removed: paths.removed,
+      written: paths.written,
+      containerDirs: new Set(target.containerDirs),
+    });
     for (const dir of dirs) {
       if (dryRun || (await removeDir(path.join(root, dir)))) {
         pruned.push({ targetId: target.id, path: dir });
@@ -214,6 +221,12 @@ function requireRoot(roots: ReadonlyMap<TargetId, string>, file: FileEntry): str
     throw new Error(`Plan carries no target "${file.targetId}", which "${file.path}" is deployed to.`);
   }
   return root;
+}
+
+/** The destinations one target's run acted on, which decide which of its directories are left empty. */
+interface TouchedPaths {
+  readonly removed: Set<string>;
+  readonly written: Set<string>;
 }
 
 // endregion | Helpers

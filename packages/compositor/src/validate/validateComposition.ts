@@ -1,6 +1,7 @@
 import { computeClosure } from '../closure/computeClosure.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
+import type { RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { ArtifactId } from '../schemas/scalar-schemas.ts';
 import { selectArtifacts } from '../selection/selectArtifacts.ts';
 import { assertSourcesFit } from '../snapshot/assertSourcesFit.ts';
@@ -34,17 +35,17 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
   const selection = selectArtifacts(config, snapshot.catalog);
   const closure = computeClosure({ graph: snapshot.edgeGraph, selection, tiers });
   const reached = new Set(closure.artifacts.map(({ id }) => id));
+  // Both collectors read one ordering, so neither reports in the order a consumer happened to declare its targets in.
+  const targets = snapshot.targets.toSorted((left, right) => compareStrings(left.id, right.id));
 
   return {
     diagnostics: [
       ...selection.diagnostics.map((diagnostic) => ({ domain: 'selection' as const, diagnostic })),
       ...closure.diagnostics.map((diagnostic) => ({ domain: 'closure' as const, diagnostic })),
-      ...collectRenderDiagnostics(snapshot, reached),
-      ...findDeploymentCollisions({
-        artifacts: closure.artifacts,
-        kinds: closure.kinds,
-        targets: snapshot.targets,
-      }).map((diagnostic) => ({ domain: 'deployment' as const, diagnostic })),
+      ...collectRenderDiagnostics(snapshot.renders, targets, reached),
+      ...findDeploymentCollisions({ artifacts: closure.artifacts, kinds: closure.kinds, targets }).map(
+        (diagnostic) => ({ domain: 'deployment' as const, diagnostic }),
+      ),
     ],
   };
 }
@@ -53,13 +54,12 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
 
 /** Collects what every render of a reached artifact could not resolve, by target and then by artifact. */
 function collectRenderDiagnostics(
-  snapshot: CompositionSnapshot,
+  renders: CompositionSnapshot['renders'],
+  targets: ReadonlyArray<RenderTarget>,
   reached: ReadonlySet<ArtifactId>,
 ): Array<ValidationDiagnostic> {
-  const targetIds = snapshot.targets.map(({ id }) => id).toSorted(compareStrings);
-
-  return targetIds.flatMap((targetId): Array<ValidationDiagnostic> => {
-    const column = snapshot.renders.get(targetId);
+  return targets.flatMap(({ id: targetId }): Array<ValidationDiagnostic> => {
+    const column = renders.get(targetId);
     if (column === undefined) {
       return [];
     }

@@ -185,7 +185,7 @@ A deployment with nowhere to put what an artifact ships beside its entry file pl
 
 Every destination is read, one the plan calls unchanged included, so a file that moved after the plan was composed reports as drift rather than as a quiet success. Nothing is written for it either way.
 
-`force` writes over drift. It never overrides a block: a destination whose content the plan could not compute, or whose provenance is undecidable from shape, is not made decidable by a flag. `dryRun` runs the identical walk and writes nothing. Emptiness is computed from the destinations a run removes rather than observed after removing them, so a dry run and the run that follows it record the same actions without a second code path kept in step.
+`force` writes over drift. It never overrides a block: a destination whose content the plan could not compute, or whose provenance is undecidable from shape, is not made decidable by a flag. `dryRun` runs the identical walk and writes nothing. Emptiness is computed from what a run removes and what it writes rather than observed after the fact, so a dry run and the run that follows it record the same actions without a second code path kept in step.
 
 **A region host is written whole**, its planned body being the host with the owned region injected into it, so an edit elsewhere in that host reads as drift like any other. Re-injecting the region into the drifted host is possible from the plan alone, the file's ownership carrying the markers, and it is the wrong answer: the plan shows the bytes that will be written, and a host's own content is among the inputs the fingerprint covers precisely because planned content is derived from it. A moved host is what capturing afresh answers.
 
