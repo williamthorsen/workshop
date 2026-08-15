@@ -6,10 +6,10 @@ import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { PlanSchema } from '../../schemas/plan-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
-import { composePlan } from '../composePlan.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
 import { buildClaudeTarget, buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
+import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
+import { composePlan } from '../composePlan.ts';
 
 describe(composePlan, () => {
   it('composes a plan the schema accepts', async () => {

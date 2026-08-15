@@ -38,9 +38,9 @@ export const TokenMappingSchema = z
  * relative to `root`, in lexicographic order. They precede the composition and outlive it, which is the one thing a
  * directory tree carries that a list of file paths cannot: a reader clearing an artifact's own directory away has to
  * know where to stop, and the artifact directories under `skills` go where `skills` itself stays. The target's root is
- * not among them, being held by every target. Absent means a plan that does not state them, which a reader takes as
- * knowing of none rather than as there being none. The engine derives the list at compose time, so a declaration
- * stating one has no effect on the plan composed from it.
+ * not among them, being held by every target. Absent means a plan that does not state them: a reader whose reach they
+ * bound has no bound at all then, and leaves every directory standing rather than reading the silence as licence. The
+ * engine derives the list at compose time, so a declaration stating one has no effect on the plan composed from it.
  */
 export const TargetEntrySchema = z
   .object({
