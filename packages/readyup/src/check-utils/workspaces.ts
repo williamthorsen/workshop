@@ -10,15 +10,15 @@ import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 /** A monorepo workspace, or the single workspace of a single-workspace repo. */
 export interface Workspace {
   /** Workspace directory, relative to `cwd`. `'.'` for a single-workspace repo. */
-  dir: string;
+  readonly dir: string;
   /** Absolute filesystem path to the workspace directory. */
-  absolutePath: string;
+  readonly absolutePath: string;
   /** `name` from the workspace's `package.json`; `undefined` if absent. */
-  name: string | undefined;
+  readonly name: string | undefined;
   /** True iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
-  isPackage: boolean;
+  readonly isPackage: boolean;
   /** Parsed `package.json` contents, validated to be a record. */
-  packageJson: Record<string, unknown>;
+  readonly packageJson: Readonly<Record<string, unknown>>;
 }
 
 /** Options for `discoverWorkspaces`. */
@@ -50,7 +50,7 @@ const workspacesByCwd = new Map<string, Workspace[]>();
  * and falls back to a single-workspace repo using the root `package.json`.
  *
  * Memoized per `cwd` for the life of the process: repeated calls in one run share a single directory walk
- * and the `Workspace` objects it built, and none of them observes a filesystem change made since the first.
+ * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
  * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
  */
 export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspace[] {
@@ -238,7 +238,18 @@ function buildWorkspaceFromPackageJson(
   const nameValue = packageJson['name'];
   const name = typeof nameValue === 'string' ? nameValue : undefined;
   const isPackage = packageJson['private'] !== true;
-  return { dir: relDir, absolutePath, name, isPackage, packageJson };
+  // One call's mutation would otherwise reach every later call, which shares these objects.
+  deepFreeze(packageJson);
+  return Object.freeze({ dir: relDir, absolutePath, name, isPackage, packageJson });
+}
+
+/** Freezes a parsed JSON value and every value reachable from it. */
+function deepFreeze(value: unknown): void {
+  if (value === null || typeof value !== 'object') return;
+  Object.freeze(value);
+  for (const nested of Object.values(value)) {
+    deepFreeze(nested);
+  }
 }
 
 // endregion | Helpers
