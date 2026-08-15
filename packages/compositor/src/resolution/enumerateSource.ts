@@ -9,7 +9,7 @@ import { statIfPresent } from '../portable/statIfPresent.ts';
 import { toPosix } from '../portable/toPosix.ts';
 import type { ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { Hash, KindId } from '../schemas/scalar-schemas.ts';
-import { isArtifactName } from './isArtifactName.ts';
+import { namesAnArtifact } from './namesAnArtifact.ts';
 
 /** One artifact a source carries, located and digested within that source. */
 export interface SourceArtifact {
@@ -44,7 +44,7 @@ export async function enumerateSource(
 /** Enumerates every artifact of one kind under `sourceDir`, ordered by slug. */
 async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Array<SourceArtifact>> {
   const rootDir = path.join(sourceDir, kind.layout.root);
-  const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
+  const names = (await readDirNames(rootDir)).filter((name) => namesAnArtifact(name));
 
   const artifacts = await Promise.all(names.map((name) => readArtifact(rootDir, name, kind)));
   return artifacts

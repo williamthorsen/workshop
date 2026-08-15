@@ -1,7 +1,7 @@
 import type { Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 
-import { isMissingFile } from './isMissingFile.ts';
+import { reportsMissingPath } from './reportsMissingPath.ts';
 
 /**
  * Reads the stats of `filePath`, or nothing when it is absent.
@@ -13,7 +13,7 @@ export async function statIfPresent(filePath: string): Promise<Stats | undefined
   try {
     return await stat(filePath);
   } catch (error: unknown) {
-    if (isMissingFile(error)) {
+    if (reportsMissingPath(error)) {
       return undefined;
     }
     throw error;

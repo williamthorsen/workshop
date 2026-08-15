@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises';
 
-import { isMissingFile } from '../portable/isMissingFile.ts';
+import { reportsMissingPath } from '../portable/reportsMissingPath.ts';
 import type { SourceSpec } from '../schemas/catalog-schemas.ts';
 
 /**
@@ -14,7 +14,7 @@ export async function assertSourceIsReadable(source: SourceSpec): Promise<void> 
   try {
     entry = await stat(source.dir);
   } catch (error: unknown) {
-    if (isMissingFile(error)) {
+    if (reportsMissingPath(error)) {
       throw new Error(`Source "${source.name}" points at "${source.dir}", which does not exist.`, { cause: error });
     }
     throw error;

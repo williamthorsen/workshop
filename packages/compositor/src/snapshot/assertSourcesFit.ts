@@ -46,7 +46,7 @@ function findMove(captured: ReadonlyArray<SourceSpec>, folded: ReadonlyArray<Sou
     if (after === undefined) {
       return `no longer adopts ${describeSource(before)}`;
     }
-    if (!isSameSource(before, after)) {
+    if (!namesOneSource(before, after)) {
       return `has ${describeSource(after)} where the snapshot has ${describeSource(before)}`;
     }
   }
@@ -54,7 +54,7 @@ function findMove(captured: ReadonlyArray<SourceSpec>, folded: ReadonlyArray<Sou
 }
 
 /** Reports whether two specs name one source, resolved the same way from the same declaration. */
-function isSameSource(left: SourceSpec, right: SourceSpec): boolean {
+function namesOneSource(left: SourceSpec, right: SourceSpec): boolean {
   return (
     left.id === right.id &&
     left.name === right.name &&

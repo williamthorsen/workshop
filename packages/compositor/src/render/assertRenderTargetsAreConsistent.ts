@@ -9,7 +9,7 @@ import type { Violation } from '../consistency/Violation.ts';
 import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
 import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
-import { isArtifactName } from '../resolution/isArtifactName.ts';
+import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
 import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 
@@ -159,7 +159,7 @@ function collectNameTemplateFaults(template: string | undefined, path: string, v
       path,
       message: `stands no ${SLUG_PLACEHOLDER}, so no name it renders recovers the artifact that deployed it`,
     });
-  } else if (!isArtifactName(head)) {
+  } else if (!namesAnArtifact(head)) {
     violations.push({ path, message: 'renders a support-prefixed name, which a destination scan passes over' });
   }
 }

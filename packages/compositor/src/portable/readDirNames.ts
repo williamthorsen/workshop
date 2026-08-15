@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises';
 
-import { isMissingFile } from './isMissingFile.ts';
+import { reportsMissingPath } from './reportsMissingPath.ts';
 
 /**
  * Lists the entry names directly under `dir`, or none when `dir` is absent.
@@ -12,7 +12,7 @@ export async function readDirNames(dir: string): Promise<Array<string>> {
   try {
     return await readdir(dir);
   } catch (error: unknown) {
-    if (isMissingFile(error)) {
+    if (reportsMissingPath(error)) {
       return [];
     }
     throw error;
