@@ -4,8 +4,8 @@ import path from 'node:path';
 import { compareStrings } from '../portable/compareStrings.ts';
 import { encodeBlob } from '../portable/encodeBlob.ts';
 import { hashBytes } from '../portable/hash-content.ts';
-import { isToolState } from '../portable/isToolState.ts';
 import { listFilesRecursively } from '../portable/listFilesRecursively.ts';
+import { namesToolState } from '../portable/namesToolState.ts';
 import { toPosix } from '../portable/toPosix.ts';
 import type { Blob } from '../schemas/file-schemas.ts';
 import type { Hash } from '../schemas/scalar-schemas.ts';
@@ -36,7 +36,7 @@ export async function readArtifactAssets(
   entryFile: string,
 ): Promise<ReadonlyArray<ArtifactAsset>> {
   const entryPath = toPosix(path.normalize(entryFile));
-  const shipped = await listFilesRecursively(artifactDir, { skipName: isToolState });
+  const shipped = await listFilesRecursively(artifactDir, { skipName: namesToolState });
   const relativePaths = shipped.filter((relativePath) => relativePath !== entryPath).toSorted(compareStrings);
 
   return Promise.all(relativePaths.map((relativePath) => readAsset(artifactDir, relativePath)));

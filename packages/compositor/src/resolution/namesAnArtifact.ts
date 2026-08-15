@@ -8,6 +8,6 @@
  * One rule serves both directions, which is what keeps a destination from claiming a name no source would have
  * enumerated. A kind whose name template renders such a name therefore deploys nothing this rule can claim back.
  */
-export function isArtifactName(name: string): boolean {
+export function namesAnArtifact(name: string): boolean {
   return !name.startsWith('.') && !name.startsWith('_');
 }

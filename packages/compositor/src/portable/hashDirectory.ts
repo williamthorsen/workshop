@@ -4,8 +4,8 @@ import path from 'node:path';
 import type { Hash } from '../schemas/scalar-schemas.ts';
 import { compareStrings } from './compareStrings.ts';
 import { hashBytes, hashUtf8 } from './hash-content.ts';
-import { isToolState } from './isToolState.ts';
 import { listFilesRecursively } from './listFilesRecursively.ts';
+import { namesToolState } from './namesToolState.ts';
 
 /**
  * Hashes everything under `dir`, keying each file by its path within the tree.
@@ -15,7 +15,7 @@ import { listFilesRecursively } from './listFilesRecursively.ts';
  * out as tool state rather than shipped content.
  */
 export async function hashDirectory(dir: string): Promise<Hash> {
-  const relativePaths = (await listFilesRecursively(dir, { skipName: isToolState })).toSorted(compareStrings);
+  const relativePaths = (await listFilesRecursively(dir, { skipName: namesToolState })).toSorted(compareStrings);
   const perFile = await Promise.all(
     relativePaths.map(async (relativePath) => {
       const bytes = await readFile(path.join(dir, relativePath));

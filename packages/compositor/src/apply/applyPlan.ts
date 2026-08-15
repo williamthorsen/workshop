@@ -4,7 +4,7 @@ import path from 'node:path';
 import { decodeBlob } from '../portable/decodeBlob.ts';
 import { expandPath } from '../portable/expandPath.ts';
 import { hashBytes } from '../portable/hash-content.ts';
-import { isMissingFile } from '../portable/isMissingFile.ts';
+import { reportsMissingPath } from '../portable/reportsMissingPath.ts';
 import type { Blob, FileEntry } from '../schemas/file-schemas.ts';
 import type { Plan } from '../schemas/plan-schemas.ts';
 import type { Hash, TargetId } from '../schemas/scalar-schemas.ts';
@@ -132,7 +132,7 @@ async function hashIfPresent(destination: string): Promise<Hash | undefined> {
   try {
     return hashBytes(await readFile(destination));
   } catch (error: unknown) {
-    if (isMissingFile(error)) {
+    if (reportsMissingPath(error)) {
       return undefined;
     }
     throw error;
@@ -197,7 +197,7 @@ async function removeDir(dir: string): Promise<boolean> {
     await rmdir(dir);
     return true;
   } catch (error: unknown) {
-    if (isMissingFile(error) || isPopulatedDir(error)) {
+    if (reportsMissingPath(error) || isPopulatedDir(error)) {
       return false;
     }
     throw error;

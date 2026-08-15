@@ -12,14 +12,14 @@ import { compareStrings } from '../portable/compareStrings.ts';
 import { encodeBlob } from '../portable/encodeBlob.ts';
 import { expandPath } from '../portable/expandPath.ts';
 import { hashBytes, hashUtf8 } from '../portable/hash-content.ts';
-import { isToolState } from '../portable/isToolState.ts';
 import { listFilesRecursively } from '../portable/listFilesRecursively.ts';
+import { namesToolState } from '../portable/namesToolState.ts';
 import { readDirNames } from '../portable/readDirNames.ts';
 import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
 import { statIfPresent } from '../portable/statIfPresent.ts';
 import { toPosix } from '../portable/toPosix.ts';
 import { composeArtifactId } from '../resolution/composeArtifactId.ts';
-import { isArtifactName } from '../resolution/isArtifactName.ts';
+import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { Blob } from '../schemas/file-schemas.ts';
 import type { RegionKindDeployment, RenderTarget, TreeKindDeployment } from '../schemas/render-target-schemas.ts';
 import type { ArtifactId, Hash, KindId, TargetId } from '../schemas/scalar-schemas.ts';
@@ -199,7 +199,7 @@ async function locateClaims(rootDir: string, name: string, deployment: TreeKindD
   }
 
   const artifact = composeClaimedArtifact(kindId, slug);
-  const shipped = await listFilesRecursively(path.join(rootDir, name), { skipName: isToolState });
+  const shipped = await listFilesRecursively(path.join(rootDir, name), { skipName: namesToolState });
   return shipped.map((relativePath) => ({
     path: toPosix(path.join(layout.root, name, relativePath)),
     artifact,
@@ -209,7 +209,7 @@ async function locateClaims(rootDir: string, name: string, deployment: TreeKindD
 /** Locates every file one tree deployment's claim rule matches. */
 async function locateTree(root: string, deployment: TreeKindDeployment): Promise<Array<Claim>> {
   const rootDir = path.join(root, deployment.layout.root);
-  const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
+  const names = (await readDirNames(rootDir)).filter((name) => namesAnArtifact(name));
 
   const located = await Promise.all(names.map((name) => locateClaims(rootDir, name, deployment)));
   return located.flat();
