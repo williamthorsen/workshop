@@ -9,7 +9,7 @@ export { computeClosure } from './closure/computeClosure.ts';
 export type { ArtifactRead, EdgeContribution, EdgeContributor } from './closure/EdgeContributor.ts';
 export type { EdgeGraph } from './closure/EdgeGraph.ts';
 export type { SourceResolution } from './config/foldSourceTiers.ts';
-export { foldSourceTiers, StaleSnapshotError } from './config/foldSourceTiers.ts';
+export { foldSourceTiers } from './config/foldSourceTiers.ts';
 export type { TierFile } from './config/loadConfig.ts';
 export { loadConfig, TierFileSchema } from './config/loadConfig.ts';
 export type { LocatePackageOptions } from './config/locatePackage.ts';
@@ -17,6 +17,7 @@ export { locatePackage } from './config/locatePackage.ts';
 export type { LocateSourcePackagesOptions, PackageLocation } from './config/locateSourcePackages.ts';
 export { locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
+export { StaleSnapshotError } from './config/StaleSnapshotError.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
 export {
   ARTIFACT_ID_PLACEHOLDER,
@@ -55,6 +56,8 @@ export type { PlanViolation } from './plan/assertPlanIsConsistent.ts';
 export { assertPlanIsConsistent, PlanConsistencyError } from './plan/assertPlanIsConsistent.ts';
 export type { TraversalIndex } from './plan/buildTraversalIndex.ts';
 export { buildTraversalIndex } from './plan/buildTraversalIndex.ts';
+export { composePlan } from './plan/composePlan.ts';
+export { computeFingerprint } from './plan/computeFingerprint.ts';
 export type { RenderTargetViolation } from './render/assertRenderTargetsAreConsistent.ts';
 export {
   assertRenderTargetsAreConsistent,
@@ -203,7 +206,13 @@ export type { CaptureSnapshotInput, CompositionSnapshot } from './snapshot/captu
 export { captureSnapshot } from './snapshot/captureSnapshot.ts';
 export type { ArtifactAsset } from './snapshot/readArtifactAssets.ts';
 export { readArtifactAssets } from './snapshot/readArtifactAssets.ts';
-export type { ClaimedFile, HostState, ReadTargetStateOptions, TargetState } from './snapshot/readTargetState.ts';
+export type {
+  ClaimedArtifact,
+  ClaimedFile,
+  HostState,
+  ReadTargetStateOptions,
+  TargetState,
+} from './snapshot/readTargetState.ts';
 export { readTargetState } from './snapshot/readTargetState.ts';
 export type { TokenKindViolation } from './tokens/assertTokenKindsAreConsistent.ts';
 export { assertTokenKindsAreConsistent, TokenKindConsistencyError } from './tokens/assertTokenKindsAreConsistent.ts';

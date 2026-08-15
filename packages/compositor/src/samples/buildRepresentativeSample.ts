@@ -1,3 +1,4 @@
+import { createBlobStore } from '../portable/createBlobStore.ts';
 import type { Plan } from '../schemas/plan-schemas.ts';
 import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 import { buildArtifacts } from './representative/buildArtifacts.ts';
@@ -9,7 +10,6 @@ import { buildSources } from './representative/buildSources.ts';
 import { buildTargets } from './representative/buildTargets.ts';
 import { buildTiers } from './representative/buildTiers.ts';
 import { buildTokenKinds } from './representative/buildTokenKinds.ts';
-import { createBlobStore } from './representative/createBlobStore.ts';
 
 /**
  * Builds a plan exercising every shape the contract has to carry.

@@ -3,7 +3,13 @@ import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { Plan } from '../../schemas/plan-schemas.ts';
 import type { DiffStatus } from '../../schemas/scalar-schemas.ts';
 
-/** Reports each file whose recorded status disagrees with the sides it carries. */
+/**
+ * Reports each file whose recorded status disagrees with the sides it carries.
+ *
+ * A block on an unchanged file is not one of those disagreements. A destination whose planned content could not be
+ * computed -- a render that failed, a region host whose markers are damaged -- stands at the body it holds, and the
+ * block is the whole record of why nothing will be written there.
+ */
 export function findStatusDisagreements(plan: Plan): Array<Violation> {
   const violations: Array<Violation> = [];
   for (const [index, file] of plan.files.entries()) {
@@ -14,12 +20,6 @@ export function findStatusDisagreements(plan: Plan): Array<Violation> {
       violations.push({
         path: `files[${index}].status`,
         message: `is "${file.status}", but its sides describe "${implied}"`,
-      });
-    }
-    if (file.blocked !== undefined && file.status === 'unchanged') {
-      violations.push({
-        path: `files[${index}].blocked`,
-        message: 'is set on a file that would not be written anyway',
       });
     }
   }

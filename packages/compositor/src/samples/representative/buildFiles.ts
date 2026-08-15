@@ -1,5 +1,5 @@
+import type { BlobStore } from '../../portable/createBlobStore.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
-import type { BlobStore } from './createBlobStore.ts';
 import {
   AUDITOR_CURRENT,
   AUDITOR_PLANNED,

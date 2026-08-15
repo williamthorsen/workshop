@@ -5,6 +5,7 @@ import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { SourceOrigin } from '../schemas/descriptor-schemas.ts';
 import { composeLocationKey } from './composeLocationKey.ts';
 import type { PackageLocation } from './locateSourcePackages.ts';
+import { StaleSnapshotError } from './StaleSnapshotError.ts';
 
 /** The sources a config declares, and the names it turned down. */
 export interface SourceResolution {
@@ -17,25 +18,6 @@ export interface SourceResolution {
    * advisory scan stay quiet about the former.
    */
   readonly declined: ReadonlyArray<string>;
-}
-
-/** Raised when a config adopts a package the supplied locations never saw. */
-export class StaleSnapshotError extends Error {
-  override readonly name = 'StaleSnapshotError';
-
-  /** The package name that went unanswered. */
-  readonly package: string;
-  /** The base directory it would have been located from. */
-  readonly baseDir: string;
-
-  constructor(details: { source: string; tier: string; package: string; baseDir: string }) {
-    super(
-      `Source "${details.source}", declared by tier "${details.tier}": package "${details.package}" has no location ` +
-        'in the locations supplied. Locate the packages again, which a config naming one it did not name before needs.',
-    );
-    this.package = details.package;
-    this.baseDir = details.baseDir;
-  }
 }
 
 /**
@@ -97,7 +79,11 @@ function buildSpec(name: string, folded: FoldedSource, located: ReadonlyMap<stri
 
   const location = located.get(composeLocationKey(baseDir, origin.location));
   if (location === undefined) {
-    throw new StaleSnapshotError({ source: name, tier: label, package: origin.location, baseDir });
+    throw new StaleSnapshotError(
+      `Source "${name}", declared by tier "${label}": package "${origin.location}" has no location ` +
+        'in the locations supplied. Locate the packages again, which a config naming one it did not name before needs.',
+      { package: origin.location, baseDir },
+    );
   }
   if (location.outcome === 'failed') {
     throw new Error(`Source "${name}", declared by tier "${label}": ${location.reason}`);

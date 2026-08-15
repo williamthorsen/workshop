@@ -2,9 +2,9 @@ import { Buffer } from 'node:buffer';
 
 import { describe, expect, it } from 'vitest';
 
-import { compareStrings } from '../../../portable/compareStrings.ts';
-import { hashBytes, hashUtf8 } from '../../../portable/hash-content.ts';
+import { compareStrings } from '../compareStrings.ts';
 import { createBlobStore } from '../createBlobStore.ts';
+import { hashBytes, hashUtf8 } from '../hash-content.ts';
 
 describe(createBlobStore, () => {
   it('addresses a UTF-8 body by the digest of its bytes', () => {
@@ -27,6 +27,14 @@ describe(createBlobStore, () => {
 
     expect(side).toStrictEqual({ hash: hashBytes(data) });
     expect(blobs.toTable()[side.hash]).toStrictEqual({ encoding: 'base64', data: 'iVBORw==' });
+  });
+
+  it('registers a body already encoded under the hash it was read with', () => {
+    const blobs = createBlobStore();
+    const side = blobs.addEncoded('sha256:read-from-disk', { encoding: 'base64', data: 'iVBORw==' });
+
+    expect(side).toStrictEqual({ hash: 'sha256:read-from-disk' });
+    expect(blobs.toTable()['sha256:read-from-disk']).toStrictEqual({ encoding: 'base64', data: 'iVBORw==' });
   });
 
   it('emits its entries in hash order, whatever order they were registered in', () => {

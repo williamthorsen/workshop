@@ -25,10 +25,23 @@ import type { RegionKindDeployment, RenderTarget, TreeKindDeployment } from '../
 import type { ArtifactId, Hash, KindId, TargetId } from '../schemas/scalar-schemas.ts';
 
 /**
+ * One artifact a claim recovers, carrying the parts its id was composed from.
+ *
+ * The kind and the slug ride along rather than being split back out of the id, which the contract calls opaque. They
+ * are what lets a consumer describe an artifact deleted from every source, the case a catalog can no longer answer and
+ * the one this whole scan exists to reach.
+ */
+export interface ClaimedArtifact {
+  readonly id: ArtifactId;
+  readonly kindId: KindId;
+  readonly slug: string;
+}
+
+/**
  * One file a target holds that the engine deployed there, and the artifacts its position and name recover.
  *
- * `artifactIds` carries more than one where two deployments' claim rules both match the path, which two kinds rooted at
- * one directory produce and no declaration resolves: a kind deploying under a template lands its artifacts among an
+ * `claims` carries more than one where two deployments' claim rules both match the path, which two kinds rooted at one
+ * directory produce and no declaration resolves: a kind deploying under a template lands its artifacts among an
  * untemplated kind's, and a name fitting both templates came from either. Which artifact it came from is undecidable
  * from shape, so a consumer authorizing a write or a deletion has to refuse the path rather than pick.
  */
@@ -36,7 +49,7 @@ export interface ClaimedFile {
   /** Posix-separated and relative to the target's root. */
   readonly path: string;
   /** Ordered by id. */
-  readonly artifactIds: ReadonlyArray<ArtifactId>;
+  readonly claims: ReadonlyArray<ClaimedArtifact>;
   readonly hash: Hash;
   readonly body: Blob;
 }
@@ -130,16 +143,12 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
 /** One file one deployment's claim rule matched, before the matches across deployments are gathered per path. */
 interface Claim {
   readonly path: string;
-  readonly artifactId: ArtifactId;
+  readonly artifact: ClaimedArtifact;
 }
 
-/** Locates every file one tree deployment's claim rule matches. */
-async function locateTree(root: string, deployment: TreeKindDeployment): Promise<Array<Claim>> {
-  const rootDir = path.join(root, deployment.layout.root);
-  const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
-
-  const located = await Promise.all(names.map((name) => locateClaims(rootDir, name, deployment)));
-  return located.flat();
+/** Builds the record a claim recovers: the composed id, beside the parts it was composed from. */
+function composeClaimedArtifact(kindId: KindId, slug: string): ClaimedArtifact {
+  return { id: composeArtifactId(kindId, slug), kindId, slug };
 }
 
 /** Digests a target's state over the sorted path-and-hash pairs of everything it holds, so scan order cannot reach it. */
@@ -180,7 +189,7 @@ async function locateClaims(rootDir: string, name: string, deployment: TreeKindD
     const slug = invertDeployedName(nameTemplate, name.slice(0, name.length - layout.extension.length));
     return slug === undefined
       ? []
-      : [{ path: toPosix(path.join(layout.root, name)), artifactId: composeArtifactId(kindId, slug) }];
+      : [{ path: toPosix(path.join(layout.root, name)), artifact: composeClaimedArtifact(kindId, slug) }];
   }
 
   const slug = invertDeployedName(nameTemplate, name);
@@ -189,12 +198,21 @@ async function locateClaims(rootDir: string, name: string, deployment: TreeKindD
     return [];
   }
 
-  const artifactId = composeArtifactId(kindId, slug);
+  const artifact = composeClaimedArtifact(kindId, slug);
   const shipped = await listFilesRecursively(path.join(rootDir, name), { skipName: isToolState });
   return shipped.map((relativePath) => ({
     path: toPosix(path.join(layout.root, name, relativePath)),
-    artifactId,
+    artifact,
   }));
+}
+
+/** Locates every file one tree deployment's claim rule matches. */
+async function locateTree(root: string, deployment: TreeKindDeployment): Promise<Array<Claim>> {
+  const rootDir = path.join(root, deployment.layout.root);
+  const names = (await readDirNames(rootDir)).filter((name) => isArtifactName(name));
+
+  const located = await Promise.all(names.map((name) => locateClaims(rootDir, name, deployment)));
+  return located.flat();
 }
 
 /**
@@ -207,22 +225,29 @@ async function readClaims(
   matched: ReadonlyArray<Claim>,
   hostPaths: ReadonlySet<string>,
 ): Promise<Array<ClaimedFile>> {
-  const byPath = new Map<string, Set<ArtifactId>>();
+  const byPath = new Map<string, Map<ArtifactId, ClaimedArtifact>>();
   for (const claim of matched) {
     if (hostPaths.has(claim.path)) {
       continue;
     }
-    byPath.set(claim.path, (byPath.get(claim.path) ?? new Set()).add(claim.artifactId));
+    const claims = byPath.get(claim.path) ?? new Map<ArtifactId, ClaimedArtifact>();
+    byPath.set(claim.path, claims.set(claim.artifact.id, claim.artifact));
   }
 
   const gathered = [...byPath]
-    .map(([filePath, artifactIds]) => ({ path: filePath, artifactIds: [...artifactIds].toSorted(compareStrings) }))
+    .map(([filePath, claims]) => ({
+      path: filePath,
+      claims: claims
+        .values()
+        .toArray()
+        .toSorted((left, right) => compareStrings(left.id, right.id)),
+    }))
     .toSorted((left, right) => compareStrings(left.path, right.path));
 
   return Promise.all(
-    gathered.map(async ({ path: filePath, artifactIds }) => {
+    gathered.map(async ({ path: filePath, claims }) => {
       const bytes = await readFile(path.join(root, filePath));
-      return { path: filePath, artifactIds, hash: hashBytes(bytes), body: encodeBlob(bytes) };
+      return { path: filePath, claims, hash: hashBytes(bytes), body: encodeBlob(bytes) };
     }),
   );
 }

@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and most of the engine does not exist yet. What ships today is the plan schema, the contract the engine's output will satisfy, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, and the snapshot that gathers all of it. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional, and the engine is still being built out. What ships today is the plan schema, the contract the engine's output satisfies, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, the snapshot that gathers all of it, and the composition that turns a snapshot into a plan. Applying a plan to a destination and validating a composition are still to come. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -143,7 +143,7 @@ A plan is the engine's output: the complete rendered result of a composition, be
 - **Why each part of it is there.** Which source an artifact resolved from, which sources lost, which config tier decided it, what pulled it into the closure, and which artifacts and transcluded partials contributed to each output file.
 - **What it was computed from.** Digests of the config, the sources, and the target's own state, so staleness is a comparison rather than a file watch.
 
-The payload is normalized: cross-references between tables are opaque ids, because the provenance graph has diamonds and JSON holds no references. The per-target directory tree follows from the paths in `files`, and file bodies live in a content-addressed `blobs` table keyed by hash, so a body shared across targets is carried once.
+The payload is normalized: cross-references between tables are opaque ids, because the provenance graph has diamonds and JSON holds no references. The per-target directory tree follows from the paths in `files`, and file bodies live in a content-addressed `blobs` table keyed by hash, so a body shared across targets is carried once. The table holds exactly the bodies `files` names, so a plan carries no body a reader cannot reach through a file.
 
 Its artifact shape is also the closure's: a closure artifact is this one with `status` removed, derived from it rather than declared beside it, so the two documents cannot drift in how they record an edge, a seed, or a resolution. The status is what a plan adds, measuring an artifact against target state a closure has not looked at.
 
@@ -154,6 +154,26 @@ Ordering is part of the contract. Id-keyed tables run lexicographically, `files`
 `tokenKinds` names the token kinds a target's mappings are keyed by, so a `tokenMappings` entry resolves to something a reader recognizes rather than to a bare id. It carries identity alone; the pattern a kind matches and the way it resolves are engine input, not payload. A kind's per-target sigil rides on the mapping itself, where the target and the kind already meet.
 
 Token mappings are the whole of a target's substitution vocabulary. A named value a body interpolates -- the guidance filename a harness reads, its home directory -- is a mapping token kind, not a table of its own: a name-to-value pairing is inert without a pattern that recognizes a reference to it, and a pattern is what a token kind is.
+
+## Composing a plan
+
+`composePlan(config, snapshot)` is pure and synchronous, and no filesystem import reaches its module graph. That is what makes What-if the same call with an edited config: a reader toggles a selection and replans against one capture as often as it likes, and the workspace the snapshot was taken over may be gone by the time it does.
+
+Two things put a snapshot out of date, and both are refused rather than composed around. A config whose adopted sources have moved -- added, dropped, reordered, or remapped -- is refused, the catalog ranking candidates by that order and both the edge graph and the render matrix reading the winning candidate alone. A snapshot captured without target state is refused too: reading its absence as an empty destination would call every file `added`, and apply would then read everything already on disk as drift. `computeFingerprint` is exported beside the flow and refuses the same two, so detecting staleness is one comparison of `composite` against the plan in hand.
+
+**Where the planned content cannot be computed, the destination stands as it is.** A render that failed and a region host whose markers are damaged both leave the engine with no body to write. The file is planned at the body that destination holds, on both sides, with `blocked` carrying the reason; a destination holding nothing yields no entry at all, nothing being what will stand there. That is what `FileBlock` is for -- a plan records the intent and the refusal side by side -- and it is why an unchanged file may carry a block: `unchanged` also covers a change that could not be computed, and the block is the whole record of why nothing will be written.
+
+The two faults are not the same kind of thing, which is why only one of them ends here. A render that fails is a fault in what an author wrote, and validate reports it from the same snapshot. A damaged host is a fact about the destination, which validate never looks at, running as it does over a snapshot captured without target state.
+
+A failed render blocks its artifact's whole file set at that target, assets included: an artifact with a fresh diagram beside a body a stale render left behind is worse than one left alone. Among a host's contributors, one failed render blocks the whole host, rebuilding the region without a contributor's block being something a reader cannot tell from a removal.
+
+Removal follows from a destination nothing plans, never from a render that failed, so a directive an author has just broken proposes no deletion. A path whose claim rules name more than one artifact is blocked whatever its status, its provenance being undecidable from shape. Two deployments landing on one path is that same fact seen from the planning side: the entries collapse into one blocked entry naming each artifact that wanted the destination. Neither name resolution nor the render-target consistency pass can see such a collision -- one holds a single lookup with no artifact set to compare against, the other no catalog to learn which slugs a template will produce -- so composing is the first place it is visible at all. Each contender keeps the status its own content earned: what will happen at a contested destination is the file's to say, and an artifact reported as unchanged because its destination is contested would hide a body that genuinely moved.
+
+**An artifact's status measures its own content, not the files it lands in.** Several artifacts share one aggregated host, and a roll-up over files would move every contributor whenever any one of them moved; a region contributor is judged by its own block against the block the host carries for it. An artifact with nothing to judge -- a kind emitting no files, a kind no target deploys, an artifact blocked everywhere -- is `unchanged`, nothing recording where it previously stood.
+
+Contributions compose into a host in artifact-id order, the order every id-keyed table in a plan runs in and the only one two composes over one snapshot cannot disagree on.
+
+A deployment with nowhere to put what an artifact ships beside its entry file places none of it. A region-routed kind contributes a body to a host rather than a tree, and a tree deployment laid out one file per artifact holds exactly one file. A kind's layout in a source and its layout at a target are separate declarations, so a kind that ships assets can be flattened at a destination with no room for them.
 
 ## What the schema checks, and what it does not
 
