@@ -3,7 +3,9 @@ import { join, resolve } from 'node:path';
 
 import picomatch from 'picomatch';
 
+import { deepFreeze } from '../portable/deepFreeze.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
@@ -37,9 +39,6 @@ const MAX_WALK_DEPTH = 10;
  * dot-prefixed directories (including `.git`) are pruned separately in `walk`.
  */
 const PRUNED_NAMES = new Set(['node_modules']);
-
-/** Error codes a directory read may fail with benignly, leaving the rest of the walk sound. */
-const SKIPPABLE_READ_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
 
 /** Discovered workspaces by the `cwd` they were resolved against, held for the life of the process. */
 const workspacesByCwd = new Map<string, Workspace[]>();
@@ -203,10 +202,8 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
   try {
     entries = readdirSync(absDir, { withFileTypes: true, encoding: 'utf8' });
   } catch (error) {
-    // Skip directories we can't read for benign reasons (missing, permission-denied).
-    // Rethrow systemic failures (e.g. EMFILE, EIO) so an incomplete walk isn't masked.
-    const code = isRecord(error) && typeof error['code'] === 'string' ? error['code'] : undefined;
-    if (code !== undefined && SKIPPABLE_READ_CODES.has(code)) return;
+    // A systemic failure (e.g. EMFILE, EIO) is rethrown, so an incomplete walk isn't masked.
+    if (isSkippableFilesystemError(error)) return;
     throw error;
   }
 
@@ -241,15 +238,6 @@ function buildWorkspaceFromPackageJson(
   // One call's mutation would otherwise reach every later call, which shares these objects.
   deepFreeze(packageJson);
   return Object.freeze({ dir: relDir, absolutePath, name, isPackage, packageJson });
-}
-
-/** Freezes a parsed JSON value and every value reachable from it. */
-function deepFreeze(value: unknown): void {
-  if (value === null || typeof value !== 'object') return;
-  Object.freeze(value);
-  for (const nested of Object.values(value)) {
-    deepFreeze(nested);
-  }
 }
 
 // endregion | Helpers
