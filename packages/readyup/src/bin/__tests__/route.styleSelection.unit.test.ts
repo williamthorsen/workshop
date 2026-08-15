@@ -1,5 +1,4 @@
-import process from 'node:process';
-
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it, vi } from 'vitest';
 
 import { plainFormatter } from '../../layout/plainFormatter.ts';
@@ -8,7 +7,6 @@ import { richFormatter } from '../../layout/richFormatter.ts';
 import { useTempDir } from '../../test-utils/tempDir.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
 import { routeCommand } from '../route.ts';
-import { useCapturedStdio } from '../test-utils/capturedStdio.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -49,60 +47,57 @@ const temp = useTempDir({
   },
 });
 
-// `init` reports through the console rather than the streams directly, so both channels are captured.
-const io = useCapturedStdio({ console: true });
-
 describe('--style plain', () => {
   it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }) => {
-    await routeCommand([...args, '--style', 'plain']);
+    const { stdout, stderr } = await route([...args, '--style', 'plain']);
 
-    const rendered = io.stdout + io.stderr;
+    const rendered = stdout + stderr;
     expect(rendered).not.toBe('');
     expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
   });
 
   it.for(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }) => {
-    await routeCommand([...args, '--style', 'plain']);
+    const { stdout, stderr } = await route([...args, '--style', 'plain']);
 
-    expect(io.stdout + io.stderr).toMatch(expected);
+    expect(stdout + stderr).toMatch(expected);
   });
 
   it('is accepted as an assigned value too', async () => {
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--style=plain']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style=plain']);
 
-    expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
+    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 });
 
 describe('a style named ahead of the command', () => {
   it.for(RENDERING_COMMANDS)('reaches $name without being taken for a kit name', async ({ args }) => {
-    const exitCode = await routeCommand(['--style', 'plain', ...args]);
+    const { exitCode, stderr } = await route(['--style', 'plain', ...args]);
 
-    expect(io.stderr).not.toContain('not found');
+    expect(stderr).not.toContain('not found');
     expect(exitCode).not.toBe(2);
   });
 
   it('is accepted as an assigned value too', async () => {
-    const exitCode = await routeCommand(['--style=plain', 'verify', '--manifest', 'manifest.json']);
+    const { exitCode, stdout } = await route(['--style=plain', 'verify', '--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(0);
-    expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
+    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
   it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async () => {
-    await routeCommand(['--style', 'plain', '--help']);
+    const { stdout } = await route(['--style', 'plain', '--help']);
 
-    expect(io.stdout).toContain('rdy <command> [options]');
+    expect(stdout).toContain('rdy <command> [options]');
   });
 
   it('leaves --version reporting the version', async () => {
-    await routeCommand(['--style', 'plain', '--version']);
+    const { stdout } = await route(['--style', 'plain', '--version']);
 
-    expect(io.stdout).toMatch(/^\d+\.\d+\.\d+/u);
+    expect(stdout).toMatch(/^\d+\.\d+\.\d+/u);
   });
 
   it('still rejects a trailing --style that carries no value', async () => {
-    const exitCode = await routeCommand(['--style']);
+    const { exitCode } = await route(['--style']);
 
     expect(exitCode).toBe(2);
   });
@@ -111,29 +106,28 @@ describe('a style named ahead of the command', () => {
 describe('--style rich', () => {
   it('renders glyphs even when the environment would detect otherwise', async () => {
     vi.stubEnv('CI', 'true');
-    process.stdout.isTTY = false;
 
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--style', 'rich']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style', 'rich'], { isTty: false });
 
-    expect(io.stdout).toContain(`${RICH_PASS} passing`);
+    expect(stdout).toContain(`${RICH_PASS} passing`);
   });
 });
 
 describe('an unrecognized style', () => {
   it('fails the invocation and names the valid set', async () => {
-    const exitCode = await routeCommand(['verify', '--style', 'emoji']);
+    const { exitCode, stderr } = await route(['verify', '--style', 'emoji']);
 
     expect(exitCode).toBe(2);
-    expect(io.stderr).toContain('--style must be one of: auto, plain, rich (got "emoji")');
+    expect(stderr).toContain('--style must be one of: auto, plain, rich (got "emoji")');
   });
 
   it('is rejected from the environment variable as well', async () => {
     vi.stubEnv(STYLE_ENV_VAR, 'text');
 
-    const exitCode = await routeCommand(['verify', '--manifest', 'manifest.json']);
+    const { exitCode, stderr } = await route(['verify', '--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(2);
-    expect(io.stderr).toContain(`${STYLE_ENV_VAR} must be one of: auto, plain, rich (got "text")`);
+    expect(stderr).toContain(`${STYLE_ENV_VAR} must be one of: auto, plain, rich (got "text")`);
   });
 });
 
@@ -143,74 +137,82 @@ describe('detection', () => {
   it('chooses plain under CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', 'true');
-    process.stdout.isTTY = true;
 
-    await routeCommand(['verify', '--manifest', 'manifest.json']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
 
-    expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
+    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
   it('chooses plain when the output is not a terminal', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
-    process.stdout.isTTY = false;
 
-    await routeCommand(['verify', '--manifest', 'manifest.json']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: false });
 
-    expect(io.stdout).toContain(`${PLAIN_PASS}  passing`);
+    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
   });
 
   it('chooses rich for a terminal outside CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
-    process.stdout.isTTY = true;
 
-    await routeCommand(['verify', '--manifest', 'manifest.json']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
 
-    expect(io.stdout).toContain(`${RICH_PASS} passing`);
+    expect(stdout).toContain(`${RICH_PASS} passing`);
   });
 
   it('is outranked by the environment variable', async () => {
     vi.stubEnv(STYLE_ENV_VAR, 'rich');
     vi.stubEnv('CI', 'true');
 
-    await routeCommand(['verify', '--manifest', 'manifest.json']);
+    const { stdout } = await route(['verify', '--manifest', 'manifest.json']);
 
-    expect(io.stdout).toContain(`${RICH_PASS} passing`);
+    expect(stdout).toContain(`${RICH_PASS} passing`);
   });
 });
 
 describe('an explicitly chosen style', () => {
   it.for(['plain', 'rich'] as const)('renders %s identically with and without a terminal', async (style) => {
-    process.stdout.isTTY = true;
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--style', style]);
-    const attached = io.stdout;
+    const args = ['verify', '--manifest', 'manifest.json', '--style', style];
 
-    io.reset();
-    process.stdout.isTTY = false;
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--style', style]);
+    const attached = await route(args, { isTty: true });
+    const piped = await route(args, { isTty: false });
 
-    expect(io.stdout).toBe(attached);
+    expect(piped.stdout).toBe(attached.stdout);
   });
 });
 
 describe('alongside --json', () => {
   it('leaves the JSON document on stdout and styles the prose on stderr', async () => {
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
+    const { stdout, stderr } = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
 
-    const document: unknown = JSON.parse(io.stdout);
+    const document: unknown = JSON.parse(stdout);
     expect(document).toMatchObject({ passed: true });
-    expect(io.stderr).toContain(PLAIN_PASS);
-    expect(io.stderr).not.toContain(RICH_PASS);
+    expect(stderr).toContain(PLAIN_PASS);
+    expect(stderr).not.toContain(RICH_PASS);
   });
 
   it('emits the same JSON whichever style is selected', async () => {
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
-    const plain = io.stdout;
+    const plain = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
+    const rich = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'rich']);
 
-    io.reset();
-    await routeCommand(['verify', '--manifest', 'manifest.json', '--json', '--style', 'rich']);
-
-    expect(io.stdout).toBe(plain);
+    expect(rich.stdout).toBe(plain.stdout);
   });
 });
+
+// region | Helpers
+
+/**
+ * Routes a command with the terminal attached or not, returning its exit code and everything it wrote.
+ *
+ * `init` reports through the console rather than the streams directly, so both channels are captured.
+ */
+async function route(args: string[], options: { isTty?: boolean } = {}) {
+  using io = captureStdio({ includeConsole: true, isTty: options.isTty ?? false });
+
+  const exitCode = await routeCommand(args);
+
+  return { exitCode, stdout: io.stdout, stderr: io.stderr };
+}
+
+// endregion | Helpers
