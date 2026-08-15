@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-08-15
+
+### 🎉 Features
+
+- Compose a plan from a config and a snapshot (#327)
+
+  Adds `composePlan(config, snapshot)` to `compositor`, which assembles a whole `Plan` from a config and a capture: every target's files, each artifact's status against what its destinations hold, and a fingerprint of the inputs. It is pure and synchronous, and no filesystem import reaches its module graph. What-if planning is therefore the same call with an edited config, and the workspace the capture was taken over may be gone by then. `computeFingerprint` is exported beside it, so that a stale capture can be detected by means of a single comparison.
+
+  Where the engine cannot decide what a destination should hold (such as a render that failed, a region host whose markers are damaged, or a path written to by multiple deployments), the file is planned at the body already there, carrying the reason. A broken directive therefore proposes no deletions.
+
+### ♻️ Refactoring
+
+- Adopt toolbelt.errors for error-message extraction and cause-chaining (#296)
+
+  Consolidates error-message extraction across the workspace on `@williamthorsen/toolbelt.errors`, replacing the helper `overlay` and `readyup` had each defined for itself along with every inline copy of the same idiom. Failures that wrap a cause now chain through the same library, and lint fails on the inline idiom, naming `describeError` as its replacement. A `catalog:` block in `pnpm-workspace.yaml` becomes the single declaration site for every version more than one manifest declares.
+
+- Adopt toolbelt's captureError and retire every local capture helper (#324)
+
+  Adopts `captureError` from `@williamthorsen/toolbelt.testing` as the standard way to capture an error in tests across the repo, replacing the hand-rolled error-capture helpers.
+
 ## 0.1.1 — 2026-08-08
 
 ### 🐛 Bug fixes

@@ -1,5 +1,121 @@
 [
   {
+    "version": "0.28.0",
+    "date": "2026-08-15",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Record the compile's input closure in the manifest (#317)",
+            "body": "`rdy compile` now records every file it read into a kit's bundle -- each module the kit imports, and each JSON file `pickJson` drew from -- with a hash of each, on the kit's manifest entry. Only the entry `.ts` and the emitted `.js` were hashed before, so an edit to an inlined module or a picked JSON value left a stale bundle with both recorded hashes still matching. Nothing reads the new record yet; turning it into a staleness verdict comes next.\n\nA `pickJson` input hashes only the values the kit drew, so an unrelated edit to the same file -- another `package.json` script, say -- does not read as staleness. The record stops at `node_modules`, whose contents the lockfile already pins.",
+            "hash": "a626b5df06d6dc0f92b46cad52ca60a2c1417e26"
+          },
+          {
+            "description": "Verify and warn on a stale compile input (#319)",
+            "body": "Adds a third check to `rdy verify`. Alongside the kit's source and its compiled bundle, verify now re-reads every file the compile consumed -- helper modules the bundle inlined, and JSON values `pickJson` copied in -- and fails when any of them has changed since the build. Editing one of those files moves neither recorded hash, so until now verify reported `ok` on a bundle built from ingredients that no longer existed.\n\nVerification names every input that failed, separating a changed file from one that is gone and from one whose picked field has vanished. `rdy run` gains a matching `input-stale` advisory, and both reach `--json` at `schemaVersion` 1.",
+            "hash": "dd357d8fbd1513e38963f11ca65c382e1dabe9c8"
+          },
+          {
+            "description": "Check recorded inputs in ReadyUp's own freshness checklist (#321)",
+            "body": "The `freshness` checklist now checks all files bundled into a compiled kit to determine whether the compilation is fresh or stale. For a package that publishes its kits, a bundle stale in one of those files now fails the check.\n\n`readyup/check-utils` gains `projectJsonFile` and `describeJsonProjectionFailure`, which a kit can use to read and report on the JSON values a compile inlined.",
+            "hash": "2f5be90b0df92e8e6146e0905a3982d7d7750373"
+          },
+          {
+            "description": "Record the compile's toolchain so a rebuild mismatch names its cause (#322)",
+            "body": "Improves ReadyUp's ability to diagnose why a kit is reported stale. `rdy compile` now records the esbuild that built each kit and every package the bundle inlined, as `esbuildVersion` and `bundledDependencies` on the kit's manifest entry. On a mismatch, `rdy verify --rebuild` compares them to newly computed values and reports which versions changed, or that none did. Plain `rdy verify` works as before.",
+            "hash": "12771afbd9c4391715b13f4008b6c84b0938c3a5"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Group readyup's flat src/ root by role (#292)",
+            "body": "Reorganizes the files in the `readyup` package for better usability and maintainability. Functions are now grouped by domain.",
+            "hash": "3550f723c4362a10926b69f8a91d6506cee26151"
+          },
+          {
+            "description": "Adopt toolbelt.errors for error-message extraction and cause-chaining (#296)",
+            "body": "Consolidates error-message extraction across the workspace on `@williamthorsen/toolbelt.errors`, replacing the helper `overlay` and `readyup` had each defined for itself along with every inline copy of the same idiom. Failures that wrap a cause now chain through the same library, and lint fails on the inline idiom, naming `describeError` as its replacement. A `catalog:` block in `pnpm-workspace.yaml` becomes the single declaration site for every version more than one manifest declares.",
+            "hash": "2440c99686ad770aabf88b4be1eb54c09537807e"
+          },
+          {
+            "description": "Regroup readyup's utils modules by role (#298)",
+            "body": "Regroups readyup's source one level below `src/`. The six modules in `utils/`, which shared nothing but their arrival time, disperse to `portable/`, `installed-packages/`, and a new `severity/`; `packages/` becomes `installed-packages/`, its old name having repeated the repo's own workspace root. An eslint rule now rejects a `utils` directory anywhere under `packages/readyup/src/`.",
+            "hash": "36f8497040e784e5d629fd0201a504754309f5bf"
+          },
+          {
+            "description": "Split argument parsing out of the run command (#304)",
+            "body": "Extracts `parseRunArgs` and its flag-validation collaborator out of `readyup`'s `src/run/runCommand.ts` into modules of their own: `parseRunArgs.ts` and `validateRunFlags.ts`. `validateRunFlags` (formerly the private `validateFlagConstraints`) takes a narrow `RunFlagConstraints` view of the parsed flags rather than the parser's whole output.\n\nThe constraint matrix is now exercised directly against `validateRunFlags` rather than through the parser, covering combinations the indirection left untested, such as `--internal` with `--packages`.",
+            "hash": "e554f93fae0ee4d47ff195cf75b45987e4b62043"
+          },
+          {
+            "description": "Split kit-source resolution out of the run command (#305)",
+            "body": "Extracts kit-source resolution from `readyup`'s `src/run/runCommand.ts` into five modules named for what they export, one each for the source-flag branch, the `--from` switch, the `--packages` expansion, and the two symbols both sides of that edge read. `runCommand.ts` keeps the execution path alone and imports the resolved-entry type rather than declaring it.\n\nEach new module's tests call it directly and mock nothing. `resolveConfiguredPackages` gains a test file of its own, the `--packages` branch having had none outside the wiring test, which in turn sheds the five cases those unit tests now cover.",
+            "hash": "5e20c1b0938201c3985dad933d6e9953e1c9b431"
+          },
+          {
+            "description": "Extract the run command's shared execution kernel (#306)",
+            "body": "Extracts five declarations out of `readyup`'s `src/run/runCommand.ts` into modules of their own: `loadKit.ts`, `kit-staleness.ts`, `resolveRunExitCode.ts`, `resolveThresholds.ts`, and `selectChecklists.ts`. Calling the extracted functions directly reaches guards a `--jit` run could not.",
+            "hash": "a80a13f75a37811f7936f0e64fd4c062c3c05af8"
+          },
+          {
+            "description": "Split the run command's output modes into their own modules (#307)",
+            "body": "Splits `readyup`'s `runCommand.ts` into three modules: `runJsonMode.ts` and `runHumanMode.ts` take the two output modes along with their rendering helpers and module-private types, leaving `runCommand.ts` with `RunCommandOptions` and the `json` dispatch.",
+            "hash": "de4041396622d2e10d0eca140d884601a37d8ede"
+          },
+          {
+            "description": "Adopt toolbelt's captureError and retire every local capture helper (#324)",
+            "body": "Adopts `captureError` from `@williamthorsen/toolbelt.testing` as the standard way to capture an error in tests across the repo, replacing the hand-rolled error-capture helpers.",
+            "hash": "2894a4b1dca2653af27b13ce1a9101dd292481cd"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Cover every kit provenance in human-mode block headings (#308)",
+            "body": "Adds missing tests to expand test coverage of `describeKitProvenance` and `runHumanMode.ts` to 100%.",
+            "hash": "1616472c15c7dbf6b2889409804bd09c3e67fd45"
+          },
+          {
+            "description": "Adopt toolbelt's captureStdio and retire local stdio capture (#326)",
+            "body": "Retires the local `capturedStdio.ts` (and its hand-rolled variants) in favor of `captureStdio` from `@williamthorsen/toolbelt.testing`. Capture is now a `using` declaration per test rather than a `beforeEach` registered for the whole suite.",
+            "hash": "6e764da7dc285a5023a1c3af12a53077676792b1"
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Catalog esbuild and declare the peer in devDependencies (#310)",
+            "body": "Declares `esbuild` as a dev dependency of `readyup`, making the peer dependency explicit. Moves the version specification of `esbuild` (also used by the root) to a pnpm catalog.",
+            "hash": "3b4c091c8a630e33c50324d14748ff7998d751d3"
+          }
+        ]
+      },
+      {
+        "title": "🤖 Agentic support",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Migrate project guidance to the repo-root AGENTS.md (#294)",
+            "body": "Project guidance is updated and moved from .agents/PROJECT.md to AGENTS.md at the repository root. Stale guidance has been removed. Guidance on use of the `nmr` task runner has been removed in deference to the guidance bundled with `nmr` itself.",
+            "hash": "932475e31a207c2aaf3717df24ddb1b508f53c97"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.27.0",
     "date": "2026-08-10",
     "sections": [

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.5 — 2026-08-15
+
+### ♻️ Refactoring
+
+- Adopt toolbelt.errors for error-message extraction and cause-chaining (#296)
+
+  Consolidates error-message extraction across the workspace on `@williamthorsen/toolbelt.errors`, replacing the helper `overlay` and `readyup` had each defined for itself along with every inline copy of the same idiom. Failures that wrap a cause now chain through the same library, and lint fails on the inline idiom, naming `describeError` as its replacement. A `catalog:` block in `pnpm-workspace.yaml` becomes the single declaration site for every version more than one manifest declares.
+
+- Regroup overlay's src by role and extend the layout guards (#299)
+
+  Regroups overlay's `src/` root by role. `formatReport.ts` and `formatJsonError.ts` move into a new `reporting/`, `types.ts` into `modes/`, and `utils/pluralize.ts` into `portable/`; `index.ts` and `overlay.ts` stay behind, naming the package rather than a role within it.
+
+  Separately, eslint now rejects a module at the root of overlay's or compositor's `src/`, and the rule barring a `utils` directory widens from readyup alone to every package.
+
+- Adopt toolbelt's captureError and retire every local capture helper (#324)
+
+  Adopts `captureError` from `@williamthorsen/toolbelt.testing` as the standard way to capture an error in tests across the repo, replacing the hand-rolled error-capture helpers.
+
+### 🧪 Tests
+
+- Adopt toolbelt's captureStdio and retire local stdio capture (#326)
+
+  Retires the local `capturedStdio.ts` (and its hand-rolled variants) in favor of `captureStdio` from `@williamthorsen/toolbelt.testing`. Capture is now a `using` declaration per test rather than a `beforeEach` registered for the whole suite.
+
 ## 0.3.4 — 2026-08-08
 
 ### 🐛 Bug fixes

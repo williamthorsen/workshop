@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/overlay",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": false,
   "description": "Idempotently overlay a canonical set of scaffolding files onto a target directory, backed by chezmoi",
   "keywords": [

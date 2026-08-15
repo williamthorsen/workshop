@@ -1,5 +1,38 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-08-15",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Compose a plan from a config and a snapshot (#327)",
+            "body": "Adds `composePlan(config, snapshot)` to `compositor`, which assembles a whole `Plan` from a config and a capture: every target's files, each artifact's status against what its destinations hold, and a fingerprint of the inputs. It is pure and synchronous, and no filesystem import reaches its module graph. What-if planning is therefore the same call with an edited config, and the workspace the capture was taken over may be gone by then. `computeFingerprint` is exported beside it, so that a stale capture can be detected by means of a single comparison.\n\nWhere the engine cannot decide what a destination should hold (such as a render that failed, a region host whose markers are damaged, or a path written to by multiple deployments), the file is planned at the body already there, carrying the reason. A broken directive therefore proposes no deletions.",
+            "hash": "830e9f043a96a77fd2f1d10e03761cabe51222ac"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adopt toolbelt.errors for error-message extraction and cause-chaining (#296)",
+            "body": "Consolidates error-message extraction across the workspace on `@williamthorsen/toolbelt.errors`, replacing the helper `overlay` and `readyup` had each defined for itself along with every inline copy of the same idiom. Failures that wrap a cause now chain through the same library, and lint fails on the inline idiom, naming `describeError` as its replacement. A `catalog:` block in `pnpm-workspace.yaml` becomes the single declaration site for every version more than one manifest declares.",
+            "hash": "2440c99686ad770aabf88b4be1eb54c09537807e"
+          },
+          {
+            "description": "Adopt toolbelt's captureError and retire every local capture helper (#324)",
+            "body": "Adopts `captureError` from `@williamthorsen/toolbelt.testing` as the standard way to capture an error in tests across the repo, replacing the hand-rolled error-capture helpers.",
+            "hash": "2894a4b1dca2653af27b13ce1a9101dd292481cd"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.1",
     "date": "2026-08-08",
     "sections": [
