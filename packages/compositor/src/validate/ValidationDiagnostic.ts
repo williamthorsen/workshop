@@ -1,18 +1,24 @@
 import type { RenderDiagnostic } from '../render/RenderDiagnostic.ts';
 import type { ClosureDiagnostic } from '../schemas/closure-schemas.ts';
-import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
+import type { ArtifactId, KindId, TargetId } from '../schemas/scalar-schemas.ts';
 import type { SelectionDiagnostic } from '../selection/SelectionDiagnostic.ts';
 import type { TransclusionDiagnostic } from '../transclusion/TransclusionDiagnostic.ts';
 
-/** Where a destination two artifacts contend for sits, with the artifacts contending for it in id order. */
+/**
+ * Where a destination two of a target's deployments contend for sits, with what each brings to it.
+ *
+ * `kindIds` names the deployments at fault, one per kind, and `artifactIds` the content they would write. Both are in
+ * id order. The kinds are what an author changes to resolve the collision; the artifacts are what would be lost.
+ */
 export interface DeploymentRef {
   readonly targetId: TargetId;
   /** Posix-separated and relative to the target's root. */
   readonly path: string;
+  readonly kindIds: ReadonlyArray<KindId>;
   readonly artifactIds: ReadonlyArray<ArtifactId>;
 }
 
-/** One destination more than one artifact of a target deploys to, which no declaration decides between. */
+/** One destination more than one of a target's deployments writes, which no declaration decides between. */
 export interface DeploymentDiagnostic {
   readonly code: 'destination-collision';
   readonly message: string;

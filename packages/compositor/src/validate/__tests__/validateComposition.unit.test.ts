@@ -6,7 +6,12 @@ import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import type { CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
-import { buildClaudeTarget, buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
+import {
+  buildClaudeTarget,
+  buildOverlappingTargets,
+  CONTRIBUTION_MARKERS,
+  HOST_PATH,
+} from '../../test-utils/composition-fixture.ts';
 import { validateComposition } from '../validateComposition.ts';
 
 const MARKDOWN_LINK = String.raw`\[[^\]]*\]\(([^)]+)\)`;
@@ -116,7 +121,7 @@ describe(validateComposition, () => {
     ]);
   });
 
-  it('reports a destination more than one artifact deploys to', async () => {
+  it('reports a destination two of a target’s tree deployments both write', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: {
         'rulebooks/naming.md': 'Name things well.\n',
@@ -135,6 +140,7 @@ describe(validateComposition, () => {
           at: {
             targetId: 'claude',
             path: 'skills/consult-naming/SKILL.md',
+            kindIds: ['rulebook', 'skill'],
             artifactIds: ['rulebook:naming', 'skill:consult-naming'],
           },
         },
@@ -155,7 +161,36 @@ describe(validateComposition, () => {
         diagnostic: {
           code: 'destination-collision',
           message: expect.stringContaining('undecidable'),
-          at: { targetId: 'claude', path: HOST_PATH, artifactIds: ['rulebook:naming', 'subagent:CLAUDE'] },
+          at: {
+            targetId: 'claude',
+            path: HOST_PATH,
+            kindIds: ['rulebook', 'subagent'],
+            artifactIds: ['rulebook:naming', 'subagent:CLAUDE'],
+          },
+        },
+      },
+    ]);
+  });
+
+  it('reports two region deployments naming one host, which composing blocks and nothing refuses', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: { 'rulebooks/naming.md': 'Name things well.\n', 'subagents/auditor.md': '# Auditor\n' },
+      select: { rulebook: { use: [{ source: 'team' }] }, subagent: { use: [{ source: 'team' }] } },
+      buildTargets: (targetRoot) => [buildSharedHostTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'deployment',
+        diagnostic: {
+          code: 'destination-collision',
+          message: expect.stringContaining('"rulebook", "subagent"'),
+          at: {
+            targetId: 'claude',
+            path: HOST_PATH,
+            kindIds: ['rulebook', 'subagent'],
+            artifactIds: ['rulebook:naming', 'subagent:auditor'],
+          },
         },
       },
     ]);
@@ -224,6 +259,19 @@ describe(validateComposition, () => {
 
 // region | Helpers
 
+/** Builds a target whose subagents deploy at its root, so one lands on the host its rulebooks aggregate into. */
+function buildHostCollidingTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return {
+    ...claude,
+    deployments: [
+      ...claude.deployments.filter((deployment) => deployment.kindId === 'rulebook'),
+      { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
+    ],
+  };
+}
+
 /** Builds a target that rewrites tokens and links, the two stages whose faults travel beside a rendered body. */
 function buildRewritingTarget(targetRoot: string): RenderTarget {
   const claude = buildClaudeTarget(targetRoot);
@@ -235,15 +283,21 @@ function buildRewritingTarget(targetRoot: string): RenderTarget {
   };
 }
 
-/** Builds a target whose subagents deploy at its root, so one of them lands on the host its rulebooks aggregate into. */
-function buildHostCollidingTarget(targetRoot: string): RenderTarget {
+/** Builds a target routing two kinds into one host, which composing blocks and no declaration check refuses. */
+function buildSharedHostTarget(targetRoot: string): RenderTarget {
   const claude = buildClaudeTarget(targetRoot);
 
   return {
     ...claude,
     deployments: [
       ...claude.deployments.filter((deployment) => deployment.kindId === 'rulebook'),
-      { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
+      {
+        form: 'region',
+        kindId: 'subagent',
+        host: HOST_PATH,
+        markers: { open: '<!-- subagents -->', close: '<!-- /subagents -->' },
+        contributionMarkers: CONTRIBUTION_MARKERS,
+      },
     ],
   };
 }
