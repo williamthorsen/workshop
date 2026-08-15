@@ -40,7 +40,10 @@
       "id": "claude",
       "label": "Claude",
       "root": "~/.claude",
-      "tokenMappings": []
+      "tokenMappings": [],
+      "containerDirs": [
+        "skills"
+      ]
     }
   ],
   "tiers": [

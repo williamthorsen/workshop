@@ -18,6 +18,7 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
+      containerDirs: ['skills', 'subagents'],
     },
     {
       id: 'rovodev',
@@ -34,6 +35,7 @@ export function buildTargets(): Array<TargetEntry> {
           ],
         },
       ],
+      containerDirs: ['subagents'],
     },
   ];
 }

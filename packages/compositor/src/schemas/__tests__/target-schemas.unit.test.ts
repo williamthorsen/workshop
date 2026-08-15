@@ -10,6 +10,16 @@ describe('TargetEntrySchema', () => {
     expect(TargetEntrySchema.parse(target)).toStrictEqual(target);
   });
 
+  it('accepts a target naming the directories it holds independently of the composition', () => {
+    const withContainers = { ...target, containerDirs: ['skills', 'subagents'] };
+
+    expect(TargetEntrySchema.parse(withContainers)).toStrictEqual(withContainers);
+  });
+
+  it('accepts a target naming no container directory, an older plan stating none', () => {
+    expect(TargetEntrySchema.parse(target)).not.toHaveProperty('containerDirs');
+  });
+
   it('if tokenMappings is absent, rejects the target for that field', () => {
     const withoutMappings = { id: 'claude', label: 'Claude', root: '~/.claude' };
 
