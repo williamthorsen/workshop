@@ -78,7 +78,7 @@ try {
     return performance.now() - startedAt;
   });
 
-  report(size, captureMs, durations);
+  printReport(size, captureMs, durations);
 } finally {
   await rm(workspace, { recursive: true, force: true });
 }
@@ -164,10 +164,24 @@ function dropSkill(config: CompositorConfig, index: number): CompositorConfig {
   };
 }
 
-/** Reads one percentile out of an ascending list of durations. */
-function percentile(sorted: ReadonlyArray<number>, fraction: number): number {
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
-  return sorted[index] ?? NaN;
+/** Prints the capture cost beside the replan distribution. */
+function printReport(size: Size, captureMs: number, durations: ReadonlyArray<number>): void {
+  const sorted = [...durations].toSorted((left, right) => left - right);
+  const total = durations.reduce((sum, duration) => sum + duration, 0);
+
+  process.stdout.write(
+    [
+      `workspace: ${size.skills} skills, ${size.rulebooks} rulebooks, ${size.targets} targets`,
+      `capture:   ${captureMs.toFixed(1)} ms`,
+      `replan:    ${size.runs} runs`,
+      `  min      ${readPercentile(sorted, 0).toFixed(2)} ms`,
+      `  median   ${readPercentile(sorted, 0.5).toFixed(2)} ms`,
+      `  p95      ${readPercentile(sorted, 0.95).toFixed(2)} ms`,
+      `  max      ${readPercentile(sorted, 1).toFixed(2)} ms`,
+      `  mean     ${(total / durations.length).toFixed(2)} ms`,
+      '',
+    ].join('\n'),
+  );
 }
 
 /** Reads one count argument, refusing anything that is not a positive whole number. */
@@ -179,24 +193,10 @@ function readCount(value: string, name: string): number {
   return count;
 }
 
-/** Prints the capture cost beside the replan distribution. */
-function report(size: Size, captureMs: number, durations: ReadonlyArray<number>): void {
-  const sorted = [...durations].toSorted((left, right) => left - right);
-  const total = durations.reduce((sum, duration) => sum + duration, 0);
-
-  process.stdout.write(
-    [
-      `workspace: ${size.skills} skills, ${size.rulebooks} rulebooks, ${size.targets} targets`,
-      `capture:   ${captureMs.toFixed(1)} ms`,
-      `replan:    ${size.runs} runs`,
-      `  min      ${percentile(sorted, 0).toFixed(2)} ms`,
-      `  median   ${percentile(sorted, 0.5).toFixed(2)} ms`,
-      `  p95      ${percentile(sorted, 0.95).toFixed(2)} ms`,
-      `  max      ${percentile(sorted, 1).toFixed(2)} ms`,
-      `  mean     ${(total / durations.length).toFixed(2)} ms`,
-      '',
-    ].join('\n'),
-  );
+/** Reads one percentile out of an ascending list of durations. */
+function readPercentile(sorted: ReadonlyArray<number>, fraction: number): number {
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
+  return sorted[index] ?? NaN;
 }
 
 /** How large a workspace the benchmark builds, and how many times it replans over it. */
