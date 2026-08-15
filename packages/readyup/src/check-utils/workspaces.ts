@@ -3,22 +3,24 @@ import { join, resolve } from 'node:path';
 
 import picomatch from 'picomatch';
 
+import { deepFreeze } from '../portable/deepFreeze.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
 /** A monorepo workspace, or the single workspace of a single-workspace repo. */
 export interface Workspace {
   /** Workspace directory, relative to `cwd`. `'.'` for a single-workspace repo. */
-  dir: string;
+  readonly dir: string;
   /** Absolute filesystem path to the workspace directory. */
-  absolutePath: string;
+  readonly absolutePath: string;
   /** `name` from the workspace's `package.json`; `undefined` if absent. */
-  name: string | undefined;
+  readonly name: string | undefined;
   /** True iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
-  isPackage: boolean;
+  readonly isPackage: boolean;
   /** Parsed `package.json` contents, validated to be a record. */
-  packageJson: Record<string, unknown>;
+  readonly packageJson: Readonly<Record<string, unknown>>;
 }
 
 /** Options for `discoverWorkspaces`. */
@@ -38,16 +40,41 @@ const MAX_WALK_DEPTH = 10;
  */
 const PRUNED_NAMES = new Set(['node_modules']);
 
-/** Error codes a directory read may fail with benignly, leaving the rest of the walk sound. */
-const SKIPPABLE_READ_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
+/** Discovered workspaces by the `cwd` they were resolved against, held for the life of the process. */
+const workspacesByCwd = new Map<string, Workspace[]>();
 
 /**
- * Discover the workspaces of the current repo.
+ * Discovers the workspaces of the current repo.
  * Detects pnpm (`pnpm-workspace.yaml`), then npm/yarn (`package.json.workspaces`),
  * and falls back to a single-workspace repo using the root `package.json`.
+ *
+ * Memoized per `cwd` for the life of the process: repeated calls in one run share a single directory walk
+ * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
+ * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
  */
 export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspace[] {
   const cwd = process.cwd();
+
+  let workspaces = workspacesByCwd.get(cwd);
+  if (workspaces === undefined) {
+    // Build before storing, so a discovery that throws leaves nothing behind and the next call retries it.
+    workspaces = buildWorkspaces(cwd);
+    workspacesByCwd.set(cwd, workspaces);
+  }
+
+  return applyFilter(workspaces, options?.filter);
+}
+
+// region | Helpers
+
+/** Applies the optional filter to a workspace list, answering with an array the caller owns either way. */
+function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions['filter']): Workspace[] {
+  if (filter === undefined) return [...workspaces];
+  return workspaces.filter(filter);
+}
+
+/** Builds the unfiltered workspace list for the repo at `cwd`. */
+function buildWorkspaces(cwd: string): Workspace[] {
   const rootPackageJsonPath = join(cwd, 'package.json');
 
   const patternResult = resolveWorkspacePatterns(cwd);
@@ -58,8 +85,7 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
     if (rootPackageJson === undefined) {
       throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
     }
-    const workspace = buildWorkspaceFromPackageJson('.', cwd, rootPackageJson);
-    return applyFilter([workspace], options?.filter);
+    return [buildWorkspaceFromPackageJson('.', cwd, rootPackageJson)];
   }
 
   // Monorepo path: still require a root package.json (both pnpm and npm workspaces do).
@@ -78,19 +104,11 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
     }
   }
 
-  return applyFilter(workspaces, options?.filter);
-}
-
-// region | Helpers
-
-/** Apply the optional filter to a workspace list. */
-function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions['filter']): Workspace[] {
-  if (filter === undefined) return workspaces;
-  return workspaces.filter(filter);
+  return workspaces;
 }
 
 /**
- * Resolve the workspace pattern list for the repo at `cwd`.
+ * Resolves the workspace pattern list for the repo at `cwd`.
  * Returns `null` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
  */
 function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: WorkspacePatternSource } | null {
@@ -115,7 +133,7 @@ function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: Wo
   return null;
 }
 
-/** Extract workspace patterns from the `workspaces` field of a root `package.json`. */
+/** Extracts workspace patterns from the `workspaces` field of a root `package.json`. */
 function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
   if (Array.isArray(workspaces)) {
     const strings = workspaces.filter((entry): entry is string => typeof entry === 'string');
@@ -134,7 +152,7 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
 }
 
 /**
- * Expand each pattern against a pruned recursive directory walk, returning relative
+ * Expands each pattern against a pruned recursive directory walk, returning relative
  * dir paths (forward-slash style) sorted and deduplicated.
  */
 function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatternSource): string[] {
@@ -166,7 +184,7 @@ function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatter
 }
 
 /**
- * Normalize a workspace pattern.
+ * Normalizes a workspace pattern.
  * Strips a trailing `/` because picomatch's `**` matches paths, not directories-with-slash.
  */
 function normalizePattern(pattern: string): string {
@@ -174,7 +192,7 @@ function normalizePattern(pattern: string): string {
   return pattern;
 }
 
-/** Recursively walk `cwd` starting at `relDir`, calling `visit` for each directory. */
+/** Walks `cwd` recursively from `relDir`, calling `visit` for each directory. */
 function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string) => void): void {
   visit(relDir);
   if (depth >= MAX_WALK_DEPTH) return;
@@ -184,10 +202,8 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
   try {
     entries = readdirSync(absDir, { withFileTypes: true, encoding: 'utf8' });
   } catch (error) {
-    // Skip directories we can't read for benign reasons (missing, permission-denied).
-    // Rethrow systemic failures (e.g. EMFILE, EIO) so an incomplete walk isn't masked.
-    const code = isRecord(error) && typeof error['code'] === 'string' ? error['code'] : undefined;
-    if (code !== undefined && SKIPPABLE_READ_CODES.has(code)) return;
+    // A systemic failure (e.g. EMFILE, EIO) is rethrown, so an incomplete walk isn't masked.
+    if (isSkippableFilesystemError(error)) return;
     throw error;
   }
 
@@ -201,7 +217,7 @@ function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string
   }
 }
 
-/** Build a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */
+/** Builds a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */
 function buildWorkspace(cwd: string, relDir: string): Workspace | undefined {
   const absoluteDir = resolve(cwd, relDir);
   const packageJsonRelativePath = relDir === '.' ? 'package.json' : `${relDir}/package.json`;
@@ -210,7 +226,7 @@ function buildWorkspace(cwd: string, relDir: string): Workspace | undefined {
   return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
 }
 
-/** Build a `Workspace` from a relative dir, absolute path, and a parsed `package.json`. */
+/** Builds a `Workspace` from a relative dir, absolute path, and a parsed `package.json`. */
 function buildWorkspaceFromPackageJson(
   relDir: string,
   absolutePath: string,
@@ -219,7 +235,9 @@ function buildWorkspaceFromPackageJson(
   const nameValue = packageJson['name'];
   const name = typeof nameValue === 'string' ? nameValue : undefined;
   const isPackage = packageJson['private'] !== true;
-  return { dir: relDir, absolutePath, name, isPackage, packageJson };
+  // One call's mutation would otherwise reach every later call, which shares these objects.
+  deepFreeze(packageJson);
+  return Object.freeze({ dir: relDir, absolutePath, name, isPackage, packageJson });
 }
 
 // endregion | Helpers

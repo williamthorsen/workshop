@@ -1170,6 +1170,8 @@ const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 
 `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, or negation patterns raise a clear error.
 
+Discovery is memoized per `cwd` for the life of the process: Repeated calls in one run share a single directory walk. `filter` is applied per call rather than being part of the key, so two checks filtering differently share that walk too. Entries are the same `Workspace` objects on every call, frozen along with their `packageJson`, so a write throws rather than reaching the next caller; a workspace added or removed after the first call does not appear in later results. A discovery that throws is not memoized.
+
 ### Kit packages
 
 `discoverKitPackages(fromDir?)` names the installed dependencies that publish kits, sorted. It reads the `dependencies` and `devDependencies` a project declares rather than sweeping `node_modules`, so every name it returns is one the reader chose to depend on and can act on; a transitive package is not. `fromDir` defaults to `cwd`, which under `rdy run --from <other-repo>` is the project being checked rather than the repo the kit came from.

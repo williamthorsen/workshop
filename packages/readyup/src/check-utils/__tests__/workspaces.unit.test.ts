@@ -235,6 +235,28 @@ describe(discoverWorkspaces, () => {
         packageJson: { name: 'alpha', version: '1.2.3' },
       });
     });
+
+    it('freezes the workspace and its `packageJson`', () => {
+      writeRootPackageJson({ name: 'root', version: '1.0.0' });
+
+      const [workspace] = discoverWorkspaces();
+
+      // `Object.isFrozen` answers true for `undefined`, so each subject is pinned before it is tested.
+      expect(workspace).toBeDefined();
+      expect(Object.isFrozen(workspace)).toBe(true);
+      expect(Object.isFrozen(workspace?.packageJson)).toBe(true);
+    });
+
+    it('freezes values nested inside `packageJson`, where an in-place sort would otherwise land', () => {
+      writeRootPackageJson({ name: 'root', files: ['dist', 'bin'], scripts: { build: 'tsc' } });
+
+      const [workspace] = discoverWorkspaces();
+
+      expect(workspace?.packageJson['files']).toStrictEqual(['dist', 'bin']);
+      expect(Object.isFrozen(workspace?.packageJson['files'])).toBe(true);
+      expect(workspace?.packageJson['scripts']).toStrictEqual({ build: 'tsc' });
+      expect(Object.isFrozen(workspace?.packageJson['scripts'])).toBe(true);
+    });
   });
 
   describe('negation patterns in npm workspaces', () => {
