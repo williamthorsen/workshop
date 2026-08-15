@@ -1,3 +1,7 @@
+export type { AppliedFile, ApplyOutcome, FileAction, PrunedDirectory } from './apply/ApplyOutcome.ts';
+export type { ApplyPlanOptions } from './apply/applyPlan.ts';
+export { applyPlan } from './apply/applyPlan.ts';
+export { UnapplicablePlanError } from './apply/UnapplicablePlanError.ts';
 export type { ClosureViolation } from './closure/assertClosureIsConsistent.ts';
 export { assertClosureIsConsistent, ClosureConsistencyError } from './closure/assertClosureIsConsistent.ts';
 export type { EdgeRuleViolation } from './closure/assertEdgeRulesAreConsistent.ts';
@@ -232,3 +236,11 @@ export type {
   TransclusionDiagnostic,
   TransclusionFailure,
 } from './transclusion/TransclusionDiagnostic.ts';
+export { validateComposition } from './validate/validateComposition.ts';
+export type {
+  DeploymentDiagnostic,
+  DeploymentRef,
+  RenderRef,
+  ValidationDiagnostic,
+  ValidationReport,
+} from './validate/ValidationDiagnostic.ts';
