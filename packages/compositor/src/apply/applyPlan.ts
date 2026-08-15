@@ -139,14 +139,6 @@ async function hashIfPresent(destination: string): Promise<Hash | undefined> {
   }
 }
 
-/** Reports whether `error` means the directory still holds something. */
-function isPopulatedDir(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null || !('code' in error)) {
-    return false;
-  }
-  return error.code === 'ENOTEMPTY' || error.code === 'EEXIST';
-}
-
 /** Takes away every directory the run's removals emptied, target by target and deepest first. */
 async function pruneEmptied(
   plan: Plan,
@@ -197,11 +189,19 @@ async function removeDir(dir: string): Promise<boolean> {
     await rmdir(dir);
     return true;
   } catch (error: unknown) {
-    if (reportsMissingPath(error) || isPopulatedDir(error)) {
+    if (reportsMissingPath(error) || reportsPopulatedDirectory(error)) {
       return false;
     }
     throw error;
   }
+}
+
+/** Reports whether `error` means the directory still holds something. */
+function reportsPopulatedDirectory(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return false;
+  }
+  return error.code === 'ENOTEMPTY' || error.code === 'EEXIST';
 }
 
 /** Decodes the body a file's planned side names, which the pre-flight has established the plan holds. */

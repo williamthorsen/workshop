@@ -39,7 +39,7 @@ export function assertPlanIsApplicable(plan: Plan): void {
         message: `is "${file.targetId}", which the plan's targets do not carry, so no root resolves for it.`,
       });
     }
-    if (!isInsideRoot(file.path)) {
+    if (!staysInsideRoot(file.path)) {
       refusals.push({
         path: `files[${index}].path`,
         message: `is "${file.path}", which does not name a destination inside the target's root.`,
@@ -67,7 +67,7 @@ export function assertPlanIsApplicable(plan: Plan): void {
 // region | Helpers
 
 /** Reports whether a path names a destination within the target's root, which is the whole of what apply may touch. */
-function isInsideRoot(filePath: string): boolean {
+function staysInsideRoot(filePath: string): boolean {
   if (filePath === '' || path.posix.isAbsolute(filePath)) {
     return false;
   }
