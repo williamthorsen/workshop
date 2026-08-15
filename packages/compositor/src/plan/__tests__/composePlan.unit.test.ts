@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { PlanSchema } from '../../schemas/plan-schemas.ts';
+import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
+import { captureComposition } from '../../test-utils/captureComposition.ts';
+import { buildClaudeTarget, buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
 import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
 import { composePlan } from '../composePlan.ts';
-import { captureComposition } from '../test-utils/captureComposition.ts';
-import { buildOverlappingTargets, HOST_PATH } from '../test-utils/composition-fixture.ts';
 
 describe(composePlan, () => {
   it('composes a plan the schema accepts', async () => {
@@ -115,8 +116,28 @@ describe(composePlan, () => {
     const { config, snapshot } = await captureComposition();
 
     expect(composePlan(config, snapshot).targets).toStrictEqual([
-      { id: 'claude', label: 'Claude', root: snapshot.targets[0]?.root, tokenMappings: [] },
+      {
+        id: 'claude',
+        label: 'Claude',
+        root: snapshot.targets[0]?.root,
+        tokenMappings: [],
+        containerDirs: ['skills'],
+      },
     ]);
+  });
+
+  it('names a tree deployment’s layout root once per target, however many kinds share it', async () => {
+    const { config, snapshot } = await captureComposition({ buildTargets: buildOverlappingTargets });
+
+    expect(composePlan(config, snapshot).targets[0]?.containerDirs).toStrictEqual(['skills']);
+  });
+
+  it('names no container directory for a target that only routes into a region host', async () => {
+    const { config, snapshot } = await captureComposition({
+      buildTargets: (targetRoot) => [buildRegionOnlyTarget(targetRoot)],
+    });
+
+    expect(composePlan(config, snapshot).targets[0]?.containerDirs).toStrictEqual([]);
   });
 
   it('names each region host contributor on the file they aggregate into', async () => {
@@ -183,3 +204,14 @@ describe(composePlan, () => {
     expect(() => composePlan(config, snapshot)).toThrow(StaleSnapshotError);
   });
 });
+
+// region | Helpers
+
+/** Builds a target routing its one deployed kind into a region host, so no tree layout root stands beneath it. */
+function buildRegionOnlyTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return { ...claude, deployments: claude.deployments.filter((deployment) => deployment.form === 'region') };
+}
+
+// endregion | Helpers

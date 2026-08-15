@@ -111,6 +111,10 @@
             }
           ]
         }
+      ],
+      "containerDirs": [
+        "skills",
+        "subagents"
       ]
     },
     {
@@ -145,6 +149,9 @@
             }
           ]
         }
+      ],
+      "containerDirs": [
+        "subagents"
       ]
     }
   ],

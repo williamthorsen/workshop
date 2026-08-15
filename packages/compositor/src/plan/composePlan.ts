@@ -81,6 +81,22 @@ function collectBlobs(files: ReadonlyArray<FileEntry>, blobs: BlobStore): Record
 }
 
 /**
+ * Collects the directories a target holds independently of the composition, in lexicographic order.
+ *
+ * A tree deployment's layout root is such a directory: the composition fills it rather than creating it, and the
+ * artifact directories under it are the other way round. A layout rooted at the empty string puts its kind at the
+ * target's root, which every target holds anyway and no list has to name.
+ */
+function collectContainerDirs(target: RenderTarget): Array<string> {
+  const roots = target.deployments
+    .filter((deployment) => deployment.form === 'tree')
+    .map((deployment) => deployment.layout.root)
+    .filter((root) => root !== '');
+
+  return [...new Set(roots)].toSorted(compareStrings);
+}
+
+/**
  * Collects the partials a plan carries: those the closure's token edges name, and those transclusion drew into a file.
  *
  * The two sets differ. A closure keeps only the partials an edge was read from, while a file's contributors name every
@@ -117,7 +133,13 @@ function sortById<Entry extends { id: Id }>(entries: ReadonlyArray<Entry>): Arra
 
 /** Reads a render target as the entry a plan carries, its pipeline and deployments being engine input alone. */
 function toTargetEntry(target: RenderTarget): TargetEntry {
-  return { id: target.id, label: target.label, root: target.root, tokenMappings: target.tokenMappings };
+  return {
+    id: target.id,
+    label: target.label,
+    root: target.root,
+    tokenMappings: target.tokenMappings,
+    containerDirs: collectContainerDirs(target),
+  };
 }
 
 // endregion | Helpers

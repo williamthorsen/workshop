@@ -1,7 +1,7 @@
-import type { ResolveKind } from '../../schemas/catalog-schemas.ts';
-import type { MarkerPair, RenderTarget } from '../../schemas/render-target-schemas.ts';
+import type { ResolveKind } from '../schemas/catalog-schemas.ts';
+import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 
-/** Builds the target the plan tests deploy into: skills as a tree, rulebooks aggregated into one region host. */
+/** Builds the target the flow tests deploy into: skills as a tree, rulebooks aggregated into one region host. */
 export function buildClaudeTarget(targetRoot: string): RenderTarget {
   return {
     id: 'claude',
@@ -22,7 +22,7 @@ export function buildClaudeTarget(targetRoot: string): RenderTarget {
   };
 }
 
-/** Builds the source tree the plan tests compose over, fresh so that a test may add to it or take from it. */
+/** Builds the source tree the flow tests compose over, fresh so that a test may add to it or take from it. */
 export function buildCompositionSourceFiles(): Record<string, string | Uint8Array> {
   return {
     'collections/core.md': '# Core\n',
@@ -62,7 +62,7 @@ export function buildOverlappingTargets(targetRoot: string): ReadonlyArray<Rende
 }
 
 /**
- * The kinds the plan tests are written against.
+ * The kinds the flow tests are written against.
  *
  * Covers what composition has to tell apart: an aggregate producing no output, a kind laid out as a directory per
  * artifact so that it ships assets beside its entry file, a kind routed into a shared region, and a kind no target

@@ -2,7 +2,7 @@
 
 Content-agnostic engine that resolves declaratively opted-in content across precedence-ordered sources, computes the transitive dependency closure, and plans idempotent writes to per-target destinations.
 
-Private and unreleased: the name is provisional, and the engine is still being built out. What ships today is the plan schema, the contract the engine's output satisfies, and the flows built against it so far: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, the snapshot that gathers all of it, and the composition that turns a snapshot into a plan. Applying a plan to a destination and validating a composition are still to come. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
+Private and unreleased: the name is provisional. What ships today is the plan schema, the contract the engine's output satisfies, and the flows built against it: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, the snapshot that gathers all of it, the composition that turns a snapshot into a plan, the apply that writes one to a destination, and the validation that reports what a config and its content get wrong. Entries ownership is the one mechanism no flow routes content to yet. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
 ## Config
 
@@ -149,6 +149,8 @@ Its artifact shape is also the closure's: a closure artifact is this one with `s
 
 Ordering is part of the contract. Id-keyed tables run lexicographically, `files` runs by target then path, and `blobs` is keyed in hash order, so two plans of the same shape diff cleanly. `sources`, `tiers`, and each list of shadowed candidates run in precedence order instead, where the order is the meaning, and each artifact's `seededBy` follows `tiers`.
 
+A target's `containerDirs` names the directories it holds independently of what the composition puts in them. That is the one fact a directory tree carries which a list of file paths cannot: a reader clearing an artifact's own directory away has to know where to stop, and nothing else in the payload separates a directory the composition created from one it merely filled. The layout roots are almost visible through `files` already; which of them are structural is not.
+
 `tiers` names the config tiers a seed can be decided by, and runs lowest precedence first: that is the order a fold applies them in, so the last tier to speak wins. It is deliberately the reverse of `sources`, where the first entry wins, because a source's position encodes precedence directly while a tier's encodes application. An artifact several tiers seed carries one seed record each, which is what tells a project-level opt-in from an inherited one.
 
 `tokenKinds` names the token kinds a target's mappings are keyed by, so a `tokenMappings` entry resolves to something a reader recognizes rather than to a bare id. It carries identity alone; the pattern a kind matches and the way it resolves are engine input, not payload. A kind's per-target sigil rides on the mapping itself, where the target and the kind already meet.
@@ -174,6 +176,32 @@ Removal follows from a destination nothing plans, never from a render that faile
 Contributions compose into a host in artifact-id order, the order every id-keyed table in a plan runs in and the only one two composes over one snapshot cannot disagree on.
 
 A deployment with nowhere to put what an artifact ships beside its entry file places none of it. A region-routed kind contributes a body to a host rather than a tree, and a tree deployment laid out one file per artifact holds exactly one file. A kind's layout in a source and its layout at a target are separate declarations, so a kind that ships assets can be flattened at a destination with no room for them.
+
+## Applying a plan
+
+`applyPlan(plan, { baseDir, force, dryRun })` writes a plan to the destinations it was composed for and takes away what it no longer plans. It reads the plan alone, so a plan serialized and read back applies as faithfully as one just composed -- which is what keeps apply a step a consumer can take over a payload it was handed rather than one only the engine that composed it can take.
+
+**Idempotence follows from the guard rather than from a pass that checks afterwards.** Each destination is compared against both of the plan's sides. One already holding the planned body has nothing to do; one holding the body the plan recorded as current is written; one holding neither moved after the plan was composed, and is passed over. So a second apply finds the planned body everywhere the first one wrote, and an empty plan touches nothing, the two being one fact rather than two guarantees. Comparing against the current side alone would read every file applied once as drifted the next time round.
+
+Every destination is read, one the plan calls unchanged included, so a file that moved after the plan was composed reports as drift rather than as a quiet success. Nothing is written for it either way.
+
+`force` writes over drift. It never overrides a block: a destination whose content the plan could not compute, or whose provenance is undecidable from shape, is not made decidable by a flag. `dryRun` runs the identical walk and writes nothing. Emptiness is computed from what a run removes and what it writes rather than observed after the fact, so a dry run and the run that follows it record the same actions without a second code path kept in step.
+
+**A region host is written whole**, its planned body being the host with the owned region injected into it, so an edit elsewhere in that host reads as drift like any other. Re-injecting the region into the drifted host is possible from the plan alone, the file's ownership carrying the markers, and it is the wrong answer: the plan shows the bytes that will be written, and a host's own content is among the inputs the fingerprint covers precisely because planned content is derived from it. A moved host is what capturing afresh answers.
+
+Removal deletes what nothing plans and takes away the directory it empties, bounded by the target's `containerDirs`. A target naming none, which a plan composed before that field is, keeps every directory it holds.
+
+A plan this engine will not write is refused before the first write, so no destination is left half applied: content the plan does not carry in full, a body no `blobs` entry holds, a file naming a target the plan does not carry, a path that is absolute or climbs out of the target, and entries ownership, which would be written whole and take another tool's items with it. The engine composes neither an escaping path nor entries ownership, so a plan carrying either came from elsewhere -- which is the case a consumer applying a payload it was handed has to be safe under, and the escaping path is the one whose cost is a file outside the target. The outcome records each destination in plan order with what it holds afterwards, beside the plan's own fingerprint, which is the shape a persisted record of what was applied would keep.
+
+## Validating a composition
+
+`validateComposition(config, snapshot)` reports every fault a config and the content it reaches carry: a selector naming nothing, a frontmatter edge that dangles or closes a cycle, a directive that cannot be resolved, a token or a link that cannot be rewritten, and a destination more than one of a target's deployments writes. Each diagnostic arrives from the domain that found it unchanged, keeping the location that domain gives it, so a reader reaches the config entry an author wrote, the artifact carrying a key, or the line a directive occupies. One merged shape could only approximate that.
+
+**What a destination holds takes no part.** The faults reported here are in what someone wrote, and a report that moved with a destination would answer a different question each time it ran. A snapshot captured with the destination scan skipped therefore validates as well as one captured with it, and the two yield the same report. It is the same division that leaves a damaged region host to composition: that is a fact about the destination, and this is not.
+
+Only what the config reaches is reported. The render matrix covers the whole catalog by design, so an artifact this config does not select carries faults that are somebody else's to fix, and reporting them would bury the ones that are not.
+
+The destination collision is the one diagnostic shape validation adds. Composing finds the same collision from the entries two deployments both drafted, which takes target state to reach; here it follows from deployed paths alone, so it is answerable before any destination has been looked at. A destination counts per deployment rather than per artifact, so a region host stays uncontested however many artifacts aggregate into it, and the diagnostic names the kinds whose deployments contend beside the artifacts whose content they would write.
 
 ## What the schema checks, and what it does not
 

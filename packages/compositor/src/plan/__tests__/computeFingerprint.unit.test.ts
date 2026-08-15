@@ -6,8 +6,8 @@ import { loadConfig } from '../../config/loadConfig.ts';
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { buildConfigDir } from '../../config/test-utils/buildConfigDir.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
+import { captureComposition } from '../../test-utils/captureComposition.ts';
 import { computeFingerprint } from '../computeFingerprint.ts';
-import { captureComposition } from '../test-utils/captureComposition.ts';
 
 describe(computeFingerprint, () => {
   it('names every source the snapshot digested, and every target it read', async () => {
