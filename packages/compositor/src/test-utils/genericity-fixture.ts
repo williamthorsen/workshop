@@ -16,9 +16,11 @@
  * aggregate emitting no files, a kind no target deploys -- bear none, and mirroring its structure would make this a
  * translation of that fixture rather than an independent consumer.
  *
- * No frontmatter stage is declared. `mergeFrontmatter` emits a `---`-fenced YAML block by construction, writing one
- * onto content that carried none, so the stage serves formats carrying such a header and AsciiDoc is not one. That is
- * where the genericity claim stops, rather than a gap in the coverage of it.
+ * No frontmatter stage is declared, and `edgeRules` is empty for the same reason. `mergeFrontmatter` emits a
+ * `---`-fenced YAML block by construction, and `readFrontmatterEdges` reads its declarations through
+ * `parseFrontmatter`, which finds a block only where the content opens with that delimiter. Both mechanisms serve
+ * formats carrying such a header, and AsciiDoc is not one. That is where the genericity claim stops, rather than a
+ * gap in the coverage of it.
  */
 
 import type { ArtifactRead, EdgeContribution } from '../closure/EdgeContributor.ts';
@@ -32,7 +34,7 @@ import { extractTokenEdges } from '../tokens/extractTokenEdges.ts';
 import { buildConfig } from './buildConfig.ts';
 import { buildTempTree } from './buildTempTree.ts';
 
-/** Builds the source tree the fixture composes over, fresh so that a test may add to it or take from it. */
+/** Builds the source tree the fixture composes over. */
 export function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
   return {
     'clauses/governing-law.adoc': '= Governing law\n\nThe laws of the stated jurisdiction govern this agreement.\n',
@@ -177,7 +179,7 @@ export const GENERICITY_TOKEN_KINDS: ReadonlyArray<TokenKind> = [
     id: 'clause-reference',
     label: 'Clause reference',
     form: 'referent',
-    pattern: String.raw`<<clause:([a-z][a-z0-9-]*)>>`,
+    pattern: '<<clause:([a-z][a-z0-9-]*)>>',
     artifactKindId: 'clause',
   },
   { id: 'party', label: 'Party', form: 'mapping', pattern: String.raw`<<party:(\w+)>>` },
