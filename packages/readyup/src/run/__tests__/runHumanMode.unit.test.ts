@@ -581,7 +581,6 @@ function makePassedResult(name: string, severity: Severity): PassedResult {
     severity,
     quiet: false,
     detail: null,
-    fix: null,
     error: null,
     progress: null,
     durationMs: 0,
