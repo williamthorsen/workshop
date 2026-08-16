@@ -2,6 +2,7 @@ import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { ARTIFACT_ID_PLACEHOLDER } from '../../deployment/contribution-markers.ts';
+import { INLAY_NAME_PLACEHOLDER } from '../../inlays/inlay-markers.ts';
 import type { KindDescriptor } from '../../schemas/descriptor-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { RenderTargetViolation } from '../assertRenderTargetsAreConsistent.ts';
@@ -24,6 +25,14 @@ const ambientDeployment = {
   host: 'CLAUDE.md',
   markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
   contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+} as const;
+
+const inlayStage = {
+  kind: 'inlay',
+  syntax: { open: '<!--', close: '-->' },
+  markers: { open: '<!-- inlay:{inlayName}:start -->', close: '<!-- inlay:{inlayName}:end -->' },
+  contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+  reshape: { pattern: String.raw`^(#{1,5})(?=\s)`, replacement: '$1#' },
 } as const;
 
 const claude: RenderTarget = {
@@ -240,6 +249,46 @@ describe(assertRenderTargetsAreConsistent, () => {
 
     await expect(violationsOf([wrong])).resolves.toStrictEqual([
       { path: 'targets[0].deployments[0].markers', message: 'A region marker must occupy a single line.' },
+    ]);
+  });
+
+  it('accepts an inlay stage whose markers, contribution markers, and reshape rule all do their jobs', () => {
+    const inlaying: RenderTarget = { ...claude, stages: [inlayStage] };
+
+    expect(() => assertRenderTargetsAreConsistent([inlaying], kinds)).not.toThrow();
+  });
+
+  it.each([
+    ['markers', { open: '<!-- {inlayName} -->', close: '<!-- {inlayName} -->' }, 'markers'],
+    ['contribution markers', { open: '{artifactId}', close: '{artifactId}' }, 'contributionMarkers'],
+  ])("reports an inlay stage's %s that could not delimit a span", async (_label, pair, field) => {
+    const wrong: RenderTarget = { ...claude, stages: [{ ...inlayStage, [field]: pair }] };
+
+    expect((await violationsOf([wrong])).map(({ path }) => path)).toStrictEqual([`targets[0].stages[0].${field}`]);
+  });
+
+  it.each([
+    ['stands no placeholder', { open: '<!-- start -->', close: '<!-- {inlayName}:end -->' }, 'open', 0],
+    ['stands two', { open: '<!-- {inlayName}:{inlayName}:start -->', close: '<!-- {inlayName}:end -->' }, 'open', 2],
+  ])('reports an inlay marker template that %s', async (_label, markers, role, count) => {
+    const wrong: RenderTarget = { ...claude, stages: [{ ...inlayStage, markers }] };
+
+    await expect(violationsOf([wrong])).resolves.toStrictEqual([
+      {
+        path: `targets[0].stages[0].markers.${role}`,
+        message: `stands ${INLAY_NAME_PLACEHOLDER} ${count} times, but exactly one names the inlay`,
+      },
+    ]);
+  });
+
+  it('reports a reshape rule that does not compile', async () => {
+    const wrong: RenderTarget = {
+      ...claude,
+      stages: [{ ...inlayStage, reshape: { pattern: '(#{1,5}', replacement: '$1#' } }],
+    };
+
+    await expect(violationsOf([wrong])).resolves.toStrictEqual([
+      { path: 'targets[0].stages[0].reshape.pattern', message: 'is not a valid regular expression' },
     ]);
   });
 
