@@ -2,7 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
@@ -19,19 +20,10 @@ const FAILED = richFormatter.tokens.failedError.glyph;
 
 describe('verifyCommand wiring', () => {
   let tempDir: string;
-  let stdout: string[];
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
   let originalCwd: string;
 
   beforeEach(() => {
     tempDir = mkdtempSync(path.join(tmpdir(), 'verify-integ-'));
-    stdout = [];
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
-      stdout.push(String(chunk));
-      return true;
-    });
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     originalCwd = process.cwd();
     process.chdir(tempDir);
   });
@@ -54,11 +46,11 @@ describe('verifyCommand wiring', () => {
       }),
     );
 
-    const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+    const { exitCode, stdout, stderr } = await verify(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
-    expect(stderrSpy).not.toHaveBeenCalled();
+    expect(stdout).toContain(`${OK} demo`);
+    expect(stderr).toBe('');
   });
 
   it('returns 1 and reports drift when on-disk compiled kit differs from manifest targetHash', async () => {
@@ -72,11 +64,11 @@ describe('verifyCommand wiring', () => {
       }),
     );
 
-    const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+    const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   drift`));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected deadbeef'));
+    expect(stdout).toContain(`${FAILED} demo\n   drift`);
+    expect(stdout).toContain('expected deadbeef');
   });
 
   describe('source staleness', () => {
@@ -113,30 +105,30 @@ describe('verifyCommand wiring', () => {
     it('returns 0 when both the source and the compiled kit match the manifest', async () => {
       writeCompiledPair();
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
+      expect(stdout).toContain(`${OK} demo`);
     });
 
     it('returns 1 when the source was edited without a recompile', async () => {
       const sourcePath = writeCompiledPair();
       writeFileSync(sourcePath, 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source stale`));
+      expect(stdout).toContain(`${FAILED} demo\n   source stale`);
     });
 
     it('returns 1 when the recorded source was deleted', async () => {
       const sourcePath = writeCompiledPair();
       rmSync(sourcePath);
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} demo\n   source file missing`));
+      expect(stdout).toContain(`${FAILED} demo\n   source file missing`);
     });
 
     it('carries both source hashes in the JSON entry for a stale kit', async () => {
@@ -144,9 +136,9 @@ describe('verifyCommand wiring', () => {
       const edited = Buffer.from('export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
       writeFileSync(sourcePath, edited);
 
-      await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
-      expect(JSON.parse(stdout.join(''))).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         passed: false,
         kits: [
           {
@@ -206,44 +198,40 @@ describe('verifyCommand wiring', () => {
     it('returns 0 when every file the compile read still matches', async () => {
       writeRecordedClosure();
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
+      expect(stdout).toContain(`${OK} demo`);
     });
 
     it('returns 1 when a module the bundle inlined was edited without a recompile', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`${FAILED} demo\n   input stale: shared.ts (module`),
-      );
+      expect(stdout).toContain(`${FAILED} demo\n   input stale: shared.ts (module`);
     });
 
     it('returns 1 when the version the kit pinned to has moved', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, version: '4.0.0' }));
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`${FAILED} demo\n   input stale: package.json (inline`),
-      );
+      expect(stdout).toContain(`${FAILED} demo\n   input stale: package.json (inline`);
     });
 
     it('returns 0 when a field the kit did not pick was edited', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, name: 'renamed' }));
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} demo`));
+      expect(stdout).toContain(`${OK} demo`);
     });
 
     it('carries the axis and every failure into the JSON entry, at the schema version it always emitted', async () => {
@@ -251,9 +239,9 @@ describe('verifyCommand wiring', () => {
       writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'demo' }));
 
-      await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
-      expect(VerifyOutputSchema.parse(JSON.parse(stdout.join('')))).toMatchObject({
+      expect(VerifyOutputSchema.parse(JSON.parse(stdout))).toMatchObject({
         schemaVersion: 1,
         passed: false,
         kits: [
@@ -298,10 +286,10 @@ describe('verifyCommand wiring', () => {
     it('reports every kit status with the hashes only a drift verdict compared', async () => {
       writeMixedManifest();
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(1);
-      expect(JSON.parse(stdout.join(''))).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         passed: false,
         kits: [
@@ -323,10 +311,10 @@ describe('verifyCommand wiring', () => {
     it('emits exactly one JSON document and sends the per-kit prose to stderr', async () => {
       writeMixedManifest();
 
-      await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { stdoutChunks, stderr } = await verify(['--manifest', 'manifest.json', '--json']);
 
-      expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} clean`));
+      expect(stdoutChunks).toHaveLength(1);
+      expect(stderr).toContain(`${OK} clean`);
     });
 
     it('passes when every kit is ok or unverified', async () => {
@@ -343,19 +331,32 @@ describe('verifyCommand wiring', () => {
         }),
       );
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(0);
-      expect(JSON.parse(stdout.join(''))).toMatchObject({ passed: true });
+      expect(JSON.parse(stdout)).toMatchObject({ passed: true });
     });
 
     it('reports an empty manifest as a passing run with no kits', async () => {
       writeFileSync(path.join(tempDir, 'manifest.json'), JSON.stringify({ version: 1, kits: [] }));
 
-      const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
       expect(exitCode).toBe(0);
-      expect(JSON.parse(stdout.join(''))).toStrictEqual({ schemaVersion: 1, passed: true, kits: [] });
+      expect(JSON.parse(stdout)).toStrictEqual({ schemaVersion: 1, passed: true, kits: [] });
     });
   });
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function verify(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await verifyCommand(args);
+
+  return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+// endregion | Helpers
