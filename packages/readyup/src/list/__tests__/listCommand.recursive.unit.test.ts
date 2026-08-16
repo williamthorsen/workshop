@@ -1,5 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
@@ -105,45 +104,40 @@ describe('list --recursive', () => {
   describe('rendering', () => {
     it('groups kits under the project holding them, the sweep root first', async () => {
       const { exitCode, stdout } = await list(['--recursive']);
-      const output = stdout;
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('\u{2501}\u{2501} \u{1F4C1} ./');
-      expect(output).toContain('\u{2501}\u{2501} \u{1F4C1} packages/readyup/');
-      expect(output.indexOf('./')).toBeLessThan(output.indexOf('packages/readyup/'));
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4C1} ./');
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4C1} packages/readyup/');
+      expect(stdout.indexOf('./')).toBeLessThan(stdout.indexOf('packages/readyup/'));
     });
 
     it('names a command that runs each project\u{2019}s kits from the sweep root', async () => {
       const { stdout } = await list(['--recursive']);
-      const output = stdout;
 
-      expect(output).toContain('rdy run <name>');
-      expect(output).toContain('rdy run --from packages/readyup [<name>]');
+      expect(stdout).toContain('rdy run <name>');
+      expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
     });
 
     it('carries the descriptions the manifest records, and renders a bare name without one', async () => {
       const { stdout } = await list(['--recursive']);
-      const output = stdout;
 
-      expect(output).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');
-      expect(output).toContain('\u{1F4D3} demo');
-      expect(output).not.toContain('demo \u{00B7}');
+      expect(stdout).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');
+      expect(stdout).toContain('\u{1F4D3} demo');
+      expect(stdout).not.toContain('demo \u{00B7}');
     });
 
     it('reaches a project on a relocated output directory by file path', async () => {
       const { stdout } = await list(['--recursive']);
-      const output = stdout;
 
-      expect(output).toContain('rdy run --file <file path>');
-      expect(output).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
+      expect(stdout).toContain('rdy run --file <file path>');
+      expect(stdout).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
     });
 
     it('omits a project with nothing compiled to show', async () => {
       const { stdout } = await list(['--recursive']);
-      const output = stdout;
 
-      expect(output).not.toContain('packages/authored');
-      expect(output).not.toContain('packages/emptied');
+      expect(stdout).not.toContain('packages/authored');
+      expect(stdout).not.toContain('packages/emptied');
     });
 
     // `--style` is consumed by the router before dispatch, so the style is bound here as the router binds it.
@@ -151,10 +145,9 @@ describe('list --recursive', () => {
       setStyle('plain');
 
       const { stdout } = await list(['--recursive']);
-      const output = stdout;
 
-      expect(output).toContain('== packages/readyup/');
-      expect(output).not.toContain('\u{1F4C1}');
+      expect(stdout).toContain('== packages/readyup/');
+      expect(stdout).not.toContain('\u{1F4C1}');
     });
   });
 
@@ -249,11 +242,10 @@ describe('list --recursive', () => {
       failReadOf('packages/blocked/dist/kits', 'EACCES');
 
       const { exitCode, stdout, stderr } = await list(['--recursive']);
-      const output = stdout;
 
       expect(exitCode).toBe(0);
-      expect(output).not.toContain('packages/blocked');
-      expect(output).toContain('packages/readyup/');
+      expect(stdout).not.toContain('packages/blocked');
+      expect(stdout).toContain('packages/readyup/');
       expect(stderr).toContain('Omitting packages/blocked from the listing');
     });
 
@@ -284,10 +276,9 @@ describe('list --recursive', () => {
 
   it('leaves a plain listing showing sections rather than project blocks', async () => {
     const { stdout } = await list([]);
-    const output = stdout;
 
-    expect(output).toContain('\u{2500}\u{2500} Compiled');
-    expect(output).not.toContain('\u{1F4C1}');
+    expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+    expect(stdout).not.toContain('\u{1F4C1}');
   });
 
   // region | Helpers

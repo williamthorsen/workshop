@@ -2,8 +2,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyManifest } from '../../manifest/manifestSchema.ts';

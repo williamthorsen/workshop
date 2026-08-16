@@ -78,16 +78,14 @@ describe(routeCommand, () => {
     const { exitCode, stdout } = await route([]);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy');
+    expect(stdout).toContain('Usage: rdy');
   });
 
   it('shows help and returns 0 for --help', async () => {
     const { exitCode, stdout } = await route(['--help']);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy');
+    expect(stdout).toContain('Usage: rdy');
   });
 
   it('shows help and returns 0 for -h', async () => {
@@ -113,15 +111,14 @@ describe(routeCommand, () => {
   it('includes run options in top-level help', async () => {
     const { stdout } = await route(['--help']);
 
-    const output = stdout;
-    expect(output).toContain('--from');
-    expect(output).toContain('--file, -f');
-    expect(output).toContain('--url');
-    expect(output).toContain('--jit');
-    expect(output).toContain('--internal');
-    expect(output).toContain('--checklists, -c');
-    expect(output).toContain('--json');
-    expect(output).toContain('--version, -V');
+    expect(stdout).toContain('--from');
+    expect(stdout).toContain('--file, -f');
+    expect(stdout).toContain('--url');
+    expect(stdout).toContain('--jit');
+    expect(stdout).toContain('--internal');
+    expect(stdout).toContain('--checklists, -c');
+    expect(stdout).toContain('--json');
+    expect(stdout).toContain('--version, -V');
   });
 
   it.each([
@@ -131,24 +128,21 @@ describe(routeCommand, () => {
   ])('names no retired short flag in $label help', async ({ args }) => {
     const { stdout } = await route(args);
 
-    const output = stdout;
     for (const short of ['-J', '-F', '-R', '-i', '-u', '-j']) {
-      expect(output).not.toContain(`, ${short}`);
+      expect(stdout).not.toContain(`, ${short}`);
     }
   });
 
   it('marks run as the default command in top-level help', async () => {
     const { stdout } = await route(['--help']);
 
-    const output = stdout;
-    expect(output).toContain('(default)');
+    expect(stdout).toContain('(default)');
   });
 
   it('points at per-command help from top-level help', async () => {
     const { stdout } = await route(['--help']);
 
-    const output = stdout;
-    expect(output).toContain("Run 'rdy <command> --help' for command-specific options.");
+    expect(stdout).toContain("Run 'rdy <command> --help' for command-specific options.");
   });
 
   it.each([
@@ -161,8 +155,7 @@ describe(routeCommand, () => {
   ])('points at the documentation from $label help', async ({ args }) => {
     const { stdout } = await route(args);
 
-    const output = stdout;
-    expect(output).toContain(DOCS_POINTER);
+    expect(stdout).toContain(DOCS_POINTER);
   });
 
   it('points at the documented package homepage', () => {
@@ -175,8 +168,7 @@ describe(routeCommand, () => {
   ])('leaves $label to the documentation rather than top-level help', async ({ text }) => {
     const { stdout } = await route(['--help']);
 
-    const output = stdout;
-    expect(output).not.toContain(text);
+    expect(stdout).not.toContain(text);
   });
 
   it.each([
@@ -186,31 +178,27 @@ describe(routeCommand, () => {
   ])('shows examples in $label help', async ({ args }) => {
     const { stdout } = await route(args);
 
-    const output = stdout;
-    expect(output).toContain('Examples:');
+    expect(stdout).toContain('Examples:');
   });
 
   it('explains how to escape a positional starting with a dash in run help', async () => {
     const { stdout } = await route(['run', '--help']);
 
-    const output = stdout;
-    expect(output).toContain('rdy run -- "--odd-kit-name"');
+    expect(stdout).toContain('rdy run -- "--odd-kit-name"');
   });
 
   it('shows run help and returns 0 for run --help', async () => {
     const { exitCode, stdout } = await route(['run', '--help']);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy run');
+    expect(stdout).toContain('Usage: rdy run');
   });
 
   it('shows init help and returns 0 for init --help', async () => {
     const { exitCode, stdout } = await route(['init', '--help']);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy init');
+    expect(stdout).toContain('Usage: rdy init');
   });
 
   it('shows init help and returns 0 for init -h', async () => {
@@ -291,8 +279,7 @@ describe(routeCommand, () => {
   it('includes --json in run help text', async () => {
     const { stdout } = await route(['run', '--help']);
 
-    const output = stdout;
-    expect(output).toContain('--json');
+    expect(stdout).toContain('--json');
   });
 
   it('returns 2 and writes to stderr when parseRunArgs throws', async () => {
@@ -501,9 +488,8 @@ describe(routeCommand, () => {
     const { exitCode, stdout } = await route(['compile', '--help']);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy compile');
-    expect(output).toContain('If no file is given');
+    expect(stdout).toContain('Usage: rdy compile');
+    expect(stdout).toContain('If no file is given');
   });
 
   it('shows compile help and returns 0 for compile -h', async () => {
@@ -533,8 +519,7 @@ describe(routeCommand, () => {
   it('lists compile in top-level help', async () => {
     const { stdout } = await route([]);
 
-    const output = stdout;
-    expect(output).toContain('compile');
+    expect(stdout).toContain('compile');
   });
 
   it('delegates to initCommand for init subcommand', async () => {
@@ -582,8 +567,7 @@ describe(routeCommand, () => {
     const { exitCode, stdout } = await route(['list', '--help']);
 
     expect(exitCode).toBe(0);
-    const output = stdout;
-    expect(output).toContain('Usage: rdy list');
+    expect(stdout).toContain('Usage: rdy list');
   });
 
   it('shows list help and returns 0 for list -h', async () => {
@@ -613,16 +597,10 @@ describe(routeCommand, () => {
   it('lists list in top-level help', async () => {
     const { stdout } = await route([]);
 
-    const output = stdout;
-    expect(output).toContain('list');
+    expect(stdout).toContain('list');
   });
 
   describe('error envelope and stdout purity', () => {
-    /** Reads everything the call wrote to stdout as a single JSON document. */
-    function parseStdout(stdout: string): unknown {
-      return JSON.parse(stdout);
-    }
-
     it('emits the error envelope on stdout and leaves stderr empty for a usage error under --json', async () => {
       mockParseRunArgs.mockImplementation(() => {
         throw usageError("Unknown option '--bogus'");
@@ -631,7 +609,7 @@ describe(routeCommand, () => {
       const { exitCode, stdout, stderr } = await route(['--json', '--bogus']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout(stdout)).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         error: { code: 'usage', message: "Unknown option '--bogus'" },
       });
@@ -646,7 +624,7 @@ describe(routeCommand, () => {
       const { exitCode, stdout } = await route(['--json', '--bogus']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout(stdout)).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         error: { code: 'usage', message: 'nothing found', hint: 'Set GITHUB_TOKEN.' },
       });
@@ -659,7 +637,7 @@ describe(routeCommand, () => {
       const { exitCode, stdout } = await route(['run', '--json']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout(stdout)).toMatchObject({ error: { code: 'config', message: 'bad config' } });
+      expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'config', message: 'bad config' } });
     });
 
     it('classifies an undiagnosed failure as an internal error in the envelope', async () => {
@@ -670,14 +648,14 @@ describe(routeCommand, () => {
       const { exitCode, stdout } = await route(['--json']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout(stdout)).toMatchObject({ error: { code: 'internal', message: 'something unexpected' } });
+      expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'internal', message: 'something unexpected' } });
     });
 
     it('emits an unknown-command error as an envelope rather than prose under --json', async () => {
       const { exitCode, stdout, stderr } = await route(['compil', '--json']);
 
       expect(exitCode).toBe(2);
-      expect(parseStdout(stdout)).toMatchObject({ error: { code: 'usage' } });
+      expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'usage' } });
       expect(stderr).toBe('');
     });
 

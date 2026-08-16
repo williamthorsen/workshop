@@ -1,5 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
@@ -505,9 +504,8 @@ describe(verifyCommand, () => {
 
       const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload = stdout;
-      expect(payload).not.toContain('rebuildEsbuild');
-      expect(payload).not.toContain('rebuildDependencyChanges');
+      expect(stdout).not.toContain('rebuildEsbuild');
+      expect(stdout).not.toContain('rebuildDependencyChanges');
     });
 
     it('fails a kit whose source no longer compiles, carrying the compile error', async () => {
@@ -610,8 +608,7 @@ describe(verifyCommand, () => {
 
       const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload = stdout;
-      expect(payload).not.toContain('rebuildCompiledWith');
+      expect(stdout).not.toContain('rebuildCompiledWith');
     });
 
     it('carries the compile error in the JSON payload for a kit that failed to build', async () => {
@@ -629,8 +626,7 @@ describe(verifyCommand, () => {
 
       const { stdout } = await verify(['--json']);
 
-      const payload = stdout;
-      expect(payload).not.toContain('rebuild');
+      expect(stdout).not.toContain('rebuild');
     });
 
     it('reports a config error naming the install command when esbuild is absent', async () => {

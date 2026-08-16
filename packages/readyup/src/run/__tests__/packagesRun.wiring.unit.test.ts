@@ -180,15 +180,14 @@ describe('--packages run path wiring', () => {
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
-    const output = stdout;
-    const headings = output
+    const headings = stdout
       .matchAll(/^\u{2501}\u{2501} \u{1F4E6} (?<crumb>.+)$/gmu)
       .map((match) => (match.groups?.['crumb'] ?? '').replaceAll(/\p{Emoji_Presentation} /gu, ''))
       .toArray();
 
     expect(headings).toStrictEqual(['@acme/kits@2.1.0 / default', 'plain-kit@1.0.0 / default']);
     for (const heading of headings) {
-      expect(output).toContain(`\u{1F7E2} ${heading}`);
+      expect(stdout).toContain(`\u{1F7E2} ${heading}`);
     }
   });
 

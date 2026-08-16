@@ -1,8 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
@@ -138,12 +137,11 @@ describe(listCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
 
-    const stdoutCalls = stdout;
-    expect(stdoutCalls).toContain(
+    expect(stdout).toContain(
       'Manifest: https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
     );
-    expect(stdoutCalls).toContain('default \u{00B7} General project health checks');
-    expect(stdoutCalls).toContain('deploy');
+    expect(stdout).toContain('default \u{00B7} General project health checks');
+    expect(stdout).toContain('deploy');
   });
 
   it('with --from github:org/repo@ref, builds the URL using the supplied ref', async () => {
@@ -325,12 +323,11 @@ describe(listCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
 
-    const stdoutCalls = stdout;
-    expect(stdoutCalls).toContain(
+    expect(stdout).toContain(
       'Manifest: https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
     );
-    expect(stdoutCalls).toContain('default \u{00B7} General project health checks');
-    expect(stdoutCalls).toContain('deploy');
+    expect(stdout).toContain('default \u{00B7} General project health checks');
+    expect(stdout).toContain('deploy');
   });
 
   it('with --from bitbucket:ws/repo@ref, builds the URL using the supplied ref', async () => {

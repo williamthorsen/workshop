@@ -1,5 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
@@ -85,11 +84,10 @@ describe(listCommand, () => {
 
       const { exitCode, stdout } = await list([]);
 
-      const output = stdout;
       expect(exitCode).toBe(0);
-      expect(output).toContain('Packages');
-      expect(output).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
-      expect(output).not.toContain('No kits found');
+      expect(stdout).toContain('Packages');
+      expect(stdout).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
+      expect(stdout).not.toContain('No kits found');
     });
 
     it('names installed packages that publish kits the config omits', async () => {
@@ -98,11 +96,10 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      const output = stdout;
-      expect(output).toContain('Available');
-      expect(output).toContain('plain-kit');
+      expect(stdout).toContain('Available');
+      expect(stdout).toContain('plain-kit');
       // Already configured, so it belongs under Packages rather than as a candidate to add.
-      expect(output.slice(output.indexOf('Available'))).not.toContain('@acme/kits');
+      expect(stdout.slice(stdout.indexOf('Available'))).not.toContain('@acme/kits');
     });
 
     it('carries package provenance into the JSON payload, apart from the kits it lists', async () => {
@@ -137,9 +134,8 @@ describe(listCommand, () => {
       expect(mockEnumerateKits).toHaveBeenCalledWith(
         expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
       );
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal');
-      expect(output).toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).toContain('\u{2500}\u{2500} Compiled');
     });
 
     it('uses infix-based extension for internal kits when configured', async () => {
@@ -163,9 +159,8 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal');
-      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
     it('uses custom-outDir style when outDir differs from default', async () => {
@@ -183,9 +178,8 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('dist/kits/deploy.js');
-      expect(output).toContain('--file');
+      expect(stdout).toContain('dist/kits/deploy.js');
+      expect(stdout).toContain('--file');
     });
 
     it('prints empty-owner message when no kits exist', async () => {
@@ -196,8 +190,7 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('No kits found.');
+      expect(stdout).toContain('No kits found.');
     });
 
     it('warns and lists with default settings when config load fails', async () => {
@@ -208,8 +201,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('Warning: bad config. Listing with default settings.\n');
-      const output = stdout;
-      expect(output).toContain('default');
+      expect(stdout).toContain('default');
     });
 
     it('renders a hint the config failure carries, on a line of its own', async () => {
@@ -264,9 +256,8 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal');
-      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toBe('');
     });
 
@@ -283,8 +274,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit --internal [<name>]');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit --internal [<name>]');
     });
 
     it('leaves --internal out of the internal hint under the default config', async () => {
@@ -292,8 +282,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit [<name>]');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit [<name>]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
@@ -305,9 +294,8 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Internal');
-      expect(output).not.toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toContain('Warning:');
       expect(stderr).toContain('invalid JSON');
     });
@@ -333,9 +321,8 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('.readyup/manifest.json'));
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Compiled');
-      expect(output).toContain('deploy');
+      expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('deploy');
     });
 
     it('prints empty-consumer message when manifest contains no kits', async () => {
@@ -344,8 +331,7 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list(['--from', '.']);
 
       expect(exitCode).toBe(0);
-      const output = stdout;
-      expect(output).toContain('No compiled kits found');
+      expect(stdout).toContain('No compiled kits found');
     });
 
     it('reports a config error when the manifest is not found at the --from path', async () => {
@@ -371,11 +357,10 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).not.toHaveBeenCalled();
-      const output = stdout;
-      expect(output).toContain('\u{2500}\u{2500} Manifest:');
-      expect(output).toContain('default');
-      expect(output).toContain('Health checks');
-      expect(output).toContain('deploy');
+      expect(stdout).toContain('\u{2500}\u{2500} Manifest:');
+      expect(stdout).toContain('default');
+      expect(stdout).toContain('Health checks');
+      expect(stdout).toContain('deploy');
     });
 
     it('reports a config error when the manifest file cannot be read', async () => {
@@ -398,11 +383,6 @@ describe(listCommand, () => {
   });
 
   describe('--json', () => {
-    /** Reads the single JSON document the command wrote to stdout. */
-    function parseStdout(stdout: string): unknown {
-      return JSON.parse(stdout);
-    }
-
     it('distinguishes internal sources from compiled kits in owner mode', async () => {
       mockEnumerateKits.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({
@@ -413,7 +393,7 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list(['--json']);
 
       expect(exitCode).toBe(0);
-      expect(parseStdout(stdout)).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         schemaVersion: 1,
         kits: [
           { name: 'draft', kind: 'internal', path: expect.stringContaining('draft.ts') },
@@ -440,7 +420,7 @@ describe(listCommand, () => {
 
       const { stdout, stderr } = await list(['--json']);
 
-      expect(parseStdout(stdout)).toStrictEqual({ schemaVersion: 1, kits: [] });
+      expect(JSON.parse(stdout)).toStrictEqual({ schemaVersion: 1, kits: [] });
       expect(stderr).toContain('No kits found.');
     });
 
@@ -452,7 +432,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list(['--manifest', '.readyup/manifest.json', '--json']);
 
-      expect(parseStdout(stdout)).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [{ name: 'deploy', kind: 'compiled', description: 'Deploy checks', readyupVersion: '0.21.2' }],
       });
