@@ -85,6 +85,22 @@ describe(validateComposition, () => {
     ]);
   });
 
+  it('reports an unreadable inlay directive under its own domain, at the line of the body it landed in', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: { 'skills/lint/SKILL.md': '<!-- inlay: preferences -->\n<!-- inlay: preferences -->\n' },
+      select: { skill: { use: [{ source: 'team' }] } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'inlay',
+        at: { targetId: 'claude', artifactId: 'skill:lint' },
+        diagnostic: { code: 'duplicate-name', message: expect.any(String), line: 2 },
+      },
+    ]);
+  });
+
   it('reports a token and a link that could not be rewritten, at the artifact hosting them', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: { 'skills/lint/SKILL.md': 'Use {tool:Write} on [the rubric](../../../outside.md).\n' },
@@ -268,6 +284,24 @@ function buildHostCollidingTarget(targetRoot: string): RenderTarget {
     deployments: [
       ...claude.deployments.filter((deployment) => deployment.kindId === 'rulebook'),
       { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
+    ],
+  };
+}
+
+/** Builds a target running the inlay stage, whose faults end a render as a transclusion directive's do. */
+function buildInlayingTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return {
+    ...claude,
+    stages: [
+      ...claude.stages,
+      {
+        kind: 'inlay',
+        syntax: { open: '<!--', close: '-->' },
+        markers: { open: '<!-- inlay:{inlayName}:start -->', close: '<!-- inlay:{inlayName}:end -->' },
+        contributionMarkers: CONTRIBUTION_MARKERS,
+      },
     ],
   };
 }

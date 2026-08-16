@@ -169,7 +169,9 @@ export {
 export type {
   DirectiveSyntax,
   FrontmatterOverlay,
+  InlayStage,
   KindDeployment,
+  LineRewrite,
   MarkerPair,
   RegionKindDeployment,
   RenderStage,
@@ -180,6 +182,7 @@ export {
   DirectiveSyntaxSchema,
   FrontmatterOverlaySchema,
   KindDeploymentSchema,
+  LineRewriteSchema,
   MarkerPairSchema,
   RenderStageSchema,
   RenderTargetSchema,

@@ -187,7 +187,7 @@ function readContributions(context: TargetPlanContext, routed: ReadonlyArray<Clo
       // `not-deployed` cannot arrive: a caller reaches an artifact through the deployment its kind resolved to.
       const reason =
         render.status === 'failed'
-          ? `"${artifact.id}" could not be rendered: ${render.diagnostic.message}`
+          ? `"${artifact.id}" could not be rendered: ${render.failure.diagnostic.message}`
           : `"${artifact.id}" is of a kind the target does not deploy.`;
       return { status: 'unrenderable', reason };
     }

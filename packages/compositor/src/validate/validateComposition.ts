@@ -71,7 +71,8 @@ function collectRenderDiagnostics(
         return [];
       }
       if (render.status === 'failed') {
-        return [{ domain: 'transclusion', at, diagnostic: render.diagnostic }];
+        const { stage, diagnostic } = render.failure;
+        return [stage === 'inlay' ? { domain: 'inlay', at, diagnostic } : { domain: 'transclusion', at, diagnostic }];
       }
       if (render.status === 'not-deployed') {
         return [];

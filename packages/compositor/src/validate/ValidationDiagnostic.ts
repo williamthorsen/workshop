@@ -1,3 +1,4 @@
+import type { InlayDiagnostic } from '../inlays/InlayDiagnostic.ts';
 import type { RenderDiagnostic } from '../render/RenderDiagnostic.ts';
 import type { ClosureDiagnostic } from '../schemas/closure-schemas.ts';
 import type { ArtifactId, KindId, TargetId } from '../schemas/scalar-schemas.ts';
@@ -39,14 +40,16 @@ export interface RenderRef {
  * token or a link at the artifact hosting it. Wrapping rather than flattening is what keeps a reader able to reach the
  * file an author would open, which one merged shape could only approximate.
  *
- * Transclusion stands apart from the other render faults because it is a different kind of event: a directive that
- * cannot be resolved ends the render, while a token or a link that cannot be rewritten travels beside the content that
- * was produced anyway.
+ * Transclusion and inlays stand apart from the other render faults because they are a different kind of event: a
+ * directive that cannot be read ends the render, while a token or a link that cannot be rewritten travels beside the
+ * content that was produced anyway. They stand apart from each other because each locates its fault differently -- a
+ * transclusion directive in the file an author wrote it in, an inlay directive in the body it was rendered into.
  */
 export type ValidationDiagnostic =
   | { readonly domain: 'selection'; readonly diagnostic: SelectionDiagnostic }
   | { readonly domain: 'closure'; readonly diagnostic: ClosureDiagnostic }
   | { readonly domain: 'transclusion'; readonly at: RenderRef; readonly diagnostic: TransclusionDiagnostic }
+  | { readonly domain: 'inlay'; readonly at: RenderRef; readonly diagnostic: InlayDiagnostic }
   | { readonly domain: 'render'; readonly at: RenderRef; readonly diagnostic: RenderDiagnostic }
   | { readonly domain: 'deployment'; readonly diagnostic: DeploymentDiagnostic };
 

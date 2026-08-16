@@ -4,6 +4,8 @@ import path from 'node:path';
 import type { DeployableArtifact } from '../deployment/resolveDeployedNames.ts';
 import { resolveDeployedPath } from '../deployment/resolveDeployedPath.ts';
 import { mergeFrontmatter } from '../frontmatter/mergeFrontmatter.ts';
+import type { InlaySite } from '../inlays/stripInlays.ts';
+import { stripInlays } from '../inlays/stripInlays.ts';
 import { rewriteLinks } from '../links/rewriteLinks.ts';
 import type { FileContributors } from '../schemas/file-schemas.ts';
 import type { PartialEntry } from '../schemas/graph-schemas.ts';
@@ -15,7 +17,7 @@ import type { Segment, TransclusionSource } from '../transclusion/expandTransclu
 import { expandTransclusions } from '../transclusion/expandTransclusions.ts';
 import { joinSegments } from '../transclusion/joinSegments.ts';
 import type { TransclusionDiagnostic } from '../transclusion/TransclusionDiagnostic.ts';
-import type { RenderDiagnostic } from './RenderDiagnostic.ts';
+import type { RenderDiagnostic, RenderFailure } from './RenderDiagnostic.ts';
 
 /** Everything rendering one of an artifact's files for one target needs. */
 export interface RenderArtifactInput {
@@ -43,8 +45,10 @@ export type ArtifactRender =
       readonly contributors: FileContributors;
       readonly partials: ReadonlyArray<PartialEntry>;
       readonly diagnostics: ReadonlyArray<RenderDiagnostic>;
+      /** Where a fill for each inlay the body declared is spliced into `content`, in the order they occur. */
+      readonly inlays: ReadonlyArray<InlaySite>;
     }
-  | { readonly status: 'failed'; readonly diagnostic: TransclusionDiagnostic }
+  | { readonly status: 'failed'; readonly failure: RenderFailure }
   | { readonly status: 'not-deployed' };
 
 /**
@@ -54,15 +58,20 @@ export type ArtifactRender =
  * rewriting runs before the token rewrite, so a link target opening with a token still carries the token the link stage
  * recognizes: a consumer writes `{name}` for a value to be inserted where it stands and `./{name}` for one to be
  * resolved against the file. The frontmatter overlay runs last, over the joined document, since it parses a block
- * rather than a run of lines and its values are already the target's own. Each ordering is load-bearing, which is why a
- * target declares which stages run and never their sequence.
+ * rather than a run of lines and its values are already the target's own. The inlay stage runs last of all, after that
+ * overlay: it reports the line each removed directive stood on, and the overlay re-emits its block and so can move
+ * every line beneath it. Each ordering is load-bearing, which is why a target declares which stages run and never
+ * their sequence.
  *
  * A target declaring no transclusion stage still has its file read: a body with no directives in it is one segment.
+ * A target declaring no inlay stage recognizes no inlay directive, so one deploys as text, which is the answer an
+ * `include:` line already gets under no transclusion stage.
  *
  * A directive that cannot be resolved ends the render, since a cycle or a missing target leaves no body to carry on
- * with. Everything a later stage could not resolve comes back as a diagnostic beside the content, so a plan records the
- * file it would write next to the reasons it is incomplete. Frontmatter the overlay cannot be applied to throws, on the
- * reasoning that no reading of a malformed block lets the overlay apply and every alternative loses content.
+ * with, and an unreadable inlay directive ends it the same way. Everything a later stage could not resolve comes back
+ * as a diagnostic beside the content, so a plan records the file it would write next to the reasons it is incomplete.
+ * Frontmatter the overlay cannot be applied to throws, on the reasoning that no reading of a malformed block lets the
+ * overlay apply and every alternative loses content.
  */
 export async function renderArtifact(input: RenderArtifactInput): Promise<ArtifactRender> {
   const deployment = input.target.deployments.find((entry) => entry.kindId === input.artifact.kindId);
@@ -73,7 +82,7 @@ export async function renderArtifact(input: RenderArtifactInput): Promise<Artifa
 
   const expansion = await expand(input);
   if (expansion.status === 'failed') {
-    return expansion;
+    return { status: 'failed', failure: { stage: 'transclusion', diagnostic: expansion.diagnostic } };
   }
 
   const diagnostics: Array<RenderDiagnostic> = [];
@@ -107,18 +116,25 @@ export async function renderArtifact(input: RenderArtifactInput): Promise<Artifa
 
   const frontmatter = findStage(input.target, 'frontmatter');
   const joined = joinSegments(segments);
-  const content =
+  const overlaid =
     frontmatter === undefined ? joined : mergeFrontmatter(joined, frontmatter.overlay, input.artifact.slug);
+
+  const inlay = findStage(input.target, 'inlay');
+  const strip = inlay === undefined ? undefined : stripInlays(overlaid, inlay.syntax);
+  if (strip?.status === 'failed') {
+    return { status: 'failed', failure: { stage: 'inlay', diagnostic: strip.diagnostic } };
+  }
 
   return {
     status: 'rendered',
-    content,
+    content: strip?.content ?? overlaid,
     contributors: {
       artifacts: [{ artifactId: input.artifact.id }],
       partials: expansion.partials.map((partial) => partial.id),
     },
     partials: expansion.partials,
     diagnostics,
+    inlays: strip?.sites ?? [],
   };
 }
 

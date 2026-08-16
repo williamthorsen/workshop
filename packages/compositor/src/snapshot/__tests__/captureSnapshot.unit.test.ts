@@ -79,7 +79,10 @@ describe(captureSnapshot, () => {
 
     expect(renderOf(snapshot, 'skill:broken')).toMatchObject({
       status: 'failed',
-      diagnostic: { code: 'not-found', at: { path: 'skills/broken/SKILL.md', line: 1 } },
+      failure: {
+        stage: 'transclusion',
+        diagnostic: { code: 'not-found', at: { path: 'skills/broken/SKILL.md', line: 1 } },
+      },
     });
   });
 
