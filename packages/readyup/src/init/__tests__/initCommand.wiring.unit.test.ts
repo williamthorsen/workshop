@@ -1,3 +1,4 @@
+import { silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 const mockScaffoldConfig = vi.hoisted(() => vi.fn());
@@ -38,14 +39,7 @@ function makeScaffoldResult(outcome: string) {
 }
 
 describe(`${initCommand.name} error handling`, () => {
-  beforeEach(() => {
-    vi.spyOn(console, 'info').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-  });
-
   afterEach(() => {
-    vi.restoreAllMocks();
     mockScaffoldConfig.mockReset();
     mockReportWriteResult.mockReset();
     mockBuildInstallCommand.mockReset();
@@ -53,6 +47,8 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error when scaffoldConfig throws', () => {
+    using _silent = silenceConsole(['info']);
+
     mockScaffoldConfig.mockImplementation(() => {
       throw new Error('disk full');
     });
@@ -63,6 +59,8 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error naming the file when the config result failed', () => {
+    using _silent = silenceConsole(['info']);
+
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
 
     expect(() => initCommand({ dryRun: false, force: false })).toThrow(
@@ -71,6 +69,8 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error naming the file when the kit result failed', () => {
+    using _silent = silenceConsole(['info']);
+
     mockScaffoldConfig.mockReturnValue({
       configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
       kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
@@ -82,6 +82,8 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('returns exit code 0 when both results are created', () => {
+    using _silent = silenceConsole(['info']);
+
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
 
     const exitCode = initCommand({ dryRun: false, force: false });
@@ -97,6 +99,8 @@ describe(`${initCommand.name} error handling`, () => {
     { outcome: 'skipped', dryRun: false },
     { outcome: 'failed', dryRun: false },
   ])('calls reportWriteResult for both files with $outcome outcome (dryRun=$dryRun)', ({ outcome, dryRun }) => {
+    using _silent = silenceConsole(['info']);
+
     const result = makeScaffoldResult(outcome);
     mockScaffoldConfig.mockReturnValue(result);
 
@@ -113,54 +117,58 @@ describe(`${initCommand.name} error handling`, () => {
 });
 
 describe(`${initCommand.name} next steps`, () => {
-  let infoSpy: MockInstance;
-
   beforeEach(() => {
-    infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
     mockBuildInstallCommand.mockReturnValue('pnpm add --save-dev readyup');
     mockIsPackageInstalled.mockReturnValue(true);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     mockScaffoldConfig.mockReset();
     mockBuildInstallCommand.mockReset();
     mockIsPackageInstalled.mockReset();
   });
 
   it('names only rdy commands, never npx readyup', () => {
+    using silent = silenceConsole(['info']);
+
     initCommand({ dryRun: false, force: false });
 
-    expect(printedSteps(infoSpy)).not.toContain('npx readyup');
-    expect(printedSteps(infoSpy)).toContain('rdy compile');
-    expect(printedSteps(infoSpy)).toContain('rdy run');
+    expect(printedSteps(silent.info)).not.toContain('npx readyup');
+    expect(printedSteps(silent.info)).toContain('rdy compile');
+    expect(printedSteps(silent.info)).toContain('rdy run');
   });
 
   it('omits the install step when readyup is already installed', () => {
+    using silent = silenceConsole(['info']);
+
     initCommand({ dryRun: false, force: false });
 
-    const steps = printedSteps(infoSpy);
+    const steps = printedSteps(silent.info);
     expect(steps).not.toContain('Install readyup');
     expect(steps).toContain('1. Customize .config/readyup.config.ts');
     expect(steps).toContain('5. Commit the generated files.');
   });
 
   it('leads with the install step when readyup is not installed', () => {
+    using silent = silenceConsole(['info']);
+
     mockIsPackageInstalled.mockReturnValue(false);
 
     initCommand({ dryRun: false, force: false });
 
-    const steps = printedSteps(infoSpy);
+    const steps = printedSteps(silent.info);
     expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup');
     expect(steps).toContain('2. Customize .config/readyup.config.ts');
     expect(steps).toContain('6. Commit the generated files.');
   });
 
   it('prints no next steps in dry-run mode', () => {
+    using silent = silenceConsole(['info']);
+
     initCommand({ dryRun: true, force: false });
 
-    expect(printedSteps(infoSpy)).not.toContain('Customize');
+    expect(printedSteps(silent.info)).not.toContain('Customize');
   });
 });
 

@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { initCommand } from '../initCommand.ts';
 import { rdyConfigTemplate, rdyKitTemplate } from '../templates.ts';
@@ -17,18 +18,16 @@ describe(initCommand, () => {
     originalCwd = process.cwd();
     mkdirSync(TEST_DIR, { recursive: true });
     process.chdir(TEST_DIR);
-    vi.spyOn(console, 'info').mockImplementation(() => undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     process.chdir(originalCwd);
     rmSync(TEST_DIR, { recursive: true, force: true });
-    vi.restoreAllMocks();
   });
 
   it('scaffolds both config and kit files and returns 0', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     const exitCode = initCommand({ dryRun: false, force: false });
 
     expect(exitCode).toBe(0);
@@ -43,6 +42,8 @@ describe(initCommand, () => {
   });
 
   it('skips with a warning when both files already exist', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
@@ -56,6 +57,8 @@ describe(initCommand, () => {
   });
 
   it('overwrites existing files when force is true', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'old config', 'utf8');
@@ -69,6 +72,8 @@ describe(initCommand, () => {
   });
 
   it('previews without writing when dry-run is true', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     const exitCode = initCommand({ dryRun: true, force: false });
 
     expect(exitCode).toBe(0);
@@ -77,6 +82,8 @@ describe(initCommand, () => {
   });
 
   it('reports up-to-date when both files match the templates', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), rdyConfigTemplate, 'utf8');
@@ -90,6 +97,8 @@ describe(initCommand, () => {
   });
 
   it('does not modify existing files during dry-run', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
@@ -103,6 +112,8 @@ describe(initCommand, () => {
   });
 
   it('does not overwrite during dry-run even with force', () => {
+    using _silent = silenceConsole(['error', 'info']);
+
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
     writeFileSync(join(TEST_DIR, CONFIG_PATH), 'existing config', 'utf8');
@@ -116,18 +127,22 @@ describe(initCommand, () => {
   });
 
   it('does not print next steps during dry-run', () => {
+    using silent = silenceConsole(['error', 'info']);
+
     const exitCode = initCommand({ dryRun: true, force: false });
 
     expect(exitCode).toBe(0);
-    const infoMessages = vi.mocked(console.info).mock.calls.map((c) => String(c[0]));
+    const infoMessages = silent.info.mock.calls.map((c) => String(c[0]));
     expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(false);
   });
 
   it('prints next steps after successful scaffolding', () => {
+    using silent = silenceConsole(['error', 'info']);
+
     const exitCode = initCommand({ dryRun: false, force: false });
 
     expect(exitCode).toBe(0);
-    const infoMessages = vi.mocked(console.info).mock.calls.map((c) => String(c[0]));
+    const infoMessages = silent.info.mock.calls.map((c) => String(c[0]));
     expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(true);
   });
 });
