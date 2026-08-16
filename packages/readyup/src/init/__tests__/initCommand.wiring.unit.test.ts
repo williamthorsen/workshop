@@ -47,7 +47,7 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error when scaffoldConfig throws', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['info']);
 
     mockScaffoldConfig.mockImplementation(() => {
       throw new Error('disk full');
@@ -59,7 +59,7 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error naming the file when the config result failed', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['info']);
 
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
 
@@ -69,7 +69,7 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('throws a config error naming the file when the kit result failed', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['info']);
 
     mockScaffoldConfig.mockReturnValue({
       configResult: { filePath: '.config/readyup.config.ts', outcome: 'created' },
@@ -82,7 +82,7 @@ describe(`${initCommand.name} error handling`, () => {
   });
 
   it('returns exit code 0 when both results are created', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['info']);
 
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
 
@@ -99,7 +99,7 @@ describe(`${initCommand.name} error handling`, () => {
     { outcome: 'skipped', dryRun: false },
     { outcome: 'failed', dryRun: false },
   ])('calls reportWriteResult for both files with $outcome outcome (dryRun=$dryRun)', ({ outcome, dryRun }) => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['info']);
 
     const result = makeScaffoldResult(outcome);
     mockScaffoldConfig.mockReturnValue(result);

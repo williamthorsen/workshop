@@ -26,7 +26,7 @@ describe(initCommand, () => {
   });
 
   it('scaffolds both config and kit files and returns 0', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     const exitCode = initCommand({ dryRun: false, force: false });
 
@@ -42,7 +42,7 @@ describe(initCommand, () => {
   });
 
   it('skips with a warning when both files already exist', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
@@ -57,7 +57,7 @@ describe(initCommand, () => {
   });
 
   it('overwrites existing files when force is true', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
@@ -72,7 +72,7 @@ describe(initCommand, () => {
   });
 
   it('previews without writing when dry-run is true', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     const exitCode = initCommand({ dryRun: true, force: false });
 
@@ -82,7 +82,7 @@ describe(initCommand, () => {
   });
 
   it('reports up-to-date when both files match the templates', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
@@ -97,7 +97,7 @@ describe(initCommand, () => {
   });
 
   it('does not modify existing files during dry-run', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
@@ -112,7 +112,7 @@ describe(initCommand, () => {
   });
 
   it('does not overwrite during dry-run even with force', () => {
-    using _silent = silenceConsole(['error', 'info', 'warn']);
+    using _silent = silenceConsole(['error', 'info']);
 
     mkdirSync(join(TEST_DIR, '.config'), { recursive: true });
     mkdirSync(join(TEST_DIR, '.readyup/kits'), { recursive: true });
@@ -127,7 +127,7 @@ describe(initCommand, () => {
   });
 
   it('does not print next steps during dry-run', () => {
-    using silent = silenceConsole(['error', 'info', 'warn']);
+    using silent = silenceConsole(['error', 'info']);
 
     const exitCode = initCommand({ dryRun: true, force: false });
 
@@ -137,7 +137,7 @@ describe(initCommand, () => {
   });
 
   it('prints next steps after successful scaffolding', () => {
-    using silent = silenceConsole(['error', 'info', 'warn']);
+    using silent = silenceConsole(['error', 'info']);
 
     const exitCode = initCommand({ dryRun: false, force: false });
 

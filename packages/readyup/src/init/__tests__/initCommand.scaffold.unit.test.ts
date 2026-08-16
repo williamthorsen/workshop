@@ -33,7 +33,7 @@ describe('scaffolded kit', () => {
   });
 
   it('passes with NODE_ENV set, reporting the value it found', async () => {
-    using _silent = silenceConsole(['info']);
+    using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', 'production');
     initCommand({ dryRun: false, force: false });
@@ -44,7 +44,7 @@ describe('scaffolded kit', () => {
   });
 
   it('fails with NODE_ENV unset, reporting that the environment carries no value', async () => {
-    using _silent = silenceConsole(['info']);
+    using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', undefined);
     initCommand({ dryRun: false, force: false });
