@@ -22,7 +22,7 @@ const skillKind: ResolveKind = {
 
 describe(enumerateSource, () => {
   it('finds one artifact per file for a file kind, dropping the extension from the slug', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'guidance/rulebooks/naming.md': 'naming',
       'guidance/rulebooks/style.md': 'style',
     });
@@ -31,7 +31,7 @@ describe(enumerateSource, () => {
   });
 
   it('finds one artifact per directory for a directory kind, naming it for the directory', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       'skills/review/SKILL.md': 'review',
     });
@@ -40,13 +40,13 @@ describe(enumerateSource, () => {
   });
 
   it('locates a directory kind at its entry file, in posix form', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
     expect((await enumerateSource(source, [skillKind])).at(0)?.path).toBe('skills/lint/SKILL.md');
   });
 
   it('skips a directory that carries no entry file', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       'skills/notaskill/README.md': 'support content',
     });
@@ -55,7 +55,7 @@ describe(enumerateSource, () => {
   });
 
   it('skips a directory whose entry file is itself a directory', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       'skills/decoy/SKILL.md/inner.txt': 'a directory named like an entry file',
     });
@@ -64,7 +64,7 @@ describe(enumerateSource, () => {
   });
 
   it('skips a loose file sitting in a directory kind root', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       'skills/README.md': 'not a skill',
     });
@@ -73,7 +73,7 @@ describe(enumerateSource, () => {
   });
 
   it('skips a directory sitting in a file kind root', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'guidance/rulebooks/naming.md': 'naming',
       'guidance/rulebooks/nested/style.md': 'nested',
     });
@@ -82,7 +82,7 @@ describe(enumerateSource, () => {
   });
 
   it('skips a file whose extension the kind does not declare', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'guidance/rulebooks/naming.md': 'naming',
       'guidance/rulebooks/notes.txt': 'notes',
     });
@@ -91,7 +91,7 @@ describe(enumerateSource, () => {
   });
 
   it.each(['_partials', '.hidden'])('skips support content named %s', async (name) => {
-    const source = await buildSource({
+    const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       [`skills/${name}/SKILL.md`]: 'support content',
     });
@@ -100,27 +100,27 @@ describe(enumerateSource, () => {
   });
 
   it('follows a symlinked artifact directory, which a linked install layout produces', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'elsewhere/shared/SKILL.md': 'shared' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint', 'elsewhere/shared/SKILL.md': 'shared' });
     await symlink(path.join(source.dir, 'elsewhere/shared'), path.join(source.dir, 'skills/shared'));
 
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
   });
 
   it('skips a symlinked artifact whose target is gone, rather than carrying one nothing can read', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
     await symlink(path.join(source.dir, 'skills/never-created'), path.join(source.dir, 'skills/dangling'));
 
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('carries nothing for a kind whose root the source does not have', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
     await expect(collectSlugs(source, [rulebookKind, skillKind])).resolves.toStrictEqual(['lint']);
   });
 
   it('fails rather than reporting an absence when a kind root cannot be read', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
     const skillsDir = path.join(source.dir, 'skills');
     await chmod(skillsDir, 0o000);
 
@@ -133,7 +133,7 @@ describe(enumerateSource, () => {
   });
 
   it('orders its results by kind, then by slug', async () => {
-    const source = await buildSource({
+    const source = buildSource({
       'guidance/rulebooks/style.md': 'style',
       'guidance/rulebooks/naming.md': 'naming',
       'skills/review/SKILL.md': 'review',
@@ -151,8 +151,8 @@ describe(enumerateSource, () => {
 
 describe('artifact digests', () => {
   it('digests a file kind over the file body', async () => {
-    const same = await buildSource({ 'guidance/rulebooks/naming.md': 'naming' });
-    const differs = await buildSource({ 'guidance/rulebooks/naming.md': 'naming, revised' });
+    const same = buildSource({ 'guidance/rulebooks/naming.md': 'naming' });
+    const differs = buildSource({ 'guidance/rulebooks/naming.md': 'naming, revised' });
 
     await expect(requireArtifactHash(same, rulebookKind)).resolves.not.toBe(
       await requireArtifactHash(differs, rulebookKind),
@@ -160,15 +160,15 @@ describe('artifact digests', () => {
   });
 
   it('digests a directory kind over the whole artifact, so a changed asset moves it', async () => {
-    const before = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
-    const after = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v2' });
+    const before = buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
+    const after = buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v2' });
 
     await expect(requireArtifactHash(before, skillKind)).resolves.not.toBe(await requireArtifactHash(after, skillKind));
   });
 
   it('gives the same artifact the same digest in two sources, so an identical copy is recognizable', async () => {
-    const here = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
-    const there = await buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
+    const here = buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
+    const there = buildSource({ 'skills/lint/SKILL.md': 'lint', 'skills/lint/run.mjs': 'v1' });
 
     await expect(requireArtifactHash(here, skillKind)).resolves.toBe(await requireArtifactHash(there, skillKind));
   });

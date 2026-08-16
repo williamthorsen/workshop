@@ -1,6 +1,8 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+
 import { resolveCatalog } from '../../resolution/resolveCatalog.ts';
 import type { Catalog, ResolveKind } from '../../schemas/catalog-schemas.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import { SAMPLE_KINDS } from './sample-kinds.ts';
 
 /** One source's content, as the files it carries relative to its own directory. */
@@ -21,13 +23,11 @@ export async function buildSourceCatalog(
   sources: ReadonlyArray<SourceContent>,
   kinds: ReadonlyArray<ResolveKind> = SAMPLE_KINDS,
 ): Promise<Catalog> {
-  const specs = await Promise.all(
-    sources.map(async (source) => ({
-      id: source.id,
-      name: source.id,
-      origin: { kind: 'directory' as const, location: `./${source.id}` },
-      dir: await buildTempTree(source.files, `compositor-${source.id}`),
-    })),
-  );
+  const specs = sources.map((source) => ({
+    id: source.id,
+    name: source.id,
+    origin: { kind: 'directory' as const, location: `./${source.id}` },
+    dir: disposeOnTestFinished(createTempTree(source.files, { prefix: `compositor-${source.id}-` })).dir,
+  }));
   return resolveCatalog({ kinds, sources: specs });
 }

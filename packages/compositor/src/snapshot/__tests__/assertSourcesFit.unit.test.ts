@@ -1,8 +1,8 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
 import { assertSourcesFit } from '../assertSourcesFit.ts';
 
@@ -52,12 +52,12 @@ describe(assertSourcesFit, () => {
   });
 
   it('refuses a config that reorders its sources, order being what the catalog ranks candidates by', async () => {
-    const library = await buildTempTree({ 'rulebooks/shared.md': 'Shared.\n' }, 'compositor-library');
+    using library = createTempTree({ 'rulebooks/shared.md': 'Shared.\n' }, { prefix: 'compositor-library-' });
     const { snapshot, sourceDir } = await captureComposition({
       buildSources: (dir) => ({
         use: [
           { name: 'team', path: dir },
-          { name: 'library', path: library },
+          { name: 'library', path: library.dir },
         ],
       }),
     });
@@ -66,7 +66,7 @@ describe(assertSourcesFit, () => {
         id: 'project',
         sources: {
           use: [
-            { name: 'library', path: library },
+            { name: 'library', path: library.dir },
             { name: 'team', path: sourceDir },
           ],
         },

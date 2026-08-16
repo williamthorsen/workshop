@@ -23,6 +23,9 @@
  * gap in the coverage of it.
  */
 
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+
 import type { ArtifactRead, EdgeContribution } from '../closure/EdgeContributor.ts';
 import type { ResolveKind } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
@@ -32,7 +35,6 @@ import type { CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
 import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
 import { extractTokenEdges } from '../tokens/extractTokenEdges.ts';
 import { buildConfig } from './buildConfig.ts';
-import { buildTempTree } from './buildTempTree.ts';
 
 /** Builds the source tree the fixture composes over. */
 export function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
@@ -102,8 +104,11 @@ export function buildJurisdictionTarget(targetRoot: string): RenderTarget {
  * so a closure that failed to read a token behind this consumer's delimiter would leave it out of the composition.
  */
 export async function captureGenericityComposition(): Promise<GenericityFixture> {
-  const sourceDir = await buildTempTree(buildGenericitySourceFiles(), 'compositor-clauses');
-  const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-jurisdiction');
+  const sourceFiles = buildGenericitySourceFiles();
+  const { dir: sourceDir } = disposeOnTestFinished(createTempTree(sourceFiles, { prefix: 'compositor-clauses-' }));
+  const { dir: targetRoot } = disposeOnTestFinished(
+    createTempTree({ '.keep': '' }, { prefix: 'compositor-jurisdiction-' }),
+  );
 
   const config = buildConfig([
     {

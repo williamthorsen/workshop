@@ -110,7 +110,7 @@ describe(resolveSources, () => {
   });
 
   it('locates a declared package at the content directory it ships', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/@acme/guidance/package.json': JSON.stringify({
         name: '@acme/guidance',
         compositor: { content: 'dist/content' },
@@ -126,7 +126,7 @@ describe(resolveSources, () => {
   // Each tier installs its own copy under the same package name, so a walk anchored at one base directory finds the
   // wrong copy for the other tier.
   it('locates a declared package from the tier that declared it, not from the last tier', async () => {
-    const root = await buildConfigDir({
+    const root = buildConfigDir({
       'global/node_modules/@acme/guidance/package.json': JSON.stringify({
         name: '@acme/guidance',
         compositor: { content: 'global-content' },
@@ -158,7 +158,7 @@ describe(resolveSources, () => {
   });
 
   it('fails on a package it cannot locate, naming the source and the tier', async () => {
-    const baseDir = await buildConfigDir({});
+    const baseDir = buildConfigDir({});
     const config = buildConfig([
       { id: 'project', baseDir, sources: { use: [{ name: 'acme', package: '@acme/absent' }] } },
     ]);

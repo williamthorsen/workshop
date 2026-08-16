@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { composePlan } from '../../plan/composePlan.ts';
@@ -11,7 +12,6 @@ import type { Blob, FileEntry } from '../../schemas/file-schemas.ts';
 import type { Plan } from '../../schemas/plan-schemas.ts';
 import type { Hash } from '../../schemas/scalar-schemas.ts';
 import { buildPlan } from '../../test-utils/buildPlan.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
 import { applyPlan } from '../applyPlan.ts';
 import { UnapplicablePlanError } from '../UnapplicablePlanError.ts';
@@ -192,11 +192,11 @@ describe(applyPlan, () => {
   });
 
   it('keeps a directory it empties and writes into, in a dry run as in the run itself', async () => {
-    const targetRoot = await buildTempTree({ 'skills/foo/SKILL.md': '# Foo\n' }, 'compositor-target');
+    using targetRoot = createTempTree({ 'skills/foo/SKILL.md': '# Foo\n' }, { prefix: 'compositor-target-' });
     const plan = buildPlan();
     const emptied: Plan = {
       ...plan,
-      targets: [{ id: 'claude', label: 'Claude', root: targetRoot, tokenMappings: [], containerDirs: ['skills'] }],
+      targets: [{ id: 'claude', label: 'Claude', root: targetRoot.dir, tokenMappings: [], containerDirs: ['skills'] }],
       files: [
         {
           targetId: 'claude',
@@ -218,17 +218,17 @@ describe(applyPlan, () => {
       blobs: { [PLANNED_HASH]: { encoding: 'utf8', data: PLANNED_BODY } },
     };
 
-    const dry = await applyPlan(emptied, { baseDir: targetRoot, dryRun: true });
-    const real = await applyPlan(emptied, { baseDir: targetRoot });
+    const dry = await applyPlan(emptied, { baseDir: targetRoot.dir, dryRun: true });
+    const real = await applyPlan(emptied, { baseDir: targetRoot.dir });
 
     expect(dry.prunedDirs).toStrictEqual([]);
     expect(dry.prunedDirs).toStrictEqual(real.prunedDirs);
-    await expect(statIfPresent(path.join(targetRoot, 'skills/foo/AGENT.md'))).resolves.toBeDefined();
+    await expect(statIfPresent(path.join(targetRoot.dir, 'skills/foo/AGENT.md'))).resolves.toBeDefined();
   });
 
   it('passes over a blocked destination, which no force overrides', async () => {
-    const targetRoot = await buildTempTree({ [LINT_SKILL]: '# Lint\n' }, 'compositor-target');
-    const plan = buildSingleFilePlan(targetRoot, {
+    using targetRoot = createTempTree({ [LINT_SKILL]: '# Lint\n' }, { prefix: 'compositor-target-' });
+    const plan = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'claude',
       path: LINT_SKILL,
       status: 'changed',
@@ -239,17 +239,17 @@ describe(applyPlan, () => {
       contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
     });
 
-    const outcome = await applyPlan(plan, { baseDir: targetRoot, force: true });
+    const outcome = await applyPlan(plan, { baseDir: targetRoot.dir, force: true });
 
     expect(outcome.files.map(({ action, reason }) => [action, reason])).toStrictEqual([
       ['skipped-blocked', 'The destination’s provenance is undecidable from shape.'],
     ]);
-    await expect(readFile(path.join(targetRoot, LINT_SKILL), 'utf8')).resolves.toBe('# Lint\n');
+    await expect(readFile(path.join(targetRoot.dir, LINT_SKILL), 'utf8')).resolves.toBe('# Lint\n');
   });
 
   it('passes over a destination the plan recorded a body for that holds nothing', async () => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
-    const plan = buildSingleFilePlan(targetRoot, {
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
+    const plan = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'claude',
       path: LINT_SKILL,
       status: 'changed',
@@ -259,10 +259,10 @@ describe(applyPlan, () => {
       contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
     });
 
-    const outcome = await applyPlan(plan, { baseDir: targetRoot });
+    const outcome = await applyPlan(plan, { baseDir: targetRoot.dir });
 
     expect(outcome.files.map(({ action }) => action)).toStrictEqual(['skipped-drifted']);
-    await expect(statIfPresent(path.join(targetRoot, LINT_SKILL))).resolves.toBeUndefined();
+    await expect(statIfPresent(path.join(targetRoot.dir, LINT_SKILL))).resolves.toBeUndefined();
   });
 
   it('writes a body no UTF-8 round trip survives byte for byte', async () => {
@@ -276,16 +276,16 @@ describe(applyPlan, () => {
   });
 
   it('refuses a plan that does not carry every body it would write', async () => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
     const plan = { ...buildPlan(), contentAvailability: 'partial' as const };
 
-    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(UnapplicablePlanError);
+    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(UnapplicablePlanError);
   });
 
   it('refuses a plan naming a body its blobs do not hold', async () => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
     const plan = buildSingleFilePlan(
-      targetRoot,
+      targetRoot.dir,
       {
         targetId: 'claude',
         path: LINT_SKILL,
@@ -297,12 +297,12 @@ describe(applyPlan, () => {
       {},
     );
 
-    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/blobs do not hold/);
+    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/blobs do not hold/);
   });
 
   it('refuses a plan whose file names a target it does not carry', async () => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
-    const plan = buildSingleFilePlan(targetRoot, {
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
+    const plan = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'rovodev',
       path: LINT_SKILL,
       status: 'added',
@@ -311,15 +311,15 @@ describe(applyPlan, () => {
       contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
     });
 
-    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/no root resolves for it/);
+    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/no root resolves for it/);
   });
 
   it.each([
     ['a path climbing out of the target', '../../.ssh/config'],
     ['an absolute path', '/etc/hosts'],
   ])('refuses %s, leaving what stands outside the target alone', async (_label, escaping) => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
-    const plan = buildSingleFilePlan(targetRoot, {
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
+    const plan = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'claude',
       path: escaping,
       status: 'added',
@@ -328,12 +328,12 @@ describe(applyPlan, () => {
       contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
     });
 
-    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/inside the target's root/);
+    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/inside the target's root/);
   });
 
   it('refuses entries ownership, which it would write whole, before writing the files beside it', async () => {
-    const targetRoot = await buildTempTree({ '.keep': '' }, 'compositor-target');
-    const base = buildSingleFilePlan(targetRoot, {
+    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
+    const base = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'claude',
       path: LINT_SKILL,
       status: 'added',
@@ -356,8 +356,8 @@ describe(applyPlan, () => {
       ],
     };
 
-    await expect(applyPlan(plan, { baseDir: targetRoot })).rejects.toThrow(/entries ownership/);
-    await expect(statIfPresent(path.join(targetRoot, LINT_SKILL))).resolves.toBeUndefined();
+    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/entries ownership/);
+    await expect(statIfPresent(path.join(targetRoot.dir, LINT_SKILL))).resolves.toBeUndefined();
   });
 });
 

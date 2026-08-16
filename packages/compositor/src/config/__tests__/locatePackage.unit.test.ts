@@ -11,7 +11,7 @@ const contentKeyPath = ['compositor', 'content'];
 
 describe(locatePackage, () => {
   it('joins the installed directory to the content directory the package declares', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ compositor: { content: 'content' } }),
     });
 
@@ -21,7 +21,7 @@ describe(locatePackage, () => {
   });
 
   it('reads the content key at whatever path the consumer names', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ rulebinder: { guidance: { dir: 'share' } } }),
     });
 
@@ -32,7 +32,7 @@ describe(locatePackage, () => {
 
   // A package source and a hand-declared one both fail through the caller's source validation.
   it('does not require the content directory to exist', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ compositor: { content: 'nowhere' } }),
     });
 
@@ -40,13 +40,13 @@ describe(locatePackage, () => {
   });
 
   it('fails when the package is not installed, listing where it looked', async () => {
-    const baseDir = await buildConfigDir({});
+    const baseDir = buildConfigDir({});
 
     await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(/is not installed. Searched:/);
   });
 
   it('fails when the package declares no content directory, naming the key path', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ name: 'guidance' }),
     });
 
@@ -54,7 +54,7 @@ describe(locatePackage, () => {
   });
 
   it('fails when the content key holds something other than a directory name', async () => {
-    const baseDir = await buildConfigDir({
+    const baseDir = buildConfigDir({
       'node_modules/guidance/package.json': JSON.stringify({ compositor: { content: {} } }),
     });
 
@@ -62,7 +62,7 @@ describe(locatePackage, () => {
   });
 
   it('fails when the package manifest will not parse, naming the package', async () => {
-    const baseDir = await buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
+    const baseDir = buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
 
     await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(
       /"guidance" has an unreadable/,
@@ -70,7 +70,7 @@ describe(locatePackage, () => {
   });
 
   it('appends the parser message to the unreadable-manifest failure and keeps the original as cause', async () => {
-    const baseDir = await buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
+    const baseDir = buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
 
     const error = await captureError(() => locatePackage('guidance', { baseDir, contentKeyPath }));
 

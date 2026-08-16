@@ -48,7 +48,7 @@ describe(computeFingerprint, () => {
 
   it('digests a config read from a file alike to the same config assembled in memory', async () => {
     const { snapshot, sourceDir } = await captureComposition();
-    const dir = await buildConfigDir({
+    const dir = buildConfigDir({
       'compositor.yaml': ['sources:', '  use:', `    - name: team`, `      path: ${sourceDir}`, ''].join('\n'),
     });
     const loaded = await loadConfig([{ id: 'project', label: 'project', path: path.join(dir, 'compositor.yaml') }]);
