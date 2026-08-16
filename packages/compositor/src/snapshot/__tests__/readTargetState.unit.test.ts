@@ -1,7 +1,8 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { KindDeployment, RenderTarget } from '../../schemas/render-target-schemas.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import type { ClaimedFile, HostState } from '../readTargetState.ts';
 import { readTargetState } from '../readTargetState.ts';
 
@@ -214,11 +215,11 @@ function presentHost(hosts: ReadonlyArray<HostState>): Extract<HostState, { stat
 }
 
 /** Reads the state of a target rooted at a temporary tree holding `files` and deploying `deployments`. */
-async function readState(
+function readState(
   files: Record<string, string>,
   deployments: ReadonlyArray<KindDeployment>,
-): Promise<Awaited<ReturnType<typeof readTargetState>>> {
-  const root = await buildTempTree(files, 'compositor-target');
+): ReturnType<typeof readTargetState> {
+  const { dir: root } = disposeOnTestFinished(createTempTree(files, { prefix: 'compositor-target-' }));
   const target: RenderTarget = {
     id: 'claude',
     label: 'Claude',

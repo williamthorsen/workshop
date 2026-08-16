@@ -24,7 +24,7 @@ select:
 
 describe(loadConfig, () => {
   it('reads a chain of tier files, keeping the order it was given', async () => {
-    const dir = await buildConfigDir({ 'global.yaml': globalTier, 'project.yaml': projectTier });
+    const dir = buildConfigDir({ 'global.yaml': globalTier, 'project.yaml': projectTier });
 
     const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
@@ -32,7 +32,7 @@ describe(loadConfig, () => {
   });
 
   it('skips a tier whose file is absent, and keeps one whose file is empty', async () => {
-    const dir = await buildConfigDir({ 'global.yaml': '# every entry commented out\n' });
+    const dir = buildConfigDir({ 'global.yaml': '# every entry commented out\n' });
 
     const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
@@ -42,7 +42,7 @@ describe(loadConfig, () => {
   });
 
   it('yields a config with no tiers when every file is absent', async () => {
-    const dir = await buildConfigDir({});
+    const dir = buildConfigDir({});
 
     await expect(loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')])).resolves.toStrictEqual({
       tiers: [],
@@ -50,7 +50,7 @@ describe(loadConfig, () => {
   });
 
   it('takes each tier’s base directory from the file that declared it', async () => {
-    const dir = await buildConfigDir({ 'nested/project.yaml': projectTier });
+    const dir = buildConfigDir({ 'nested/project.yaml': projectTier });
 
     const config = await loadConfig([{ id: 'project', label: 'Project', path: path.join(dir, 'nested/project.yaml') }]);
 
@@ -58,7 +58,7 @@ describe(loadConfig, () => {
   });
 
   it('normalizes what it reads, so the result needs no further parsing', async () => {
-    const dir = await buildConfigDir({ 'project.yaml': projectTier });
+    const dir = buildConfigDir({ 'project.yaml': projectTier });
 
     const config = await loadConfig([buildTierFile(dir, 'project')]);
 
@@ -69,7 +69,7 @@ describe(loadConfig, () => {
 
   // YAML is a superset of JSON, so a consumer writing config as JSON needs no separate branch here.
   it('reads a tier written as JSON', async () => {
-    const dir = await buildConfigDir({ 'project.json': '{ "select": { "skill": { "use": ["lint"] } } }' });
+    const dir = buildConfigDir({ 'project.json': '{ "select": { "skill": { "use": ["lint"] } } }' });
 
     const config = await loadConfig([{ id: 'project', label: 'Project', path: path.join(dir, 'project.json') }]);
 
@@ -77,13 +77,13 @@ describe(loadConfig, () => {
   });
 
   it('fails on malformed YAML, naming the file', async () => {
-    const dir = await buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
+    const dir = buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
 
     await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
   });
 
   it('appends the parser message to the malformed-YAML failure and keeps the original as cause', async () => {
-    const dir = await buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
+    const dir = buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
 
     const error = await captureError(() => loadConfig([buildTierFile(dir, 'project')]));
 
@@ -93,14 +93,14 @@ describe(loadConfig, () => {
   });
 
   it('fails on a tier declaring an unrecognized key, naming the file', async () => {
-    const dir = await buildConfigDir({ 'project.yaml': 'selects: {}\n' });
+    const dir = buildConfigDir({ 'project.yaml': 'selects: {}\n' });
 
     await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
   });
 
   // Both files are absent, so a check running after the load would see no tiers at all and never notice the repeat.
   it('fails on two tiers sharing an id, naming the id', async () => {
-    const dir = await buildConfigDir({});
+    const dir = buildConfigDir({});
 
     await expect(loadConfig([buildTierFile(dir, 'project'), buildTierFile(dir, 'project')])).rejects.toThrow(
       /Tier "project" is declared more than once/,
@@ -108,7 +108,7 @@ describe(loadConfig, () => {
   });
 
   it('fails on a tier whose identity is incomplete', async () => {
-    const dir = await buildConfigDir({ 'project.yaml': projectTier });
+    const dir = buildConfigDir({ 'project.yaml': projectTier });
 
     await expect(loadConfig([{ ...buildTierFile(dir, 'project'), id: '' }])).rejects.toThrow(/id/);
   });

@@ -1,3 +1,5 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { RenderTargetConsistencyError } from '../../render/assertRenderTargetsAreConsistent.ts';
@@ -5,7 +7,6 @@ import type { ArtifactRender } from '../../render/renderArtifact.ts';
 import type { ResolveKind } from '../../schemas/catalog-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import { readManifestVersion } from '../../test-utils/readManifestVersion.ts';
 import type { CaptureSnapshotInput, CompositionSnapshot } from '../captureSnapshot.ts';
 import { captureSnapshot } from '../captureSnapshot.ts';
@@ -170,11 +171,11 @@ describe(captureSnapshot, () => {
   });
 
   it('reads an unchanged workspace to the same digests twice, which is what a fingerprint rests on', async () => {
-    const sourceDir = await buildTempTree(sourceFiles, 'compositor-source');
-    const targetRoot = await buildTempTree({ 'skills/review/SKILL.md': '# Old review\n' }, 'compositor-target');
+    using sourceDir = createTempTree(sourceFiles, { prefix: 'compositor-source-' });
+    using targetRoot = createTempTree({ 'skills/review/SKILL.md': '# Old review\n' }, { prefix: 'compositor-target-' });
 
-    const first = await captureSnapshot(buildInput(sourceDir, targetRoot));
-    const second = await captureSnapshot(buildInput(sourceDir, targetRoot));
+    const first = await captureSnapshot(buildInput(sourceDir.dir, targetRoot.dir));
+    const second = await captureSnapshot(buildInput(sourceDir.dir, targetRoot.dir));
 
     expect(second.sourceDigests).toStrictEqual(first.sourceDigests);
     expect(second.targetState?.map(({ digest }) => digest)).toStrictEqual(
@@ -206,8 +207,10 @@ async function capture(
     input?: Partial<CaptureSnapshotInput>;
   } = {},
 ): Promise<CompositionSnapshot> {
-  const sourceDir = await buildTempTree(options.sourceFiles ?? sourceFiles, 'compositor-source');
-  const targetRoot = await buildTempTree(options.targetFiles ?? { '.keep': '' }, 'compositor-target');
+  const files = options.sourceFiles ?? sourceFiles;
+  const { dir: sourceDir } = disposeOnTestFinished(createTempTree(files, { prefix: 'compositor-source-' }));
+  const targetFiles = options.targetFiles ?? { '.keep': '' };
+  const { dir: targetRoot } = disposeOnTestFinished(createTempTree(targetFiles, { prefix: 'compositor-target-' }));
 
   return captureSnapshot({ ...buildInput(sourceDir, targetRoot), ...options.input });
 }

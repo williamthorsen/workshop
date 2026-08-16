@@ -12,7 +12,7 @@ const manifest = JSON.stringify({ name: '@acme/guidance', compositor: { content:
 
 describe(locateSourcePackages, () => {
   it('locates a declared package at the content directory it ships', async () => {
-    const baseDir = await buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
+    const baseDir = buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
     const config = buildConfig([{ baseDir, sources: { use: [{ name: 'acme', package: '@acme/guidance' }] } }]);
 
     await expect(locateSourcePackages(config, options)).resolves.toStrictEqual([
@@ -33,7 +33,7 @@ describe(locateSourcePackages, () => {
 
   // A throw here would fail a config that works today, since a package a later tier drops is one this walk still sees.
   it('records a package it cannot locate rather than throwing', async () => {
-    const baseDir = await buildConfigDir({});
+    const baseDir = buildConfigDir({});
     const config = buildConfig([{ baseDir, sources: { use: [{ name: 'acme', package: '@acme/absent' }] } }]);
 
     const [location] = await locateSourcePackages(config, options);
@@ -43,7 +43,7 @@ describe(locateSourcePackages, () => {
   });
 
   it('walks a package a later tier drops, so a fold may re-adopt it', async () => {
-    const baseDir = await buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
+    const baseDir = buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
     const config = buildConfig([
       { baseDir, sources: { use: [{ name: 'acme', package: '@acme/guidance' }] } },
       { baseDir, sources: { drop: ['acme'] } },
@@ -53,7 +53,7 @@ describe(locateSourcePackages, () => {
   });
 
   it('walks one package and base directory once, however many tiers declare it', async () => {
-    const baseDir = await buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
+    const baseDir = buildConfigDir({ 'node_modules/@acme/guidance/package.json': manifest });
     const config = buildConfig([
       { baseDir, sources: { use: [{ name: 'acme', package: '@acme/guidance' }] } },
       { baseDir: `${baseDir}/`, sources: { use: [{ name: 'acme-again', package: '@acme/guidance' }] } },
@@ -64,7 +64,7 @@ describe(locateSourcePackages, () => {
 
   // Each tier installs its own copy under one package name, so the two are separate questions with separate answers.
   it('walks one package once per base directory that declares it', async () => {
-    const root = await buildConfigDir({
+    const root = buildConfigDir({
       'global/node_modules/@acme/guidance/package.json': manifest,
       'project/node_modules/@acme/guidance/package.json': manifest,
     });

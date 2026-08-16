@@ -1,9 +1,11 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { CaptureSnapshotInput, CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
 import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
 import { buildConfig } from './buildConfig.ts';
-import { buildTempTree } from './buildTempTree.ts';
 import { buildClaudeTarget, buildCompositionSourceFiles, COMPOSITION_KINDS } from './composition-fixture.ts';
 
 /** A captured composition, with the config it answers and the directories it was captured over. */
@@ -33,8 +35,10 @@ export interface CaptureCompositionOptions {
  * exercise the wrong half. What varies between tests is the content of the two trees and the config read against them.
  */
 export async function captureComposition(options: CaptureCompositionOptions = {}): Promise<CompositionFixture> {
-  const sourceDir = await buildTempTree(options.sourceFiles ?? buildCompositionSourceFiles(), 'compositor-source');
-  const targetRoot = await buildTempTree(options.targetFiles ?? { '.keep': '' }, 'compositor-target');
+  const sourceFiles = options.sourceFiles ?? buildCompositionSourceFiles();
+  const { dir: sourceDir } = disposeOnTestFinished(createTempTree(sourceFiles, { prefix: 'compositor-source-' }));
+  const targetFiles = options.targetFiles ?? { '.keep': '' };
+  const { dir: targetRoot } = disposeOnTestFinished(createTempTree(targetFiles, { prefix: 'compositor-target-' }));
 
   const config = buildConfig([
     {

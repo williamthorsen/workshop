@@ -36,7 +36,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@williamthorsen/toolbelt.testing": "catalog:"
+    "@williamthorsen/toolbelt.filesystem": "catalog:",
+    "@williamthorsen/toolbelt.testing": "catalog:",
+    "@williamthorsen/toolbelt.vitest": "catalog:"
   },
   "engines": {
     "node": ">=24"

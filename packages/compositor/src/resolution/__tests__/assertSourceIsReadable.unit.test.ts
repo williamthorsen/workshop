@@ -8,13 +8,13 @@ import { buildSource } from '../test-utils/buildSource.ts';
 
 describe(assertSourceIsReadable, () => {
   it('accepts a source pointing at a directory', async () => {
-    const source = await buildSource({ 'skills/lint/SKILL.md': 'lint' });
+    const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
     await expect(assertSourceIsReadable(source)).resolves.toBeUndefined();
   });
 
   it('rejects a source pointing at nothing', async () => {
-    const source = await buildSource({});
+    const source = buildSource({});
 
     await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'absent') })).rejects.toThrow(
       /does not exist/,
@@ -22,7 +22,7 @@ describe(assertSourceIsReadable, () => {
   });
 
   it('rejects a source pointing at a file', async () => {
-    const source = await buildSource({ 'guidance.md': 'not a directory' });
+    const source = buildSource({ 'guidance.md': 'not a directory' });
 
     await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'guidance.md') })).rejects.toThrow(
       /not a directory/,
@@ -30,7 +30,7 @@ describe(assertSourceIsReadable, () => {
   });
 
   it('surfaces a permission failure rather than reporting the source as absent', async () => {
-    const source = await buildSource({ 'guidance/rulebooks/naming.md': 'naming' });
+    const source = buildSource({ 'guidance/rulebooks/naming.md': 'naming' });
     const unreachable = path.join(source.dir, 'guidance');
     await chmod(source.dir, 0o000);
 

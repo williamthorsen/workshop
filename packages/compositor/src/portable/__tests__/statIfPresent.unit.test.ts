@@ -1,53 +1,53 @@
 import { chmod, symlink } from 'node:fs/promises';
 import path from 'node:path';
 
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import { statIfPresent } from '../statIfPresent.ts';
 
 describe(statIfPresent, () => {
   it('stats a file that is there', async () => {
-    const dir = await buildTempTree({ 'notes.md': 'notes' });
+    using tree = createTempTree({ 'notes.md': 'notes' });
 
-    expect((await statIfPresent(path.join(dir, 'notes.md')))?.isFile()).toBe(true);
+    expect((await statIfPresent(path.join(tree.dir, 'notes.md')))?.isFile()).toBe(true);
   });
 
   it('stats a directory that is there', async () => {
-    const dir = await buildTempTree({ 'nested/inner.md': 'inner' });
+    using tree = createTempTree({ 'nested/inner.md': 'inner' });
 
-    expect((await statIfPresent(path.join(dir, 'nested')))?.isDirectory()).toBe(true);
+    expect((await statIfPresent(path.join(tree.dir, 'nested')))?.isDirectory()).toBe(true);
   });
 
   it('reports nothing for an absent path', async () => {
-    const dir = await buildTempTree({});
+    using tree = createTempTree({});
 
-    await expect(statIfPresent(path.join(dir, 'never-created'))).resolves.toBeUndefined();
+    await expect(statIfPresent(path.join(tree.dir, 'never-created'))).resolves.toBeUndefined();
   });
 
   it('reports nothing for a path below a regular file, which fails as ENOTDIR rather than ENOENT', async () => {
-    const dir = await buildTempTree({ 'notes.md': 'notes' });
+    using tree = createTempTree({ 'notes.md': 'notes' });
 
-    await expect(statIfPresent(path.join(dir, 'notes.md', 'below'))).resolves.toBeUndefined();
+    await expect(statIfPresent(path.join(tree.dir, 'notes.md', 'below'))).resolves.toBeUndefined();
   });
 
   it('follows a symlink to the directory it points at, which a linked install layout produces', async () => {
-    const dir = await buildTempTree({ 'elsewhere/shared/SKILL.md': 'shared' });
-    await symlink(path.join(dir, 'elsewhere/shared'), path.join(dir, 'linked'));
+    using tree = createTempTree({ 'elsewhere/shared/SKILL.md': 'shared' });
+    await symlink(path.join(tree.dir, 'elsewhere/shared'), path.join(tree.dir, 'linked'));
 
-    expect((await statIfPresent(path.join(dir, 'linked')))?.isDirectory()).toBe(true);
+    expect((await statIfPresent(path.join(tree.dir, 'linked')))?.isDirectory()).toBe(true);
   });
 
   it('reports nothing for a symlink whose target is gone, rather than the link itself', async () => {
-    const dir = await buildTempTree({});
-    await symlink(path.join(dir, 'never-created'), path.join(dir, 'dangling'));
+    using tree = createTempTree({});
+    await symlink(path.join(tree.dir, 'never-created'), path.join(tree.dir, 'dangling'));
 
-    await expect(statIfPresent(path.join(dir, 'dangling'))).resolves.toBeUndefined();
+    await expect(statIfPresent(path.join(tree.dir, 'dangling'))).resolves.toBeUndefined();
   });
 
   it('fails rather than reporting an absence when the path cannot be reached', async () => {
-    const dir = await buildTempTree({ 'locked/inner.md': 'inner' });
-    const lockedDir = path.join(dir, 'locked');
+    using tree = createTempTree({ 'locked/inner.md': 'inner' });
+    const lockedDir = path.join(tree.dir, 'locked');
     await chmod(lockedDir, 0o000);
 
     try {

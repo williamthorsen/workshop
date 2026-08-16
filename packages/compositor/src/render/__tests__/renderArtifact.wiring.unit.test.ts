@@ -1,10 +1,10 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { DeployableArtifact } from '../../deployment/resolveDeployedNames.ts';
 import { resolveDeployedNames } from '../../deployment/resolveDeployedNames.ts';
 import type { RenderStage, RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
-import { buildTempTree } from '../../test-utils/buildTempTree.ts';
 import type { ArtifactRender } from '../renderArtifact.ts';
 import { renderArtifact } from '../renderArtifact.ts';
 
@@ -38,10 +38,10 @@ const claude: RenderTarget = {
 
 describe('per-target stage composition', () => {
   it('renders one artifact differently for two targets whose stage sets differ', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'Use {tool:Read} on [x](./y.md).\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': 'Use {tool:Read} on [x](./y.md).\n' });
 
-    const both = await render(dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
-    const tokensOnly = await render(dir, [{ kind: 'tokens' }]);
+    const both = await render(tree.dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
+    const tokensOnly = await render(tree.dir, [{ kind: 'tokens' }]);
 
     expect(contentOf(both)).toBe('Use view on [x](~/.claude/skills/review/y.md).\n');
     expect(contentOf(tokensOnly)).toBe('Use view on [x](./y.md).\n');
@@ -49,29 +49,29 @@ describe('per-target stage composition', () => {
 
   it('leaves a body untouched for a target declaring no stages at all', async () => {
     const body = 'Use {tool:Read} on [x](./y.md).\n';
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': body });
+    using tree = createTempTree({ 'skills/review/SKILL.md': body });
 
-    expect(contentOf(await render(dir, []))).toBe(body);
+    expect(contentOf(await render(tree.dir, []))).toBe(body);
   });
 
   it('runs transclusion first, so a token inside a partial is rewritten like one in the host', async () => {
-    const dir = await buildTempTree({
+    using tree = createTempTree({
       '_data/shared.md': 'Shared {tool:Read}.\n',
       'skills/review/SKILL.md': '<!-- include: ../../_data/shared.md / -->\n',
     });
 
-    const result = await render(dir, [{ kind: 'transclusion', syntax: COMMENT }, { kind: 'tokens' }]);
+    const result = await render(tree.dir, [{ kind: 'transclusion', syntax: COMMENT }, { kind: 'tokens' }]);
 
     expect(contentOf(result)).toBe('Shared view.\n');
   });
 
   it('runs transclusion first, so a link inside a partial resolves against the host it renders into', async () => {
-    const dir = await buildTempTree({
+    using tree = createTempTree({
       '_data/shared.md': 'See [x](./y.md).\n',
       'skills/review/SKILL.md': '<!-- include: ../../_data/shared.md / -->\n',
     });
 
-    const result = await render(dir, [
+    const result = await render(tree.dir, [
       { kind: 'transclusion', syntax: COMMENT },
       { kind: 'links', pattern: MARKDOWN_LINK },
     ]);
@@ -80,25 +80,25 @@ describe('per-target stage composition', () => {
   });
 
   it('runs link rewriting first, so a mapping value heading a target is inserted where it stands', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [guidance]({tool:Guidance}).\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': 'See [guidance]({tool:Guidance}).\n' });
 
-    const result = await render(dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
+    const result = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
     expect(contentOf(result)).toBe('See [guidance](CLAUDE.md).\n');
   });
 
   it('resolves a target whose token sits behind a relative prefix, which is how a consumer asks for that', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'See [guidance](./{tool:Guidance}).\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': 'See [guidance](./{tool:Guidance}).\n' });
 
-    const result = await render(dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
+    const result = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
     expect(contentOf(result)).toBe('See [guidance](~/.claude/skills/review/CLAUDE.md).\n');
   });
 
   it('runs the overlay last, so a value the target supplies is not rewritten as though an author wrote it', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': '---\nname: review\n---\nBody.\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': '---\nname: review\n---\nBody.\n' });
 
-    const result = await render(dir, [
+    const result = await render(tree.dir, [
       { kind: 'tokens' },
       { kind: 'frontmatter', overlay: { defaults: { hint: '{tool:Read}' } } },
     ]);
@@ -107,10 +107,10 @@ describe('per-target stage composition', () => {
   });
 
   it('declares stage participation, not sequence, so a reordered declaration renders the same', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'Use {tool:Read} on [x](./y.md).\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': 'Use {tool:Read} on [x](./y.md).\n' });
 
-    const declared = await render(dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
-    const reversed = await render(dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
+    const declared = await render(tree.dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
+    const reversed = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
     expect(contentOf(reversed)).toBe(contentOf(declared));
   });

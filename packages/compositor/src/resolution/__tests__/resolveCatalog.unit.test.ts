@@ -26,7 +26,7 @@ const kinds: ReadonlyArray<ResolveKind> = [
 
 describe(resolveCatalog, () => {
   it('gives the highest-precedence source the win and lists the rest as shadowed, in precedence order', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'skills/review/SKILL.md': 'local' },
       team: { 'skills/review/SKILL.md': 'team' },
       library: { 'skills/review/SKILL.md': 'library' },
@@ -39,7 +39,7 @@ describe(resolveCatalog, () => {
   });
 
   it('gives the lowest-precedence source the win when it alone carries the artifact', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: {},
       team: {},
       library: { 'skills/lint/SKILL.md': 'library' },
@@ -52,7 +52,7 @@ describe(resolveCatalog, () => {
   });
 
   it('leaves shadowed empty for an artifact only one source carries', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'skills/only/SKILL.md': 'local' },
       library: {},
     });
@@ -61,7 +61,7 @@ describe(resolveCatalog, () => {
   });
 
   it('records each candidate at the path and digest of the source carrying it', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'guidance/rulebooks/style.md': 'local text' },
       library: { 'guidance/rulebooks/style.md': 'library text' },
     });
@@ -73,7 +73,7 @@ describe(resolveCatalog, () => {
   });
 
   it('reports an identical copy in a lower source with the same digest as the winner', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'guidance/rulebooks/style.md': 'same bytes' },
       library: { 'guidance/rulebooks/style.md': 'same bytes' },
     });
@@ -84,7 +84,7 @@ describe(resolveCatalog, () => {
   });
 
   it('unions what the sources carry rather than taking only the winner source contents', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'skills/review/SKILL.md': 'local' },
       library: { 'skills/lint/SKILL.md': 'library', 'guidance/rulebooks/style.md': 'library' },
     });
@@ -95,13 +95,13 @@ describe(resolveCatalog, () => {
   });
 
   it('composes each entry id from its kind and slug', async () => {
-    const sources = await buildSources({ local: { 'skills/lint/SKILL.md': 'local' } });
+    const sources = buildSources({ local: { 'skills/lint/SKILL.md': 'local' } });
 
     await expect(requireOnlyEntry(sources)).resolves.toMatchObject({ id: 'skill:lint', kindId: 'skill', slug: 'lint' });
   });
 
   it('orders entries lexicographically by id', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: {
         'skills/review/SKILL.md': 'local',
         'skills/lint/SKILL.md': 'local',
@@ -116,7 +116,7 @@ describe(resolveCatalog, () => {
   });
 
   it('echoes the kinds and sources it was given, so a reader needs nothing beside the catalog', async () => {
-    const sources = await buildSources({ local: { 'skills/lint/SKILL.md': 'local' }, library: {} });
+    const sources = buildSources({ local: { 'skills/lint/SKILL.md': 'local' }, library: {} });
 
     const catalog = await resolveCatalog({ kinds, sources });
 
@@ -126,7 +126,7 @@ describe(resolveCatalog, () => {
   });
 
   it('yields the same catalog across runs over unchanged sources', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'skills/review/SKILL.md': 'local', 'guidance/rulebooks/style.md': 'local' },
       library: { 'skills/review/SKILL.md': 'library', 'skills/lint/SKILL.md': 'library' },
     });
@@ -137,7 +137,7 @@ describe(resolveCatalog, () => {
   });
 
   it('produces a catalog that satisfies the schema and every consistency invariant', async () => {
-    const sources = await buildSources({
+    const sources = buildSources({
       local: { 'skills/review/SKILL.md': 'local' },
       team: { 'skills/review/SKILL.md': 'team', 'guidance/rulebooks/style.md': 'team' },
       library: { 'skills/review/SKILL.md': 'library', 'skills/lint/SKILL.md': 'library' },
@@ -152,13 +152,13 @@ describe(resolveCatalog, () => {
   });
 
   it('carries nothing when the sources are empty', async () => {
-    const sources = await buildSources({ local: {}, library: {} });
+    const sources = buildSources({ local: {}, library: {} });
 
     await expect(resolveCatalog({ kinds, sources })).resolves.toMatchObject({ entries: [] });
   });
 
   it('fails the whole call when any source is missing, rather than resolving around it', async () => {
-    const sources = await buildSources({ local: { 'skills/lint/SKILL.md': 'local' }, library: {} });
+    const sources = buildSources({ local: { 'skills/lint/SKILL.md': 'local' }, library: {} });
     const absent: SourceSpec = {
       id: 'absent',
       name: 'absent',
@@ -173,13 +173,8 @@ describe(resolveCatalog, () => {
 // region | Helpers
 
 /** Builds one source directory per named entry, in the order given, highest precedence first. */
-async function buildSources(byName: Record<string, Record<string, string>>): Promise<ReadonlyArray<SourceSpec>> {
-  const sources: Array<SourceSpec> = [];
-  for (const [name, files] of Object.entries(byName)) {
-    // Built in sequence, since the array's order is the precedence the resolver reads.
-    sources.push(await buildSource(files, name));
-  }
-  return sources;
+function buildSources(byName: Record<string, Record<string, string>>): ReadonlyArray<SourceSpec> {
+  return Object.entries(byName).map(([name, files]) => buildSource(files, name));
 }
 
 /** Reads the catalog's single entry, failing the test when it carries any other number. */
