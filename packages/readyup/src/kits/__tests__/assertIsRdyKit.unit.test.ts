@@ -195,6 +195,114 @@ describe(assertIsRdyKit, () => {
     });
   });
 
+  describe('accessor-valued fix', () => {
+    it('leaves a fix accessor uninvoked', () => {
+      let hits = 0;
+      const raw = {
+        checklists: [
+          {
+            name: 'test',
+            checks: [
+              {
+                name: 'a',
+                check: () => true,
+                get fix() {
+                  hits++;
+                  return 'Run the thing';
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      assertIsRdyKit(raw);
+
+      expect(hits).toBe(0);
+    });
+
+    it('leaves a fix accessor uninvoked on a check nested under a parent', () => {
+      let hits = 0;
+      const raw = {
+        checklists: [
+          {
+            name: 'test',
+            checks: [
+              {
+                name: 'parent',
+                check: () => true,
+                checks: [
+                  {
+                    name: 'child',
+                    check: () => true,
+                    get fix() {
+                      hits++;
+                      return 'Run the thing';
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      assertIsRdyKit(raw);
+
+      expect(hits).toBe(0);
+    });
+
+    it('accepts a kit whose fix accessor throws', () => {
+      const raw = {
+        checklists: [
+          {
+            name: 'test',
+            checks: [
+              {
+                name: 'a',
+                check: () => true,
+                get fix(): string {
+                  throw new Error('resolved too early');
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => assertIsRdyKit(raw)).not.toThrow();
+    });
+
+    // Hiding `fix` from the parse must not hide the check's other accessors, which the runner needs
+    // resolved for every result and every tree.
+    it('still invokes a name accessor on a check whose fix is an accessor', () => {
+      let hits = 0;
+      const raw = {
+        checklists: [
+          {
+            name: 'test',
+            checks: [
+              {
+                get name() {
+                  hits++;
+                  return 'a';
+                },
+                check: () => true,
+                get fix() {
+                  return 'Run the thing';
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      assertIsRdyKit(raw);
+
+      expect(hits).toBeGreaterThan(0);
+    });
+  });
+
   describe('error message', () => {
     it('names the kit source when one is supplied', async () => {
       const message = await messageFrom({}, '.readyup/kits/default.js');

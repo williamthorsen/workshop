@@ -110,4 +110,26 @@ describe(validateCompiledOutput, () => {
 
     await expect(validateCompiledOutput(outputPath)).rejects.toThrow(`Invalid kit at ${outputPath}:`);
   });
+
+  // Written as source rather than through `writeTempKit`, because JSON expresses neither a getter
+  // nor the `check` function the kit needs to validate.
+  it('accepts a kit whose fix accessor throws, leaving the compiled output in place', async () => {
+    const filePath = join(testDir, 'throwing-fix.mjs');
+    mkdirSync(testDir, { recursive: true });
+    writeFileSync(
+      filePath,
+      [
+        'export default {',
+        "  checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true,",
+        "    get fix() { throw new Error('resolved too early'); } }] }],",
+        '};',
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata.checklists).toStrictEqual(['test']);
+    expect(existsSync(filePath)).toBe(true);
+  });
 });

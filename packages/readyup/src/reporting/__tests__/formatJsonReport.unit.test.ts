@@ -14,7 +14,6 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
     severity: 'error',
     quiet: false,
     detail: null,
-    fix: null,
     error: null,
     progress: null,
     durationMs: 10,
@@ -49,7 +48,6 @@ function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
     quiet: false,
     skipReason: 'precondition',
     detail: null,
-    fix: null,
     error: null,
     progress: null,
     durationMs: 0,
@@ -422,19 +420,17 @@ describe(formatJsonReport, () => {
       expect(output).not.toContain('worstSeverity');
     });
 
-    it('emits fix on a failed check and withholds it from a passed one', () => {
+    // Only a failed result carries a `fix`, so withholding it from a passed one is a type-level
+    // guarantee rather than a behavior to assert.
+    it('emits fix on a failed check', () => {
       const report = makeReport({
-        results: [
-          makePassedResult({ name: 'clean', fix: 'never needed' }),
-          makeFailedResult({ name: 'broken', fix: 'run install' }),
-        ],
+        results: [makePassedResult({ name: 'clean' }), makeFailedResult({ name: 'broken', fix: 'run install' })],
         passed: false,
       });
 
       const output = formatReport(singleKit('deploy', report));
 
       expect(output).toContain('run install');
-      expect(output).not.toContain('never needed');
     });
 
     it('rounds every duration to whole milliseconds', () => {

@@ -1,4 +1,12 @@
-import type { FixLocation, Progress, RdyReport, RdyResult, Severity, SummaryCounts } from '../kits/types.ts';
+import type {
+  FailedResult,
+  FixLocation,
+  Progress,
+  RdyReport,
+  RdyResult,
+  Severity,
+  SummaryCounts,
+} from '../kits/types.ts';
 import { isPercentProgress } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
@@ -161,7 +169,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
  *
  * Each is present only when the result carries it, so a result carrying none yields an empty list.
  */
-function collectReasons(result: RdyResult, includeFix: boolean): string[] {
+function collectReasons(result: FailedResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);

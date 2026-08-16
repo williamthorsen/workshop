@@ -157,7 +157,12 @@ export interface RdyCheck {
    */
   skip?: (() => SkipResult | Promise<SkipResult>) | undefined;
 
-  /** What to do about a failure. Remediation belongs here rather than in a `CheckOutcome`'s `detail`. */
+  /**
+   * What to do about a failure. Remediation belongs here rather than in a `CheckOutcome`'s `detail`.
+   *
+   * An accessor is resolved by the check that fails and by nothing else, at most once, so it may
+   * read a value initialized below the kit literal.
+   */
   fix?: string | undefined;
 
   /** Dependent checks that run only if this check passes. */
@@ -179,9 +184,6 @@ interface RdyResultBase {
 
   /** Diagnostic detail (failure reason, skip reason, or supplementary info). */
   detail: string | null;
-
-  /** Remediation message, carried from the check definition. */
-  fix: string | null;
 
   /** Error thrown by the check function, if any. */
   error: Error | null;
@@ -206,6 +208,12 @@ export interface PassedResult extends RdyResultBase {
 export interface FailedResult extends RdyResultBase {
   status: 'failed';
   ok: false;
+
+  /**
+   * Remediation message, resolved from the check definition as the failure is built. Only a failure
+   * carries one, because a `fix` may be an accessor and nothing else renders it.
+   */
+  fix: string | null;
 }
 
 /** Result for a check that was skipped. */

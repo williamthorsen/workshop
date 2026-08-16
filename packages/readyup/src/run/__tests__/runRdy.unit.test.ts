@@ -9,8 +9,8 @@ import { runRdy } from '../runRdy.ts';
 /*
  * A kit runs as JavaScript, so its functions return whatever their author wrote and its fields hold
  * whatever they were assigned; neither jiti nor esbuild type-checks any of it. The authoring-error
- * tests exercise exactly the values the declared types forbid, so the two wrappers below restate
- * them as the types those declarations promise.
+ * tests exercise exactly the values the declared types forbid, so the wrappers below restate them as
+ * the types those declarations promise.
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
@@ -22,6 +22,11 @@ function returning(value: unknown): RdyCheck['check'] {
 /** Wrap a value as a skip function that returns it. */
 function skipReturning(value: unknown): NonNullable<RdyCheck['skip']> {
   return () => value as SkipResult;
+}
+
+/** Wraps a value as the string a `fix` accessor promises. */
+function asFix(value: unknown): string {
+  return value as string;
 }
 
 /* eslint-enable @typescript-eslint/consistent-type-assertions */
@@ -52,10 +57,12 @@ describe(runRdy, () => {
 
       const report = await runRdy(checklist);
 
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
       expect(report.passed).toBe(false);
-      expect(report.results[0]?.status).toBe('failed');
-      expect(report.results[0]?.ok).toBe(false);
-      expect(report.results[0]?.fix).toBe('Do something');
+      expect(result.ok).toBe(false);
+      expect(result.fix).toBe('Do something');
     });
 
     it('captures errors from throwing checks', async () => {
@@ -1077,6 +1084,175 @@ describe(runRdy, () => {
     });
   });
 
+  describe('fix resolution', () => {
+    it('resolves a fix accessor once for a failing check', async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'fails',
+            check: () => false,
+            get fix() {
+              hits++;
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(hits).toBe(1);
+      expect(result.fix).toBe('Run the thing');
+    });
+
+    it('leaves a fix accessor unresolved for a check that passes', async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'passes',
+            check: () => true,
+            get fix() {
+              hits++;
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      await runRdy(checklist);
+
+      expect(hits).toBe(0);
+    });
+
+    it('leaves a fix accessor unresolved for a check skipped as not applicable', async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'skips',
+            check: () => false,
+            skip: () => 'not applicable here',
+            get fix() {
+              hits++;
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      await runRdy(checklist);
+
+      expect(hits).toBe(0);
+    });
+
+    it('leaves a fix accessor unresolved for a check blocked by a failed ancestor', async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'parent-fails',
+            check: () => false,
+            checks: [
+              {
+                name: 'blocked',
+                check: () => true,
+                get fix() {
+                  hits++;
+                  return 'Run the thing';
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      await runRdy(checklist);
+
+      expect(hits).toBe(0);
+    });
+
+    it('keeps a failure verdict when its fix accessor throws', async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'fails',
+            check: () => false,
+            severity: 'warn',
+            get fix(): string {
+              throw new Error('version constants are not initialized yet');
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(result.severity).toBe('warn');
+      expect(result.error).toBeNull();
+      expect(result.fix).toBe('Unresolvable fix: the accessor threw "version constants are not initialized yet"');
+    });
+
+    it('resolves a fix accessor for a check whose own function throws', async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'throws',
+            check: () => {
+              throw new Error('boom');
+            },
+            severity: 'warn',
+            get fix() {
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(result.fix).toBe('Run the thing');
+      expect(result.error?.message).toBe('boom');
+      expect(result.severity).toBe('error');
+    });
+
+    it('keeps a failure verdict when its fix accessor returns a non-string', async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'fails',
+            check: () => false,
+            severity: 'warn',
+            get fix() {
+              return asFix(42);
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(result.severity).toBe('warn');
+      expect(result.fix).toBe('Unresolvable fix: the accessor returned number 42');
+    });
+  });
+
   describe('result shape', () => {
     it('sets null for optional fields on passed results', async () => {
       const checklist: RdyChecklist = {
@@ -1088,7 +1264,6 @@ describe(runRdy, () => {
       const result = report.results[0];
 
       expect(result?.detail).toBeNull();
-      expect(result?.fix).toBeNull();
       expect(result?.error).toBeNull();
       expect(result?.progress).toBeNull();
     });
@@ -1101,11 +1276,12 @@ describe(runRdy, () => {
 
       const report = await runRdy(checklist);
       const result = report.results[0];
+      assert.ok(result?.status === 'failed');
 
-      expect(result?.detail).toBeNull();
-      expect(result?.fix).toBeNull();
-      expect(result?.error).toBeNull();
-      expect(result?.progress).toBeNull();
+      expect(result.detail).toBeNull();
+      expect(result.fix).toBeNull();
+      expect(result.error).toBeNull();
+      expect(result.progress).toBeNull();
     });
   });
 

@@ -38,12 +38,36 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
   return check.severity ?? defaultSeverity;
 }
 
+/**
+ * Resolves a check's remediation message, absorbing an accessor that fails to produce one.
+ *
+ * `fix` may be an accessor, so it is read here and nowhere else: only a failure renders one, and a
+ * check that passes, skips, or is blocked must not pay for work it discards. An accessor that throws
+ * or yields a non-string is a defect in the kit rather than in the check's subject, so it is reported
+ * in the slot the remediation would occupy and leaves the verdict and its severity alone.
+ */
+function resolveFix(check: RdyCheck): string | null {
+  let raw: unknown;
+  try {
+    // Widened to `unknown`: a kit runs as JavaScript, so an accessor yields whatever its author
+    // wrote, whatever the declared type promised.
+    raw = check.fix;
+  } catch (error_: unknown) {
+    const error = error_ instanceof Error ? error_ : new Error(String(error_));
+    // Quoted so the kit's message stays distinguishable from the sentence carrying it.
+    return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
+  }
+
+  if (raw === undefined) return null;
+  if (typeof raw === 'string') return raw;
+  return `Unresolvable fix: the accessor returned ${describeValue(raw)}`;
+}
+
 /** The fields a check contributes to every result it can produce. */
 interface CheckContext {
   name: string;
   severity: Severity;
   quiet: boolean;
-  fix: string | null;
   depth: number;
 }
 
@@ -53,7 +77,6 @@ function buildCheckContext(check: RdyCheck, defaultSeverity: Severity, depth: nu
     name: check.name,
     severity: resolveSeverity(check, defaultSeverity),
     quiet: check.quiet ?? false,
-    fix: check.fix ?? null,
     depth,
   };
 }
@@ -65,8 +88,9 @@ function buildPassedResult(
   return { ...fields, status: 'passed', ok: true, error: null };
 }
 
-/** Build a failed result. */
+/** Builds a failed result, resolving the check's fix because this is the only outcome that renders one. */
 function buildFailedResult(
+  check: RdyCheck,
   fields: CheckContext & {
     detail: string | null;
     durationMs: number;
@@ -74,7 +98,7 @@ function buildFailedResult(
     progress: Progress | null;
   },
 ): FailedResult {
-  return { ...fields, status: 'failed', ok: false };
+  return { ...fields, fix: resolveFix(check), status: 'failed', ok: false };
 }
 
 /** Build a skipped result. */
@@ -90,8 +114,13 @@ function buildSkippedResult(
  * The declared severity is overridden, because a check that never expressed a verdict says nothing
  * about the urgency of its subject.
  */
-function buildAuthoringErrorResult(context: CheckContext, durationMs: number, error: Error): FailedResult {
-  return buildFailedResult({
+function buildAuthoringErrorResult(
+  check: RdyCheck,
+  context: CheckContext,
+  durationMs: number,
+  error: Error,
+): FailedResult {
+  return buildFailedResult(check, {
     ...context,
     severity: AUTHORING_ERROR_SEVERITY,
     detail: null,
@@ -125,13 +154,13 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
         const error = new Error(
           `skip() returned ${describeValue(skipResult)}; expected false to run the check, or a reason string to skip it.`,
         );
-        const result = buildAuthoringErrorResult(context, performance.now() - start, error);
+        const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
         const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
         return [result, ...childResults];
       }
     } catch (error_: unknown) {
       const error = error_ instanceof Error ? error_ : new Error(String(error_));
-      const result = buildAuthoringErrorResult(context, performance.now() - start, error);
+      const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
       const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
       return [result, ...childResults];
     }
@@ -145,27 +174,27 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
     if (typeof raw === 'boolean') {
       result = raw
         ? buildPassedResult({ ...context, detail: null, durationMs, progress: null })
-        : buildFailedResult({ ...context, detail: null, durationMs, error: null, progress: null });
+        : buildFailedResult(check, { ...context, detail: null, durationMs, error: null, progress: null });
     } else if (isCheckOutcome(raw)) {
       const detail = raw.detail ?? null;
       const progress = raw.progress ?? null;
       result = raw.ok
         ? buildPassedResult({ ...context, detail, durationMs, progress })
-        : buildFailedResult({ ...context, detail, durationMs, error: null, progress });
+        : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress });
     } else {
       // Reported as a defect rather than as an ordinary failure: the check never expressed a
       // verdict, so the severity it declared for its subject says nothing about this outcome.
       const error = new Error(
         `check() returned ${describeValue(raw)}; expected a boolean or an object with a boolean "ok" property.`,
       );
-      result = buildAuthoringErrorResult(context, durationMs, error);
+      result = buildAuthoringErrorResult(check, context, durationMs, error);
     }
 
     const childResults = await collectChildResults(result, children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
-    const result = buildAuthoringErrorResult(context, performance.now() - start, error);
+    const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
     const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
     return [result, ...childResults];
   }

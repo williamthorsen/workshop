@@ -363,7 +363,7 @@ rdy deploy:fast
 
 Neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both validate structure at load time, identically -- `rdy compile` refuses to publish a kit that `rdy run` would reject.
 
-Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function and `fix` a string when present. Unknown keys are allowed, so a kit written for a later ReadyUp still loads.
+Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function, and a `fix` written as a data property must be a string. Unknown keys are allowed, so a kit written for a later ReadyUp still loads.
 
 ```
 Invalid kit at .readyup/kits/default.js:
@@ -372,6 +372,8 @@ Invalid kit at .readyup/kits/default.js:
 ```
 
 A typo'd `severity` is the mistake this matters most for: an unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
+
+A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error taking the whole kit down.
 
 ### Inlining JSON at compile time
 
