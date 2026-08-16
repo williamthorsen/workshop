@@ -25,8 +25,8 @@ const textsByCwd = new Map<string, Map<string, string | undefined>>();
  *
  * The filter decides a path before anything reads it, so a caller never pays for a file it excluded. Text is held per
  * `cwd` for the life of the process, so a file two kits both select costs one read between them, and each pays only
- * for the remainder the other did not ask for. A path that cannot be read is omitted and remembered as unreadable,
- * so a later filter selecting it probes the filesystem no second time.
+ * for the remainder the other did not ask for. A path that cannot be read as text is omitted and remembered as
+ * unreadable, so a later filter selecting it probes the filesystem no second time.
  */
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
   const tracked = await listTrackedFiles();
@@ -39,7 +39,7 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
     if (filter !== undefined && !filter(path)) continue;
 
     if (!texts.has(path)) {
-      texts.set(path, readFile(path));
+      texts.set(path, readText(path));
     }
 
     const text = texts.get(path);
@@ -56,6 +56,20 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
 /** Reports whether a path is one no sweep reads. */
 function isExcluded(path: string): boolean {
   return EXCLUDED_PATH_PATTERNS.some((pattern) => pattern.test(path));
+}
+
+/**
+ * Reads a tracked path as text, answering with nothing where it holds none.
+ *
+ * `git ls-files` names entries that are not files: a symlink to a directory, and the gitlink of a checked-out
+ * submodule. Both exist, so only the read itself can tell them from a source.
+ */
+function readText(path: string): string | undefined {
+  try {
+    return readFile(path);
+  } catch {
+    return undefined;
+  }
 }
 
 /** Answers with the text cache belonging to `cwd`, opening one where this is the first sweep under it. */

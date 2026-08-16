@@ -8,7 +8,7 @@ export interface Finding {
 }
 
 /** Every finding a project holds, which of them the calling check reports, and how far adoption already got. */
-export interface FindingReport<F extends Finding> {
+export interface BuildFindingReportOptions<F extends Finding> {
   findings: readonly F[];
   shouldReport: (finding: F) => boolean;
   adoptedCount: number;
@@ -21,8 +21,8 @@ export interface FindingReport<F extends Finding> {
  * denominator the reader can compare across them. Passing only the reported findings would state a fraction of a
  * different whole for each check, which is why the selection is made here rather than by the caller.
  */
-export function buildFindingReport<F extends Finding>(report: FindingReport<F>): CheckOutcome {
-  const { adoptedCount, findings, shouldReport } = report;
+export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): CheckOutcome {
+  const { adoptedCount, findings, shouldReport } = options;
 
   const reported = findings.filter((finding) => shouldReport(finding));
   const progress = {

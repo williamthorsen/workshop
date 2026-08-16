@@ -42,6 +42,12 @@ describe(listTrackedFiles, () => {
     await expect(listTrackedFiles()).resolves.toStrictEqual(['src/index.ts', 'src/check-utils/json.ts']);
   });
 
+  it('keeps the leading whitespace of the first path', async () => {
+    respondWith({ trackedOutput: ' leading-space.txt\0normal.txt\0' });
+
+    await expect(listTrackedFiles()).resolves.toStrictEqual([' leading-space.txt', 'normal.txt']);
+  });
+
   it('lists with `-z`, so git neither escapes nor quotes a path', async () => {
     respondWith({ trackedOutput: 'src/index.ts\0' });
 

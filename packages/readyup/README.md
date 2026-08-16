@@ -1191,28 +1191,39 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 | `listTrackedFiles()`                  | Paths git tracks under `cwd`                                   |
 | `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path the filter selects      |
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
-| `buildFindingReport(report)`          | A `CheckOutcome` naming located findings, with a fraction      |
+| `buildFindingReport(options)`         | A `CheckOutcome` naming located findings, with a fraction      |
 
 These four are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers answer `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
-`listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, which is the scope `readFile` and `rdy run --from <other-repo>` already work in.
+`listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope `readFile` works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 
-`readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. A caller wanting further exclusions applies them in its own filter.
+`readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
 
 `countPackageUsage` counts calls to the named exports and counts none in a source that never imports the package, from its root or any subpath. The import is what separates adoption from a name collision: a project hand-rolling its own `describeError` calls that name as often as an adopter calls the real one.
 
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and names each selected finding as `symbol (path:line)`, or `path:line` where it declares no symbol. Its fraction is derived from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
+`undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
+
 ```ts
 import { buildFindingReport, countPackageUsage, readTrackedSources } from 'readyup/check-utils';
 
-const sources = await readTrackedSources((path) => /\.[cm]?[jt]sx?$/.test(path));
-if (sources === undefined) return { ok: true };
+function isSource(path: string): boolean {
+  return /\.[cm]?[jt]sx?$/.test(path);
+}
 
-const findings = sources.flatMap(listHandRolledSites);
-const adoptedCount = countPackageUsage(sources, { exportNames: ['describeError'], packageName: '@scope/errors' });
+const check = {
+  name: 'No source defines its own description helper',
+  // The sweep is cached, so the skip and the check share one pass over the project.
+  skip: async () => (await readTrackedSources(isSource)) === undefined && 'the project is not a git working tree',
+  check: async () => {
+    const sources = (await readTrackedSources(isSource)) ?? [];
+    const findings = sources.flatMap(listHandRolledSites);
+    const adoptedCount = countPackageUsage(sources, { exportNames: ['describeError'], packageName: '@scope/errors' });
 
-return buildFindingReport({ adoptedCount, findings, shouldReport: (finding) => finding.kind === 'clone' });
+    return buildFindingReport({ adoptedCount, findings, shouldReport: (finding) => finding.kind === 'clone' });
+  },
+};
 ```
 
 ## Compatibility

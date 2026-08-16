@@ -23,7 +23,7 @@ export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json
 export { getJsonValue, hasJsonValue } from './json-value.ts';
 export { missingFrom } from './missingFrom.ts';
 export { hasDevDependency, hasMinDevDependencyVersion, hasPackageJsonField, readPackageJson } from './package-json.ts';
-export type { Finding, FindingReport } from './project/buildFindingReport.ts';
+export type { BuildFindingReportOptions, Finding } from './project/buildFindingReport.ts';
 export { buildFindingReport } from './project/buildFindingReport.ts';
 export type { CountPackageUsageOptions } from './project/countPackageUsage.ts';
 export { countPackageUsage } from './project/countPackageUsage.ts';

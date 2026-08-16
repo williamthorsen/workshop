@@ -1,5 +1,5 @@
 import { isGitRepo } from '../git/repo-predicates.ts';
-import { runGit } from '../git/run-git.ts';
+import { runGitRaw } from '../git/run-git.ts';
 
 /** Tracked-path listings by the `cwd` they were resolved against, held for the life of the process. */
 const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
@@ -35,8 +35,9 @@ async function readTrackedPaths(cwd: string): Promise<readonly string[] | undefi
   if (!(await isGitRepo(cwd))) return undefined;
 
   // `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in
-  // quotes, which no reader can open, and that file drops out of the sweep unreported.
-  const tracked = await runGit(cwd, 'ls-files', '-z');
+  // quotes, which no reader can open, and that file drops out of the sweep unreported. Reading stdout untrimmed keeps
+  // the same promise for the first path, whose leading space or tab a trim would take.
+  const tracked = await runGitRaw(cwd, 'ls-files', '-z');
   return tracked.split('\0').filter((path) => path !== '');
 }
 

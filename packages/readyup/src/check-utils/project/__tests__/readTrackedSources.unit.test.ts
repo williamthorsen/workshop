@@ -110,6 +110,17 @@ describe(readTrackedSources, () => {
     expect(countProbes('src/deleted.ts')).toBe(1);
   });
 
+  it('omits a tracked path that resolves to a directory', async () => {
+    temp.write('website/docs/page.md', 'page');
+    temp.symlinkDir('docs', 'website/docs');
+    temp.write('src/present.ts', 'present');
+    trackPaths('docs', 'src/present.ts');
+
+    await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+    // The read is what tells a directory from a source, so a fixture git never listed would pass this vacuously.
+    expect(countReads('docs')).toBe(1);
+  });
+
   it('returns undefined outside a git working tree', async () => {
     temp.write('src/present.ts', 'present');
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
