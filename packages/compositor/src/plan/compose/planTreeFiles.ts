@@ -104,7 +104,7 @@ function collectDestinations(
 function describeUnrenderable(render: ArtifactRender): string {
   // `not-deployed` cannot arrive: a caller reaches an artifact through the deployment its kind resolved to.
   return render.status === 'failed'
-    ? `The content could not be rendered: ${render.diagnostic.message}`
+    ? `The content could not be rendered: ${render.failure.diagnostic.message}`
     : 'The target deploys none of this artifact’s kind.';
 }
 

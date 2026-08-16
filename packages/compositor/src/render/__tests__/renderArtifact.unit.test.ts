@@ -28,6 +28,19 @@ const claude: RenderTarget = {
   stages: [{ kind: 'transclusion', syntax: COMMENT }, { kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }],
 };
 
+const inlaying: RenderTarget = {
+  ...claude,
+  stages: [
+    { kind: 'transclusion', syntax: COMMENT },
+    {
+      kind: 'inlay',
+      syntax: COMMENT,
+      markers: { open: '<!-- inlay:{inlayName}:start -->', close: '<!-- inlay:{inlayName}:end -->' },
+      contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+    },
+  ],
+};
+
 describe(renderArtifact, () => {
   it('renders an artifact through every stage its target declares', async () => {
     using tree = createTempTree({
@@ -143,6 +156,83 @@ describe(renderArtifact, () => {
     const result = await render(tree.dir, claude);
 
     expect(result.status).toBe('failed');
+  });
+
+  it('strips an inlay directive and reports the line it stood on', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': '# Review\n\n<!-- inlay: preferences -->\n\nTail.\n' });
+
+    const result = await render(dir, inlaying);
+
+    expect(requireRendered(result).content).toBe('# Review\n\n\nTail.\n');
+    expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 2 }]);
+  });
+
+  // The overlay re-emits its block, so a site computed before it ran would address the line above the right one.
+  it('addresses a site against the content the frontmatter overlay produced', async () => {
+    const dir = await buildTempTree({
+      'skills/review/SKILL.md': '---\nname: review\n---\n<!-- inlay: preferences -->\nTail.\n',
+    });
+    const overlaid: RenderTarget = {
+      ...inlaying,
+      stages: [...inlaying.stages, { kind: 'frontmatter', overlay: { defaults: { model: 'opus' } } }],
+    };
+
+    const result = await render(dir, overlaid);
+
+    expect(requireRendered(result).content).toBe('---\nname: review\nmodel: opus\n---\nTail.\n');
+    expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 4 }]);
+  });
+
+  it('finds an inlay a transcluded partial declared', async () => {
+    const dir = await buildTempTree({
+      '_data/shared.md': 'Shared text.\n<!-- inlay: preferences -->\n',
+      'skills/review/SKILL.md': '# Review\n\n<!-- include: ../../_data/shared.md / -->\n',
+    });
+
+    const result = await render(dir, inlaying);
+
+    expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 3 }]);
+  });
+
+  it('strips an inlay for a kind the target routes into a region of a host', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'Lead.\n<!-- inlay: preferences -->\n' });
+    const routed: RenderTarget = {
+      ...inlaying,
+      deployments: [
+        {
+          form: 'region',
+          kindId: 'skill',
+          host: 'CLAUDE.md',
+          markers: { open: '<!-- team -->', close: '<!-- /team -->' },
+          contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+        },
+      ],
+    };
+
+    const result = await render(dir, routed);
+
+    expect(requireRendered(result).content).toBe('Lead.\n');
+    expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 1 }]);
+  });
+
+  it('deploys an inlay directive as text for a target declaring no inlay stage', async () => {
+    const dir = await buildTempTree({ 'skills/review/SKILL.md': '<!-- inlay: preferences -->\n' });
+
+    const result = await render(dir, claude);
+
+    expect(requireRendered(result).content).toBe('<!-- inlay: preferences -->\n');
+    expect(requireRendered(result).inlays).toStrictEqual([]);
+  });
+
+  it('ends the render on a body declaring one inlay twice, naming the stage that stopped it', async () => {
+    const dir = await buildTempTree({
+      'skills/review/SKILL.md': '<!-- inlay: preferences -->\n<!-- inlay: preferences -->\n',
+    });
+
+    const result = await render(dir, inlaying);
+
+    expect(result).toHaveProperty('failure.stage', 'inlay');
+    expect(result).toHaveProperty('failure.diagnostic.code', 'duplicate-name');
   });
 
   it("renders nothing for a target taking none of the artifact's kind", async () => {

@@ -8,6 +8,7 @@ import { findDuplicateIds } from '../consistency/findDuplicateIds.ts';
 import type { Violation } from '../consistency/Violation.ts';
 import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
 import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
+import { INLAY_NAME_PLACEHOLDER } from '../inlays/inlay-markers.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
 import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
@@ -27,8 +28,9 @@ export class RenderTargetConsistencyError extends ConsistencyError {
 
 /**
  * Verifies what the structural schema cannot: that no target repeats an id, a stage kind, or a deployed kind, that
- * every deployment names a kind in `kinds`, that a region deployment's markers and host can do their jobs, and that
- * each link grammar compiles and captures exactly one group.
+ * every deployment names a kind in `kinds`, that a region deployment's markers and host can do their jobs, that each
+ * link grammar compiles and captures exactly one group, and that an inlay stage's two marker templates can delimit a
+ * span and name what they stand for, with a reshape rule that compiles.
  *
  * A stage declared twice would run twice, and a kind deployed twice would put one artifact in two places; both are
  * authoring mistakes a declaration can express and no render could act on. Checking them here rather than at the first
@@ -76,20 +78,33 @@ export function assertRenderTargetsAreConsistent(
       const deployedAt = `${at}.deployments[${position}]`;
       collectMarkerFaults(deployment.markers, `${deployedAt}.markers`, violations);
       collectMarkerFaults(deployment.contributionMarkers, `${deployedAt}.contributionMarkers`, violations);
-      collectPlaceholderFaults(deployment.contributionMarkers, `${deployedAt}.contributionMarkers`, violations);
+      collectContributorFaults(deployment.contributionMarkers, `${deployedAt}.contributionMarkers`, violations);
       collectHostCollisions(deployment.host, layoutRoots, `${deployedAt}.host`, violations);
     }
 
     for (const [position, stage] of target.stages.entries()) {
-      if (stage.kind !== 'links') {
+      const stageAt = `${at}.stages[${position}]`;
+
+      if (stage.kind === 'links') {
+        const groups = countCaptureGroups(stage.pattern);
+        const path = `${stageAt}.pattern`;
+        if (groups === undefined) {
+          violations.push({ path, message: 'is not a valid regular expression' });
+        } else if (groups !== 1) {
+          violations.push({ path, message: `captures ${groups} groups, but exactly one names the link target` });
+        }
         continue;
       }
-      const groups = countCaptureGroups(stage.pattern);
-      const path = `${at}.stages[${position}].pattern`;
-      if (groups === undefined) {
-        violations.push({ path, message: 'is not a valid regular expression' });
-      } else if (groups !== 1) {
-        violations.push({ path, message: `captures ${groups} groups, but exactly one names the link target` });
+
+      if (stage.kind !== 'inlay') {
+        continue;
+      }
+      collectMarkerFaults(stage.markers, `${stageAt}.markers`, violations);
+      collectInlayNameFaults(stage.markers, `${stageAt}.markers`, violations);
+      collectMarkerFaults(stage.contributionMarkers, `${stageAt}.contributionMarkers`, violations);
+      collectContributorFaults(stage.contributionMarkers, `${stageAt}.contributionMarkers`, violations);
+      if (stage.reshape !== undefined && countCaptureGroups(stage.reshape.pattern) === undefined) {
+        violations.push({ path: `${stageAt}.reshape.pattern`, message: 'is not a valid regular expression' });
       }
     }
   }
@@ -170,16 +185,37 @@ function collectNameTemplateFaults(template: string | undefined, path: string, v
  * Once, not at least once: the template renders to one pattern carrying one capture group, and a second placeholder
  * would leave the reader a choice of which capture named the contributor.
  */
-function collectPlaceholderFaults(template: MarkerPair, path: string, violations: Array<Violation>): void {
+function collectContributorFaults(template: MarkerPair, path: string, violations: Array<Violation>): void {
+  collectPlaceholderFaults(template, ARTIFACT_ID_PLACEHOLDER, 'contributor', path, violations);
+}
+
+/**
+ * Reports an inlay marker template that does not stand its inlay exactly once.
+ *
+ * A filled inlay is attributed from the deployed file alone, so a marker naming no inlay leaves a reader unable to say
+ * which one the span belongs to, and one naming two leaves the attribution ambiguous.
+ */
+function collectInlayNameFaults(template: MarkerPair, path: string, violations: Array<Violation>): void {
+  collectPlaceholderFaults(template, INLAY_NAME_PLACEHOLDER, 'inlay', path, violations);
+}
+
+/** Reports each side of a marker template that does not stand `placeholder`, standing for `subject`, exactly once. */
+function collectPlaceholderFaults(
+  template: MarkerPair,
+  placeholder: string,
+  subject: string,
+  path: string,
+  violations: Array<Violation>,
+): void {
   for (const [role, value] of [
     ['open', template.open],
     ['close', template.close],
   ] as const) {
-    const count = value.split(ARTIFACT_ID_PLACEHOLDER).length - 1;
+    const count = value.split(placeholder).length - 1;
     if (count !== 1) {
       violations.push({
         path: `${path}.${role}`,
-        message: `stands ${ARTIFACT_ID_PLACEHOLDER} ${count} times, but exactly one names the contributor`,
+        message: `stands ${placeholder} ${count} times, but exactly one names the ${subject}`,
       });
     }
   }

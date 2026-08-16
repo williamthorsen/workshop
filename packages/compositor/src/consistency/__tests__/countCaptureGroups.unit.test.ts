@@ -22,4 +22,8 @@ describe(countCaptureGroups, () => {
   it('reports nothing for a pattern that does not compile', () => {
     expect(countCaptureGroups('([a-z')).toBeUndefined();
   });
+
+  it('reports nothing for a pattern ending in an escape, which the empty branch would otherwise absorb', () => {
+    expect(countCaptureGroups('^#\\')).toBeUndefined();
+  });
 });
