@@ -23,6 +23,13 @@ export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json
 export { getJsonValue, hasJsonValue } from './json-value.ts';
 export { missingFrom } from './missingFrom.ts';
 export { hasDevDependency, hasMinDevDependencyVersion, hasPackageJsonField, readPackageJson } from './package-json.ts';
+export type { Finding, FindingReport } from './project/buildFindingReport.ts';
+export { buildFindingReport } from './project/buildFindingReport.ts';
+export type { CountPackageUsageOptions } from './project/countPackageUsage.ts';
+export { countPackageUsage } from './project/countPackageUsage.ts';
+export { listTrackedFiles } from './project/listTrackedFiles.ts';
+export type { PathFilter, ProjectSource } from './project/readTrackedSources.ts';
+export { readTrackedSources } from './project/readTrackedSources.ts';
 export { compareVersions } from './semver.ts';
 export { readToolVersionsNode } from './tool-versions.ts';
 export type { TsconfigChain, TsconfigChainEntry, TsconfigLanguageLevel, UnresolvedExtends } from './tsconfig.ts';
