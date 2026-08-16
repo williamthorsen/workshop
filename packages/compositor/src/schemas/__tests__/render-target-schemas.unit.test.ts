@@ -17,6 +17,13 @@ const regionDeployment = {
   markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
   contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
 };
+const inlayStage = {
+  kind: 'inlay',
+  syntax: { open: '<!--', close: '-->' },
+  markers: { open: '<!-- inlay:{inlayName}:start -->', close: '<!-- inlay:{inlayName}:end -->' },
+  contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+  reshape: { pattern: String.raw`^(#{1,5})(?=\s)`, replacement: '$1#' },
+};
 const target = {
   id: 'claude',
   label: 'Claude',
@@ -129,6 +136,25 @@ describe('RenderStageSchema', () => {
 
     expect(RenderStageSchema.parse(stage)).toStrictEqual(stage);
   });
+
+  it('accepts the inlay stage with its syntax, its markers, and the rewrite that reshapes a bound body', () => {
+    expect(RenderStageSchema.parse(inlayStage)).toStrictEqual(inlayStage);
+  });
+
+  it('accepts an inlay stage declaring no reshape, which splices a bound body as it stands', () => {
+    const { reshape: _dropped, ...unreshaped } = inlayStage;
+
+    expect(RenderStageSchema.parse(unreshaped)).toStrictEqual(unreshaped);
+  });
+
+  it.each(['syntax', 'markers', 'contributionMarkers'] as const)(
+    'if the inlay stage omits %s, rejects it for that field',
+    (field) => {
+      const { [field]: _dropped, ...incomplete } = inlayStage;
+
+      expect(findIssuePaths(RenderStageSchema, incomplete)).toStrictEqual([[field]]);
+    },
+  );
 
   it('if the stage kind is outside the known set, rejects the stage for that field', () => {
     expect(findIssuePaths(RenderStageSchema, { kind: 'variables', pattern: '(x)' })).toStrictEqual([['kind']]);

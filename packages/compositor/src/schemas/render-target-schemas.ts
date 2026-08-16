@@ -7,7 +7,7 @@ import { IdSchema } from './scalar-schemas.ts';
 import { TargetEntrySchema } from './target-schemas.ts';
 
 /**
- * The comment syntax a source writes its transclusion directives in.
+ * The comment syntax a source writes its directives in, transclusion's and the inlay stage's alike.
  *
  * `close` is empty for a syntax whose comments run to the end of the line, such as `#`.
  */
@@ -31,6 +31,21 @@ export const FrontmatterOverlaySchema = z
     overrides: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
   })
   .meta({ id: 'FrontmatterOverlay' });
+
+/**
+ * One rewrite applied to each line of a body, as a regular-expression source and the replacement it splices in.
+ *
+ * A source rather than a compiled expression, which keeps a declaration serializable. The engine owns the flags and
+ * runs the rewrite a line at a time, so a pattern whose character classes admit a newline cannot run away from the
+ * line it was written for. That it compiles is `assertRenderTargetsAreConsistent`'s question, a refinement here being
+ * invisible to `z.toJSONSchema`.
+ */
+export const LineRewriteSchema = z
+  .object({
+    pattern: z.string(),
+    replacement: z.string(),
+  })
+  .meta({ id: 'LineRewrite' });
 
 /**
  * The line pair delimiting a span, each string the whole content of its marker line.
@@ -89,9 +104,15 @@ export const KindDeploymentSchema = z
  * One transform stage a target runs, carrying the parameters that stage reads.
  *
  * A target declares which stages run, never their sequence: transclusion precedes everything that reads the segments it
- * produces, and the frontmatter overlay follows every transform over the body, so a declared sequence could render
- * wrongly while type-checking. `tokens` takes no parameters, reading the engine's token kinds and the target's own
- * mappings.
+ * produces, the frontmatter overlay follows every transform over the body, and the inlay stage follows that, so a
+ * declared sequence could render wrongly while type-checking. `tokens` takes no parameters, reading the engine's token
+ * kinds and the target's own mappings.
+ *
+ * `inlay` carries its own `syntax` rather than reading the transclusion stage's, a target being free to declare either
+ * without the other. Its two marker fields are templates, as a region deployment's are: `markers` stands `{inlayName}`
+ * and fences a whole filled inlay, while `contributionMarkers` stands `{artifactId}` and delimits one bound artifact's
+ * body within it. `reshape` is what makes a bound body sit level with its host, and it is declared rather than
+ * compiled in, so demoting a Markdown heading is data a consumer writes and no content format enters the engine.
  */
 export const RenderStageSchema = z
   .discriminatedUnion('kind', [
@@ -99,6 +120,15 @@ export const RenderStageSchema = z
     z.object({ kind: z.literal('tokens') }).meta({ id: 'TokensStage' }),
     z.object({ kind: z.literal('links'), pattern: z.string() }).meta({ id: 'LinksStage' }),
     z.object({ kind: z.literal('frontmatter'), overlay: FrontmatterOverlaySchema }).meta({ id: 'FrontmatterStage' }),
+    z
+      .object({
+        kind: z.literal('inlay'),
+        syntax: DirectiveSyntaxSchema,
+        markers: MarkerPairSchema,
+        contributionMarkers: MarkerPairSchema,
+        reshape: LineRewriteSchema.optional(),
+      })
+      .meta({ id: 'InlayStage' }),
   ])
   .meta({ id: 'RenderStage' });
 
@@ -121,7 +151,9 @@ export const RenderTargetSchema = TargetEntrySchema.extend({
 
 export type DirectiveSyntax = z.infer<typeof DirectiveSyntaxSchema>;
 export type FrontmatterOverlay = z.infer<typeof FrontmatterOverlaySchema>;
+export type InlayStage = Extract<RenderStage, { kind: 'inlay' }>;
 export type KindDeployment = z.infer<typeof KindDeploymentSchema>;
+export type LineRewrite = z.infer<typeof LineRewriteSchema>;
 export type MarkerPair = z.infer<typeof MarkerPairSchema>;
 export type RegionKindDeployment = Extract<KindDeployment, { form: 'region' }>;
 export type RenderStage = z.infer<typeof RenderStageSchema>;
