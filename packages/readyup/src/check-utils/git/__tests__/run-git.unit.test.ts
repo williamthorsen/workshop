@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { expandHome, isRefMissingError, runGit } from '../run-git.ts';
+import { expandHome, isRefMissingError, runGit, runGitRaw } from '../run-git.ts';
 
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
@@ -64,6 +64,29 @@ describe(runGit, () => {
     await runGit('/home/~user/repo', 'status');
 
     expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/home/~user/repo', 'status']);
+  });
+});
+
+describe(runGitRaw, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns stdout unchanged, keeping the whitespace a trim would take', async () => {
+    execFileAsync.mockResolvedValue({ stdout: ' leading-space.txt\0normal.txt\0', stderr: '' });
+
+    const result = await runGitRaw('/repo', 'ls-files', '-z');
+
+    expect(result).toBe(' leading-space.txt\0normal.txt\0');
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'ls-files', '-z']);
+  });
+
+  it('expands ~/ prefix to the home directory', async () => {
+    execFileAsync.mockResolvedValue({ stdout: 'ok\n', stderr: '' });
+
+    await runGitRaw('~/projects/repo', 'status');
+
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', `${homedir()}/projects/repo`, 'status']);
   });
 });
 
