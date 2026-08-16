@@ -3,7 +3,8 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyManifest } from '../../manifest/manifestSchema.ts';
 
@@ -113,12 +114,7 @@ function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
 }
 
 describe(compileCommand, () => {
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
     // No path these tests name holds a symlink, so a real path is the path itself.
@@ -145,11 +141,11 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    const exitCode = await compileCommand(['input.ts']);
+    const { exitCode, stdout } = await compile(['input.ts']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', undefined);
-    expect(stdoutSpy).toHaveBeenCalledWith('\u{2500}\u{2500} Compiling kit\n');
+    expect(stdout).toContain('\u{2500}\u{2500} Compiling kit\n');
   });
 
   it('shows compiled indicator for a changed single file', async () => {
@@ -157,10 +153,10 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand(['input.ts']);
+    const { stdout } = await compile(['input.ts']);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_COMPILED} input.ts -> ${GLYPH_OUTPUT} `));
-    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('\u{2192}'));
+    expect(stdout).toContain(`${ICON_COMPILED} input.ts -> ${GLYPH_OUTPUT} `);
+    expect(stdout).not.toContain('\u{2192}');
   });
 
   it('shows no-changes indicator for an unchanged single file', async () => {
@@ -168,10 +164,10 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/out.js', changed: false, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand(['input.ts']);
+    const { stdout } = await compile(['input.ts']);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(ICON_NO_CHANGES));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('no changes'));
+    expect(stdout).toContain(ICON_NO_CHANGES);
+    expect(stdout).toContain('no changes');
   });
 
   it('passes --output value to compileConfig', async () => {
@@ -179,7 +175,7 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    const exitCode = await compileCommand(['input.ts', '--output', 'custom.js']);
+    const { exitCode } = await compile(['input.ts', '--output', 'custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
@@ -190,7 +186,7 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    const exitCode = await compileCommand(['input.ts', '--output=custom.js']);
+    const { exitCode } = await compile(['input.ts', '--output=custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
@@ -201,28 +197,28 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    const exitCode = await compileCommand(['input.ts', '-o', 'custom.js']);
+    const { exitCode } = await compile(['input.ts', '-o', 'custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
   });
 
   it('reports a usage error when --output is provided without a value', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--output']));
+    const { error } = await compileRaising(['input.ts', '--output']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires a path argument');
   });
 
   it('reports a usage error when --output is given an empty value', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--output=']));
+    const { error } = await compileRaising(['input.ts', '--output=']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires a path argument');
   });
 
   it('reports a usage error for unknown flags', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['input.ts', '--verbose']));
+    const { error } = await compileRaising(['input.ts', '--verbose']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--verbose'");
@@ -231,14 +227,14 @@ describe(compileCommand, () => {
   it('returns 1 when compileConfig throws', async () => {
     mockCompileConfig.mockRejectedValue(new Error('esbuild is required'));
 
-    const exitCode = await compileCommand(['input.ts']);
+    const { exitCode, stderr } = await compile(['input.ts']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('esbuild is required'));
+    expect(stderr).toContain('esbuild is required');
   });
 
   it('reports a usage error when multiple positional arguments are provided', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['a.ts', 'b.ts']));
+    const { error } = await compileRaising(['a.ts', 'b.ts']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('Too many arguments');
@@ -251,7 +247,7 @@ describe(compileCommand, () => {
       }),
     );
 
-    const error = await captureError(RdyError, () => compileCommand([]));
+    const { error } = await compileRaising([]);
 
     expect(error.code).toBe('config');
     expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
@@ -268,10 +264,10 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stdout } = await compile([]);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Compiling kits in'));
-    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining(' to '));
+    expect(stdout).toContain('Compiling kits in');
+    expect(stdout).not.toContain(' to ');
   });
 
   // `pnpm -r exec rdy compile` gives each workspace its own working directory, so a heading naming paths
@@ -290,10 +286,10 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stdout } = await compile([]);
 
     const expected = path.relative(workspaceRoot, path.resolve(process.cwd(), '.readyup/kits'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`Compiling kits in ${expected}`));
+    expect(stdout).toContain(`Compiling kits in ${expected}`);
   });
 
   // Readyup is published, so it runs in repositories that have no workspace file and in directories under
@@ -311,9 +307,9 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stdout } = await compile([]);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Compiling kits in .readyup/kits'));
+    expect(stdout).toContain('Compiling kits in .readyup/kits');
   });
 
   it('prints "from ... to ..." header when srcDir differs from outDir', async () => {
@@ -326,10 +322,10 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stdout } = await compile([]);
 
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('from'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('to'));
+    expect(stdout).toContain('from');
+    expect(stdout).toContain('to');
   });
 
   it('compiles all .ts files and shows per-file status lines', async () => {
@@ -346,25 +342,25 @@ describe(compileCommand, () => {
         compileResult(kitSource('b.ts'), { outputPath: '/abs/b.js', changed: false, targetHash: 'bbbb2222' }),
       );
 
-    const exitCode = await compileCommand([]);
+    const { exitCode, stdout, stdoutChunks } = await compile([]);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledTimes(2);
     // Header + 2 status lines
-    expect(stdoutSpy).toHaveBeenCalledTimes(3);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_COMPILED} a.ts -> ${GLYPH_OUTPUT} a.js`));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_NO_CHANGES} b.ts \u{00B7} no changes`));
+    expect(stdoutChunks).toHaveLength(3);
+    expect(stdout).toContain(`${ICON_COMPILED} a.ts -> ${GLYPH_OUTPUT} a.js`);
+    expect(stdout).toContain(`${ICON_NO_CHANGES} b.ts \u{00B7} no changes`);
   });
 
   it('reports a usage error when --output is given without an input file', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['--output', 'out.js']));
+    const { error } = await compileRaising(['--output', 'out.js']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('--output requires an input file');
   });
 
   it('reports a usage error for --all (removed flag)', async () => {
-    const error = await captureError(RdyError, () => compileCommand(['--all']));
+    const { error } = await compileRaising(['--all']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--all'");
@@ -394,7 +390,7 @@ describe(compileCommand, () => {
         }),
       );
 
-    const exitCode = await compileCommand([]);
+    const { exitCode } = await compile([]);
 
     expect(exitCode).toBe(0);
     expect(mockPicomatch).toHaveBeenCalledWith('shared/*.ts');
@@ -405,54 +401,50 @@ describe(compileCommand, () => {
     it('writes no manifest when the source directory is absent and no manifest exists', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: false });
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stdout } = await compile([]);
 
       expect(exitCode).toBe(0);
       expect(mockReaddirSync).not.toHaveBeenCalled();
       expect(mockWriteManifest).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Source directory not found: .readyup/kits; manifest not written'),
-      );
+      expect(stdout).toContain('Source directory not found: .readyup/kits; manifest not written');
     });
 
     it('writes no manifest when the source directory holds no .ts files and no manifest exists', async () => {
       arrangeEmptySweep({ srcDirExists: true, manifestExists: false });
       mockReaddirSync.mockReturnValue(['readme.md']);
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stdout } = await compile([]);
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('No .ts files found in .readyup/kits; manifest not written'),
-      );
+      expect(stdout).toContain('No .ts files found in .readyup/kits; manifest not written');
     });
 
     it('empties an existing manifest when the source directory is absent', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: true });
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stdout } = await compile([]);
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('manifest now lists no kits'));
+      expect(stdout).toContain('manifest now lists no kits');
     });
 
     it('empties an existing manifest when the source directory holds no .ts files', async () => {
       arrangeEmptySweep({ srcDirExists: true, manifestExists: true });
       mockReaddirSync.mockReturnValue(['readme.md']);
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stdout } = await compile([]);
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('manifest now lists no kits'));
+      expect(stdout).toContain('manifest now lists no kits');
     });
 
     it('gates on the path --manifest names rather than the default', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: false });
 
-      await compileCommand(['--manifest', 'custom/manifest.json']);
+      await compile(['--manifest', 'custom/manifest.json']);
 
       expect(mockExistsSync).toHaveBeenCalledWith(path.resolve(process.cwd(), 'custom/manifest.json'));
       expect(mockWriteManifest).not.toHaveBeenCalled();
@@ -461,22 +453,22 @@ describe(compileCommand, () => {
     it('omits the manifest clause under --skip-manifest when the source directory is absent', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: true });
 
-      const exitCode = await compileCommand(['--skip-manifest']);
+      const { exitCode, stdout } = await compile(['--skip-manifest']);
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith('Source directory not found: .readyup/kits\n');
+      expect(stdout).toBe('Source directory not found: .readyup/kits\n');
     });
 
     it('omits the manifest clause under --skip-manifest when the directory holds no .ts files', async () => {
       arrangeEmptySweep({ srcDirExists: true, manifestExists: true });
       mockReaddirSync.mockReturnValue(['readme.md']);
 
-      const exitCode = await compileCommand(['--skip-manifest']);
+      const { exitCode, stdout } = await compile(['--skip-manifest']);
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith('No .ts files found in .readyup/kits\n');
+      expect(stdout).toBe('No .ts files found in .readyup/kits\n');
     });
 
     // region | Helpers
@@ -499,10 +491,10 @@ describe(compileCommand, () => {
     );
     mockValidateCompiledOutput.mockRejectedValue(new Error('Suite name(s) collide with checklist name(s): deploy'));
 
-    const exitCode = await compileCommand(['input.ts']);
+    const { exitCode, stderr } = await compile(['input.ts']);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Suite name(s) collide'));
+    expect(stderr).toContain('Suite name(s) collide');
   });
 
   it('returns 1 when post-compile validation fails during batch compile', async () => {
@@ -516,10 +508,10 @@ describe(compileCommand, () => {
     );
     mockValidateCompiledOutput.mockRejectedValue(new Error('suite "ci" references unknown checklist "missing"'));
 
-    const exitCode = await compileCommand([]);
+    const { exitCode, stderr } = await compile([]);
 
     expect(exitCode).toBe(1);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('references unknown checklist'));
+    expect(stderr).toContain('references unknown checklist');
   });
 
   describe('sweep completion', () => {
@@ -540,20 +532,20 @@ describe(compileCommand, () => {
     it('compiles the kits after a failed one instead of abandoning the sweep', async () => {
       arrangeMixedBatch();
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stdout, stderr } = await compile([]);
 
       expect(exitCode).toBe(1);
       expect(mockCompileConfig).toHaveBeenCalledTimes(2);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error compiling alpha.ts'));
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('beta.ts'));
+      expect(stderr).toContain('Error compiling alpha.ts');
+      expect(stdout).toContain('beta.ts');
     });
 
     it('reports how many kits failed once the sweep finishes', async () => {
       arrangeMixedBatch();
 
-      await compileCommand([]);
+      const { stdout } = await compile([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits failed to compile.'));
+      expect(stdout).toContain('1 of 2 kits failed to compile.');
     });
 
     it('writes a manifest when sources are found but every one fails to compile', async () => {
@@ -564,7 +556,7 @@ describe(compileCommand, () => {
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
       mockCompileConfig.mockRejectedValue(new Error('not valid TypeScript'));
 
-      const exitCode = await compileCommand([]);
+      const { exitCode } = await compile([]);
 
       expect(exitCode).toBe(1);
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
@@ -573,7 +565,7 @@ describe(compileCommand, () => {
     it('leaves a failed kit out of the manifest rather than recording it as compiled', async () => {
       arrangeMixedBatch();
 
-      await compileCommand([]);
+      await compile([]);
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
@@ -592,7 +584,7 @@ describe(compileCommand, () => {
       };
       mockReadManifest.mockReturnValue({ version: 1, kits: [recordedAlpha] });
 
-      await compileCommand([]);
+      await compile([]);
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
@@ -609,10 +601,10 @@ describe(compileCommand, () => {
         ],
       });
 
-      const exitCode = await compileCommand([]);
+      const { exitCode, stderr } = await compile([]);
 
       expect(exitCode).toBe(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Error compiling alpha.ts'));
+      expect(stderr).toContain('Error compiling alpha.ts');
     });
   });
 
@@ -626,7 +618,7 @@ describe(compileCommand, () => {
         throw new ManifestNotFoundError('missing');
       });
 
-      await compileCommand(['deploy.ts']);
+      await compile(['deploy.ts']);
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
@@ -642,7 +634,7 @@ describe(compileCommand, () => {
         throw new ManifestNotFoundError('missing');
       });
 
-      await compileCommand(['deploy.ts']);
+      await compile(['deploy.ts']);
 
       const [call] = mockWriteManifest.mock.calls;
       assert.ok(call);
@@ -662,7 +654,7 @@ describe(compileCommand, () => {
         throw new ManifestNotFoundError('missing');
       });
 
-      await compileCommand(['deploy.ts']);
+      await compile(['deploy.ts']);
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
@@ -678,7 +670,7 @@ describe(compileCommand, () => {
         throw new ManifestNotFoundError('missing');
       });
 
-      await compileCommand(['deploy.ts']);
+      await compile(['deploy.ts']);
 
       const [call] = mockWriteManifest.mock.calls;
       assert.ok(call);
@@ -701,13 +693,11 @@ describe(compileCommand, () => {
           compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
         );
 
-      const exitCode = await compileCommand(['--json']);
+      const { exitCode, stdout, stdoutChunks } = await compile(['--json']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      const [jsonCall] = stdoutSpy.mock.calls;
-      assert.ok(jsonCall);
-      expect(JSON.parse(String(jsonCall[0]))).toStrictEqual({
+      expect(stdoutChunks).toHaveLength(1);
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         passed: false,
         kits: [
@@ -725,12 +715,10 @@ describe(compileCommand, () => {
         throw new ManifestNotFoundError('missing');
       });
 
-      const exitCode = await compileCommand(['deploy.ts', '--json']);
+      const { exitCode, stdout } = await compile(['deploy.ts', '--json']);
 
       expect(exitCode).toBe(0);
-      const [jsonCall] = stdoutSpy.mock.calls;
-      assert.ok(jsonCall);
-      expect(JSON.parse(String(jsonCall[0]))).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         passed: true,
         kits: [{ name: 'deploy', status: 'compiled' }],
       });
@@ -748,12 +736,10 @@ describe(compileCommand, () => {
         resolvedPath: '/abs/deploy.js',
       });
 
-      const exitCode = await compileCommand(['deploy.ts', '--json']);
+      const { exitCode, stdout } = await compile(['deploy.ts', '--json']);
 
       expect(exitCode).toBe(1);
-      const [jsonCall] = stdoutSpy.mock.calls;
-      assert.ok(jsonCall);
-      expect(JSON.parse(String(jsonCall[0]))).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         passed: false,
         kits: [{ name: 'deploy', status: 'skipped', error: expect.stringContaining('drifted') }],
       });
@@ -769,7 +755,7 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const error = await captureError(RdyError, () => compileCommand([]));
+    const { error } = await compileRaising([]);
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Failed to read source directory');
@@ -784,7 +770,7 @@ describe(compileCommand, () => {
     mockReaddirSync.mockReturnValue(['data/readme.md', 'data/config.json']);
     mockPicomatch.mockReturnValue(() => true);
 
-    const exitCode = await compileCommand([]);
+    const { exitCode } = await compile([]);
 
     expect(exitCode).toBe(0);
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
@@ -815,7 +801,7 @@ describe(compileCommand, () => {
       .mockResolvedValueOnce(kitMetadata({ description: 'Alpha checks' }))
       .mockResolvedValueOnce(kitMetadata());
 
-    await compileCommand([]);
+    await compile([]);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -866,7 +852,7 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand(['--skip-manifest']);
+    await compile(['--skip-manifest']);
 
     expect(mockWriteManifest).not.toHaveBeenCalled();
   });
@@ -881,7 +867,7 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand(['--manifest=custom/manifest.json']);
+    await compile(['--manifest=custom/manifest.json']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
   });
@@ -896,7 +882,7 @@ describe(compileCommand, () => {
       kits: [{ name: 'default', description: 'Default checks' }],
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -926,7 +912,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -955,7 +941,7 @@ describe(compileCommand, () => {
       kits: [{ name: 'deploy', description: 'Old' }],
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -987,7 +973,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(
       expect.any(String),
@@ -1012,7 +998,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(
       expect.any(String),
@@ -1040,7 +1026,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(
       expect.any(String),
@@ -1051,7 +1037,7 @@ describe(compileCommand, () => {
   it('records a distinct source hash per kit in a batch compile', async () => {
     arrangeTwoKitBatch({ alphaHash: 'a1a1a1a1', betaHash: 'b2b2b2b2' });
 
-    await compileCommand([]);
+    await compile([]);
 
     const [writeManifestCall] = mockWriteManifest.mock.calls;
     assert.ok(writeManifestCall);
@@ -1076,7 +1062,7 @@ describe(compileCommand, () => {
         : { kind: 'unverified' },
     );
 
-    await compileCommand([]);
+    await compile([]);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -1089,7 +1075,7 @@ describe(compileCommand, () => {
       compileResult('input.ts', { outputPath: '/abs/out.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand(['input.ts', '--skip-manifest']);
+    await compile(['input.ts', '--skip-manifest']);
 
     expect(mockWriteManifest).not.toHaveBeenCalled();
     expect(mockReadManifest).not.toHaveBeenCalled();
@@ -1108,7 +1094,7 @@ describe(compileCommand, () => {
       throw new Error('EACCES: permission denied');
     });
 
-    const error = await captureError(RdyError, () => compileCommand([]));
+    const { error } = await compileRaising([]);
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Error writing manifest');
@@ -1124,10 +1110,10 @@ describe(compileCommand, () => {
       throw new Error('Invalid manifest schema in .readyup/manifest.json: bad data');
     });
 
-    await compileCommand(['deploy.ts']);
+    const { stderr } = await compile(['deploy.ts']);
 
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid manifest schema'));
+    expect(stderr).toContain('Warning:');
+    expect(stderr).toContain('Invalid manifest schema');
     // Still writes the manifest despite the warning
     expect(mockWriteManifest).toHaveBeenCalledTimes(1);
   });
@@ -1141,7 +1127,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts', '--manifest=custom/manifest.json']);
+    await compile(['deploy.ts', '--manifest=custom/manifest.json']);
 
     expect(mockWriteManifest).toHaveBeenCalledTimes(1);
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'), expect.anything());
@@ -1161,7 +1147,7 @@ describe(compileCommand, () => {
         compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
       );
 
-    await compileCommand([]);
+    await compile([]);
 
     const [writeManifestCall] = mockWriteManifest.mock.calls;
     assert.ok(writeManifestCall);
@@ -1180,7 +1166,7 @@ describe(compileCommand, () => {
       throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
     });
 
-    await compileCommand(['deploy.ts']);
+    await compile(['deploy.ts']);
 
     const [writeManifestCall] = mockWriteManifest.mock.calls;
     assert.ok(writeManifestCall);
@@ -1200,7 +1186,7 @@ describe(compileCommand, () => {
       kits: [{ name: 'charlie' }, { name: 'beta' }],
     });
 
-    await compileCommand(['alpha.ts']);
+    await compile(['alpha.ts']);
 
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
       version: 1,
@@ -1221,15 +1207,13 @@ describe(compileCommand, () => {
       resolvedPath: '/abs/deploy.js',
     });
 
-    const exitCode = await compileCommand(['deploy.ts']);
+    const { exitCode, stdout } = await compile(['deploy.ts']);
 
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).not.toHaveBeenCalled();
     expect(mockWriteManifest).not.toHaveBeenCalled();
-    expect(stdoutSpy).toHaveBeenCalledWith(
-      `${ICON_DRIFT} deploy.ts\n   drift in deploy.js: expected aaaa1111, got bbbb2222\n`,
-    );
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Re-run with --force'));
+    expect(stdout).toContain(`${ICON_DRIFT} deploy.ts\n   drift in deploy.js: expected aaaa1111, got bbbb2222\n`);
+    expect(stdout).toContain('Re-run with --force');
   });
 
   it('bypasses drift gate with --force on single-file compile', async () => {
@@ -1248,7 +1232,7 @@ describe(compileCommand, () => {
       resolvedPath: '/abs/deploy.js',
     });
 
-    const exitCode = await compileCommand(['deploy.ts', '--force']);
+    const { exitCode } = await compile(['deploy.ts', '--force']);
 
     expect(exitCode).toBe(0);
     expect(mockCheckDrift).not.toHaveBeenCalled();
@@ -1282,12 +1266,12 @@ describe(compileCommand, () => {
       compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
     );
 
-    const exitCode = await compileCommand([]);
+    const { exitCode, stdout } = await compile([]);
 
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).toHaveBeenCalledTimes(1); // only beta compiled
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${ICON_DRIFT} alpha.ts\n   drift in alpha.js:`));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits skipped due to drift'));
+    expect(stdout).toContain(`${ICON_DRIFT} alpha.ts\n   drift in alpha.js:`);
+    expect(stdout).toContain('1 of 2 kits skipped due to drift');
 
     const [writeManifestCall] = mockWriteManifest.mock.calls;
     assert.ok(writeManifestCall);
@@ -1320,12 +1304,12 @@ describe(compileCommand, () => {
       compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa9999' }),
     );
 
-    const exitCode = await compileCommand(['--force']);
+    const { exitCode, stdout } = await compile(['--force']);
 
     expect(exitCode).toBe(0);
     expect(mockCheckDrift).not.toHaveBeenCalled();
     expect(mockCompileConfig).toHaveBeenCalledTimes(1);
-    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('skipped due to drift'));
+    expect(stdout).not.toContain('skipped due to drift');
   });
 
   it('does not emit drift footer when no kits were skipped', async () => {
@@ -1339,9 +1323,9 @@ describe(compileCommand, () => {
       compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stdout } = await compile([]);
 
-    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('skipped due to drift'));
+    expect(stdout).not.toContain('skipped due to drift');
   });
 
   it('warns on stderr when the existing manifest is unreadable during batch compile', async () => {
@@ -1357,10 +1341,10 @@ describe(compileCommand, () => {
       compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stderr } = await compile([]);
 
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Unexpected token in JSON'));
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
+    expect(stderr).toContain('Unexpected token in JSON');
+    expect(stderr).toContain('drift gate skipped');
   });
 
   it('is silent when the manifest is missing during batch compile', async () => {
@@ -1376,9 +1360,9 @@ describe(compileCommand, () => {
       compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa1111' }),
     );
 
-    await compileCommand([]);
+    const { stderr } = await compile([]);
 
-    expect(stderrSpy).not.toHaveBeenCalledWith(expect.stringContaining('drift gate skipped'));
+    expect(stderr).not.toContain('drift gate skipped');
   });
 
   // region | Helpers
@@ -1398,3 +1382,25 @@ describe(compileCommand, () => {
 
   // endregion | Helpers
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function compile(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await compileCommand(args);
+
+  return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+/** Runs the command expecting it to raise, returning the error alongside everything it wrote. */
+async function compileRaising(args: string[]) {
+  using io = captureStdio();
+
+  const error = await captureError(RdyError, () => compileCommand(args));
+
+  return { error, stdout: io.stdout, stderr: io.stderr };
+}
+
+// endregion | Helpers
