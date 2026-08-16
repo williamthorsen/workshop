@@ -1,6 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
@@ -69,7 +70,6 @@ const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, ()
 describe(discoverKitProjects, () => {
   beforeEach(() => {
     passAllReads();
-    vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -114,7 +114,7 @@ describe(discoverKitProjects, () => {
   });
 
   it('reads each project under its own config', async () => {
-    const projects = await discoverKitProjects({ root: tempDir.dir });
+    const { projects } = await discover();
     const byDir = new Map(projects.map((project) => [project.dir, project]));
 
     expect(byDir.get('packages/custom')?.config.compile.srcDir).toBe('src/kits');
@@ -123,7 +123,7 @@ describe(discoverKitProjects, () => {
   });
 
   it('resolves each project against the sweep root, manifest path included', async () => {
-    const projects = await discoverKitProjects({ root: tempDir.dir });
+    const { projects } = await discover();
     const emptied = projects.find((project) => project.dir === 'packages/emptied');
 
     expect(emptied?.absolutePath).toBe(path.join(tempDir.dir, 'packages/emptied'));
@@ -132,11 +132,11 @@ describe(discoverKitProjects, () => {
 
   // Discovery is read-only, so a config nobody can evaluate costs that project its settings, not its place.
   it('reports a project whose config fails to evaluate, reading it with default settings', async () => {
-    const projects = await discoverKitProjects({ root: tempDir.dir });
+    const { projects, stderr } = await discover();
     const broken = projects.find((project) => project.dir === 'packages/broken');
 
     expect(broken?.config.compile.srcDir).toBe('.readyup/kits');
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('packages/broken'));
+    expect(stderr).toContain('packages/broken');
   });
 
   // Topology comes from the filesystem, so a repo declaring no workspaces is swept like any other.
@@ -145,12 +145,13 @@ describe(discoverKitProjects, () => {
   });
 
   it('reports nothing for a tree holding no kit project', async () => {
-    const projects = await discoverKitProjects({ root: path.join(tempDir.dir, 'packages/plain') });
+    const { projects } = await discover(path.join(tempDir.dir, 'packages/plain'));
 
     expect(projects).toStrictEqual([]);
   });
 
   it('sweeps the working directory when no root is named', async () => {
+    using _io = captureStdio();
     vi.spyOn(process, 'cwd').mockReturnValue(path.join(tempDir.dir, 'packages/emptied'));
 
     const projects = await discoverKitProjects();
@@ -161,11 +162,11 @@ describe(discoverKitProjects, () => {
   it.each(['EACCES', 'EPERM'])('omits a project whose kit directory it cannot read for a benign %s', async (code) => {
     failReadOf('packages/compiled-only/.readyup/kits', code);
 
-    const dirs = await discoverDirs();
+    const { dirs, stderr } = await discover();
 
     expect(dirs).not.toContain('packages/compiled-only');
     expect(dirs).toStrictEqual(expect.arrayContaining(['.', 'packages/authored', 'packages/tooling']));
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('packages/compiled-only'));
+    expect(stderr).toContain('packages/compiled-only');
   });
 
   it('omits a project whose source directory it cannot read', async () => {
@@ -180,16 +181,25 @@ describe(discoverKitProjects, () => {
   it('rethrows a filesystem failure that is not benign', async () => {
     failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
 
-    await expect(discoverKitProjects({ root: tempDir.dir })).rejects.toThrow('read failed: EMFILE');
+    await expect(discover()).rejects.toThrow('read failed: EMFILE');
   });
 });
 
 // region | Helpers
 
+/** Sweeps the fixture tree for kit projects, returning them alongside what the sweep wrote to stderr. */
+async function discover(root: string = tempDir.dir) {
+  using io = captureStdio();
+
+  const projects = await discoverKitProjects({ root });
+
+  return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr };
+}
+
 /** Returns the root-relative directories discovery reports for the fixture tree. */
 async function discoverDirs(): Promise<string[]> {
-  const projects = await discoverKitProjects({ root: tempDir.dir });
-  return projects.map((project) => project.dir);
+  const { dirs } = await discover();
+  return dirs;
 }
 
 // endregion | Helpers

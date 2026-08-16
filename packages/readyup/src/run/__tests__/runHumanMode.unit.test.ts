@@ -1,6 +1,5 @@
-import process from 'node:process';
-
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { FailedResult, PassedResult, Severity } from '../../kits/types.ts';
@@ -66,12 +65,7 @@ const BLOCK_GAP = '\n'.repeat(2);
 const WIDER_GAP = '\n'.repeat(3);
 
 describe(runHumanMode, () => {
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue(undefined);
@@ -90,21 +84,11 @@ describe(runHumanMode, () => {
     mockWarnOnKitStaleness.mockReset();
   });
 
-  /** Every stdout write concatenated into one string. */
-  function stdoutText(): string {
-    return stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-  }
-
-  /** Every stderr write concatenated into one string. */
-  function stderrText(): string {
-    return stderrSpy.mock.calls.map((c) => String(c[0])).join('');
-  }
-
   it('says the run selected no kits rather than printing nothing', async () => {
-    const exitCode = await runHuman([]);
+    const { exitCode, stdout } = await runHuman([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutText()).toBe('No kits to run.\n');
+    expect(stdout).toBe('No kits to run.\n');
     expect(mockLoadRdyKit).not.toHaveBeenCalled();
   });
 
@@ -113,7 +97,7 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const exitCode = await runHuman(singleKitEntry());
+    const { exitCode } = await runHuman(singleKitEntry());
 
     expect(mockRunRdy).toHaveBeenCalledTimes(2);
     expect(exitCode).toBe(0);
@@ -124,7 +108,7 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const exitCode = await runHuman(singleKitEntry(['deploy']));
+    const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
     expect(mockRunRdy).toHaveBeenCalledTimes(1);
     expect(mockRunRdy).toHaveBeenCalledWith(
@@ -138,10 +122,10 @@ describe(runHumanMode, () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
-    const exitCode = await runHuman(singleKitEntry(['nonexistent']));
+    const { exitCode, stderr } = await runHuman(singleKitEntry(['nonexistent']));
 
     expect(exitCode).toBe(2);
-    expect(stderrText()).toContain('Error: Unknown name(s): nonexistent');
+    expect(stderr).toContain('Error: Unknown name(s): nonexistent');
   });
 
   it('returns exit code 1 when any checklist fails', async () => {
@@ -151,7 +135,7 @@ describe(runHumanMode, () => {
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
-    const exitCode = await runHuman(singleKitEntry());
+    const { exitCode } = await runHuman(singleKitEntry());
 
     expect(exitCode).toBe(1);
   });
@@ -171,9 +155,8 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry());
 
-    const allOutput = stdoutText();
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} deploy');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
@@ -184,9 +167,8 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry());
 
-    const allOutput = stdoutText();
     expect(allOutput).not.toContain(WIDER_GAP);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
     expect(allOutput).toContain(`${BLOCK_GAP}combined summary`);
@@ -199,9 +181,8 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(['deploy']));
+    const { stdout: allOutput } = await runHuman(singleKitEntry(['deploy']));
 
-    const allOutput = stdoutText();
     expect(allOutput).not.toContain('\u{2501}\u{2501}');
     expect(allOutput).not.toContain('\u{2500}\u{2500} ');
     expect(allOutput.startsWith('\n')).toBe(false);
@@ -214,12 +195,11 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman([
+    const { stdout: allOutput } = await runHuman([
       { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
       { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
     ]);
 
-    const allOutput = stdoutText();
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit1');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit2');
   });
@@ -231,9 +211,11 @@ describe(runHumanMode, () => {
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runHuman([{ name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [], provenance }]);
+      const { stdout } = await runHuman([
+        { name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [], provenance },
+      ]);
 
-      return stdoutText();
+      return stdout;
     }
 
     it('names a remote kit by the source it was fetched from', async () => {
@@ -280,12 +262,11 @@ describe(runHumanMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman([
+    const { stdout: allOutput } = await runHuman([
       { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
       { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
     ]);
 
-    const allOutput = stdoutText();
     expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F4D3} kit1')).toBe(true);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
     expect(allOutput).not.toContain(WIDER_GAP);
@@ -297,9 +278,8 @@ describe(runHumanMode, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry());
 
-    const allOutput = stdoutText();
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
   });
@@ -310,9 +290,8 @@ describe(runHumanMode, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry());
 
-    const allOutput = stdoutText();
     expect(allOutput).toContain('report output');
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
   });
@@ -324,12 +303,11 @@ describe(runHumanMode, () => {
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    await runHuman([
+    const { stdout: allOutput } = await runHuman([
       { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
       { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
     ]);
 
-    const allOutput = stdoutText();
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
   });
@@ -412,10 +390,10 @@ describe(runHumanMode, () => {
   it('reports an unloadable kit against its kit name and exits 2', async () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
-    const exitCode = await runHuman(singleKitEntry());
+    const { exitCode, stderr } = await runHuman(singleKitEntry());
 
     expect(exitCode).toBe(2);
-    expect(stderrText()).toBe('Error: Kit not found\n');
+    expect(stderr).toBe('Error: Kit not found\n');
   });
 
   it('keeps running the kits that are not at fault', async () => {
@@ -424,7 +402,7 @@ describe(runHumanMode, () => {
       .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const exitCode = await runHuman([
+    const { exitCode } = await runHuman([
       { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
       { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
     ]);
@@ -554,7 +532,7 @@ describe(runHumanMode, () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      const exitCode = await runHuman(singleKitEntry(['deploy']));
+      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
       expect(exitCode).toBe(0);
     });
@@ -568,11 +546,9 @@ describe(runHumanMode, () => {
       mockResolveGitHubToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${GITHUB_URL}`, 404));
 
-      await runHuman([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }]);
+      const { stderr } = await runHuman([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }]);
 
-      expect(stderrText()).toBe(
-        `Error: Failed to fetch remote kit from ${GITHUB_URL}\n\u{1F4A1} Hint: ${GITHUB_HINT}\n`,
-      );
+      expect(stderr).toBe(`Error: Failed to fetch remote kit from ${GITHUB_URL}\n\u{1F4A1} Hint: ${GITHUB_HINT}\n`);
     });
   });
 });
@@ -621,12 +597,19 @@ interface HumanRunOptions {
   reportOn?: Severity;
 }
 
-/** Runs the mode over the given entries, filling in every setting the test did not name. */
-function runHuman(
+/**
+ * Runs the mode over the given entries, filling in every setting the test did not name, and returns its
+ * exit code alongside everything it wrote.
+ */
+async function runHuman(
   kitEntries: ResolvedKitEntry[],
   { failOn, isJit = false, quiet = false, reportOn }: HumanRunOptions = {},
-): Promise<number> {
-  return runHumanMode(kitEntries, { failOn, quiet, reportOn }, isJit);
+) {
+  using io = captureStdio();
+
+  const exitCode = await runHumanMode(kitEntries, { failOn, quiet, reportOn }, isJit);
+
+  return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
 
 // endregion | Helpers
