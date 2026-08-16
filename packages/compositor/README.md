@@ -4,6 +4,8 @@ Content-agnostic engine that resolves declaratively opted-in content across prec
 
 Private and unreleased: the name is provisional. What ships today is the plan schema, the contract the engine's output satisfies, and the flows built against it: the config model, source resolution, selection, the dependency closure, the mechanisms that own part of a destination and overlay a target's metadata, the per-target transform pipeline that renders one artifact's content, the snapshot that gathers all of it, the composition that turns a snapshot into a plan, the apply that writes one to a destination, and the validation that reports what a config and its content get wrong. Entries ownership is the one mechanism no flow routes content to yet. The requirements it is built to are tracked in [issue #158](https://github.com/williamthorsen/workshop/issues/158).
 
+Content-agnostic is a testable claim, and `src/__tests__/genericity.unit.test.ts` is where it is tested: it composes and applies a second consumer whose content format, comment syntax, token delimiter, link grammar, and deployed layout all differ from the vocabulary the rest of the suite is written in.
+
 ## Config
 
 A config is a list of tiers, lowest precedence first, the order a fold applies them. Each tier declares the sources it adds or drops, and per artifact kind the artifacts it uses or drops. `loadConfig` reads one file per tier, but files are one way to obtain a config rather than the only one: what it returns is the same shape a caller can build in memory and hand straight to the flows downstream, which is what lets an edited config be evaluated without touching disk.
