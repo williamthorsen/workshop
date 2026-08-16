@@ -1215,7 +1215,7 @@ function isSource(path: string): boolean {
 const check = {
   name: 'No source defines its own description helper',
   // The sweep is cached, so the skip and the check share one pass over the project.
-  skip: async () => (await readTrackedSources(isSource)) === undefined && 'the project is not a git working tree',
+  skip: async () => (await readTrackedSources(isSource)) === undefined && 'The project is not a git working tree',
   check: async () => {
     const sources = (await readTrackedSources(isSource)) ?? [];
     const findings = sources.flatMap(listHandRolledSites);
