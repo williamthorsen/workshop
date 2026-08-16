@@ -2,6 +2,7 @@ import type { ZodError } from 'zod';
 import { z } from 'zod';
 
 import { describeType, previewValue } from '../portable/describe-value.ts';
+import { isRecord } from '../portable/isRecord.ts';
 import type { RdyKit } from './types.ts';
 
 /** Schema for valid severity levels. */
@@ -32,18 +33,28 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
  *
  * `looseObject` lets unknown keys through: a kit authored against a later readyup, or carrying an
  * annotation this version knows nothing about, is not thereby broken.
+ *
+ * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
+ * `fix` from the shape would stop it being type-checked without stopping it being invoked. The
+ * preprocess is what leaves an accessor-valued one unread.
+ *
+ * The annotation breaks an inference cycle: TypeScript cannot infer a type that recurses through
+ * `z.preprocess`. Widening it costs nothing, because no caller reads the parsed output.
  */
-const CheckSchema = z.looseObject({
-  name: NameSchema,
-  check: FunctionSchema,
-  severity: SeveritySchema.optional(),
-  quiet: z.boolean().optional(),
-  skip: FunctionSchema.optional(),
-  fix: z.string().optional(),
-  get checks() {
-    return z.array(CheckSchema).optional();
-  },
-});
+const CheckSchema: z.ZodType = z.preprocess(
+  hideAccessorFix,
+  z.looseObject({
+    name: NameSchema,
+    check: FunctionSchema,
+    severity: SeveritySchema.optional(),
+    quiet: z.boolean().optional(),
+    skip: FunctionSchema.optional(),
+    fix: z.string().optional(),
+    get checks() {
+      return z.array(CheckSchema).optional();
+    },
+  }),
+);
 
 /**
  * Fields common to flat and staged checklists.
@@ -125,4 +136,24 @@ function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
       return index === 0 ? String(segment) : `.${String(segment)}`;
     })
     .join('');
+}
+
+/**
+ * Returns the check as the schema should see it, with an accessor-valued `fix` hidden from the parse.
+ *
+ * A getter is deferred to the failure that renders it, so validation must not read one. Hiding it
+ * behind a copy that has no `fix` at all is what defers it; a data property passes through untouched.
+ * The copy carries descriptors rather than values, so no other accessor on the check is invoked by
+ * building it.
+ */
+function hideAccessorFix(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+
+  const descriptor = Object.getOwnPropertyDescriptor(value, 'fix');
+  if (descriptor === undefined || 'value' in descriptor) return value;
+
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  delete descriptors['fix'];
+  // `Reflect.getPrototypeOf` rather than `Object.getPrototypeOf`, which is declared to return `any`.
+  return Object.create(Reflect.getPrototypeOf(value), descriptors);
 }
