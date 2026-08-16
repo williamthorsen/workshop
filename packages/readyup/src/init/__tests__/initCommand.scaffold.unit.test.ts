@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadRdyKit } from '../../kits/loadRdyKit.ts';
@@ -24,16 +25,16 @@ describe('scaffolded kit', () => {
     originalCwd = process.cwd();
     mkdirSync(TEST_DIR, { recursive: true });
     process.chdir(TEST_DIR);
-    vi.spyOn(console, 'info').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     process.chdir(originalCwd);
     rmSync(TEST_DIR, { recursive: true, force: true });
-    vi.restoreAllMocks();
   });
 
   it('passes with NODE_ENV set, reporting the value it found', async () => {
+    using _silent = silenceConsole(['info']);
+
     vi.stubEnv('NODE_ENV', 'production');
     initCommand({ dryRun: false, force: false });
 
@@ -43,6 +44,8 @@ describe('scaffolded kit', () => {
   });
 
   it('fails with NODE_ENV unset, reporting that the environment carries no value', async () => {
+    using _silent = silenceConsole(['info']);
+
     vi.stubEnv('NODE_ENV', undefined);
     initCommand({ dryRun: false, force: false });
 
