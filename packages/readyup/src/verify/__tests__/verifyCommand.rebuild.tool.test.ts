@@ -3,8 +3,8 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { version as installedEsbuildVersion } from 'esbuild';
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { version as installedEsbuildVersion } from 'esbuild';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompileResult } from '../../compile/compileConfig.ts';

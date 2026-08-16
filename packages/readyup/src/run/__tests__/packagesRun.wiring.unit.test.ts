@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
@@ -19,16 +20,9 @@ import { runCommand } from '../runCommand.ts';
 describe('--packages run path wiring', () => {
   let projectRoot: string;
   let originalCwd: string;
-  let stdout: string[];
 
   beforeEach(() => {
     projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'packages-run-')));
-    stdout = [];
-    vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
-      stdout.push(String(chunk));
-      return true;
-    });
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     originalCwd = process.cwd();
     process.chdir(projectRoot);
   });
@@ -106,20 +100,20 @@ describe('--packages run path wiring', () => {
     installPackage('@acme/kits', ['drift']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
-    const exitCode = await runCommand({ kitEntries: entries, json: false });
+    const { exitCode, stdout } = await run({ kitEntries: entries, json: false });
 
     expect(exitCode).toBe(0);
-    expect(stdout.join('')).toBe('No kits to run.\n');
+    expect(stdout).toBe('No kits to run.\n');
   });
 
   it('carries the package and version into the JSON report', async () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
-    const exitCode = await runCommand({ kitEntries: entries, json: true });
+    const { exitCode, stdout } = await run({ kitEntries: entries, json: true });
 
     expect(exitCode).toBe(0);
-    const report = ReportSchema.parse(JSON.parse(stdout.join('')));
+    const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.kits[0]).toMatchObject({ name: 'default', origin: { package: '@acme/kits', version: '2.1.0' } });
   });
 
@@ -127,9 +121,9 @@ describe('--packages run path wiring', () => {
     installPackage('@acme/kits', ['default']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
-    await runCommand({ kitEntries: entries, json: true });
+    const { stdout } = await run({ kitEntries: entries, json: true });
 
-    const report = ReportSchema.parse(JSON.parse(stdout.join('')));
+    const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.kits[0]).toMatchObject({ origin: { package: '@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('version');
   });
@@ -138,9 +132,9 @@ describe('--packages run path wiring', () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
-    await runCommand({ kitEntries: entries, json: true });
+    const { stdout } = await run({ kitEntries: entries, json: true });
 
-    const report = ReportSchema.parse(JSON.parse(stdout.join('')));
+    const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { package: '@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('compiledWith');
   });
@@ -150,9 +144,9 @@ describe('--packages run path wiring', () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
-    await runCommand({ kitEntries: entries, json: false });
+    const { stdout } = await run({ kitEntries: entries, json: false });
 
-    expect(stdout.join('')).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} default');
+    expect(stdout).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} default');
   });
 
   // The defect #238 reports: every package kit here runs one checklist, so the run tallied nothing at all.
@@ -165,8 +159,8 @@ describe('--packages run path wiring', () => {
       configuredPackages: ['plain-kit', '@acme/kits'],
     });
 
-    await runCommand({ kitEntries: entries, json: false });
-    const lines = stdout.join('').trimEnd().split('\n');
+    const { stdout } = await run({ kitEntries: entries, json: false });
+    const lines = stdout.trimEnd().split('\n');
 
     // Heading, rule, one row per checklist, rule, total.
     expect(lines.at(-6)).toContain('Summary');
@@ -185,8 +179,8 @@ describe('--packages run path wiring', () => {
       configuredPackages: ['@acme/kits', 'plain-kit'],
     });
 
-    await runCommand({ kitEntries: entries, json: false });
-    const output = stdout.join('');
+    const { stdout } = await run({ kitEntries: entries, json: false });
+    const output = stdout;
     const headings = output
       .matchAll(/^\u{2501}\u{2501} \u{1F4E6} (?<crumb>.+)$/gmu)
       .map((match) => (match.groups?.['crumb'] ?? '').replaceAll(/\p{Emoji_Presentation} /gu, ''))
@@ -213,8 +207,8 @@ describe('--packages run path wiring', () => {
       configuredPackages: ['@acme/kits', 'broken-kit', 'plain-kit'],
     });
 
-    await runCommand({ kitEntries: entries, json: false });
-    const table = stdout.join('').split('\u{2501}\u{2501} Summary\n', 2)[1] ?? '';
+    const { stdout } = await run({ kitEntries: entries, json: false });
+    const table = stdout.split('\u{2501}\u{2501} Summary\n', 2)[1] ?? '';
 
     expect(table).toContain('@acme/kits@2.1.0 / default');
     expect(table).toContain('plain-kit@1.0.0 / default');
@@ -266,6 +260,15 @@ interface InstallPackageOptions {
   hasManifest?: boolean;
   readyupVersion?: string;
   version?: string;
+}
+
+/** Runs the command over the given options, returning its exit code alongside everything it wrote. */
+async function run(options: Parameters<typeof runCommand>[0]) {
+  using io = captureStdio();
+
+  const exitCode = await runCommand(options);
+
+  return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
 
 // endregion | Helpers
