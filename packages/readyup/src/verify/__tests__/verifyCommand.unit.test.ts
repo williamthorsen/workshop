@@ -1,5 +1,5 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
@@ -46,11 +46,7 @@ const FAILED = richFormatter.tokens.failedError.glyph;
 const UNVERIFIED = richFormatter.tokens.skippedOptional.glyph;
 
 describe(verifyCommand, () => {
-  let stdoutSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
     mockCheckSourceDrift.mockReturnValue({ kind: 'unverified' });
     mockLoadEsbuild.mockResolvedValue({ build: vi.fn() });
@@ -76,12 +72,12 @@ describe(verifyCommand, () => {
     });
     mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
 
-    const exitCode = await verifyCommand([]);
+    const { exitCode, stdout } = await verify([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha`));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} beta`));
-    expect(stdoutSpy).not.toHaveBeenCalledWith(expect.stringContaining('failed verification'));
+    expect(stdout).toContain(`${OK} alpha`);
+    expect(stdout).toContain(`${OK} beta`);
+    expect(stdout).not.toContain('failed verification');
   });
 
   it('returns 1 when any kit has drift', async () => {
@@ -101,12 +97,12 @@ describe(verifyCommand, () => {
       })
       .mockReturnValueOnce({ kind: 'ok', targetHash: 'bbbb2222' });
 
-    const exitCode = await verifyCommand([]);
+    const { exitCode, stdout } = await verify([]);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} alpha\n   drift`));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('expected aaaa1111, got aaaa9999'));
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 of 2 kits failed verification'));
+    expect(stdout).toContain(`${FAILED} alpha\n   drift`);
+    expect(stdout).toContain('expected aaaa1111, got aaaa9999');
+    expect(stdout).toContain('1 of 2 kits failed verification');
   });
 
   it('returns 1 when any kit is missing', async () => {
@@ -116,10 +112,10 @@ describe(verifyCommand, () => {
     });
     mockCheckDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/alpha.js' });
 
-    const exitCode = await verifyCommand([]);
+    const { exitCode, stdout } = await verify([]);
 
     expect(exitCode).toBe(1);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${FAILED} alpha\n   compiled file missing`));
+    expect(stdout).toContain(`${FAILED} alpha\n   compiled file missing`);
   });
 
   it('returns 0 when a kit is unverified (no targetHash)', async () => {
@@ -129,19 +125,19 @@ describe(verifyCommand, () => {
     });
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
 
-    const exitCode = await verifyCommand([]);
+    const { exitCode, stdout } = await verify([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${UNVERIFIED} alpha \u{00B7} unverified`));
+    expect(stdout).toContain(`${UNVERIFIED} alpha \u{00B7} unverified`);
   });
 
   it('returns 0 and reports no-kits message when the manifest is empty', async () => {
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-    const exitCode = await verifyCommand([]);
+    const { exitCode, stdout } = await verify([]);
 
     expect(exitCode).toBe(0);
-    expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('(no kits in manifest)'));
+    expect(stdout).toContain('(no kits in manifest)');
     expect(mockCheckDrift).not.toHaveBeenCalled();
   });
 
@@ -164,43 +160,39 @@ describe(verifyCommand, () => {
         resolvedPath: '/abs/alpha.ts',
       });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`${FAILED} alpha\n   source stale (expected 5555aaaa, got 6666bbbb)`),
-      );
+      expect(stdout).toContain(`${FAILED} alpha\n   source stale (expected 5555aaaa, got 6666bbbb)`);
     });
 
     it('fails a kit whose recorded source file is gone', async () => {
       arrangeSingleKit();
       mockCheckSourceDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/alpha.ts' });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`${FAILED} alpha\n   source file missing (expected alpha.ts)`),
-      );
+      expect(stdout).toContain(`${FAILED} alpha\n   source file missing (expected alpha.ts)`);
     });
 
     it('passes a kit whose source matches, leaving the line unchanged', async () => {
       arrangeSingleKit();
       mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha\n`));
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('passes a manifest that records no source hash, leaving the line unchanged', async () => {
       arrangeSingleKit();
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha\n`));
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('reports both verdicts when the source is stale and the target has drifted', async () => {
@@ -218,13 +210,11 @@ describe(verifyCommand, () => {
         resolvedPath: '/abs/alpha.ts',
       });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)\n   source stale (expected 5555aaaa, got 6666bbbb)`,
-        ),
+      expect(stdout).toContain(
+        `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)\n   source stale (expected 5555aaaa, got 6666bbbb)`,
       );
     });
   });
@@ -249,13 +239,11 @@ describe(verifyCommand, () => {
         ],
       });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `${FAILED} alpha\n   input stale: kits/shared.ts (module, expected 1111aaaa, got 2222bbbb)`,
-        ),
+      expect(stdout).toContain(
+        `${FAILED} alpha\n   input stale: kits/shared.ts (module, expected 1111aaaa, got 2222bbbb)`,
       );
     });
 
@@ -268,11 +256,9 @@ describe(verifyCommand, () => {
         ],
       });
 
-      await verifyCommand([]);
+      const { stdout } = await verify([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('input stale: ../../package.json (inline, expected 3333cccc, got 4444dddd)'),
-      );
+      expect(stdout).toContain('input stale: ../../package.json (inline, expected 3333cccc, got 4444dddd)');
     });
 
     it('reports a picked field that has vanished with what went wrong rather than a pair of hashes', async () => {
@@ -289,12 +275,10 @@ describe(verifyCommand, () => {
         ],
       });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('input unprojectable: ../../package.json (path not found: version)'),
-      );
+      expect(stdout).toContain('input unprojectable: ../../package.json (path not found: version)');
     });
 
     it('reports an input the compile read that is gone', async () => {
@@ -304,9 +288,9 @@ describe(verifyCommand, () => {
         failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
       });
 
-      await verifyCommand([]);
+      const { stdout } = await verify([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('input missing: kits/shared.ts (module)'));
+      expect(stdout).toContain('input missing: kits/shared.ts (module)');
     });
 
     it('gives every failed input its own line beneath the kit', async () => {
@@ -319,13 +303,11 @@ describe(verifyCommand, () => {
         ],
       });
 
-      await verifyCommand([]);
+      const { stdout } = await verify([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `${FAILED} alpha\n   input missing: kits/shared.ts (module)\n` +
-            '   input stale: ../../package.json (inline, expected 3333cccc, got 4444dddd)',
-        ),
+      expect(stdout).toContain(
+        `${FAILED} alpha\n   input missing: kits/shared.ts (module)\n` +
+          '   input stale: ../../package.json (inline, expected 3333cccc, got 4444dddd)',
       );
     });
 
@@ -333,19 +315,19 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockCheckInputDrift.mockReturnValue({ kind: 'ok' });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('passes an entry that predates the closure, leaving the line it produces today unchanged', async () => {
       arrangeSingleKit();
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('speaks a passing rebuild over a stale input, where it names the manifest as what went wrong', async () => {
@@ -356,9 +338,9 @@ describe(verifyCommand, () => {
       });
       mockCheckRebuild.mockResolvedValue({ kind: 'ok' });
 
-      await verifyCommand(['--rebuild']);
+      const { stdout } = await verify(['--rebuild']);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('rebuild ok'));
+      expect(stdout).toContain('rebuild ok');
     });
   });
 
@@ -367,7 +349,7 @@ describe(verifyCommand, () => {
       throw new Error('Manifest file not found: /path/to/manifest.json');
     });
 
-    const error = await captureError(RdyError, () => verifyCommand([]));
+    const { error } = await verifyRaising([]);
 
     expect(error.code).toBe('config');
     expect(error.message).toContain('Manifest file not found');
@@ -376,13 +358,13 @@ describe(verifyCommand, () => {
   it('honors --manifest flag to resolve a custom path', async () => {
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-    await verifyCommand(['--manifest', 'custom/manifest.json']);
+    await verify(['--manifest', 'custom/manifest.json']);
 
     expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('custom/manifest.json'));
   });
 
   it('reports a usage error when positional arguments are supplied', async () => {
-    const error = await captureError(RdyError, () => verifyCommand(['unexpected']));
+    const { error } = await verifyRaising(['unexpected']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain('does not accept positional arguments');
@@ -402,34 +384,32 @@ describe(verifyCommand, () => {
     it('leaves the run untouched without the flag, never reaching for esbuild', async () => {
       arrangeSingleKit();
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
       expect(mockCheckRebuild).not.toHaveBeenCalled();
       expect(mockLoadEsbuild).not.toHaveBeenCalled();
-      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('passes a kit that reproduces, leaving its line unchanged', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'ok' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
 
     it('fails a kit whose bundle differs from what its source rebuilds to', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`${FAILED} alpha\n   rebuild mismatch (rebuilt 1111aaaa, on disk 2222bbbb)`),
-      );
+      expect(stdout).toContain(`${FAILED} alpha\n   rebuild mismatch (rebuilt 1111aaaa, on disk 2222bbbb)`);
     });
 
     it('names both versions on a mismatch spanning a readyup move', async () => {
@@ -441,11 +421,9 @@ describe(verifyCommand, () => {
         compiledWith: '0.0.1-old',
       });
 
-      await verifyCommand(['--rebuild']);
+      const { stdout } = await verify(['--rebuild']);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`compiled by readyup 0.0.1-old, rebuilt by ${VERSION}`),
-      );
+      expect(stdout).toContain(`compiled by readyup 0.0.1-old, rebuilt by ${VERSION}`);
     });
 
     it('names the esbuild move on a mismatch whose recorded version differs', async () => {
@@ -457,9 +435,9 @@ describe(verifyCommand, () => {
         esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' },
       });
 
-      await verifyCommand(['--rebuild']);
+      const { stdout } = await verify(['--rebuild']);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('esbuild 0.28.1 -> 0.29.0'));
+      expect(stdout).toContain('esbuild 0.28.1 -> 0.29.0');
     });
 
     it('names each dependency change on a mismatch, one clause apiece', async () => {
@@ -476,11 +454,11 @@ describe(verifyCommand, () => {
         ],
       });
 
-      await verifyCommand(['--rebuild']);
+      const { stdout } = await verify(['--rebuild']);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('glob 10.0.0 no longer bundled'));
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('picomatch 4.0.2 newly bundled'));
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('zod 3.24.1 -> 4.0.0'));
+      expect(stdout).toContain('glob 10.0.0 no longer bundled');
+      expect(stdout).toContain('picomatch 4.0.2 newly bundled');
+      expect(stdout).toContain('zod 3.24.1 -> 4.0.0');
     });
 
     it('says the recorded versions match when the toolchain record clears every named cause', async () => {
@@ -492,11 +470,9 @@ describe(verifyCommand, () => {
         esbuild: { recorded: '0.29.0', rebuilt: '0.29.0' },
       });
 
-      await verifyCommand(['--rebuild']);
+      const { stdout } = await verify(['--rebuild']);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('recorded esbuild and dependency versions match the rebuild'),
-      );
+      expect(stdout).toContain('recorded esbuild and dependency versions match the rebuild');
     });
 
     it('carries the esbuild comparison and dependency changes in the JSON payload', async () => {
@@ -509,9 +485,9 @@ describe(verifyCommand, () => {
         dependencyChanges: [{ name: 'zod', recorded: '3.24.1', rebuilt: '4.0.0' }],
       });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({
         kits: [
           {
@@ -526,33 +502,30 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload = String(stdoutSpy.mock.calls.at(-1)?.[0]);
-      expect(payload).not.toContain('rebuildEsbuild');
-      expect(payload).not.toContain('rebuildDependencyChanges');
+      expect(stdout).not.toContain('rebuildEsbuild');
+      expect(stdout).not.toContain('rebuildDependencyChanges');
     });
 
     it('fails a kit whose source no longer compiles, carrying the compile error', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('rebuild failed (Unexpected token)'));
+      expect(stdout).toContain('rebuild failed (Unexpected token)');
     });
 
     it('fails a kit that cannot be rebuilt rather than waiving it', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'missing', reason: 'no source recorded in manifest' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(
-        expect.stringContaining('cannot rebuild (no source recorded in manifest)'),
-      );
+      expect(stdout).toContain('cannot rebuild (no source recorded in manifest)');
     });
 
     it('states a passing rebuild beside a failing hash verdict, where it changes the reading', async () => {
@@ -565,20 +538,20 @@ describe(verifyCommand, () => {
       });
       mockCheckRebuild.mockResolvedValue({ kind: 'ok' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(1);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('drift (expected aaaa1111, got aaaa9999)'));
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('rebuild ok'));
+      expect(stdout).toContain('drift (expected aaaa1111, got aaaa9999)');
+      expect(stdout).toContain('rebuild ok');
     });
 
     it('carries the rebuild verdict and its hashes in the JSON payload', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({
         passed: false,
         kits: [{ name: 'alpha', rebuildStatus: 'mismatch', rebuildExpected: '1111aaaa', rebuildActual: '2222bbbb' }],
@@ -594,11 +567,11 @@ describe(verifyCommand, () => {
       mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
       mockCheckRebuild.mockResolvedValue({ kind: 'ok' });
 
-      const exitCode = await verifyCommand(['--rebuild']);
+      const { exitCode, stdout } = await verify(['--rebuild']);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${OK} alpha`));
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('rebuild ok'));
+      expect(stdout).toContain(`${OK} alpha`);
+      expect(stdout).toContain('rebuild ok');
     });
 
     it('keeps the skip token on an unverified target the rebuild did not answer for', async () => {
@@ -608,10 +581,10 @@ describe(verifyCommand, () => {
       });
       mockCheckDrift.mockReturnValue({ kind: 'unverified' });
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode, stdout } = await verify([]);
 
       expect(exitCode).toBe(0);
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining(`${UNVERIFIED} alpha`));
+      expect(stdout).toContain(`${UNVERIFIED} alpha`);
     });
 
     it('carries the compiling version in the JSON payload when it differs from the runner', async () => {
@@ -623,9 +596,9 @@ describe(verifyCommand, () => {
         compiledWith: '0.0.1-old',
       });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({ kits: [{ rebuildCompiledWith: '0.0.1-old' }] });
     });
 
@@ -633,36 +606,34 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload = String(stdoutSpy.mock.calls.at(-1)?.[0]);
-      expect(payload).not.toContain('rebuildCompiledWith');
+      expect(stdout).not.toContain('rebuildCompiledWith');
     });
 
     it('carries the compile error in the JSON payload for a kit that failed to build', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });
 
-      await verifyCommand(['--rebuild', '--json']);
+      const { stdout } = await verify(['--rebuild', '--json']);
 
-      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({ kits: [{ rebuildStatus: 'failed', rebuildError: 'Unexpected token' }] });
     });
 
     it('omits every rebuild field from the JSON payload without the flag', async () => {
       arrangeSingleKit();
 
-      await verifyCommand(['--json']);
+      const { stdout } = await verify(['--json']);
 
-      const payload = String(stdoutSpy.mock.calls.at(-1)?.[0]);
-      expect(payload).not.toContain('rebuild');
+      expect(stdout).not.toContain('rebuild');
     });
 
     it('reports a config error naming the install command when esbuild is absent', async () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-      const error = await captureError(RdyError, () => verifyCommand(['--rebuild']));
+      const { error } = await verifyRaising(['--rebuild']);
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('pnpm add --save-dev esbuild');
@@ -672,17 +643,17 @@ describe(verifyCommand, () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-      await captureError(RdyError, () => verifyCommand(['--rebuild']));
+      const { stdout } = await verifyRaising(['--rebuild']);
 
       expect(mockReadManifest).not.toHaveBeenCalled();
-      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(stdout).toBe('');
     });
 
     it('verifies without esbuild when the flag is absent', async () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
-      const exitCode = await verifyCommand([]);
+      const { exitCode } = await verify([]);
 
       expect(exitCode).toBe(0);
     });
@@ -700,26 +671,27 @@ describe(verifyCommand, () => {
     it.each(['\u{2705}', '\u{26A0}', '\u{2753}', '\u{2796}', '\u{FE0F}', '\u{2014}'])(
       'renders no %s for any verdict',
       async (retired) => {
+        const written: string[] = [];
         for (const verdict of verdicts) {
           mockReadManifest.mockReturnValue({
             version: 1,
             kits: [{ name: 'alpha', path: 'alpha.js', targetHash: 'aaaa1111', source: 'alpha.ts' }],
           });
           mockCheckDrift.mockReturnValue(verdict);
-          await verifyCommand([]);
+          const { stdout } = await verify([]);
+          written.push(stdout);
         }
 
-        const written = stdoutSpy.mock.calls.flat().join('\n');
-        expect(written).not.toContain(retired);
+        expect(written.join('\n')).not.toContain(retired);
       },
     );
 
     it('renders a section heading rather than a colon-terminated header', async () => {
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-      await verifyCommand([]);
+      const { stdout } = await verify([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('\u{2500}\u{2500} Verifying kits against '));
+      expect(stdout).toContain('\u{2500}\u{2500} Verifying kits against ');
     });
 
     it('leaves a wholly verified kit carrying nothing beyond its token', async () => {
@@ -730,9 +702,31 @@ describe(verifyCommand, () => {
       mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
 
-      await verifyCommand([]);
+      const { stdout } = await verify([]);
 
-      expect(stdoutSpy).toHaveBeenCalledWith(`${OK} alpha\n`);
+      expect(stdout).toContain(`${OK} alpha\n`);
     });
   });
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function verify(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await verifyCommand(args);
+
+  return { exitCode, stdout: io.stdout, stderr: io.stderr };
+}
+
+/** Runs the command expecting it to raise, returning the error alongside everything it wrote. */
+async function verifyRaising(args: string[]) {
+  using io = captureStdio();
+
+  const error = await captureError(RdyError, () => verifyCommand(args));
+
+  return { error, stdout: io.stdout, stderr: io.stderr };
+}
+
+// endregion | Helpers

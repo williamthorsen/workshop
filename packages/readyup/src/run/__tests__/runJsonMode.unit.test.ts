@@ -1,6 +1,5 @@
-import process from 'node:process';
-
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
@@ -62,12 +61,7 @@ import { runJsonMode } from '../runJsonMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
 describe(runJsonMode, () => {
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
     mockReadManifestTracking.mockReturnValue(undefined);
     mockWarnOnKitStaleness.mockReturnValue([]);
@@ -91,12 +85,12 @@ describe(runJsonMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const exitCode = await runJson(singleKitEntry());
+    const { exitCode, stdout } = await runJson(singleKitEntry());
 
     expect(mockFormatJsonReport).toHaveBeenCalledTimes(1);
     expect(mockReportRdy).not.toHaveBeenCalled();
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
-    expect(stdoutSpy).toHaveBeenCalledWith('{"worstSeverity":null}\n');
+    expect(stdout).toBe('{"worstSeverity":null}\n');
     expect(exitCode).toBe(0);
   });
 
@@ -107,7 +101,7 @@ describe(runJsonMode, () => {
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
-    const exitCode = await runJson(singleKitEntry());
+    const { exitCode } = await runJson(singleKitEntry());
 
     expect(exitCode).toBe(1);
   });
@@ -116,14 +110,14 @@ describe(runJsonMode, () => {
     mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
     mockFormatJsonReport.mockReturnValue('{}');
 
-    const exitCode = await runJson(singleKitEntry());
+    const { exitCode, stderr } = await runJson(singleKitEntry());
 
     expect(exitCode).toBe(2);
     expect(mockFormatJsonReport).toHaveBeenCalledWith(
       [{ name: 'default', error: { code: 'kit-load', message: 'Kit not found' } }],
       expect.anything(),
     );
-    expect(stderrSpy).not.toHaveBeenCalled();
+    expect(stderr).toBe('');
   });
 
   it('records an unknown checklist name as an error entry, leaving stderr clean', async () => {
@@ -131,14 +125,14 @@ describe(runJsonMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockFormatJsonReport.mockReturnValue('{}');
 
-    const exitCode = await runJson(singleKitEntry(['nonexistent']));
+    const { exitCode, stderr } = await runJson(singleKitEntry(['nonexistent']));
 
     expect(exitCode).toBe(2);
     expect(mockFormatJsonReport).toHaveBeenCalledWith(
       [{ name: 'default', error: { code: 'usage', message: expect.stringContaining('nonexistent') } }],
       expect.anything(),
     );
-    expect(stderrSpy).not.toHaveBeenCalled();
+    expect(stderr).toBe('');
   });
 
   it('passes kit-grouped entries to formatJsonReport', async () => {
@@ -200,7 +194,7 @@ describe(runJsonMode, () => {
     mockRunRdy.mockRejectedValue(new Error('runner crashed'));
     mockFormatJsonReport.mockReturnValue('{}');
 
-    const exitCode = await runJson(singleKitEntry(['deploy']));
+    const { exitCode } = await runJson(singleKitEntry(['deploy']));
 
     expect(exitCode).toBe(2);
     expect(mockFormatJsonReport).toHaveBeenCalledWith(
@@ -214,10 +208,8 @@ describe(runJsonMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runJson(singleKitEntry());
-
-    const allOutput = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-    expect(allOutput).not.toContain('---');
+    const { stdout } = await runJson(singleKitEntry());
+    expect(stdout).not.toContain('---');
   });
 
   it('produces JSON output with multiple kit entries', async () => {
@@ -227,7 +219,7 @@ describe(runJsonMode, () => {
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const exitCode = await runJson([
+    const { exitCode } = await runJson([
       { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
       { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
     ]);
@@ -284,7 +276,7 @@ describe(runJsonMode, () => {
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
       mockFormatJsonReport.mockReturnValue('{"kits":[]}');
 
-      const exitCode = await runJson(twoKitEntries());
+      const { exitCode } = await runJson(twoKitEntries());
 
       expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
       expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
@@ -338,12 +330,19 @@ interface JsonRunOptions {
   reportOn?: Severity;
 }
 
-/** Runs the mode over the given entries, filling in every setting the test did not name. */
-function runJson(
+/**
+ * Runs the mode over the given entries, filling in every setting the test did not name, and returns its
+ * exit code alongside everything it wrote.
+ */
+async function runJson(
   kitEntries: ResolvedKitEntry[],
   { detail = 'full', failOn, isJit = false, reportOn }: JsonRunOptions = {},
-): Promise<number> {
-  return runJsonMode(kitEntries, { detail, failOn, reportOn }, isJit);
+) {
+  using io = captureStdio();
+
+  const exitCode = await runJsonMode(kitEntries, { detail, failOn, reportOn }, isJit);
+
+  return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
 
 // endregion | Helpers

@@ -1,5 +1,5 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
@@ -92,12 +92,8 @@ const tempDir = useTempDir({
 const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
 
 describe('list --recursive', () => {
-  let stdoutSpy: MockInstance;
-
   beforeEach(() => {
     passAllReads();
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
-    vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -107,57 +103,51 @@ describe('list --recursive', () => {
 
   describe('rendering', () => {
     it('groups kits under the project holding them, the sweep root first', async () => {
-      const exitCode = await listCommand(['--recursive']);
-      const output = readOutput();
+      const { exitCode, stdout } = await list(['--recursive']);
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('\u{2501}\u{2501} \u{1F4C1} ./');
-      expect(output).toContain('\u{2501}\u{2501} \u{1F4C1} packages/readyup/');
-      expect(output.indexOf('./')).toBeLessThan(output.indexOf('packages/readyup/'));
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4C1} ./');
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4C1} packages/readyup/');
+      expect(stdout.indexOf('./')).toBeLessThan(stdout.indexOf('packages/readyup/'));
     });
 
     it('names a command that runs each project\u{2019}s kits from the sweep root', async () => {
-      await listCommand(['--recursive']);
-      const output = readOutput();
+      const { stdout } = await list(['--recursive']);
 
-      expect(output).toContain('rdy run <name>');
-      expect(output).toContain('rdy run --from packages/readyup [<name>]');
+      expect(stdout).toContain('rdy run <name>');
+      expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
     });
 
     it('carries the descriptions the manifest records, and renders a bare name without one', async () => {
-      await listCommand(['--recursive']);
-      const output = readOutput();
+      const { stdout } = await list(['--recursive']);
 
-      expect(output).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');
-      expect(output).toContain('\u{1F4D3} demo');
-      expect(output).not.toContain('demo \u{00B7}');
+      expect(stdout).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');
+      expect(stdout).toContain('\u{1F4D3} demo');
+      expect(stdout).not.toContain('demo \u{00B7}');
     });
 
     it('reaches a project on a relocated output directory by file path', async () => {
-      await listCommand(['--recursive']);
-      const output = readOutput();
+      const { stdout } = await list(['--recursive']);
 
-      expect(output).toContain('rdy run --file <file path>');
-      expect(output).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
+      expect(stdout).toContain('rdy run --file <file path>');
+      expect(stdout).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
     });
 
     it('omits a project with nothing compiled to show', async () => {
-      await listCommand(['--recursive']);
-      const output = readOutput();
+      const { stdout } = await list(['--recursive']);
 
-      expect(output).not.toContain('packages/authored');
-      expect(output).not.toContain('packages/emptied');
+      expect(stdout).not.toContain('packages/authored');
+      expect(stdout).not.toContain('packages/emptied');
     });
 
     // `--style` is consumed by the router before dispatch, so the style is bound here as the router binds it.
     it('degrades to ASCII in plain style', async () => {
       setStyle('plain');
 
-      await listCommand(['--recursive']);
-      const output = readOutput();
+      const { stdout } = await list(['--recursive']);
 
-      expect(output).toContain('== packages/readyup/');
-      expect(output).not.toContain('\u{1F4C1}');
+      expect(stdout).toContain('== packages/readyup/');
+      expect(stdout).not.toContain('\u{1F4C1}');
     });
   });
 
@@ -213,8 +203,8 @@ describe('list --recursive', () => {
     it('emits an empty kit list under --json', async () => {
       vi.spyOn(process, 'cwd').mockReturnValue(`${tempDir.dir}/packages/authored`);
 
-      await listCommand(['--recursive', '--json']);
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const { stdout } = await list(['--recursive', '--json']);
+      const payload = JSON.parse(stdout);
 
       expect(payload).toStrictEqual({ schemaVersion: 1, kits: [] });
     });
@@ -222,19 +212,19 @@ describe('list --recursive', () => {
     it('prints the empty-sweep message for a tree whose projects have nothing compiled', async () => {
       vi.spyOn(process, 'cwd').mockReturnValue(`${tempDir.dir}/packages/authored`);
 
-      await listCommand(['--recursive']);
+      const { stdout } = await list(['--recursive']);
 
-      expect(readOutput()).toContain('No kit projects found.');
+      expect(stdout).toContain('No kit projects found.');
     });
   });
 
   describe('a project the filesystem will not fully give up', () => {
     it('lists the kits beside a manifest that cannot be parsed, and warns', async () => {
-      await listCommand(['--recursive']);
+      const { stdout, stderr } = await list(['--recursive']);
 
-      expect(readOutput()).toContain('packages/corrupt/');
-      expect(readOutput()).toContain('audit');
-      expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('manifest'));
+      expect(stdout).toContain('packages/corrupt/');
+      expect(stdout).toContain('audit');
+      expect(stderr).toContain('manifest');
     });
 
     it('names the project of a kit read from disk past a broken manifest', async () => {
@@ -251,15 +241,12 @@ describe('list --recursive', () => {
     it('drops a project whose output directory it cannot read, and lists the rest', async () => {
       failReadOf('packages/blocked/dist/kits', 'EACCES');
 
-      const exitCode = await listCommand(['--recursive']);
-      const output = readOutput();
+      const { exitCode, stdout, stderr } = await list(['--recursive']);
 
       expect(exitCode).toBe(0);
-      expect(output).not.toContain('packages/blocked');
-      expect(output).toContain('packages/readyup/');
-      expect(process.stderr.write).toHaveBeenCalledWith(
-        expect.stringContaining('Omitting packages/blocked from the listing'),
-      );
+      expect(stdout).not.toContain('packages/blocked');
+      expect(stdout).toContain('packages/readyup/');
+      expect(stderr).toContain('Omitting packages/blocked from the listing');
     });
 
     it('rethrows a filesystem failure that is not benign', async () => {
@@ -288,24 +275,27 @@ describe('list --recursive', () => {
   });
 
   it('leaves a plain listing showing sections rather than project blocks', async () => {
-    await listCommand([]);
-    const output = readOutput();
+    const { stdout } = await list([]);
 
-    expect(output).toContain('\u{2500}\u{2500} Compiled');
-    expect(output).not.toContain('\u{1F4C1}');
+    expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+    expect(stdout).not.toContain('\u{1F4C1}');
   });
 
   // region | Helpers
 
-  /** Returns everything the run wrote to stdout. */
-  function readOutput(): string {
-    return stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+  /** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+  async function list(args: string[]) {
+    using io = captureStdio();
+
+    const exitCode = await listCommand(args);
+
+    return { exitCode, stdout: io.stdout, stderr: io.stderr };
   }
 
   /** Runs a recursive listing under `--json` and returns the payload it emitted. */
   async function runForPayload(): Promise<unknown> {
-    await listCommand(['--recursive', '--json']);
-    return JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+    const { stdout } = await list(['--recursive', '--json']);
+    return JSON.parse(stdout);
   }
 
   // endregion | Helpers

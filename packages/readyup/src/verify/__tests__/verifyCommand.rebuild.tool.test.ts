@@ -3,8 +3,9 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { version as installedEsbuildVersion } from 'esbuild';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompileResult } from '../../compile/compileConfig.ts';
 import { compileConfig } from '../../compile/compileConfig.ts';
@@ -41,7 +42,6 @@ const PRIOR_VERSION = '0.19.2';
  */
 describe('verifyCommand --rebuild', () => {
   let tempDir: string;
-  let stdoutSpy: MockInstance;
   let originalCwd: string;
   let compiled: CompileResult;
 
@@ -50,8 +50,6 @@ describe('verifyCommand --rebuild', () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '1.0.0' }));
     writeFileSync(path.join(tempDir, 'kit.ts'), KIT_SOURCE);
 
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     originalCwd = process.cwd();
     // esbuild renders each module's path against the working directory, so the fixture is compiled from
     // the directory it is verified from, as a real project is.
@@ -88,10 +86,10 @@ describe('verifyCommand --rebuild', () => {
   });
 
   it('passes an untouched tree', async () => {
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(0);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       passed: true,
       kits: [{ name: 'demo', status: 'ok', sourceStatus: 'ok', rebuildStatus: 'ok' }],
     });
@@ -100,10 +98,10 @@ describe('verifyCommand --rebuild', () => {
   it('fails a bundle stale only in an inlined JSON file, which both recorded hashes still pass', async () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       passed: false,
       // The `.ts` and the `.js` are both untouched, so the hash verdicts see nothing wrong. Only the
       // rebuild reads the JSON the bundle inlined, which is the gap the flag exists to close.
@@ -124,10 +122,10 @@ describe('verifyCommand --rebuild', () => {
     // it go stale in agreement and keep matching. Only a recompile reads the version.
     restampBundle(tempDir, PRIOR_VERSION);
 
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       passed: false,
       kits: [{ status: 'ok', sourceStatus: 'ok', rebuildStatus: 'mismatch', rebuildCompiledWith: PRIOR_VERSION }],
     });
@@ -136,9 +134,9 @@ describe('verifyCommand --rebuild', () => {
   it('reports matching recorded versions on a mismatch the record cannot explain', async () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    await runVerify();
+    const { stdout } = await runVerify();
 
-    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+    expect(readPayload(stdout).kits[0]).toMatchObject({
       rebuildStatus: 'mismatch',
       rebuildEsbuild: { recorded: installedEsbuildVersion, rebuilt: installedEsbuildVersion },
     });
@@ -148,9 +146,9 @@ describe('verifyCommand --rebuild', () => {
     patchKits(path.join(tempDir, 'manifest.json'), { esbuildVersion: '0.0.1-old' });
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    await runVerify();
+    const { stdout } = await runVerify();
 
-    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+    expect(readPayload(stdout).kits[0]).toMatchObject({
       rebuildEsbuild: { recorded: '0.0.1-old', rebuilt: installedEsbuildVersion },
     });
   });
@@ -161,9 +159,9 @@ describe('verifyCommand --rebuild', () => {
     });
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    await runVerify();
+    const { stdout } = await runVerify();
 
-    expect(readPayload(stdoutSpy).kits[0]).toMatchObject({
+    expect(readPayload(stdout).kits[0]).toMatchObject({
       rebuildStatus: 'mismatch',
       rebuildDependencyChanges: [
         { name: 'picomatch', recorded: '0.0.1-old', rebuilt: readInstalledPackageVersion('picomatch') },
@@ -174,10 +172,10 @@ describe('verifyCommand --rebuild', () => {
   it('fails a hand-edited bundle', async () => {
     writeFileSync(path.join(tempDir, 'kit.js'), 'export default { checklists: [] };\n');
 
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       kits: [{ status: 'drift', rebuildStatus: 'mismatch' }],
     });
   });
@@ -185,10 +183,10 @@ describe('verifyCommand --rebuild', () => {
   it('reports a passing rebuild beside a recorded hash that has gone wrong', async () => {
     patchKits(path.join(tempDir, 'manifest.json'), { targetHash: 'deadbeef' });
 
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       kits: [{ status: 'drift', rebuildStatus: 'ok' }],
     });
   });
@@ -196,10 +194,10 @@ describe('verifyCommand --rebuild', () => {
   it('fails a kit whose source no longer compiles', async () => {
     writeFileSync(path.join(tempDir, 'kit.ts'), 'export default { checklists: [ ;\n');
 
-    const exitCode = await runVerify();
+    const { exitCode, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
-    expect(readPayload(stdoutSpy)).toMatchObject({
+    expect(readPayload(stdout)).toMatchObject({
       kits: [{ rebuildStatus: 'failed' }],
     });
   });
@@ -207,10 +205,10 @@ describe('verifyCommand --rebuild', () => {
   it('leaves every rebuild field out of the payload without the flag', async () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    const exitCode = await verifyCommand(['--manifest', 'manifest.json', '--json']);
+    const { exitCode, stdout } = await runVerify({ rebuild: false });
 
     expect(exitCode).toBe(0);
-    expect(readPayload(stdoutSpy).kits[0]).not.toHaveProperty('rebuildStatus');
+    expect(readPayload(stdout).kits[0]).not.toHaveProperty('rebuildStatus');
   });
 });
 
@@ -230,8 +228,8 @@ function patchKits(manifestPath: string, patch: Partial<RdyManifestKit>): void {
  * Parsed through the published schema rather than cast, so a payload that does not satisfy the
  * contract fails here rather than reaching an assertion that happens not to look at the bad field.
  */
-function readPayload(stdoutSpy: MockInstance): JsonVerifyOutput {
-  const emitted: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+function readPayload(stdout: string): JsonVerifyOutput {
+  const emitted: unknown = JSON.parse(stdout);
   return VerifyOutputSchema.parse(emitted);
 }
 
@@ -252,9 +250,17 @@ function restampBundle(tempDir: string, version: string): void {
   patchKits(path.join(tempDir, 'manifest.json'), { readyupVersion: version, targetHash: hashFile(bundlePath) });
 }
 
-/** Runs `verify` over the tempdir's manifest with the rebuild check and JSON output on. */
-async function runVerify(): Promise<number> {
-  return verifyCommand(['--manifest', 'manifest.json', '--rebuild', '--json']);
+/**
+ * Runs `verify` over the tempdir's manifest with JSON output on and the rebuild check on unless waived,
+ * returning its exit code alongside what it wrote.
+ */
+async function runVerify({ rebuild = true }: { rebuild?: boolean } = {}) {
+  using io = captureStdio();
+
+  const rebuildFlag = rebuild ? ['--rebuild'] : [];
+  const exitCode = await verifyCommand(['--manifest', 'manifest.json', ...rebuildFlag, '--json']);
+
+  return { exitCode, stdout: io.stdout };
 }
 
 // endregion | Helpers
