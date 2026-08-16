@@ -171,11 +171,11 @@ describe(captureSnapshot, () => {
   });
 
   it('reads an unchanged workspace to the same digests twice, which is what a fingerprint rests on', async () => {
-    using sourceDir = createTempTree(sourceFiles, { prefix: 'compositor-source-' });
-    using targetRoot = createTempTree({ 'skills/review/SKILL.md': '# Old review\n' }, { prefix: 'compositor-target-' });
+    using sourceTree = createTempTree(sourceFiles, { prefix: 'compositor-source-' });
+    using targetTree = createTempTree({ 'skills/review/SKILL.md': '# Old review\n' }, { prefix: 'compositor-target-' });
 
-    const first = await captureSnapshot(buildInput(sourceDir.dir, targetRoot.dir));
-    const second = await captureSnapshot(buildInput(sourceDir.dir, targetRoot.dir));
+    const first = await captureSnapshot(buildInput(sourceTree.dir, targetTree.dir));
+    const second = await captureSnapshot(buildInput(sourceTree.dir, targetTree.dir));
 
     expect(second.sourceDigests).toStrictEqual(first.sourceDigests);
     expect(second.targetState?.map(({ digest }) => digest)).toStrictEqual(

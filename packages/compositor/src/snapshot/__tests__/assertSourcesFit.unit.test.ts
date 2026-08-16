@@ -57,7 +57,7 @@ describe(assertSourcesFit, () => {
       buildSources: (dir) => ({
         use: [
           { name: 'team', path: dir },
-          { name: 'library.dir', path: library.dir },
+          { name: 'library', path: library.dir },
         ],
       }),
     });
@@ -66,7 +66,7 @@ describe(assertSourcesFit, () => {
         id: 'project',
         sources: {
           use: [
-            { name: 'library.dir', path: library.dir },
+            { name: 'library', path: library.dir },
             { name: 'team', path: sourceDir },
           ],
         },
