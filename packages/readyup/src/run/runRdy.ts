@@ -54,7 +54,8 @@ function resolveFix(check: RdyCheck): string | null {
     raw = check.fix;
   } catch (error_: unknown) {
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
-    return `Unresolvable fix: the accessor threw ${error.message}`;
+    // Quoted so the kit's message stays distinguishable from the sentence carrying it.
+    return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
   }
 
   if (raw === undefined) return null;

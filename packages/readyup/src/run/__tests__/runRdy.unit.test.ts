@@ -1200,7 +1200,33 @@ describe(runRdy, () => {
 
       expect(result.severity).toBe('warn');
       expect(result.error).toBeNull();
-      expect(result.fix).toBe('Unresolvable fix: the accessor threw version constants are not initialized yet');
+      expect(result.fix).toBe('Unresolvable fix: the accessor threw "version constants are not initialized yet"');
+    });
+
+    it('resolves a fix accessor for a check whose own function throws', async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'throws',
+            check: () => {
+              throw new Error('boom');
+            },
+            severity: 'warn',
+            get fix() {
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(result.fix).toBe('Run the thing');
+      expect(result.error?.message).toBe('boom');
+      expect(result.severity).toBe('error');
     });
 
     it('keeps a failure verdict when its fix accessor returns a non-string', async () => {
