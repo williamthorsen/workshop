@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
@@ -16,19 +17,10 @@ import { listCommand } from '../listCommand.ts';
  */
 describe('listCommand wiring', () => {
   let tempDir: string;
-  let stdout: string[];
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
   let originalCwd: string;
 
   beforeEach(() => {
     tempDir = mkdtempSync(path.join(tmpdir(), 'list-integ-'));
-    stdout = [];
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
-      stdout.push(String(chunk));
-      return true;
-    });
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     originalCwd = process.cwd();
     process.chdir(tempDir);
   });
@@ -53,20 +45,20 @@ describe('listCommand wiring', () => {
     it('lists the compiled kits on disk in human mode', async () => {
       writeKitsDir('kits', ['alpha', 'beta']);
 
-      const exitCode = await listCommand(['--from', 'dir:kits']);
+      const { exitCode, stdout } = await list(['--from', 'dir:kits']);
 
       expect(exitCode).toBe(0);
-      expect(stdout.join('')).toContain('alpha');
-      expect(stdout.join('')).toContain('beta');
+      expect(stdout).toContain('alpha');
+      expect(stdout).toContain('beta');
     });
 
     it('lists them in JSON mode with a name and a path and nothing the manifest would have added', async () => {
       writeKitsDir('kits', ['alpha']);
 
-      const exitCode = await listCommand(['--from', 'dir:kits', '--json']);
+      const { exitCode, stdout } = await list(['--from', 'dir:kits', '--json']);
 
       expect(exitCode).toBe(0);
-      expect(JSON.parse(stdout.join(''))).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [{ name: 'alpha', kind: 'compiled', path: path.join('kits', 'alpha.js') }],
       });
@@ -75,9 +67,9 @@ describe('listCommand wiring', () => {
     it('resolves a local repo path to the same directory run --from would load from', async () => {
       writeKitsDir(path.join('repo', '.readyup', 'kits'), ['deploy']);
 
-      await listCommand(['--from', 'repo', '--json']);
+      const { stdout } = await list(['--from', 'repo', '--json']);
 
-      expect(JSON.parse(stdout.join(''))).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         kits: [{ name: 'deploy', path: path.join('repo', '.readyup', 'kits', 'deploy.js') }],
       });
     });
@@ -87,9 +79,9 @@ describe('listCommand wiring', () => {
       writeFileSync(path.join(dir, 'notes.md'), '# not a kit\n');
       writeFileSync(path.join(dir, 'alpha.ts'), 'export default {};\n');
 
-      await listCommand(['--from', 'dir:kits', '--json']);
+      const { stdout } = await list(['--from', 'dir:kits', '--json']);
 
-      expect(JSON.parse(stdout.join(''))).toMatchObject({ kits: [{ name: 'alpha' }] });
+      expect(JSON.parse(stdout)).toMatchObject({ kits: [{ name: 'alpha' }] });
     });
 
     it('reports a source with neither a manifest nor a kit directory as a config error', async () => {
@@ -119,9 +111,9 @@ describe('listCommand wiring', () => {
         }),
       );
 
-      await listCommand(['--from', 'dir:kits', '--json']);
+      const { stdout } = await list(['--from', 'dir:kits', '--json']);
 
-      expect(JSON.parse(stdout.join(''))).toStrictEqual({
+      expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [
           {
@@ -141,11 +133,24 @@ describe('listCommand wiring', () => {
     it('emits exactly one JSON document and sends the human view to stderr', async () => {
       writeKitsDir('kits', ['alpha']);
 
-      await listCommand(['--from', 'dir:kits', '--json']);
+      const { stdout, stdoutChunks, stderr } = await list(['--from', 'dir:kits', '--json']);
 
-      expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('alpha'));
-      expect(() => ListOutputSchema.parse(JSON.parse(stdout.join('')))).not.toThrow();
+      expect(stdoutChunks).toHaveLength(1);
+      expect(stderr).toContain('alpha');
+      expect(() => ListOutputSchema.parse(JSON.parse(stdout))).not.toThrow();
     });
   });
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function list(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await listCommand(args);
+
+  return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+// endregion | Helpers

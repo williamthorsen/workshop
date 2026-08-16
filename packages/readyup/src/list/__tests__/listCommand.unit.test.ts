@@ -1,5 +1,6 @@
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
@@ -40,12 +41,7 @@ import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { listCommand } from '../listCommand.ts';
 
 describe(listCommand, () => {
-  let stdoutSpy: MockInstance;
-  let stderrSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       internal: { dir: '.', infix: undefined },
@@ -87,9 +83,9 @@ describe(listCommand, () => {
         throw new ManifestNotFoundError('.readyup/manifest.json');
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout } = await list([]);
 
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(exitCode).toBe(0);
       expect(output).toContain('Packages');
       expect(output).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
@@ -100,9 +96,9 @@ describe(listCommand, () => {
       mockDiscoverKitPackages.mockReturnValue(['@acme/kits', 'plain-kit']);
       configureOnePackage();
 
-      await listCommand([]);
+      const { stdout } = await list([]);
 
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('Available');
       expect(output).toContain('plain-kit');
       // Already configured, so it belongs under Packages rather than as a candidate to add.
@@ -113,9 +109,9 @@ describe(listCommand, () => {
       mockDiscoverKitPackages.mockReturnValue(['plain-kit']);
       configureOnePackage();
 
-      await listCommand(['--json']);
+      const { stdout } = await list(['--json']);
 
-      const payload: unknown = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0]));
+      const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({
         kits: [{ name: 'drift', kind: 'compiled', origin: { package: '@acme/kits', version: '2.1.0' } }],
         availablePackages: ['plain-kit'],
@@ -131,7 +127,7 @@ describe(listCommand, () => {
         kits: [{ name: 'deploy' }],
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalledWith();
@@ -141,7 +137,7 @@ describe(listCommand, () => {
       expect(mockEnumerateKits).toHaveBeenCalledWith(
         expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
       );
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal');
       expect(output).toContain('\u{2500}\u{2500} Compiled');
     });
@@ -154,7 +150,7 @@ describe(listCommand, () => {
       });
       mockEnumerateKits.mockReturnValue(['default']);
 
-      const exitCode = await listCommand([]);
+      const { exitCode } = await list([]);
 
       expect(exitCode).toBe(0);
       expect(mockEnumerateKits).toHaveBeenCalledWith(expect.objectContaining({ extension: '.int.ts' }));
@@ -164,10 +160,10 @@ describe(listCommand, () => {
       mockEnumerateKits.mockReturnValue(['default']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal');
       expect(output).not.toContain('\u{2500}\u{2500} Compiled');
     });
@@ -184,10 +180,10 @@ describe(listCommand, () => {
         kits: [{ name: 'deploy' }],
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('dist/kits/deploy.js');
       expect(output).toContain('--file');
     });
@@ -197,10 +193,10 @@ describe(listCommand, () => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('No kits found.');
     });
 
@@ -208,11 +204,11 @@ describe(listCommand, () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
       mockEnumerateKits.mockReturnValue(['default']);
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stderrSpy).toHaveBeenCalledWith('Warning: bad config. Listing with default settings.\n');
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(stderr).toBe('Warning: bad config. Listing with default settings.\n');
+      const output = stdout;
       expect(output).toContain('default');
     });
 
@@ -223,9 +219,9 @@ describe(listCommand, () => {
         }),
       );
 
-      await listCommand([]);
+      const { stderrChunks } = await list([]);
 
-      expect(stderrSpy.mock.calls.map((call: unknown[]) => String(call[0]))).toStrictEqual([
+      expect(stderrChunks).toStrictEqual([
         "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings.\n",
         '\u{1F4A1} Hint: Install it with: pnpm add --save-dev some-lib\n',
       ]);
@@ -234,17 +230,17 @@ describe(listCommand, () => {
     it('writes no hint line for a config failure that carries none', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
-      await listCommand([]);
+      const { stderrChunks } = await list([]);
 
-      expect(stderrSpy).toHaveBeenCalledTimes(1);
+      expect(stderrChunks).toHaveLength(1);
     });
 
     it('does not double the period when the config failure already ends in one', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config.'));
 
-      await listCommand([]);
+      const { stderr } = await list([]);
 
-      expect(stderrSpy).toHaveBeenCalledWith('Warning: bad config. Listing with default settings.\n');
+      expect(stderr).toBe('Warning: bad config. Listing with default settings.\n');
     });
 
     it('reports a config error when enumerateKits throws', async () => {
@@ -253,7 +249,7 @@ describe(listCommand, () => {
         throw permError;
       });
 
-      const error = await captureError(RdyError, () => listCommand([]));
+      const { error } = await listRaising([]);
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('permission denied');
@@ -265,13 +261,13 @@ describe(listCommand, () => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal');
       expect(output).not.toContain('\u{2500}\u{2500} Compiled');
-      expect(stderrSpy).not.toHaveBeenCalled();
+      expect(stderr).toBe('');
     });
 
     it.each([
@@ -285,18 +281,18 @@ describe(listCommand, () => {
       });
       mockEnumerateKits.mockReturnValue(['default']);
 
-      await listCommand([]);
+      const { stdout } = await list([]);
 
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit --internal [<name>]');
     });
 
     it('leaves --internal out of the internal hint under the default config', async () => {
       mockEnumerateKits.mockReturnValue(['default']);
 
-      await listCommand([]);
+      const { stdout } = await list([]);
 
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit [<name>]');
     });
 
@@ -306,14 +302,14 @@ describe(listCommand, () => {
         throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
       });
 
-      const exitCode = await listCommand([]);
+      const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Internal');
       expect(output).not.toContain('\u{2500}\u{2500} Compiled');
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Warning:'));
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('invalid JSON'));
+      expect(stderr).toContain('Warning:');
+      expect(stderr).toContain('invalid JSON');
     });
   });
 
@@ -321,7 +317,7 @@ describe(listCommand, () => {
     it('does not load config when --from is given', async () => {
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-      const exitCode = await listCommand(['--from', '.']);
+      const { exitCode } = await list(['--from', '.']);
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).not.toHaveBeenCalled();
@@ -333,11 +329,11 @@ describe(listCommand, () => {
         kits: [{ name: 'deploy' }],
       });
 
-      const exitCode = await listCommand(['--from', '.']);
+      const { exitCode, stdout } = await list(['--from', '.']);
 
       expect(exitCode).toBe(0);
       expect(mockReadManifest).toHaveBeenCalledWith(expect.stringContaining('.readyup/manifest.json'));
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Compiled');
       expect(output).toContain('deploy');
     });
@@ -345,10 +341,10 @@ describe(listCommand, () => {
     it('prints empty-consumer message when manifest contains no kits', async () => {
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-      const exitCode = await listCommand(['--from', '.']);
+      const { exitCode, stdout } = await list(['--from', '.']);
 
       expect(exitCode).toBe(0);
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('No compiled kits found');
     });
 
@@ -357,7 +353,7 @@ describe(listCommand, () => {
         throw new Error('Manifest file not found: /nonexistent/.readyup/manifest.json');
       });
 
-      const error = await captureError(RdyError, () => listCommand(['--from', '/nonexistent']));
+      const { error } = await listRaising(['--from', '/nonexistent']);
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('Manifest file not found');
@@ -371,11 +367,11 @@ describe(listCommand, () => {
         kits: [{ name: 'default', description: 'Health checks' }, { name: 'deploy' }],
       });
 
-      const exitCode = await listCommand(['--manifest', '.readyup/manifest.json']);
+      const { exitCode, stdout } = await list(['--manifest', '.readyup/manifest.json']);
 
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).not.toHaveBeenCalled();
-      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      const output = stdout;
       expect(output).toContain('\u{2500}\u{2500} Manifest:');
       expect(output).toContain('default');
       expect(output).toContain('Health checks');
@@ -387,16 +383,14 @@ describe(listCommand, () => {
         throw new Error('Manifest file not found: /missing/manifest.json');
       });
 
-      const error = await captureError(RdyError, () => listCommand(['--manifest', '/missing/manifest.json']));
+      const { error } = await listRaising(['--manifest', '/missing/manifest.json']);
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('Manifest file not found');
     });
 
     it('reports a usage error when --from and --manifest are both provided', async () => {
-      const error = await captureError(RdyError, () =>
-        listCommand(['--from', '.', '--manifest', '.readyup/manifest.json']),
-      );
+      const { error } = await listRaising(['--from', '.', '--manifest', '.readyup/manifest.json']);
 
       expect(error.code).toBe('usage');
       expect(error.message).toContain('mutually exclusive');
@@ -404,9 +398,9 @@ describe(listCommand, () => {
   });
 
   describe('--json', () => {
-    /** Read the single JSON document the command wrote to stdout. */
-    function parseStdout(): unknown {
-      return JSON.parse(stdoutSpy.mock.calls.map((c) => String(c[0])).join(''));
+    /** Reads the single JSON document the command wrote to stdout. */
+    function parseStdout(stdout: string): unknown {
+      return JSON.parse(stdout);
     }
 
     it('distinguishes internal sources from compiled kits in owner mode', async () => {
@@ -416,10 +410,10 @@ describe(listCommand, () => {
         kits: [{ name: 'deploy', path: 'kits/deploy.js', checklists: ['preflight'] }],
       });
 
-      const exitCode = await listCommand(['--json']);
+      const { exitCode, stdout } = await list(['--json']);
 
       expect(exitCode).toBe(0);
-      expect(parseStdout()).toMatchObject({
+      expect(parseStdout(stdout)).toMatchObject({
         schemaVersion: 1,
         kits: [
           { name: 'draft', kind: 'internal', path: expect.stringContaining('draft.ts') },
@@ -432,10 +426,10 @@ describe(listCommand, () => {
       mockEnumerateKits.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
-      await listCommand(['--json']);
+      const { stdoutChunks, stderr } = await list(['--json']);
 
-      expect(stdoutSpy).toHaveBeenCalledTimes(1);
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('\u{2500}\u{2500} Internal'));
+      expect(stdoutChunks).toHaveLength(1);
+      expect(stderr).toContain('\u{2500}\u{2500} Internal');
     });
 
     it('reports an empty kit list rather than the empty-owner prose', async () => {
@@ -444,10 +438,10 @@ describe(listCommand, () => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
 
-      await listCommand(['--json']);
+      const { stdout, stderr } = await list(['--json']);
 
-      expect(parseStdout()).toStrictEqual({ schemaVersion: 1, kits: [] });
-      expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No kits found.'));
+      expect(parseStdout(stdout)).toStrictEqual({ schemaVersion: 1, kits: [] });
+      expect(stderr).toContain('No kits found.');
     });
 
     it('carries the manifest fields in manifest mode', async () => {
@@ -456,9 +450,9 @@ describe(listCommand, () => {
         kits: [{ name: 'deploy', description: 'Deploy checks', readyupVersion: '0.21.2' }],
       });
 
-      await listCommand(['--manifest', '.readyup/manifest.json', '--json']);
+      const { stdout } = await list(['--manifest', '.readyup/manifest.json', '--json']);
 
-      expect(parseStdout()).toStrictEqual({
+      expect(parseStdout(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [{ name: 'deploy', kind: 'compiled', description: 'Deploy checks', readyupVersion: '0.21.2' }],
       });
@@ -466,9 +460,37 @@ describe(listCommand, () => {
   });
 
   it('reports a usage error for unknown flags', async () => {
-    const error = await captureError(RdyError, () => listCommand(['--unknown']));
+    const { error } = await listRaising(['--unknown']);
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--unknown'");
   });
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function list(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await listCommand(args);
+
+  return {
+    exitCode,
+    stdout: io.stdout,
+    stdoutChunks: io.stdoutChunks,
+    stderr: io.stderr,
+    stderrChunks: io.stderrChunks,
+  };
+}
+
+/** Runs the command expecting it to raise, returning the error alongside everything it wrote. */
+async function listRaising(args: string[]) {
+  using io = captureStdio();
+
+  const error = await captureError(RdyError, () => listCommand(args));
+
+  return { error, stdout: io.stdout, stderr: io.stderr };
+}
+
+// endregion | Helpers

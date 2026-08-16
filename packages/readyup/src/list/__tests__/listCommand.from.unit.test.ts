@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import path from 'node:path';
 
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
@@ -51,11 +52,7 @@ const validRemoteManifestBody = JSON.stringify({
 });
 
 describe(listCommand, () => {
-  let stdoutSpy: MockInstance;
-
   beforeEach(() => {
-    stdoutSpy = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
-    vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
     mockResolveBitbucketToken.mockReturnValue(undefined);
@@ -78,14 +75,14 @@ describe(listCommand, () => {
       kits: [{ name: 'default' }],
     });
 
-    const exitCode = await listCommand(['--from', 'global']);
+    const { exitCode, stdoutChunks } = await list(['--from', 'global']);
 
     expect(exitCode).toBe(0);
     const firstCall = mockReadManifest.mock.calls[0];
     assert.ok(firstCall, 'expected readManifest to have been called');
     const calledPath = String(firstCall[0]);
     expect(calledPath).toMatch(/\/.readyup\/manifest\.json$/);
-    expect(stdoutSpy).toHaveBeenCalledTimes(1);
+    expect(stdoutChunks).toHaveLength(1);
   });
 
   it('with --from dir:/some/path, reads manifest from the resolved directory', async () => {
@@ -94,7 +91,7 @@ describe(listCommand, () => {
       kits: [{ name: 'my-kit' }],
     });
 
-    const exitCode = await listCommand(['--from', 'dir:/some/path']);
+    const { exitCode } = await list(['--from', 'dir:/some/path']);
 
     expect(exitCode).toBe(0);
     const firstCall = mockReadManifest.mock.calls[0];
@@ -111,7 +108,7 @@ describe(listCommand, () => {
       kits: [{ name: 'default' }],
     });
 
-    const exitCode = await listCommand(['--from', '/some/repo']);
+    const { exitCode } = await list(['--from', '/some/repo']);
 
     expect(exitCode).toBe(0);
     const firstCall = mockReadManifest.mock.calls[0];
@@ -131,7 +128,7 @@ describe(listCommand, () => {
   it('with --from github:org/repo, fetches and renders the remote manifest', async () => {
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const { exitCode, stdout } = await list(['--from', 'github:williamthorsen/workshop']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -141,7 +138,7 @@ describe(listCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
 
-    const stdoutCalls = stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+    const stdoutCalls = stdout;
     expect(stdoutCalls).toContain(
       'Manifest: https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
     );
@@ -152,7 +149,7 @@ describe(listCommand, () => {
   it('with --from github:org/repo@ref, builds the URL using the supplied ref', async () => {
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop@develop']);
+    const { exitCode } = await list(['--from', 'github:williamthorsen/workshop@develop']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -165,7 +162,7 @@ describe(listCommand, () => {
     mockResolveGitHubToken.mockReturnValue('my-token');
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'github:williamthorsen/workshop']);
+    const { exitCode } = await list(['--from', 'github:williamthorsen/workshop']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -318,7 +315,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:ws/repo, fetches and renders the remote manifest', async () => {
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const { exitCode, stdout } = await list(['--from', 'bitbucket:tutorials/markdowndemo']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -328,7 +325,7 @@ describe(listCommand, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
 
-    const stdoutCalls = stdoutSpy.mock.calls.map((call) => String(call[0])).join('');
+    const stdoutCalls = stdout;
     expect(stdoutCalls).toContain(
       'Manifest: https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
     );
@@ -339,7 +336,7 @@ describe(listCommand, () => {
   it('with --from bitbucket:ws/repo@ref, builds the URL using the supplied ref', async () => {
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo@develop']);
+    const { exitCode } = await list(['--from', 'bitbucket:tutorials/markdowndemo@develop']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -352,7 +349,7 @@ describe(listCommand, () => {
     mockResolveBitbucketToken.mockReturnValue('bb-token');
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const { exitCode } = await list(['--from', 'bitbucket:tutorials/markdowndemo']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -365,7 +362,7 @@ describe(listCommand, () => {
     mockResolveBitbucketToken.mockReturnValue(undefined);
     mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
 
-    const exitCode = await listCommand(['--from', 'bitbucket:tutorials/markdowndemo']);
+    const { exitCode } = await list(['--from', 'bitbucket:tutorials/markdowndemo']);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -432,3 +429,16 @@ describe(listCommand, () => {
     expect(error.message).toContain('ECONNREFUSED');
   });
 });
+
+// region | Helpers
+
+/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
+async function list(args: string[]) {
+  using io = captureStdio();
+
+  const exitCode = await listCommand(args);
+
+  return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+// endregion | Helpers
