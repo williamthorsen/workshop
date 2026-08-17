@@ -1,12 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from '../json.ts';
 
-const temp = useTempDir({ prefix: 'rdy-json-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-json-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(readJsonFile, () => {
-  it('returns the parsed object from a JSON file', () => {
+  it('returns the parsed object from a JSON file', ({ temp }) => {
     temp.writeJson('config.json', { key: 'value' });
 
     expect(readJsonFile('config.json')).toStrictEqual({ key: 'value' });
@@ -16,13 +27,13 @@ describe(readJsonFile, () => {
     expect(readJsonFile('missing.json')).toBeUndefined();
   });
 
-  it('returns undefined when the file content is not an object', () => {
+  it('returns undefined when the file content is not an object', ({ temp }) => {
     temp.writeJson('array.json', [1, 2, 3]);
 
     expect(readJsonFile('array.json')).toBeUndefined();
   });
 
-  it('returns undefined when the file contains malformed JSON', () => {
+  it('returns undefined when the file contains malformed JSON', ({ temp }) => {
     temp.write('bad.json', '{ not valid json }}}');
 
     expect(readJsonFile('bad.json')).toBeUndefined();
@@ -30,7 +41,7 @@ describe(readJsonFile, () => {
 });
 
 describe(readJsonValue, () => {
-  it('returns a nested value from a JSON file', () => {
+  it('returns a nested value from a JSON file', ({ temp }) => {
     temp.writeJson('config.json', { publishConfig: { access: 'public' } });
 
     expect(readJsonValue('config.json', 'publishConfig', 'access')).toBe('public');
@@ -40,19 +51,19 @@ describe(readJsonValue, () => {
     expect(readJsonValue('missing.json', 'key')).toBeUndefined();
   });
 
-  it('returns undefined when the JSON is invalid', () => {
+  it('returns undefined when the JSON is invalid', ({ temp }) => {
     temp.write('bad.json', '{ not valid }}}');
 
     expect(readJsonValue('bad.json', 'key')).toBeUndefined();
   });
 
-  it('returns undefined when a key in the path is missing', () => {
+  it('returns undefined when a key in the path is missing', ({ temp }) => {
     temp.writeJson('config.json', { a: { b: 'value' } });
 
     expect(readJsonValue('config.json', 'a', 'missing', 'deep')).toBeUndefined();
   });
 
-  it('returns the full object when no keys are provided', () => {
+  it('returns the full object when no keys are provided', ({ temp }) => {
     temp.writeJson('config.json', { name: 'test' });
 
     expect(readJsonValue('config.json')).toStrictEqual({ name: 'test' });
@@ -60,25 +71,25 @@ describe(readJsonValue, () => {
 });
 
 describe(hasJsonField, () => {
-  it('returns true when the field exists', () => {
+  it('returns true when the field exists', ({ temp }) => {
     temp.writeJson('data.json', { type: 'module' });
 
     expect(hasJsonField('data.json', 'type')).toBe(true);
   });
 
-  it('returns false when the field does not exist', () => {
+  it('returns false when the field does not exist', ({ temp }) => {
     temp.writeJson('data.json', {});
 
     expect(hasJsonField('data.json', 'type')).toBe(false);
   });
 
-  it('returns true when the field matches the expected value', () => {
+  it('returns true when the field matches the expected value', ({ temp }) => {
     temp.writeJson('data.json', { type: 'module' });
 
     expect(hasJsonField('data.json', 'type', 'module')).toBe(true);
   });
 
-  it('returns false when the field does not match the expected value', () => {
+  it('returns false when the field does not match the expected value', ({ temp }) => {
     temp.writeJson('data.json', { type: 'commonjs' });
 
     expect(hasJsonField('data.json', 'type', 'module')).toBe(false);
@@ -90,7 +101,7 @@ describe(hasJsonField, () => {
 });
 
 describe(hasJsonFields, () => {
-  it('returns ok when all fields are present', () => {
+  it('returns ok when all fields are present', ({ temp }) => {
     temp.writeJson('data.json', { name: 'test', version: '1.0.0' });
 
     const result = hasJsonFields('data.json', ['name', 'version']);
@@ -101,7 +112,7 @@ describe(hasJsonFields, () => {
     });
   });
 
-  it('returns not ok with missing fields listed', () => {
+  it('returns not ok with missing fields listed', ({ temp }) => {
     temp.writeJson('data.json', { name: 'test' });
 
     const result = hasJsonFields('data.json', ['name', 'version', 'type']);
@@ -113,7 +124,7 @@ describe(hasJsonFields, () => {
     });
   });
 
-  it('returns ok with zero counts when fields array is empty', () => {
+  it('returns ok with zero counts when fields array is empty', ({ temp }) => {
     temp.writeJson('data.json', { name: 'test' });
 
     const result = hasJsonFields('data.json', []);
