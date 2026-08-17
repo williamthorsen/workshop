@@ -6,6 +6,8 @@ import {
   CLAUDE_MD_CURRENT,
   CLAUDE_MD_PLANNED,
   DIAGRAM_BYTES,
+  FILL_CLOSE,
+  FILL_OPEN,
   LINT_SKILL,
   REGION_CLOSE,
   REGION_OPEN,
@@ -81,7 +83,13 @@ export function buildFiles(blobs: BlobStore): Array<FileEntry> {
       ownership: { kind: 'full' },
       current: blobs.addUtf8(REVIEW_SKILL_CURRENT),
       planned: blobs.addUtf8(REVIEW_SKILL_PLANNED),
-      contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: ['team:_data/shared.md'] },
+      contributors: {
+        artifacts: [
+          { artifactId: 'skill:review' },
+          { artifactId: 'rulebook:naming', marker: { open: FILL_OPEN, close: FILL_CLOSE } },
+        ],
+        partials: ['team:_data/shared.md'],
+      },
     },
     {
       targetId: 'claude',
