@@ -8,6 +8,7 @@ import type { CaptureCompositionOptions } from '../../test-utils/captureComposit
 import { captureComposition } from '../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
+  buildInlayingTarget,
   buildOverlappingTargets,
   CONTRIBUTION_MARKERS,
   HOST_PATH,
@@ -97,6 +98,101 @@ describe(validateComposition, () => {
         domain: 'inlay',
         at: { targetId: 'claude', artifactId: 'skill:lint' },
         diagnostic: { code: 'duplicate-name', message: expect.any(String), line: 2 },
+      },
+    ]);
+  });
+
+  it('reports a filler of a kind the target deploys nowhere, naming the inlay and the host it was to fill', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n',
+        'subagents/auditor.md': '# Auditor\n',
+      },
+      select: { skill: { use: [{ source: 'team' }] } },
+      inlays: { preferences: { subagent: { use: ['auditor'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'binding',
+        diagnostic: {
+          code: 'undeployed-kind',
+          message: expect.any(String),
+          at: {
+            inlayName: 'preferences',
+            targetId: 'claude',
+            hostArtifactId: 'skill:lint',
+            artifactId: 'subagent:auditor',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('reports a filler whose own body declares an inlay, the render it ended carrying the fault', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Naming.\n<!-- inlay: deeper -->\n',
+        'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n',
+      },
+      select: { rulebook: { use: [{ source: 'team' }] }, skill: { use: [{ source: 'team' }] } },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'binding',
+        diagnostic: {
+          code: 'nested-inlay',
+          message: expect.any(String),
+          at: {
+            inlayName: 'preferences',
+            targetId: 'claude',
+            hostArtifactId: 'skill:lint',
+            artifactId: 'rulebook:naming',
+          },
+        },
+      },
+    ]);
+  });
+
+  it('reports a binding whose inlay no artifact declares, once and at the config', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Naming.\n',
+        'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n',
+      },
+      select: { rulebook: { use: [{ source: 'team' }] }, skill: { use: [{ source: 'team' }] } },
+      inlays: { prefrences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'binding',
+        diagnostic: { code: 'unmatched-inlay', message: expect.any(String), at: { inlayName: 'prefrences' } },
+      },
+    ]);
+  });
+
+  it('locates a binding naming an artifact no source carries at the inlay it was written under', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: { 'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n' },
+      select: { skill: { use: [{ source: 'team' }] } },
+      inlays: { preferences: { rulebook: { use: ['absent'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
+      {
+        domain: 'selection',
+        diagnostic: {
+          code: 'unknown-artifact',
+          message: expect.any(String),
+          at: { tierId: 'project', kindId: 'rulebook', inlayName: 'preferences', list: 'use', index: 0 },
+        },
       },
     ]);
   });
@@ -284,24 +380,6 @@ function buildHostCollidingTarget(targetRoot: string): RenderTarget {
     deployments: [
       ...claude.deployments.filter((deployment) => deployment.kindId === 'rulebook'),
       { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
-    ],
-  };
-}
-
-/** Builds a target running the inlay stage, whose faults end a render as a transclusion directive's do. */
-function buildInlayingTarget(targetRoot: string): RenderTarget {
-  const claude = buildClaudeTarget(targetRoot);
-
-  return {
-    ...claude,
-    stages: [
-      ...claude.stages,
-      {
-        kind: 'inlay',
-        syntax: { open: '<!--', close: '-->' },
-        markers: { open: '<!-- inlay:{inlayName}:start -->', close: '<!-- inlay:{inlayName}:end -->' },
-        contributionMarkers: CONTRIBUTION_MARKERS,
-      },
     ],
   };
 }
