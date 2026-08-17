@@ -1,83 +1,76 @@
-import path from 'node:path';
-import process from 'node:process';
-
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
-// Only directory reads are intercepted; the temporary-directory helper still writes through to disk.
+// Only directory reads are intercepted; the temporary tree still writes through to disk.
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { discoverKitProjects } from '../discoverKitProjects.ts';
 
-const tempDir = useTempDir({
-  prefix: 'rdy-projects-',
-  scope: 'file',
-  setup: () => {
-    // Sweep root: compiled kits and a manifest of its own.
-    tempDir.writeJson('package.json', { name: 'root' });
-    tempDir.write('.readyup/kits/demo.js', 'export default {};');
-    tempDir.writeJson('.readyup/manifest.json', { version: 1, kits: [{ name: 'demo' }] });
+const it = test
+  .extend(
+    'temp',
+    { scope: 'file' },
+    makeFixture(() =>
+      createTempTree(
+        {
+          // Sweep root: compiled kits and a manifest of its own.
+          'package.json': JSON.stringify({ name: 'root' }),
+          '.readyup/kits/demo.js': 'export default {};',
+          '.readyup/manifest.json': JSON.stringify({ version: 1, kits: [{ name: 'demo' }] }),
 
-    // Authored but never compiled, under the default source directory.
-    tempDir.writeJson('packages/authored/package.json', { name: 'authored' });
-    tempDir.write('packages/authored/.readyup/kits/default.ts', 'export default {};');
+          // Authored but never compiled, under the default source directory.
+          'packages/authored/package.json': JSON.stringify({ name: 'authored' }),
+          'packages/authored/.readyup/kits/default.ts': 'export default {};',
 
-    // A config that cannot be evaluated, over a project that is a kit project regardless.
-    tempDir.writeJson('packages/broken/package.json', { name: 'broken' });
-    tempDir.write('packages/broken/.config/readyup.config.ts', 'export default { this is not TypeScript');
-    tempDir.writeJson('packages/broken/.readyup/manifest.json', { version: 1, kits: [] });
+          // A config that cannot be evaluated, over a project that is a kit project regardless.
+          'packages/broken/package.json': JSON.stringify({ name: 'broken' }),
+          'packages/broken/.config/readyup.config.ts': 'export default { this is not TypeScript',
+          'packages/broken/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [] }),
 
-    // Compiled with --skip-manifest: kits on disk, no manifest beside them.
-    tempDir.writeJson('packages/compiled-only/package.json', { name: 'compiled-only' });
-    tempDir.write('packages/compiled-only/.readyup/kits/thing.js', 'export default {};');
+          // Compiled with --skip-manifest: kits on disk, no manifest beside them.
+          'packages/compiled-only/package.json': JSON.stringify({ name: 'compiled-only' }),
+          'packages/compiled-only/.readyup/kits/thing.js': 'export default {};',
 
-    // Authored but never compiled, under a source directory the config repoints.
-    tempDir.writeJson('packages/custom/package.json', { name: 'custom' });
-    tempDir.write('packages/custom/.config/readyup.config.ts', "export default { compile: { srcDir: 'src/kits' } };");
-    tempDir.write('packages/custom/src/kits/lint.ts', 'export default {};');
+          // Authored but never compiled, under a source directory the config repoints.
+          'packages/custom/package.json': JSON.stringify({ name: 'custom' }),
+          'packages/custom/.config/readyup.config.ts': "export default { compile: { srcDir: 'src/kits' } };",
+          'packages/custom/src/kits/lint.ts': 'export default {};',
 
-    // Kits since deleted, manifest left behind.
-    tempDir.writeJson('packages/emptied/package.json', { name: 'emptied' });
-    tempDir.writeJson('packages/emptied/.readyup/manifest.json', { version: 1, kits: [{ name: 'gone' }] });
+          // Kits since deleted, manifest left behind.
+          'packages/emptied/package.json': JSON.stringify({ name: 'emptied' }),
+          'packages/emptied/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [{ name: 'gone' }] }),
 
-    // A workspace with no readyup footprint at all.
-    tempDir.writeJson('packages/plain/package.json', { name: 'plain' });
-    tempDir.write('packages/plain/src/index.ts', 'export {};');
+          // A workspace with no readyup footprint at all.
+          'packages/plain/package.json': JSON.stringify({ name: 'plain' }),
+          'packages/plain/src/index.ts': 'export {};',
 
-    // Compiled to an output directory the config repoints.
-    tempDir.writeJson('packages/tooling/package.json', { name: 'tooling' });
-    tempDir.write(
-      'packages/tooling/.config/readyup.config.ts',
-      "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
-    );
-    tempDir.write('packages/tooling/dist/kits/lint.js', 'export default {};');
+          // Compiled to an output directory the config repoints.
+          'packages/tooling/package.json': JSON.stringify({ name: 'tooling' }),
+          'packages/tooling/.config/readyup.config.ts':
+            "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
+          'packages/tooling/dist/kits/lint.js': 'export default {};',
 
-    // An installed dependency that publishes kits, which is not a project of this repo.
-    tempDir.writeJson('node_modules/dep/package.json', { name: 'dep' });
-    tempDir.write('node_modules/dep/.readyup/kits/dep.js', 'export default {};');
-  },
-});
-
-const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
+          // An installed dependency that publishes kits, which is not a project of this repo.
+          'node_modules/dep/package.json': JSON.stringify({ name: 'dep' }),
+          'node_modules/dep/.readyup/kits/dep.js': 'export default {};',
+        },
+        { prefix: 'rdy-projects-' },
+      ),
+    ),
+  )
+  .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
 describe(discoverKitProjects, () => {
-  beforeEach(() => {
-    passAllReads();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('reports every kit project in the tree, the sweep root first', async () => {
-    await expect(discoverDirs()).resolves.toStrictEqual([
+  it('reports every kit project in the tree, the sweep root first', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toStrictEqual([
       '.',
       'packages/authored',
       'packages/broken',
@@ -89,32 +82,32 @@ describe(discoverKitProjects, () => {
   });
 
   // A sweep has to reach this project to rewrite the manifest left behind.
-  it('reports a project whose kits were deleted but whose manifest remains', async () => {
-    await expect(discoverDirs()).resolves.toContain('packages/emptied');
+  it('reports a project whose kits were deleted but whose manifest remains', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toContain('packages/emptied');
   });
 
-  it('reports a project with kit sources but no manifest and no compiled output', async () => {
-    await expect(discoverDirs()).resolves.toContain('packages/authored');
+  it('reports a project with kit sources but no manifest and no compiled output', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toContain('packages/authored');
   });
 
-  it('reports a never-compiled project whose config repoints the source directory', async () => {
-    await expect(discoverDirs()).resolves.toContain('packages/custom');
+  it('reports a never-compiled project whose config repoints the source directory', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toContain('packages/custom');
   });
 
-  it('reports a project compiled without a manifest beside its kits', async () => {
-    await expect(discoverDirs()).resolves.toContain('packages/compiled-only');
+  it('reports a project compiled without a manifest beside its kits', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toContain('packages/compiled-only');
   });
 
-  it('omits a workspace with neither a readyup directory nor a readyup config', async () => {
-    await expect(discoverDirs()).resolves.not.toContain('packages/plain');
+  it('omits a workspace with neither a readyup directory nor a readyup config', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.not.toContain('packages/plain');
   });
 
-  it('omits an installed dependency that publishes kits', async () => {
-    await expect(discoverDirs()).resolves.not.toContain('node_modules/dep');
+  it('omits an installed dependency that publishes kits', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.not.toContain('node_modules/dep');
   });
 
-  it('reads each project under its own config', async () => {
-    const { projects } = await discover();
+  it('reads each project under its own config', async ({ temp }) => {
+    const { projects } = await discover(temp.dir);
     const byDir = new Map(projects.map((project) => [project.dir, project]));
 
     expect(byDir.get('packages/custom')?.config.compile.srcDir).toBe('src/kits');
@@ -122,17 +115,17 @@ describe(discoverKitProjects, () => {
     expect(byDir.get('.')?.config.compile.outDir).toBe('.readyup/kits');
   });
 
-  it('resolves each project against the sweep root, manifest path included', async () => {
-    const { projects } = await discover();
+  it('resolves each project against the sweep root, manifest path included', async ({ temp }) => {
+    const { projects } = await discover(temp.dir);
     const emptied = projects.find((project) => project.dir === 'packages/emptied');
 
-    expect(emptied?.absolutePath).toBe(path.join(tempDir.dir, 'packages/emptied'));
-    expect(emptied?.manifestPath).toBe(path.join(tempDir.dir, 'packages/emptied/.readyup/manifest.json'));
+    expect(emptied?.absolutePath).toBe(temp.resolve('packages/emptied'));
+    expect(emptied?.manifestPath).toBe(temp.resolve('packages/emptied/.readyup/manifest.json'));
   });
 
   // Discovery is read-only, so a config nobody can evaluate costs that project its settings, not its place.
-  it('reports a project whose config fails to evaluate, reading it with default settings', async () => {
-    const { projects, stderr } = await discover();
+  it('reports a project whose config fails to evaluate, reading it with default settings', async ({ temp }) => {
+    const { projects, stderr } = await discover(temp.dir);
     const broken = projects.find((project) => project.dir === 'packages/broken');
 
     expect(broken?.config.compile.srcDir).toBe('.readyup/kits');
@@ -140,55 +133,58 @@ describe(discoverKitProjects, () => {
   });
 
   // Topology comes from the filesystem, so a repo declaring no workspaces is swept like any other.
-  it('finds nested projects with no workspace file anywhere in the tree', async () => {
-    await expect(discoverDirs()).resolves.toContain('packages/authored');
+  it('finds nested projects with no workspace file anywhere in the tree', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.toContain('packages/authored');
   });
 
-  it('reports nothing for a tree holding no kit project', async () => {
-    const { projects } = await discover(path.join(tempDir.dir, 'packages/plain'));
+  it('reports nothing for a tree holding no kit project', async ({ temp }) => {
+    const { projects } = await discover(temp.resolve('packages/plain'));
 
     expect(projects).toStrictEqual([]);
   });
 
-  it('sweeps the working directory when no root is named', async () => {
+  it('sweeps the working directory when no root is named', async ({ temp }) => {
     using _io = captureStdio();
-    vi.spyOn(process, 'cwd').mockReturnValue(path.join(tempDir.dir, 'packages/emptied'));
+    using _cwd = pointCwdAt(temp.resolve('packages/emptied'));
 
     const projects = await discoverKitProjects();
 
     expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
   });
 
-  it.each(['EACCES', 'EPERM'])('omits a project whose kit directory it cannot read for a benign %s', async (code) => {
-    failReadOf('packages/compiled-only/.readyup/kits', code);
+  it.for(['EACCES', 'EPERM'])(
+    'omits a project whose kit directory it cannot read for a benign %s',
+    async (code, { reads, temp }) => {
+      reads.failReadOf('packages/compiled-only/.readyup/kits', code);
 
-    const { dirs, stderr } = await discover();
+      const { dirs, stderr } = await discover(temp.dir);
 
-    expect(dirs).not.toContain('packages/compiled-only');
-    expect(dirs).toStrictEqual(expect.arrayContaining(['.', 'packages/authored', 'packages/tooling']));
-    expect(stderr).toContain('packages/compiled-only');
-  });
+      expect(dirs).not.toContain('packages/compiled-only');
+      expect(dirs).toStrictEqual(expect.arrayContaining(['.', 'packages/authored', 'packages/tooling']));
+      expect(stderr).toContain('packages/compiled-only');
+    },
+  );
 
-  it('omits a project whose source directory it cannot read', async () => {
-    failReadOf('packages/custom/src/kits', 'EACCES');
+  it('omits a project whose source directory it cannot read', async ({ reads, temp }) => {
+    reads.failReadOf('packages/custom/src/kits', 'EACCES');
 
-    const dirs = await discoverDirs();
+    const dirs = await discoverDirs(temp.dir);
 
     expect(dirs).not.toContain('packages/custom');
     expect(dirs).toContain('packages/authored');
   });
 
-  it('rethrows a filesystem failure that is not benign', async () => {
-    failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
+  it('rethrows a filesystem failure that is not benign', async ({ reads, temp }) => {
+    reads.failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
 
-    await expect(discover()).rejects.toThrow('read failed: EMFILE');
+    await expect(discover(temp.dir)).rejects.toThrow('read failed: EMFILE');
   });
 });
 
 // region | Helpers
 
 /** Sweeps the fixture tree for kit projects, returning them alongside what the sweep wrote to stderr. */
-async function discover(root: string = tempDir.dir) {
+async function discover(root: string) {
   using io = captureStdio();
 
   const projects = await discoverKitProjects({ root });
@@ -197,8 +193,8 @@ async function discover(root: string = tempDir.dir) {
 }
 
 /** Returns the root-relative directories discovery reports for the fixture tree. */
-async function discoverDirs(): Promise<string[]> {
-  const { dirs } = await discover();
+async function discoverDirs(root: string): Promise<string[]> {
+  const { dirs } = await discover(root);
   return dirs;
 }
 

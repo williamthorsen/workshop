@@ -1,9 +1,11 @@
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureError, captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
-// Only directory reads are intercepted; the temporary-directory helper still writes through to disk.
+// Only directory reads are intercepted; the temporary tree still writes through to disk.
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, readdirSync: mockReaddirSync };
@@ -12,92 +14,92 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 import { RdyError } from '../../errors/RdyError.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { listCommand } from '../listCommand.ts';
 
-const tempDir = useTempDir({
-  prefix: 'rdy-recursive-',
-  cwd: 'mock',
-  setup: () => {
-    // Sweep root, holding one kit of its own.
-    tempDir.writeJson('package.json', { name: 'root' });
-    tempDir.write('.readyup/kits/demo.js', 'export default {};');
-    tempDir.writeJson('.readyup/manifest.json', {
-      version: 1,
-      kits: [{ name: 'demo', path: 'kits/demo.js' }],
-    });
-
-    // Two kits with descriptions, on the convention output directory.
-    tempDir.writeJson('packages/readyup/package.json', { name: 'readyup' });
-    tempDir.write('packages/readyup/.readyup/kits/default.js', 'export default {};');
-    tempDir.write('packages/readyup/.readyup/kits/publishing.js', 'export default {};');
-    tempDir.writeJson('packages/readyup/.readyup/manifest.json', {
-      version: 1,
-      kits: [
+const it = test
+  .extend(
+    'temp',
+    makeFixture(() =>
+      createTempTree(
         {
-          name: 'default',
-          path: 'kits/default.js',
-          description: 'Authoring hygiene for a project that defines readyup kits',
-          readyupVersion: '0.24.0',
+          // Sweep root, holding one kit of its own.
+          'package.json': JSON.stringify({ name: 'root' }),
+          '.readyup/kits/demo.js': 'export default {};',
+          '.readyup/manifest.json': JSON.stringify({
+            version: 1,
+            kits: [{ name: 'demo', path: 'kits/demo.js' }],
+          }),
+
+          // Two kits with descriptions, on the convention output directory.
+          'packages/readyup/package.json': JSON.stringify({ name: 'readyup' }),
+          'packages/readyup/.readyup/kits/default.js': 'export default {};',
+          'packages/readyup/.readyup/kits/publishing.js': 'export default {};',
+          'packages/readyup/.readyup/manifest.json': JSON.stringify({
+            version: 1,
+            kits: [
+              {
+                name: 'default',
+                path: 'kits/default.js',
+                description: 'Authoring hygiene for a project that defines readyup kits',
+                readyupVersion: '0.24.0',
+              },
+              {
+                name: 'publishing',
+                path: 'kits/publishing.js',
+                description: 'Publication readiness for a package that ships readyup kits',
+              },
+            ],
+          }),
+
+          // A relocated output directory, compiled with no manifest beside its kits.
+          'packages/tooling/package.json': JSON.stringify({ name: 'tooling' }),
+          'packages/tooling/.config/readyup.config.ts':
+            "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
+          'packages/tooling/dist/kits/lint.js': 'export default {};',
+
+          // One kit, no description recorded for it.
+          'packages/ui/package.json': JSON.stringify({ name: 'ui' }),
+          'packages/ui/.readyup/kits/default.js': 'export default {};',
+          'packages/ui/.readyup/manifest.json': JSON.stringify({
+            version: 1,
+            kits: [{ name: 'default', path: 'kits/default.js' }],
+          }),
+
+          // Discovered for its sources, with nothing compiled to show.
+          'packages/authored/package.json': JSON.stringify({ name: 'authored' }),
+          'packages/authored/.readyup/kits/default.ts': 'export default {};',
+
+          // Discovered for its manifest, which now lists nothing.
+          'packages/emptied/package.json': JSON.stringify({ name: 'emptied' }),
+          'packages/emptied/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [] }),
+
+          // Compiled kits beside a manifest that cannot be parsed.
+          'packages/corrupt/package.json': JSON.stringify({ name: 'corrupt' }),
+          'packages/corrupt/.readyup/kits/audit.js': 'export default {};',
+          'packages/corrupt/.readyup/manifest.json': '{ "version": 1, "kits": [',
+
+          // Discovered for its sources, with its output directory barred to the process.
+          'packages/blocked/package.json': JSON.stringify({ name: 'blocked' }),
+          'packages/blocked/.config/readyup.config.ts':
+            "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
+          'packages/blocked/kit-sources/probe.ts': 'export default {};',
+          'packages/blocked/dist/kits/probe.js': 'export default {};',
         },
-        {
-          name: 'publishing',
-          path: 'kits/publishing.js',
-          description: 'Publication readiness for a package that ships readyup kits',
-        },
-      ],
-    });
+        { prefix: 'rdy-recursive-' },
+      ),
+    ),
+  )
+  .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
-    // A relocated output directory, compiled with no manifest beside its kits.
-    tempDir.writeJson('packages/tooling/package.json', { name: 'tooling' });
-    tempDir.write(
-      'packages/tooling/.config/readyup.config.ts',
-      "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
-    );
-    tempDir.write('packages/tooling/dist/kits/lint.js', 'export default {};');
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
 
-    // One kit, no description recorded for it.
-    tempDir.writeJson('packages/ui/package.json', { name: 'ui' });
-    tempDir.write('packages/ui/.readyup/kits/default.js', 'export default {};');
-    tempDir.writeJson('packages/ui/.readyup/manifest.json', {
-      version: 1,
-      kits: [{ name: 'default', path: 'kits/default.js' }],
-    });
-
-    // Discovered for its sources, with nothing compiled to show.
-    tempDir.writeJson('packages/authored/package.json', { name: 'authored' });
-    tempDir.write('packages/authored/.readyup/kits/default.ts', 'export default {};');
-
-    // Discovered for its manifest, which now lists nothing.
-    tempDir.writeJson('packages/emptied/package.json', { name: 'emptied' });
-    tempDir.writeJson('packages/emptied/.readyup/manifest.json', { version: 1, kits: [] });
-
-    // Compiled kits beside a manifest that cannot be parsed.
-    tempDir.writeJson('packages/corrupt/package.json', { name: 'corrupt' });
-    tempDir.write('packages/corrupt/.readyup/kits/audit.js', 'export default {};');
-    tempDir.write('packages/corrupt/.readyup/manifest.json', '{ "version": 1, "kits": [');
-
-    // Discovered for its sources, with its output directory barred to the process.
-    tempDir.writeJson('packages/blocked/package.json', { name: 'blocked' });
-    tempDir.write(
-      'packages/blocked/.config/readyup.config.ts',
-      "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
-    );
-    tempDir.write('packages/blocked/kit-sources/probe.ts', 'export default {};');
-    tempDir.write('packages/blocked/dist/kits/probe.js', 'export default {};');
-  },
+  await runTest();
 });
 
-const { failReadOf, passAllReads } = useFailingDirectoryRead(mockReaddirSync, () => tempDir.dir);
-
 describe('list --recursive', () => {
-  beforeEach(() => {
-    passAllReads();
-  });
-
   afterEach(() => {
-    vi.restoreAllMocks();
     setStyle('rich');
   });
 
@@ -200,8 +202,8 @@ describe('list --recursive', () => {
   });
 
   describe('an empty sweep', () => {
-    it('emits an empty kit list under --json', async () => {
-      vi.spyOn(process, 'cwd').mockReturnValue(`${tempDir.dir}/packages/authored`);
+    it('emits an empty kit list under --json', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.resolve('packages/authored'));
 
       const { stdout } = await list(['--recursive', '--json']);
       const payload = JSON.parse(stdout);
@@ -209,8 +211,8 @@ describe('list --recursive', () => {
       expect(payload).toStrictEqual({ schemaVersion: 1, kits: [] });
     });
 
-    it('prints the empty-sweep message for a tree whose projects have nothing compiled', async () => {
-      vi.spyOn(process, 'cwd').mockReturnValue(`${tempDir.dir}/packages/authored`);
+    it('prints the empty-sweep message for a tree whose projects have nothing compiled', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.resolve('packages/authored'));
 
       const { stdout } = await list(['--recursive']);
 
@@ -238,8 +240,8 @@ describe('list --recursive', () => {
       });
     });
 
-    it('drops a project whose output directory it cannot read, and lists the rest', async () => {
-      failReadOf('packages/blocked/dist/kits', 'EACCES');
+    it('drops a project whose output directory it cannot read, and lists the rest', async ({ reads }) => {
+      reads.failReadOf('packages/blocked/dist/kits', 'EACCES');
 
       const { exitCode, stdout, stderr } = await list(['--recursive']);
 
@@ -249,8 +251,8 @@ describe('list --recursive', () => {
       expect(stderr).toContain('Omitting packages/blocked from the listing');
     });
 
-    it('rethrows a filesystem failure that is not benign', async () => {
-      failReadOf('packages/blocked/dist/kits', 'EMFILE');
+    it('rethrows a filesystem failure that is not benign', async ({ reads }) => {
+      reads.failReadOf('packages/blocked/dist/kits', 'EMFILE');
 
       await expect(listCommand(['--recursive'])).rejects.toThrow('read failed: EMFILE');
     });
