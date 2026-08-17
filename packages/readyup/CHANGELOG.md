@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.29.0 — 2026-08-17
+
+### 🎉 Features
+
+- Add adoption-kit support to `check-utils` (#351)
+
+  Adds four utilities to `readyup/check-utils` for kits that audit a project's own sources: `listTrackedFiles`, `readTrackedSources`, `countPackageUsage`, and `buildFindingReport`. A file is read at most once per process however many kits select it, and the listing behind it is built once for the checks a run starts together. Both readers return `undefined` outside a git working tree.
+
+- Add `--diagnose`, which reports skipped checks that would have passed (#354)
+
+  Adds `rdy run --diagnose`, which runs the `check` of each skipped check and reports the ones that would have passed. It reports them as two new warnings, `skip-masks-pass` and `diagnosis-inconclusive`, written to stderr in both output modes and listed under `warnings` in JSON; statuses, counts, durations, and the exit code are the same as a run without the flag. The flag is off by default because it runs checks that a kit author chose to skip, and such a check may reach a network or a registry.
+
+### 🐛 Bug fixes
+
+- Resolve a check's `fix` only where a failure renders it (#345)
+
+  Fixes the issue that `rdy compile` could delete a just-compiled kit if the kit included a `fix` whose value was a getter that throws. A `fix` written as a data property is still validated as a string at load. A getter that throws or yields a non-string reports `Unresolvable fix: ...` in that failure's remediation slot, keeping the check's own status and declared severity.
+
+### ⚡ Performance
+
+- Memoize workspace discovery so one run walks the tree once (#332)
+
+  `discoverWorkspaces` now scans a repository's workspace layout once per run and reuses the result, rather than rescanning for each check that calls it. The walk costs 3.7 ms in a 19-workspace repository, and one `rdy run --packages` ran it eight times; it now runs once.
+
+  The `Workspace` values a run returns are shared across it, frozen along with their `packageJson`, so a kit that writes to one raises a `TypeError`. A workspace added or removed mid-run is not reported in the results.
+
+### 🧪 Tests
+
+- Adopt toolbelt's `silenceConsole` and retire the hand-rolled console spies (#340)
+
+  Adopts `silenceConsole` from `@williamthorsen/toolbelt.vitest` to replace every hand-rolled `vi.spyOn(console, …)` spy in the repo. The function returns a disposable, so a test binds it with `using` and the console methods it named are restored at the end of the test scope.
+
+  `@williamthorsen/toolbelt.vitest` is added to the ReadyUp configuration; `rdy run --packages` runs the kit bundled with the new package along with other kits.
+
+- Move readyup's remaining stdio spies onto captureStdio (#341)
+
+  Completes the adoption of `captureStdio` from `@williamthorsen/toolbelt.testing` for stdio capture in tests, eliminating all remaining uses of `process.stdout` and `process.stderr` write spies.
+
 ## 0.28.0 — 2026-08-15
 
 ### 🎉 Features

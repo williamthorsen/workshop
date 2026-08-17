@@ -1,5 +1,54 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-08-17",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Apply a plan to its destinations and report a composition's faults (#334)",
+            "body": "Adds `applyPlan` and `validateComposition`, the two flows that consume what `compositor` composes. Apply writes a plan to the destinations it was composed for and takes away what it no longer plans. Validate reports every authoring fault carried by a config and the content it reaches (selection, closure, transclusion, token, link, and destination collision) in one report.\n\nSeparately, a plan's target entries gain `containerDirs`, the directories that a target holds independently of what the composition puts in them.",
+            "hash": "05b5bf5285952e70eb8279c0f4608e09932f849e"
+          },
+          {
+            "description": "Recognize inlay directives and strip them from rendered bodies (#347)",
+            "body": "Adds an `inlay` stage to `compositor`'s transform pipeline: An artifact declares a named place in its body with a full-line directive written in the target's own comment syntax (`<!-- inlay: implementation-preferences -->`), and the stage strips that directive and reports the line it stood on. Recognition belongs to the stage alone, so a target declaring no inlay stage deploys the directive as text. Nothing fills an inlay yet; this ships the render side, with the config bindings that name a filler still to come.\n\nSeparately, `assertRenderTargetsAreConsistent` now rejects a declared `links` grammar or `reshape` rule that ends in an escape, which it previously accepted and left to throw wherever the pattern was compiled.",
+            "hash": "78a4cd99b43f02b73ce07fb83e935338618a3476"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Reserve the `is` prefix for type predicates (#335)",
+            "body": "Renames eight boolean functions and function-valued parameters in `compositor` to third-person verb names, so the `is` prefix marks only type predicates.",
+            "hash": "3aba420597180110f37c24c0612873c63076dfb8"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Test the genericity claims against a second consumer's vocabulary (#344)",
+            "body": "Adds a `genericity-fixture.ts` to serve as a hypothetical consumer of `compositor` that is unlike the other content previously tested as the only consumer. A test suite verifies that the `compositor` handles this dissimilar content correctly, checking for correct handling of such features as line-comment directives, `<<label:...>>` tokens, and templating. A feature hard-coded in `compositor` instead of read from the consumer's declaration fails this suite, where the existing pipeline tests would not notice it.",
+            "hash": "5b3d13e45dc3172f97c9f1c5fb0c5014535679b5"
+          },
+          {
+            "description": "Replace compositor's `buildTempTree` with toolbelt's `createTempTree` (#349)",
+            "body": "Replaces compositor's local `buildTempTree` test helper with `createTempTree` from `@williamthorsen/toolbelt.filesystem`. Adds `@williamthorsen/toolbelt.filesystem` and `@williamthorsen/toolbelt.vitest` as dev dependencies of Compositor.",
+            "hash": "0c5c883975c0e1690b1c742d380239638920d474"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-08-15",
     "sections": [

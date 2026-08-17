@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 — 2026-08-17
+
+### 🎉 Features
+
+- Apply a plan to its destinations and report a composition's faults (#334)
+
+  Adds `applyPlan` and `validateComposition`, the two flows that consume what `compositor` composes. Apply writes a plan to the destinations it was composed for and takes away what it no longer plans. Validate reports every authoring fault carried by a config and the content it reaches (selection, closure, transclusion, token, link, and destination collision) in one report.
+
+  Separately, a plan's target entries gain `containerDirs`, the directories that a target holds independently of what the composition puts in them.
+
+- Recognize inlay directives and strip them from rendered bodies (#347)
+
+  Adds an `inlay` stage to `compositor`'s transform pipeline: An artifact declares a named place in its body with a full-line directive written in the target's own comment syntax (`<!-- inlay: implementation-preferences -->`), and the stage strips that directive and reports the line it stood on. Recognition belongs to the stage alone, so a target declaring no inlay stage deploys the directive as text. Nothing fills an inlay yet; this ships the render side, with the config bindings that name a filler still to come.
+
+  Separately, `assertRenderTargetsAreConsistent` now rejects a declared `links` grammar or `reshape` rule that ends in an escape, which it previously accepted and left to throw wherever the pattern was compiled.
+
+### ♻️ Refactoring
+
+- Reserve the `is` prefix for type predicates (#335)
+
+  Renames eight boolean functions and function-valued parameters in `compositor` to third-person verb names, so the `is` prefix marks only type predicates.
+
+### 🧪 Tests
+
+- Test the genericity claims against a second consumer's vocabulary (#344)
+
+  Adds a `genericity-fixture.ts` to serve as a hypothetical consumer of `compositor` that is unlike the other content previously tested as the only consumer. A test suite verifies that the `compositor` handles this dissimilar content correctly, checking for correct handling of such features as line-comment directives, `<<label:...>>` tokens, and templating. A feature hard-coded in `compositor` instead of read from the consumer's declaration fails this suite, where the existing pipeline tests would not notice it.
+
+- Replace compositor's `buildTempTree` with toolbelt's `createTempTree` (#349)
+
+  Replaces compositor's local `buildTempTree` test helper with `createTempTree` from `@williamthorsen/toolbelt.filesystem`. Adds `@williamthorsen/toolbelt.filesystem` and `@williamthorsen/toolbelt.vitest` as dev dependencies of Compositor.
+
 ## 0.2.0 — 2026-08-15
 
 ### 🎉 Features
