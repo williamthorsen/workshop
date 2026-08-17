@@ -1,20 +1,31 @@
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 
-const temp = useTempDir({ prefix: 'rdy-ws-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(discoverWorkspaces, () => {
   describe('pnpm workspaces', () => {
-    it('discovers workspaces listed via `packages` block sequence', () => {
-      writeRootPackageJson({ name: 'root', private: true });
-      writePnpmWorkspaceYaml(['packages:', '  - packages/*', '  - apps/**', ''].join('\n'));
-      writeWorkspacePackage('packages/alpha', { name: 'alpha', version: '1.0.0' });
-      writeWorkspacePackage('packages/beta', { name: 'beta', version: '1.0.0' });
-      writeWorkspacePackage('apps/web', { name: 'web', version: '1.0.0' });
+    it('discovers workspaces listed via `packages` block sequence', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true });
+      writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', '  - apps/**', ''].join('\n'));
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha', version: '1.0.0' });
+      writeWorkspacePackage(temp, 'packages/beta', { name: 'beta', version: '1.0.0' });
+      writeWorkspacePackage(temp, 'apps/web', { name: 'web', version: '1.0.0' });
 
       const workspaces = discoverWorkspaces();
 
@@ -22,16 +33,16 @@ describe(discoverWorkspaces, () => {
       expect(workspaces.map((w) => w.name)).toStrictEqual(['web', 'alpha', 'beta']);
     });
 
-    it('returns an empty array when a pattern expands to zero directories', () => {
-      writeRootPackageJson({ name: 'root', private: true });
-      writePnpmWorkspaceYaml(['packages:', '  - packages/*', ''].join('\n'));
+    it('returns an empty array when a pattern expands to zero directories', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true });
+      writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
 
       expect(discoverWorkspaces()).toStrictEqual([]);
     });
 
-    it('falls through to npm/single detection when `packages` key is absent', () => {
-      writeRootPackageJson({ name: 'root', version: '1.0.0' });
-      writePnpmWorkspaceYaml(['onlyBuiltDependencies:', '  - esbuild', ''].join('\n'));
+    it('falls through to npm/single detection when `packages` key is absent', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', version: '1.0.0' });
+      writePnpmWorkspaceYaml(temp, ['onlyBuiltDependencies:', '  - esbuild', ''].join('\n'));
 
       const workspaces = discoverWorkspaces();
 
@@ -46,43 +57,43 @@ describe(discoverWorkspaces, () => {
       ]);
     });
 
-    it('propagates errors from the YAML reader for unsupported features', () => {
-      writeRootPackageJson({ name: 'root', private: true });
-      writePnpmWorkspaceYaml(['packages:', '  - &anchor packages/*', ''].join('\n'));
+    it('propagates errors from the YAML reader for unsupported features', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true });
+      writePnpmWorkspaceYaml(temp, ['packages:', '  - &anchor packages/*', ''].join('\n'));
 
       expect(() => discoverWorkspaces()).toThrow(/anchor/);
     });
   });
 
   describe('npm/yarn workspaces', () => {
-    it('discovers workspaces when `workspaces` is a string array', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('packages/beta', { name: 'beta' });
+    it('discovers workspaces when `workspaces` is a string array', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/beta', { name: 'beta' });
 
       const workspaces = discoverWorkspaces();
 
       expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
     });
 
-    it('discovers workspaces when `workspaces.packages` is a string array', () => {
-      writeRootPackageJson({
+    it('discovers workspaces when `workspaces.packages` is a string array', ({ temp }) => {
+      writeRootPackageJson(temp, {
         name: 'root',
         private: true,
         workspaces: { packages: ['packages/*', 'apps/*'] },
       });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('apps/web', { name: 'web' });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'apps/web', { name: 'web' });
 
       const workspaces = discoverWorkspaces();
 
       expect(workspaces.map((w) => w.dir)).toStrictEqual(['apps/web', 'packages/alpha']);
     });
 
-    it('returns isPackage: false for a discovered workspace with `private: true`', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('packages/internal', { name: 'internal', private: true });
+    it('returns isPackage: false for a discovered workspace with `private: true`', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/internal', { name: 'internal', private: true });
 
       const workspaces = discoverWorkspaces();
       const byDir = Object.fromEntries(workspaces.map((w) => [w.dir, w.isPackage]));
@@ -92,8 +103,8 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('single-workspace repo', () => {
-    it('returns a single entry with dir: "." when no workspace config is present', () => {
-      writeRootPackageJson({ name: 'solo', version: '1.0.0' });
+    it('returns a single entry with dir: "." when no workspace config is present', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo', version: '1.0.0' });
 
       const workspaces = discoverWorkspaces();
 
@@ -108,42 +119,42 @@ describe(discoverWorkspaces, () => {
       ]);
     });
 
-    it('returns isPackage: false when `private: true`', () => {
-      writeRootPackageJson({ name: 'solo', private: true });
+    it('returns isPackage: false when `private: true`', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo', private: true });
 
       expect(discoverWorkspaces()[0]?.isPackage).toBe(false);
     });
 
-    it('returns isPackage: true when `private` is absent', () => {
-      writeRootPackageJson({ name: 'solo' });
+    it('returns isPackage: true when `private` is absent', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo' });
 
       expect(discoverWorkspaces()[0]?.isPackage).toBe(true);
     });
 
-    it('returns isPackage: true when `private: false`', () => {
-      writeRootPackageJson({ name: 'solo', private: false });
+    it('returns isPackage: true when `private: false`', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo', private: false });
 
       expect(discoverWorkspaces()[0]?.isPackage).toBe(true);
     });
 
-    it('returns isPackage: true when `private` is a non-true value like the string "false"', () => {
-      writeRootPackageJson({ name: 'solo', private: 'false' });
+    it('returns isPackage: true when `private` is a non-true value like the string "false"', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo', private: 'false' });
 
       expect(discoverWorkspaces()[0]?.isPackage).toBe(true);
     });
 
-    it('returns `name: undefined` when root package.json has no `name` field', () => {
-      writeRootPackageJson({ version: '1.0.0' });
+    it('returns `name: undefined` when root package.json has no `name` field', ({ temp }) => {
+      writeRootPackageJson(temp, { version: '1.0.0' });
 
       expect(discoverWorkspaces()[0]?.name).toBeUndefined();
     });
   });
 
   describe('filter option', () => {
-    it('excludes workspaces for which the filter returns false', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('packages/beta', { name: 'beta', private: true });
+    it('excludes workspaces for which the filter returns false', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/beta', { name: 'beta', private: true });
 
       const workspaces = discoverWorkspaces({ filter: (w) => w.isPackage });
 
@@ -152,9 +163,9 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('skipping non-workspace matched directories', () => {
-    it('skips a matched directory without a package.json', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
+    it('skips a matched directory without a package.json', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
       temp.mkdir('packages/empty');
 
       const workspaces = discoverWorkspaces();
@@ -162,9 +173,9 @@ describe(discoverWorkspaces, () => {
       expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
     });
 
-    it('skips a matched directory with an unparseable package.json', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
+    it('skips a matched directory with an unparseable package.json', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
       temp.write('packages/broken/package.json', '{ not valid json');
 
       const workspaces = discoverWorkspaces();
@@ -172,21 +183,21 @@ describe(discoverWorkspaces, () => {
       expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
     });
 
-    it('does not traverse into node_modules', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['**/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
+    it('does not traverse into node_modules', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['**/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
       // A fake workspace hiding inside node_modules — must not appear in results.
-      writeWorkspacePackage('node_modules/sneaky', { name: 'sneaky' });
+      writeWorkspacePackage(temp, 'node_modules/sneaky', { name: 'sneaky' });
 
       const workspaces = discoverWorkspaces();
 
       expect(workspaces.map((w) => w.name)).not.toContain('sneaky');
     });
 
-    it('does not traverse into .git', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['**/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('.git/fake', { name: 'fake' });
+    it('does not traverse into .git', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['**/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, '.git/fake', { name: 'fake' });
 
       const workspaces = discoverWorkspaces();
 
@@ -195,24 +206,24 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('error: missing root package.json', () => {
-    it('throws with a message that includes the resolved path', () => {
+    it('throws with a message that includes the resolved path', ({ temp }) => {
       expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
       expect(() => discoverWorkspaces()).toThrow(temp.dir);
     });
 
-    it('throws even when pnpm-workspace.yaml is present', () => {
-      writePnpmWorkspaceYaml(['packages:', '  - packages/*', ''].join('\n'));
+    it('throws even when pnpm-workspace.yaml is present', ({ temp }) => {
+      writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
 
       expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
     });
   });
 
   describe('sorting', () => {
-    it('sorts results by dir ascending', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/zeta', { name: 'zeta' });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha' });
-      writeWorkspacePackage('packages/mu', { name: 'mu' });
+    it('sorts results by dir ascending', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/zeta', { name: 'zeta' });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/mu', { name: 'mu' });
 
       const workspaces = discoverWorkspaces();
 
@@ -221,9 +232,9 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('Workspace shape', () => {
-    it('includes absolutePath, name, isPackage, and packageJson for a monorepo workspace', () => {
-      writeRootPackageJson({ name: 'root', private: true, workspaces: ['packages/*'] });
-      writeWorkspacePackage('packages/alpha', { name: 'alpha', version: '1.2.3' });
+    it('includes absolutePath, name, isPackage, and packageJson for a monorepo workspace', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha', version: '1.2.3' });
 
       const [workspace] = discoverWorkspaces();
 
@@ -236,8 +247,8 @@ describe(discoverWorkspaces, () => {
       });
     });
 
-    it('freezes the workspace and its `packageJson`', () => {
-      writeRootPackageJson({ name: 'root', version: '1.0.0' });
+    it('freezes the workspace and its `packageJson`', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', version: '1.0.0' });
 
       const [workspace] = discoverWorkspaces();
 
@@ -247,8 +258,8 @@ describe(discoverWorkspaces, () => {
       expect(Object.isFrozen(workspace?.packageJson)).toBe(true);
     });
 
-    it('freezes values nested inside `packageJson`, where an in-place sort would otherwise land', () => {
-      writeRootPackageJson({ name: 'root', files: ['dist', 'bin'], scripts: { build: 'tsc' } });
+    it('freezes values nested inside `packageJson`, where an in-place sort would otherwise land', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', files: ['dist', 'bin'], scripts: { build: 'tsc' } });
 
       const [workspace] = discoverWorkspaces();
 
@@ -260,8 +271,8 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('negation patterns in npm workspaces', () => {
-    it('throws when `workspaces` contains a negation pattern', () => {
-      writeRootPackageJson({
+    it('throws when `workspaces` contains a negation pattern', ({ temp }) => {
+      writeRootPackageJson(temp, {
         name: 'root',
         private: true,
         workspaces: ['packages/*', '!packages/deprecated/*'],
@@ -270,8 +281,8 @@ describe(discoverWorkspaces, () => {
       expect(() => discoverWorkspaces()).toThrow(/negation pattern "!packages\/deprecated\/\*"/);
     });
 
-    it('throws when `workspaces.packages` contains a negation pattern', () => {
-      writeRootPackageJson({
+    it('throws when `workspaces.packages` contains a negation pattern', ({ temp }) => {
+      writeRootPackageJson(temp, {
         name: 'root',
         private: true,
         workspaces: { packages: ['packages/*', '!packages/deprecated/*'] },
@@ -285,17 +296,17 @@ describe(discoverWorkspaces, () => {
 // region | Helpers
 
 /** Writes the root manifest that declares the workspace globs. */
-function writeRootPackageJson(content: Record<string, unknown>): void {
+function writeRootPackageJson(temp: TempTree, content: Record<string, unknown>): void {
   temp.writeJson('package.json', content);
 }
 
 /** Writes a workspace member's manifest at a root-relative directory. */
-function writeWorkspacePackage(relDir: string, content: Record<string, unknown>): void {
+function writeWorkspacePackage(temp: TempTree, relDir: string, content: Record<string, unknown>): void {
   temp.writeJson(join(relDir, 'package.json'), content);
 }
 
 /** Writes the pnpm workspace manifest, which takes precedence over the `workspaces` field. */
-function writePnpmWorkspaceYaml(content: string): void {
+function writePnpmWorkspaceYaml(temp: TempTree, content: string): void {
   temp.write('pnpm-workspace.yaml', content);
 }
 

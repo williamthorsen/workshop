@@ -1,8 +1,10 @@
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 
 // Hoisted alongside the `vi.mock` factory below, which runs before this module's own bindings initialize.
@@ -24,24 +26,37 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-const temp = useTempDir({ prefix: 'rdy-ws-walk-', cwd: 'mock', setup: () => failures.clear() });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-walk-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
+
+beforeEach(() => {
+  failures.clear();
+});
 
 describe(`${discoverWorkspaces.name} directory walk`, () => {
-  it('reads every readable directory when none fails', () => {
-    writeMonorepo();
+  it('reads every readable directory when none fails', ({ temp }) => {
+    writeMonorepo(temp);
 
     expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha', 'locked', 'inner']);
   });
 
-  it('skips the subtree under a directory it cannot read for a benign reason, keeping the rest', () => {
-    writeMonorepo();
+  it('skips the subtree under a directory it cannot read for a benign reason, keeping the rest', ({ temp }) => {
+    writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EACCES');
 
     expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha', 'locked']);
   });
 
-  it('propagates a systemic read failure rather than answering with a partial walk', () => {
-    writeMonorepo();
+  it('propagates a systemic read failure rather than answering with a partial walk', ({ temp }) => {
+    writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EMFILE');
 
     expect(() => discoverWorkspaces()).toThrow(/EMFILE/);
@@ -54,7 +69,7 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
  * Writes a monorepo whose `packages/locked` holds a nested workspace, so a failed read of `locked`
  * costs `inner` and nothing else. `locked` itself is matched from reading `packages/`, so it survives.
  */
-function writeMonorepo(): void {
+function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/**'] });
   temp.writeJson(join('packages/alpha', 'package.json'), { name: 'alpha' });
   temp.writeJson(join('packages/locked', 'package.json'), { name: 'locked' });
