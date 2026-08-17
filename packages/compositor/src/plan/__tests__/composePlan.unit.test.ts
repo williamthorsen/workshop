@@ -7,7 +7,12 @@ import { PlanSchema } from '../../schemas/plan-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
-import { buildClaudeTarget, buildOverlappingTargets, HOST_PATH } from '../../test-utils/composition-fixture.ts';
+import {
+  buildClaudeTarget,
+  buildInlayingTarget,
+  buildOverlappingTargets,
+  HOST_PATH,
+} from '../../test-utils/composition-fixture.ts';
 import { assertPlanIsConsistent } from '../assertPlanIsConsistent.ts';
 import { composePlan } from '../composePlan.ts';
 
@@ -202,6 +207,26 @@ describe(composePlan, () => {
     const { config, snapshot } = await captureComposition({ input: { shouldReadTargetState: false } });
 
     expect(() => composePlan(config, snapshot)).toThrow(StaleSnapshotError);
+  });
+
+  // The partial reaches the host only through the filler, and its entry is read from the filler's own render.
+  it('resolves a partial that reached a file through a filler’s body', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        '_data/shared.md': 'Shared guidance.\n',
+        'rulebooks/naming.md': '<!-- include: ../_data/shared.md / -->\n',
+        'skills/review/SKILL.md': '# Review\n<!-- inlay: preferences -->\n',
+      },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    const plan = composePlan(config, snapshot);
+    const review = plan.files.find(({ path }) => path === 'skills/review/SKILL.md');
+
+    expect(review?.contributors.partials).toStrictEqual(['team:_data/shared.md']);
+    expect(plan.partials.map(({ id }) => id)).toContain('team:_data/shared.md');
+    expect(() => assertPlanIsConsistent(plan)).not.toThrow();
   });
 });
 

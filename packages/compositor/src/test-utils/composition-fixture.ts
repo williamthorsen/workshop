@@ -22,6 +22,29 @@ export function buildClaudeTarget(targetRoot: string): RenderTarget {
   };
 }
 
+/**
+ * Builds the target the inlay tests deploy into, which is the flow target with an inlay stage over it.
+ *
+ * The inlay's contribution markers differ from the region's, so a filled inlay inside a routed contribution stays
+ * distinguishable from the contribution it sits in.
+ */
+export function buildInlayingTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return {
+    ...claude,
+    stages: [
+      ...claude.stages,
+      {
+        kind: 'inlay',
+        syntax: { open: '<!--', close: '-->' },
+        markers: INLAY_MARKERS,
+        contributionMarkers: FILL_MARKERS,
+      },
+    ],
+  };
+}
+
 /** Builds the source tree the flow tests compose over, fresh so that a test may add to it or take from it. */
 export function buildCompositionSourceFiles(): Record<string, string | Uint8Array> {
   return {
@@ -99,6 +122,18 @@ export const COMPOSITION_KINDS: ReadonlyArray<ResolveKind> = [
 export const CONTRIBUTION_MARKERS: MarkerPair = {
   open: '<!-- {artifactId} -->',
   close: '<!-- /{artifactId} -->',
+};
+
+/** The markers delimiting one filler's block within a filled inlay. */
+export const FILL_MARKERS: MarkerPair = {
+  open: '<!-- fill:{artifactId} -->',
+  close: '<!-- /fill:{artifactId} -->',
+};
+
+/** The markers fencing a whole filled inlay in the body that declared it. */
+export const INLAY_MARKERS: MarkerPair = {
+  open: '<!-- inlay:{inlayName}:start -->',
+  close: '<!-- inlay:{inlayName}:end -->',
 };
 
 /** A PNG signature, standing in for an asset a skill ships and no target transforms. */

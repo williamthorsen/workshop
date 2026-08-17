@@ -1,10 +1,12 @@
 import { resolveDeployedNames } from '../../deployment/resolveDeployedNames.ts';
+import { fillInlays } from '../../inlays/fillInlays.ts';
 import { appendTo } from '../../portable/appendTo.ts';
 import { compareStrings } from '../../portable/compareStrings.ts';
 import type { BlobStore } from '../../portable/createBlobStore.ts';
 import type { ClosureArtifact } from '../../schemas/closure-schemas.ts';
 import type { ArtifactContribution, FileContributors, FileEntry } from '../../schemas/file-schemas.ts';
 import type { ArtifactId, KindId, PartialId } from '../../schemas/scalar-schemas.ts';
+import type { InlayBinding } from '../../selection/selectArtifacts.ts';
 import type { ClaimedArtifact, TargetState } from '../../snapshot/readTargetState.ts';
 import type { PlannableSnapshot } from './assertSnapshotFits.ts';
 import { blockAtCurrent, describeAmbiguousClaim } from './file-entries.ts';
@@ -18,6 +20,8 @@ export interface AssembleFilesInput {
   /** The artifacts the closure reached, in id order. */
   readonly artifacts: ReadonlyArray<ClosureArtifact>;
   readonly blobs: BlobStore;
+  /** What each inlay is filled with, in the order a fill splices them. */
+  readonly bindings: ReadonlyArray<InlayBinding>;
 }
 
 /** What assembling one composition's files produced. */
@@ -39,6 +43,10 @@ export interface FileAssembly {
  *
  * Two deployments landing on one path are collapsed into a single blocked entry. This is the first place a collision is
  * visible at all, and leaving both would repeat a destination the payload keys by `(targetId, path)`.
+ *
+ * Each target's inlays are filled once, above its deployments, so both planners read filled bodies. What the fill got
+ * wrong is dropped here rather than carried: a plan reports a fault as a blocked destination, which the fill already
+ * produces for every fault that leaves a body unwritable, and the rest are the validation report's to list.
  */
 export function assembleFiles(input: AssembleFilesInput): FileAssembly {
   const { artifacts, blobs, snapshot } = input;
@@ -63,11 +71,17 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
       continue;
     }
 
+    const fill = fillInlays({
+      target,
+      renders: snapshot.renders.get(target.id) ?? new Map(),
+      bindings: input.bindings,
+    });
+
     const context: TargetPlanContext = {
       targetId: target.id,
       blobs,
       artifactsByKind,
-      renders: snapshot.renders.get(target.id) ?? new Map(),
+      renders: fill.renders,
       assets: snapshot.assets,
       claimed: new Map(state.claimed.map((claimed) => [claimed.path, claimed])),
       hosts: new Map(state.hosts.map((host) => [host.kindId, host])),

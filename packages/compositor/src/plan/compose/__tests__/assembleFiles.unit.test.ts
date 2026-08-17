@@ -12,6 +12,7 @@ import { captureComposition } from '../../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
   buildCompositionSourceFiles,
+  buildInlayingTarget,
   buildOverlappingTargets,
   COMPOSITION_KINDS,
   HOST_PATH,
@@ -261,6 +262,100 @@ describe(assembleFiles, () => {
     expect(blobs.toTable()).toStrictEqual({});
   });
 
+  it('splices a bound artifact into the inlay a tree-deployed body declared', async () => {
+    const { assembly, blobs } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/review/SKILL.md': '# Review\n\n<!-- inlay: preferences -->\n',
+      },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(bodyOf(blobs, assembly, 'skills/review/SKILL.md').data).toBe(
+      [
+        '# Review',
+        '',
+        '<!-- inlay:preferences:start -->',
+        '<!-- fill:rulebook:naming -->',
+        'Name things well.',
+        '<!-- /fill:rulebook:naming -->',
+        '<!-- inlay:preferences:end -->',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('names a bound artifact among the contributors of the file it filled', async () => {
+    const { assembly } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n',
+        'skills/review/SKILL.md': '# Review\n<!-- inlay: preferences -->\n',
+      },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(fileAt(assembly, 'skills/review/SKILL.md').contributors.artifacts).toStrictEqual([
+      { artifactId: 'skill:review' },
+      {
+        artifactId: 'rulebook:naming',
+        marker: { open: '<!-- fill:rulebook:naming -->', close: '<!-- /fill:rulebook:naming -->' },
+      },
+    ]);
+  });
+
+  it('splices a bound artifact inside the block a routed contributor occupies in its host', async () => {
+    const { assembly, blobs } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n<!-- inlay: extras -->\n',
+        'skills/lint/SKILL.md': '# Lint\n',
+      },
+      inlays: { extras: { skill: { use: ['lint'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    const host = bodyOf(blobs, assembly, HOST_PATH);
+
+    expect(host.data).toBe(
+      [
+        REGION_MARKERS.open,
+        '<!-- rulebook:naming -->',
+        'Name things well.',
+        '<!-- inlay:extras:start -->',
+        '<!-- fill:skill:lint -->',
+        '# Lint',
+        '<!-- /fill:skill:lint -->',
+        '<!-- inlay:extras:end -->',
+        '<!-- /rulebook:naming -->',
+        REGION_MARKERS.close,
+        '',
+      ].join('\n'),
+    );
+    expect(fileAt(assembly, HOST_PATH).contributors.artifacts.map(({ artifactId }) => artifactId)).toStrictEqual([
+      'rulebook:naming',
+      'skill:lint',
+    ]);
+  });
+
+  it('blocks the file whose inlay a nesting filler could not fill, at the content it holds, and nothing besides', async () => {
+    const { assembly } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Naming.\n<!-- inlay: deeper -->\n',
+        'skills/lint/SKILL.md': '# Lint\n',
+        'skills/review/SKILL.md': '# Review\n<!-- inlay: preferences -->\n',
+      },
+      targetFiles: { 'skills/review/SKILL.md': '# Old review\n' },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(fileAt(assembly, 'skills/review/SKILL.md').blocked?.reason).toContain(
+      '"rulebook:naming" declares an inlay of its own',
+    );
+    expect(fileAt(assembly, 'skills/lint/SKILL.md')).toHaveProperty('status', 'added');
+  });
+
   it('gives an artifact deploying nowhere no verdict, nothing recording where it previously stood', async () => {
     const { assembly } = await assemble();
 
@@ -283,7 +378,9 @@ async function assemble(options?: CaptureCompositionOptions): Promise<{ assembly
   });
   const blobs = createBlobStore();
 
-  return { assembly: assembleFiles({ snapshot, artifacts: closure.artifacts, blobs }), blobs };
+  const assembly = assembleFiles({ snapshot, artifacts: closure.artifacts, blobs, bindings: selection.bindings });
+
+  return { assembly, blobs };
 }
 
 /** Reads the body planned for one destination out of the store. */
