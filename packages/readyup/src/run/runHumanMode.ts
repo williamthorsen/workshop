@@ -16,8 +16,10 @@ import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
+import { warnOnMaskedSkips } from './skip-diagnosis.ts';
 
 interface HumanRunSettings {
+  diagnose: boolean;
   failOn: Severity | undefined;
   quiet: boolean;
   reportOn: Severity | undefined;
@@ -60,6 +62,7 @@ export async function runHumanMode(
 
       const kitResult = await runKit(kit, entry.checklists, settings, {
         isMultiKit,
+        kitName: entry.name,
         kitSegments,
         writeBlock,
       });
@@ -149,9 +152,10 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
 
-/** What a kit's checklists need in order to take their place in the run's sequence of blocks. */
+/** What a kit's checklists need from the run they belong to. */
 interface KitBlockContext {
   isMultiKit: boolean;
+  kitName: string;
   kitSegments: BreadcrumbSegment[];
   writeBlock: BlockWriter;
 }
@@ -168,7 +172,7 @@ async function runKit(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  { isMultiKit, kitSegments, writeBlock }: KitBlockContext,
+  { isMultiKit, kitName, kitSegments, writeBlock }: KitBlockContext,
 ): Promise<KitRunResult> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
@@ -183,6 +187,7 @@ async function runKit(
   for (const checklist of checklists) {
     const report = await runRdy(checklist, {
       defaultSeverity: thresholds.defaultSeverity,
+      diagnose: settings.diagnose,
       failOn: thresholds.failOn,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
@@ -202,6 +207,9 @@ async function runKit(
     } else {
       hasDroppedBlock = true;
     }
+
+    // Written after the block, so the reader has just seen the skipped line the warning is about.
+    warnOnMaskedSkips(kitName, checklist.name, report.diagnoses);
 
     if (!report.passed) {
       allPassed = false;

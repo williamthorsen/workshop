@@ -462,6 +462,7 @@ rdy run -- "--odd-kit-name"
 | `--checklists, -c <name,...>` | Filter checklists within the selected kit                             |
 | `--json`                      | Output results as JSON                                                |
 | `--detail <summary\|full>`    | How much of the JSON report to emit (default: `full`)                 |
+| `--diagnose`                  | Report skipped checks whose `check` would have passed                 |
 | `--fail-on <severity>`        | Fail on this severity or above                                        |
 | `--report-on <severity>`      | Show this severity or above                                           |
 | `--quiet`                     | Hide passed checks; incompatible with `--json`                        |
@@ -469,6 +470,8 @@ rdy run -- "--odd-kit-name"
 `--quiet` filters by status where `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
 
 A checklist either filter empties renders no block at all: its summary-table row states the same counts in a column the reader can compare across the run. A block is withheld only where a table will carry its row, so a run of one checklist reports its block however little it has to say, and a run that withholds one always ends with the table.
+
+`--diagnose` runs the `check` of every check its own `skip` turned off, and reports the ones that would have passed: a `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. It is opt-in because it executes exactly the work a skip was written to avoid, which may reach a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
 
 A check's own [`quiet`](#checks) is this flag narrowed to that one check, and a kit whose every check declares it renders what `--quiet` renders. It is not `skip`, which reports that the check did not run and why: a quiet check runs, and its pass reaches the count line and the exit code like any other -- only the line is withheld. `--json` is unaffected, so `rdy run --json --detail full` shows a quiet check that passed.
 
@@ -585,7 +588,9 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 
 ### Advisory warnings
 
-`rdy run` compares the kits it is about to run against `.readyup/manifest.json` and says so when they disagree. Warnings go to stderr in both modes and appear under `warnings` in JSON; none affects the exit code.
+`rdy run` raises advisories about the run it is performing. Warnings go to stderr in both modes and appear under `warnings` in JSON; none affects the exit code.
+
+Three compare the kits it is about to run against `.readyup/manifest.json` and say so when they disagree.
 
 | Code           | Raised when                                                              |
 | -------------- | ------------------------------------------------------------------------ |
@@ -595,11 +600,20 @@ Once a style is named explicitly, output is byte-identical to a terminal or a pi
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
+Two more come from [`--diagnose`](#run-options), and are raised only where that flag asked for them.
+
+| Code                     | Raised when                                                        |
+| ------------------------ | ------------------------------------------------------------------ |
+| `diagnosis-inconclusive` | A diagnosed check threw, or returned a value expressing no verdict |
+| `skip-masks-pass`        | A check its own `skip` turned off would have passed had it run     |
+
+These read the checks rather than the manifest, so none of the silencing conditions above reaches them: they apply wherever the kit came from, `--url`, `--from`, `--packages`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
+
 ### Kit import compatibility
 
 A compiled kit leaves its `readyup` imports unbundled, so it binds whichever readyup runs it rather than the one that built it. Before running a bundle, `rdy run` reads the `readyup` symbols it imports and compares them against what the running readyup exports.
 
-A kit importing a symbol, or a `readyup` subpath, the runner does not export does not run: the failure is a `kit-load` error naming every missing symbol, the kit, and the publishing package where the kit has one, and it exits `2`. Unlike the advisory warnings above, this check is not manifest-derived and applies wherever the kit came from, `--url`, `--from`, and `--packages` included. `--jit` runs load TypeScript source rather than a bundle, and are unaffected.
+A kit importing a symbol, or a `readyup` subpath, the runner does not export does not run: the failure is a `kit-load` error naming every missing symbol, the kit, and the publishing package where the kit has one, and it exits `2`. Unlike the staleness advisories above, this check is not manifest-derived and applies wherever the kit came from, `--url`, `--from`, and `--packages` included. `--jit` runs load TypeScript source rather than a bundle, and are unaffected.
 
 The remedy follows where the kit is maintained:
 

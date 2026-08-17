@@ -305,6 +305,34 @@ describe(parseRunArgs, () => {
     expect(parseRunArgs(['--json'])).not.toHaveProperty('detail');
   });
 
+  describe('--diagnose', () => {
+    it('parses as a boolean', () => {
+      expect(parseRunArgs(['--diagnose']).diagnose).toBe(true);
+    });
+
+    it('defaults to false', () => {
+      expect(parseRunArgs([]).diagnose).toBe(false);
+    });
+
+    it.each([
+      ['--json', ['--diagnose', '--json']],
+      ['--jit', ['--diagnose', '--jit']],
+      ['--packages', ['--diagnose', '--packages']],
+      ['--from', ['--diagnose', '--from', 'global']],
+      ['--file', ['--diagnose', '--file', 'kit.js']],
+      ['--url', ['--diagnose', '--url', 'https://example.com/kit.js']],
+    ])('composes with %s, which it constrains in no way', (_label, flags) => {
+      expect(parseRunArgs(flags).diagnose).toBe(true);
+    });
+
+    it('composes with a kit selection', () => {
+      const parsed = parseRunArgs(['--diagnose', 'deploy']);
+
+      expect(parsed.diagnose).toBe(true);
+      expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
+    });
+  });
+
   describe('--quiet', () => {
     it('parses as a boolean', () => {
       expect(parseRunArgs(['--quiet']).quiet).toBe(true);

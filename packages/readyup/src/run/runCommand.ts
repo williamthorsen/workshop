@@ -8,6 +8,7 @@ interface RunCommandOptions {
   kitEntries: ResolvedKitEntry[];
   json: boolean;
   detail?: JsonDetail;
+  diagnose?: boolean;
   failOn?: Severity;
   quiet?: boolean;
   reportOn?: Severity;
@@ -15,11 +16,11 @@ interface RunCommandOptions {
 
 /** Runs rdy checklists across one or more kits. Returns a numeric exit code. */
 export async function runCommand(
-  { kitEntries, json, detail, failOn, quiet, reportOn }: RunCommandOptions,
+  { kitEntries, json, detail, diagnose, failOn, quiet, reportOn }: RunCommandOptions,
   isJit = false,
 ): Promise<number> {
   if (json) {
-    return runJsonMode(kitEntries, { detail: detail ?? 'full', failOn, reportOn }, isJit);
+    return runJsonMode(kitEntries, { detail: detail ?? 'full', diagnose: diagnose === true, failOn, reportOn }, isJit);
   }
-  return runHumanMode(kitEntries, { failOn, quiet: quiet === true, reportOn }, isJit);
+  return runHumanMode(kitEntries, { diagnose: diagnose === true, failOn, quiet: quiet === true, reportOn }, isJit);
 }

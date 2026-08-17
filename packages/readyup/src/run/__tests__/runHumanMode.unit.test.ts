@@ -118,6 +118,32 @@ describe(runHumanMode, () => {
     expect(exitCode).toBe(0);
   });
 
+  it('writes a diagnosed masked pass to stderr', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({
+      results: [],
+      passed: true,
+      durationMs: 0,
+      diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
+    });
+
+    const { exitCode, stderr } = await runHuman(singleKitEntry(['deploy']), { diagnose: true });
+
+    expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
+    expect(exitCode).toBe(0);
+  });
+
+  it('asks the runner to diagnose only where --diagnose was passed', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runHuman(singleKitEntry(['deploy']));
+    expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
+
+    await runHuman(singleKitEntry(['deploy']), { diagnose: true });
+    expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
+  });
+
   it('reports an unknown checklist name against its kit and exits 2', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -590,6 +616,7 @@ function makePassedResult(name: string, severity: Severity): PassedResult {
 
 /** The settings a test names, over the defaults the dispatch would have resolved. */
 interface HumanRunOptions {
+  diagnose?: boolean;
   failOn?: Severity;
   isJit?: boolean;
   quiet?: boolean;
@@ -602,11 +629,11 @@ interface HumanRunOptions {
  */
 async function runHuman(
   kitEntries: ResolvedKitEntry[],
-  { failOn, isJit = false, quiet = false, reportOn }: HumanRunOptions = {},
+  { diagnose = false, failOn, isJit = false, quiet = false, reportOn }: HumanRunOptions = {},
 ) {
   using io = captureStdio();
 
-  const exitCode = await runHumanMode(kitEntries, { failOn, quiet, reportOn }, isJit);
+  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, reportOn }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
