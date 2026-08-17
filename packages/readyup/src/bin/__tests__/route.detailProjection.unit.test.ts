@@ -1,7 +1,8 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { routeCommand } from '../route.ts';
 
 /** A kit with one passing check and one failing check that carries a fix. */
@@ -11,11 +12,16 @@ const MIXED_KIT =
   `  { name: 'nope', check: () => false, fix: 'do the thing' },\n` +
   `] }] };\n`;
 
-const temp = useTempDir({
-  prefix: 'readyup-detail-',
-  cwd: 'chdir',
-  scope: 'file',
-  setup: () => temp.write('.readyup/kits/default.js', MIXED_KIT),
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() => createTempTree({ '.readyup/kits/default.js': MIXED_KIT }, { prefix: 'readyup-detail-' })),
+);
+
+it.aroundAll(async (runSuite, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runSuite();
 });
 
 describe('--detail projection', () => {
