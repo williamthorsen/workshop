@@ -1111,6 +1111,28 @@ describe(runRdy, () => {
       expect(childCalled).toBe(false);
     });
 
+    it("orders findings by the report's order, not by the order the skips resolved", async () => {
+      const checklist: RdyChecklist = {
+        name: 'async-skips',
+        checks: [
+          {
+            name: 'slow-skip',
+            check: () => true,
+            skip: async () => {
+              await new Promise((resolve) => setTimeout(resolve, 20));
+              return 'not applicable';
+            },
+          },
+          { name: 'fast-skip', check: () => true, skip: () => 'not applicable' },
+        ],
+      };
+
+      const report = await runRdy(checklist, { diagnose: true });
+
+      expect(report.results.map((r) => r.name)).toStrictEqual(['slow-skip', 'fast-skip']);
+      expect(report.diagnoses?.map((d) => d.name)).toStrictEqual(['slow-skip', 'fast-skip']);
+    });
+
     it('leaves statuses, per-check durations, and the verdict identical to an undiagnosed run', async () => {
       const buildChecklist = (): RdyChecklist => ({
         name: 'mixed',

@@ -1,8 +1,10 @@
 import process from 'node:process';
 
+import { describeKitOwner } from '../kits/describeKitOwner.ts';
 import type { RdyCheck, SkipDiagnosis } from '../kits/types.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { describeUninterpretableReturn, isCheckOutcome } from './check-return.ts';
+import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 
 /**
  * Reports what the `check` of each skipped check would have concluded.
@@ -29,13 +31,13 @@ export async function diagnoseSkips(checks: RdyCheck[]): Promise<SkipDiagnosis[]
  * that family, these are check-derived rather than manifest-derived, so no kit source silences them.
  */
 export function warnOnMaskedSkips(
-  kitName: string,
+  entry: ResolvedKitEntry,
   checklistName: string,
   diagnoses: SkipDiagnosis[] | undefined,
 ): RaisedWarning[] {
   if (diagnoses === undefined) return [];
 
-  const warnings = diagnoses.map((diagnosis) => toWarning(kitName, checklistName, diagnosis));
+  const warnings = diagnoses.map((diagnosis) => toWarning(entry, checklistName, diagnosis));
   for (const warning of warnings) {
     process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
   }
@@ -43,6 +45,17 @@ export function warnOnMaskedSkips(
 }
 
 // region | Helpers
+
+/**
+ * Names the check a warning is about, down to the checklist that holds it.
+ *
+ * A masked pass is a property of one check where the staleness advisories are properties of a kit,
+ * and one run may carry many of both, so the check's name alone would not say which line to look at.
+ */
+function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: string): string {
+  const kit = `kit "${entry.name}"${describeKitOwner(entry.provenance)}`;
+  return `skipped check "${name}" in ${kit} / checklist "${checklistName}"`;
+}
 
 /**
  * Diagnoses one skipped check, answering with nothing where its `check` would have failed.
@@ -67,19 +80,9 @@ async function diagnoseSkip(check: RdyCheck): Promise<SkipDiagnosis | undefined>
   return { name: check.name, verdict: 'inconclusive', reason: describeUninterpretableReturn(raw) };
 }
 
-/**
- * Names the check a warning is about, down to the checklist that holds it.
- *
- * A masked pass is a property of one check where the staleness advisories are properties of a kit,
- * and one run may carry many of both, so the check's name alone would not say which line to look at.
- */
-function describeCheck(kitName: string, checklistName: string, name: string): string {
-  return `skipped check "${name}" in kit "${kitName}" / checklist "${checklistName}"`;
-}
-
 /** Composes the warning one diagnosis raises. */
-function toWarning(kitName: string, checklistName: string, diagnosis: SkipDiagnosis): RaisedWarning {
-  const subject = describeCheck(kitName, checklistName, diagnosis.name);
+function toWarning(entry: ResolvedKitEntry, checklistName: string, diagnosis: SkipDiagnosis): RaisedWarning {
+  const subject = describeCheck(entry, checklistName, diagnosis.name);
 
   if (diagnosis.verdict === 'masked-pass') {
     return {

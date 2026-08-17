@@ -20,6 +20,7 @@ export type {
   RemoteRefCompareResult,
   ResolvedRdyConfig,
   Severity,
+  SkipDiagnosis,
   SkippedResult,
   SkipResult,
   SummaryCounts,

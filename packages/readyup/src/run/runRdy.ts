@@ -28,17 +28,24 @@ export interface RunRdyOptions {
   diagnose?: boolean;
 }
 
+/** A check whose `skip` fired, paired with the result standing in for it. */
+interface PendingDiagnosis {
+  check: RdyCheck;
+  result: SkippedResult;
+}
+
 /** What every step of a checklist walk carries with it. */
 interface RunContext {
   defaultSeverity: Severity;
 
   /**
-   * The checks whose `skip` returned a reason, in the order the walk reached them.
+   * The checks whose `skip` returned a reason, in the order their skips resolved.
    *
    * Collected unconditionally, because recording a reference executes nothing; only the diagnosis
-   * that reads them is gated on the option.
+   * that reads them is gated on the option. Each carries its result, which is what lets the findings
+   * be read back in the report's own order rather than in the order the skips happened to settle.
    */
-  skippedChecks: RdyCheck[];
+  pendingDiagnoses: PendingDiagnosis[];
 }
 
 /**
@@ -164,9 +171,10 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
       // author wrote, whatever the declared type promised.
       const skipResult: unknown = await check.skip();
       if (typeof skipResult === 'string') {
-        run.skippedChecks.push(check);
+        const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
+        run.pendingDiagnoses.push({ check, result });
         // An `n/a` skip terminates its subtree: descendants produce no results at all.
-        return [buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult })];
+        return [result];
       }
       if (skipResult !== false) {
         const error = new Error(
@@ -338,6 +346,18 @@ async function runStagedChecks(
 }
 
 /**
+ * Orders the checks awaiting diagnosis by where their results sit in the report.
+ *
+ * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
+ * the order back off `results`, which is declaration-ordered by construction, is what keeps the
+ * advisories in the order the reader met the skipped lines, run after run.
+ */
+function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCheck[] {
+  const checkByResult = new Map<RdyResult, RdyCheck>(pending.map(({ check, result }) => [result, check]));
+  return results.map((result) => checkByResult.get(result)).filter((check) => check !== undefined);
+}
+
+/**
  * Run all checks in a checklist and produce a report.
  *
  * Preconditions run first. If any fails, all subsequent checks are skipped; a precondition
@@ -359,7 +379,7 @@ export async function runRdy(
   const start = performance.now();
   const results: RdyResult[] = [];
 
-  const run: RunContext = { defaultSeverity, skippedChecks: [] };
+  const run: RunContext = { defaultSeverity, pendingDiagnoses: [] };
 
   const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
 
@@ -373,7 +393,7 @@ export async function runRdy(
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   const diagnoses: SkipDiagnosis[] | undefined =
-    options.diagnose === true ? await diagnoseSkips(run.skippedChecks) : undefined;
+    options.diagnose === true ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses)) : undefined;
 
   return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }

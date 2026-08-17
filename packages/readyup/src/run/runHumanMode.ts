@@ -61,8 +61,8 @@ export async function runHumanMode(
       warnOnKitStaleness(entry.name, entry.source, tracking);
 
       const kitResult = await runKit(kit, entry.checklists, settings, {
+        entry,
         isMultiKit,
-        kitName: entry.name,
         kitSegments,
         writeBlock,
       });
@@ -154,8 +154,8 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
 
 /** What a kit's checklists need from the run they belong to. */
 interface KitBlockContext {
+  entry: ResolvedKitEntry;
   isMultiKit: boolean;
-  kitName: string;
   kitSegments: BreadcrumbSegment[];
   writeBlock: BlockWriter;
 }
@@ -172,7 +172,7 @@ async function runKit(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  { isMultiKit, kitName, kitSegments, writeBlock }: KitBlockContext,
+  { entry, isMultiKit, kitSegments, writeBlock }: KitBlockContext,
 ): Promise<KitRunResult> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
@@ -209,7 +209,7 @@ async function runKit(
     }
 
     // Written after the block, so the reader has just seen the skipped line the warning is about.
-    warnOnMaskedSkips(kitName, checklist.name, report.diagnoses);
+    warnOnMaskedSkips(entry, checklist.name, report.diagnoses);
 
     if (!report.passed) {
       allPassed = false;

@@ -1,3 +1,4 @@
+import { describeKitOwner } from '../kits/describeKitOwner.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import { VERSION } from '../version.ts';
 import type { UnresolvableImports } from './UnresolvableKitImportsError.ts';
@@ -33,17 +34,12 @@ export function describeUnresolvableImports(
   ];
 
   return {
-    message: `kit "${context.kitName}"${describeOwner(context.provenance)} cannot run against readyup ${VERSION}: ${clauses.join('; ')}.`,
+    message: `kit "${context.kitName}"${describeKitOwner(context.provenance)} cannot run against readyup ${VERSION}: ${clauses.join('; ')}.`,
     hint: describeRemedy(context.provenance),
   };
 }
 
 // region | Helpers
-
-/** Names the package publishing a kit, for the provenance that has one. */
-function describeOwner(provenance: KitProvenance | undefined): string {
-  return provenance?.kind === 'package' ? ` from ${provenance.packageName}` : '';
-}
 
 /** Gives the one action that puts a kit back in reach of the running readyup. */
 function describeRemedy(provenance: KitProvenance | undefined): string {

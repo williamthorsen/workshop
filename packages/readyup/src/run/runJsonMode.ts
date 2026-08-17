@@ -60,7 +60,7 @@ export async function runJsonMode(
           failOn: thresholds.failOn,
         });
         entries.push({ name: checklist.name, report });
-        warnings.push(...warnOnMaskedSkips(entry.name, checklist.name, report.diagnoses));
+        warnings.push(...warnOnMaskedSkips(entry, checklist.name, report.diagnoses));
         if (!report.passed) allPassed = false;
       }
 
