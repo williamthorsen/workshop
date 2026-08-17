@@ -287,6 +287,38 @@ describe(runJsonMode, () => {
       expect(exitCode).toBe(0);
     });
 
+    it('carries a diagnosed masked pass into the report and onto stderr', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({
+        results: [],
+        passed: true,
+        durationMs: 0,
+        diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
+      });
+      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
+
+      const { stderr } = await runJson(singleKitEntry(['deploy']), { diagnose: true });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          warnings: [expect.objectContaining({ code: 'skip-masks-pass' })],
+        }),
+      );
+      expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
+    });
+
+    it('asks the runner to diagnose only where --diagnose was passed', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runJson(singleKitEntry(['deploy']));
+      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
+
+      await runJson(singleKitEntry(['deploy']), { diagnose: true });
+      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
+    });
+
     it('omits the warnings field entirely when the run raised none', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -325,6 +357,7 @@ describe(runJsonMode, () => {
 /** The settings a test names, over the defaults the dispatch would have resolved. */
 interface JsonRunOptions {
   detail?: JsonDetail;
+  diagnose?: boolean;
   failOn?: Severity;
   isJit?: boolean;
   reportOn?: Severity;
@@ -336,11 +369,11 @@ interface JsonRunOptions {
  */
 async function runJson(
   kitEntries: ResolvedKitEntry[],
-  { detail = 'full', failOn, isJit = false, reportOn }: JsonRunOptions = {},
+  { detail = 'full', diagnose = false, failOn, isJit = false, reportOn }: JsonRunOptions = {},
 ) {
   using io = captureStdio();
 
-  const exitCode = await runJsonMode(kitEntries, { detail, failOn, reportOn }, isJit);
+  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, reportOn }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

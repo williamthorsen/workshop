@@ -13,6 +13,7 @@ import { validateRunFlags } from './validateRunFlags.ts';
 export interface ParsedRunArgs {
   checklists: string[] | undefined;
   detail?: JsonDetail;
+  diagnose: boolean;
   failOn?: Severity;
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -40,6 +41,7 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 const runOptions = {
   checklists: { type: 'string', short: 'c' },
   detail: { type: 'string' },
+  diagnose: { type: 'boolean' },
   'fail-on': { type: 'string' },
   file: { type: 'string', short: 'f' },
   from: { type: 'string' },
@@ -83,6 +85,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const parsed = {
     checklists: values.checklists,
     detail: values.detail,
+    diagnose: values.diagnose === true,
     file: values.file,
     from: values.from,
     internal: values.internal === true,
@@ -120,6 +123,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 
   const parsedArgs: ParsedRunArgs = {
     checklists,
+    diagnose: parsed.diagnose,
     filePath: parsed.file,
     fromValue: parsed.from,
     internal: parsed.internal,

@@ -70,6 +70,7 @@ Run options:
   --checklists, -c <name,...>        Filter checklists within the selected kit
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
+  --diagnose                         Report skipped checks whose check would have passed
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --quiet                            Hide passed checks from the report; incompatible with --json
   --report-on <severity>             Show this severity or above (error, warn, recommend)
@@ -118,6 +119,7 @@ Options:
                                      single kit and no ":" filter on it
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
+  --diagnose                         Report skipped checks whose check would have passed
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
   --quiet                            Hide passed checks from the report; incompatible with --json
   --report-on <severity>             Show this severity or above (error, warn, recommend)
@@ -138,6 +140,7 @@ Examples:
   rdy run --from global deploy           Run the deploy kit from the global directory
   rdy run --fail-on warn                 Fail the run on warnings as well as errors
   rdy run --quiet                        Report only what is not passing
+  rdy run --diagnose                     Report skips whose check would have passed
   rdy run --json --detail summary        Emit a JSON report carrying only failed checks
 
 ${DOCS_POINTER}
@@ -367,6 +370,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     {
       kitEntries,
       json: parsed.json,
+      diagnose: parsed.diagnose,
       quiet: parsed.quiet,
       ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),

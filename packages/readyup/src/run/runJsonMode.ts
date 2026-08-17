@@ -13,9 +13,11 @@ import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
+import { warnOnMaskedSkips } from './skip-diagnosis.ts';
 
 interface JsonRunSettings {
   detail: JsonDetail;
+  diagnose: boolean;
   failOn: Severity | undefined;
   reportOn: Severity | undefined;
 }
@@ -33,7 +35,7 @@ export async function runJsonMode(
   settings: JsonRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const { detail, failOn, reportOn } = settings;
+  const { detail, diagnose, failOn, reportOn } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const tracking = readManifestTracking(isJit);
@@ -54,9 +56,11 @@ export async function runJsonMode(
       for (const checklist of checklists) {
         const report = await runRdy(checklist, {
           defaultSeverity: thresholds.defaultSeverity,
+          diagnose,
           failOn: thresholds.failOn,
         });
         entries.push({ name: checklist.name, report });
+        warnings.push(...warnOnMaskedSkips(entry, checklist.name, report.diagnoses));
         if (!report.passed) allPassed = false;
       }
 

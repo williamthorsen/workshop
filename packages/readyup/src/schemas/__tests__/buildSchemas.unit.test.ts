@@ -65,7 +65,10 @@ describe('generated JSON Schemas', () => {
 
     it('publishes the warning vocabulary as an open set that still names its known codes', () => {
       expect(valueAt(report, '$defs', 'WarningCode', 'anyOf')).toStrictEqual([
-        { type: 'string', enum: ['input-stale', 'source-stale', 'target-drift'] },
+        {
+          type: 'string',
+          enum: ['diagnosis-inconclusive', 'input-stale', 'skip-masks-pass', 'source-stale', 'target-drift'],
+        },
         { type: 'string' },
       ]);
     });

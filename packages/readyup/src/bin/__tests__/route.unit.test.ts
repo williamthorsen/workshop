@@ -181,6 +181,15 @@ describe(routeCommand, () => {
     expect(stdout).toContain('Examples:');
   });
 
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
+  ])('lists --diagnose in $label help', async ({ args }) => {
+    const { stdout } = await route(args);
+
+    expect(stdout).toContain('--diagnose');
+  });
+
   it('explains how to escape a positional starting with a dash in run help', async () => {
     const { stdout } = await route(['run', '--help']);
 
@@ -273,6 +282,26 @@ describe(routeCommand, () => {
       }),
       false,
     );
+    expect(exitCode).toBe(0);
+  });
+
+  it('passes --diagnose through to runCommand', async () => {
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: false,
+      internal: false,
+      json: false,
+      diagnose: true,
+    });
+    mockRunCommand.mockResolvedValue(0);
+
+    const { exitCode } = await route(['run', '--diagnose']);
+
+    expect(mockRunCommand).toHaveBeenCalledWith(expect.objectContaining({ diagnose: true }), false);
     expect(exitCode).toBe(0);
   });
 

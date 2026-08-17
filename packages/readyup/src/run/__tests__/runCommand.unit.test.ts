@@ -64,6 +64,28 @@ describe(runCommand, () => {
     );
   });
 
+  it('resolves an unrequested diagnose to an undiagnosed run', async () => {
+    await runCommand({ kitEntries: singleKitEntry(), json: false });
+
+    expect(mockRunHumanMode).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ diagnose: false }),
+      false,
+    );
+  });
+
+  it('passes the diagnose the invocation requested through to either mode', async () => {
+    await runCommand({ kitEntries: singleKitEntry(), json: false, diagnose: true });
+    await runCommand({ kitEntries: singleKitEntry(), json: true, diagnose: true });
+
+    expect(mockRunHumanMode).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ diagnose: true }),
+      false,
+    );
+    expect(mockRunJsonMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }), false);
+  });
+
   it('resolves an unrequested quiet to a loud run', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: false });
 

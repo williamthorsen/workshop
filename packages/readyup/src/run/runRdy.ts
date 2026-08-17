@@ -1,7 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
 import type {
-  CheckOutcome,
   FailedResult,
   PassedResult,
   Progress,
@@ -11,17 +10,42 @@ import type {
   RdyResult,
   RdyStagedChecklist,
   Severity,
+  SkipDiagnosis,
   SkippedResult,
 } from '../kits/types.ts';
 import { isFlatChecklist } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
-import { isRecord } from '../portable/isRecord.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
+import { describeUninterpretableReturn, isCheckOutcome } from './check-return.ts';
+import { diagnoseSkips } from './skip-diagnosis.ts';
 
 /** Options controlling failure and severity defaults for a run. */
 export interface RunRdyOptions {
   defaultSeverity?: Severity;
   failOn?: Severity;
+
+  /** Whether to ask each skipped check what its `check` would have concluded. */
+  diagnose?: boolean;
+}
+
+/** A check whose `skip` fired, paired with the result standing in for it. */
+interface PendingDiagnosis {
+  check: RdyCheck;
+  result: SkippedResult;
+}
+
+/** What every step of a checklist walk carries with it. */
+interface RunContext {
+  defaultSeverity: Severity;
+
+  /**
+   * The checks whose `skip` returned a reason, in the order their skips resolved.
+   *
+   * Collected unconditionally, because recording a reference executes nothing; only the diagnosis
+   * that reads them is gated on the option. Each carries its result, which is what lets the findings
+   * be read back in the report's own order rather than in the order the skips happened to settle.
+   */
+  pendingDiagnoses: PendingDiagnosis[];
 }
 
 /**
@@ -135,8 +159,8 @@ function buildAuthoringErrorResult(
  *
  * Returns the check's own result followed by all descendant results in depth-first order.
  */
-async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 0): Promise<RdyResult[]> {
-  const context = buildCheckContext(check, defaultSeverity, depth);
+async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promise<RdyResult[]> {
+  const context = buildCheckContext(check, run.defaultSeverity, depth);
   const children = check.checks ?? [];
 
   // Evaluate skip condition before running the check.
@@ -147,21 +171,23 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
       // author wrote, whatever the declared type promised.
       const skipResult: unknown = await check.skip();
       if (typeof skipResult === 'string') {
+        const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
+        run.pendingDiagnoses.push({ check, result });
         // An `n/a` skip terminates its subtree: descendants produce no results at all.
-        return [buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult })];
+        return [result];
       }
       if (skipResult !== false) {
         const error = new Error(
           `skip() returned ${describeValue(skipResult)}; expected false to run the check, or a reason string to skip it.`,
         );
         const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
-        const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
+        const childResults = skipAllDescendants(children, run, depth + 1);
         return [result, ...childResults];
       }
     } catch (error_: unknown) {
       const error = error_ instanceof Error ? error_ : new Error(String(error_));
       const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
-      const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
+      const childResults = skipAllDescendants(children, run, depth + 1);
       return [result, ...childResults];
     }
   }
@@ -184,18 +210,16 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
     } else {
       // Reported as a defect rather than as an ordinary failure: the check never expressed a
       // verdict, so the severity it declared for its subject says nothing about this outcome.
-      const error = new Error(
-        `check() returned ${describeValue(raw)}; expected a boolean or an object with a boolean "ok" property.`,
-      );
+      const error = new Error(describeUninterpretableReturn(raw));
       result = buildAuthoringErrorResult(check, context, durationMs, error);
     }
 
-    const childResults = await collectChildResults(result, children, defaultSeverity, depth + 1);
+    const childResults = await collectChildResults(result, children, run, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
     const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
-    const childResults = skipAllDescendants(children, defaultSeverity, depth + 1);
+    const childResults = skipAllDescendants(children, run, depth + 1);
     return [result, ...childResults];
   }
 }
@@ -209,16 +233,16 @@ async function executeCheck(check: RdyCheck, defaultSeverity: Severity, depth = 
 async function collectChildResults(
   parentResult: PassedResult | FailedResult,
   children: RdyCheck[],
-  defaultSeverity: Severity,
+  run: RunContext,
   childDepth: number,
 ): Promise<RdyResult[]> {
   if (children.length === 0) return [];
 
   if (parentResult.status === 'failed') {
-    return skipAllDescendants(children, defaultSeverity, childDepth);
+    return skipAllDescendants(children, run, childDepth);
   }
 
-  return runSiblingChecks(children, defaultSeverity, childDepth);
+  return runSiblingChecks(children, run, childDepth);
 }
 
 /**
@@ -228,8 +252,8 @@ async function collectChildResults(
  * preserves declaration order: each sibling's own result is followed by its
  * subtree before the next sibling appears.
  */
-async function runSiblingChecks(checks: RdyCheck[], defaultSeverity: Severity, depth: number): Promise<RdyResult[]> {
-  const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, defaultSeverity, depth)));
+async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
+  const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, run, depth)));
   return siblingTrees.flat();
 }
 
@@ -239,32 +263,28 @@ async function runSiblingChecks(checks: RdyCheck[], defaultSeverity: Severity, d
  * Every skip produced here is a `precondition` skip: an `n/a` skip terminates its own
  * subtree in `executeCheck` and so never reaches this function.
  */
-function skipAllDescendants(checks: RdyCheck[], defaultSeverity: Severity, depth: number): RdyResult[] {
+function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
   for (const check of checks) {
-    results.push(skipCheck(check, defaultSeverity, depth));
+    results.push(skipCheck(check, run, depth));
     if (check.checks !== undefined && check.checks.length > 0) {
-      results.push(...skipAllDescendants(check.checks, defaultSeverity, depth + 1));
+      results.push(...skipAllDescendants(check.checks, run, depth + 1));
     }
   }
   return results;
 }
 
 /** Mark a check as skipped because a precondition or ancestor check failed. */
-function skipCheck(check: RdyCheck, defaultSeverity: Severity, depth: number): RdyResult {
-  const context = buildCheckContext(check, defaultSeverity, depth);
+function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
+  const context = buildCheckContext(check, run.defaultSeverity, depth);
   return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
 }
 
 /** Run preconditions concurrently. Return true if all passed. */
-async function runPreconditions(
-  preconditions: RdyCheck[],
-  results: RdyResult[],
-  defaultSeverity: Severity,
-): Promise<boolean> {
+async function runPreconditions(preconditions: RdyCheck[], results: RdyResult[], run: RunContext): Promise<boolean> {
   if (preconditions.length === 0) return true;
 
-  const trees = await Promise.all(preconditions.map((c) => executeCheck(c, defaultSeverity)));
+  const trees = await Promise.all(preconditions.map((c) => executeCheck(c, run)));
   const flat = trees.flat();
   results.push(...flat);
 
@@ -278,14 +298,14 @@ async function runFlatChecks(
   checklist: RdyChecklist,
   results: RdyResult[],
   preconditionsPassed: boolean,
-  defaultSeverity: Severity,
+  run: RunContext,
 ): Promise<void> {
   if (!preconditionsPassed) {
-    results.push(...skipAllDescendants(checklist.checks, defaultSeverity, 0));
+    results.push(...skipAllDescendants(checklist.checks, run, 0));
     return;
   }
 
-  const checkResults = await runSiblingChecks(checklist.checks, defaultSeverity, 0);
+  const checkResults = await runSiblingChecks(checklist.checks, run, 0);
   results.push(...checkResults);
 }
 
@@ -294,12 +314,12 @@ async function runStagedChecks(
   checklist: RdyStagedChecklist,
   results: RdyResult[],
   preconditionsPassed: boolean,
-  defaultSeverity: Severity,
+  run: RunContext,
   failOn: Severity,
 ): Promise<void> {
   if (!preconditionsPassed) {
     for (const group of checklist.groups) {
-      results.push(...skipAllDescendants(group, defaultSeverity, 0));
+      results.push(...skipAllDescendants(group, run, 0));
     }
     return;
   }
@@ -307,11 +327,11 @@ async function runStagedChecks(
   let shouldSkipRemaining = false;
   for (const group of checklist.groups) {
     if (shouldSkipRemaining) {
-      results.push(...skipAllDescendants(group, defaultSeverity, 0));
+      results.push(...skipAllDescendants(group, run, 0));
       continue;
     }
 
-    const groupResults = await runSiblingChecks(group, defaultSeverity, 0);
+    const groupResults = await runSiblingChecks(group, run, 0);
     results.push(...groupResults);
 
     // Only top-level group results (depth 0) determine whether to halt subsequent groups,
@@ -326,6 +346,18 @@ async function runStagedChecks(
 }
 
 /**
+ * Orders the checks awaiting diagnosis by where their results sit in the report.
+ *
+ * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
+ * the order back off `results`, which is declaration-ordered by construction, is what keeps the
+ * advisories in the order the reader met the skipped lines, run after run.
+ */
+function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCheck[] {
+  const checkByResult = new Map<RdyResult, RdyCheck>(pending.map(({ check, result }) => [result, check]));
+  return results.map((result) => checkByResult.get(result)).filter((check) => check !== undefined);
+}
+
+/**
  * Run all checks in a checklist and produce a report.
  *
  * Preconditions run first. If any fails, all subsequent checks are skipped; a precondition
@@ -333,6 +365,10 @@ async function runStagedChecks(
  * Flat checklists run all checks concurrently. Staged checklists run groups
  * sequentially, bailing on later groups when an earlier group has a failure
  * at or above the failure threshold.
+ *
+ * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
+ * cannot then alter it: no diagnostic check can reach a conclusion that already exists, and none
+ * enters the wall clock the report carries.
  */
 export async function runRdy(
   checklist: RdyChecklist | RdyStagedChecklist,
@@ -343,26 +379,21 @@ export async function runRdy(
   const start = performance.now();
   const results: RdyResult[] = [];
 
-  const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, defaultSeverity);
+  const run: RunContext = { defaultSeverity, pendingDiagnoses: [] };
+
+  const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
 
   await (isFlatChecklist(checklist)
-    ? runFlatChecks(checklist, results, preconditionsPassed, defaultSeverity)
-    : runStagedChecks(checklist, results, preconditionsPassed, defaultSeverity, failOn));
+    ? runFlatChecks(checklist, results, preconditionsPassed, run)
+    : runStagedChecks(checklist, results, preconditionsPassed, run, failOn));
 
   const durationMs = performance.now() - start;
 
   // The run passes when no failed result has severity at or above the failure threshold.
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
-  return { results, passed, durationMs };
-}
+  const diagnoses: SkipDiagnosis[] | undefined =
+    options.diagnose === true ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses)) : undefined;
 
-/**
- * Return true if a check's return value is a structured outcome.
- *
- * `ok` must be a boolean: a truthy value of any other type is an authoring mistake, not a pass, and
- * treating it as one is how a broken check reports success.
- */
-function isCheckOutcome(raw: unknown): raw is CheckOutcome {
-  return isRecord(raw) && typeof raw['ok'] === 'boolean';
+  return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }

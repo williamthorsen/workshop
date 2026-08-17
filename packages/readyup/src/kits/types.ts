@@ -235,10 +235,26 @@ export type RdyResult = PassedResult | FailedResult | SkippedResult;
 
 // -- Reports --
 
+/**
+ * What a skipped check's `check` would have concluded, produced only when diagnosis runs.
+ *
+ * A check that would have failed used its `skip` correctly and yields no entry, so every entry is a
+ * finding rather than a record of one diagnosis.
+ */
+export type SkipDiagnosis =
+  { name: string; verdict: 'masked-pass' } | { name: string; verdict: 'inconclusive'; reason: string };
+
 /** Aggregate report from running a single checklist. */
 export interface RdyReport {
   /** Individual check results. */
   results: RdyResult[];
+
+  /**
+   * Findings from diagnosing the checks that skipped `n/a`, absent when diagnosis did not run.
+   *
+   * Absent and empty say different things: nothing was asked, versus asked and nothing found.
+   */
+  diagnoses?: SkipDiagnosis[] | undefined;
 
   /**
    * True when no check at or above the failure threshold has `ok: false`.
