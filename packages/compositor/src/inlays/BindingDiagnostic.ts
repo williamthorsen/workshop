@@ -3,9 +3,11 @@ import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
 /**
  * Where a binding fault sits, which is as much of the inlay, the target, the host, and the filler as the fault knows.
  *
- * `inlayName` is the one field every code carries, a binding being addressed by the inlay it names. `targetId` is
- * absent where the fault is the config's alone rather than one target's, and the two artifact fields are absent where
- * the binding as a whole is at fault rather than one site or one filler.
+ * `inlayName` is the one field every code carries, a binding being addressed by the inlay it names. Each other field is
+ * present only where it is part of what went wrong: `targetId` where the fault is one target's rather than the config's
+ * alone, `artifactId` where one filler is at fault rather than the binding as a whole, and `hostArtifactId` where the
+ * fault belongs to one host. A fault decided by the filler and the target together carries no host, being answered once
+ * for every host that declares the inlay.
  */
 export interface BindingRef {
   readonly inlayName: string;
@@ -34,8 +36,9 @@ export interface BindingDiagnostic {
  *
  * `unmatched-inlay` is a binding naming an inlay no artifact declares, which is the config's alone and reported once.
  * The other three are one target's. `undeployed-kind` is a filler of a kind the target takes none of, which is the
- * standing rule that a kind a target declares no deployment for does not deploy there. `nested-inlay` is a filler
- * whose own body declares an inlay, which a fill one level deep can never reach. `unrenderable-binding` is a filler
- * whose own render ended, leaving no body to splice.
+ * standing rule that a kind a target declares no deployment for does not deploy there; it is decided by the filler and
+ * the target alone, so it is reported once however many hosts declare the inlay. `nested-inlay` is a filler whose own
+ * body declares an inlay, which a fill one level deep can never reach, and `unrenderable-binding` is a filler whose own
+ * render ended, leaving no body to splice; each of those blocks a host, so each is reported once per host.
  */
 export type BindingFailure = 'nested-inlay' | 'undeployed-kind' | 'unmatched-inlay' | 'unrenderable-binding';

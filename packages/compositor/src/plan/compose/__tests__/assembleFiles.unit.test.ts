@@ -338,6 +338,26 @@ describe(assembleFiles, () => {
     ]);
   });
 
+  // The filler is routed into the same host, so the region's own attribution of it has to outrank the fill's.
+  it('keeps a routed contributor’s region marker where a sibling’s inlay also names it', async () => {
+    const { assembly } = await assemble({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Name things well.\n<!-- inlay: extras -->\n',
+        'rulebooks/style.md': 'Write plainly.\n',
+      },
+      inlays: { extras: { rulebook: { use: ['style'] } } },
+      buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
+    });
+
+    expect(fileAt(assembly, HOST_PATH).contributors.artifacts).toStrictEqual([
+      {
+        artifactId: 'rulebook:naming',
+        marker: { open: '<!-- rulebook:naming -->', close: '<!-- /rulebook:naming -->' },
+      },
+      { artifactId: 'rulebook:style', marker: { open: '<!-- rulebook:style -->', close: '<!-- /rulebook:style -->' } },
+    ]);
+  });
+
   it('blocks the file whose inlay a nesting filler could not fill, at the content it holds, and nothing besides', async () => {
     const { assembly } = await assemble({
       sourceFiles: {

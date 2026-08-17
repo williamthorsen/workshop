@@ -102,7 +102,7 @@ describe(validateComposition, () => {
     ]);
   });
 
-  it('reports a filler of a kind the target deploys nowhere, naming the inlay and the host it was to fill', async () => {
+  it('reports a filler of a kind the target deploys nowhere, naming the inlay and the filler', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: {
         'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n',
@@ -119,12 +119,7 @@ describe(validateComposition, () => {
         diagnostic: {
           code: 'undeployed-kind',
           message: expect.any(String),
-          at: {
-            inlayName: 'preferences',
-            targetId: 'claude',
-            hostArtifactId: 'skill:lint',
-            artifactId: 'subagent:auditor',
-          },
+          at: { inlayName: 'preferences', targetId: 'claude', artifactId: 'subagent:auditor' },
         },
       },
     ]);
@@ -156,6 +151,27 @@ describe(validateComposition, () => {
         },
       },
     ]);
+  });
+
+  // One run reports every mistake: the fill blocking a host does not take that host's own render faults with it.
+  it('keeps a blocked host’s render diagnostics beside the binding fault that blocked it', async () => {
+    const { config, snapshot } = await captureComposition({
+      sourceFiles: {
+        'rulebooks/naming.md': 'Naming.\n<!-- inlay: deeper -->\n',
+        'skills/lint/SKILL.md': '# Lint\n\nSee [the rubric](../../../away.md).\n<!-- inlay: preferences -->\n',
+      },
+      select: { rulebook: { use: [{ source: 'team' }] }, skill: { use: [{ source: 'team' }] } },
+      inlays: { preferences: { rulebook: { use: ['naming'] } } },
+      buildTargets: (targetRoot) => [
+        { ...buildInlayingTarget(targetRoot), stages: buildLinkingInlayStages(targetRoot) },
+      ],
+    });
+
+    const { diagnostics } = validateComposition(config, snapshot);
+
+    expect(diagnostics.map(({ domain }) => domain)).toStrictEqual(['render', 'binding']);
+    expect(diagnostics.at(0)).toHaveProperty('diagnostic.diagnostic.code', 'out-of-tree');
+    expect(diagnostics.at(1)).toHaveProperty('diagnostic.code', 'nested-inlay');
   });
 
   it('reports a binding whose inlay no artifact declares, once and at the config', async () => {
@@ -382,6 +398,11 @@ function buildHostCollidingTarget(targetRoot: string): RenderTarget {
       { form: 'tree', kindId: 'subagent', layout: { form: 'file', root: '', extension: '.md' } },
     ],
   };
+}
+
+/** Builds the inlaying target's stages with link rewriting added, so one body can carry a link fault and an inlay. */
+function buildLinkingInlayStages(targetRoot: string): RenderTarget['stages'] {
+  return [...buildInlayingTarget(targetRoot).stages, { kind: 'links', pattern: MARKDOWN_LINK }];
 }
 
 /** Builds a target that rewrites tokens and links, the two stages whose faults travel beside a rendered body. */

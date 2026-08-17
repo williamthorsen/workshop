@@ -131,6 +131,49 @@ describe(fillInlays, () => {
     expect(content.startsWith('<!-- inlay:first:start -->')).toBe(true);
   });
 
+  // Whether a filler deploys is a property of the filler and the target, so every host declaring the inlay gets one answer.
+  it('reports a filler the target deploys nowhere once, however many hosts declare the inlay', () => {
+    const fill = run({
+      renders: [
+        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:lint', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+      ],
+      bindings: [{ inlayName: 'preferences', artifactIds: ['subagent:auditor'] }],
+    });
+
+    expect(fill.diagnostics).toHaveLength(1);
+    expect(fill.diagnostics.at(0)?.at).toStrictEqual({
+      inlayName: 'preferences',
+      targetId: 'claude',
+      artifactId: 'subagent:auditor',
+    });
+  });
+
+  // A block is one consequence per host, unlike the fault above, so each host raises it against itself.
+  it('raises a blocking fault against each host declaring the inlay', () => {
+    const fill = run({
+      renders: [
+        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:lint', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+      ],
+      bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
+    });
+
+    expect(fill.diagnostics.map(({ at }) => at.hostArtifactId)).toStrictEqual(['skill:review', 'skill:lint']);
+  });
+
+  it('fills no host the closure did not reach, so nothing reports against one', () => {
+    const fill = run({
+      renders: [['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])]],
+      bindings: [{ inlayName: 'preferences', artifactIds: ['subagent:auditor'] }],
+      reached: [],
+    });
+
+    expect(requireRendered(fill, 'skill:review').content).toBe('Lead.\n');
+    expect(fill.diagnostics).toStrictEqual([]);
+  });
+
   it('leaves an inlay nothing is bound to empty of every marker', () => {
     const content = 'Lead.\nTail.\n';
     const fill = run({
@@ -154,6 +197,7 @@ describe(fillInlays, () => {
         ['rulebook:naming', rendered('# Naming\n\n## Verbs\n')],
       ]),
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
+      reached: new Set(['skill:review', 'rulebook:naming']),
     });
 
     const content = requireRendered(fill, 'skill:review').content;
@@ -184,7 +228,7 @@ describe(fillInlays, () => {
     const host = rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }]);
     const fill = run({
       renders: [
-        ['skill:review', { ...host, contributors: { ...host.contributors, partials: ['team:_data/shared.md'] } }],
+        ['skill:review', withPartial(host, 'team:_data/shared.md')],
         ['rulebook:naming', withPartial(rendered('Naming.\n'), 'team:_data/glossary.md')],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
@@ -193,7 +237,7 @@ describe(fillInlays, () => {
     const filled = requireRendered(fill, 'skill:review');
 
     expect(filled.contributors.partials).toStrictEqual(['team:_data/glossary.md', 'team:_data/shared.md']);
-    expect(filled.partials.map(({ id }) => id)).toStrictEqual(['team:_data/glossary.md']);
+    expect(filled.partials.map(({ id }) => id)).toStrictEqual(['team:_data/glossary.md', 'team:_data/shared.md']);
   });
 
   it('ends the host’s render where a filler declares an inlay of its own', () => {
@@ -207,7 +251,20 @@ describe(fillInlays, () => {
 
     expect(fill.renders.get('skill:review')).toHaveProperty('failure.stage', 'binding');
     expect(fill.renders.get('skill:review')).toHaveProperty('failure.diagnostic.code', 'nested-inlay');
-    expect(fill.diagnostics).toStrictEqual([]);
+    expect(fill.diagnostics.map(({ code }) => code)).toStrictEqual(['nested-inlay']);
+  });
+
+  // The block fires on the declaration, so what an artifact may fill does not move with another inlay's bindings.
+  it('blocks on a filler declaring an inlay even where the config binds nothing to that inner name', () => {
+    const fill = run({
+      renders: [
+        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', rendered('Naming.\n', [{ name: 'unbound', insertAt: 1 }])],
+      ],
+      bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
+    });
+
+    expect(fill.renders.get('skill:review')).toHaveProperty('failure.diagnostic.code', 'nested-inlay');
   });
 
   it('ends the host’s render where a filler’s own render ended', () => {
@@ -239,12 +296,7 @@ describe(fillInlays, () => {
       {
         code: 'undeployed-kind',
         message: '"subagent:auditor" is of a kind "claude" deploys nowhere, so it fills nothing there.',
-        at: {
-          inlayName: 'preferences',
-          targetId: 'claude',
-          hostArtifactId: 'skill:review',
-          artifactId: 'subagent:auditor',
-        },
+        at: { inlayName: 'preferences', targetId: 'claude', artifactId: 'subagent:auditor' },
       },
     ]);
   });
@@ -255,7 +307,7 @@ describe(fillInlays, () => {
     ]);
     const bare: RenderTarget = { ...claude, stages: [] };
 
-    const fill = fillInlays({ target: bare, renders, bindings: [] });
+    const fill = fillInlays({ target: bare, renders, bindings: [], reached: new Set(['skill:review']) });
 
     expect(fill.renders).toBe(renders);
     expect(fill.diagnostics).toStrictEqual([]);
@@ -263,6 +315,9 @@ describe(fillInlays, () => {
 });
 
 // region | Helpers
+
+/** The sites a fixture's body declares. */
+type InlaySites = ReadonlyArray<{ name: string; insertAt: number }>;
 
 /** Builds one artifact's completed render, declaring the inlay sites given. */
 function rendered(content: string, inlays: InlaySites = []): RenderedFixture {
@@ -276,20 +331,8 @@ function rendered(content: string, inlays: InlaySites = []): RenderedFixture {
   };
 }
 
-/** The sites a fixture's body declares. */
-type InlaySites = ReadonlyArray<{ name: string; insertAt: number }>;
-
 /** One artifact's completed render, narrowed so a fixture can be read without re-narrowing it. */
 type RenderedFixture = Extract<ArtifactRender, { status: 'rendered' }>;
-
-/** Reads the render a fill produced for `artifactId`, failing the test where it did not complete. */
-function requireRendered(fill: InlayFill, artifactId: ArtifactId): RenderedFixture {
-  const render = fill.renders.get(artifactId);
-  if (render?.status !== 'rendered') {
-    throw new Error(`Expected "${artifactId}" to be rendered, but it is ${render?.status ?? 'absent'}.`);
-  }
-  return render;
-}
 
 /** Reads the fixture target's inlay stage, which it declares exactly one of. */
 function requireInlayStage(): Extract<RenderTarget['stages'][number], { kind: 'inlay' }> {
@@ -300,12 +343,29 @@ function requireInlayStage(): Extract<RenderTarget['stages'][number], { kind: 'i
   return stage;
 }
 
+/** Reads the render a fill produced for `artifactId`, failing the test where it did not complete. */
+function requireRendered(fill: InlayFill, artifactId: ArtifactId): RenderedFixture {
+  const render = fill.renders.get(artifactId);
+  if (render?.status !== 'rendered') {
+    throw new Error(`Expected "${artifactId}" to be rendered, but it is ${render?.status ?? 'absent'}.`);
+  }
+  return render;
+}
+
 /** Fills the fixture target's inlays over the renders and bindings given. */
 function run(input: {
   renders: ReadonlyArray<readonly [ArtifactId, ArtifactRender]>;
   bindings: ReadonlyArray<InlayBinding>;
+  reached?: ReadonlyArray<ArtifactId>;
 }): InlayFill {
-  return fillInlays({ target: claude, renders: new Map(input.renders), bindings: input.bindings });
+  const reached = input.reached ?? input.renders.map(([artifactId]) => artifactId);
+
+  return fillInlays({
+    target: claude,
+    renders: new Map(input.renders),
+    bindings: input.bindings,
+    reached: new Set(reached),
+  });
 }
 
 /** Adds one transcluded partial to a render, as both an entry and a contributor. */

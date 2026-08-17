@@ -75,6 +75,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
       target,
       renders: snapshot.renders.get(target.id) ?? new Map(),
       bindings: input.bindings,
+      reached,
     });
 
     const context: TargetPlanContext = {

@@ -18,6 +18,8 @@ export interface FillInlaysInput {
   readonly renders: ReadonlyMap<ArtifactId, ArtifactRender>;
   /** What each inlay is filled with, in the order a fill splices them. */
   readonly bindings: ReadonlyArray<InlayBinding>;
+  /** The artifacts the closure reached, the only hosts a fill is computed for. */
+  readonly reached: ReadonlySet<ArtifactId>;
 }
 
 /** The column with every inlay filled, beside what the bindings got wrong. */
@@ -41,11 +43,16 @@ export interface InlayFill {
  * are filled. Two directives on consecutive lines record one index between them, and splicing in reverse is also what
  * keeps those two blocks in the order the body declared them.
  *
- * A fill reaches one level. A filler whose own body declares an inlay ends the host's render, as does one whose own
- * render ended: either would otherwise deploy a body silently short of what its author wrote, and the destinations it
- * was to reach are better left holding what they hold. A filler of a kind the target takes none of is neither, being
- * the standing rule that a kind a target declares no deployment for does not deploy there: it contributes nothing and
- * is reported.
+ * A fill reaches one level, and the rule fires on the declaration rather than on the loss: a filler whose body declares
+ * an inlay ends the host's render whether or not the config binds anything to that inner name. Gating on the binding
+ * instead would let an edit to one inlay's bindings block a file whose body nobody touched, so what an artifact may
+ * fill stays a property of the artifact. A filler whose own render ended ends the host's render too, that one for the
+ * body it leaves missing. A filler of a kind the target takes none of is neither, being the standing rule that a kind a
+ * target declares no deployment for does not deploy there: it contributes nothing and is reported.
+ *
+ * Each inlay's fillers are read once per target and reused by every host declaring that inlay, so a body reshaped for
+ * two hosts is reshaped once and a filler the target cannot deploy is reported once. A fault that blocks is the
+ * exception: it is one consequence per host, so each host raises it against itself.
  */
 export function fillInlays(input: FillInlaysInput): InlayFill {
   const stage = input.target.stages.find((held) => held.kind === 'inlay');
@@ -58,13 +65,14 @@ export function fillInlays(input: FillInlaysInput): InlayFill {
     reshape: stage.reshape === undefined ? undefined : compileReshape(stage.reshape),
     bound: new Map(input.bindings.map(({ inlayName, artifactIds }) => [inlayName, artifactIds])),
     diagnostics: [],
+    reads: new Map(),
     renders: input.renders,
     targetId: input.target.id,
   };
   const filled = new Map(input.renders);
 
   for (const [hostId, render] of input.renders) {
-    if (render.status === 'rendered' && render.inlays.length > 0) {
+    if (input.reached.has(hostId) && render.status === 'rendered' && render.inlays.length > 0) {
       filled.set(hostId, fillHost(context, hostId, render));
     }
   }
@@ -84,39 +92,17 @@ function buildBlock(context: FillContext, inlayName: string, fillers: ReadonlyAr
   return renderContribution(renderInlayMarkers(context.stage.markers, inlayName), contributions.join('\n\n'));
 }
 
-/** Reads every filler one inlay is bound to, or the fault that leaves the host with no body worth writing. */
-function collectFillers(context: FillContext, hostId: ArtifactId, inlayName: string): FillerRead {
-  const fillers: Array<Filler> = [];
-  const boundHere = context.bound.get(inlayName) ?? [];
-
-  for (const artifactId of boundHere) {
-    const at: BindingRef = { inlayName, targetId: context.targetId, hostArtifactId: hostId, artifactId };
-    const render = context.renders.get(artifactId);
-
-    if (render === undefined || render.status === 'not-deployed') {
-      const detail = `is of a kind "${context.targetId}" deploys nowhere, so it fills nothing there`;
-      context.diagnostics.push(describeFault('undeployed-kind', at, detail));
-      continue;
-    }
-    if (render.status === 'failed') {
-      const detail = `could not be rendered: ${render.failure.diagnostic.message}`;
-      return { status: 'blocked', diagnostic: describeFault('unrenderable-binding', at, detail) };
-    }
-    if (render.inlays.length > 0) {
-      const detail = 'declares an inlay of its own, which a fill one level deep can never reach';
-      return { status: 'blocked', diagnostic: describeFault('nested-inlay', at, detail) };
-    }
-
-    fillers.push({
-      artifactId,
-      body: reshapeBody(context.reshape, render.content),
-      markers: renderContributionMarkers(context.stage.contributionMarkers, artifactId),
-      contributors: render.contributors,
-      partials: render.partials,
-    });
-  }
-
-  return { status: 'read', fillers };
+/**
+ * The fault that leaves a host with no body worth writing, held apart from the host that will raise it.
+ *
+ * One read serves every host declaring the inlay, while a block is one consequence per host, so the read carries what
+ * the fault is and each host names itself when it raises it.
+ */
+interface BlockingFault {
+  readonly code: Extract<BindingFailure, 'nested-inlay' | 'unrenderable-binding'>;
+  readonly inlayName: string;
+  readonly artifactId: ArtifactId;
+  readonly detail: string;
 }
 
 /** A reshape rule as the fill runs it. */
@@ -149,6 +135,8 @@ interface FillContext {
   /** Keyed by inlay name, each list in the order a fill splices it. */
   readonly bound: ReadonlyMap<string, ReadonlyArray<ArtifactId>>;
   readonly diagnostics: Array<BindingDiagnostic>;
+  /** Each inlay's fillers, read once and reused by every host declaring it. */
+  readonly reads: Map<string, FillerRead>;
   readonly renders: ReadonlyMap<ArtifactId, ArtifactRender>;
   readonly targetId: TargetId;
 }
@@ -162,25 +150,33 @@ interface Filler {
   readonly partials: ReadonlyArray<PartialEntry>;
 }
 
-/** Every filler one site takes, or the fault that ends the host's render. */
+/** Every filler one site takes, or the fault that ends the render of every host declaring it. */
 type FillerRead =
   | { readonly status: 'read'; readonly fillers: ReadonlyArray<Filler> }
-  | { readonly status: 'blocked'; readonly diagnostic: BindingDiagnostic };
+  | { readonly status: 'blocked'; readonly fault: BlockingFault };
 
 /**
  * Fills every inlay one host declared, ending its render at the first filler that leaves it unwritable.
  *
  * The sites are read forward and spliced backward. Reading forward is what puts the contributors in the order the body
  * declares them; splicing backward is what keeps every unfilled index addressing the line it was recorded against.
+ *
+ * A blocking fault travels twice: as a diagnostic, which is how the report lists it beside the host's other faults, and
+ * as the failed render, which is what leaves the host's destinations holding what they hold.
  */
 function fillHost(context: FillContext, hostId: ArtifactId, render: RenderedArtifact): ArtifactRender {
   const blocks: Array<{ insertAt: number; block: string | undefined }> = [];
   const used: Array<Filler> = [];
 
   for (const site of render.inlays) {
-    const read = collectFillers(context, hostId, site.name);
+    const read = readInlay(context, site.name);
     if (read.status === 'blocked') {
-      return { status: 'failed', failure: { stage: 'binding', diagnostic: read.diagnostic } };
+      const { code, inlayName, artifactId, detail } = read.fault;
+      const at: BindingRef = { inlayName, targetId: context.targetId, hostArtifactId: hostId, artifactId };
+      const diagnostic = describeFault(code, at, detail);
+      // The report reads the diagnostics; the plan reads the failed render, which is what blocks the host's file.
+      context.diagnostics.push(diagnostic);
+      return { status: 'failed', failure: { stage: 'binding', diagnostic } };
     }
     const block = buildBlock(context, site.name, read.fillers);
     blocks.push({ insertAt: site.insertAt, block });
@@ -241,6 +237,58 @@ function mergePartials(host: ReadonlyArray<PartialEntry>, fillers: ReadonlyArray
     .values()
     .toArray()
     .toSorted((left, right) => compareStrings(left.id, right.id));
+}
+
+/** Reads every filler one inlay is bound to, reporting each the target deploys nowhere and stopping at the first block. */
+function readFillers(context: FillContext, inlayName: string): FillerRead {
+  const fillers: Array<Filler> = [];
+  const boundHere = context.bound.get(inlayName) ?? [];
+
+  for (const artifactId of boundHere) {
+    const render = context.renders.get(artifactId);
+
+    if (render === undefined || render.status === 'not-deployed') {
+      const at: BindingRef = { inlayName, targetId: context.targetId, artifactId };
+      const detail = `is of a kind "${context.targetId}" deploys nowhere, so it fills nothing there`;
+      context.diagnostics.push(describeFault('undeployed-kind', at, detail));
+      continue;
+    }
+    if (render.status === 'failed') {
+      const detail = `could not be rendered: ${render.failure.diagnostic.message}`;
+      return { status: 'blocked', fault: { code: 'unrenderable-binding', inlayName, artifactId, detail } };
+    }
+    if (render.inlays.length > 0) {
+      const detail = 'declares an inlay of its own, which a fill one level deep can never reach';
+      return { status: 'blocked', fault: { code: 'nested-inlay', inlayName, artifactId, detail } };
+    }
+
+    fillers.push({
+      artifactId,
+      body: reshapeBody(context.reshape, render.content),
+      markers: renderContributionMarkers(context.stage.contributionMarkers, artifactId),
+      contributors: render.contributors,
+      partials: render.partials,
+    });
+  }
+
+  return { status: 'read', fillers };
+}
+
+/**
+ * Reads every filler one inlay is bound to, once per target.
+ *
+ * Whether a filler deploys at this target, renders at all, or nests an inlay of its own are all properties of the
+ * filler and the target, so re-deciding them per host would repeat one answer and report one fault as many.
+ */
+function readInlay(context: FillContext, inlayName: string): FillerRead {
+  const held = context.reads.get(inlayName);
+  if (held !== undefined) {
+    return held;
+  }
+
+  const read = readFillers(context, inlayName);
+  context.reads.set(inlayName, read);
+  return read;
 }
 
 /** One artifact's completed render, which is the only status a fill has anything to do with. */
