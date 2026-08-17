@@ -1,9 +1,8 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { readPnpmWorkspacePackages } from '../pnpmWorkspaceYaml.ts';
-
-const temp = useTempDir({ prefix: 'rdy-yaml-' });
 
 describe(readPnpmWorkspacePackages, () => {
   it('returns a single unquoted item', () => {
@@ -198,9 +197,10 @@ describe(readPnpmWorkspacePackages, () => {
 
 // region | Helpers
 
-/** Writes the workspace manifest and returns its path, which the parser under test is given directly. */
+/** Writes the workspace manifest into a tree of its own and returns its path, which the parser is given directly. */
 function writeYaml(content: string): string {
-  return temp.write('pnpm-workspace.yaml', content);
+  const tree = disposeOnTestFinished(createTempTree({ 'pnpm-workspace.yaml': content }, { prefix: 'rdy-yaml-' }));
+  return tree.resolve('pnpm-workspace.yaml');
 }
 
 // endregion | Helpers

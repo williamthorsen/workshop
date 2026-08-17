@@ -1,58 +1,57 @@
-import path from 'node:path';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { describe, expect, it } from 'vitest';
-
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { discoverKitPackages } from '../discoverKitPackages.ts';
 
-const temp = useTempDir({
-  prefix: 'discover-packages-',
-  scope: 'file',
-  setup: () => {
-    temp.writeJson('package.json', {
-      name: 'consumer',
-      dependencies: { 'zebra-kit': '1.0.0' },
-      devDependencies: { '@acme/kits': '1.0.0', kitless: '1.0.0' },
-    });
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() =>
+    createTempTree(
+      {
+        'package.json': JSON.stringify({
+          name: 'consumer',
+          dependencies: { 'zebra-kit': '1.0.0' },
+          devDependencies: { '@acme/kits': '1.0.0', kitless: '1.0.0' },
+        }),
 
-    installPackage('zebra-kit', ['smoke']);
-    installPackage('@acme/kits', ['drift']);
-    installPackage('kitless', []);
-    // Installed and publishing kits, but never declared as a dependency.
-    installPackage('undeclared-kit', ['drift']);
-  },
-});
+        'node_modules/@acme/kits/package.json': JSON.stringify({ name: '@acme/kits', version: '1.0.0' }),
+        'node_modules/@acme/kits/.readyup/kits/drift.js': 'export default {};\n',
 
-const manifestless = useTempDir({ prefix: 'discover-no-manifest-', scope: 'file' });
+        // Declared and installed, publishing nothing: an empty kit directory, not an absent one.
+        'node_modules/kitless/package.json': JSON.stringify({ name: 'kitless', version: '1.0.0' }),
+        'node_modules/kitless/.readyup/kits/': '',
+
+        // Installed and publishing kits, but never declared as a dependency.
+        'node_modules/undeclared-kit/package.json': JSON.stringify({ name: 'undeclared-kit', version: '1.0.0' }),
+        'node_modules/undeclared-kit/.readyup/kits/drift.js': 'export default {};\n',
+
+        'node_modules/zebra-kit/package.json': JSON.stringify({ name: 'zebra-kit', version: '1.0.0' }),
+        'node_modules/zebra-kit/.readyup/kits/smoke.js': 'export default {};\n',
+      },
+      { prefix: 'discover-packages-' },
+    ),
+  ),
+);
 
 describe(discoverKitPackages, () => {
-  it('names declared dependencies that publish kits, sorted, across both dependency fields', () => {
+  it('names declared dependencies that publish kits, sorted, across both dependency fields', ({ temp }) => {
     expect(discoverKitPackages(temp.dir)).toStrictEqual(['@acme/kits', 'zebra-kit']);
   });
 
-  it('omits a declared dependency that publishes no kits', () => {
+  it('omits a declared dependency that publishes no kits', ({ temp }) => {
     expect(discoverKitPackages(temp.dir)).not.toContain('kitless');
   });
 
   // Suggesting a package the reader never chose to depend on is not something they can act on.
-  it('omits an installed package that is not a declared dependency', () => {
+  it('omits an installed package that is not a declared dependency', ({ temp }) => {
     expect(discoverKitPackages(temp.dir)).not.toContain('undeclared-kit');
   });
 
   it('answers with nothing when the project manifest cannot be read', () => {
+    using manifestless = createTempTree({}, { prefix: 'discover-no-manifest-' });
+
     expect(discoverKitPackages(manifestless.dir)).toStrictEqual([]);
   });
 });
-
-// region | Helpers
-
-/** Installs a package into a fixture project, optionally publishing kits. */
-function installPackage(name: string, kits: string[]): void {
-  temp.writeJson(path.join('node_modules', name, 'package.json'), { name, version: '1.0.0' });
-  temp.mkdir(path.join('node_modules', name, '.readyup', 'kits'));
-  for (const kit of kits) {
-    temp.write(path.join('node_modules', name, '.readyup', 'kits', `${kit}.js`), 'export default {};\n');
-  }
-}
-
-// endregion | Helpers
