@@ -1,10 +1,11 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it, vi } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test, vi } from 'vitest';
 
 import { plainFormatter } from '../../layout/plainFormatter.ts';
 import { STYLE_ENV_VAR } from '../../layout/resolveStyle.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
 import { routeCommand } from '../route.ts';
 
@@ -32,19 +33,27 @@ const RENDERING_COMMANDS = [
   { name: 'init', args: ['init', '--dry-run'], expected: /^PASS {2}\.config\/readyup\.config\.ts/mu },
 ] as const;
 
-const temp = useTempDir({
-  prefix: 'readyup-style-',
-  cwd: 'chdir',
-  scope: 'file',
-  setup: () => {
-    temp.write('.readyup/kits/passing.js', PASSING_KIT);
-    temp.write('src/passing.ts', PASSING_KIT);
-    temp.write('passing.js', COMPILED_BYTES);
-    temp.writeJson('manifest.json', {
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() => {
+    const tree = createTempTree(
+      { '.readyup/kits/passing.js': PASSING_KIT, 'passing.js': COMPILED_BYTES, 'src/passing.ts': PASSING_KIT },
+      { prefix: 'readyup-style-' },
+    );
+    tree.writeJson('manifest.json', {
       version: 1,
       kits: [{ name: 'passing', path: 'passing.js', source: 'src/passing.ts', targetHash: hashBytes(COMPILED_BYTES) }],
     });
-  },
+
+    return tree;
+  }),
+);
+
+it.aroundAll(async (runSuite, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runSuite();
 });
 
 describe('--style plain', () => {

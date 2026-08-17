@@ -1,7 +1,8 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { routeCommand } from '../route.ts';
 
 /** A kit whose single check passes. */
@@ -10,14 +11,21 @@ const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ na
 /** A kit whose single error-severity check fails. */
 const FAILING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'nope', check: () => false }] }] };\n`;
 
-const temp = useTempDir({
-  prefix: 'readyup-partial-results-',
-  cwd: 'chdir',
-  scope: 'file',
-  setup: () => {
-    temp.write('.readyup/kits/passing.js', PASSING_KIT);
-    temp.write('.readyup/kits/failing.js', FAILING_KIT);
-  },
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() =>
+    createTempTree(
+      { '.readyup/kits/failing.js': FAILING_KIT, '.readyup/kits/passing.js': PASSING_KIT },
+      { prefix: 'readyup-partial-results-' },
+    ),
+  ),
+);
+
+it.aroundAll(async (runSuite, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runSuite();
 });
 
 describe('partial results when a kit fails after dispatch', () => {

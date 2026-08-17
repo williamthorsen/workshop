@@ -1,12 +1,8 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import process from 'node:process';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
-
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { routeCommand } from '../route.ts';
 
 /** A kit whose single check passes. */
@@ -26,24 +22,36 @@ const MULTI_KIT =
   `  { name: 'lint', checks: [{ name: 'lint-ok', check: () => true }] },\n` +
   `] };\n`;
 
-const temp = useTempDir({
-  prefix: 'readyup-exit-codes-',
-  cwd: 'chdir',
-  scope: 'file',
-  setup: () => {
-    temp.write('.readyup/kits/passing.js', PASSING_KIT);
-    temp.write('.readyup/kits/failing.js', FAILING_KIT);
-    temp.write('.readyup/kits/invalid.js', INVALID_KIT);
-    temp.write('.readyup/kits/deploy.js', MULTI_KIT);
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() => {
+    const tree = createTempTree(
+      {
+        '.readyup/kits/deploy.js': MULTI_KIT,
+        '.readyup/kits/failing.js': FAILING_KIT,
+        '.readyup/kits/invalid.js': INVALID_KIT,
+        '.readyup/kits/passing.js': PASSING_KIT,
+        // Compiling this drives real esbuild, which writes its own diagnostic straight to stderr; the
+        // error banner that appears in an otherwise-passing test run belongs to this fixture.
+        'broken.ts': 'export default { this is not valid TypeScript\n',
+      },
+      { prefix: 'readyup-exit-codes-' },
+    );
     // A manifest whose recorded hash cannot match the file on disk, so `verify` reports drift.
-    temp.writeJson('.readyup/manifest.json', {
+    tree.writeJson('.readyup/manifest.json', {
       version: 1,
       kits: [{ name: 'passing', path: 'kits/passing.js', targetHash: '0'.repeat(8) }],
     });
-    // Compiling this drives real esbuild, which writes its own diagnostic straight to stderr; the
-    // error banner that appears in an otherwise-passing test run belongs to this fixture.
-    temp.write('broken.ts', 'export default { this is not valid TypeScript\n');
-  },
+
+    return tree;
+  }),
+);
+
+it.aroundAll(async (runSuite, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runSuite();
 });
 
 describe('exit codes', () => {
@@ -93,25 +101,20 @@ describe('exit codes', () => {
 
   it('reports code "config" for an unreadable config file', async () => {
     // A separate tree, so the broken config does not reach the other cases in this file.
-    const brokenCwd = mkdtempSync(path.join(tmpdir(), 'readyup-bad-config-'));
-    mkdirSync(path.join(brokenCwd, '.config'), { recursive: true });
-    writeFileSync(path.join(brokenCwd, '.config/readyup.config.ts'), 'export default { compile: 42 };\n');
-    process.chdir(brokenCwd);
+    using broken = createTempTree(
+      { '.config/readyup.config.ts': 'export default { compile: 42 };\n' },
+      { prefix: 'readyup-bad-config-' },
+    );
+    using _cwd = pointCwdAt(broken.dir, { chdir: true });
+    using io = captureStdio();
 
-    try {
-      using io = captureStdio();
+    const exitCode = await routeCommand(['--json']);
 
-      const exitCode = await routeCommand(['--json']);
-
-      expect(exitCode).toBe(2);
-      expect(JSON.parse(io.stdout)).toStrictEqual({
-        schemaVersion: 1,
-        error: { code: 'config', message: expect.any(String) },
-      });
-    } finally {
-      process.chdir(temp.dir);
-      rmSync(brokenCwd, { recursive: true, force: true });
-    }
+    expect(exitCode).toBe(2);
+    expect(JSON.parse(io.stdout)).toStrictEqual({
+      schemaVersion: 1,
+      error: { code: 'config', message: expect.any(String) },
+    });
   });
 });
 
