@@ -73,7 +73,7 @@ const config = defineConfig([
     extends: [await createConfig.vitest()],
   }),
   {
-    // The suites taking their trees as fixtures bind `test.extend(...)` to `it` and register
+    // The suites taking their trees as fixtures bind `test.extend(...)` to `it`, and some of them register
     // `it.aroundAll(...)` or `it.aroundEach(...)`, which @vitest/eslint-plugin 1.6.27 misreads twice:
     // `consistent-test-it` compares the resolved import name (`test`) rather than the local binding, so every
     // describe-nested `it(...)` is a false positive; and `require-hook`'s call-chain table lacks both hooks,
@@ -87,6 +87,7 @@ const config = defineConfig([
     // file.
     files: [
       'packages/readyup/src/bin/__tests__/route.*.test.ts',
+      'packages/readyup/src/check-utils/__tests__/discoverKitPackages.unit.test.ts',
       'packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts',
       'packages/readyup/src/portable/__tests__/walkDirectories.unit.test.ts',
       'packages/readyup/src/projects/__tests__/discoverKitProjects.unit.test.ts',
