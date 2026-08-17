@@ -105,6 +105,32 @@ describe(fillInlays, () => {
     );
   });
 
+  // Two directives on consecutive lines record one index between them; splicing in reverse is what orders the blocks.
+  it('keeps two inlays recorded at one index in the order the body declared them', () => {
+    const fill = run({
+      renders: [
+        [
+          'skill:review',
+          rendered('Tail.\n', [
+            { name: 'first', insertAt: 0 },
+            { name: 'second', insertAt: 0 },
+          ]),
+        ],
+        ['rulebook:naming', rendered('Naming.\n')],
+        ['rulebook:style', rendered('Style.\n')],
+      ],
+      bindings: [
+        { inlayName: 'first', artifactIds: ['rulebook:naming'] },
+        { inlayName: 'second', artifactIds: ['rulebook:style'] },
+      ],
+    });
+
+    const content = requireRendered(fill, 'skill:review').content;
+
+    expect(content.indexOf('<!-- inlay:first:start -->')).toBeLessThan(content.indexOf('<!-- inlay:second:start -->'));
+    expect(content.startsWith('<!-- inlay:first:start -->')).toBe(true);
+  });
+
   it('leaves an inlay nothing is bound to empty of every marker', () => {
     const content = 'Lead.\nTail.\n';
     const fill = run({
