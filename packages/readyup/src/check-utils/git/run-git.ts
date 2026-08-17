@@ -6,9 +6,19 @@ const execFileAsync = promisify(execFile);
 
 /** Run a git command in the given directory and return trimmed stdout. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {
+  return (await runGitRaw(path, ...args)).trim();
+}
+
+/**
+ * Runs a git command in the given directory and returns its stdout byte for byte.
+ *
+ * Reach for this where a path is part of the output: trimming strips a leading space or tab from the first path of a
+ * listing, and the file it names then reads as missing.
+ */
+export async function runGitRaw(path: string, ...args: string[]): Promise<string> {
   const resolved = expandHome(path);
   const { stdout } = await execFileAsync('git', ['-C', resolved, ...args]);
-  return stdout.trim();
+  return stdout;
 }
 
 /**
