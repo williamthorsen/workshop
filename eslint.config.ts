@@ -73,6 +73,20 @@ const config = defineConfig([
     extends: [await createConfig.vitest()],
   }),
   {
+    // The route.* suites bind `test.extend(...)` to `it` and register `it.aroundAll(...)`, which
+    // @vitest/eslint-plugin 1.6.27 misreads twice: `consistent-test-it` compares the resolved import name
+    // (`test`) rather than the local binding, so every describe-nested `it(...)` is a false positive; and
+    // `require-hook`'s call-chain table lacks `it.aroundAll`, so the hook registration reads as bare
+    // top-level code. Both are plugin defects; delete this block when the upstream fixes land:
+    // https://github.com/vitest-dev/eslint-plugin-vitest/issues/955 (require-hook) and
+    // https://github.com/vitest-dev/eslint-plugin-vitest/issues/956 (consistent-test-it).
+    files: ['packages/readyup/src/bin/__tests__/route.*.test.ts'],
+    rules: {
+      'vitest/consistent-test-it': 'off',
+      'vitest/require-hook': ['warn', { allowedFunctionCalls: ['it.aroundAll'] }],
+    },
+  },
+  {
     // Config files legitimately mutate and compose configuration objects at module top level.
     files: ['**/*.config.{cjs,js,mjs,ts}', '**/config/**'],
     rules: {
