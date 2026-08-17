@@ -164,6 +164,9 @@ importers:
       '@types/picomatch':
         specifier: 4.0.3
         version: 4.0.3
+      '@williamthorsen/toolbelt.filesystem':
+        specifier: 'catalog:'
+        version: 0.6.0
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
         version: 0.3.0
