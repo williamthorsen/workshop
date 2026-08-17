@@ -42,6 +42,8 @@ export type { InlayPatterns } from './inlays/buildInlayPatterns.ts';
 export { buildInlayPatterns } from './inlays/buildInlayPatterns.ts';
 export type { FillInlaysInput, InlayFill } from './inlays/fillInlays.ts';
 export { fillInlays } from './inlays/fillInlays.ts';
+export type { FindUnmatchedBindingsInput } from './inlays/findUnmatchedBindings.ts';
+export { findUnmatchedBindings } from './inlays/findUnmatchedBindings.ts';
 export { INLAY_NAME_PLACEHOLDER, renderInlayMarkers } from './inlays/inlay-markers.ts';
 export type { InlayDiagnostic, InlayFailure } from './inlays/InlayDiagnostic.ts';
 export type { InlaySite, InlayStrip } from './inlays/stripInlays.ts';
