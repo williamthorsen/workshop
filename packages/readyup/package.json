@@ -64,6 +64,7 @@
   },
   "devDependencies": {
     "@types/picomatch": "4.0.3",
+    "@williamthorsen/toolbelt.filesystem": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
     "ajv": "8.20.0",
