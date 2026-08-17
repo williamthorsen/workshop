@@ -37,11 +37,11 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-beforeEach(() => {
-  failures.clear();
-});
-
 describe(`${discoverWorkspaces.name} directory walk`, () => {
+  beforeEach(() => {
+    failures.clear();
+  });
+
   it('reads every readable directory when none fails', ({ temp }) => {
     writeMonorepo(temp);
 
