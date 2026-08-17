@@ -6,7 +6,7 @@
  * vocabulary can show a mechanism works; it cannot show the mechanism is general. This is the control -- a legal clause
  * library in AsciiDoc, differing from `composition-fixture.ts` in every dimension where a compiled-in assumption could
  * hide. Nothing here is to be normalized toward the vocabulary beside it: folding a declaration back toward Markdown,
- * brace tokens, or a skill-shaped layout destroys what the fixture exists to prove.
+ * brace tokens, a skill-shaped layout, or a `#`-shaped heading demotion destroys what the fixture exists to prove.
  *
  * It shares no declaration and no capture path with `composition-fixture.ts` and `captureComposition.ts`. Reaching the
  * pipeline through those would inherit their defaults, and a default silently inherited is the assumption this fixture
@@ -49,7 +49,10 @@ export function buildGenericitySourceFiles(): Record<string, string | Uint8Array
       '',
       'See xref:../exhibits/schedule-of-fees/EXHIBIT.adoc[the fee schedule].',
       '',
+      '// inlay: standard-terms',
+      '',
     ].join('\n'),
+    'clauses/standard-terms.adoc': '= Standard terms\n\nThe stated schedule of fees applies.\n',
     'definitions/affiliate.adoc':
       'Affiliate: any entity controlling the <<party:Vendor>>, as qualified by <<clause:governing-law>>.\n',
     'exhibits/schedule-of-fees/EXHIBIT.adoc': '= Schedule of fees\n\nFees are stated in the attached rates table.\n',
@@ -93,6 +96,13 @@ export function buildJurisdictionTarget(targetRoot: string): RenderTarget {
       { kind: 'transclusion', syntax: { open: '//', close: '' } },
       { kind: 'tokens' },
       { kind: 'links', pattern: String.raw`xref:([^\[]+)\[` },
+      {
+        kind: 'inlay',
+        syntax: { open: '//', close: '' },
+        markers: INLAY_MARKERS,
+        contributionMarkers: FILL_MARKERS,
+        reshape: { pattern: String.raw`^(={1,5})(?=\s)`, replacement: '$1=' },
+      },
     ],
   };
 }
@@ -100,8 +110,9 @@ export function buildJurisdictionTarget(targetRoot: string): RenderTarget {
 /**
  * Captures a composition over a temporary source tree and destination root, both removed when the test ends.
  *
- * Only the `indemnity` clause is selected. The other clause is reached through the referent token a definition carries,
- * so a closure that failed to read a token behind this consumer's delimiter would leave it out of the composition.
+ * Only the `indemnity` clause is selected. The `governing-law` clause is reached through the referent token a
+ * definition carries, so a closure that failed to read a token behind this consumer's delimiter would leave it out of
+ * the composition, and `standard-terms` is reached by the binding that fills the inlay `indemnity` declares.
  */
 export async function captureGenericityComposition(): Promise<GenericityFixture> {
   const sourceFiles = buildGenericitySourceFiles();
@@ -119,6 +130,7 @@ export async function captureGenericityComposition(): Promise<GenericityFixture>
         definition: { use: [{ source: 'firm' }] },
         exhibit: { use: [{ source: 'firm' }] },
       },
+      inlays: { 'standard-terms': { clause: { use: ['standard-terms'] } } },
     },
   ]);
 
@@ -144,6 +156,12 @@ export const CONTRACT_HOST_PATH = 'master-agreement.adoc';
 export const CONTRIBUTION_MARKERS: MarkerPair = {
   open: '// tag::{artifactId}[]',
   close: '// end::{artifactId}[]',
+};
+
+/** The markers delimiting one filler's block within a filled inlay, in a syntax of the fixture's own. */
+export const FILL_MARKERS: MarkerPair = {
+  open: '// fill::{artifactId}[]',
+  close: '// end-fill::{artifactId}[]',
 };
 
 /**
@@ -197,6 +215,12 @@ export interface GenericityFixture {
   readonly sourceDir: string;
   readonly targetRoot: string;
 }
+
+/** The markers fencing a whole filled inlay in the clause that declared it. */
+export const INLAY_MARKERS: MarkerPair = {
+  open: '// inlay::{inlayName}[]',
+  close: '// end-inlay::{inlayName}[]',
+};
 
 /** A PDF signature, standing in for an asset an exhibit ships and no target transforms. */
 export const RATES_PDF_BYTES = Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);

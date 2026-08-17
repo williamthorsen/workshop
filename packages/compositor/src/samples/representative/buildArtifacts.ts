@@ -32,7 +32,10 @@ export function buildArtifacts(): Array<ArtifactEntry> {
       kindId: 'rulebook',
       slug: 'naming',
       status: 'added',
-      seededBy: [{ via: 'source-catalog', tierId: 'project' }],
+      seededBy: [
+        { via: 'source-catalog', tierId: 'project' },
+        { via: 'binding', tierId: 'project' },
+      ],
       dependsOn: [],
       resolution: {
         winner: { sourceId: 'packaged', path: 'rulebooks/naming.md', hash: hashUtf8('rulebooks/naming.md') },

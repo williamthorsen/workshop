@@ -1,8 +1,12 @@
 import { computeClosure } from '../closure/computeClosure.ts';
+import type { BindingDiagnostic } from '../inlays/BindingDiagnostic.ts';
+import { fillInlays } from '../inlays/fillInlays.ts';
+import { findUnmatchedBindings } from '../inlays/findUnmatchedBindings.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
+import type { ArtifactRender } from '../render/renderArtifact.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
-import type { ArtifactId } from '../schemas/scalar-schemas.ts';
+import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
 import { selectArtifacts } from '../selection/selectArtifacts.ts';
 import { assertSourcesFit } from '../snapshot/assertSourcesFit.ts';
 import type { CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
@@ -26,7 +30,14 @@ import type { ValidationDiagnostic, ValidationReport } from './ValidationDiagnos
  * are not.
  *
  * Ordering is fixed, so two reports of one shape diff cleanly: selection in config order, closure in the order the
- * faults were found, render by target and then by artifact, deployment by target and then by path.
+ * faults were found, render by target and then by artifact, binding by target and then by the order the fills ran,
+ * with the config's own binding faults last among them, and deployment by target and then by path.
+ *
+ * The inlays are filled here as they are for a plan, over the same call, because a binding fault is only visible once
+ * something tries to fill something: a report derived from the config and the sites alone would miss a filler the
+ * target cannot deploy and one whose body declares an inlay of its own. The render pass reads the snapshot's own column
+ * rather than the filled one, so a host a fill blocked still reports whatever its render could not resolve; the fault
+ * that blocked it arrives under its own domain.
  */
 export function validateComposition(config: CompositorConfig, snapshot: CompositionSnapshot): ValidationReport {
   assertSourcesFit(config, snapshot);
@@ -37,12 +48,27 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
   const reached = new Set(closure.artifacts.map(({ id }) => id));
   // Both collectors read one ordering, so neither reports in the order a consumer happened to declare its targets in.
   const targets = snapshot.targets.toSorted((left, right) => compareStrings(left.id, right.id));
+  const fills = new Map(
+    targets.map((target) => [
+      target.id,
+      fillInlays({
+        target,
+        renders: snapshot.renders.get(target.id) ?? new Map(),
+        bindings: selection.bindings,
+        reached,
+      }),
+    ]),
+  );
 
   return {
     diagnostics: [
       ...selection.diagnostics.map((diagnostic) => ({ domain: 'selection' as const, diagnostic })),
       ...closure.diagnostics.map((diagnostic) => ({ domain: 'closure' as const, diagnostic })),
       ...collectRenderDiagnostics(snapshot.renders, targets, reached),
+      ...collectBindingDiagnostics(fills, targets),
+      ...findUnmatchedBindings({ bindings: selection.bindings, renders: snapshot.renders, reached }).map(
+        (diagnostic) => ({ domain: 'binding' as const, diagnostic }),
+      ),
       ...findDeploymentCollisions({ artifacts: closure.artifacts, kinds: closure.kinds, targets }).map(
         (diagnostic) => ({ domain: 'deployment' as const, diagnostic }),
       ),
@@ -52,9 +78,25 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
 
 // region | Helpers
 
+/**
+ * Collects what each target's fill could not do, by target and then by the order the fills ran.
+ *
+ * The fill is given the closure's own artifacts, so what it reports is already kept to the hosts this config reaches,
+ * on the rule the whole report follows: the render matrix covers the catalog by design, so a fault against a body this
+ * config never deploys is somebody else's to fix.
+ */
+function collectBindingDiagnostics(
+  fills: ReadonlyMap<TargetId, { diagnostics: ReadonlyArray<BindingDiagnostic> }>,
+  targets: ReadonlyArray<RenderTarget>,
+): Array<ValidationDiagnostic> {
+  return targets.flatMap(({ id }) =>
+    (fills.get(id)?.diagnostics ?? []).map((diagnostic) => ({ domain: 'binding' as const, diagnostic })),
+  );
+}
+
 /** Collects what every render of a reached artifact could not resolve, by target and then by artifact. */
 function collectRenderDiagnostics(
-  renders: CompositionSnapshot['renders'],
+  renders: ReadonlyMap<TargetId, ReadonlyMap<ArtifactId, ArtifactRender>>,
   targets: ReadonlyArray<RenderTarget>,
   reached: ReadonlySet<ArtifactId>,
 ): Array<ValidationDiagnostic> {
@@ -70,14 +112,21 @@ function collectRenderDiagnostics(
       if (!reached.has(artifactId)) {
         return [];
       }
-      if (render.status === 'failed') {
-        const { stage, diagnostic } = render.failure;
-        return [stage === 'inlay' ? { domain: 'inlay', at, diagnostic } : { domain: 'transclusion', at, diagnostic }];
+      if (render.status !== 'failed') {
+        return render.status === 'not-deployed'
+          ? []
+          : render.diagnostics.map((diagnostic) => ({ domain: 'render', at, diagnostic }));
       }
-      if (render.status === 'not-deployed') {
-        return [];
+
+      const failure = render.failure;
+      switch (failure.stage) {
+        case 'binding':
+          return [{ domain: 'binding', diagnostic: failure.diagnostic }];
+        case 'inlay':
+          return [{ domain: 'inlay', at, diagnostic: failure.diagnostic }];
+        case 'transclusion':
+          return [{ domain: 'transclusion', at, diagnostic: failure.diagnostic }];
       }
-      return render.diagnostics.map((diagnostic) => ({ domain: 'render', at, diagnostic }));
     });
   });
 }

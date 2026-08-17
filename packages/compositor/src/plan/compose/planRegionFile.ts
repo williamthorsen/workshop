@@ -6,9 +6,15 @@ import { removeRegion } from '../../ownership/removeRegion.ts';
 import { renderContribution } from '../../ownership/renderContribution.ts';
 import { compareStrings } from '../../portable/compareStrings.ts';
 import type { ClosureArtifact } from '../../schemas/closure-schemas.ts';
-import type { FileContributors, FileEntry, FileOwnership, FileSide } from '../../schemas/file-schemas.ts';
+import type {
+  ArtifactContribution,
+  FileContributors,
+  FileEntry,
+  FileOwnership,
+  FileSide,
+} from '../../schemas/file-schemas.ts';
 import type { RegionKindDeployment } from '../../schemas/render-target-schemas.ts';
-import type { PartialId, TargetId } from '../../schemas/scalar-schemas.ts';
+import type { ArtifactId, PartialId, TargetId } from '../../schemas/scalar-schemas.ts';
 import type { HostState } from '../../snapshot/readTargetState.ts';
 import { blockAtCurrent, classifyStatus } from './file-entries.ts';
 import type { ArtifactVerdict, PlannedFiles, TargetPlanContext } from './TargetPlanContext.ts';
@@ -146,22 +152,36 @@ function markersFor(deployment: RegionKindDeployment, artifact: ClosureArtifact)
 }
 
 /**
- * Names every artifact routed into the host, with the partials that reached it.
+ * Names every artifact routed into the host, every artifact a fill put inside one of their blocks, and the partials
+ * that reached it.
  *
- * A blocked host names its contributors too, which route there whether or not the host could be assembled; it carries
- * no partials, nothing having been read.
+ * A routed artifact keeps the region markers its own block was written behind, even where a fill names it too: the
+ * outer attribution is the one a reader of the host needs to find its bytes. A blocked host names its routed
+ * contributors, which route there whether or not it could be assembled; it names no filler and carries no partials,
+ * nothing having been read.
  */
 function nameContributors(
   deployment: RegionKindDeployment,
   routed: ReadonlyArray<ClosureArtifact>,
   contributions: ReadonlyArray<RenderedContribution>,
 ): FileContributors {
-  const named = new Set(contributions.flatMap(({ partials }) => [...partials]));
+  const artifacts = new Map<ArtifactId, ArtifactContribution>(
+    routed.map((artifact) => [artifact.id, { artifactId: artifact.id, marker: markersFor(deployment, artifact) }]),
+  );
+  const named = new Set<PartialId>();
 
-  return {
-    artifacts: routed.map((artifact) => ({ artifactId: artifact.id, marker: markersFor(deployment, artifact) })),
-    partials: [...named].toSorted(compareStrings) satisfies Array<PartialId>,
-  };
+  for (const { contributors } of contributions) {
+    for (const contribution of contributors.artifacts) {
+      if (!artifacts.has(contribution.artifactId)) {
+        artifacts.set(contribution.artifactId, contribution);
+      }
+    }
+    for (const partial of contributors.partials) {
+      named.add(partial);
+    }
+  }
+
+  return { artifacts: artifacts.values().toArray(), partials: [...named].toSorted(compareStrings) };
 }
 
 /** Names the destination a region deployment writes, which is the host itself. */
@@ -191,17 +211,17 @@ function readContributions(context: TargetPlanContext, routed: ReadonlyArray<Clo
           : `"${artifact.id}" is of a kind the target does not deploy.`;
       return { status: 'unrenderable', reason };
     }
-    contributions.push({ artifact, content: render.content, partials: render.contributors.partials });
+    contributions.push({ artifact, content: render.content, contributors: render.contributors });
   }
 
   return { status: 'read', contributions };
 }
 
-/** One contributor's rendered body, with the partials that reached it. */
+/** One contributor's rendered body, with everything whose text reached it. */
 interface RenderedContribution {
   readonly artifact: ClosureArtifact;
   readonly content: string;
-  readonly partials: ReadonlyArray<PartialId>;
+  readonly contributors: FileContributors;
 }
 
 // endregion | Helpers

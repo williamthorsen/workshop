@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -226,6 +226,10 @@
       "seededBy": [
         {
           "via": "source-catalog",
+          "tierId": "project"
+        },
+        {
+          "via": "binding",
           "tierId": "project"
         }
       ],
@@ -494,12 +498,19 @@
         "hash": "sha256:7f2382a25a1072b058208751673bdccb0269c5b19b7e4e70169f3f6e00c4cff6"
       },
       "planned": {
-        "hash": "sha256:023a89d4905ca9852344d46ff5701e14e9fb9efec4a8a3fee5e4dc3298d13a7e"
+        "hash": "sha256:19e30c9ecf84f5023c3dd09b193cee72886c3b2fdebe889be62147044fa2447f"
       },
       "contributors": {
         "artifacts": [
           {
             "artifactId": "skill:review"
+          },
+          {
+            "artifactId": "rulebook:naming",
+            "marker": {
+              "open": "<!-- fill:rulebook:naming -->",
+              "close": "<!-- /fill:rulebook:naming -->"
+            }
           }
         ],
         "partials": [
@@ -555,13 +566,13 @@
     }
   ],
   "blobs": {
-    "sha256:023a89d4905ca9852344d46ff5701e14e9fb9efec4a8a3fee5e4dc3298d13a7e": {
-      "encoding": "utf8",
-      "data": "# Review\n\nRead the diff, then the tests.\n"
-    },
     "sha256:17846c43781848d3cfbc5a8fe0a31b97f60626d87f4844f73669f10cc38ec21d": {
       "encoding": "utf8",
       "data": "{\n  \"hooks\": [\n    {\n      \"command\": \"vendor-tool sync\"\n    },\n    {\n      \"command\": \"relay --on=stop\",\n      \"source\": \"codeassembly\"\n    },\n    {\n      \"command\": \"relay --on=review\",\n      \"source\": \"codeassembly\"\n    }\n  ]\n}\n"
+    },
+    "sha256:19e30c9ecf84f5023c3dd09b193cee72886c3b2fdebe889be62147044fa2447f": {
+      "encoding": "utf8",
+      "data": "# Review\n\nRead the diff, then the tests.\n\n<!-- inlay:preferences:start -->\n<!-- fill:rulebook:naming -->\nName functions with a leading verb.\n<!-- /fill:rulebook:naming -->\n<!-- inlay:preferences:end -->\n"
     },
     "sha256:218ad85a233eff829618a6865ab681222b734c62d35a32b3eabd5c37d8945f86": {
       "encoding": "base64",

@@ -39,7 +39,7 @@ export function composePlan(config: CompositorConfig, snapshot: CompositionSnaps
   const closure = computeClosure({ graph: snapshot.edgeGraph, selection, tiers });
 
   const blobs = createBlobStore();
-  const assembly = assembleFiles({ snapshot, artifacts: closure.artifacts, blobs });
+  const assembly = assembleFiles({ snapshot, artifacts: closure.artifacts, blobs, bindings: selection.bindings });
   const partials = collectPartials(closure.partials, assembly.files, snapshot);
 
   return {

@@ -4,8 +4,8 @@ import { CompositorConfigSchema } from '../schemas/config-schemas.ts';
 /**
  * One tier as a test declares it: an authored body, plus an identity defaulted from its position.
  *
- * `sources` and `select` are untyped so a test can write the terse authored spellings the schema normalizes, which is
- * what most tests here are exercising the far side of.
+ * `sources`, `select`, and `inlays` are untyped so a test can write the terse authored spellings the schema normalizes,
+ * which is what most tests here are exercising the far side of.
  */
 export interface TierInput {
   readonly id?: string;
@@ -13,6 +13,7 @@ export interface TierInput {
   readonly shouldReset?: boolean;
   readonly sources?: unknown;
   readonly select?: unknown;
+  readonly inlays?: unknown;
 }
 
 /** Builds a normalized config whose tiers are `tiers`, lowest precedence first. */
@@ -25,6 +26,7 @@ export function buildConfig(tiers: ReadonlyArray<TierInput>): CompositorConfig {
       shouldReset: tier.shouldReset,
       sources: tier.sources,
       select: tier.select,
+      inlays: tier.inlays,
     })),
   });
 }

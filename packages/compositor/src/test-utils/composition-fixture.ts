@@ -36,6 +36,29 @@ export function buildCompositionSourceFiles(): Record<string, string | Uint8Arra
 }
 
 /**
+ * Builds the target the inlay tests deploy into, which is the flow target with an inlay stage over it.
+ *
+ * The inlay's contribution markers differ from the region's, so a filled inlay inside a routed contribution stays
+ * distinguishable from the contribution it sits in.
+ */
+export function buildInlayingTarget(targetRoot: string): RenderTarget {
+  const claude = buildClaudeTarget(targetRoot);
+
+  return {
+    ...claude,
+    stages: [
+      ...claude.stages,
+      {
+        kind: 'inlay',
+        syntax: { open: '<!--', close: '-->' },
+        markers: INLAY_MARKERS,
+        contributionMarkers: FILL_MARKERS,
+      },
+    ],
+  };
+}
+
+/**
  * Builds a target whose two deployments are rooted at one directory, rulebooks deploying under a template among an
  * untemplated kind's own artifacts.
  *
@@ -104,8 +127,20 @@ export const CONTRIBUTION_MARKERS: MarkerPair = {
 /** A PNG signature, standing in for an asset a skill ships and no target transforms. */
 export const DIAGRAM_BYTES = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+/** The markers delimiting one filler's block within a filled inlay. */
+export const FILL_MARKERS: MarkerPair = {
+  open: '<!-- fill:{artifactId} -->',
+  close: '<!-- /fill:{artifactId} -->',
+};
+
 /** The path of the region host the fixture's rulebooks aggregate into. */
 export const HOST_PATH = 'CLAUDE.md';
+
+/** The markers fencing a whole filled inlay in the body that declared it. */
+export const INLAY_MARKERS: MarkerPair = {
+  open: '<!-- inlay:{inlayName}:start -->',
+  close: '<!-- inlay:{inlayName}:end -->',
+};
 
 /** The markers fencing the span the engine owns within the fixture's region host. */
 export const REGION_MARKERS: MarkerPair = {

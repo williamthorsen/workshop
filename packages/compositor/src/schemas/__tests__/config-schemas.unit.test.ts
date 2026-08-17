@@ -18,18 +18,26 @@ const authoredTier = {
     skill: { use: ['lint', { source: 'acme' }], drop: ['legacy'] },
     rulebook: { use: [{ source: 'local' }] },
   },
+  inlays: {
+    'implementation-preferences': { rulebook: { use: ['naming'] } },
+  },
 };
+
+const nothingDeclared = { shouldReset: false, sources: { use: [], drop: [] }, select: [], inlays: {} };
 
 describe('TierBodySchema', () => {
   it('reads an empty body as a tier declaring nothing', () => {
-    expect(TierBodySchema.parse({})).toStrictEqual({ shouldReset: false, sources: { use: [], drop: [] }, select: [] });
+    expect(TierBodySchema.parse({})).toStrictEqual(nothingDeclared);
   });
 
-  it.each(['sources', 'select'] as const)('reads a null %s block as declaring nothing', (block) => {
-    expect(TierBodySchema.parse({ [block]: null })).toStrictEqual({
-      shouldReset: false,
-      sources: { use: [], drop: [] },
-      select: [],
+  it.each(['sources', 'select', 'inlays'] as const)('reads a null %s block as declaring nothing', (block) => {
+    expect(TierBodySchema.parse({ [block]: null })).toStrictEqual(nothingDeclared);
+  });
+
+  it('reads a null binding as one naming the inlay and binding nothing to it', () => {
+    expect(TierBodySchema.parse({ inlays: { preferences: null } })).toStrictEqual({
+      ...nothingDeclared,
+      inlays: { preferences: [] },
     });
   });
 
@@ -58,6 +66,9 @@ describe('ConfigTierSchema', () => {
         { kindId: 'rulebook', use: [{ source: 'local' }], drop: [] },
         { kindId: 'skill', use: [{ artifact: 'lint' }, { source: 'acme' }], drop: [{ artifact: 'legacy' }] },
       ],
+      inlays: {
+        'implementation-preferences': [{ kindId: 'rulebook', use: [{ artifact: 'naming' }], drop: [] }],
+      },
     });
   });
 
