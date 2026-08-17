@@ -22,6 +22,19 @@ export function buildClaudeTarget(targetRoot: string): RenderTarget {
   };
 }
 
+/** Builds the source tree the flow tests compose over, fresh so that a test may add to it or take from it. */
+export function buildCompositionSourceFiles(): Record<string, string | Uint8Array> {
+  return {
+    'collections/core.md': '# Core\n',
+    'rulebooks/naming.md': 'Name things well.\n',
+    'rulebooks/style.md': 'Write plainly.\n',
+    'skills/lint/SKILL.md': '# Lint\n',
+    'skills/review/SKILL.md': '# Review\n',
+    'skills/review/diagram.png': DIAGRAM_BYTES,
+    'subagents/auditor.md': '# Auditor\n',
+  };
+}
+
 /**
  * Builds the target the inlay tests deploy into, which is the flow target with an inlay stage over it.
  *
@@ -42,19 +55,6 @@ export function buildInlayingTarget(targetRoot: string): RenderTarget {
         contributionMarkers: FILL_MARKERS,
       },
     ],
-  };
-}
-
-/** Builds the source tree the flow tests compose over, fresh so that a test may add to it or take from it. */
-export function buildCompositionSourceFiles(): Record<string, string | Uint8Array> {
-  return {
-    'collections/core.md': '# Core\n',
-    'rulebooks/naming.md': 'Name things well.\n',
-    'rulebooks/style.md': 'Write plainly.\n',
-    'skills/lint/SKILL.md': '# Lint\n',
-    'skills/review/SKILL.md': '# Review\n',
-    'skills/review/diagram.png': DIAGRAM_BYTES,
-    'subagents/auditor.md': '# Auditor\n',
   };
 }
 
@@ -124,23 +124,23 @@ export const CONTRIBUTION_MARKERS: MarkerPair = {
   close: '<!-- /{artifactId} -->',
 };
 
+/** A PNG signature, standing in for an asset a skill ships and no target transforms. */
+export const DIAGRAM_BYTES = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
 /** The markers delimiting one filler's block within a filled inlay. */
 export const FILL_MARKERS: MarkerPair = {
   open: '<!-- fill:{artifactId} -->',
   close: '<!-- /fill:{artifactId} -->',
 };
 
+/** The path of the region host the fixture's rulebooks aggregate into. */
+export const HOST_PATH = 'CLAUDE.md';
+
 /** The markers fencing a whole filled inlay in the body that declared it. */
 export const INLAY_MARKERS: MarkerPair = {
   open: '<!-- inlay:{inlayName}:start -->',
   close: '<!-- inlay:{inlayName}:end -->',
 };
-
-/** A PNG signature, standing in for an asset a skill ships and no target transforms. */
-export const DIAGRAM_BYTES = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-
-/** The path of the region host the fixture's rulebooks aggregate into. */
-export const HOST_PATH = 'CLAUDE.md';
 
 /** The markers fencing the span the engine owns within the fixture's region host. */
 export const REGION_MARKERS: MarkerPair = {
