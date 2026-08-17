@@ -1,22 +1,33 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { VERSION } from '../../version.ts';
 import { routeCommand } from '../route.ts';
 
 /** A kit whose single check passes, shared by every fixture here so only the stamp varies. */
 const KIT_BODY = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
 
-const temp = useTempDir({
-  prefix: 'readyup-compiled-with-',
-  cwd: 'chdir',
-  scope: 'file',
-  setup: () => {
-    temp.write('.readyup/kits/stamped.js', buildStampedKit('0.19.2'));
-    temp.write('.readyup/kits/current.js', buildStampedKit(VERSION));
-    temp.write('.readyup/kits/unstamped.js', KIT_BODY);
-  },
+const it = test.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() =>
+    createTempTree(
+      {
+        '.readyup/kits/current.js': buildStampedKit(VERSION),
+        '.readyup/kits/stamped.js': buildStampedKit('0.19.2'),
+        '.readyup/kits/unstamped.js': KIT_BODY,
+      },
+      { prefix: 'readyup-compiled-with-' },
+    ),
+  ),
+);
+
+it.aroundAll(async (runSuite, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runSuite();
 });
 
 describe('compile-time readyup version in the run report', () => {
