@@ -88,6 +88,7 @@ const config = defineConfig([
     files: [
       'packages/readyup/src/bin/__tests__/route.*.test.ts',
       'packages/readyup/src/check-utils/__tests__/discoverKitPackages.unit.test.ts',
+      'packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.unit.test.ts',
       'packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts',
       'packages/readyup/src/portable/__tests__/walkDirectories.unit.test.ts',
       'packages/readyup/src/projects/__tests__/discoverKitProjects.unit.test.ts',
