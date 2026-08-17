@@ -1,3 +1,4 @@
+import type { BindingDiagnostic } from '../inlays/BindingDiagnostic.ts';
 import type { InlayDiagnostic } from '../inlays/InlayDiagnostic.ts';
 import type { RenderDiagnostic } from '../render/RenderDiagnostic.ts';
 import type { ClosureDiagnostic } from '../schemas/closure-schemas.ts';
@@ -44,12 +45,17 @@ export interface RenderRef {
  * directive that cannot be read ends the render, while a token or a link that cannot be rewritten travels beside the
  * content that was produced anyway. They stand apart from each other because each locates its fault differently -- a
  * transclusion directive in the file an author wrote it in, an inlay directive in the body it was rendered into.
+ *
+ * A binding carries no `at` of its own here, unlike every other located domain, because its diagnostic already knows
+ * where it belongs: a fault the config alone commits sits at the config, and one a target commits names the target and
+ * the site. A `RenderRef` wrapper would have to be empty for the first of those.
  */
 export type ValidationDiagnostic =
   | { readonly domain: 'selection'; readonly diagnostic: SelectionDiagnostic }
   | { readonly domain: 'closure'; readonly diagnostic: ClosureDiagnostic }
   | { readonly domain: 'transclusion'; readonly at: RenderRef; readonly diagnostic: TransclusionDiagnostic }
   | { readonly domain: 'inlay'; readonly at: RenderRef; readonly diagnostic: InlayDiagnostic }
+  | { readonly domain: 'binding'; readonly diagnostic: BindingDiagnostic }
   | { readonly domain: 'render'; readonly at: RenderRef; readonly diagnostic: RenderDiagnostic }
   | { readonly domain: 'deployment'; readonly diagnostic: DeploymentDiagnostic };
 

@@ -70,14 +70,21 @@ function collectRenderDiagnostics(
       if (!reached.has(artifactId)) {
         return [];
       }
-      if (render.status === 'failed') {
-        const { stage, diagnostic } = render.failure;
-        return [stage === 'inlay' ? { domain: 'inlay', at, diagnostic } : { domain: 'transclusion', at, diagnostic }];
+      if (render.status !== 'failed') {
+        return render.status === 'not-deployed'
+          ? []
+          : render.diagnostics.map((diagnostic) => ({ domain: 'render', at, diagnostic }));
       }
-      if (render.status === 'not-deployed') {
-        return [];
+
+      const failure = render.failure;
+      switch (failure.stage) {
+        case 'binding':
+          return [{ domain: 'binding', diagnostic: failure.diagnostic }];
+        case 'inlay':
+          return [{ domain: 'inlay', at, diagnostic: failure.diagnostic }];
+        case 'transclusion':
+          return [{ domain: 'transclusion', at, diagnostic: failure.diagnostic }];
       }
-      return render.diagnostics.map((diagnostic) => ({ domain: 'render', at, diagnostic }));
     });
   });
 }

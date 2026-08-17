@@ -82,9 +82,8 @@ export function selectArtifacts(config: CompositorConfig, catalog: Catalog): Sel
       applyBlock(fold, tier.id, block, undefined);
     }
     // Inlay names are walked in order, so a config authored in two key orders reports its faults in one order.
-    for (const [inlayName, blocks] of Object.entries(tier.inlays).toSorted(([left], [right]) =>
-      compareStrings(left, right),
-    )) {
+    const named = Object.entries(tier.inlays).toSorted(([left], [right]) => compareStrings(left, right));
+    for (const [inlayName, blocks] of named) {
       for (const block of blocks) {
         applyBlock(fold, tier.id, block, inlayName);
       }
