@@ -82,16 +82,6 @@ export function fillInlays(input: FillInlaysInput): InlayFill {
 
 // region | Helpers
 
-/** Builds one filled inlay's whole block, or nothing where the inlay has no filler to put in it. */
-function buildBlock(context: FillContext, inlayName: string, fillers: ReadonlyArray<Filler>): string | undefined {
-  if (fillers.length === 0) {
-    return undefined;
-  }
-
-  const contributions = fillers.map((filler) => renderContribution(filler.markers, filler.body));
-  return renderContribution(renderInlayMarkers(context.stage.markers, inlayName), contributions.join('\n\n'));
-}
-
 /**
  * The fault that leaves a host with no body worth writing, held apart from the host that will raise it.
  *
@@ -103,6 +93,16 @@ interface BlockingFault {
   readonly inlayName: string;
   readonly artifactId: ArtifactId;
   readonly detail: string;
+}
+
+/** Builds one filled inlay's whole block, or nothing where the inlay has no filler to put in it. */
+function buildBlock(context: FillContext, inlayName: string, fillers: ReadonlyArray<Filler>): string | undefined {
+  if (fillers.length === 0) {
+    return undefined;
+  }
+
+  const contributions = fillers.map((filler) => renderContribution(filler.markers, filler.body));
+  return renderContribution(renderInlayMarkers(context.stage.markers, inlayName), contributions.join('\n\n'));
 }
 
 /** A reshape rule as the fill runs it. */
@@ -156,10 +156,14 @@ type FillerRead =
   | { readonly status: 'blocked'; readonly fault: BlockingFault };
 
 /**
- * Fills every inlay one host declared, ending its render at the first filler that leaves it unwritable.
+ * Fills every inlay one host declared, ending its render where any filler leaves it unwritable.
  *
  * The sites are read forward and spliced backward. Reading forward is what puts the contributors in the order the body
  * declares them; splicing backward is what keeps every unfilled index addressing the line it was recorded against.
+ *
+ * Every site is read before the host is answered, even once one has blocked it, so a fault does not hide behind an
+ * earlier one and a single run reports every mistake a config carries. The render is ended by the first block, in
+ * declaration order, a blocked destination taking one reason while the report takes them all.
  *
  * A blocking fault travels twice: as a diagnostic, which is how the report lists it beside the host's other faults, and
  * as the failed render, which is what leaves the host's destinations holding what they hold.
@@ -167,6 +171,7 @@ type FillerRead =
 function fillHost(context: FillContext, hostId: ArtifactId, render: RenderedArtifact): ArtifactRender {
   const blocks: Array<{ insertAt: number; block: string | undefined }> = [];
   const used: Array<Filler> = [];
+  let blocking: BindingDiagnostic | undefined;
 
   for (const site of render.inlays) {
     const read = readInlay(context, site.name);
@@ -176,13 +181,18 @@ function fillHost(context: FillContext, hostId: ArtifactId, render: RenderedArti
       const diagnostic = describeFault(code, at, detail);
       // The report reads the diagnostics; the plan reads the failed render, which is what blocks the host's file.
       context.diagnostics.push(diagnostic);
-      return { status: 'failed', failure: { stage: 'binding', diagnostic } };
+      blocking ??= diagnostic;
+      continue;
     }
     const block = buildBlock(context, site.name, read.fillers);
     blocks.push({ insertAt: site.insertAt, block });
     if (block !== undefined) {
       used.push(...read.fillers);
     }
+  }
+
+  if (blocking !== undefined) {
+    return { status: 'failed', failure: { stage: 'binding', diagnostic: blocking } };
   }
 
   const lines = render.content.split('\n');

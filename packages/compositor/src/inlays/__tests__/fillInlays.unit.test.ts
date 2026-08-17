@@ -285,6 +285,59 @@ describe(fillInlays, () => {
     expect(fill.renders.get('skill:review')).toHaveProperty('failure.diagnostic.code', 'unrenderable-binding');
   });
 
+  // One run reports every mistake, so a site's fault does not hide behind a block an earlier site raised.
+  it('reads every site of a blocked host, reporting what the sites after the block got wrong', () => {
+    const fill = run({
+      renders: [
+        [
+          'skill:review',
+          rendered('Lead.\nTail.\n', [
+            { name: 'first', insertAt: 1 },
+            { name: 'second', insertAt: 2 },
+          ]),
+        ],
+        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+      ],
+      bindings: [
+        { inlayName: 'first', artifactIds: ['rulebook:naming'] },
+        { inlayName: 'second', artifactIds: ['subagent:auditor'] },
+      ],
+    });
+
+    expect(fill.diagnostics.map(({ code }) => code)).toStrictEqual(['nested-inlay', 'undeployed-kind']);
+    expect(fill.renders.get('skill:review')).toHaveProperty('failure.diagnostic.code', 'nested-inlay');
+  });
+
+  // A blocked destination takes one reason while the report takes them all, and declaration order picks which.
+  it('ends a doubly-blocked host’s render at the first block, reporting both', () => {
+    const fill = run({
+      renders: [
+        [
+          'skill:review',
+          rendered('Lead.\nTail.\n', [
+            { name: 'first', insertAt: 1 },
+            { name: 'second', insertAt: 2 },
+          ]),
+        ],
+        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+        [
+          'rulebook:style',
+          {
+            status: 'failed',
+            failure: { stage: 'inlay', diagnostic: { code: 'duplicate-name', message: 'Declared twice.', line: 2 } },
+          },
+        ],
+      ],
+      bindings: [
+        { inlayName: 'first', artifactIds: ['rulebook:naming'] },
+        { inlayName: 'second', artifactIds: ['rulebook:style'] },
+      ],
+    });
+
+    expect(fill.diagnostics.map(({ code }) => code)).toStrictEqual(['nested-inlay', 'unrenderable-binding']);
+    expect(fill.renders.get('skill:review')).toHaveProperty('failure.diagnostic.code', 'nested-inlay');
+  });
+
   it('reports a filler of a kind the target deploys nowhere and splices nothing for it', () => {
     const fill = run({
       renders: [['skill:review', rendered('Lead.\nTail.\n', [{ name: 'preferences', insertAt: 1 }])]],
