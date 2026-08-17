@@ -20,11 +20,24 @@ import { SourceDeclarationSchema } from './source-declaration-schemas.ts';
  *
  * Strict, so a misspelled key fails rather than declaring nothing. A block that is absent, or whose value is `null`
  * because every entry under it is commented out, reads as the empty declaration it means.
+ *
+ * `inlays` binds artifacts into the inlays a body declares, keyed by inlay name and carrying `select`'s own selector
+ * grammar under it. A second grammar would state one idea twice, and reusing this one is what lets a higher tier
+ * unbind with `drop` and supplies the `kindId` that orders a fill.
  */
 export const TierBodySchema = z.strictObject({
   shouldReset: z.boolean().default(false),
   sources: z.preprocess((value) => value ?? undefined, SourceDeclarationSchema.default({ use: [], drop: [] })),
   select: z.preprocess((value) => value ?? undefined, SelectSchema.default([])),
+  inlays: z.preprocess(
+    (value) => value ?? undefined,
+    z
+      .record(
+        IdSchema,
+        z.preprocess((value) => value ?? undefined, SelectSchema.default([])),
+      )
+      .default({}),
+  ),
 });
 
 /**

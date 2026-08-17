@@ -159,6 +159,151 @@ describe(selectArtifacts, () => {
     expect(selection.diagnostics).toHaveLength(2);
   });
 
+  it('binds an artifact a tier names under an inlay, seeding it as the binding it is', () => {
+    const selection = select([{ id: 'project', inlays: { preferences: { skill: { use: ['lint'] } } } }]);
+
+    expect(selection.bindings).toStrictEqual([{ inlayName: 'preferences', artifactIds: ['skill:lint'] }]);
+    expect(selection.seeded).toStrictEqual([
+      { artifactId: 'skill:lint', seededBy: [{ via: 'binding', tierId: 'project' }] },
+    ]);
+  });
+
+  // The origin says the artifact is there to fill an inlay; how the selector reached it is the binding's own business.
+  it('seeds a binding as a binding even where the selector took a source whole', () => {
+    const selection = select([
+      { id: 'project', inlays: { preferences: { rulebook: { use: [{ source: 'local' }] } } } },
+    ]);
+
+    expect(selection.seeded.at(0)?.seededBy).toStrictEqual([{ via: 'binding', tierId: 'project' }]);
+  });
+
+  it('fills in tier order, then kind order, then the order a use list names', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['review', 'lint'] } } } },
+      { id: 'project', inlays: { preferences: { rulebook: { use: ['house-style'] }, skill: { use: ['format'] } } } },
+    ]);
+
+    expect(selection.bindings.at(0)?.artifactIds).toStrictEqual([
+      'skill:review',
+      'skill:lint',
+      'rulebook:house-style',
+      'skill:format',
+    ]);
+  });
+
+  // The higher tier says who wants it there, which is not a statement about where it goes.
+  it('leaves an artifact’s position alone when a higher tier binds it again', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint', 'review'] } } } },
+      { id: 'project', inlays: { preferences: { skill: { use: ['lint'] } } } },
+    ]);
+
+    expect(selection.bindings.at(0)?.artifactIds).toStrictEqual(['skill:lint', 'skill:review']);
+    expect(selection.seeded.find(({ artifactId }) => artifactId === 'skill:lint')?.seededBy).toStrictEqual([
+      { via: 'binding', tierId: 'global' },
+      { via: 'binding', tierId: 'project' },
+    ]);
+  });
+
+  it('unbinds from one inlay alone when a higher tier drops there, leaving the artifact bound elsewhere', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint'] } }, appendix: { skill: { use: ['lint'] } } } },
+      { id: 'project', inlays: { preferences: { skill: { drop: ['lint'] } } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([{ inlayName: 'appendix', artifactIds: ['skill:lint'] }]);
+    expect(collectIds(selection)).toStrictEqual(['skill:lint']);
+  });
+
+  it('stops seeding an artifact whose last binding a higher tier dropped', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint'] } } } },
+      { id: 'project', inlays: { preferences: { skill: { drop: ['lint'] } } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([]);
+    expect(selection.seeded).toStrictEqual([]);
+  });
+
+  it('keeps an artifact a binding dropped where something else still selects it', () => {
+    const selection = select([
+      { id: 'global', select: { skill: { use: ['lint'] } }, inlays: { preferences: { skill: { use: ['lint'] } } } },
+      { id: 'project', inlays: { preferences: { skill: { drop: ['lint'] } } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([]);
+    expect(selection.seeded).toStrictEqual([
+      { artifactId: 'skill:lint', seededBy: [{ via: 'declaration', tierId: 'global' }] },
+    ]);
+  });
+
+  it('unbinds silently when a higher tier’s select drops a bound artifact', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint'] } } } },
+      { id: 'project', select: { skill: { drop: ['lint'] } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([]);
+    expect(selection.declined).toStrictEqual([{ artifactId: 'skill:lint', via: 'declaration', tierId: 'project' }]);
+  });
+
+  // A binding is what binds; re-adopting the artifact says it belongs in the composition, not that it fills anything.
+  it('does not restore a binding a select drop cleared when a later tier uses the artifact again', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint'] } } } },
+      { id: 'team', select: { skill: { drop: ['lint'] } } },
+      { id: 'project', select: { skill: { use: ['lint'] } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([]);
+    expect(selection.seeded).toStrictEqual([
+      { artifactId: 'skill:lint', seededBy: [{ via: 'declaration', tierId: 'project' }] },
+    ]);
+  });
+
+  it('binds despite a drop in the same tier’s select, the tier’s bindings applying after it', () => {
+    const selection = select([
+      { id: 'global', select: { skill: { use: ['lint'] } } },
+      { id: 'project', select: { skill: { drop: ['lint'] } }, inlays: { preferences: { skill: { use: ['lint'] } } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([{ inlayName: 'preferences', artifactIds: ['skill:lint'] }]);
+    expect(selection.declined).toStrictEqual([]);
+  });
+
+  it('discards every lower tier’s bindings at a tier declaring shouldReset', () => {
+    const selection = select([
+      { id: 'global', inlays: { preferences: { skill: { use: ['lint'] } } } },
+      { id: 'project', shouldReset: true, inlays: { preferences: { skill: { use: ['review'] } } } },
+    ]);
+
+    expect(selection.bindings).toStrictEqual([{ inlayName: 'preferences', artifactIds: ['skill:review'] }]);
+  });
+
+  it('runs bindings in inlay-name order, so two selections of one shape diff cleanly', () => {
+    const selection = select([
+      {
+        id: 'project',
+        inlays: { preferences: { skill: { use: ['lint'] } }, appendix: { skill: { use: ['review'] } } },
+      },
+    ]);
+
+    expect(selection.bindings.map(({ inlayName }) => inlayName)).toStrictEqual(['appendix', 'preferences']);
+  });
+
+  it('locates a diagnostic under a binding at the inlay the author wrote it under', () => {
+    const selection = select([{ id: 'project', inlays: { preferences: { skill: { use: ['absent'] } } } }]);
+
+    expect(selection.diagnostics.at(0)?.code).toBe('unknown-artifact');
+    expect(selection.diagnostics.at(0)?.at).toStrictEqual({
+      tierId: 'project',
+      kindId: 'skill',
+      inlayName: 'preferences',
+      list: 'use',
+      index: 0,
+    });
+  });
+
   // Asserting the dirs is what keeps the claim honest: a source pointing somewhere real would let this pass by accident.
   it('selects without reading anything from disk', () => {
     const selection = select([{ id: 'project', select: { skill: { use: [{ source: 'acme' }] } } }]);

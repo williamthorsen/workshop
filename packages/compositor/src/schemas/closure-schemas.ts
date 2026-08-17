@@ -12,7 +12,7 @@ import { IdSchema } from './scalar-schemas.ts';
  * Bumped when a field is removed, renamed, or re-typed, never when an optional field is added. Independent of the
  * plan's version: the two contracts share the artifact shape but evolve on their own schedules.
  */
-export const CLOSURE_SCHEMA_VERSION = 1;
+export const CLOSURE_SCHEMA_VERSION = 2;
 
 /**
  * One artifact the closure reached.

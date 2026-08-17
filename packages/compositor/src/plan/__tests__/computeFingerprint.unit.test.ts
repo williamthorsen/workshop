@@ -34,6 +34,7 @@ describe(computeFingerprint, () => {
     const { config, snapshot } = await captureComposition();
     const rebuilt = {
       tiers: config.tiers.map((tier) => ({
+        inlays: tier.inlays,
         select: tier.select,
         sources: tier.sources,
         shouldReset: tier.shouldReset,

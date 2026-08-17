@@ -37,7 +37,15 @@ describe(loadConfig, () => {
     const config = await loadConfig([buildTierFile(dir, 'global'), buildTierFile(dir, 'project')]);
 
     expect(config.tiers).toStrictEqual([
-      { id: 'global', label: 'global', baseDir: dir, shouldReset: false, sources: { use: [], drop: [] }, select: [] },
+      {
+        id: 'global',
+        label: 'global',
+        baseDir: dir,
+        shouldReset: false,
+        sources: { use: [], drop: [] },
+        select: [],
+        inlays: {},
+      },
     ]);
   });
 
@@ -65,6 +73,18 @@ describe(loadConfig, () => {
     expect(config.tiers.at(0)?.sources.use).toStrictEqual([
       { name: 'local', origin: { kind: 'directory', location: './content' } },
     ]);
+  });
+
+  it('reads an inlay binding, normalizing it through the selector grammar select is read by', async () => {
+    const dir = buildConfigDir({
+      'project.yaml': 'inlays:\n  implementation-preferences:\n    rulebook:\n      use: [naming]\n',
+    });
+
+    const config = await loadConfig([buildTierFile(dir, 'project')]);
+
+    expect(config.tiers.at(0)?.inlays).toStrictEqual({
+      'implementation-preferences': [{ kindId: 'rulebook', use: [{ artifact: 'naming' }], drop: [] }],
+    });
   });
 
   // YAML is a superset of JSON, so a consumer writing config as JSON needs no separate branch here.

@@ -35,9 +35,12 @@ export const DependencyEdgeSchema = z
  * How an artifact entered the closure as a root.
  *
  * `declaration` is a tier naming the artifact itself. `source-catalog` is a tier taking everything one source carries,
- * which names no artifact and so cannot say which one it meant.
+ * which names no artifact and so cannot say which one it meant. `binding` is a tier naming the artifact as the filler
+ * of an inlay, which is a root rather than an edge: an edge would have to run from the artifact declaring the inlay,
+ * and finding those means reading bodies for a directive whose syntax lives on a target, while the edge graph is
+ * target-independent by construction.
  */
-export const SeedOriginSchema = z.enum(['declaration', 'source-catalog']).meta({ id: 'SeedOrigin' });
+export const SeedOriginSchema = z.enum(['binding', 'declaration', 'source-catalog']).meta({ id: 'SeedOrigin' });
 
 /**
  * One reason an artifact is a closure root, with the config tier that decided it.
