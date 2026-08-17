@@ -21,7 +21,7 @@ const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/ki
 const textsByCwd = new Map<string, Map<string, string | undefined>>();
 
 /**
- * Reads the project's tracked sources that `filter` selects, or nothing outside a git working tree.
+ * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree.
  *
  * The filter decides a path before anything reads it, so a caller never pays for a file it excluded. Text is held per
  * `cwd` for the life of the process, so a file two kits both select costs one read between them, and each pays only
@@ -59,7 +59,7 @@ function isExcluded(path: string): boolean {
 }
 
 /**
- * Reads a tracked path as text, answering with nothing where it holds none.
+ * Reads a tracked path as text, returning `undefined` where it holds none.
  *
  * `git ls-files` names entries that are not files: a symlink to a directory, and the gitlink of a checked-out
  * submodule. Both exist, so only the read itself can tell them from a source.
@@ -72,7 +72,7 @@ function readText(path: string): string | undefined {
   }
 }
 
-/** Answers with the text cache belonging to `cwd`, opening one where this is the first sweep under it. */
+/** Returns the text cache belonging to `cwd`, opening one where this is the first sweep under it. */
 function resolveTextCache(cwd: string): Map<string, string | undefined> {
   let texts = textsByCwd.get(cwd);
   if (texts === undefined) {

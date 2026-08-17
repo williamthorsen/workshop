@@ -5,10 +5,10 @@ import { runGitRaw } from '../git/run-git.ts';
 const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
 
 /**
- * Lists the paths git tracks under the working directory, or nothing where it is not a git working tree.
+ * Lists the paths git tracks under the working directory, or `undefined` where it is not a git working tree.
  *
- * Nothing and an empty list are distinct answers: a project outside a working tree cannot be swept at all, while one
- * inside an empty tree was swept and holds no tracked file.
+ * `undefined` and an empty list are distinct results: a project outside a working tree cannot be swept at all,
+ * while one inside an empty tree was swept and holds no tracked file.
  *
  * Memoized per `cwd` for the life of the process. The promise is held rather than the value it settles to, because
  * the runner starts sibling checks together: a cache filled on resolution arrives too late for every check that
@@ -30,7 +30,7 @@ export function listTrackedFiles(): Promise<readonly string[] | undefined> {
 
 // region | Helpers
 
-/** Reads the tracked paths of the working tree at `cwd`, or nothing where `cwd` is outside one. */
+/** Reads the tracked paths of the working tree at `cwd`, or `undefined` where `cwd` is outside one. */
 async function readTrackedPaths(cwd: string): Promise<readonly string[] | undefined> {
   if (!(await isGitRepo(cwd))) return undefined;
 

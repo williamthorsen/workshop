@@ -1193,7 +1193,7 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
 | `buildFindingReport(options)`         | A `CheckOutcome` naming located findings, with a fraction      |
 
-These four are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers answer `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
+These four are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
 `listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope `readFile` works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 
