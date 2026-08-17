@@ -159,9 +159,9 @@ describe(renderArtifact, () => {
   });
 
   it('strips an inlay directive and reports the line it stood on', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': '# Review\n\n<!-- inlay: preferences -->\n\nTail.\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': '# Review\n\n<!-- inlay: preferences -->\n\nTail.\n' });
 
-    const result = await render(dir, inlaying);
+    const result = await render(tree.dir, inlaying);
 
     expect(requireRendered(result).content).toBe('# Review\n\n\nTail.\n');
     expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 2 }]);
@@ -169,7 +169,7 @@ describe(renderArtifact, () => {
 
   // The overlay re-emits its block, so a site computed before it ran would address the line above the right one.
   it('addresses a site against the content the frontmatter overlay produced', async () => {
-    const dir = await buildTempTree({
+    using tree = createTempTree({
       'skills/review/SKILL.md': '---\nname: review\n---\n<!-- inlay: preferences -->\nTail.\n',
     });
     const overlaid: RenderTarget = {
@@ -177,25 +177,25 @@ describe(renderArtifact, () => {
       stages: [...inlaying.stages, { kind: 'frontmatter', overlay: { defaults: { model: 'opus' } } }],
     };
 
-    const result = await render(dir, overlaid);
+    const result = await render(tree.dir, overlaid);
 
     expect(requireRendered(result).content).toBe('---\nname: review\nmodel: opus\n---\nTail.\n');
     expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 4 }]);
   });
 
   it('finds an inlay a transcluded partial declared', async () => {
-    const dir = await buildTempTree({
+    using tree = createTempTree({
       '_data/shared.md': 'Shared text.\n<!-- inlay: preferences -->\n',
       'skills/review/SKILL.md': '# Review\n\n<!-- include: ../../_data/shared.md / -->\n',
     });
 
-    const result = await render(dir, inlaying);
+    const result = await render(tree.dir, inlaying);
 
     expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 3 }]);
   });
 
   it('strips an inlay for a kind the target routes into a region of a host', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': 'Lead.\n<!-- inlay: preferences -->\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': 'Lead.\n<!-- inlay: preferences -->\n' });
     const routed: RenderTarget = {
       ...inlaying,
       deployments: [
@@ -209,27 +209,27 @@ describe(renderArtifact, () => {
       ],
     };
 
-    const result = await render(dir, routed);
+    const result = await render(tree.dir, routed);
 
     expect(requireRendered(result).content).toBe('Lead.\n');
     expect(requireRendered(result).inlays).toStrictEqual([{ name: 'preferences', insertAt: 1 }]);
   });
 
   it('deploys an inlay directive as text for a target declaring no inlay stage', async () => {
-    const dir = await buildTempTree({ 'skills/review/SKILL.md': '<!-- inlay: preferences -->\n' });
+    using tree = createTempTree({ 'skills/review/SKILL.md': '<!-- inlay: preferences -->\n' });
 
-    const result = await render(dir, claude);
+    const result = await render(tree.dir, claude);
 
     expect(requireRendered(result).content).toBe('<!-- inlay: preferences -->\n');
     expect(requireRendered(result).inlays).toStrictEqual([]);
   });
 
   it('ends the render on a body declaring one inlay twice, naming the stage that stopped it', async () => {
-    const dir = await buildTempTree({
+    using tree = createTempTree({
       'skills/review/SKILL.md': '<!-- inlay: preferences -->\n<!-- inlay: preferences -->\n',
     });
 
-    const result = await render(dir, inlaying);
+    const result = await render(tree.dir, inlaying);
 
     expect(result).toHaveProperty('failure.stage', 'inlay');
     expect(result).toHaveProperty('failure.diagnostic.code', 'duplicate-name');
