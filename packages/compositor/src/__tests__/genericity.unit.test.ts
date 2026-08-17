@@ -85,6 +85,28 @@ describe('a second consumer', () => {
     );
   });
 
+  it('fills an inlay declared in its own directive syntax, behind its own markers and under its own reshape', async () => {
+    const { targetRoot } = await composeAndApply();
+
+    await expect(readFile(path.join(targetRoot, INDEMNITY), 'utf8')).resolves.toContain(
+      [
+        '// inlay::standard-terms[]',
+        '// fill::clause:standard-terms[]',
+        '== Standard terms',
+        '',
+        'The stated schedule of fees applies.',
+        '// end-fill::clause:standard-terms[]',
+        '// end-inlay::standard-terms[]',
+      ].join('\n'),
+    );
+  });
+
+  it('reaches a clause no tier selected, through the binding that fills an inlay with it', async () => {
+    const { outcome } = await composeAndApply();
+
+    expect(outcome.files.map(({ path: filePath }) => filePath)).toContain('articles/clause-standard-terms.adoc');
+  });
+
   it('finds nothing to do the second time, the destination already holding what was planned', async () => {
     const { config, snapshot, targetRoot } = await captureGenericityComposition();
     const plan = composePlan(config, snapshot);
