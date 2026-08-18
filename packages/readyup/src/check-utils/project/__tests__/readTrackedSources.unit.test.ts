@@ -1,6 +1,9 @@
 import { promisify } from 'node:util';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const { existsProbes, readPaths } = vi.hoisted(() => {
   const existsProbes: string[] = [];
@@ -33,10 +36,18 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-import { useTempDir } from '../../../test-utils/tempDir.ts';
 import { readTrackedSources } from '../readTrackedSources.ts';
 
-const temp = useTempDir({ prefix: 'rdy-sources-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-sources-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(readTrackedSources, () => {
   beforeEach(() => {
@@ -44,7 +55,7 @@ describe(readTrackedSources, () => {
     readPaths.length = 0;
   });
 
-  it('reads each file once across calls passing different filters', async () => {
+  it('reads each file once across calls passing different filters', async ({ temp }) => {
     temp.write('src/shared.ts', 'shared');
     temp.write('src/first.ts', 'first');
     temp.write('src/second.ts', 'second');
@@ -66,7 +77,7 @@ describe(readTrackedSources, () => {
     expect(countReads('src/second.ts')).toBe(1);
   });
 
-  it('never reads a path the filter rejects', async () => {
+  it('never reads a path the filter rejects', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('src/rejected.ts', 'rejected');
     trackPaths('src/kept.ts', 'src/rejected.ts');
@@ -77,7 +88,7 @@ describe(readTrackedSources, () => {
     expect(countProbes('src/rejected.ts')).toBe(0);
   });
 
-  it('never reads an excluded path, whatever the filter answers for it', async () => {
+  it('never reads an excluded path, whatever the filter answers for it', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('node_modules/dependency/index.js', 'dependency');
     temp.write('.readyup/kits/default.js', 'bundle');
@@ -90,7 +101,7 @@ describe(readTrackedSources, () => {
     expect(countReads('.readyup/kits/default.js')).toBe(0);
   });
 
-  it('sweeps a kit source, which only its compiled bundle is excluded from', async () => {
+  it('sweeps a kit source, which only its compiled bundle is excluded from', async ({ temp }) => {
     temp.write('.readyup/kits/default.ts', 'kit source');
     trackPaths('.readyup/kits/default.ts');
 
@@ -99,7 +110,7 @@ describe(readTrackedSources, () => {
     ]);
   });
 
-  it('omits a tracked path that cannot be read, and probes the filesystem for it once', async () => {
+  it('omits a tracked path that cannot be read, and probes the filesystem for it once', async ({ temp }) => {
     temp.write('src/present.ts', 'present');
     trackPaths('src/deleted.ts', 'src/present.ts');
 
@@ -110,9 +121,9 @@ describe(readTrackedSources, () => {
     expect(countProbes('src/deleted.ts')).toBe(1);
   });
 
-  it('omits a tracked path that resolves to a directory', async () => {
+  it('omits a tracked path that resolves to a directory', async ({ temp }) => {
     temp.write('website/docs/page.md', 'page');
-    temp.symlinkDir('docs', 'website/docs');
+    temp.symlink('docs', 'website/docs');
     temp.write('src/present.ts', 'present');
     trackPaths('docs', 'src/present.ts');
 
@@ -121,7 +132,7 @@ describe(readTrackedSources, () => {
     expect(countReads('docs')).toBe(1);
   });
 
-  it('returns undefined outside a git working tree', async () => {
+  it('returns undefined outside a git working tree', async ({ temp }) => {
     temp.write('src/present.ts', 'present');
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
 

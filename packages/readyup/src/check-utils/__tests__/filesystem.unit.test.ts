@@ -1,12 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { fileContains, fileDoesNotContain, fileExists, filesExist, readFile } from '../filesystem.ts';
 
-const temp = useTempDir({ prefix: 'rdy-fs-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-fs-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(fileExists, () => {
-  it('returns true when the file exists', () => {
+  it('returns true when the file exists', ({ temp }) => {
     temp.write('found.txt', 'content');
 
     expect(fileExists('found.txt')).toBe(true);
@@ -18,13 +29,13 @@ describe(fileExists, () => {
 });
 
 describe(fileContains, () => {
-  it('returns true when the file matches the pattern', () => {
+  it('returns true when the file matches the pattern', ({ temp }) => {
     temp.write('data.txt', 'version: 3.2.1');
 
     expect(fileContains('data.txt', /version:\s*\d+/)).toBe(true);
   });
 
-  it('returns false when the file does not match the pattern', () => {
+  it('returns false when the file does not match the pattern', ({ temp }) => {
     temp.write('data.txt', 'no match here');
 
     expect(fileContains('data.txt', /version:/)).toBe(false);
@@ -36,13 +47,13 @@ describe(fileContains, () => {
 });
 
 describe(fileDoesNotContain, () => {
-  it('returns true when the file does not match the pattern', () => {
+  it('returns true when the file does not match the pattern', ({ temp }) => {
     temp.write('clean.txt', 'all good');
 
     expect(fileDoesNotContain('clean.txt', /bad/)).toBe(true);
   });
 
-  it('returns false when the file matches the pattern', () => {
+  it('returns false when the file matches the pattern', ({ temp }) => {
     temp.write('dirty.txt', 'contains bad stuff');
 
     expect(fileDoesNotContain('dirty.txt', /bad/)).toBe(false);
@@ -63,7 +74,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('returns ok when all files exist', () => {
+  it('returns ok when all files exist', ({ temp }) => {
     temp.write('a.txt', '');
     temp.write('b.txt', '');
 
@@ -75,7 +86,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('returns not ok with missing files listed', () => {
+  it('returns not ok with missing files listed', ({ temp }) => {
     temp.write('a.txt', '');
 
     const result = filesExist(['a.txt', 'b.txt', 'c.txt']);
@@ -87,7 +98,7 @@ describe(filesExist, () => {
     });
   });
 
-  it('resolves paths relative to baseDir when provided', () => {
+  it('resolves paths relative to baseDir when provided', ({ temp }) => {
     temp.write('sub/found.txt', '');
 
     const result = filesExist(['found.txt', 'missing.txt'], { baseDir: 'sub' });
@@ -101,7 +112,7 @@ describe(filesExist, () => {
 });
 
 describe(readFile, () => {
-  it('returns the file content as a string', () => {
+  it('returns the file content as a string', ({ temp }) => {
     temp.write('hello.txt', 'hello world');
 
     expect(readFile('hello.txt')).toBe('hello world');

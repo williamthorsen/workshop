@@ -1,11 +1,22 @@
 import { createHash } from 'node:crypto';
 
-import { describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { computeHash, fileMatchesHash } from '../hashing.ts';
 
-const temp = useTempDir({ prefix: 'rdy-hash-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-hash-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(computeHash, () => {
   it('returns a SHA-256 hex digest of the given string', () => {
@@ -25,7 +36,7 @@ describe(computeHash, () => {
 });
 
 describe(fileMatchesHash, () => {
-  it('returns true when the file content matches the expected hash', () => {
+  it('returns true when the file content matches the expected hash', ({ temp }) => {
     const content = 'exact content';
     temp.write('config.js', content);
     const hash = createHash('sha256').update(content).digest('hex');
@@ -33,7 +44,7 @@ describe(fileMatchesHash, () => {
     expect(fileMatchesHash('config.js', hash)).toBe(true);
   });
 
-  it('returns false when the file content does not match the expected hash', () => {
+  it('returns false when the file content does not match the expected hash', ({ temp }) => {
     temp.write('config.js', 'actual content');
 
     expect(fileMatchesHash('config.js', 'wrong-hash')).toBe(false);

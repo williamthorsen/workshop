@@ -1,32 +1,42 @@
 import path from 'node:path';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { captureError, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, test } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { resolveConfiguredPackages } from '../resolveConfiguredPackages.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 
-describe(resolveConfiguredPackages, () => {
-  const project = useTempDir({ prefix: 'resolve-configured-packages-', cwd: 'chdir' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'resolve-configured-packages-' })),
+);
 
-  it('expands a configured package into an entry per requested kit', () => {
-    installPackage('@acme/kits', ['default'], '2.1.0');
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runTest();
+});
+
+describe(resolveConfiguredPackages, () => {
+  it('expands a configured package into an entry per requested kit', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], '2.1.0');
 
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.js')).toStrictEqual([
       {
         name: 'default',
-        source: { path: path.join(project.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
+        source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
         checklists: [],
         provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
       },
     ]);
   });
 
-  it('orders the entries name-major across the configured packages', () => {
-    installPackage('@acme/kits', ['default', 'preflight']);
-    installPackage('@beta/kits', ['default', 'preflight']);
+  it('orders the entries name-major across the configured packages', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default', 'preflight']);
+    installPackage(temp, '@beta/kits', ['default', 'preflight']);
 
     const entries = resolveConfiguredPackages(['@acme/kits', '@beta/kits'], ['preflight', 'default'], '.js');
 
@@ -39,9 +49,9 @@ describe(resolveConfiguredPackages, () => {
   });
 
   // Requiring nothing under a name is a package with nothing to answer for, not a failure of the run.
-  it('skips a configured package that publishes no requested kit', () => {
-    installPackage('@acme/kits', ['default', 'preflight']);
-    installPackage('@beta/kits', ['default']);
+  it('skips a configured package that publishes no requested kit', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default', 'preflight']);
+    installPackage(temp, '@beta/kits', ['default']);
 
     const entries = resolveConfiguredPackages(['@acme/kits', '@beta/kits'], ['preflight'], '.js');
 
@@ -49,15 +59,15 @@ describe(resolveConfiguredPackages, () => {
   });
 
   // A bare `--packages` fills the name in, so no package publishing it is the "requires nothing" case.
-  it('resolves to nothing when no configured package publishes the default kit', () => {
-    installPackage('@acme/kits', ['preflight']);
+  it('resolves to nothing when no configured package publishes the default kit', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['preflight']);
 
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.js')).toStrictEqual([]);
   });
 
   // Answering with an empty pass would be the clean report of nothing checked.
-  it('rejects a named kit no configured package publishes', async () => {
-    installPackage('@acme/kits', ['default', 'preflight']);
+  it('rejects a named kit no configured package publishes', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default', 'preflight']);
 
     const error = await captureError(RdyError, () => {
       resolveConfiguredPackages(['@acme/kits'], ['absent'], '.js');
@@ -80,41 +90,41 @@ describe(resolveConfiguredPackages, () => {
     expect(error.message).toMatch(/requires a "packages" list/);
   });
 
-  it('applies the extension it is given to every kit path', () => {
-    installPackage('@acme/kits', ['default']);
+  it('applies the extension it is given to every kit path', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default']);
 
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.ts')).toStrictEqual([
       {
         name: 'default',
-        source: { path: path.join(project.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.ts') },
+        source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.ts') },
         checklists: [],
         provenance: { kind: 'package', packageName: '@acme/kits', version: undefined },
       },
     ]);
   });
-
-  // region | Helpers
-
-  /** Names a run entry as the package it came from and the kit it runs, which is what an order assertion reads. */
-  function describeEntry(entry: ResolvedKitEntry): string {
-    const packageName = entry.provenance?.kind === 'package' ? entry.provenance.packageName : entry.provenance?.kind;
-    return `${packageName}:${entry.name}`;
-  }
-
-  /**
-   * Installs a package declaring the named kits in its manifest.
-   *
-   * The kit files themselves are left unwritten: this resolver names where a kit would be read from and
-   * never opens it, so a fixture that wrote them would prove nothing the manifest does not already say.
-   */
-  function installPackage(name: string, kits: string[], version?: string): void {
-    const root = path.join('node_modules', name);
-    project.writeJson(path.join(root, 'package.json'), { name, ...(version !== undefined && { version }) });
-    project.writeJson(path.join(root, '.readyup', 'manifest.json'), {
-      version: 1,
-      kits: kits.map((kit) => ({ name: kit })),
-    });
-  }
-
-  // endregion | Helpers
 });
+
+// region | Helpers
+
+/** Names a run entry as the package it came from and the kit it runs, which is what an order assertion reads. */
+function describeEntry(entry: ResolvedKitEntry): string {
+  const packageName = entry.provenance?.kind === 'package' ? entry.provenance.packageName : entry.provenance?.kind;
+  return `${packageName}:${entry.name}`;
+}
+
+/**
+ * Installs a package declaring the named kits in its manifest.
+ *
+ * The kit files themselves are left unwritten: this resolver names where a kit would be read from and
+ * never opens it, so a fixture that wrote them would prove nothing the manifest does not already say.
+ */
+function installPackage(temp: TempTree, name: string, kits: string[], version?: string): void {
+  const root = path.join('node_modules', name);
+  temp.writeJson(path.join(root, 'package.json'), { name, ...(version !== undefined && { version }) });
+  temp.writeJson(path.join(root, '.readyup', 'manifest.json'), {
+    version: 1,
+    kits: kits.map((kit) => ({ name: kit })),
+  });
+}
+
+// endregion | Helpers

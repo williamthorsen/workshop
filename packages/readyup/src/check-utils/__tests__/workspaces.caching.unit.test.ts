@@ -1,8 +1,10 @@
 import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { useTempDir } from '../../test-utils/tempDir.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 
 // Hoisted alongside the `vi.mock` factory below, which runs before this module's own bindings initialize.
@@ -23,15 +25,24 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-const temp = useTempDir({ prefix: 'rdy-ws-cache-', cwd: 'mock' });
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-cache-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir);
+
+  await runTest();
+});
 
 describe(`${discoverWorkspaces.name} memoization`, () => {
   beforeEach(() => {
     readDirectories.length = 0;
   });
 
-  it('walks once across calls passing different filters, and filters each result correctly', () => {
-    writeMonorepo();
+  it('walks once across calls passing different filters, and filters each result correctly', ({ temp }) => {
+    writeMonorepo(temp);
 
     const packages = discoverWorkspaces({ filter: (workspace) => workspace.isPackage });
     const walkedForFirstCall = readDirectories.length;
@@ -44,15 +55,15 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     expect(readDirectories).toHaveLength(walkedForFirstCall);
   });
 
-  it('walks again for a second cwd', () => {
-    writeMonorepo();
+  it('walks again for a second cwd', ({ temp }) => {
+    writeMonorepo(temp);
     discoverWorkspaces();
     const walkedForFirstRoot = readDirectories.length;
 
     const secondRoot = temp.mkdir('second-root');
     temp.writeJson('second-root/package.json', { name: 'second', private: true, workspaces: ['packages/*'] });
     temp.writeJson('second-root/packages/solo/package.json', { name: 'solo' });
-    vi.spyOn(process, 'cwd').mockReturnValue(secondRoot);
+    using _cwd = pointCwdAt(secondRoot);
 
     const workspaces = discoverWorkspaces();
 
@@ -60,8 +71,8 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     expect(readDirectories.length).toBeGreaterThan(walkedForFirstRoot);
   });
 
-  it('answers a later call in full after a caller empties the array it returned', () => {
-    writeMonorepo();
+  it('answers a later call in full after a caller empties the array it returned', ({ temp }) => {
+    writeMonorepo(temp);
 
     discoverWorkspaces().length = 0;
 
@@ -71,7 +82,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     ]);
   });
 
-  it('caches nothing when discovery throws, so a repaired repo is discovered on the next call', () => {
+  it('caches nothing when discovery throws, so a repaired repo is discovered on the next call', ({ temp }) => {
     expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
     expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
 
@@ -84,7 +95,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 // region | Helpers
 
 /** Writes a two-workspace monorepo whose members differ in `private`, so a filter can tell them apart. */
-function writeMonorepo(): void {
+function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
   temp.writeJson(join('packages/alpha', 'package.json'), { name: 'alpha' });
   temp.writeJson(join('packages/internal', 'package.json'), { name: 'internal', private: true });
