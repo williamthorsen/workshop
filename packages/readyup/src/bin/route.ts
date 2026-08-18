@@ -18,6 +18,7 @@ import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { findNearestWord } from '../portable/findNearestWord.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { parseRunArgs } from '../run/parseRunArgs.ts';
 import { resolveKitSources } from '../run/resolveKitSources.ts';
@@ -25,7 +26,6 @@ import { runCommand } from '../run/runCommand.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
-import { findNearestWord } from './findNearestWord.ts';
 import { hasJsonFlag } from './hasJsonFlag.ts';
 
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */

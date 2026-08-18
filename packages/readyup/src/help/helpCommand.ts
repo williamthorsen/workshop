@@ -1,10 +1,10 @@
 import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
-import { findNearestWord } from '../bin/findNearestWord.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { findNearestWord } from '../portable/findNearestWord.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
 import { readReadmeSection } from './readmeSection.ts';
 import { TOPICS } from './topics.ts';
