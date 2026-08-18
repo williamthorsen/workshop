@@ -378,13 +378,14 @@ function describePackageKit(kit: PackageKit): string {
   return `${kit.packageName}${version}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
 }
 
-/** Builds the row for a kit a configured package publishes. */
+/** Builds the row for a kit an installed package publishes. */
 function buildPackageEntry(kit: PackageKit): JsonListKitEntry {
   return {
     name: kit.kitName,
     kind: 'compiled',
     origin: { package: kit.packageName, ...(kit.version !== undefined && { version: kit.version }) },
     path: kit.path,
+    ...(kit.description !== undefined && { description: kit.description }),
   };
 }
 

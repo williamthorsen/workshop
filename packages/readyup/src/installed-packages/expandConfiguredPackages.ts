@@ -12,7 +12,14 @@ export interface PackageKit {
   packageName: string;
   version: string | undefined;
   kitName: string;
+  description: string | undefined;
   path: string;
+}
+
+/** One kit a package publishes, as its manifest or its kit directory names it. */
+interface PublishedKit {
+  name: string;
+  description: string | undefined;
 }
 
 /**
@@ -32,23 +39,22 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
   const root = resolvePackageRoot(packageName, fromDir);
   if (root === undefined) {
-    throw configError(
-      `Configured package "${packageName}" is not installed; it must be a direct dependency of this project.`,
-    );
+    throw configError(`Package "${packageName}" is not installed; it must be a direct dependency of this project.`);
   }
 
   const kitsDir = path.join(root, KITS_DIR);
-  const kitNames = listPublishedKitNames(root, kitsDir, extension);
-  if (kitNames.length === 0) {
-    throw configError(`Configured package "${packageName}" publishes no kits in ${KITS_DIR}.`);
+  const publishedKits = listPublishedKits(root, kitsDir, extension);
+  if (publishedKits.length === 0) {
+    throw configError(`Package "${packageName}" publishes no kits in ${KITS_DIR}.`);
   }
 
   const version = readPackageVersion(root);
-  return kitNames.map((kitName) => ({
+  return publishedKits.map((kit) => ({
     packageName,
     version,
-    kitName,
-    path: path.join(kitsDir, `${kitName}${extension}`),
+    kitName: kit.name,
+    description: kit.description,
+    path: path.join(kitsDir, `${kit.name}${extension}`),
   }));
 }
 
@@ -57,14 +63,18 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
  *
  * The same precedence a local `--from` source already follows, so a package source and a directory source
  * answer alike. Only a missing manifest falls back: one that exists but cannot be parsed is a broken
- * publication, and quietly reading around it would report a kit list nobody declared.
+ * publication, and quietly reading around it would report a kit list nobody declared. Descriptions live in
+ * the manifest, so the fallback names kits without them.
  */
-function listPublishedKitNames(root: string, kitsDir: string, extension: string): string[] {
+function listPublishedKits(root: string, kitsDir: string, extension: string): PublishedKit[] {
   try {
-    return readManifest(path.join(root, DEFAULT_MANIFEST_PATH)).kits.map((kit) => kit.name);
+    return readManifest(path.join(root, DEFAULT_MANIFEST_PATH)).kits.map((kit) => ({
+      name: kit.name,
+      description: kit.description,
+    }));
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) throw error;
-    return enumerateKits({ dir: kitsDir, extension });
+    return enumerateKits({ dir: kitsDir, extension }).map((name) => ({ name, description: undefined }));
   }
 }
 

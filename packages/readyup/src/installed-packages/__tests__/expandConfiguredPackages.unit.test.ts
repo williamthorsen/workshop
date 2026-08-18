@@ -15,7 +15,8 @@ const it = test.extend(
         'node_modules/@acme/kits/.readyup/kits/preflight.js': 'export default {};\n',
         'node_modules/@acme/kits/.readyup/manifest.json': JSON.stringify({
           version: 1,
-          kits: [{ name: 'drift' }, { name: 'preflight' }],
+          // Only one kit is described, so the pair covers both branches of an optional description.
+          kits: [{ name: 'drift', description: 'Dependency drift' }, { name: 'preflight' }],
         }),
 
         // Kits on disk under a manifest nobody can parse.
@@ -43,12 +44,14 @@ describe(expandConfiguredPackages, () => {
         packageName: '@acme/kits',
         version: '2.1.0',
         kitName: 'drift',
+        description: 'Dependency drift',
         path: temp.resolve('node_modules/@acme/kits/.readyup/kits/drift.js'),
       },
       {
         packageName: '@acme/kits',
         version: '2.1.0',
         kitName: 'preflight',
+        description: undefined,
         path: temp.resolve('node_modules/@acme/kits/.readyup/kits/preflight.js'),
       },
     ]);
@@ -60,6 +63,13 @@ describe(expandConfiguredPackages, () => {
 
     expect(kit?.kitName).toBe('smoke');
     expect(kit?.version).toBe('0.4.0');
+  });
+
+  // Descriptions live in the manifest, so the directory fallback has none to report.
+  it('leaves a kit undescribed when it comes from the directory fallback', ({ temp }) => {
+    const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
+
+    expect(kit?.description).toBeUndefined();
   });
 
   it('expands every configured package, in configured order', ({ temp }) => {
@@ -74,14 +84,12 @@ describe(expandConfiguredPackages, () => {
 
   it('names the package when it is not installed', ({ temp }) => {
     expect(() => expandConfiguredPackages(['absent-package'], '.js', temp.dir)).toThrow(
-      /Configured package "absent-package" is not installed/,
+      /Package "absent-package" is not installed/,
     );
   });
 
   it('names the package when it publishes no kits', ({ temp }) => {
-    expect(() => expandConfiguredPackages(['kitless'], '.js', temp.dir)).toThrow(
-      /Configured package "kitless" publishes no kits/,
-    );
+    expect(() => expandConfiguredPackages(['kitless'], '.js', temp.dir)).toThrow(/Package "kitless" publishes no kits/);
   });
 
   // Falling back here would report a kit list the publisher never declared.
