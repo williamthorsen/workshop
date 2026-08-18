@@ -235,7 +235,7 @@ function wantsHelp(flags: string[]): boolean {
 }
 
 /**
- * Report whether a bare word is a kit rather than a candidate command typo.
+ * Reports whether a bare word is a kit rather than a candidate command typo.
  *
  * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
  * settles the question outright: under them the word is a kit by construction, and the kit it names
@@ -251,7 +251,7 @@ function namesAKit(word: string, args: string[]): boolean {
 }
 
 /**
- * Detect a kit-source flag by scanning raw argv.
+ * Detects a kit-source flag by scanning raw argv.
  *
  * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
  * stops at the `--` terminator, after which arguments are positional rather than flags.
