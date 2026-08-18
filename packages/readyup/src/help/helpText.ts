@@ -197,6 +197,7 @@ ${DOCS_POINTER}
 /** Help text for each command, keyed by the name that selects it. */
 export const COMMAND_HELP: Readonly<Record<string, string>> = {
   compile: COMPILE_HELP,
+  help: HELP,
   init: INIT_HELP,
   list: LIST_HELP,
   run: RUN_HELP,

@@ -10,6 +10,7 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { helpCommand, HELP_FLAGS, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';
@@ -28,10 +29,7 @@ import { findNearestWord } from './findNearestWord.ts';
 import { hasJsonFlag } from './hasJsonFlag.ts';
 
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
-const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];
-
-/** Flags that request help, whether given as the command itself or among a subcommand's flags. */
-const HELP_FLAGS = new Set(['--help', '-h']);
+export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
 /** Extensions a kit file can carry, in the order `run` would resolve them. */
 const KIT_EXTENSIONS = ['.js', '.ts'];
@@ -103,6 +101,10 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
   if (command === 'compile') {
     const flags = args.slice(1);
     return wantsHelp(flags) ? writeHelp(COMPILE_HELP, json) : compileCommand(flags);
+  }
+
+  if (command === 'help') {
+    return helpCommand(args.slice(1), json);
   }
 
   if (command === 'init') {
@@ -230,12 +232,6 @@ function dropLeadingStyleFlag(argv: string[]): string[] {
 /** Returns true when the flags request help for the current subcommand. */
 function wantsHelp(flags: string[]): boolean {
   return flags.some((f) => HELP_FLAGS.has(f));
-}
-
-/** Emits help text through the human channel and reports success. */
-function writeHelp(text: string, json: boolean): number {
-  writeHuman(`${text}\n`, json);
-  return EXIT_OK;
 }
 
 /**
