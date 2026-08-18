@@ -159,7 +159,12 @@ describe(routeCommand, () => {
   });
 
   it('points at the documented package homepage', () => {
-    expect(DOCS_POINTER.endsWith(packageJson.homepage)).toBe(true);
+    expect(DOCS_POINTER).toContain(packageJson.homepage);
+  });
+
+  it('points at the installed README and the authoring skill', () => {
+    expect(DOCS_POINTER).toContain('node_modules/readyup/README.md');
+    expect(DOCS_POINTER).toContain('consult-readyup-kits');
   });
 
   it.each([

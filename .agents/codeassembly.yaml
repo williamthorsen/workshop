@@ -2,3 +2,4 @@ collections:
 packages:
   use:
     - '@williamthorsen/nmr'
+    - readyup

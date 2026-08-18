@@ -10,11 +10,11 @@ Packages live under `packages/`:
 
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
-- **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`).
+- **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` carries the discipline for editing it.
 
 Key files:
 
-- `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
+- `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest and what validate readyup's agent content root, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
 - `.config/readyup.config.ts`: Readyup compile settings, plus the `packages` list whose kits audit this repo.
 - `.readyup/kits/`: Kit files (TypeScript sources compiled to self-contained ESM bundles).
 - `packages/readyup/vitest.config.ts`: Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection.

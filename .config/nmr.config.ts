@@ -8,6 +8,9 @@ export default defineConfig({
   },
   rootScripts: {
     'build:post': 'rdy compile',
+    // Validate readyup's own CodeAssembly content, so a defect fails this build rather than a consumer's install.
+    'check:content': 'codeassembly validate --content packages/readyup/agents',
+    'check:strict:post': ['check:content'],
     // Checks are cwd-relative, so the kit has to run from the package it audits. A root
     // `rdy run --from npm:readyup publishing` would audit the repo root instead.
     'ci:post': 'pnpm --filter readyup run verify:kits',

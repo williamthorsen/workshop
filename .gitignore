@@ -1,6 +1,7 @@
 # Agents
 .agents/*.branch-manifest.json
 .claude/scheduled_tasks.lock
+.claude/skills/
 
 # Editor directories and files
 .idea/
