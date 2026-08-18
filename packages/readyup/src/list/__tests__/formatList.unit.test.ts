@@ -4,11 +4,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { setStyle } from '../../layout/engine.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
+import type { KitPackageGroup } from '../../installed-packages/collectKitPackageGroups.ts';
+import type { PackageKit } from '../../installed-packages/expandConfiguredPackages.ts';
 import {
   formatConsumerView,
   formatEmpty,
   formatManifestView,
   formatOwnerView,
+  formatPackagesView,
   formatRecursiveView,
   type RecursiveProjectView,
   resolveCompiledStyle,
@@ -17,6 +20,7 @@ import {
 const COMPILED = richFormatter.tokens.kit.glyph;
 const INTERNAL = richFormatter.tokens.kitSource.glyph;
 const DIRECTORY = richFormatter.tokens.sourceDirectory.glyph;
+const PACKAGE = richFormatter.tokens.sourcePackage.glyph;
 
 describe(formatOwnerView, () => {
   it('renders only the Internal section when compiled kits are empty', () => {
@@ -364,6 +368,99 @@ describe(formatManifestView, () => {
   });
 });
 
+describe(formatPackagesView, () => {
+  it('heads each package with its name and version', () => {
+    const result = formatPackagesView({
+      groups: [buildGroup({ packageName: '@acme/kits', version: '2.1.0', kits: ['drift'] })],
+    });
+
+    expect(result).toContain(`\u{2501}\u{2501} ${PACKAGE} @acme/kits@2.1.0`);
+  });
+
+  // Built inline rather than through the helper, whose default would fill the version back in.
+  it('heads a package that declares no version with its name alone', () => {
+    const result = formatPackagesView({
+      groups: [
+        {
+          packageName: 'plain-kit',
+          version: undefined,
+          configured: true,
+          kits: [buildKit('plain-kit', 'smoke', undefined)],
+        },
+      ],
+    });
+
+    expect(result).toContain(`\u{2501}\u{2501} ${PACKAGE} plain-kit\n`);
+  });
+
+  it('hints a configured package with the run that reaches it', () => {
+    const result = formatPackagesView({ groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] });
+
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   rdy run --packages <name>');
+  });
+
+  // The hint is what tells the reader a `--packages` run would skip this package.
+  it('hints an unconfigured package with the source that names it directly', () => {
+    const result = formatPackagesView({
+      groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
+    });
+
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   rdy run --from npm:@acme/kits <name>');
+  });
+
+  it('brackets the positional name when the package publishes a default kit', () => {
+    const result = formatPackagesView({
+      groups: [buildGroup({ packageName: '@acme/kits', kits: ['default', 'drift'] })],
+    });
+
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   rdy run --packages [<name>]');
+  });
+
+  it('marks an unconfigured package and leaves a configured one unmarked', () => {
+    const result = formatPackagesView({
+      groups: [
+        buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] }),
+        buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
+      ],
+    });
+
+    expect(result).toContain(`\u{2501}\u{2501} ${PACKAGE} @acme/kits@2.1.0 \u{00B7} not configured`);
+    expect(result).toContain(`\u{2501}\u{2501} ${PACKAGE} plain-kit@2.1.0\n`);
+  });
+
+  it('renders a description as inline detail, and a kit without one as the bare name', () => {
+    const result = formatPackagesView({
+      groups: [
+        {
+          packageName: '@acme/kits',
+          version: '2.1.0',
+          configured: true,
+          kits: [buildKit('@acme/kits', 'drift', 'Dependency drift'), buildKit('@acme/kits', 'preflight', undefined)],
+        },
+      ],
+    });
+
+    expect(result).toContain(`${COMPILED} drift \u{00B7} Dependency drift`);
+    expect(result).toContain(`${COMPILED} preflight`);
+    expect(result).not.toContain('preflight \u{00B7}');
+  });
+
+  it('parts one package block from the next with a blank line', () => {
+    const result = formatPackagesView({
+      groups: [
+        buildGroup({ packageName: '@acme/kits', kits: ['drift'] }),
+        buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
+      ],
+    });
+
+    expect(result).toContain(`${COMPILED} drift\n\n\u{2501}\u{2501} ${PACKAGE} plain-kit@2.1.0`);
+  });
+
+  it('reports the empty-packages message when nothing publishes kits', () => {
+    expect(formatPackagesView({ groups: [] })).toBe('No installed dependency publishes kits.');
+  });
+});
+
 describe(formatRecursiveView, () => {
   afterEach(() => {
     setStyle('rich');
@@ -535,6 +632,42 @@ describe(formatEmpty, () => {
 
 // region | Helpers
 
+/**
+ * Builds a configured package group holding the named kits, each undescribed.
+ *
+ * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: a group naming no version
+ * is built inline.
+ */
+function buildGroup({
+  packageName,
+  version = '2.1.0',
+  configured = true,
+  kits,
+}: {
+  packageName: string;
+  version?: string | undefined;
+  configured?: boolean;
+  kits: string[];
+}): KitPackageGroup {
+  return {
+    packageName,
+    version,
+    configured,
+    kits: kits.map((kitName) => buildKit(packageName, kitName, undefined)),
+  };
+}
+
+/** Builds one published kit, whose path the packages view never renders. */
+function buildKit(packageName: string, kitName: string, description: string | undefined): PackageKit {
+  return {
+    packageName,
+    version: '2.1.0',
+    kitName,
+    description,
+    path: `node_modules/${packageName}/.readyup/kits/${kitName}.js`,
+  };
+}
+
 /** Builds a project on the default outDir, holding the named kits and no descriptions. */
 function buildProject({ dir, kits }: { dir: string; kits: string[] }): RecursiveProjectView {
   return {
@@ -542,6 +675,18 @@ function buildProject({ dir, kits }: { dir: string; kits: string[] }): Recursive
     compiledKits: kits.map((name) => ({ name })),
     compiledStyle: { kind: 'local-convention' },
   };
+}
+
+/**
+ * Returns the line beneath a package's heading, which is where its command sits.
+ *
+ * The heading rule anchors the search, since an unconfigured package's heading carries a trailing
+ * detail and a kit line could otherwise hold the same text.
+ */
+function findPackageCommand(output: string, label: string): string | undefined {
+  const lines = output.split('\n');
+  const headingIndex = lines.findIndex((line) => line.startsWith('\u{2501}\u{2501} ') && line.includes(` ${label}`));
+  return headingIndex === -1 ? undefined : lines[headingIndex + 1];
 }
 
 /** Returns the line beneath a project's heading, which is where its command sits. */

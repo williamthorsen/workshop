@@ -1,11 +1,15 @@
 import path from 'node:path';
 
+import type { KitPackageGroup } from '../installed-packages/collectKitPackageGroups.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
 /** Blank line parting one listed section from the next. A section supplies none of its own. */
 const SECTION_SEPARATOR = '\n\n';
+
+/** Detail marking a package the readyup config does not name. */
+const UNCONFIGURED_DETAIL = 'not configured';
 
 // -- Compiled-section style discriminants --
 
@@ -129,6 +133,25 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   return formatSection('Compiled', hint, compiledKits, 'kit');
 }
 
+// -- Packages view --
+
+interface PackagesViewOptions {
+  groups: KitPackageGroup[];
+}
+
+/**
+ * Formats the dependency-axis output: one block per kit-publishing package, headed by the package.
+ *
+ * Configured and unconfigured packages interleave in one alphabetical list rather than splitting into
+ * sections, so a reader asking what their dependencies publish reads one answer. What separates them is
+ * the hint each block carries, which names the command that runs that package's kits.
+ *
+ * A sweep with no groups returns the empty-packages message.
+ */
+export function formatPackagesView({ groups }: PackagesViewOptions): string {
+  return groups.length === 0 ? formatEmpty('packages') : groups.map(formatPackageBlock).join(SECTION_SEPARATOR);
+}
+
 // -- Recursive view --
 
 /** One kit a recursive listing reports, carrying the description its project's manifest records. */
@@ -165,9 +188,12 @@ export function formatRecursiveView({ projects }: RecursiveViewOptions): string 
 // -- Empty messages --
 
 /** Format the "no kits found" message appropriate to the given mode. */
-export function formatEmpty(mode: 'owner' | 'consumer' | 'recursive', kitsDir?: string): string {
+export function formatEmpty(mode: 'owner' | 'consumer' | 'packages' | 'recursive', kitsDir?: string): string {
   if (mode === 'consumer') {
     return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
+  }
+  if (mode === 'packages') {
+    return 'No installed dependency publishes kits.';
   }
   if (mode === 'recursive') {
     return 'No kit projects found.';
@@ -214,6 +240,18 @@ function buildKitHint(kits: string[]): string {
 }
 
 /**
+ * Returns the command that runs a package's kits, which is also what marks the package as configured.
+ *
+ * `rdy run --packages` reaches only the packages the config names, and every other package is reachable
+ * by the source naming it directly. So one hint answers both what to run and whether a `--packages` run
+ * would include it, and every kit listed stays reachable by the command above it.
+ */
+function buildPackageHint(group: KitPackageGroup): string {
+  const nameHint = buildKitHint(group.kits.map((kit) => kit.kitName));
+  return group.configured ? `rdy run --packages ${nameHint}` : `rdy run --from npm:${group.packageName} ${nameHint}`;
+}
+
+/**
  * Returns the command that runs a project's kits from where the reader stands.
  *
  * A project on a custom `outDir` is reachable only by file: every other resolution path hardcodes the
@@ -231,6 +269,25 @@ function buildProjectHint(project: RecursiveProjectView): string {
 /** Returns the section naming installed packages that publish kits the config does not list. */
 function formatAvailableSection(availablePackages: string[]): string {
   return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
+}
+
+/** Returns one package's heading, the command running its kits, and a line per kit. */
+function formatPackageBlock(group: KitPackageGroup): string {
+  const label = group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
+  const heading = getLayout().formatBreadcrumb(
+    [{ role: 'sourcePackage', text: label }],
+    'kit',
+    group.configured ? undefined : UNCONFIGURED_DETAIL,
+  );
+  const items = group.kits.map((kit) =>
+    getLayout().formatCheckLine({
+      token: 'kit',
+      name: kit.kitName,
+      ...(kit.description !== undefined && { detail: kit.description }),
+    }),
+  );
+
+  return [heading, `${getLayout().indent(1)}${buildPackageHint(group)}`, ...items].join('\n');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
