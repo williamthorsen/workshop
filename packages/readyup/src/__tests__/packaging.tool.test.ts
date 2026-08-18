@@ -21,6 +21,10 @@ describe('published tarball', () => {
   it('carries the CodeAssembly content root declared by codeassembly.content', () => {
     expect(packedPaths).toContain('agents/guidance/rulebooks/readyup-kits.md');
   });
+
+  it('carries the README that `rdy help <topic>` reads its sections from', () => {
+    expect(packedPaths).toContain('README.md');
+  });
 });
 
 // region | Helpers

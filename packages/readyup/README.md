@@ -459,9 +459,12 @@ rdy <command> [options]
 | ---------------- | ------------------------------------------------ |
 | `run [names...]` | Run checklists (default)                         |
 | `compile [file]` | Bundle TypeScript kit(s) into self-contained ESM |
+| `help [<topic>]` | Show help for a command or a topic               |
 | `init`           | Scaffold a starter config and kit                |
 | `list`           | List available kits                              |
 | `verify`         | Check compiled kits against manifest hashes      |
+
+`rdy help <command>` prints what `rdy <command> --help` prints, and `rdy help <topic>` prints a section of this README. Run `rdy help` for the topics on offer.
 
 ### Selecting what runs
 

@@ -10,12 +10,15 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
+import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { findNearestWord } from '../portable/findNearestWord.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { parseRunArgs } from '../run/parseRunArgs.ts';
 import { resolveKitSources } from '../run/resolveKitSources.ts';
@@ -26,215 +29,13 @@ import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { hasJsonFlag } from './hasJsonFlag.ts';
 
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
-const COMMAND_NAMES = ['compile', 'init', 'list', 'run', 'verify'];
-
-/** Flags that request help, whether given as the command itself or among a subcommand's flags. */
-const HELP_FLAGS = new Set(['--help', '-h']);
-
-/** Edits (insertions, deletions, or substitutions) a word may be from a command and still match it. */
-const MAX_TYPO_DISTANCE = 2;
+export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
 /** Extensions a kit file can carry, in the order `run` would resolve them. */
 const KIT_EXTENSIONS = ['.js', '.ts'];
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
-
-/**
- * Where help output sends a reader for anything it does not cover.
- *
- * Help lists the surface; the README explains it, and the skill carries the authoring judgment neither states. The
- * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
- * for a global install, where no such path exists.
- */
-export const DOCS_POINTER = `Full documentation: node_modules/readyup/README.md
-   Online: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
-Authoring kits: the consult-readyup-kits skill`;
-
-const HELP = `
-Usage: rdy [kit[:checklist,...] ...] [options]
-       rdy <command> [options]
-
-Commands:
-  run [kit[:checklist,...] ...]  Run rdy checklists (default)
-  compile [file]                Bundle TypeScript kit(s) into self-contained ESM file(s)
-  init                          Scaffold a starter config and kit
-  list                          List available kits
-  verify                        Check compiled kits against manifest hashes
-
-Run options:
-  --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
-  --file, -f <path>                  Path to a local kit file
-  --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit the config's "packages" list publishes (default: "default")
-  --jit                              Run from TypeScript source instead of compiled JS
-  --internal                         Use internal kit directory and infix from config
-  --checklists, -c <name,...>        Filter checklists within the selected kit
-  --json                             Output results as JSON
-  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
-  --diagnose                         Report skipped checks whose check would have passed
-  --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
-  --quiet                            Hide passed checks from the report; incompatible with --json
-  --report-on <severity>             Show this severity or above (error, warn, recommend)
-
-Global options:
-  --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected (default: auto)
-  --help, -h                 Show this help message
-  --version, -V              Show version number
-
-Run 'rdy <command> --help' for command-specific options.
-
-Examples:
-  rdy                                              Run every checklist in the default kit
-  rdy deploy                                       Run the compiled deploy kit
-  rdy deploy:build,test                            Run two checklists from the deploy kit
-  rdy run --jit deploy                             Run the deploy kit from its TypeScript source
-  rdy init                                         Scaffold a starter config and kit
-  rdy compile                                      Compile every kit source into a bundle
-  rdy list --from github:williamthorsen/workshop   List kits published by a repository
-
-${DOCS_POINTER}
-`;
-
-const RUN_HELP = `
-Usage: rdy run [kit[:checklist,...] ...] [options]
-
-Run rdy checklists. Positional arguments select kits to run; use colon syntax
-to filter checklists within a kit (e.g., deploy:check1,check2).
-If no arguments are given, all checklists in the default kit are run.
-
-Kit source (mutually exclusive):
-  --from <source>                    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref],
-                                     npm:package, global, dir:path, or local repo path)
-  --file, -f <path>                  Path to a local kit file
-  --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit from every package the config's "packages"
-                                     list names that publishes it, skipping those that do
-                                     not; without a name, the kit named "default"
-
-Mode flags (incompatible with --from, --file, --url, --packages):
-  --jit                              Run from TypeScript source instead of compiled JS
-  --internal                         Use internal kit directory and infix from config
-
-Options:
-  --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
-                                     single kit and no ":" filter on it
-  --json                             Output results as JSON
-  --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
-  --diagnose                         Report skipped checks whose check would have passed
-  --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
-  --quiet                            Hide passed checks from the report; incompatible with --json
-  --report-on <severity>             Show this severity or above (error, warn, recommend)
-  --style <auto|plain|rich>          Output style (default: auto)
-  --help, -h                         Show this help message
-
-Positional args accept relative paths (e.g., shared/deploy).
-Defaults to .readyup/kits/default.js when no source is given.
-
-To pass a positional argument that starts with a '-', place it at the end of the command
-after '--', as in: rdy run -- "--odd-kit-name"
-
-Examples:
-  rdy run                                Run every checklist in the default kit
-  rdy run deploy                         Run the compiled deploy kit
-  rdy run deploy:build,test              Run two checklists from the deploy kit
-  rdy run --jit deploy                   Run the deploy kit from its TypeScript source
-  rdy run --from global deploy           Run the deploy kit from the global directory
-  rdy run --fail-on warn                 Fail the run on warnings as well as errors
-  rdy run --quiet                        Report only what is not passing
-  rdy run --diagnose                     Report skips whose check would have passed
-  rdy run --json --detail summary        Emit a JSON report carrying only failed checks
-
-${DOCS_POINTER}
-`;
-
-const COMPILE_HELP = `
-Usage: rdy compile [<file>] [options]
-
-Bundle TypeScript kit(s) into self-contained ESM bundle(s).
-If no file is given, all sources from the config's srcDir are compiled.
-
-Modes:
-  rdy compile                  Compile all sources from the config's srcDir
-  rdy compile <file>           Compile a single file
-
-Options:
-  --output, -o <path>        Output file path (single-file mode only)
-  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
-  --force                    Overwrite compiled kits even if they have drifted from the manifest
-  --json                     Report each kit's status as JSON
-  --skip-manifest            Do not read or write the manifest
-  --style <auto|plain|rich>  Output style (default: auto)
-  --help, -h                 Show this help message
-
-${DOCS_POINTER}
-`;
-
-const VERIFY_HELP = `
-Usage: rdy verify [options]
-
-Check compiled kits against the hashes recorded in the manifest.
-
-Options:
-  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
-  --json                     Report each kit's verification status as JSON
-  --rebuild                  Also recompile each kit and compare it to the committed bundle;
-                             requires esbuild
-  --style <auto|plain|rich>  Output style (default: auto)
-  --help, -h                 Show this help message
-
-${DOCS_POINTER}
-`;
-
-const LIST_HELP = `
-Usage: rdy list [options]
-
-List available kits without running them.
-
-Modes:
-  rdy list                                  List internal and compiled kits (owner view)
-  rdy list --recursive                      List compiled kits in every project below this directory
-  rdy list --from <path>                    List compiled kits at a local path (consumer view)
-  rdy list --from npm:package               List the kits an installed package publishes
-  rdy list --from global                    List compiled kits in the global directory
-  rdy list --from dir:<path>                List kits in an arbitrary directory
-  rdy list --from github:org/repo[@ref]     List kits in a remote GitHub repository
-  rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
-
-Options:
-  --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
-                             global, dir:path, or local path)
-  --manifest <path>          List the kits a manifest file declares
-  --recursive                List compiled kits in every project below the working directory,
-                             grouped by project; not combinable with --from or --manifest
-  --json                     Output the kit list as JSON
-  --style <auto|plain|rich>  Output style (default: auto)
-  --help, -h                 Show this help message
-
-Examples:
-  rdy list                                         Show kits in the current project
-  rdy list --recursive                             Show compiled kits across the whole repository
-  rdy list --from .                                Show compiled kits in the current directory
-  rdy list --from global                           Show kits in the global directory
-  rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
-  rdy list --from bitbucket:tutorials/markdowndemo@master Show kits in a remote Bitbucket repository
-
-${DOCS_POINTER}
-`;
-
-const INIT_HELP = `
-Usage: rdy init [options]
-
-Scaffold a starter config and kit file.
-
-Options:
-  --dry-run, -n              Preview changes without writing files
-  --force                    Overwrite existing files
-  --style <auto|plain|rich>  Output style (default: auto)
-  --help, -h                 Show this help message
-
-${DOCS_POINTER}
-`;
 
 /**
  * Routes CLI arguments to the appropriate subcommand.
@@ -302,6 +103,10 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
     return wantsHelp(flags) ? writeHelp(COMPILE_HELP, json) : compileCommand(flags);
   }
 
+  if (command === 'help') {
+    return helpCommand(args.slice(1), json);
+  }
+
   if (command === 'init') {
     const flags = args.slice(1);
     return wantsHelp(flags) ? writeHelp(INIT_HELP, json) : handleInit(flags);
@@ -320,7 +125,7 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
   // A bare word that names a kit is always run as that kit; only one that names none can be a
   // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
   // never reaches it: naming the subcommand says the word is a kit.
-  const typoMatch = findTypoMatch(command);
+  const typoMatch = findNearestWord(command, COMMAND_NAMES);
   if (typoMatch !== undefined && !namesAKit(command, args)) {
     throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
   }
@@ -429,36 +234,8 @@ function wantsHelp(flags: string[]): boolean {
   return flags.some((f) => HELP_FLAGS.has(f));
 }
 
-/** Emits help text through the human channel and reports success. */
-function writeHelp(text: string, json: boolean): number {
-  writeHuman(`${text}\n`, json);
-  return EXIT_OK;
-}
-
 /**
- * Find the command a bare word most likely misspells, or `undefined` when none is close enough.
- *
- * A word qualifies by abbreviating a command or by sitting within a couple of edits of one, so a
- * transposed or wrong letter is caught alongside a truncation. Ties go to the nearest command and
- * then to the first in alphabetical order. Words starting with `-` are flags, which the argument
- * parser reports on its own.
- */
-function findTypoMatch(input: string): string | undefined {
-  if (input === '' || input.startsWith('-')) return undefined;
-
-  let best: { command: string; distance: number } | undefined;
-  for (const command of COMMAND_NAMES) {
-    const distance = measureEditDistance(input, command);
-    const isCandidate = distance <= MAX_TYPO_DISTANCE || command.startsWith(input);
-    if (isCandidate && (best === undefined || distance < best.distance)) {
-      best = { command, distance };
-    }
-  }
-  return best?.command;
-}
-
-/**
- * Report whether a bare word is a kit rather than a candidate command typo.
+ * Reports whether a bare word is a kit rather than a candidate command typo.
  *
  * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
  * settles the question outright: under them the word is a kit by construction, and the kit it names
@@ -474,7 +251,7 @@ function namesAKit(word: string, args: string[]): boolean {
 }
 
 /**
- * Detect a kit-source flag by scanning raw argv.
+ * Detects a kit-source flag by scanning raw argv.
  *
  * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
  * stops at the `--` terminator, after which arguments are positional rather than flags.
@@ -486,33 +263,4 @@ function hasSourceFlag(args: string[]): boolean {
     if (SOURCE_FLAGS.has(flag)) return true;
   }
   return false;
-}
-
-/** Compute the Levenshtein edit distance between two words. */
-function measureEditDistance(source: string, target: string): number {
-  const targetCharacters = Array.from(target);
-
-  // Each row holds the distance from one prefix of the source to every non-empty prefix of the
-  // target. Column zero is held in a scalar rather than the row because its value is always the
-  // row's own index, which keeps every read a plain iteration.
-  let previousRow = targetCharacters.map((character, index) => ({ character, distance: index + 1 }));
-
-  for (const [rowIndex, sourceCharacter] of Array.from(source).entries()) {
-    let diagonal = rowIndex;
-    let left = rowIndex + 1;
-    const currentRow: typeof previousRow = [];
-
-    for (const { character, distance: above } of previousRow) {
-      const substitution = diagonal + (sourceCharacter === character ? 0 : 1);
-      const distance = Math.min(above + 1, left + 1, substitution);
-      currentRow.push({ character, distance });
-      diagonal = above;
-      left = distance;
-    }
-
-    previousRow = currentRow;
-  }
-
-  // An empty target leaves every row empty, and the distance is then the source's length alone.
-  return previousRow.at(-1)?.distance ?? source.length;
 }
