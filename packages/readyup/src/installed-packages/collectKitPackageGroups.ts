@@ -28,8 +28,8 @@ interface KitPackageGroupOptions {
  * Configured membership arrives as an argument rather than being read here, which leaves the answer a
  * function of a directory and a list: a caller sweeping a repository already holds each project's config.
  *
- * A package that cannot be expanded warns and is omitted, the warn-and-continue listing already takes
- * elsewhere. Listing is read-only, so a broken dependency costs its own group rather than the answer.
+ * A package that cannot be expanded warns and is omitted, matching the warn-and-continue listing already
+ * takes elsewhere. Listing is read-only, so a broken dependency costs its own group rather than the answer.
  */
 export function collectKitPackageGroups({
   configuredPackages,

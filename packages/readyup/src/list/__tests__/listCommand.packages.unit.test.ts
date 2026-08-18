@@ -14,6 +14,7 @@ vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
 import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { listCommand } from '../listCommand.ts';
+import { findPackageCommand } from '../test-utils/findPackageCommand.ts';
 
 const it = test.extend(
   'temp',
@@ -88,8 +89,8 @@ describe('list --packages', () => {
 
       const { stdout } = await list(['--packages']);
 
-      expect(commandUnder(stdout, '@acme/kits@2.1.0')).toBe('   rdy run --packages [<name>]');
-      expect(commandUnder(stdout, 'plain-kit@0.4.0')).toBe('   rdy run --from npm:plain-kit <name>');
+      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   rdy run --packages [<name>]');
+      expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe('   rdy run --from npm:plain-kit <name>');
     });
 
     it('marks an unconfigured package and leaves a configured one unmarked', async () => {
@@ -114,7 +115,7 @@ describe('list --packages', () => {
       const { exitCode, stdout, stderr } = await list(['--packages']);
 
       expect(exitCode).toBe(0);
-      expect(stderr).toContain('Package "absent-package" is not installed');
+      expect(stderr).toContain('Configured package "absent-package" is not installed');
       expect(stdout).not.toContain('absent-package');
     });
   });
@@ -157,7 +158,10 @@ describe('list --packages', () => {
 
   describe('empty', () => {
     it('reports that nothing publishes kits', async () => {
-      const emptyTree = createTempTree({ 'package.json': JSON.stringify({ name: 'bare' }) });
+      using emptyTree = createTempTree(
+        { 'package.json': JSON.stringify({ name: 'bare' }) },
+        { prefix: 'rdy-packages-empty-' },
+      );
       using _cwd = pointCwdAt(emptyTree.dir);
 
       const { exitCode, stdout } = await list(['--packages']);
@@ -192,13 +196,6 @@ describe('list --packages', () => {
 });
 
 // region | Helpers
-
-/** Returns the line beneath a package's heading, which is where its command sits. */
-function commandUnder(output: string, label: string): string | undefined {
-  const lines = output.split('\n');
-  const headingIndex = lines.findIndex((line) => line.startsWith('\u{2501}\u{2501} ') && line.includes(` ${label}`));
-  return headingIndex === -1 ? undefined : lines[headingIndex + 1];
-}
 
 /** Points the mocked config loader at the given package list, leaving every other setting at its default. */
 function configurePackages(packages: string[]): void {

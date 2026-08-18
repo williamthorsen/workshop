@@ -95,7 +95,7 @@ describe(collectKitPackageGroups, () => {
     const groups = collectKitPackageGroups({ configuredPackages: ['absent-package'], fromDir: temp.dir });
 
     expect(groups.map((group) => group.packageName)).not.toContain('absent-package');
-    expect(io.stderr).toContain('Package "absent-package" is not installed');
+    expect(io.stderr).toContain('Configured package "absent-package" is not installed');
   });
 
   it('warns and omits a configured package that publishes no kits', ({ temp }) => {

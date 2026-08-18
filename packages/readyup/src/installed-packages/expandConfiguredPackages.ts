@@ -39,7 +39,11 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
   const root = resolvePackageRoot(packageName, fromDir);
   if (root === undefined) {
-    throw configError(`Package "${packageName}" is not installed; it must be a direct dependency of this project.`);
+    // Only a configured name reaches this: a discovered one resolved through this same call before it was
+    // named, so the config is the one place the reader can act on.
+    throw configError(
+      `Configured package "${packageName}" is not installed; it must be a direct dependency of this project.`,
+    );
   }
 
   const kitsDir = path.join(root, KITS_DIR);

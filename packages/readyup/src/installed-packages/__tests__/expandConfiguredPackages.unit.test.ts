@@ -84,7 +84,7 @@ describe(expandConfiguredPackages, () => {
 
   it('names the package when it is not installed', ({ temp }) => {
     expect(() => expandConfiguredPackages(['absent-package'], '.js', temp.dir)).toThrow(
-      /Package "absent-package" is not installed/,
+      /Configured package "absent-package" is not installed/,
     );
   });
 

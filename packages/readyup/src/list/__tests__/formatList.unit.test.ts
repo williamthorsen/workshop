@@ -16,6 +16,7 @@ import {
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from '../formatList.ts';
+import { findPackageCommand } from '../test-utils/findPackageCommand.ts';
 
 const COMPILED = richFormatter.tokens.kit.glyph;
 const INTERNAL = richFormatter.tokens.kitSource.glyph;
@@ -675,18 +676,6 @@ function buildProject({ dir, kits }: { dir: string; kits: string[] }): Recursive
     compiledKits: kits.map((name) => ({ name })),
     compiledStyle: { kind: 'local-convention' },
   };
-}
-
-/**
- * Returns the line beneath a package's heading, which is where its command sits.
- *
- * The heading rule anchors the search, since an unconfigured package's heading carries a trailing
- * detail and a kit line could otherwise hold the same text.
- */
-function findPackageCommand(output: string, label: string): string | undefined {
-  const lines = output.split('\n');
-  const headingIndex = lines.findIndex((line) => line.startsWith('\u{2501}\u{2501} ') && line.includes(` ${label}`));
-  return headingIndex === -1 ? undefined : lines[headingIndex + 1];
 }
 
 /** Returns the line beneath a project's heading, which is where its command sits. */

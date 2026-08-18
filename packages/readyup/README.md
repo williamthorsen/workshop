@@ -711,7 +711,7 @@ Kits from configured packages get their own section, each named package-first so
 
 ```
 ━━ 📦 @acme/eslint-config@2.1.0
-   rdy run --packages [<name>]
+   rdy run --packages <name>
 📓 drift · Dependency drift
 
 ━━ 📦 @acme/release-kit@4.0.1 · not configured
