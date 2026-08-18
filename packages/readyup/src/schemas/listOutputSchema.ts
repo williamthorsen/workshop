@@ -17,11 +17,16 @@ export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKin
  * that is what it is — a compiled bundle — and only its provenance is new. Recording provenance here
  * rather than as a third `kind` also keeps the payload additive: widening a closed set would bump
  * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
+ *
+ * `configured` reports whether the readyup config names the package, which is what decides whether
+ * `rdy run --packages` would reach the kit. It is absent only from a payload written before the field
+ * existed, never as a way of saying `false`.
  */
 export const ListKitOriginSchema = z
   .object({
     package: z.string(),
     version: z.string().optional(),
+    configured: z.boolean().optional(),
   })
   .meta({ id: 'ListKitOrigin' });
 
@@ -63,9 +68,13 @@ export const ListKitEntrySchema = z
  * hold a `default` kit. Every such row is meaningful, and a consumer indexing on less than the full key
  * silently drops one of them.
  *
+ * Every row is a kit some invocation would execute, which is the invariant a consumer iterating `kits`
+ * relies on. A kit an unconfigured package publishes satisfies it: `rdy run --packages` will not reach it,
+ * but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the two apart.
+ *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
- * they are candidates to add rather than kits that would run. They are kept out of `kits` for exactly
- * that reason: a consumer iterating `kits` must never be handed something no invocation would execute.
+ * they are candidates to add rather than kits. It accompanies the owner listing, which names them without
+ * their kits; `--packages` reports those kits as rows and emits no candidate list.
  */
 export const ListOutputSchema = z
   .object({

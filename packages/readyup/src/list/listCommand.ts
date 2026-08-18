@@ -11,11 +11,13 @@ import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
+import { collectKitPackageGroups } from '../installed-packages/collectKitPackageGroups.ts';
 import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
 import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../kits/parseFromValue.ts';
 import { parseFromValue } from '../kits/parseFromValue.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { SEGMENT_SEPARATOR } from '../layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -35,6 +37,7 @@ import {
   formatConsumerView,
   formatManifestView,
   formatOwnerView,
+  formatPackagesView,
   formatRecursiveView,
   resolveCompiledStyle,
 } from './formatList.ts';
@@ -46,6 +49,7 @@ const listOptions = {
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
+  packages: { type: 'boolean' },
   recursive: { type: 'boolean' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
@@ -79,6 +83,7 @@ export async function listCommand(args: string[]): Promise<number> {
     throw usageError('--from and --manifest are mutually exclusive');
   }
 
+  const packages = values.packages === true;
   const recursive = values.recursive === true;
 
   // `--recursive` sweeps this tree, while the other two name a single foreign source.
@@ -88,6 +93,21 @@ export async function listCommand(args: string[]): Promise<number> {
 
   if (recursive && manifestArg !== undefined) {
     throw usageError('--recursive and --manifest are mutually exclusive');
+  }
+
+  // `--packages` reports this directory's dependencies, which no foreign source has.
+  if (packages && fromArg !== undefined) {
+    throw usageError('--packages and --from are mutually exclusive');
+  }
+
+  if (packages && manifestArg !== undefined) {
+    throw usageError('--packages and --manifest are mutually exclusive');
+  }
+
+  // Not exclusivity: the pair names the repo-wide dependency view, which nothing implements yet. Saying
+  // so keeps the reader from reading a limit as a rule.
+  if (packages && recursive) {
+    throw usageError('Listing dependencies across a whole repository is not supported yet: "--recursive --packages".');
   }
 
   if (recursive) {
@@ -100,6 +120,10 @@ export async function listCommand(args: string[]): Promise<number> {
 
   if (fromArg !== undefined) {
     return runFromMode(fromArg, json);
+  }
+
+  if (packages) {
+    return runPackagesMode(json);
   }
 
   return runOwnerMode(json);
@@ -208,20 +232,7 @@ async function runRemoteFromMode({ url, json }: { url: string; json: boolean }):
 /** Enumerate kits using the project config. */
 async function runOwnerMode(json: boolean): Promise<number> {
   const cwd = process.cwd();
-
-  // Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather
-  // than the answer, taking the same warn-and-continue the corrupt-manifest path below takes. `run` still
-  // fails hard on the same failure: it would otherwise execute against settings nobody chose.
-  let config;
-  try {
-    config = await loadConfig();
-  } catch (error: unknown) {
-    const detail = describeError(error).replace(/\.$/, '');
-    process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
-    const hint = extractHint(error);
-    if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
-    config = { ...DEFAULT_CONFIG };
-  }
+  const config = await loadListingConfig();
 
   const internalDir = path.join(cwd, KITS_DIR, config.internal.dir);
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
@@ -267,9 +278,28 @@ async function runOwnerMode(json: boolean): Promise<number> {
   const entries: JsonListKitEntry[] = [
     ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),
     ...manifestKits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath))),
-    ...packageKits.map(buildPackageEntry),
+    ...packageKits.map((kit) => buildPackageEntry(kit, true)),
   ];
   return finishList(entries, json, availablePackages);
+}
+
+/**
+ * Enumerates every kit-publishing dependency of the working directory, with the kits each publishes.
+ *
+ * The dependency axis alone: a project's own kits belong to the owner listing, and this view answers what
+ * the project's dependencies offer rather than what it holds. Both the packages the config names and the
+ * ones it omits are reported, since the question is what is available rather than what a run would select.
+ */
+async function runPackagesMode(json: boolean): Promise<number> {
+  const config = await loadListingConfig();
+  const groups = collectKitPackageGroups({ configuredPackages: config.packages, fromDir: process.cwd() });
+
+  writeHuman(formatPackagesView({ groups }) + '\n', json);
+
+  return finishList(
+    groups.flatMap((group) => group.kits.map((kit) => buildPackageEntry(kit, group.configured))),
+    json,
+  );
 }
 
 /**
@@ -378,15 +408,38 @@ function describePackageKit(kit: PackageKit): string {
   return `${kit.packageName}${version}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
 }
 
-/** Builds the row for a kit an installed package publishes. */
-function buildPackageEntry(kit: PackageKit): JsonListKitEntry {
+/** Builds the row for a kit an installed package publishes, recording whether the config names it. */
+function buildPackageEntry(kit: PackageKit, configured: boolean): JsonListKitEntry {
   return {
     name: kit.kitName,
     kind: 'compiled',
-    origin: { package: kit.packageName, ...(kit.version !== undefined && { version: kit.version }) },
+    origin: {
+      package: kit.packageName,
+      ...(kit.version !== undefined && { version: kit.version }),
+      configured,
+    },
     path: kit.path,
     ...(kit.description !== undefined && { description: kit.description }),
   };
+}
+
+/**
+ * Loads the project config, falling back to the defaults and reporting a config it cannot evaluate.
+ *
+ * Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather than
+ * the answer, taking the same warn-and-continue the corrupt-manifest paths take. `run` still fails hard on
+ * the same failure: it would otherwise execute against settings nobody chose.
+ */
+async function loadListingConfig(): Promise<ResolvedRdyConfig> {
+  try {
+    return await loadConfig();
+  } catch (error: unknown) {
+    const detail = describeError(error).replace(/\.$/, '');
+    process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
+    const hint = extractHint(error);
+    if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
+    return { ...DEFAULT_CONFIG };
+  }
 }
 
 /** Emit the list payload under `--json`. Listing succeeds whenever its source could be read. */
