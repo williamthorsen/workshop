@@ -56,7 +56,7 @@ export function writeHelp(text: string, json: boolean): number {
 
 /** Builds the failure message for an argument naming neither a command nor a topic. */
 function describeUnknownSubject(subject: string): string {
-  const candidates = [...Object.keys(COMMAND_HELP), ...Object.keys(TOPICS)].sort();
+  const candidates = [...Object.keys(COMMAND_HELP), ...Object.keys(TOPICS)].toSorted();
   const match = findNearestWord(subject, candidates);
 
   return match === undefined

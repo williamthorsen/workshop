@@ -47,9 +47,11 @@ export function extractSection(markdown: string, heading: string): string | unde
   for (const [index, line] of lines.entries()) {
     if (line.startsWith('```')) {
       fenced = !fenced;
-    } else if (fenced) {
       continue;
-    } else if (start === undefined) {
+    }
+    if (fenced) continue;
+
+    if (start === undefined) {
       if (line.trimEnd() === target) start = index;
     } else if (line.startsWith('## ')) {
       return joinSection(lines.slice(start, index));

@@ -10,7 +10,7 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
-import { helpCommand, HELP_FLAGS, writeHelp } from '../help/helpCommand.ts';
+import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';

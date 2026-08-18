@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { readReadmeSection } from '../readmeSection.ts';
 import { HELP } from '../helpText.ts';
+import { readReadmeSection } from '../readmeSection.ts';
 import { TOPICS } from '../topics.ts';
 
 describe('help topics', () => {
@@ -17,7 +17,8 @@ describe('help topics', () => {
   );
 
   it("lists every topic under the top-level help's Topics heading", () => {
-    const topicsBlock = HELP.split('Topics:\n')[1]?.split('\n\n')[0] ?? '';
+    const [, afterHeading = ''] = HELP.split('Topics:\n', 2);
+    const [topicsBlock = ''] = afterHeading.split('\n\n', 1);
 
     for (const [topic, { summary }] of Object.entries(TOPICS)) {
       expect(topicsBlock).toContain(topic);

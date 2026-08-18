@@ -96,7 +96,7 @@ describe('rdy help', () => {
   });
 
   it('offers help for every command the router matches a typo against', () => {
-    expect(Object.keys(COMMAND_HELP).sort()).toEqual([...COMMAND_NAMES].sort());
+    expect(Object.keys(COMMAND_HELP).toSorted()).toStrictEqual(COMMAND_NAMES.toSorted());
   });
 });
 
