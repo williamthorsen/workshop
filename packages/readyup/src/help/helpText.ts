@@ -1,3 +1,10 @@
+import { TOPICS } from './topics.ts';
+
+/** The topic list help output prints, rendered from the table so the two cannot diverge. */
+const TOPIC_LINES = Object.entries(TOPICS)
+  .map(([topic, { summary }]) => `  ${topic.padEnd(30)}${summary}`)
+  .join('\n');
+
 /**
  * Where help output sends a reader for anything it does not cover.
  *
@@ -38,9 +45,13 @@ Usage: rdy [kit[:checklist,...] ...] [options]
 Commands:
   run [kit[:checklist,...] ...]  Run rdy checklists (default)
   compile [file]                Bundle TypeScript kit(s) into self-contained ESM file(s)
+  help [<topic>]                Show help for a command or a topic
   init                          Scaffold a starter config and kit
   list                          List available kits
   verify                        Check compiled kits against manifest hashes
+
+Topics:
+${TOPIC_LINES}
 
 Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
@@ -63,6 +74,7 @@ Global options:
   --version, -V              Show version number
 
 Run 'rdy <command> --help' for command-specific options.
+Run 'rdy help <topic>' to read a topic.
 
 Examples:
   rdy                                              Run every checklist in the default kit
@@ -70,6 +82,7 @@ Examples:
   rdy deploy:build,test                            Run two checklists from the deploy kit
   rdy run --jit deploy                             Run the deploy kit from its TypeScript source
   rdy init                                         Scaffold a starter config and kit
+  rdy help concepts                                Read the concepts section of the README
   rdy compile                                      Compile every kit source into a bundle
   rdy list --from github:williamthorsen/workshop   List kits published by a repository
 

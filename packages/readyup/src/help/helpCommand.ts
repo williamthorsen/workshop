@@ -7,7 +7,7 @@ import { usageError } from '../errors/RdyError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
 import { readReadmeSection } from './readmeSection.ts';
-import { TOPIC_HEADINGS, TOPIC_NAMES } from './topics.ts';
+import { TOPICS } from './topics.ts';
 
 /** Flags that request help, whether given as the command itself or among a subcommand's flags. */
 export const HELP_FLAGS = new Set(['--help', '-h']);
@@ -40,8 +40,8 @@ export function helpCommand(flags: string[], json: boolean): number {
   const commandHelp = COMMAND_HELP[subject];
   if (commandHelp !== undefined) return writeHelp(commandHelp, json);
 
-  const heading = TOPIC_HEADINGS[subject];
-  if (heading !== undefined) return writeHelp(readReadmeSection(heading), json);
+  const topic = TOPICS[subject];
+  if (topic !== undefined) return writeHelp(readReadmeSection(topic.heading), json);
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
 }
@@ -56,7 +56,7 @@ export function writeHelp(text: string, json: boolean): number {
 
 /** Builds the failure message for an argument naming neither a command nor a topic. */
 function describeUnknownSubject(subject: string): string {
-  const candidates = [...Object.keys(COMMAND_HELP), ...TOPIC_NAMES].sort();
+  const candidates = [...Object.keys(COMMAND_HELP), ...Object.keys(TOPICS)].sort();
   const match = findNearestWord(subject, candidates);
 
   return match === undefined

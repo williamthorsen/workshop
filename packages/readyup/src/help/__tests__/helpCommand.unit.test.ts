@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { COMMAND_NAMES, routeCommand } from '../../bin/route.ts';
 import { COMMAND_HELP } from '../helpText.ts';
-import { TOPIC_HEADINGS } from '../topics.ts';
+import { TOPICS } from '../topics.ts';
 
 describe('rdy help', () => {
   it.each([
@@ -29,7 +29,7 @@ describe('rdy help', () => {
     },
   );
 
-  it.each(Object.entries(TOPIC_HEADINGS).map(([topic, heading]) => ({ heading, topic })))(
+  it.each(Object.entries(TOPICS).map(([topic, { heading }]) => ({ heading, topic })))(
     'prints the README section for topic $topic',
     async ({ heading, topic }) => {
       const { exitCode, stdout } = await route(['help', topic]);
