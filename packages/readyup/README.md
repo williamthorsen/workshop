@@ -320,6 +320,33 @@ It produces:
 
 A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence.
 
+### When a check skips
+
+`skip` exists to prevent a wrong failure, not to suppress a right pass. A skip reports that the check does not apply to this repo, so the first question is whether the thing being checked is yours to assert about; only then ask what `check` would have returned.
+
+- If `check` would have failed, and failing would misjudge a conformant repo, the skip is correct.
+- If `check` would have passed, delete the skip and let the check pass.
+
+The second question is a fast check, not the rule. A skip is correct whenever the subject is not yours to assert about, whatever `check` would have returned. Five checks from published kits separate the two cases:
+
+| Check                                             | In the skipped state, `check` would     | Verdict                                                |
+| ------------------------------------------------- | --------------------------------------- | ------------------------------------------------------ |
+| `eslint >= 10.0.0`                                | fail -- no version to satisfy the floor | the skip prevents a wrong failure                      |
+| `.config/git-cliff.toml matches current template` | fail -- hash of a missing file          | the skip prevents a wrong failure                      |
+| `audit-ci configs are under .config/audit-ci/`    | pass                                    | the skip masks a pass, in every passing state          |
+| `code-quality workflow does not use nmr prepush`  | pass                                    | the skip masks a pass                                  |
+| `.github/labels.yaml exists`                      | pass                                    | the skip is correct; release-kit does not own the file |
+
+The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo carrying that file without the block would have passed `fileExists` and still deserves the skip.
+
+The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass. [`rdy run --diagnose`](#run-options) decides that mechanical half, reporting every check its own `skip` turned off that would have passed. It decides nothing about applicability.
+
+**Only a skipping parent collapses a group.** A parent whose `skip` fires reports alone: its descendants are not run, not reported, and not counted. A parent that _fails_ instead renders every descendant as its own 🚫, which is one blocked line per descendant where one skipped line was wanted. `quiet` helps with neither, suppressing passes only.
+
+**⚪ and 🚫 read differently.** ⚪ means the check declined to apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
+
+**Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
+
 ### Staged checklists
 
 A staged checklist replaces `checks` with `groups`. Groups run in order; checks within a group run concurrently.
@@ -342,7 +369,7 @@ This is the one gate that consults the threshold. A failed check blocks its own 
 A checklist's `preconditions` gate the checks that follow. If any precondition fails, every check is skipped and each records `precondition` as its reason.
 
 - **A failed precondition gates regardless of severity.** Severity decides whether the run fails; the gate decides whether the checks are worth running. Unlike a staged checklist's groups, the gate does not consult the [failure threshold](#thresholds).
-- **A precondition skipped `n/a` does not gate.** To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason.
+- **A precondition skipped `n/a` does not gate.** To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason. [When a check skips](#when-a-check-skips) covers why that structure and not a failing parent.
 
 ### Suites
 
