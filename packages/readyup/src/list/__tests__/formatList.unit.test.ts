@@ -2,10 +2,10 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { setStyle } from '../../layout/engine.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
 import type { KitPackageGroup } from '../../installed-packages/collectKitPackageGroups.ts';
 import type { PackageKit } from '../../installed-packages/expandConfiguredPackages.ts';
+import { setStyle } from '../../layout/engine.ts';
+import { richFormatter } from '../../layout/richFormatter.ts';
 import {
   formatConsumerView,
   formatEmpty,

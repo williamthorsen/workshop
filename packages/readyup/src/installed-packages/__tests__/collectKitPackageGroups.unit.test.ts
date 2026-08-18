@@ -51,7 +51,7 @@ describe(collectKitPackageGroups, () => {
 
   // Only resolution reaches it, so discovery alone would drop a package the config points at.
   it('reports a configured package that no dependency field declares', ({ temp }) => {
-    const [group] = collect(['hidden-kit'], temp.dir).filter((one) => one.packageName === 'hidden-kit');
+    const group = collect(['hidden-kit'], temp.dir).find((one) => one.packageName === 'hidden-kit');
 
     expect(group?.configured).toBe(true);
     expect(group?.version).toBe('3.0.0');
@@ -59,14 +59,14 @@ describe(collectKitPackageGroups, () => {
   });
 
   it('reports a discovered package the config omits, with the kits it publishes', ({ temp }) => {
-    const [group] = collect([], temp.dir).filter((one) => one.packageName === '@acme/kits');
+    const group = collect([], temp.dir).find((one) => one.packageName === '@acme/kits');
 
     expect(group?.configured).toBe(false);
     expect(group?.kits.map((kit) => kit.kitName)).toStrictEqual(['drift', 'preflight']);
   });
 
   it('carries the description a publisher records for its kit', ({ temp }) => {
-    const [group] = collect([], temp.dir).filter((one) => one.packageName === '@acme/kits');
+    const group = collect([], temp.dir).find((one) => one.packageName === '@acme/kits');
 
     expect(group?.kits.map((kit) => kit.description)).toStrictEqual(['Dependency drift', undefined]);
   });
