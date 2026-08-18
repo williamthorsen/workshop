@@ -46,7 +46,8 @@ vi.mock('../../version.ts', () => ({
 
 import packageJson from '../../../package.json' with { type: 'json' };
 import { usageError } from '../../errors/RdyError.ts';
-import { DOCS_POINTER, routeCommand } from '../route.ts';
+import { DOCS_POINTER } from '../../help/helpText.ts';
+import { routeCommand } from '../route.ts';
 
 /** Scratch project root for the tests that need a kit file on disk. */
 const TYPO_TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-route');
