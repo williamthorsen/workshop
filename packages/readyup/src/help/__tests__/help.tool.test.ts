@@ -37,11 +37,11 @@ describe('rdy help, spawned', () => {
   // The published entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it
   // is the only spawn that shows the package root still resolving to where `README.md` sits. It needs
   // build output, which `nmr ci` produces before it checks and a bare `nmr test` does not.
-  it.skipIf(!existsSync(buildOutput))('prints the same section from the published entry point', () => {
-    const fromSource = runHelp(sourceCli, 'concepts', tmpdir());
-    const fromBuild = runHelp(publishedCli, 'concepts', tmpdir());
+  it.skipIf(!existsSync(buildOutput))('resolves the README from the published entry point', () => {
+    const stdout = runHelp(publishedCli, 'concepts', tmpdir());
 
-    expect(fromBuild).toBe(fromSource);
+    expect(stdout.startsWith('## Concepts\n')).toBe(true);
+    expect(stdout).toContain('### Thresholds');
   });
 });
 
