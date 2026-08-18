@@ -94,12 +94,12 @@ export interface SummaryTableInput {
 
 /** String builders that lay out a formatter's tokens. */
 export interface LayoutEngine {
-  formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string;
+  formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel, detail?: string): string;
   formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string;
   formatCheckLine(input: CheckLineInput): string;
   formatCountLine(counts: SummaryCounts, durationMs: number): string;
   formatCounts(counts: SummaryCounts): string;
-  formatHeading(name: string, level: HeadingLevel): string;
+  formatHeading(name: string, level: HeadingLevel, detail?: string): string;
   formatHint(hint: string): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
   formatSummaryTable(input: SummaryTableInput): string[];
@@ -116,9 +116,9 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * A role the formatter gives no glyph closes up rather than carrying the space that would have
    * followed one.
    */
-  function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel): string {
+  function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel, detail?: string): string {
     const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);
-    return formatHeading(rendered.join(SEGMENT_SEPARATOR), level);
+    return formatHeading(rendered.join(SEGMENT_SEPARATOR), level, detail);
   }
 
   /**
@@ -147,14 +147,16 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns `name` behind a two-character rule whose weight comes from `level`.
+   * Returns `name` behind a two-character rule whose weight comes from `level`, carrying `detail` behind
+   * the formatter's separator where there is one.
    *
    * A heading carries no blank line of its own. Separation is a property of the sequence a heading sits
    * in, which only the code emitting that sequence can see: a heading deciding for itself is how two
    * adjacent ones each contribute a blank and open a gap neither intended.
    */
-  function formatHeading(name: string, level: HeadingLevel): string {
-    return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}`;
+  function formatHeading(name: string, level: HeadingLevel, detail?: string): string {
+    const suffix = detail === undefined ? '' : ` ${formatter.detailSeparator} ${detail}`;
+    return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}${suffix}`;
   }
 
   /** Returns a remediation hint behind the formatter's prefix, as one line of its own. */

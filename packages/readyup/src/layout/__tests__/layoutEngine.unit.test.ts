@@ -168,6 +168,23 @@ describe('formatHeading', () => {
     expect(rendered).not.toContain('===');
     expect(rendered).not.toContain('---');
   });
+
+  it('carries detail behind the separator', () => {
+    expect(engine.formatHeading('deploy', 'kit', 'not configured')).toBe(
+      '\u{2501}\u{2501} deploy \u{00B7} not configured',
+    );
+  });
+
+  // The separator is the formatter's, so a heading reads the same way a check line does in either style.
+  it('takes the detail separator from a glyphless style too', () => {
+    const plain = createLayoutEngine(plainFormatter);
+
+    expect(plain.formatHeading('deploy', 'kit', 'not configured')).toBe('== deploy - not configured');
+  });
+
+  it('renders no separator without detail', () => {
+    expect(engine.formatHeading('deploy', 'kit')).toBe('\u{2501}\u{2501} deploy');
+  });
 });
 
 describe('formatBreadcrumb', () => {
@@ -201,6 +218,16 @@ describe('formatBreadcrumb', () => {
     );
 
     expect(rendered).toBe('== @acme/release-kit@2.1.0 / npm-auto-publish');
+  });
+
+  it('passes detail through to the heading it builds', () => {
+    const rendered = engine.formatBreadcrumb(
+      [{ role: 'sourcePackage', text: '@acme/kits@3.1.0' }],
+      'kit',
+      'not configured',
+    );
+
+    expect(rendered).toBe('\u{2501}\u{2501} 📦 @acme/kits@3.1.0 \u{00B7} not configured');
   });
 });
 

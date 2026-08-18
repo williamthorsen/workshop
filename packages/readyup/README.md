@@ -675,6 +675,7 @@ The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy 
 
 ```
 rdy list                       List internal, compiled, and configured-package kits (owner view)
+rdy list --packages            List the kits this project's dependencies publish
 rdy list --recursive           List compiled kits in every project below the working directory
 rdy list --from <source>       List compiled kits at a local path, remote source, or installed package
 rdy list --manifest <path>     List the kits a manifest file declares
@@ -705,6 +706,23 @@ Kits from configured packages get their own section, each named package-first so
    Add to "packages" in the readyup config
 📦 @acme/release-kit
 ```
+
+`--packages` answers the dependency question on its own, and answers it for both groups at once. `rdy list --packages` reports every installed direct dependency that publishes kits, plus every package the config names, one block apiece with the kits it publishes and the descriptions their manifests record:
+
+```
+━━ 📦 @acme/eslint-config@2.1.0
+   rdy run --packages <name>
+📓 drift · Dependency drift
+
+━━ 📦 @acme/release-kit@4.0.1 · not configured
+   rdy run --from npm:@acme/release-kit [<name>]
+📓 default
+📓 npm-auto-publish
+```
+
+The hint above each block is what marks the package. A package the config names is headed by `rdy run --packages`, which is exactly the run that would reach it; one the config omits is headed by the source that names it directly, and reads `not configured`. Every kit listed is therefore runnable by the command above it, and learning what an unconfigured package holds no longer means a `--from npm:` listing per package.
+
+Configured packages are resolved through `node_modules` rather than through the project's declared dependencies, so one that is installed without being declared is reported here as it is under a plain `rdy list`; one that is not installed warns and is omitted. Like every other non-recursive mode, `--packages` reads the working directory, and it is not combinable with `--from` or `--manifest`. Pairing it with `--recursive` is the repo-wide dependency view, which is not supported yet.
 
 `--manifest` reports each kit's compile-time ReadyUp version and description:
 
@@ -743,7 +761,9 @@ Internal kits and configured-package kits are absent: no invocation reaches anot
 
 The sweep considers every directory holding a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project it finds is read under its own `.config/readyup.config.ts`. Topology comes from the filesystem rather than a workspace file, so the sweep does not care which package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source.
 
-Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each hold a `default`. A consumer indexing on less than the full key silently drops a row. Candidates from the **Available** section are not kits and appear separately.
+Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each hold a `default`. A consumer indexing on less than the full key silently drops a row.
+
+Every kit a package published carries `origin.configured`, reporting whether the config names that package and so whether `rdy run --packages` would reach it. It is emitted under `--packages` and under a plain `rdy list` alike, so a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which accompanies the owner listing alone: under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
 
 ### Scaffolding
 
@@ -1014,7 +1034,7 @@ A package declaring no `files` field passes the first check, because everything 
 
 Both kits read the convention layout: `.readyup/manifest.json` and bundles directly under `.readyup/kits`. A project that compiles to a different `outDir` still gets its recorded kits checked for freshness, since those paths come from the manifest, but the checks that count compiled bundles report nothing to do. For a published package the layout is not a convention but a contract, which is what the last `packaging` check enforces: `--from npm:` composes a kit's path from its name, so a bundle recorded anywhere else is listed and then fails to load.
 
-Adding readyup to `packages` in the config is what makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, by the rule that holds back every kit not named `default`; reach it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name. Until readyup is listed, `rdy list` names it among the dependencies that publish kits.
+Adding readyup to `packages` in the config is what makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, by the rule that holds back every kit not named `default`; reach it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name. Until readyup is listed, `rdy list` names it among the dependencies that publish kits, and `rdy list --packages` shows the kits it holds.
 
 ### Internal kits
 

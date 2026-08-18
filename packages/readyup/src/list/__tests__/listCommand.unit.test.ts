@@ -114,6 +114,17 @@ describe(listCommand, () => {
         availablePackages: ['plain-kit'],
       });
     });
+
+    // A package reaches the owner listing's rows only by being configured, so the marker is always true
+    // here; emitting it regardless is what spares a consumer from knowing which invocation wrote the payload.
+    it('marks every package row as configured', async () => {
+      configureOnePackage();
+
+      const { stdout } = await list(['--json']);
+
+      const payload: unknown = JSON.parse(stdout);
+      expect(payload).toMatchObject({ kits: [{ origin: { configured: true } }] });
+    });
   });
 
   describe('owner mode', () => {
