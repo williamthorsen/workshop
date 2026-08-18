@@ -347,6 +347,12 @@ The third row is the failure mode to watch for: `skip` and `check` ran the ident
 
 **Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
 
+### Agent guidance
+
+The doctrine above ships as agent guidance too, in a CodeAssembly content root under `agents/` in the installed package. A repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync` gets it as the `consult-readyup-kits` skill, in every harness that repo targets.
+
+The skill carries the judgment a kit author needs while writing; this README stays the reference for everything mechanical.
+
 ### Staged checklists
 
 A staged checklist replaces `checks` with `groups`. Groups run in order; checks within a group run concurrently.

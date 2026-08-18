@@ -52,7 +52,9 @@ function isPackReport(value: unknown): value is { files: Array<{ path: string }>
     value !== null &&
     'files' in value &&
     Array.isArray(value.files) &&
-    value.files.every((file: unknown) => typeof file === 'object' && file !== null && 'path' in file)
+    value.files.every(
+      (file: unknown) => typeof file === 'object' && file !== null && 'path' in file && typeof file.path === 'string',
+    )
   );
 }
 
