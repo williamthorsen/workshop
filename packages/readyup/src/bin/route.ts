@@ -43,11 +43,13 @@ const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the README explains it. A repository URL rather than a relative path, so the pointer
- * resolves from a global install as readily as from a local one.
+ * Help lists the surface; the README explains it, and the skill carries the authoring judgment neither states. The
+ * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
+ * for a global install, where no such path exists.
  */
-export const DOCS_POINTER =
-  'Full documentation: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme';
+export const DOCS_POINTER = `Full documentation: node_modules/readyup/README.md
+   Online: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
+Authoring kits: the consult-readyup-kits skill`;
 
 const HELP = `
 Usage: rdy [kit[:checklist,...] ...] [options]
