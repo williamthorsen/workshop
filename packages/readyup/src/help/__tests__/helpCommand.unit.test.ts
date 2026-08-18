@@ -65,6 +65,20 @@ describe('rdy help', () => {
   });
 
   it.each([
+    { subject: 'toString' },
+    { subject: '__proto__' },
+    { subject: 'constructor' },
+    { subject: 'valueOf' },
+    { subject: 'hasOwnProperty' },
+  ])('rejects $subject, which the lookup tables inherit rather than declare', async ({ subject }) => {
+    const { exitCode, stdout, stderr } = await route(['help', subject]);
+
+    expect(exitCode).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr).toContain(`No help available for '${subject}'.`);
+  });
+
+  it.each([
     { label: 'a second subject', args: ['help', 'concepts', 'authoring'] },
     { label: 'an undeclared flag', args: ['help', '--bogus'] },
   ])('fails with a usage error for $label', async ({ args }) => {

@@ -37,10 +37,10 @@ export function helpCommand(flags: string[], json: boolean): number {
   if (extra.length > 0) throw usageError('Usage: rdy help [<command|topic>]');
   if (subject === undefined) return writeHelp(HELP, json);
 
-  const commandHelp = COMMAND_HELP[subject];
+  const commandHelp = Object.hasOwn(COMMAND_HELP, subject) ? COMMAND_HELP[subject] : undefined;
   if (commandHelp !== undefined) return writeHelp(commandHelp, json);
 
-  const topic = TOPICS[subject];
+  const topic = Object.hasOwn(TOPICS, subject) ? TOPICS[subject] : undefined;
   if (topic !== undefined) return writeHelp(readReadmeSection(topic.heading), json);
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
