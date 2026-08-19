@@ -122,6 +122,28 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(source);
   });
 
+  it('reads a slash after a non-null assertion as division', () => {
+    const source = `const r = counts.get(k)! / total, b = ${CLAMP} / 2;\nconst n = xs[0]! / 2;\n`;
+
+    expect(blankNonCode(source)).toBe(source);
+  });
+
+  // The trailing comment supplies the closing slash. Where the assertion opened a regular expression, the
+  // comment would never be recognized as one and its prose would stand in the output as code.
+  it('blanks a comment trailing a division by a non-null assertion', () => {
+    const comment = '// percentage of the whole';
+    const source = `const r = counts.get(k)! / total; ${comment}\n`;
+
+    expect(blankNonCode(source)).toBe(`const r = counts.get(k)! / total; ${blank(comment)}\n`);
+  });
+
+  it('reads a regular expression opening after a negation', () => {
+    const body = String.raw`^https?:`;
+    const source = `const ok = !/${body}/.test(url);\nconst ne = a != b / 2;\n`;
+
+    expect(blankNonCode(source)).toBe(`const ok = !/${blank(body)}/.test(url);\nconst ne = a != b / 2;\n`);
+  });
+
   it('reads a regular expression opening after a binary plus or minus', () => {
     const body = 'abc';
     const source = `const s = x + /${body}/.source;\nconst t = y - /${body}/.source;\n`;

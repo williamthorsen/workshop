@@ -73,9 +73,13 @@ export function blankComments(source: string): string {
  *
  * Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted
  * string or regular expression whose closing delimiter never arrives on its line was neither. A misjudgment
- * therefore leaves text standing rather than blanking an expression that runs. JSX is the one exception, being
- * read here as the JavaScript it is not: `>` has to open a regular expression because `=>` does, so a text node
- * beginning with `/` blanks as far as its closing tag's slash.
+ * therefore leaves text standing rather than blanking an expression that runs.
+ *
+ * That direction holds only while the token a `/` is classified against is the operand before it, so a postfix
+ * operator has to attach to its operand rather than replace it: `++`, `--`, and TypeScript's `!` each do, and a
+ * postfix operator added to the language needs the same treatment or it reopens this hole. `>` is the one token
+ * classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning
+ * with `/` blanks as far as its closing tag's slash.
  *
  * Reads JavaScript-family syntax. A source in another language yields arbitrary output rather than an error.
  */
@@ -225,6 +229,18 @@ function isDoubledSign(char: string, next: string | undefined): boolean {
 }
 
 /**
+ * Reports whether a `!` following the given token asserts non-null rather than negating.
+ *
+ * The assertion is postfix, so the operand before it decides whether a following `/` divides, and leaving
+ * `previousToken` alone is what puts that decision back where it belongs. `startsRegex` is the test because a
+ * token permitting a regular expression after it completed no operand: a `!` after one of those negates, and a
+ * `!` after anything else attaches to the operand it follows.
+ */
+function isNonNullAssertion(char: string, previousToken: string): boolean {
+  return char === '!' && previousToken !== '' && !startsRegex(previousToken);
+}
+
+/**
  * Scans code from an offset, blanking every comment and literal it meets, and returns where it stopped.
  *
  * Stops at the `}` closing an interpolation when scanning one, and at the source's end otherwise. Braces opened
@@ -283,6 +299,10 @@ function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
     if (isDoubledSign(char, next)) {
       previousToken = char + char;
       index += 2;
+      continue;
+    }
+    if (isNonNullAssertion(char, previousToken)) {
+      index += 1;
       continue;
     }
 
