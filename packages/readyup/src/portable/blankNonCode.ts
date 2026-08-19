@@ -1,6 +1,7 @@
 // Punctuation a `/` may follow and still open a regular expression. `)` and `]` are left out on purpose: both
 // end an expression that division takes as its left operand, and division after them is far commoner than a
-// regular expression is.
+// regular expression is. `+` and `-` are the binary operators alone, because `scanCode` reads `++` and `--`
+// whole and a postfix one therefore never reaches this set.
 const REGEX_PRECEDERS = new Set([
   '!',
   '%',
@@ -99,8 +100,10 @@ function blankLiteralText(scan: Scan, from: number, to: number): number {
   return scan.blanksLiterals ? blankSpan(scan, from, to) : to;
 }
 
-/** Blanks a quoted string's text and returns the offset past its closing delimiter, or past the opening one
- * where the line ends first. */
+/**
+ * Blanks a quoted string's text and returns the offset past its closing delimiter, or past the opening one where
+ * the line ends first.
+ */
 function blankQuoted(scan: Scan, start: number, quote: string): number {
   const { source } = scan;
   let index = start + 1;
@@ -129,8 +132,10 @@ function blankSpan(scan: Scan, from: number, to: number): number {
   return to;
 }
 
-/** Blanks a template literal's text, leaving each interpolated expression as code, and returns the offset past
- * its closing backtick. */
+/**
+ * Blanks a template literal's text, leaving each interpolated expression as code, and returns the offset past its
+ * closing backtick.
+ */
 function blankTemplate(scan: Scan, start: number): number {
   const { source } = scan;
   let index = start + 1;
@@ -161,6 +166,16 @@ function blankTemplate(scan: Scan, start: number): number {
 function findBlockCommentEnd(source: string, from: number): number {
   const end = source.indexOf('*/', from + 2);
   return end === -1 ? source.length : end + 2;
+}
+
+/** Returns the offset past the comment opening at an offset, or nothing where none opens there. */
+function findCommentEnd(source: string, from: number): number | undefined {
+  if (source[from] !== '/') return undefined;
+
+  const next = source[from + 1];
+  if (next === '/') return findLineEnd(source, from);
+  if (next === '*') return findBlockCommentEnd(source, from);
+  return undefined;
 }
 
 /** Returns the offset of the line break ending the line an offset sits on, or the source's end. */
@@ -199,6 +214,17 @@ function findWordEnd(source: string, from: number): number {
 }
 
 /**
+ * Reports whether a character and the one after it open a `++` or a `--`.
+ *
+ * A postfix one ends an expression that division takes as its left operand. Read as a single `+` or `-`, it would
+ * put the `/` after it in regular-expression position, blanking everything up to the line's next `/` -- running
+ * code, which is the one direction this module does not blank in.
+ */
+function isDoubledSign(char: string, next: string | undefined): boolean {
+  return (char === '+' || char === '-') && next === char;
+}
+
+/**
  * Scans code from an offset, blanking every comment and literal it meets, and returns where it stopped.
  *
  * Stops at the `}` closing an interpolation when scanning one, and at the source's end otherwise. Braces opened
@@ -216,12 +242,9 @@ function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
     const char = source[index] ?? '';
     const next = source[index + 1];
 
-    if (char === '/' && next === '/') {
-      index = blankSpan(scan, index, findLineEnd(source, index));
-      continue;
-    }
-    if (char === '/' && next === '*') {
-      index = blankSpan(scan, index, findBlockCommentEnd(source, index));
+    const commentEnd = findCommentEnd(source, index);
+    if (commentEnd !== undefined) {
+      index = blankSpan(scan, index, commentEnd);
       continue;
     }
     if (char === "'" || char === '"') {
@@ -254,6 +277,12 @@ function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
       const end = findWordEnd(source, index);
       previousToken = source.slice(index, end);
       index = end;
+      continue;
+    }
+
+    if (isDoubledSign(char, next)) {
+      previousToken = char + char;
+      index += 2;
       continue;
     }
 

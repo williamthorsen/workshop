@@ -23,6 +23,15 @@ describe(blankNonCode, () => {
     expect(listLineBreakOffsets(blanked)).toStrictEqual(listLineBreakOffsets(source));
   });
 
+  it('keeps a carriage return as it keeps a line feed', () => {
+    const source = `const a = 1;\r\n// ${CLAMP}\r\nconst b = 2;\r\n`;
+
+    const blanked = blankNonCode(source);
+
+    expect(blanked).toHaveLength(source.length);
+    expect(blanked).toBe(`const a = 1;\r\n${blank(`// ${CLAMP}`)}\r\nconst b = 2;\r\n`);
+  });
+
   it('blanks an idiom written in a line comment', () => {
     const comment = `// ${CLAMP}`;
     const source = `const a = 1; ${comment}\nconst b = 2;\n`;
@@ -103,6 +112,23 @@ describe(blankNonCode, () => {
     const source = 'const ratio = a / b / c;\nconst mean = (a + b) / 2;\n';
 
     expect(blankNonCode(source)).toBe(source);
+  });
+
+  // A postfix `++` read as a single `+` would put the `/` after it in regular-expression position, and the call
+  // between it and the line's next `/` would blank as a literal.
+  it('reads a slash after a postfix increment or decrement as division', () => {
+    const source = `const a = i++ / 2, b = ${CLAMP} / 2;\nconst c = j-- / 2;\n`;
+
+    expect(blankNonCode(source)).toBe(source);
+  });
+
+  it('reads a regular expression opening after a binary plus or minus', () => {
+    const body = 'abc';
+    const source = `const s = x + /${body}/.source;\nconst t = y - /${body}/.source;\n`;
+
+    expect(blankNonCode(source)).toBe(
+      `const s = x + /${blank(body)}/.source;\nconst t = y - /${blank(body)}/.source;\n`,
+    );
   });
 
   it('reads a regular expression opening after an expression keyword', () => {
