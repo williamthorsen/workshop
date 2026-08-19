@@ -59,6 +59,48 @@ describe(countPackageUsage, () => {
     expect(count(source)).toBe(0);
   });
 
+  it('does not count a call written in a line or a block comment', () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      // describeError(error) replaced the hand-rolled version.
+      /* and describeError(error) once more. */
+      export const described = describeError(error);
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it('does not count a call written in a string, a template literal, or a regular expression', () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      export const hint = 'call describeError(error) instead';
+      export const label = \`prefer describeError(error)\`;
+      export const pattern = /describeError\\(/;
+      export const described = describeError(error);
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it('counts a call interpolated into a template literal', () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      export const label = \`error: \${describeError(error)}\`;
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it('counts no call in a source whose only import of the package is commented out', () => {
+    const source = buildSource(`
+      // import { describeError } from '${PACKAGE_NAME}';
+      function describeError(error) { return String(error); }
+      export const described = describeError(error);
+    `);
+
+    expect(count(source)).toBe(0);
+  });
+
   it('totals the calls of every importing source', () => {
     const first = buildSource(`import { describeError } from '${PACKAGE_NAME}';\nexport const a = describeError(e);`);
     const second = buildSource(`import { describeError } from '${PACKAGE_NAME}';\nexport const b = describeError(e);`);
