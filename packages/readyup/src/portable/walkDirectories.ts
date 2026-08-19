@@ -24,11 +24,11 @@ export interface WalkDirectoriesOptions {
   /** Directory the sweep descends from. Every returned path is relative to it. */
   root: string;
   /**
-   * Glob matched against each entry the sweep meets, file and directory alike, as a path relative to
+   * Globs matched against each entry the sweep meets, file and directory alike, as a path relative to
    * `root`. A matching entry contributes the directory holding it, so a recursive glob ending in
-   * `/package.json` names the directories that hold one.
+   * `/package.json` names the directories that hold one. A list matches what any one of its globs matches.
    */
-  match: string;
+  match: string | string[];
   /**
    * Globs matched against directory paths. A matching directory is neither traversed nor yielded, and
    * nothing else excludes anything: clearing this sweeps the whole tree, dot-directories included.
