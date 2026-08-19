@@ -13,7 +13,7 @@ const { failures } = vi.hoisted(() => {
   return { failures };
 });
 
-// The module under test binds `readdirSync` at import, so a spy on the `node:fs` namespace never reaches it.
+// `walkDirectories` binds `readdirSync` at import, so a spy on the `node:fs` namespace never reaches it.
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
@@ -48,11 +48,11 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
     expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha', 'locked', 'inner']);
   });
 
-  it('skips the subtree under a directory it cannot read for a benign reason, keeping the rest', ({ temp }) => {
+  it('drops a directory it cannot read for a benign reason along with its subtree, keeping the rest', ({ temp }) => {
     writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EACCES');
 
-    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha', 'locked']);
+    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha']);
   });
 
   it('propagates a systemic read failure rather than answering with a partial walk', ({ temp }) => {
@@ -66,8 +66,9 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
 // region | Helpers
 
 /**
- * Writes a monorepo whose `packages/locked` holds a nested workspace, so a failed read of `locked`
- * costs `inner` and nothing else. `locked` itself is matched from reading `packages/`, so it survives.
+ * Writes a monorepo whose `packages/locked` holds a nested workspace, so a failed read of `locked` costs
+ * both while `alpha` survives. A directory qualifies as a workspace only when reading it reveals a
+ * `package.json`, and that is the read that fails.
  */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/**'] });

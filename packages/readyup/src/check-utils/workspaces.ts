@@ -1,11 +1,9 @@
-import { type Dirent, existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-
-import picomatch from 'picomatch';
 
 import { deepFreeze } from '../portable/deepFreeze.ts';
 import { isRecord } from '../portable/isRecord.ts';
-import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
+import { walkDirectories } from '../portable/walkDirectories.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
@@ -30,15 +28,6 @@ export interface DiscoverWorkspacesOptions {
 }
 
 type WorkspacePatternSource = 'pnpm-workspace.yaml' | 'package.json';
-
-/** Maximum recursion depth for the glob walk. */
-const MAX_WALK_DEPTH = 10;
-
-/**
- * Directory names that are never traversed. Only `node_modules` is listed here;
- * dot-prefixed directories (including `.git`) are pruned separately in `walk`.
- */
-const PRUNED_NAMES = new Set(['node_modules']);
 
 /** Discovered workspaces by the `cwd` they were resolved against, held for the life of the process. */
 const workspacesByCwd = new Map<string, Workspace[]>();
@@ -152,8 +141,11 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
 }
 
 /**
- * Expands each pattern against a pruned recursive directory walk, returning relative
- * dir paths (forward-slash style) sorted and deduplicated.
+ * Expands each pattern into the workspace directories it names, as relative forward-slash paths,
+ * sorted and deduplicated.
+ *
+ * Each pattern is rewritten to name the `package.json` inside the directories it matches, so
+ * `walkDirectories` yields those directories.
  */
 function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatternSource): string[] {
   if (patterns.length === 0) return [];
@@ -170,51 +162,19 @@ function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatter
     }
   }
 
-  const matchers = patterns.map((pattern) => picomatch(normalizePattern(pattern)));
-  const matched = new Set<string>();
+  const match = patterns.map((pattern) => `${normalizePattern(pattern)}/package.json`);
 
-  walk(cwd, '.', 0, (relDir) => {
-    if (relDir === '.') return;
-    if (matchers.some((isMatch) => isMatch(relDir))) {
-      matched.add(relDir);
-    }
-  });
-
-  return [...matched].toSorted();
+  // The root is not a workspace, and a pattern of `**` translates to a glob matching its own manifest.
+  return walkDirectories({ root: cwd, match }).filter((relDir) => relDir !== '.');
 }
 
 /**
  * Normalizes a workspace pattern.
- * Strips a trailing `/` because picomatch's `**` matches paths, not directories-with-slash.
+ * Strips a trailing `/`, which would otherwise double the separator when the manifest name is appended.
  */
 function normalizePattern(pattern: string): string {
   if (pattern.endsWith('/')) return pattern.slice(0, -1);
   return pattern;
-}
-
-/** Walks `cwd` recursively from `relDir`, calling `visit` for each directory. */
-function walk(cwd: string, relDir: string, depth: number, visit: (relDir: string) => void): void {
-  visit(relDir);
-  if (depth >= MAX_WALK_DEPTH) return;
-
-  const absDir = relDir === '.' ? cwd : join(cwd, relDir);
-  let entries: Dirent[];
-  try {
-    entries = readdirSync(absDir, { withFileTypes: true, encoding: 'utf8' });
-  } catch (error) {
-    // A systemic failure (e.g. EMFILE, EIO) is rethrown, so an incomplete walk isn't masked.
-    if (isSkippableFilesystemError(error)) return;
-    throw error;
-  }
-
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const name = entry.name;
-    if (PRUNED_NAMES.has(name)) continue;
-    if (name.startsWith('.')) continue;
-    const childRel = relDir === '.' ? name : `${relDir}/${name}`;
-    walk(cwd, childRel, depth + 1, visit);
-  }
 }
 
 /** Builds a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */

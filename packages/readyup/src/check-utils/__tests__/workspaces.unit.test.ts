@@ -162,8 +162,8 @@ describe(discoverWorkspaces, () => {
     });
   });
 
-  describe('skipping non-workspace matched directories', () => {
-    it('skips a matched directory without a package.json', ({ temp }) => {
+  describe('skipping directories that are not workspaces', () => {
+    it('skips a directory without a package.json', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
       temp.mkdir('packages/empty');
@@ -202,6 +202,37 @@ describe(discoverWorkspaces, () => {
       const workspaces = discoverWorkspaces();
 
       expect(workspaces.map((w) => w.name)).not.toContain('fake');
+    });
+  });
+
+  describe('pattern shapes', () => {
+    it('does not report the repo root as a workspace under a `**` pattern', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['**'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+
+      const workspaces = discoverWorkspaces();
+
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
+    });
+
+    it('resolves a trailing-slash pattern to the same set as its bare form', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*/'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/beta', { name: 'beta' });
+
+      const workspaces = discoverWorkspaces();
+
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
+    });
+
+    it('resolves a pattern that names its directory literally', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['tools/formatter'] });
+      writeWorkspacePackage(temp, 'tools/formatter', { name: 'formatter' });
+      writeWorkspacePackage(temp, 'tools/linter', { name: 'linter' });
+
+      const workspaces = discoverWorkspaces();
+
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['tools/formatter']);
     });
   });
 
