@@ -264,7 +264,8 @@ function readWordToken(word: string, previousToken: string): string {
  */
 function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
   const { source } = scan;
-  // The last thing seen that was neither whitespace nor a comment: a word, or a single punctuation character.
+  // The token a `/` is classified against: the operand before it where one is complete, so a member name carries its
+  // introducing `.` or `#`, a postfix `++` or `--` is one token, and a postfix `!` leaves this untouched.
   let previousToken = '';
   let braceDepth = 0;
   let index = from;
