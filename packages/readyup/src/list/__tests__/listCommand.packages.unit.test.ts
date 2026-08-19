@@ -61,8 +61,8 @@ describe('list --packages', () => {
 
       expect(exitCode).toBe(0);
       expect(headings(stdout)).toStrictEqual([
-        '@acme/kits@2.1.0 \u{00B7} not configured',
-        'plain-kit@0.4.0 \u{00B7} not configured',
+        '@acme/kits@2.1.0 \u{00B7} not listed in the readyup config',
+        'plain-kit@0.4.0 \u{00B7} not listed in the readyup config',
       ]);
     });
 
@@ -89,8 +89,8 @@ describe('list --packages', () => {
 
       const { stdout } = await list(['--packages']);
 
-      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   rdy run --packages [<name>]');
-      expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe('   rdy run --from npm:plain-kit <name>');
+      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<name>]');
+      expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe('   To run: rdy run --from npm:plain-kit <name>');
     });
 
     it('marks an unconfigured package and leaves a configured one unmarked', async () => {
@@ -98,7 +98,10 @@ describe('list --packages', () => {
 
       const { stdout } = await list(['--packages']);
 
-      expect(headings(stdout)).toStrictEqual(['@acme/kits@2.1.0', 'plain-kit@0.4.0 \u{00B7} not configured']);
+      expect(headings(stdout)).toStrictEqual([
+        '@acme/kits@2.1.0',
+        'plain-kit@0.4.0 \u{00B7} not listed in the readyup config',
+      ]);
     });
 
     it('omits the project\u{2019}s own kits, which belong to the plain listing', async () => {

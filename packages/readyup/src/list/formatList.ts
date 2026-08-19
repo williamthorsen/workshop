@@ -9,7 +9,7 @@ import type { TokenName } from '../layout/formatter.ts';
 const SECTION_SEPARATOR = '\n\n';
 
 /** Detail marking a package the readyup config does not name. */
-const UNCONFIGURED_DETAIL = 'not configured';
+const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 
 // -- Compiled-section style discriminants --
 
@@ -83,25 +83,24 @@ export function formatOwnerView({
 
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
-    const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, 'kitSource'));
+    const command = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
+    sections.push(formatSection('Internal', buildRunLine(command), internalKits, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, 'kit'));
+      const command = `rdy run ${buildKitHint(compiledKits)}`;
+      sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
     } else {
-      const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, 'kit'));
+      sections.push(formatSection('Compiled', buildRunLine('rdy run --file <file path>'), pathItems, 'kit'));
     }
   }
 
   if (packageKits.length > 0) {
     // The rows stay every published kit — discovery is not run selection — so the bracketed optional keeps
     // the promise that every kit listed is reachable by the command above it.
-    sections.push(formatSection('Packages', 'rdy run --packages [<name>]', packageKits, 'sourcePackage'));
+    sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<name>]'), packageKits, 'sourcePackage'));
   }
 
   if (availablePackages.length > 0) {
@@ -129,8 +128,8 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
     return formatEmpty('consumer', kitsDir);
   }
 
-  const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, 'kit');
+  const command = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
+  return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
 }
 
 // -- Packages view --
@@ -266,9 +265,25 @@ function buildProjectHint(project: RecursiveProjectView): string {
   return project.dir === '.' ? `rdy run ${nameHint}` : `rdy run --from ${project.dir} ${nameHint}`;
 }
 
-/** Returns the section naming installed packages that publish kits the config does not list. */
+/**
+ * Returns the indented line naming the command that runs the kits beneath it.
+ *
+ * The label is what separates the line from the kit rows sharing its column: the role glyphs those rows
+ * carry are empty in plain style, so without it the command reads as one more kit.
+ */
+function buildRunLine(command: string): string {
+  return `${getLayout().indent(1)}To run: ${command}`;
+}
+
+/**
+ * Returns the section naming installed packages that publish kits the config does not list.
+ *
+ * Its line heads the section with what to do about those packages rather than a command to run, so it
+ * carries no `To run:` label.
+ */
 function formatAvailableSection(availablePackages: string[]): string {
-  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
+  const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
+  return formatSection('Available', instruction, availablePackages, 'sourcePackage');
 }
 
 /** Returns one package's heading, the command running its kits, and a line per kit. */
@@ -287,7 +302,7 @@ function formatPackageBlock(group: KitPackageGroup): string {
     }),
   );
 
-  return [heading, `${getLayout().indent(1)}${buildPackageHint(group)}`, ...items].join('\n');
+  return [heading, buildRunLine(buildPackageHint(group)), ...items].join('\n');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
@@ -301,19 +316,20 @@ function formatProjectBlock(project: RecursiveProjectView): string {
     }),
   );
 
-  return [heading, `${getLayout().indent(1)}${buildProjectHint(project)}`, ...items].join('\n');
+  return [heading, buildRunLine(buildProjectHint(project)), ...items].join('\n');
 }
 
 /**
- * Returns a titled section: the title, `hint` indented beneath it, then the kits.
+ * Returns a titled section: the title, `hintLine` beneath it, then the kits.
  *
- * Nothing inside is parted by a blank line. `hint` sits against the title so the command reads as part of
- * the heading, the kits sit against the hint, and the blank parting one section from the next belongs to
- * whoever assembles them.
+ * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
+ * built differently and only the caller knows which it holds. Nothing inside is parted by a blank line:
+ * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
+ * the blank parting one section from the next belongs to whoever assembles them.
  */
-function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
+function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
-  return [getLayout().formatHeading(title, 'section'), `${getLayout().indent(1)}${hint}`, ...items].join('\n');
+  return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
 /** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */
