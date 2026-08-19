@@ -1,5 +1,79 @@
 [
   {
+    "version": "0.30.0",
+    "date": "2026-08-19",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Bundle kit-authoring guidance with readyup (#365)",
+            "body": "Adds kit-authoring guidance to `readyup`, published in the package as a CodeAssembly content root and installed as the `consult-readyup-kits` skill by any repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync`. The guidance states when a check should skip rather than pass, which structures collapse a group of skips, and when a `fix` getter is appropriate. `rdy --help` and the kit scaffolded by `rdy init` both point at it, and the README carries the same doctrine under a new `When a check skips` heading.",
+            "hash": "614e00adfb2ec2c2649466886282bb736ffe0e4a"
+          },
+          {
+            "description": "Add the `rdy help` command with README-backed topics (#366)",
+            "body": "Adds `rdy help [<command|topic>]` to readyup. Given a command, it prints that command's help; given one of five topics (`authoring`, `concepts`, `json`, `publishing`, `utils`), it prints the matching section of the shipped README. `rdy --help` now displays the topic list.",
+            "hash": "2046d7da3fbced11500130c3fe574e43dab61618"
+          },
+          {
+            "description": "Add `rdy list --packages`, a listing of the kits a project's dependencies publish (#367)",
+            "body": "Adds `rdy list --packages` to `readyup`, which lists the working directory's kit-publishing dependencies as one block per package. The set is every installed direct dependency that publishes kits plus every package the config's `packages` list names. Under `--json`, every package-published kit row now carries `origin.configured`.",
+            "hash": "bb80d865aabdc7e2bd853b87dbc601c8c7ca966d"
+          },
+          {
+            "description": "Add `rdy list --recursive --packages`, the repo-wide dependency view (#368)",
+            "body": "Adds `rdy list --recursive --packages`, which reports every workspace below the working directory with the kit-publishing dependencies it declares and the kits each publishes. Each workspace is read under its own `package.json` and its own readyup config, and its run hint begins with the `cd` that reaches it, so every command works from where the sweep began.\n\nSeparately, every listing view now labels its command hint `To run: <command>`, and a package the config omits is marked `not listed in the readyup config` in place of `not configured`.",
+            "hash": "c305def66a718ab3701cce5f49713954432173cc"
+          },
+          {
+            "description": "Add `blankNonCode` and `getLineAtOffset` to `readyup/check-utils` (#373)",
+            "body": "Adds `blankNonCode` and `getLineAtOffset` to `readyup/check-utils`, the two text primitives a conformance kit's detector needs to tell a site in code from an idiom written in a comment or a string. `blankNonCode` replaces every comment and every literal's text with spaces while preserving the source's length and every line-break position, so an offset found in the blanked text names the same line in the source a reader opens. It reads JavaScript-family syntax.\n\nSeparately, `countPackageUsage` no longer counts a call written in a comment or a literal, nor treats a source that only quotes an import of the package as one making it.",
+            "hash": "0ba63224b8ad63d7d98b67d6ca9348b2a05f9fdf"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Consolidate workspace discovery onto the shared directory walker (#371)",
+            "body": "Consolidates `readyup`'s workspace discovery onto `walkDirectories`, the shared directory walker, deleting the private recursive walk that `discoverWorkspaces` carried alongside it.\n\nA workspace directory that cannot itself be listed is now dropped along with its subtree, where before it survived by being matched from its parent's listing. That brings `discoverWorkspaces` into line with `discoverProjects`, which already swept the tree this way.",
+            "hash": "ed9bfecf9396dacabb46408805013035e6c79890"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Move the `route.*` suites onto toolbelt's temp tree and cwd pointer (#361)",
+            "body": "Moves the five `route.*` suites in the `readyup` package off the local `useTempDir` helper and onto toolbelt's utilities: `createTempTree` for the file-scoped tree, `pointCwdAt` for moving the process into it, and `makeFixture` for binding the tree as a Vitest fixture. The helper survives for the eighteen suites not yet migrated, which follow before it is deleted.",
+            "hash": "5f2e5fb4fb8196b37011e9b788d92d1075595c9f"
+          },
+          {
+            "description": "Reshape `useFailingDirectoryRead` and move its suites onto fixtures (#362)",
+            "body": "Moves the `discoverKitProjects`, `list --recursive`, and `walkDirectories` suites onto `createTempTree` fixtures, so each test reaches its tree as a parameter rather than through a module-level handle. Reshapes `useFailingDirectoryRead` to take the tree's root rather than a thunk resolving it, and folds the reader's reset into binding, which retires `passAllReads`. Both suites that point the working directory reach it through `pointCwdAt` rather than a `process.cwd` spy.",
+            "hash": "ab777be804fccf631a2cfe23177ee2809e4428f4"
+          },
+          {
+            "description": "Move three `readyup` test suites onto toolbelt's temp trees (#363)",
+            "body": "Moves three `readyup` test suites off the package's own `useTempDir` helper onto `createTempTree` from `@williamthorsen/toolbelt.filesystem`. The `discoverKitPackages` and `expandConfiguredPackages` suites take their trees as `test.extend` fixtures declared as literal entry maps; the `pnpmWorkspaceYaml` suite builds a tree per test.",
+            "hash": "7efd7e3b5faec0e9e843e31b093a9a46cb1405b3"
+          },
+          {
+            "description": "Delete `useTempDir` and move its suites onto toolbelt tree fixtures (#364)",
+            "body": "Deletes `packages/readyup/src/test-utils/tempDir.ts` and moves its remaining consumer suites onto toolbelt's `createTempTree` and `pointCwdAt`, reached through a per-test `makeFixture` fixture. `readyup` no longer carries a temporary-directory helper of its own.\n\nSeparately, narrows `eslint.config.ts`'s vitest suppression block to exact filenames, replacing two globs that reached files needing no suppression.",
+            "hash": "b09ecfa07ce37196093de0a5334070a8e6a88399"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.29.0",
     "date": "2026-08-17",
     "sections": [

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-08-19
+
+### 🎉 Features
+
+- Fill inlays from config bindings (#356)
+
+  Fills the inlays a body declares with the rendered bodies of the artifacts a config binds to them. A tier's new `inlays` block is keyed by inlay name and carries `select`'s own selector grammar, so that a higher tier unbinds with `drop`, and every artifact a binding names enters the closure as a seed under the new `binding` origin. `fillInlays` splices each bound body into every host declaring that inlay when a plan is composed, reshaped by the target's declared line rewrite and fenced by its declared markers.
+
+  Migration: The plan schema is at version 5 and the closure schema at version 2, each carrying `binding` among an artifact's seed origins.
+
 ## 0.3.0 — 2026-08-17
 
 ### 🎉 Features

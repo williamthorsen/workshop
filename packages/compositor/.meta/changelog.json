@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-08-19",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fill inlays from config bindings (#356)",
+            "body": "Fills the inlays a body declares with the rendered bodies of the artifacts a config binds to them. A tier's new `inlays` block is keyed by inlay name and carries `select`'s own selector grammar, so that a higher tier unbinds with `drop`, and every artifact a binding names enters the closure as a seed under the new `binding` origin. `fillInlays` splices each bound body into every host declaring that inlay when a plan is composed, reshaped by the target's declared line rewrite and fenced by its declared markers.\n\nMigration: The plan schema is at version 5 and the closure schema at version 2, each carrying `binding` among an artifact's seed origins.",
+            "hash": "a550ddbf97b3bb7af52d1c8355725f117f77fba2"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-08-17",
     "sections": [
