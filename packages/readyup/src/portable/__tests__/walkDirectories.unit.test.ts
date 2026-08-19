@@ -64,6 +64,12 @@ describe(walkDirectories, () => {
     expect(found).toStrictEqual(['twins']);
   });
 
+  it('yields the union of what its globs match when `match` is a list', ({ temp }) => {
+    const found = walkDirectories({ root: temp.dir, match: ['packages/*/package.json', 'deep/**/package.json'] });
+
+    expect(found).toStrictEqual(['deep/one/two', 'packages/a', 'packages/b']);
+  });
+
   it('yields the directory holding a matching directory, not the match itself', ({ temp }) => {
     const found = walkDirectories({ root: temp.dir, match: '**/.readyup', prune: [] });
 
