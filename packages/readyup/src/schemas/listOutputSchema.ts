@@ -19,8 +19,9 @@ export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKin
  * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
  *
  * `configured` reports whether the readyup config names the package, which is what decides whether
- * `rdy run --packages` would reach the kit. It is absent only from a payload written before the field
- * existed, never as a way of saying `false`.
+ * `rdy run --packages` would reach the kit. Under a repo-wide sweep the config is the one belonging to
+ * the row's own `project`, so the same package answers differently across workspaces. It is absent only
+ * from a payload written before the field existed, never as a way of saying `false`.
  */
 export const ListKitOriginSchema = z
   .object({
@@ -65,8 +66,8 @@ export const ListKitEntrySchema = z
  * `compiled`, which `rdy run <name>` runs. A package's kit is `compiled` as well, so `name` and `kind`
  * alone collide between a project's own kit and a package's kit of the same name, and between two
  * packages publishing that name. A repo-wide listing adds a third collision, since two projects may each
- * hold a `default` kit. Every such row is meaningful, and a consumer indexing on less than the full key
- * silently drops one of them.
+ * hold a `default` kit, and two workspaces may each depend on the same publisher. Every such row is
+ * meaningful, and a consumer indexing on less than the full key silently drops one of them.
  *
  * Every row is a kit some invocation would execute, which is the invariant a consumer iterating `kits`
  * relies on. A kit an unconfigured package publishes satisfies it: `rdy run --packages` will not reach it,
@@ -74,7 +75,7 @@ export const ListKitEntrySchema = z
  *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits. It accompanies the owner listing, which names them without
- * their kits; `--packages` reports those kits as rows and emits no candidate list.
+ * their kits; every `--packages` listing reports those kits as rows and emits no candidate list.
  */
 export const ListOutputSchema = z
   .object({

@@ -25,19 +25,20 @@ import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts'
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
-import type { KitProject } from '../projects/discoverKitProjects.ts';
-import { discoverKitProjects } from '../projects/discoverKitProjects.ts';
+import type { Project } from '../projects/project-discovery.ts';
+import { discoverKitProjects, discoverProjects } from '../projects/project-discovery.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { enumerateKits } from './enumerateKits.ts';
-import type { RecursiveProjectView } from './formatList.ts';
+import type { ProjectPackagesView, RecursiveProjectView } from './formatList.ts';
 import {
   formatConsumerView,
   formatManifestView,
   formatOwnerView,
   formatPackagesView,
+  formatRecursivePackagesView,
   formatRecursiveView,
   resolveCompiledStyle,
 } from './formatList.ts';
@@ -104,10 +105,9 @@ export async function listCommand(args: string[]): Promise<number> {
     throw usageError('--packages and --manifest are mutually exclusive');
   }
 
-  // Not exclusivity: the pair names the repo-wide dependency view, which nothing implements yet. Saying
-  // so keeps the reader from reading a limit as a rule.
+  // The pair composes rather than conflicting: locality from one flag, provenance from the other.
   if (packages && recursive) {
-    throw usageError('Listing dependencies across a whole repository is not supported yet: "--recursive --packages".');
+    return runRecursivePackagesMode(json);
   }
 
   if (recursive) {
@@ -303,6 +303,39 @@ async function runPackagesMode(json: boolean): Promise<number> {
 }
 
 /**
+ * Enumerates the kit-publishing dependencies of every project below the working directory.
+ *
+ * Both axes at once: the locality `--recursive` names and the provenance `--packages` names. The sweep is
+ * every project rather than every kit project, because a workspace authoring no kits of its own still
+ * declares dependencies that publish them, and that workspace is the one the question is about.
+ *
+ * Each project's dependencies are read under its own config, so a package one workspace configures and
+ * another does not is reported as configured where it is.
+ */
+async function runRecursivePackagesMode(json: boolean): Promise<number> {
+  const projects = await discoverProjects({ root: process.cwd() });
+
+  const views: ProjectPackagesView[] = [];
+  const entries: JsonListKitEntry[] = [];
+
+  for (const project of projects) {
+    const groups = collectKitPackageGroups({
+      configuredPackages: project.config.packages,
+      fromDir: project.absolutePath,
+    });
+
+    views.push({ dir: project.dir, groups });
+    entries.push(
+      ...groups.flatMap((group) => group.kits.map((kit) => buildPackageEntry(kit, group.configured, project.dir))),
+    );
+  }
+
+  writeHuman(formatRecursivePackagesView({ projects: views }) + '\n', json);
+
+  return finishList(entries, json);
+}
+
+/**
  * Enumerates the compiled kits of every kit project below the working directory.
  *
  * Compiled kits only: an internal kit is never reachable from another directory, since `--jit` and
@@ -337,7 +370,7 @@ async function runRecursiveMode(json: boolean): Promise<number> {
  * The manifest is where the descriptions live, and a project compiled with `--skip-manifest` still has
  * kits worth naming.
  */
-function collectProjectKits(project: KitProject): JsonListKitEntry[] {
+function collectProjectKits(project: Project): JsonListKitEntry[] {
   const manifest = readProjectManifest(project.manifestPath);
   if (manifest !== undefined) {
     const manifestDir = path.dirname(project.manifestPath);
@@ -408,11 +441,18 @@ function describePackageKit(kit: PackageKit): string {
   return `${kit.packageName}${version}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
 }
 
-/** Builds the row for a kit an installed package publishes, recording whether the config names it. */
-function buildPackageEntry(kit: PackageKit, configured: boolean): JsonListKitEntry {
+/**
+ * Builds the row for a kit an installed package publishes, recording whether the config names it.
+ *
+ * `project` names the directory whose dependencies were read. Pass `undefined` for a listing that reads
+ * one project, and the sweep-relative directory for a repo-wide one, where two workspaces depending on
+ * the same package each contribute a row.
+ */
+function buildPackageEntry(kit: PackageKit, configured: boolean, project?: string): JsonListKitEntry {
   return {
     name: kit.kitName,
     kind: 'compiled',
+    ...(project !== undefined && { project }),
     origin: {
       package: kit.packageName,
       ...(kit.version !== undefined && { version: kit.version }),

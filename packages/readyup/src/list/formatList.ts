@@ -9,7 +9,7 @@ import type { TokenName } from '../layout/formatter.ts';
 const SECTION_SEPARATOR = '\n\n';
 
 /** Detail marking a package the readyup config does not name. */
-const UNCONFIGURED_DETAIL = 'not configured';
+const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 
 // -- Compiled-section style discriminants --
 
@@ -83,25 +83,24 @@ export function formatOwnerView({
 
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
-    const hint = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', hint, internalKits, 'kitSource'));
+    const command = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
+    sections.push(formatSection('Internal', buildRunLine(command), internalKits, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const hint = `rdy run ${buildKitHint(compiledKits)}`;
-      sections.push(formatSection('Compiled', hint, compiledKits, 'kit'));
+      const command = `rdy run ${buildKitHint(compiledKits)}`;
+      sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
     } else {
-      const hint = `rdy run --file <file path>`;
       const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
-      sections.push(formatSection('Compiled', hint, pathItems, 'kit'));
+      sections.push(formatSection('Compiled', buildRunLine('rdy run --file <file path>'), pathItems, 'kit'));
     }
   }
 
   if (packageKits.length > 0) {
     // The rows stay every published kit — discovery is not run selection — so the bracketed optional keeps
     // the promise that every kit listed is reachable by the command above it.
-    sections.push(formatSection('Packages', 'rdy run --packages [<name>]', packageKits, 'sourcePackage'));
+    sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<name>]'), packageKits, 'sourcePackage'));
   }
 
   if (availablePackages.length > 0) {
@@ -129,8 +128,8 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
     return formatEmpty('consumer', kitsDir);
   }
 
-  const hint = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
-  return formatSection('Compiled', hint, compiledKits, 'kit');
+  const command = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
+  return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
 }
 
 // -- Packages view --
@@ -185,10 +184,43 @@ export function formatRecursiveView({ projects }: RecursiveViewOptions): string 
   return blocks.length === 0 ? formatEmpty('recursive') : blocks.join(SECTION_SEPARATOR);
 }
 
+// -- Repo-wide dependency view --
+
+/** One discovered project's contribution to a repo-wide dependency listing. */
+export interface ProjectPackagesView {
+  /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
+  dir: string;
+  groups: KitPackageGroup[];
+}
+
+interface RecursivePackagesViewOptions {
+  projects: ProjectPackagesView[];
+}
+
+/**
+ * Formats the repo-wide dependency output: each project's directory, then a block per kit-publishing dependency.
+ *
+ * Nesting comes from the glyph and the indentation rather than from a heading rule. The two rule weights
+ * this view would otherwise need are a stroke apart, and the roles they would mark are already told apart
+ * by their glyphs; plain style, whose role glyphs are empty, reads the same three levels off the indent.
+ *
+ * A project with no kit-publishing dependency contributes no block at all, its directory line included, so
+ * a caller may hand over every project discovery found. A sweep left with no block returns the empty
+ * message.
+ */
+export function formatRecursivePackagesView({ projects }: RecursivePackagesViewOptions): string {
+  const blocks = projects.filter((project) => project.groups.length > 0).map(formatProjectPackagesBlock);
+
+  return blocks.length === 0 ? formatEmpty('recursive-packages') : blocks.join(SECTION_SEPARATOR);
+}
+
 // -- Empty messages --
 
 /** Format the "no kits found" message appropriate to the given mode. */
-export function formatEmpty(mode: 'owner' | 'consumer' | 'packages' | 'recursive', kitsDir?: string): string {
+export function formatEmpty(
+  mode: 'owner' | 'consumer' | 'packages' | 'recursive' | 'recursive-packages',
+  kitsDir?: string,
+): string {
   if (mode === 'consumer') {
     return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
   }
@@ -197,6 +229,9 @@ export function formatEmpty(mode: 'owner' | 'consumer' | 'packages' | 'recursive
   }
   if (mode === 'recursive') {
     return 'No kit projects found.';
+  }
+  if (mode === 'recursive-packages') {
+    return 'No dependency of any project below this directory publishes kits.';
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
@@ -251,6 +286,11 @@ function buildPackageHint(group: KitPackageGroup): string {
   return group.configured ? `rdy run --packages ${nameHint}` : `rdy run --from npm:${group.packageName} ${nameHint}`;
 }
 
+/** Returns a package's name with the version its own manifest records, where it records one. */
+function buildPackageLabel(group: KitPackageGroup): string {
+  return group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
+}
+
 /**
  * Returns the command that runs a project's kits from where the reader stands.
  *
@@ -266,16 +306,61 @@ function buildProjectHint(project: RecursiveProjectView): string {
   return project.dir === '.' ? `rdy run ${nameHint}` : `rdy run --from ${project.dir} ${nameHint}`;
 }
 
-/** Returns the section naming installed packages that publish kits the config does not list. */
+/**
+ * Returns what a dependency command needs to run from the sweep root, which is nothing at the root itself.
+ *
+ * A workspace's own dependency is reachable from nowhere else: `rdy run` takes no directory, and `--from`
+ * names a kit source rather than a working directory.
+ */
+function buildProjectPrefix(dir: string): string {
+  return dir === '.' ? '' : `cd ${dir} && `;
+}
+
+/**
+ * Returns the indented line naming the command that runs the kits beneath it.
+ *
+ * The label is what separates the line from the kit rows sharing its column: the role glyphs those rows
+ * carry are empty in plain style, so without it the command reads as one more kit.
+ */
+function buildRunLine(command: string, depth = 1): string {
+  return `${getLayout().indent(depth)}To run: ${command}`;
+}
+
+/**
+ * Returns the section naming installed packages that publish kits the config does not list.
+ *
+ * Its line heads the section with what to do about those packages rather than a command to run, so it
+ * carries no `To run:` label.
+ */
 function formatAvailableSection(availablePackages: string[]): string {
-  return formatSection('Available', 'Add to "packages" in the readyup config', availablePackages, 'sourcePackage');
+  const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
+  return formatSection('Available', instruction, availablePackages, 'sourcePackage');
+}
+
+/** Returns one package's line under a project's directory, the command running its kits, and a line per kit. */
+function formatNestedPackageBlock(group: KitPackageGroup, runPrefix: string): string {
+  const packageLine = getLayout().formatCheckLine({
+    token: 'sourcePackage',
+    name: buildPackageLabel(group),
+    depth: 1,
+    ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
+  });
+  const items = group.kits.map((kit) =>
+    getLayout().formatCheckLine({
+      token: 'kit',
+      name: kit.kitName,
+      depth: 2,
+      ...(kit.description !== undefined && { detail: kit.description }),
+    }),
+  );
+
+  return [packageLine, buildRunLine(`${runPrefix}${buildPackageHint(group)}`, 2), ...items].join('\n');
 }
 
 /** Returns one package's heading, the command running its kits, and a line per kit. */
 function formatPackageBlock(group: KitPackageGroup): string {
-  const label = group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
   const heading = getLayout().formatBreadcrumb(
-    [{ role: 'sourcePackage', text: label }],
+    [{ role: 'sourcePackage', text: buildPackageLabel(group) }],
     'kit',
     group.configured ? undefined : UNCONFIGURED_DETAIL,
   );
@@ -287,7 +372,7 @@ function formatPackageBlock(group: KitPackageGroup): string {
     }),
   );
 
-  return [heading, `${getLayout().indent(1)}${buildPackageHint(group)}`, ...items].join('\n');
+  return [heading, buildRunLine(buildPackageHint(group)), ...items].join('\n');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
@@ -301,19 +386,34 @@ function formatProjectBlock(project: RecursiveProjectView): string {
     }),
   );
 
-  return [heading, `${getLayout().indent(1)}${buildProjectHint(project)}`, ...items].join('\n');
+  return [heading, buildRunLine(buildProjectHint(project)), ...items].join('\n');
 }
 
 /**
- * Returns a titled section: the title, `hint` indented beneath it, then the kits.
+ * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
  *
- * Nothing inside is parted by a blank line. `hint` sits against the title so the command reads as part of
- * the heading, the kits sit against the hint, and the blank parting one section from the next belongs to
- * whoever assembles them.
+ * The directory sits directly above its first package, which is what makes the blank lines within the
+ * block read as parting one package from the next rather than the directory from what it heads.
  */
-function formatSection(title: string, hint: string, kits: string[], token: TokenName): string {
+function formatProjectPackagesBlock(project: ProjectPackagesView): string {
+  const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
+  const runPrefix = buildProjectPrefix(project.dir);
+  const blocks = project.groups.map((group) => formatNestedPackageBlock(group, runPrefix));
+
+  return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
+}
+
+/**
+ * Returns a titled section: the title, `hintLine` beneath it, then the kits.
+ *
+ * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
+ * built differently and only the caller knows which it holds. Nothing inside is parted by a blank line:
+ * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
+ * the blank parting one section from the next belongs to whoever assembles them.
+ */
+function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
-  return [getLayout().formatHeading(title, 'section'), `${getLayout().indent(1)}${hint}`, ...items].join('\n');
+  return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
 /** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */

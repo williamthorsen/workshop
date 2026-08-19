@@ -112,6 +112,7 @@ Modes:
   rdy list                                  List internal and compiled kits (owner view)
   rdy list --packages                       List the kits this project's dependencies publish
   rdy list --recursive                      List compiled kits in every project below this directory
+  rdy list --recursive --packages           List each project's kit-publishing dependencies
   rdy list --from <path>                    List compiled kits at a local path (consumer view)
   rdy list --from npm:package               List the kits an installed package publishes
   rdy list --from global                    List compiled kits in the global directory
@@ -124,10 +125,12 @@ Options:
                              global, dir:path, or local path)
   --manifest <path>          List the kits a manifest file declares
   --packages                 List every installed dependency that publishes kits, with the kits
-                             each publishes and the command that runs them; not combinable with
-                             --from or --manifest
+                             each publishes and the command that runs them; combines with
+                             --recursive, not with --from or --manifest
   --recursive                List compiled kits in every project below the working directory,
-                             grouped by project; not combinable with --from or --manifest
+                             grouped by project; with --packages, lists each project's
+                             kit-publishing dependencies instead; not combinable with --from
+                             or --manifest
   --json                     Output the kit list as JSON
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
@@ -136,6 +139,7 @@ Examples:
   rdy list                                         Show kits in the current project
   rdy list --packages                              Show what this project's dependencies publish
   rdy list --recursive                             Show compiled kits across the whole repository
+  rdy list --recursive --packages                  Show every project's kit-publishing dependencies
   rdy list --from .                                Show compiled kits in the current directory
   rdy list --from global                           Show kits in the global directory
   rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository

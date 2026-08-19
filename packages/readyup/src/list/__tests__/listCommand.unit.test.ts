@@ -285,7 +285,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit --internal [<name>]');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit --internal [<name>]');
     });
 
     it('leaves --internal out of the internal hint under the default config', async () => {
@@ -293,7 +293,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   rdy run --jit [<name>]');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit [<name>]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {

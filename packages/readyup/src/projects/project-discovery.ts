@@ -20,8 +20,8 @@ import { walkDirectories } from '../portable/walkDirectories.ts';
  */
 const CANDIDATE_GLOB = '**/package.json';
 
-/** A directory in the swept tree that readyup reads as a kit project. */
-export interface KitProject {
+/** A directory in the swept tree that readyup reads as a project. */
+export interface Project {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
   absolutePath: string;
@@ -30,8 +30,8 @@ export interface KitProject {
   manifestPath: string;
 }
 
-/** Options for `discoverKitProjects`. */
-export interface DiscoverKitProjectsOptions {
+/** Options for the sweeps below. */
+export interface DiscoverProjectsOptions {
   /** Directory the sweep descends from. */
   root?: string;
 }
@@ -45,19 +45,33 @@ export interface DiscoverKitProjectsOptions {
  * emptied. A manifest counts on existence alone, however many kits it currently lists, which is what
  * keeps a project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
  */
-export async function discoverKitProjects(options: DiscoverKitProjectsOptions = {}): Promise<KitProject[]> {
+export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
+  const projects = await discoverProjects(options);
+
+  return projects.filter(
+    (project) =>
+      hasReadyupFootprint(project.absolutePath) &&
+      holdsKits(project.absolutePath, project.config, project.manifestPath),
+  );
+}
+
+/**
+ * Returns every project in the tree below `root`, each resolved under its own config, root-first.
+ *
+ * A project is any directory holding a package manifest, whatever its relationship to readyup. That is
+ * the set the dependency axis asks about: a workspace authoring no kits of its own still declares
+ * dependencies that publish them, and a readyup footprint is not a condition it has to meet to have any.
+ */
+export async function discoverProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
   const { root = process.cwd() } = options;
 
   const candidates = walkDirectories({ root, match: CANDIDATE_GLOB });
 
-  const projects: KitProject[] = [];
+  const projects: Project[] = [];
   for (const dir of candidates) {
     const absolutePath = dir === '.' ? root : path.join(root, dir);
-    if (!hasReadyupFootprint(absolutePath)) continue;
-
     const config = await readProjectConfig(absolutePath, dir);
     const manifestPath = path.join(absolutePath, DEFAULT_MANIFEST_PATH);
-    if (!holdsKits(absolutePath, config, manifestPath)) continue;
 
     projects.push({ dir, absolutePath, config, manifestPath });
   }
@@ -89,11 +103,12 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
 }
 
 /**
- * Reports whether a directory carries any readyup footprint at all, before any config is evaluated.
+ * Reports whether a directory carries any readyup footprint at all.
  *
  * A project with neither falls back to the default config, which points inside `.readyup/`: declaring a
- * source directory anywhere else takes a config file to say so. Settling this first keeps the sweep from
- * evaluating TypeScript in every workspace of a repo whose kits live in one of them.
+ * source directory anywhere else takes a config file to say so. Testing this before the directory reads
+ * below keeps the sweep from walking a source tree in every workspace of a repo whose kits live in one
+ * of them.
  */
 function hasReadyupFootprint(absolutePath: string): boolean {
   if (existsSync(path.join(absolutePath, READYUP_DIR))) return true;
@@ -113,6 +128,8 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
  * Reads one project's config, falling back to the defaults when it cannot be evaluated.
  *
  * Discovery is read-only, so a config that fails costs that project its settings, not its discovery.
+ * A project declaring no config costs one `existsSync` and evaluates no TypeScript, which is what lets
+ * every candidate be resolved before any of them is judged a kit project.
  */
 async function readProjectConfig(absolutePath: string, dir: string): Promise<ResolvedRdyConfig> {
   try {
