@@ -1,6 +1,6 @@
 ---
 slug: readyup-kits
-description: 'Authoring judgment for ReadyUp kits: when a check should skip rather than pass, which structures collapse a group of skips, and when a fix getter is appropriate. Consult before writing or editing a readyup kit.'
+description: 'Authoring judgment for ReadyUp kits: when a check should skip rather than pass, which structures collapse a group of skips, what a detector must blank before it scans a source, and when a fix getter is appropriate. Consult before writing or editing a readyup kit.'
 delivery: skill
 ---
 
@@ -44,6 +44,16 @@ To make a whole checklist inapplicable, nest its checks under one parent check w
 ⚪ means the check declined to apply. 🚫 means the check never ran.
 
 A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
+
+## Scanning a project's sources
+
+A detector reads what `blankNonCode` returns, never a source's raw text. An idiom written in a comment or a string is prose about the code rather than a site in it, and reporting one is a false positive -- which is what discredits a kit permanently, because a reader who finds one stops trusting the rest of what it says.
+
+Nothing in your own repo will show you the defect. An adoption kit skips the workspace publishing the package it checks, so the detector never runs against the comments you wrote; the false positives surface in consumer repos, where the reader who gets one cannot fix it.
+
+Expect the site count to move in both directions. Blanking unmasks sites a comment was hiding, because a comment sitting mid-expression blanks to a run of spaces as wide as it was rather than breaking the anchor scan. Write an anchor that tolerates a whitespace run, not one that admits a single space.
+
+One pattern must not read blanked text: one matching a literal's own content, such as an import specifier, which blanking erases. `countPackageUsage` already answers that question against the text it needs; reach for it rather than hand-rolling the sweep.
 
 ## Writing `fix`
 

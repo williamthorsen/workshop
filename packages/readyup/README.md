@@ -1284,23 +1284,29 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 | ------------------------------------- | -------------------------------------------------------------- |
 | `listTrackedFiles()`                  | Paths git tracks under `cwd`                                   |
 | `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path the filter selects      |
+| `blankNonCode(text)`                  | The same text with every comment and literal blanked           |
+| `getLineAtOffset(text, offset)`       | The 1-based line holding an offset                             |
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
 | `buildFindingReport(options)`         | A `CheckOutcome` naming located findings, with a fraction      |
 
-These four are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
+These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
 `listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope `readFile` works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 
 `readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
 
-`countPackageUsage` counts calls to the named exports and counts none in a source that never imports the package, from its root or any subpath. The import is what separates adoption from a name collision: a project hand-rolling its own `describeError` calls that name as often as an adopter calls the real one.
+`blankNonCode` is what a detector scans instead of the raw text. It replaces every comment and every literal's text with spaces, so an idiom written in prose is invisible to an anchor scan while the code around the prose is not; a recommendation pointing at a comment is a false positive, and a false positive is what discredits a kit. Literal delimiters survive and only the text between them blanks, because a literal is an operand -- a scan reading the token before a `[` would otherwise take `'abc'[0]` for an array literal -- and an expression interpolated into a template literal stays visible as the code it is. Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted string or regular expression whose closing delimiter never arrives on its line was neither, so a misjudgment leaves text standing rather than blanking an expression that runs. That direction holds because a `/` is classified against the operand before it, so every construct completing an operand has to present itself as one: a postfix operator -- `++`, `--`, and TypeScript's `!` -- attaches to its operand rather than replacing it, and a member name keeps the `.` or `#` that introduced it, so a property spelled like a keyword is read as the property it is. `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning with `/` blanks as far as its closing tag's slash. It reads JavaScript-family syntax; a source in another language yields arbitrary output rather than an error, so a filter selecting `.md` or `.yaml` paths should not reach for it.
+
+`getLineAtOffset` turns an offset into the line `buildFindingReport` renders. The two pair: `blankNonCode` preserves its input's length and every line-break position, so an offset found in the blanked text names the same line in the source a reader opens.
+
+`countPackageUsage` counts calls to the named exports and counts none in a source that never imports the package, from its root or any subpath. The import is what separates adoption from a name collision: a project hand-rolling its own `describeError` calls that name as often as an adopter calls the real one. Its two patterns read two texts -- the call scan reads a blanked source, so a call named in prose is not counted as one made, while the import test locates its match in a source with comments alone blanked, because the specifier it matches is itself a string literal that full blanking would erase, then reads the blanked text at that offset so a source quoting an import is not taken for one making it.
 
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and names each selected finding as `symbol (path:line)`, or `path:line` where it declares no symbol. Its fraction is derived from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
 `undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
 
 ```ts
-import { buildFindingReport, countPackageUsage, readTrackedSources } from 'readyup/check-utils';
+import { blankNonCode, buildFindingReport, countPackageUsage, readTrackedSources } from 'readyup/check-utils';
 
 function isSource(path: string): boolean {
   return /\.[cm]?[jt]sx?$/.test(path);
@@ -1312,7 +1318,7 @@ const check = {
   skip: async () => (await readTrackedSources(isSource)) === undefined && 'The project is not a git working tree',
   check: async () => {
     const sources = (await readTrackedSources(isSource)) ?? [];
-    const findings = sources.flatMap(listHandRolledSites);
+    const findings = sources.flatMap((source) => listHandRolledSites(blankNonCode(source.text), source.path));
     const adoptedCount = countPackageUsage(sources, { exportNames: ['describeError'], packageName: '@scope/errors' });
 
     return buildFindingReport({ adoptedCount, findings, shouldReport: (finding) => finding.kind === 'clone' });
