@@ -101,6 +101,26 @@ describe(countPackageUsage, () => {
     expect(count(source)).toBe(0);
   });
 
+  it('counts no call in a source whose only import of the package sits inside a string', () => {
+    const source = buildSource(`
+      const doc = "import { describeError } from '${PACKAGE_NAME}'";
+      function describeError(error) { return String(error); }
+      export const described = describeError(error);
+    `);
+
+    expect(count(source)).toBe(0);
+  });
+
+  it('counts a real import in a source that also quotes one', () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      const doc = "import { describeError } from '${PACKAGE_NAME}'";
+      export const described = describeError(error);
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
   it('totals the calls of every importing source', () => {
     const first = buildSource(`import { describeError } from '${PACKAGE_NAME}';\nexport const a = describeError(e);`);
     const second = buildSource(`import { describeError } from '${PACKAGE_NAME}';\nexport const b = describeError(e);`);
