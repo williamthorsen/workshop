@@ -62,8 +62,7 @@ it.aroundEach(async (runTest, { temp }) => {
 
 describe('list --recursive --packages', () => {
   describe('rendering', () => {
-    it('reports each project as a directory heading over its kit-publishing dependencies', async ({ temp }) => {
-      void temp;
+    it('reports each project as a directory heading over its kit-publishing dependencies', async () => {
       const { exitCode, stdout } = await list();
 
       expect(exitCode).toBe(0);

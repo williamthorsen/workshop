@@ -390,19 +390,6 @@ function formatProjectBlock(project: RecursiveProjectView): string {
 }
 
 /**
- * Returns a titled section: the title, `hintLine` beneath it, then the kits.
- *
- * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
- * built differently and only the caller knows which it holds. Nothing inside is parted by a blank line:
- * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
- * the blank parting one section from the next belongs to whoever assembles them.
- */
-function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
-  const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
-  return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
-}
-
-/**
  * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
  *
  * The directory sits directly above its first package, which is what makes the blank lines within the
@@ -414,6 +401,19 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
   const blocks = project.groups.map((group) => formatNestedPackageBlock(group, runPrefix));
 
   return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
+}
+
+/**
+ * Returns a titled section: the title, `hintLine` beneath it, then the kits.
+ *
+ * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
+ * built differently and only the caller knows which it holds. Nothing inside is parted by a blank line:
+ * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
+ * the blank parting one section from the next belongs to whoever assembles them.
+ */
+function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
+  const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
+  return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
 /** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */

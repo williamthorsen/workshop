@@ -624,7 +624,7 @@ describe(formatRecursivePackagesView, () => {
   });
 
   // The command has to run the kits beneath it from wherever the sweep was run.
-  it('runs a workspace dependency from that workspace, and a root dependency where it stands', () => {
+  it('reaches a workspace dependency by changing into the workspace that declares it', () => {
     const result = formatRecursivePackagesView({
       projects: [
         buildProjectPackages({
@@ -823,11 +823,6 @@ function buildKit(packageName: string, kitName: string, description: string | un
   };
 }
 
-/** Builds one project's contribution to a repo-wide dependency listing. */
-function buildProjectPackages({ dir, groups }: { dir: string; groups: KitPackageGroup[] }): ProjectPackagesView {
-  return { dir, groups };
-}
-
 /** Builds a project on the default outDir, holding the named kits and no descriptions. */
 function buildProject({ dir, kits }: { dir: string; kits: string[] }): RecursiveProjectView {
   return {
@@ -835,6 +830,11 @@ function buildProject({ dir, kits }: { dir: string; kits: string[] }): Recursive
     compiledKits: kits.map((name) => ({ name })),
     compiledStyle: { kind: 'local-convention' },
   };
+}
+
+/** Builds one project's contribution to a repo-wide dependency listing. */
+function buildProjectPackages({ dir, groups }: { dir: string; groups: KitPackageGroup[] }): ProjectPackagesView {
+  return { dir, groups };
 }
 
 /** Returns the line beneath a project's heading, which is where its command sits. */
