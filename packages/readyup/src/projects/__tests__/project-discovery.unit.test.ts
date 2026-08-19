@@ -12,7 +12,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
-import { discoverKitProjects, discoverProjects } from '../discoverKitProjects.ts';
+import { discoverKitProjects, discoverProjects } from '../project-discovery.ts';
 
 const it = test
   .extend(

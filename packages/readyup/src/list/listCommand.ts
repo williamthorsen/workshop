@@ -25,8 +25,8 @@ import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts'
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
-import type { Project } from '../projects/discoverKitProjects.ts';
-import { discoverKitProjects, discoverProjects } from '../projects/discoverKitProjects.ts';
+import type { Project } from '../projects/project-discovery.ts';
+import { discoverKitProjects, discoverProjects } from '../projects/project-discovery.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
