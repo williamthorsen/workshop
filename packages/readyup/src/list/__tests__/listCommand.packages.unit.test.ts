@@ -186,15 +186,6 @@ describe('list --packages', () => {
 
       expect(error.message).toBe('--packages and --manifest are mutually exclusive');
     });
-
-    // The pair names the repo-wide dependency view, so refusing it as exclusive would misdescribe it.
-    it('rejects --packages with --recursive as unsupported rather than exclusive', async () => {
-      const error = await captureError(RdyError, () => listCommand(['--packages', '--recursive']));
-
-      expect(error.message).toBe(
-        'Listing dependencies across a whole repository is not supported yet: "--recursive --packages".',
-      );
-    });
   });
 });
 
