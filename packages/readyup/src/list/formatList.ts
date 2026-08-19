@@ -184,10 +184,43 @@ export function formatRecursiveView({ projects }: RecursiveViewOptions): string 
   return blocks.length === 0 ? formatEmpty('recursive') : blocks.join(SECTION_SEPARATOR);
 }
 
+// -- Repo-wide dependency view --
+
+/** One discovered project's contribution to a repo-wide dependency listing. */
+export interface ProjectPackagesView {
+  /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
+  dir: string;
+  groups: KitPackageGroup[];
+}
+
+interface RecursivePackagesViewOptions {
+  projects: ProjectPackagesView[];
+}
+
+/**
+ * Formats the repo-wide dependency output: each project's directory, then a block per kit-publishing dependency.
+ *
+ * Nesting comes from the glyph and the indentation rather than from a heading rule. The two rule weights
+ * this view would otherwise need are a stroke apart, and the roles they would mark are already told apart
+ * by their glyphs; plain style, whose role glyphs are empty, reads the same three levels off the indent.
+ *
+ * A project with no kit-publishing dependency contributes no block at all, its directory line included, so
+ * a caller may hand over every project discovery found. A sweep left with no block returns the empty
+ * message.
+ */
+export function formatRecursivePackagesView({ projects }: RecursivePackagesViewOptions): string {
+  const blocks = projects.filter((project) => project.groups.length > 0).map(formatProjectPackagesBlock);
+
+  return blocks.length === 0 ? formatEmpty('recursive-packages') : blocks.join(SECTION_SEPARATOR);
+}
+
 // -- Empty messages --
 
 /** Format the "no kits found" message appropriate to the given mode. */
-export function formatEmpty(mode: 'owner' | 'consumer' | 'packages' | 'recursive', kitsDir?: string): string {
+export function formatEmpty(
+  mode: 'owner' | 'consumer' | 'packages' | 'recursive' | 'recursive-packages',
+  kitsDir?: string,
+): string {
   if (mode === 'consumer') {
     return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
   }
@@ -196,6 +229,9 @@ export function formatEmpty(mode: 'owner' | 'consumer' | 'packages' | 'recursive
   }
   if (mode === 'recursive') {
     return 'No kit projects found.';
+  }
+  if (mode === 'recursive-packages') {
+    return 'No dependency of any project below this directory publishes kits.';
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
@@ -250,6 +286,11 @@ function buildPackageHint(group: KitPackageGroup): string {
   return group.configured ? `rdy run --packages ${nameHint}` : `rdy run --from npm:${group.packageName} ${nameHint}`;
 }
 
+/** Returns a package's name with the version its own manifest records, where it records one. */
+function buildPackageLabel(group: KitPackageGroup): string {
+  return group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
+}
+
 /**
  * Returns the command that runs a project's kits from where the reader stands.
  *
@@ -266,13 +307,23 @@ function buildProjectHint(project: RecursiveProjectView): string {
 }
 
 /**
+ * Returns what a dependency command needs to run from the sweep root, which is nothing at the root itself.
+ *
+ * A workspace's own dependency is reachable from nowhere else: `rdy run` takes no directory, and `--from`
+ * names a kit source rather than a working directory.
+ */
+function buildProjectPrefix(dir: string): string {
+  return dir === '.' ? '' : `cd ${dir} && `;
+}
+
+/**
  * Returns the indented line naming the command that runs the kits beneath it.
  *
  * The label is what separates the line from the kit rows sharing its column: the role glyphs those rows
  * carry are empty in plain style, so without it the command reads as one more kit.
  */
-function buildRunLine(command: string): string {
-  return `${getLayout().indent(1)}To run: ${command}`;
+function buildRunLine(command: string, depth = 1): string {
+  return `${getLayout().indent(depth)}To run: ${command}`;
 }
 
 /**
@@ -286,11 +337,30 @@ function formatAvailableSection(availablePackages: string[]): string {
   return formatSection('Available', instruction, availablePackages, 'sourcePackage');
 }
 
+/** Returns one package's line under a project's directory, the command running its kits, and a line per kit. */
+function formatNestedPackageBlock(group: KitPackageGroup, runPrefix: string): string {
+  const packageLine = getLayout().formatCheckLine({
+    token: 'sourcePackage',
+    name: buildPackageLabel(group),
+    depth: 1,
+    ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
+  });
+  const items = group.kits.map((kit) =>
+    getLayout().formatCheckLine({
+      token: 'kit',
+      name: kit.kitName,
+      depth: 2,
+      ...(kit.description !== undefined && { detail: kit.description }),
+    }),
+  );
+
+  return [packageLine, buildRunLine(`${runPrefix}${buildPackageHint(group)}`, 2), ...items].join('\n');
+}
+
 /** Returns one package's heading, the command running its kits, and a line per kit. */
 function formatPackageBlock(group: KitPackageGroup): string {
-  const label = group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
   const heading = getLayout().formatBreadcrumb(
-    [{ role: 'sourcePackage', text: label }],
+    [{ role: 'sourcePackage', text: buildPackageLabel(group) }],
     'kit',
     group.configured ? undefined : UNCONFIGURED_DETAIL,
   );
@@ -330,6 +400,20 @@ function formatProjectBlock(project: RecursiveProjectView): string {
 function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
   return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
+}
+
+/**
+ * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
+ *
+ * The directory sits directly above its first package, which is what makes the blank lines within the
+ * block read as parting one package from the next rather than the directory from what it heads.
+ */
+function formatProjectPackagesBlock(project: ProjectPackagesView): string {
+  const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
+  const runPrefix = buildProjectPrefix(project.dir);
+  const blocks = project.groups.map((group) => formatNestedPackageBlock(group, runPrefix));
+
+  return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
 }
 
 /** Returns what a kit's row is named: its bare name, or the path a `--file` invocation needs. */

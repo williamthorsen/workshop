@@ -12,7 +12,9 @@ import {
   formatManifestView,
   formatOwnerView,
   formatPackagesView,
+  formatRecursivePackagesView,
   formatRecursiveView,
+  type ProjectPackagesView,
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from '../formatList.ts';
@@ -592,6 +594,142 @@ describe(formatRecursiveView, () => {
   });
 });
 
+describe(formatRecursivePackagesView, () => {
+  afterEach(() => {
+    setStyle('rich');
+  });
+
+  it('heads each project with its directory and nests a line per publishing dependency', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
+        buildProjectPackages({
+          dir: 'packages/tooling',
+          groups: [buildGroup({ packageName: 'plain-kit', kits: ['smoke'] })],
+        }),
+      ],
+    });
+
+    expect(result.split('\n')).toStrictEqual([
+      `${DIRECTORY} ./`,
+      `   ${PACKAGE} @acme/kits@2.1.0`,
+      '      To run: rdy run --packages <name>',
+      `      ${COMPILED} drift`,
+      '',
+      `${DIRECTORY} packages/tooling/`,
+      `   ${PACKAGE} plain-kit@2.1.0`,
+      '      To run: cd packages/tooling && rdy run --packages <name>',
+      `      ${COMPILED} smoke`,
+    ]);
+  });
+
+  // The command has to run the kits beneath it from wherever the sweep was run.
+  it('runs a workspace dependency from that workspace, and a root dependency where it stands', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: 'packages/tooling',
+          groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
+        }),
+      ],
+    });
+
+    expect(result).toContain('To run: cd packages/tooling && rdy run --from npm:@acme/kits <name>');
+  });
+
+  it('marks a package the project config omits', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: '.',
+          groups: [
+            buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] }),
+            buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
+          ],
+        }),
+      ],
+    });
+
+    expect(result).toContain(`${PACKAGE} @acme/kits@2.1.0 \u{00B7} not listed in the readyup config`);
+    expect(result).toContain(`${PACKAGE} plain-kit@2.1.0\n`);
+  });
+
+  it('renders a kit description as inline detail', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: '.',
+          groups: [
+            {
+              packageName: '@acme/kits',
+              version: '2.1.0',
+              configured: true,
+              kits: [buildKit('@acme/kits', 'drift', 'Dependency drift')],
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(result).toContain(`${COMPILED} drift \u{00B7} Dependency drift`);
+  });
+
+  it('parts one package from the next with a blank line, and keeps the directory against its first', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: '.',
+          groups: [
+            buildGroup({ packageName: '@acme/kits', kits: ['drift'] }),
+            buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
+          ],
+        }),
+      ],
+    });
+
+    expect(result).toContain(`${DIRECTORY} ./\n   ${PACKAGE} @acme/kits@2.1.0`);
+    expect(result).toContain(`${COMPILED} drift\n\n   ${PACKAGE} plain-kit@2.1.0`);
+  });
+
+  it('omits a project whose sweep found no publishing dependency, its directory included', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
+        buildProjectPackages({ dir: 'packages/plain', groups: [] }),
+      ],
+    });
+
+    expect(result).not.toContain('packages/plain');
+  });
+
+  it('returns the empty message for a sweep that found no publishing dependency anywhere', () => {
+    const result = formatRecursivePackagesView({ projects: [buildProjectPackages({ dir: '.', groups: [] })] });
+
+    expect(result).toBe('No dependency of any project below this directory publishes kits.');
+  });
+
+  // Plain style gives the role tokens no glyph, so the indent is all that separates the three levels.
+  it('separates directory, package, and kit by indentation alone in plain style', () => {
+    setStyle('plain');
+
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: 'packages/tooling',
+          groups: [buildGroup({ packageName: 'plain-kit', kits: ['smoke'] })],
+        }),
+      ],
+    });
+
+    expect(result.split('\n')).toStrictEqual([
+      '      packages/tooling/',
+      '            plain-kit@2.1.0',
+      '            To run: cd packages/tooling && rdy run --packages <name>',
+      '                  smoke',
+    ]);
+  });
+});
+
 describe(resolveCompiledStyle, () => {
   it('reports the local convention when outDir is the default kits directory', () => {
     const style = resolveCompiledStyle('/repo', '.readyup/kits', '/repo');
@@ -628,6 +766,10 @@ describe(formatEmpty, () => {
 
   it('returns the empty-sweep message for recursive mode', () => {
     expect(formatEmpty('recursive')).toBe('No kit projects found.');
+  });
+
+  it('returns the empty-sweep message for repo-wide dependency mode', () => {
+    expect(formatEmpty('recursive-packages')).toBe('No dependency of any project below this directory publishes kits.');
   });
 
   it('returns consumer message with the provided kitsDir', () => {
@@ -679,6 +821,11 @@ function buildKit(packageName: string, kitName: string, description: string | un
     description,
     path: `node_modules/${packageName}/.readyup/kits/${kitName}.js`,
   };
+}
+
+/** Builds one project's contribution to a repo-wide dependency listing. */
+function buildProjectPackages({ dir, groups }: { dir: string; groups: KitPackageGroup[] }): ProjectPackagesView {
+  return { dir, groups };
 }
 
 /** Builds a project on the default outDir, holding the named kits and no descriptions. */
