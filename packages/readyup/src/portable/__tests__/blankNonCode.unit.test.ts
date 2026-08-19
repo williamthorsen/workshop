@@ -138,10 +138,32 @@ describe(blankNonCode, () => {
   });
 
   it('reads a regular expression opening after a negation', () => {
-    const body = String.raw`^https?:`;
+    const body = '^https?:';
     const source = `const ok = !/${body}/.test(url);\nconst ne = a != b / 2;\n`;
 
     expect(blankNonCode(source)).toBe(`const ok = !/${blank(body)}/.test(url);\nconst ne = a != b / 2;\n`);
+  });
+
+  it('reads a slash after a property or private-field name spelled like a keyword as division', () => {
+    const source = `const r = ops.delete / ops.total, b = ${CLAMP} / 2;\nconst s = this.#delete / n;\n`;
+
+    expect(blankNonCode(source)).toBe(source);
+  });
+
+  it('blanks a comment trailing a division by a property spelled like a keyword', () => {
+    const comment = '// inbound share';
+    const source = `const ratio = bytes.in / bytes.out; ${comment}\n`;
+
+    expect(blankNonCode(source)).toBe(`const ratio = bytes.in / bytes.out; ${blank(comment)}\n`);
+  });
+
+  it('reads a regular expression opening after a keyword that is not a member name', () => {
+    const body = 'abc';
+    const source = `const t = typeof /${body}/;\nfunction f(x) { return /${body}/.test(x); }\n`;
+
+    expect(blankNonCode(source)).toBe(
+      `const t = typeof /${blank(body)}/;\nfunction f(x) { return /${blank(body)}/.test(x); }\n`,
+    );
   });
 
   it('reads a regular expression opening after a binary plus or minus', () => {

@@ -75,11 +75,14 @@ export function blankComments(source: string): string {
  * string or regular expression whose closing delimiter never arrives on its line was neither. A misjudgment
  * therefore leaves text standing rather than blanking an expression that runs.
  *
- * That direction holds only while the token a `/` is classified against is the operand before it, so a postfix
- * operator has to attach to its operand rather than replace it: `++`, `--`, and TypeScript's `!` each do, and a
- * postfix operator added to the language needs the same treatment or it reopens this hole. `>` is the one token
- * classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning
- * with `/` blanks as far as its closing tag's slash.
+ * That direction holds only while the token a `/` is classified against is the operand before it, so every
+ * construct completing an operand has to present itself as one. A postfix operator attaches to its operand
+ * rather than replacing it, which is `++`, `--`, and TypeScript's `!`; a member name keeps the `.` or `#` that
+ * introduced it, so a property spelled like a keyword is read as the property it is. A construct added to the
+ * language that completes an operand needs the same treatment, or it reopens this hole.
+ *
+ * `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node
+ * beginning with `/` blanks as far as its closing tag's slash.
  *
  * Reads JavaScript-family syntax. A source in another language yields arbitrary output rather than an error.
  */
@@ -241,6 +244,18 @@ function isNonNullAssertion(char: string, previousToken: string): boolean {
 }
 
 /**
+ * Returns the token a word forms, keeping the punctuation that introduced it where the word is a member name.
+ *
+ * A property or private-field name completes an operand, so a `/` after it divides. Every member of
+ * `EXPRESSION_KEYWORDS` is also a legal member name -- `ops.delete`, `bytes.in`, `this.#delete` -- so a name
+ * stored bare would be looked up as the keyword it spells and open a regular expression instead.
+ */
+function readWordToken(word: string, previousToken: string): string {
+  const isMemberName = previousToken === '.' || previousToken === '#';
+  return isMemberName ? `${previousToken}${word}` : word;
+}
+
+/**
  * Scans code from an offset, blanking every comment and literal it meets, and returns where it stopped.
  *
  * Stops at the `}` closing an interpolation when scanning one, and at the source's end otherwise. Braces opened
@@ -291,7 +306,7 @@ function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
 
     if (WORD_CHAR.test(char)) {
       const end = findWordEnd(source, index);
-      previousToken = source.slice(index, end);
+      previousToken = readWordToken(source.slice(index, end), previousToken);
       index = end;
       continue;
     }
