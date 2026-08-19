@@ -25,7 +25,7 @@ import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts'
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
-import type { KitProject } from '../projects/discoverKitProjects.ts';
+import type { Project } from '../projects/discoverKitProjects.ts';
 import { discoverKitProjects } from '../projects/discoverKitProjects.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
@@ -337,7 +337,7 @@ async function runRecursiveMode(json: boolean): Promise<number> {
  * The manifest is where the descriptions live, and a project compiled with `--skip-manifest` still has
  * kits worth naming.
  */
-function collectProjectKits(project: KitProject): JsonListKitEntry[] {
+function collectProjectKits(project: Project): JsonListKitEntry[] {
   const manifest = readProjectManifest(project.manifestPath);
   if (manifest !== undefined) {
     const manifestDir = path.dirname(project.manifestPath);

@@ -12,7 +12,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
-import { discoverKitProjects } from '../discoverKitProjects.ts';
+import { discoverKitProjects, discoverProjects } from '../discoverKitProjects.ts';
 
 const it = test
   .extend(
@@ -181,6 +181,47 @@ describe(discoverKitProjects, () => {
   });
 });
 
+describe(discoverProjects, () => {
+  it('reports every directory holding a package manifest, the sweep root first', async ({ temp }) => {
+    await expect(discoverAllDirs(temp.dir)).resolves.toStrictEqual([
+      '.',
+      'packages/authored',
+      'packages/broken',
+      'packages/compiled-only',
+      'packages/custom',
+      'packages/emptied',
+      'packages/plain',
+      'packages/tooling',
+    ]);
+  });
+
+  // The dependency axis asks what a workspace depends on, which one authoring no kits still answers.
+  it('reports a workspace with neither a readyup directory nor a readyup config', async ({ temp }) => {
+    await expect(discoverAllDirs(temp.dir)).resolves.toContain('packages/plain');
+  });
+
+  it('omits an installed dependency that publishes kits', async ({ temp }) => {
+    await expect(discoverAllDirs(temp.dir)).resolves.not.toContain('node_modules/dep');
+  });
+
+  it('reads each project under its own config, defaulting the one declaring none', async ({ temp }) => {
+    const { projects } = await discoverAll(temp.dir);
+    const byDir = new Map(projects.map((project) => [project.dir, project]));
+
+    expect(byDir.get('packages/tooling')?.config.compile.outDir).toBe('dist/kits');
+    expect(byDir.get('packages/plain')?.config.compile.outDir).toBe('.readyup/kits');
+  });
+
+  it('sweeps the working directory when no root is named', async ({ temp }) => {
+    using _io = captureStdio();
+    using _cwd = pointCwdAt(temp.resolve('packages/plain'));
+
+    const projects = await discoverProjects();
+
+    expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
+  });
+});
+
 // region | Helpers
 
 /** Sweeps the fixture tree for kit projects, returning them alongside what the sweep wrote to stderr. */
@@ -190,6 +231,21 @@ async function discover(root: string) {
   const projects = await discoverKitProjects({ root });
 
   return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr };
+}
+
+/** Sweeps the fixture tree for every project, returning them alongside what the sweep wrote to stderr. */
+async function discoverAll(root: string) {
+  using io = captureStdio();
+
+  const projects = await discoverProjects({ root });
+
+  return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr };
+}
+
+/** Returns the root-relative directories the whole-tree sweep reports for the fixture tree. */
+async function discoverAllDirs(root: string): Promise<string[]> {
+  const { dirs } = await discoverAll(root);
+  return dirs;
 }
 
 /** Returns the root-relative directories discovery reports for the fixture tree. */
