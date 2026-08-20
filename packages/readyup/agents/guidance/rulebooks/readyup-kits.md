@@ -49,7 +49,7 @@ A blocked subtree does not consult a descendant's own `skip`, so a check that wo
 
 A detector reads what `blankNonCode` returns, never a source's raw text. An idiom written in a comment or a string is prose about the code rather than a site in it, and reporting one is a false positive -- which is what discredits a kit permanently, because a reader who finds one stops trusting the rest of what it says.
 
-Nothing in your own repo will show you the defect. An adoption kit skips the workspace publishing the package it checks, so the detector never runs against the comments you wrote; the false positives surface in consumer repos, where the reader who gets one cannot fix it.
+Your own repo is where the defect surfaces first. An adoption kit's `ownImplementation` declaration exempts the file defining the package's exports and nothing else, so the detector runs against every other source you wrote, comments included. A false positive there is the one a consumer would have got; fix the detector rather than the source.
 
 Expect the site count to move in both directions. Blanking unmasks sites a comment was hiding, because a comment sitting mid-expression blanks to a run of spaces as wide as it was rather than breaking the anchor scan. Write an anchor that tolerates a whitespace run, not one that admits a single space.
 

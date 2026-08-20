@@ -1303,6 +1303,8 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and names each selected finding as `symbol (path:line)`, or `path:line` where it declares no symbol. Its fraction is derived from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
+Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A file qualifies by sitting inside a workspace whose `package.json` names the package and exporting one of the named exports, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is file-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off; a second file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
+
 `undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
 
 ```ts
@@ -1319,9 +1321,15 @@ const check = {
   check: async () => {
     const sources = (await readTrackedSources(isSource)) ?? [];
     const findings = sources.flatMap((source) => listHandRolledSites(blankNonCode(source.text), source.path));
-    const adoptedCount = countPackageUsage(sources, { exportNames: ['describeError'], packageName: '@scope/errors' });
+    const usage = { exportNames: ['describeError'], packageName: '@scope/errors' };
+    const adoptedCount = countPackageUsage(sources, usage);
 
-    return buildFindingReport({ adoptedCount, findings, shouldReport: (finding) => finding.kind === 'clone' });
+    return buildFindingReport({
+      adoptedCount,
+      findings,
+      ownImplementation: { ...usage, sources },
+      shouldReport: (finding) => finding.kind === 'clone',
+    });
   },
 };
 ```
