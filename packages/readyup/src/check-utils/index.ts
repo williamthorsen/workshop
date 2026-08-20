@@ -29,6 +29,7 @@ export type { BuildFindingReportOptions, Finding } from './project/buildFindingR
 export { buildFindingReport } from './project/buildFindingReport.ts';
 export type { CountPackageUsageOptions } from './project/countPackageUsage.ts';
 export { countPackageUsage } from './project/countPackageUsage.ts';
+export type { OwnImplementation } from './project/definesOwnImplementation.ts';
 export { listTrackedFiles } from './project/listTrackedFiles.ts';
 export type { PathFilter, ProjectSource } from './project/readTrackedSources.ts';
 export { readTrackedSources } from './project/readTrackedSources.ts';

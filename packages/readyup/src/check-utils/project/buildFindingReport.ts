@@ -1,4 +1,5 @@
 import type { CheckOutcome } from '../../kits/types.ts';
+import { definesOwnImplementation, type OwnImplementation } from './definesOwnImplementation.ts';
 
 /** One located site a check names. */
 export interface Finding {
@@ -12,6 +13,8 @@ export interface BuildFindingReportOptions<F extends Finding> {
   findings: readonly F[];
   shouldReport: (finding: F) => boolean;
   adoptedCount: number;
+  /** The package the check is about, whose own implementation the report passes over. */
+  ownImplementation?: OwnImplementation | undefined;
 }
 
 /**
@@ -20,13 +23,18 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * The fraction is derived from every finding passed, not only the reported ones, so the checks of one run share a
  * denominator the reader can compare across them. Passing only the reported findings would state a fraction of a
  * different whole for each check, which is why the selection is made here rather than by the caller.
+ *
+ * A check naming its own package drops the findings sited in that package's implementation, from the detail and from
+ * both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit reporting it there
+ * spends the credibility it needs in every other repo it runs in.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): CheckOutcome {
-  const { adoptedCount, findings, shouldReport } = options;
+  const { adoptedCount, findings, ownImplementation, shouldReport } = options;
 
-  const reported = findings.filter((finding) => shouldReport(finding));
+  const retained = excludeOwnImplementation(findings, ownImplementation);
+  const reported = retained.filter((finding) => shouldReport(finding));
   const progress = {
-    count: adoptedCount + findings.length,
+    count: adoptedCount + retained.length,
     passedCount: adoptedCount,
     type: 'fraction',
   } as const;
@@ -41,6 +49,28 @@ export function buildFindingReport<F extends Finding>(options: BuildFindingRepor
 function describeFinding(finding: Finding): string {
   const location = `${finding.path}:${finding.line}`;
   return finding.symbol === undefined ? location : `${finding.symbol} (${location})`;
+}
+
+/**
+ * Drops the findings sited in the declared package's own implementation.
+ *
+ * Each path is decided once, so a file holding ten findings is read and blanked once between them.
+ */
+function excludeOwnImplementation<F extends Finding>(
+  findings: readonly F[],
+  ownImplementation: OwnImplementation | undefined,
+): readonly F[] {
+  if (ownImplementation === undefined) return findings;
+
+  const verdicts = new Map<string, boolean>();
+  return findings.filter((finding) => {
+    let exempt = verdicts.get(finding.path);
+    if (exempt === undefined) {
+      exempt = definesOwnImplementation(finding.path, ownImplementation);
+      verdicts.set(finding.path, exempt);
+    }
+    return !exempt;
+  });
 }
 
 // endregion | Helpers
