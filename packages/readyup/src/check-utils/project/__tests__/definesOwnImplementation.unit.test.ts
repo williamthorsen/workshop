@@ -30,6 +30,22 @@ describe(definesOwnImplementation, () => {
       expect(definesOwnImplementation(path, own)).toBe(true);
     });
 
+    it.for([
+      ['const', 'export const describeError = (error: unknown) => {};'],
+      ['let', 'export let describeError = (error: unknown) => {};'],
+      ['var', 'export var describeError = (error: unknown) => {};'],
+      ['class', 'export class describeError {}'],
+      ['async function', 'export async function describeError(error: unknown) {}'],
+      ['generator function', 'export function* describeError(error: unknown) {}'],
+      ['default function', 'export default function describeError(error: unknown) {}'],
+    ] as const)('exempts a file declaring the export as an exported %s', ([, text], { temp }) => {
+      writeMonorepo(temp);
+      const path = 'packages/errors/src/describeError.ts';
+      const own = buildOwnImplementation([{ path, text }]);
+
+      expect(definesOwnImplementation(path, own)).toBe(true);
+    });
+
     it('exempts a file that renames a local binding to a recommended export', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';

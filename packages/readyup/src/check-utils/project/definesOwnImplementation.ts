@@ -2,7 +2,10 @@ import { blankNonCode } from '../../portable/blankNonCode.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 import type { ProjectSource } from './readTrackedSources.ts';
 
-/** The package a check is about, the exports whose definition marks a file as its implementation, and the swept sources. */
+/**
+ * The package a check is about, the exports whose definition marks a file as its implementation, and the swept
+ * sources.
+ */
 export interface OwnImplementation {
   packageName: string;
   exportNames: readonly string[];
