@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
@@ -25,6 +27,12 @@ describe(fileExists, () => {
 
   it('returns false when the file does not exist', () => {
     expect(fileExists('missing.txt')).toBe(false);
+  });
+
+  it('reads an absolute path as itself', ({ temp }) => {
+    temp.write('found.txt', 'content');
+
+    expect(fileExists(join(temp.dir, 'found.txt'))).toBe(true);
   });
 });
 
@@ -109,6 +117,25 @@ describe(filesExist, () => {
       progress: { type: 'fraction', passedCount: 1, count: 2 },
     });
   });
+
+  it('reads an absolute path as itself', ({ temp }) => {
+    temp.write('found.txt', '');
+
+    const result = filesExist([join(temp.dir, 'found.txt')]);
+
+    expect(result).toStrictEqual({
+      ok: true,
+      progress: { type: 'fraction', passedCount: 1, count: 1 },
+    });
+  });
+
+  it('reads an absolute path as itself in preference to baseDir', ({ temp }) => {
+    temp.write('outside-base.txt', '');
+
+    const result = filesExist([join(temp.dir, 'outside-base.txt')], { baseDir: 'sub' });
+
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe(readFile, () => {
@@ -120,5 +147,11 @@ describe(readFile, () => {
 
   it('returns undefined when the file does not exist', () => {
     expect(readFile('missing.txt')).toBeUndefined();
+  });
+
+  it('reads an absolute path as itself', ({ temp }) => {
+    temp.write('hello.txt', 'hello world');
+
+    expect(readFile(join(temp.dir, 'hello.txt'))).toBe('hello world');
   });
 });

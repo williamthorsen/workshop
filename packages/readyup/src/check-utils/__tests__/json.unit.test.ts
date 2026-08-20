@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
@@ -37,6 +39,12 @@ describe(readJsonFile, () => {
     temp.write('bad.json', '{ not valid json }}}');
 
     expect(readJsonFile('bad.json')).toBeUndefined();
+  });
+
+  it('reads an absolute path as itself', ({ temp }) => {
+    temp.writeJson('config.json', { key: 'value' });
+
+    expect(readJsonFile(join(temp.dir, 'config.json'))).toStrictEqual({ key: 'value' });
   });
 });
 

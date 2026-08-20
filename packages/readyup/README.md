@@ -1155,6 +1155,8 @@ Reusable check functions for common assertions:
 import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 ```
 
+Every path a check utility takes resolves against `cwd` unless it is absolute, in which case it names the file itself; `filesExist` applies that rule to `baseDir` too, and an absolute entry in its list outranks the base directory.
+
 ### Outcomes
 
 | Function                                  | Returns                                                   |
@@ -1291,7 +1293,7 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 
 These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
-`listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope `readFile` works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
+`listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope a relative `readFile` path works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 
 `readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
 
