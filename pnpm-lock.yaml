@@ -72,8 +72,8 @@ importers:
         specifier: 0.5.0
         version: 0.5.0
       codeassembly:
-        specifier: 0.9.0
-        version: 0.9.0
+        specifier: 0.10.0
+        version: 0.10.0
       esbuild:
         specifier: 'catalog:'
         version: 0.28.2
@@ -842,8 +842,8 @@ packages:
       eslint: '>=10'
       typescript: '>=5'
 
-  '@williamthorsen/kb@0.6.0':
-    resolution: {integrity: sha512-9c3sCtf90NfMCZjAJGwsrPymmKMi2qxYkUmx5tfyqOPaScW7U7I+aIO1U9SkwttE/mmWZbPWzO+285T5/K80nA==}
+  '@williamthorsen/kb@0.6.1':
+    resolution: {integrity: sha512-Cp/a1YuQ3upOCAAQwQaSFp544J0PZAGhTMvC6SmPb8sYeOMPf15Qj/IjwFaCK7lmybIgCH45rs1IG1EWYxGI0w==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -1083,12 +1083,12 @@ packages:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
 
-  codeassembly-lifecycle@0.4.0:
-    resolution: {integrity: sha512-JxzORj9u1jDMNbIxT+KqtksQRTj3CZYlewwHMSp+qSRUOxV8AnVU56sC4MD3eO2Nv3eNqGnt8sj2dvPNC3MM+w==}
+  codeassembly-lifecycle@0.4.1:
+    resolution: {integrity: sha512-e+pMkb/Fp6knyULe6xXsr5gEHY4MDN7KQPZrSwnKJ+MFPsdW0Iv7ikJGyr7BpMJlRiNCKpznE1vjTqCIJb7qYQ==}
     engines: {node: '>=24'}
 
-  codeassembly@0.9.0:
-    resolution: {integrity: sha512-/v2JoEOVI6jRYhjjnWuyCz4ozKBNQ2WdaVySbuQJw4v/gLVlOBsRpk59Pj5wA79X4td9O9i0cBPqEPxXwnL+Uw==}
+  codeassembly@0.10.0:
+    resolution: {integrity: sha512-Q0FNsjNDCtsCbgx/zThe4rvqe/YxnCzGlVYN+78N7Jrv98xi1DORkMrBopBrsjkTgicbGO76P3tvyDFtZpdoGQ==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3299,9 +3299,9 @@ snapshots:
       - supports-color
       - ts-declaration-location
 
-  '@williamthorsen/kb@0.6.0':
+  '@williamthorsen/kb@0.6.1':
     dependencies:
-      '@williamthorsen/toolbelt.errors': 0.3.0
+      '@williamthorsen/toolbelt.errors': 0.5.0
       picomatch: 4.0.5
       yaml: 2.9.0
       zod: 4.4.3
@@ -3567,13 +3567,13 @@ snapshots:
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
 
-  codeassembly-lifecycle@0.4.0: {}
+  codeassembly-lifecycle@0.4.1: {}
 
-  codeassembly@0.9.0:
+  codeassembly@0.10.0:
     dependencies:
-      '@williamthorsen/kb': 0.6.0
-      '@williamthorsen/toolbelt.errors': 0.3.0
-      codeassembly-lifecycle: 0.4.0
+      '@williamthorsen/kb': 0.6.1
+      '@williamthorsen/toolbelt.errors': 0.5.0
+      codeassembly-lifecycle: 0.4.1
       ulid: 3.0.2
       yaml: 2.9.0
       zod: 4.4.3
