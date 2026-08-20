@@ -99,6 +99,7 @@ const config = defineConfig([
       'packages/readyup/src/check-utils/__tests__/tool-versions.unit.test.ts',
       'packages/readyup/src/check-utils/__tests__/tsconfig.unit.test.ts',
       'packages/readyup/src/check-utils/__tests__/workspaces.caching.unit.test.ts',
+      'packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts',
       'packages/readyup/src/check-utils/__tests__/workspaces.unit.test.ts',
       'packages/readyup/src/check-utils/__tests__/workspaces.walk.unit.test.ts',
       'packages/readyup/src/check-utils/project/__tests__/buildFindingReport.unit.test.ts',

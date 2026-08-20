@@ -70,7 +70,7 @@ function buildWorkspaces(cwd: string): Workspace[] {
 
   if (patternResult === null) {
     // Single-workspace fallback uses the root package.json, which MUST exist.
-    const rootPackageJson = readJsonFile('package.json');
+    const rootPackageJson = readJsonFile(rootPackageJsonPath);
     if (rootPackageJson === undefined) {
       throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
     }
@@ -110,7 +110,7 @@ function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: Wo
     // `packages` key absent — fall through to npm/single detection.
   }
 
-  const rootPackageJson = readJsonFile('package.json');
+  const rootPackageJson = readJsonFile(join(cwd, 'package.json'));
   if (rootPackageJson !== undefined) {
     const workspaces = rootPackageJson['workspaces'];
     const npmPatterns = extractNpmWorkspacePatterns(workspaces);
@@ -180,8 +180,7 @@ function normalizePattern(pattern: string): string {
 /** Builds a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */
 function buildWorkspace(cwd: string, relDir: string): Workspace | undefined {
   const absoluteDir = resolve(cwd, relDir);
-  const packageJsonRelativePath = relDir === '.' ? 'package.json' : `${relDir}/package.json`;
-  const packageJson = readJsonFile(packageJsonRelativePath);
+  const packageJson = readJsonFile(join(absoluteDir, 'package.json'));
   if (packageJson === undefined) return undefined;
   return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
 }
