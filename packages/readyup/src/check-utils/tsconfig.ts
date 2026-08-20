@@ -65,9 +65,9 @@ interface Resolution {
  * declares in its own right. Returns undefined if the entry file is missing or unparseable; unresolvable parents
  * are reported in `unresolvedExtends` rather than treated as failures.
  */
-export function readTsconfigChain(relativePath: string): TsconfigChain | undefined {
+export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
   const cwd = process.cwd();
-  const entryPath = resolve(cwd, relativePath);
+  const entryPath = resolve(cwd, filePath);
   const entryConfig = readJsonFile(entryPath);
   if (entryConfig === undefined) return undefined;
 
@@ -87,8 +87,8 @@ export function readTsconfigChain(relativePath: string): TsconfigChain | undefin
  * Reads a tsconfig's effective `lib` and `target` from its `extends` chain. Returns undefined if the entry file is
  * missing or unparseable; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
  */
-export function readTsconfigLanguageLevel(relativePath: string): TsconfigLanguageLevel | undefined {
-  const resolved = readTsconfigChain(relativePath);
+export function readTsconfigLanguageLevel(filePath: string): TsconfigLanguageLevel | undefined {
+  const resolved = readTsconfigChain(filePath);
   if (resolved === undefined) return undefined;
 
   const { entries, unresolvedExtends } = resolved;
