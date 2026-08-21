@@ -72,6 +72,7 @@ export interface BreadcrumbSegment {
 export interface CheckLineInput {
   token: TokenName;
   name: string;
+  checkId?: string | undefined;
   depth?: number | undefined;
   detail?: string | undefined;
   durationMs?: number | undefined;
@@ -122,13 +123,14 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns one line, `token name <separator> detail [progress] (duration)`, dropping the segments it lacks.
+   * Returns one line, `token name <separator> detail [id] [progress] (duration)`, dropping the segments it lacks.
    *
    * The separator is the formatter's, so the shape holds across styles while the punctuation varies.
    */
   function formatCheckLine(input: CheckLineInput): string {
     const segments = [`${indent(input.depth ?? 0)}${token(input.token)}${input.name}`];
     if (input.detail !== undefined) segments.push(`${formatter.detailSeparator} ${input.detail}`);
+    if (input.checkId !== undefined) segments.push(`[${input.checkId}]`);
     if (input.progress !== undefined) segments.push(`[${input.progress}]`);
 
     const duration = resolveDuration(input.token, input.durationMs);
