@@ -585,6 +585,7 @@ describe(runHumanMode, () => {
 function makeFailedResult(name: string, severity: Severity): FailedResult {
   return {
     name,
+    id: null,
     status: 'failed',
     ok: false,
     severity,
@@ -602,6 +603,7 @@ function makeFailedResult(name: string, severity: Severity): FailedResult {
 function makePassedResult(name: string, severity: Severity): PassedResult {
   return {
     name,
+    id: null,
     status: 'passed',
     ok: true,
     severity,

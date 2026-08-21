@@ -9,6 +9,7 @@ import { formatReport } from '../test-utils/formatReport.ts';
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
   return {
     name: 'check',
+    id: null,
     status: 'passed',
     ok: true,
     severity: 'error',
@@ -25,6 +26,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
 function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
   return {
     name: 'check',
+    id: null,
     status: 'failed',
     ok: false,
     severity: 'error',
@@ -42,6 +44,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
 function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
   return {
     name: 'check',
+    id: null,
     status: 'skipped',
     ok: null,
     severity: 'error',

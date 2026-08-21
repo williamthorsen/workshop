@@ -121,8 +121,36 @@ export interface CheckOutcome {
   progress?: Progress | undefined;
 }
 
+/** One located site a check names, and whether the check reports it or only counts it. */
+export interface OutcomeFinding {
+  path: string;
+  line: number;
+  symbol?: string | undefined;
+
+  /**
+   * Whether the check reports this site, rather than only counting it toward the fraction.
+   *
+   * An unreported site reaches the runner all the same, because a site a pragma declines has to leave
+   * every check's denominator rather than only the denominator of the check naming it.
+   */
+  reported: boolean;
+}
+
+/**
+ * A check's located sites, from which the runner derives the verdict, the detail, and the fraction.
+ *
+ * The sites a pragma declines drop there rather than here: the runner is the only layer holding both the
+ * check and the kit's provenance, which is what a pragma naming a check is matched against.
+ */
+export interface FindingOutcome {
+  findings: readonly OutcomeFinding[];
+
+  /** Sites already settled, the numerator of the fraction the runner renders. Omitted, it renders none. */
+  adoptedCount?: number | undefined;
+}
+
 /** The value a check function may return (or resolve to). */
-export type CheckReturnValue = boolean | CheckOutcome;
+export type CheckReturnValue = boolean | CheckOutcome | FindingOutcome;
 
 // -- Check definition --
 
@@ -135,7 +163,15 @@ export interface RdyCheck {
    */
   name: string;
 
-  /** Assert the claim. Return true/false or a CheckOutcome. */
+  /**
+   * Stable identifier a pragma writes to decline this check's findings and no other check's.
+   *
+   * Bare here: the runner namespaces it under the publishing package where the kit has one. A check
+   * naming no located site needs none, and one declaring none is named by no pragma.
+   */
+  id?: string | undefined;
+
+  /** Assert the claim. Return a boolean, a `CheckOutcome`, or a `FindingOutcome`. */
   check: () => CheckReturnValue | Promise<CheckReturnValue>;
 
   /**
@@ -175,6 +211,9 @@ export interface RdyCheck {
 interface RdyResultBase {
   /** Check name. */
   name: string;
+
+  /** The check's namespaced id as a pragma writes it, or `null` where the check declares none. */
+  id: string | null;
 
   /** Resolved severity for this check. */
   severity: Severity;

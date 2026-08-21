@@ -1,10 +1,10 @@
-import type { CheckOutcome } from '../kits/types.ts';
+import type { CheckOutcome, FindingOutcome } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
 
 /** Describes a `check` return value that expresses no verdict, naming what was expected instead. */
 export function describeUninterpretableReturn(raw: unknown): string {
-  return `check() returned ${describeValue(raw)}; expected a boolean or an object with a boolean "ok" property.`;
+  return `check() returned ${describeValue(raw)}; expected a boolean, an object with a boolean "ok" property, or an object with a "findings" array.`;
 }
 
 /**
@@ -15,4 +15,14 @@ export function describeUninterpretableReturn(raw: unknown): string {
  */
 export function isCheckOutcome(raw: unknown): raw is CheckOutcome {
   return isRecord(raw) && typeof raw['ok'] === 'boolean';
+}
+
+/**
+ * Returns true if a check's return value is a set of located findings.
+ *
+ * Keyed on an array `findings`, as `isCheckOutcome` is on a boolean `ok`: each arm is recognized by the
+ * field it is built around rather than by a tag its author would have to remember to write.
+ */
+export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
+  return isRecord(raw) && Array.isArray(raw['findings']);
 }

@@ -1021,7 +1021,8 @@ describe(runRdy, () => {
         {
           name: 'no-verdict',
           verdict: 'inconclusive',
-          reason: 'check() returned string "yes"; expected a boolean or an object with a boolean "ok" property.',
+          reason:
+            'check() returned string "yes"; expected a boolean, an object with a boolean "ok" property, or an object with a "findings" array.',
         },
       ]);
     });
@@ -1187,7 +1188,7 @@ describe(runRdy, () => {
       const report = await runRdy(checklist);
 
       expect(report.results[0]?.error?.message).toContain(
-        'expected a boolean or an object with a boolean "ok" property',
+        'expected a boolean, an object with a boolean "ok" property, or an object with a "findings" array',
       );
     });
 
@@ -1771,6 +1772,68 @@ describe(runRdy, () => {
       const report = await runRdy(checklist);
 
       expect(report.results[0]?.depth).toBe(0);
+    });
+  });
+
+  describe('finding outcomes', () => {
+    it('derives the verdict, the reason, and the fraction from a check returning findings', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [
+          {
+            name: 'no source hand-rolls the idiom',
+            check: () => ({
+              adoptedCount: 2,
+              findings: [
+                { line: 12, path: 'fixture/errors.ts', reported: true, symbol: 'describeError' },
+                { line: 7, path: 'fixture/report.ts', reported: false },
+              ],
+            }),
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      const result = report.results[0];
+      assert.ok(result !== undefined);
+      expect(result.status).toBe('failed');
+      expect(result.detail).toBe('describeError (fixture/errors.ts:12)');
+      expect(result.progress).toStrictEqual({ count: 4, passedCount: 2, type: 'fraction' });
+    });
+  });
+
+  describe('check ids', () => {
+    it('namespaces an id under the package publishing the kit', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [{ name: 'claim', id: 'no-instanceof-error', check: () => true }],
+      };
+
+      const report = await runRdy(checklist, {
+        provenance: { kind: 'package', packageName: '@williamthorsen/toolbelt.errors', version: '1.0.0' },
+      });
+
+      expect(report.results[0]?.id).toBe('toolbelt.errors/no-instanceof-error');
+    });
+
+    it('leaves a bare id standing for a kit with no publishing package', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [{ name: 'claim', id: 'no-instanceof-error', check: () => true }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.id).toBe('no-instanceof-error');
+    });
+
+    it('carries no id for a check declaring none', async () => {
+      const checklist: RdyChecklist = { name: 'adoption', checks: [{ name: 'claim', check: () => true }] };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.id).toBeNull();
     });
   });
 });

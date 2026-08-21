@@ -44,41 +44,34 @@ it.aroundEach(async (runTest, { temp }) => {
 });
 
 describe(buildFindingReport, () => {
-  it('passes when the check reports none of the findings the project holds', () => {
+  it('marks each retained finding with whether the calling check reports it', () => {
     const outcome = buildFindingReport({
       adoptedCount: 3,
-      findings: [INLINE],
-      shouldReport: (finding) => finding.kind === 'clone',
-    });
-
-    expect(outcome).toStrictEqual({ ok: true, progress: { count: 4, passedCount: 3, type: 'fraction' } });
-  });
-
-  it('counts an unreported finding in the denominator', () => {
-    const outcome = buildFindingReport({
-      adoptedCount: 1,
       findings: [CLONE, INLINE],
       shouldReport: (finding) => finding.kind === 'clone',
     });
 
-    expect(outcome.progress).toStrictEqual({ count: 3, passedCount: 1, type: 'fraction' });
-  });
-
-  it('fails and names each reported finding, by symbol where one is declared', () => {
-    const outcome = buildFindingReport({
-      adoptedCount: 0,
-      findings: [CLONE, INLINE],
-      shouldReport: () => true,
+    expect(outcome).toStrictEqual({
+      adoptedCount: 3,
+      findings: [
+        { line: 12, path: 'src/errors.ts', reported: true, symbol: 'describeError' },
+        { line: 44, path: 'src/report.ts', reported: false },
+      ],
     });
-
-    expect(outcome.ok).toBe(false);
-    expect(outcome.detail).toBe('describeError (src/errors.ts:12), src/report.ts:44');
   });
 
-  it('passes with no detail for a project holding no findings at all', () => {
+  it('returns no findings for a project holding none', () => {
     const outcome = buildFindingReport({ adoptedCount: 0, findings: [], shouldReport: () => true });
 
-    expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
+    expect(outcome).toStrictEqual({ adoptedCount: 0, findings: [] });
+  });
+
+  it('declines nothing, leaving a site carrying a pragma to the runner', ({ temp }) => {
+    temp.write('src/errors.ts', ['', ...Array.from({ length: 10 }, () => ''), 'x; // rdy-ignore', ''].join('\n'));
+
+    const outcome = buildFindingReport({ adoptedCount: 0, findings: [CLONE], shouldReport: () => true });
+
+    expect(outcome.findings).toHaveLength(1);
   });
 
   describe('given a check that names its own package', () => {
@@ -92,20 +85,9 @@ describe(buildFindingReport, () => {
         shouldReport: () => true,
       });
 
-      expect(outcome.detail).toBe('describeError (src/errors.ts:12)');
-    });
-
-    it('counts an exempt finding in neither half of the fraction', ({ temp }) => {
-      writeMonorepo(temp);
-
-      const outcome = buildFindingReport({
-        adoptedCount: 1,
-        findings: [OWN_CLONE, OWN_INLINE, CLONE],
-        ownImplementation: OWN_IMPLEMENTATION,
-        shouldReport: () => true,
-      });
-
-      expect(outcome.progress).toStrictEqual({ count: 2, passedCount: 1, type: 'fraction' });
+      expect(outcome.findings).toStrictEqual([
+        { line: 12, path: 'src/errors.ts', reported: true, symbol: 'describeError' },
+      ]);
     });
 
     it('reports a second file in that package hand-rolling the idiom', ({ temp }) => {
@@ -118,11 +100,12 @@ describe(buildFindingReport, () => {
         shouldReport: () => true,
       });
 
-      expect(outcome.ok).toBe(false);
-      expect(outcome.detail).toBe('formatError (packages/errors/src/format.ts:5)');
+      expect(outcome.findings).toStrictEqual([
+        { line: 5, path: 'packages/errors/src/format.ts', reported: true, symbol: 'formatError' },
+      ]);
     });
 
-    it('passes where the implementation held the only findings', ({ temp }) => {
+    it('returns no findings where the implementation held them all', ({ temp }) => {
       writeMonorepo(temp);
 
       const outcome = buildFindingReport({
@@ -132,55 +115,7 @@ describe(buildFindingReport, () => {
         shouldReport: () => true,
       });
 
-      expect(outcome).toStrictEqual({ ok: true, progress: { count: 2, passedCount: 2, type: 'fraction' } });
-    });
-  });
-
-  describe('given a source declining a finding', () => {
-    it('drops a finding on a line carrying `rdy-ignore`', ({ temp }) => {
-      writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
-
-      const outcome = buildFindingReport({
-        adoptedCount: 0,
-        findings: [CLONE, INLINE],
-        shouldReport: () => true,
-      });
-
-      expect(outcome.detail).toBe('src/report.ts:44');
-    });
-
-    it('drops a finding on the line after an `rdy-ignore-next-line`', ({ temp }) => {
-      writeSourceLine(temp, 'src/errors.ts', 11, '// rdy-ignore-next-line -- the bootstrap shim, no deps allowed');
-
-      const outcome = buildFindingReport({ adoptedCount: 0, findings: [CLONE], shouldReport: () => true });
-
-      expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
-    });
-
-    it('counts a declined finding in neither half of the fraction', ({ temp }) => {
-      writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
-
-      const outcome = buildFindingReport({
-        adoptedCount: 1,
-        findings: [CLONE, INLINE],
-        shouldReport: () => true,
-      });
-
-      expect(outcome.progress).toStrictEqual({ count: 2, passedCount: 1, type: 'fraction' });
-    });
-
-    it('honors a pragma for a check that also names its own package', ({ temp }) => {
-      writeMonorepo(temp);
-      writeSourceLine(temp, 'packages/errors/src/format.ts', 5, 'formatError(); // rdy-ignore');
-
-      const outcome = buildFindingReport({
-        adoptedCount: 0,
-        findings: [SIBLING_CLONE],
-        ownImplementation: OWN_IMPLEMENTATION,
-        shouldReport: () => true,
-      });
-
-      expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
+      expect(outcome).toStrictEqual({ adoptedCount: 2, findings: [] });
     });
   });
 });
@@ -193,11 +128,6 @@ function writeMonorepo(temp: TempTree): void {
   temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));
   temp.writeJson('packages/errors/package.json', { name: '@scope/errors', version: '1.0.0' });
   temp.writeJson('packages/app/package.json', { name: '@scope/app', version: '1.0.0' });
-}
-
-/** Writes a source whose 1-based `line` reads `text`, padded above with the blank lines that put it there. */
-function writeSourceLine(temp: TempTree, path: string, line: number, text: string): void {
-  temp.write(path, [...Array.from({ length: line - 1 }, () => ''), text, ''].join('\n'));
 }
 
 // endregion | Helpers

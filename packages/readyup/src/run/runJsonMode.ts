@@ -58,6 +58,7 @@ export async function runJsonMode(
           defaultSeverity: thresholds.defaultSeverity,
           diagnose,
           failOn: thresholds.failOn,
+          provenance: entry.provenance,
         });
         entries.push({ name: checklist.name, report });
         warnings.push(...warnOnMaskedSkips(entry, checklist.name, report.diagnoses));

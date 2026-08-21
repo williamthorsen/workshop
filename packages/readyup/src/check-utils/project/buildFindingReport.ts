@@ -1,7 +1,5 @@
-import type { CheckOutcome } from '../../kits/types.ts';
-import { declinesFinding } from './declinesFinding.ts';
+import type { FindingOutcome, OutcomeFinding } from '../../kits/types.ts';
 import { definesOwnImplementation, type OwnImplementation } from './definesOwnImplementation.ts';
-import { readSourceText } from './readTrackedSources.ts';
 
 /** One located site a check names. */
 export interface Finding {
@@ -20,62 +18,25 @@ export interface BuildFindingReportOptions<F extends Finding> {
 }
 
 /**
- * Reports whether a project holds the findings the calling check names, naming each and how far adoption got.
+ * Returns the findings a project holds, each marked whether the calling check reports it, for the runner to
+ * decline, render, and count.
  *
- * The fraction is derived from every finding passed, not only the reported ones, so the checks of one run share a
- * denominator the reader can compare across them. Passing only the reported findings would state a fraction of a
- * different whole for each check, which is why the selection is made here rather than by the caller.
+ * Every retained finding is returned rather than only the reported ones, so the checks of one run share a
+ * denominator the reader can compare across them, and so a site a pragma declines leaves every check's
+ * fraction rather than only the fraction of the check that names it.
  *
- * A source declines a finding with an `rdy-ignore` pragma, which drops it from the detail and from both halves of
- * the fraction, so a project that has settled every remaining site reaches completion rather than resting one short.
- * The pragma belongs to readyup rather than to any kit, so a kit inherits it by reporting here and declares nothing
- * for it.
- *
- * A check naming its own package drops the findings sited in that package's implementation the same way. The repo
- * publishing an idiom is where the idiom lives, and a kit reporting it there spends the credibility it needs in
- * every other repo it runs in.
+ * A check naming its own package drops the findings sited in that package's implementation. The repo
+ * publishing an idiom is where the idiom lives, and a kit reporting it there spends the credibility it needs
+ * in every other repo it runs in.
  */
-export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): CheckOutcome {
+export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;
 
-  const undeclined = excludeDeclined(findings);
-  const retained = excludeOwnImplementation(undeclined, ownImplementation);
-  const reported = retained.filter((finding) => shouldReport(finding));
-  const progress = {
-    count: adoptedCount + retained.length,
-    passedCount: adoptedCount,
-    type: 'fraction',
-  } as const;
-
-  if (reported.length === 0) return { ok: true, progress };
-  return { detail: reported.map((finding) => describeFinding(finding)).join(', '), ok: false, progress };
+  const retained = excludeOwnImplementation(findings, ownImplementation);
+  return { adoptedCount, findings: retained.map((finding) => toOutcomeFinding(finding, shouldReport(finding))) };
 }
 
 // region | Helpers
-
-/** Names one finding by where it is, and by the symbol it declares where it declares one. */
-function describeFinding(finding: Finding): string {
-  const location = `${finding.path}:${finding.line}`;
-  return finding.symbol === undefined ? location : `${finding.symbol} (${location})`;
-}
-
-/**
- * Drops the findings a source declined with an `rdy-ignore` pragma.
- *
- * Each path is parted into lines once, so a file holding ten findings costs one read and one split between them. A
- * path holding no readable text declines nothing.
- */
-function excludeDeclined<F extends Finding>(findings: readonly F[]): readonly F[] {
-  const linesByPath = new Map<string, readonly string[] | undefined>();
-  return findings.filter((finding) => {
-    if (!linesByPath.has(finding.path)) {
-      linesByPath.set(finding.path, readSourceText(finding.path)?.split('\n'));
-    }
-
-    const lines = linesByPath.get(finding.path);
-    return lines === undefined || !declinesFinding(lines, finding.line);
-  });
-}
 
 /**
  * Drops the findings sited in the declared package's own implementation.
@@ -97,6 +58,12 @@ function excludeOwnImplementation<F extends Finding>(
     }
     return !exempt;
   });
+}
+
+/** Returns a finding as the runner reads it, carrying whether the reporting check names it. */
+function toOutcomeFinding(finding: Finding, reported: boolean): OutcomeFinding {
+  const { line, path, symbol } = finding;
+  return symbol === undefined ? { line, path, reported } : { line, path, reported, symbol };
 }
 
 // endregion | Helpers

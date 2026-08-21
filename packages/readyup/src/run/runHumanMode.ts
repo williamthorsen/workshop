@@ -189,6 +189,7 @@ async function runKit(
       defaultSeverity: thresholds.defaultSeverity,
       diagnose: settings.diagnose,
       failOn: thresholds.failOn,
+      provenance: entry.provenance,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
     const { body, hasVisibleResults } = reportRdy(report, {
