@@ -38,6 +38,7 @@ export const ProgressSchema = z
 export const CheckEntrySchema = z
   .object({
     name: z.string(),
+    id: z.string().optional(),
     status: z.enum(['passed', 'failed', 'skipped']),
     ok: z.union([z.boolean(), z.null()]),
     severity: SeveritySchema,

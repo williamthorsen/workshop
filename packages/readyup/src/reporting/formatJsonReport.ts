@@ -189,6 +189,7 @@ function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
         severity: result.severity,
         durationMs: Math.round(result.durationMs),
       };
+      if (result.id !== null) entry.id = result.id;
       if (result.fix !== null) entry.fix = result.fix;
       return entry;
     });
@@ -248,6 +249,7 @@ function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[]): JsonChe
     durationMs: Math.round(result.durationMs),
   };
 
+  if (result.id !== null) entry.id = result.id;
   if (result.status === 'skipped') entry.skipReason = result.skipReason;
   if (result.detail !== null) entry.detail = result.detail;
   if (result.status === 'failed' && result.fix !== null) entry.fix = result.fix;

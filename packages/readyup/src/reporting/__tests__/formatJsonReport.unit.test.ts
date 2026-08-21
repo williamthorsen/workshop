@@ -840,4 +840,37 @@ describe(formatJsonReport, () => {
       }
     });
   });
+
+  describe('check ids', () => {
+    it('carries the id of a check that declares one', () => {
+      const withId = makeReport({
+        results: [makePassedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', withId)));
+
+      expect(parsed).toMatchObject({
+        kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
+      });
+    });
+
+    it('omits the key for a check that declares none', () => {
+      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+
+      expect(output).not.toContain('"id"');
+    });
+
+    it('carries the id into the summary projection, where a failure is all that survives', () => {
+      const failing = makeReport({
+        results: [makeFailedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
+        passed: false,
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', failing), { detail: 'summary' }));
+
+      expect(parsed).toMatchObject({
+        kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
+      });
+    });
+  });
 });
