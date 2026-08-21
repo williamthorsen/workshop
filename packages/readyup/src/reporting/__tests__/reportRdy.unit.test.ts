@@ -25,6 +25,7 @@ const SLOW_MS = 250;
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
   return {
     name: 'check',
+    id: null,
     status: 'passed',
     ok: true,
     severity: 'error',
@@ -41,6 +42,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
 function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
   return {
     name: 'check',
+    id: null,
     status: 'failed',
     ok: false,
     severity: 'error',
@@ -58,6 +60,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
 function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
   return {
     name: 'check',
+    id: null,
     status: 'skipped',
     ok: null,
     severity: 'error',
@@ -177,6 +180,55 @@ describe(reportRdy, () => {
       ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target \u{00B7} all good [100%]`);
+    });
+
+    it('brackets a failed check id ahead of its progress', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeFailedResult({
+              name: 'target',
+              id: 'toolbelt.errors/no-instanceof-error',
+              progress: { type: 'fraction', passedCount: 7, count: 10 },
+            }),
+          ],
+        }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(
+        `${FAILED_ERROR} target [toolbelt.errors/no-instanceof-error] [7 of 10]`,
+      );
+    });
+
+    it('renders a failed check declaring no id as it renders one today', () => {
+      const output = reportRdy(makeReport({ results: [makeFailedResult({ name: 'target' })] })).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${FAILED_ERROR} target`);
+    });
+
+    it('withholds the id from a check that passed', () => {
+      const output = reportRdy(
+        makeReport({ results: [makePassedResult({ name: 'target', id: 'toolbelt.errors/no-instanceof-error' })] }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target`);
+    });
+
+    it('withholds the id from a check that skipped', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makeSkippedResult({
+              name: 'target',
+              id: 'toolbelt.errors/no-instanceof-error',
+              skipReason: 'n/a',
+              detail: 'no lockfile',
+            }),
+          ],
+        }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${SKIPPED_OPTIONAL} target \u{00B7} no lockfile`);
     });
 
     it('retires the em-dash separator', () => {

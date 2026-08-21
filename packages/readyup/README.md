@@ -206,15 +206,16 @@ A checklist carries either `checks` or `groups`, never both.
 
 ### Checks
 
-| Field      | Type                            | Default                     | Meaning                                    |
-| ---------- | ------------------------------- | --------------------------- | ------------------------------------------ |
-| `name`     | `string`                        | required                    | The claim being asserted                   |
-| `check`    | `() => boolean \| CheckOutcome` | required                    | The assertion; may be async                |
-| `severity` | `Severity`                      | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`      |
-| `quiet`    | `boolean`                       | `false`                     | Renders only when the check does not pass  |
-| `skip`     | `() => false \| string`         | --                          | Reason string to skip; `false` to run      |
-| `fix`      | `string`                        | --                          | Remediation, shown when the check fails    |
-| `checks`   | `RdyCheck[]`                    | --                          | Nested checks, run only if this one passes |
+| Field      | Type                                              | Default                     | Meaning                                      |
+| ---------- | ------------------------------------------------- | --------------------------- | -------------------------------------------- |
+| `name`     | `string`                                          | required                    | The claim being asserted                     |
+| `id`       | `string`                                          | --                          | What a pragma writes to decline its findings |
+| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                  |
+| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`        |
+| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass    |
+| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run        |
+| `fix`      | `string`                                          | --                          | Remediation, shown when the check fails      |
+| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes   |
 
 A check returns a boolean or a `CheckOutcome`:
 
@@ -223,6 +224,15 @@ A check returns a boolean or a `CheckOutcome`:
 | `ok`       | `boolean`  | Whether the assertion holds                                                  |
 | `detail`   | `string`   | Why this status                                                              |
 | `progress` | `Progress` | `{ type: 'fraction', passedCount, count }` or `{ type: 'percent', percent }` |
+
+A check naming located sites returns a `FindingOutcome` instead, and the runner derives all three from it:
+
+| Field          | Type               | Meaning                                                                 |
+| -------------- | ------------------ | ----------------------------------------------------------------------- |
+| `findings`     | `OutcomeFinding[]` | Every located site, as `{ path, line, symbol?, reported }`              |
+| `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none |
+
+`reported` marks the sites this check names; the rest count toward the fraction and do nothing else. The runner drops the sites a [pragma declines](#declining-a-finding), renders the reported survivors as the `detail`, reads `ok` off whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](#project-sources).
 
 ### Naming checks
 
@@ -636,9 +646,27 @@ error instanceof Error ? error.message : String(error);
 | `rdy-ignore`           | The line it sits on |
 | `rdy-ignore-next-line` | The line below it   |
 
-With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is declined. One or more comma-separated check ids may follow the token; they are accepted and narrow nothing yet.
+With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is declined.
 
-A declined finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short.
+One or more comma-separated check ids may follow the token, and the pragma then declines for those checks alone:
+
+```ts
+// rdy-ignore-next-line toolbelt.errors/no-instanceof-error -- the bootstrap shim, no deps allowed
+error instanceof Error ? error.message : String(error);
+```
+
+A failed check prints its id bracketed ahead of its fraction, and that printed form is what a pragma writes:
+
+```
+❌ No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
+   src/a.ts:4, src/b.ts:9
+```
+
+A kit an installed package publishes namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace is what keeps two kits' same-named checks apart. A kit reached any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id stands. An id naming no check in the run declines nothing, as does a pragma on a check that declares no id at all.
+
+The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` declines for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry carries its `id` in both detail projections.
+
+A declined finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short. An unqualified pragma takes the site out of every check's fraction at once, which is what keeps the checks of one run comparable; a qualified one takes it out of the checks it names and leaves it standing in the rest.
 
 The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string declines a finding sited on it.
 
@@ -1309,7 +1337,7 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 | `blankNonCode(text)`                  | The same text with every comment and literal blanked           |
 | `getLineAtOffset(text, offset)`       | The 1-based line holding an offset                             |
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
-| `buildFindingReport(options)`         | A `CheckOutcome` naming located findings, with a fraction      |
+| `buildFindingReport(options)`         | A `FindingOutcome` the runner declines, renders, and counts    |
 
 These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
@@ -1323,11 +1351,11 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 
 `countPackageUsage` counts calls to the named exports and counts none in a source that never imports the package, from its root or any subpath. The import is what separates adoption from a name collision: a project hand-rolling its own `describeError` calls that name as often as an adopter calls the real one. Its two patterns read two texts -- the call scan reads a blanked source, so a call named in prose is not counted as one made, while the import test locates its match in a source with comments alone blanked, because the specifier it matches is itself a string literal that full blanking would erase, then reads the blanked text at that offset so a source quoting an import is not taken for one making it.
 
-`buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and names each selected finding as `symbol (path:line)`, or `path:line` where it declares no symbol. Its fraction is derived from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
+`buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and returns them as a `FindingOutcome` for the runner to decline, render, and count. The runner names each reported finding as `symbol (path:line)`, or `path:line` where it declares no symbol, and derives the fraction from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
 Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A file qualifies by sitting inside a workspace whose `package.json` names the package and exporting one of the named exports, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is file-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off; a second file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
 
-`buildFindingReport` also honors the [`rdy-ignore` pragma](#declining-a-finding), dropping a declined finding from the detail and from both halves of the fraction. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own.
+The [`rdy-ignore` pragma](#declining-a-finding) is honored by the runner rather than here, which is the layer holding both the check and the provenance a pragma naming that check is matched against. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own. Give the check an `id` and a consumer can decline its findings by name.
 
 `undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
 

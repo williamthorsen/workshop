@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
+import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type {
   FailedResult,
   PassedResult,
@@ -16,7 +17,8 @@ import type {
 import { isFlatChecklist } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
-import { describeUninterpretableReturn, isCheckOutcome } from './check-return.ts';
+import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
+import { resolveCheckIds } from './resolveCheckIds.ts';
 import { diagnoseSkips } from './skip-diagnosis.ts';
 
 /** Options controlling failure and severity defaults for a run. */
@@ -26,6 +28,9 @@ export interface RunRdyOptions {
 
   /** Whether to ask each skipped check what its `check` would have concluded. */
   diagnose?: boolean;
+
+  /** Where the kit came from, which is what namespaces its checks' ids. */
+  provenance?: KitProvenance | undefined;
 }
 
 /** A check whose `skip` fired, paired with the result standing in for it. */
@@ -37,6 +42,9 @@ interface PendingDiagnosis {
 /** What every step of a checklist walk carries with it. */
 interface RunContext {
   defaultSeverity: Severity;
+
+  /** Where the kit came from, read for every check's ids and for nothing else. */
+  provenance: KitProvenance | undefined;
 
   /**
    * The checks whose `skip` returned a reason, in the order their skips resolved.
@@ -90,16 +98,18 @@ function resolveFix(check: RdyCheck): string | null {
 /** The fields a check contributes to every result it can produce. */
 interface CheckContext {
   name: string;
+  id: string | null;
   severity: Severity;
   quiet: boolean;
   depth: number;
 }
 
 /** Gather the fields a check contributes to every result it can produce. */
-function buildCheckContext(check: RdyCheck, defaultSeverity: Severity, depth: number): CheckContext {
+function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
   return {
     name: check.name,
-    severity: resolveSeverity(check, defaultSeverity),
+    id: resolveCheckIds(check.id, run.provenance)?.printed ?? null,
+    severity: resolveSeverity(check, run.defaultSeverity),
     quiet: check.quiet ?? false,
     depth,
   };
@@ -160,7 +170,7 @@ function buildAuthoringErrorResult(
  * Returns the check's own result followed by all descendant results in depth-first order.
  */
 async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promise<RdyResult[]> {
-  const context = buildCheckContext(check, run.defaultSeverity, depth);
+  const context = buildCheckContext(check, run, depth);
   const children = check.checks ?? [];
 
   // Evaluate skip condition before running the check.
@@ -196,15 +206,18 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
   try {
     const raw: unknown = await check.check();
     const durationMs = performance.now() - start;
+    // Findings become an outcome before anything reads a verdict off them, so the two structured arms are
+    // one branch below.
+    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance);
     let result: PassedResult | FailedResult;
-    if (typeof raw === 'boolean') {
-      result = raw
+    if (typeof outcome === 'boolean') {
+      result = outcome
         ? buildPassedResult({ ...context, detail: null, durationMs, progress: null })
         : buildFailedResult(check, { ...context, detail: null, durationMs, error: null, progress: null });
-    } else if (isCheckOutcome(raw)) {
-      const detail = raw.detail ?? null;
-      const progress = raw.progress ?? null;
-      result = raw.ok
+    } else if (isCheckOutcome(outcome)) {
+      const detail = outcome.detail ?? null;
+      const progress = outcome.progress ?? null;
+      result = outcome.ok
         ? buildPassedResult({ ...context, detail, durationMs, progress })
         : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress });
     } else {
@@ -276,7 +289,7 @@ function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number):
 
 /** Mark a check as skipped because a precondition or ancestor check failed. */
 function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
-  const context = buildCheckContext(check, run.defaultSeverity, depth);
+  const context = buildCheckContext(check, run, depth);
   return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
 }
 
@@ -379,7 +392,7 @@ export async function runRdy(
   const start = performance.now();
   const results: RdyResult[] = [];
 
-  const run: RunContext = { defaultSeverity, pendingDiagnoses: [] };
+  const run: RunContext = { defaultSeverity, pendingDiagnoses: [], provenance: options.provenance };
 
   const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
 
@@ -393,7 +406,9 @@ export async function runRdy(
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   const diagnoses: SkipDiagnosis[] | undefined =
-    options.diagnose === true ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses)) : undefined;
+    options.diagnose === true
+      ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses), run.provenance)
+      : undefined;
 
   return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }

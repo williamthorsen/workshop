@@ -156,6 +156,8 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
     durationMs: result.durationMs,
     // A failed check's detail is its reason, which the block beneath carries.
     ...(!isFailed && result.detail !== null && { detail: result.detail }),
+    // Only a failure names findings, so only a failure gives the reader a pragma to write.
+    ...(isFailed && result.id !== null && { checkId: result.id }),
     ...(result.progress !== null && { progress: formatProgress(result.progress) }),
   });
 

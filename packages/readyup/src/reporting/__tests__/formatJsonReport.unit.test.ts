@@ -9,6 +9,7 @@ import { formatReport } from '../test-utils/formatReport.ts';
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
   return {
     name: 'check',
+    id: null,
     status: 'passed',
     ok: true,
     severity: 'error',
@@ -25,6 +26,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
 function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
   return {
     name: 'check',
+    id: null,
     status: 'failed',
     ok: false,
     severity: 'error',
@@ -42,6 +44,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
 function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
   return {
     name: 'check',
+    id: null,
     status: 'skipped',
     ok: null,
     severity: 'error',
@@ -835,6 +838,39 @@ describe(formatJsonReport, () => {
         const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail }));
         expect(() => ReportSchema.parse(parsed)).not.toThrow();
       }
+    });
+  });
+
+  describe('check ids', () => {
+    it('carries the id of a check that declares one', () => {
+      const withId = makeReport({
+        results: [makePassedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', withId)));
+
+      expect(parsed).toMatchObject({
+        kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
+      });
+    });
+
+    it('omits the key for a check that declares none', () => {
+      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+
+      expect(output).not.toContain('"id"');
+    });
+
+    it('carries the id into the summary projection, where a failure is all that survives', () => {
+      const failing = makeReport({
+        results: [makeFailedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
+        passed: false,
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', failing), { detail: 'summary' }));
+
+      expect(parsed).toMatchObject({
+        kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
+      });
     });
   });
 });

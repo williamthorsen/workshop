@@ -1,9 +1,10 @@
 import process from 'node:process';
 
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
+import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyCheck, SkipDiagnosis } from '../kits/types.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
-import { describeUninterpretableReturn, isCheckOutcome } from './check-return.ts';
+import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 
 /**
@@ -13,8 +14,8 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  * no `skip`. A check that would have failed used its skip correctly and contributes nothing, so
  * every entry returned is a finding.
  */
-export async function diagnoseSkips(checks: RdyCheck[]): Promise<SkipDiagnosis[]> {
-  const diagnoses = await Promise.all(checks.map(diagnoseSkip));
+export async function diagnoseSkips(checks: RdyCheck[], provenance?: KitProvenance): Promise<SkipDiagnosis[]> {
+  const diagnoses = await Promise.all(checks.map((check) => diagnoseSkip(check, provenance)));
   return diagnoses.filter((diagnosis) => diagnosis !== undefined);
 }
 
@@ -60,22 +61,29 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
 /**
  * Diagnoses one skipped check, answering with nothing where its `check` would have failed.
  *
- * A `check` that throws, or that returns a value expressing no verdict, leaves the question
- * undecided: reporting either as a masked pass would assert something the run never established.
+ * A `check` that throws, one whose findings cannot be read, or one returning a value expressing no
+ * verdict leaves the question undecided: reporting any of them as a masked pass would assert something
+ * the run never established. Resolving the return value sits inside the guard for that reason, as it
+ * does in the runner.
  */
-async function diagnoseSkip(check: RdyCheck): Promise<SkipDiagnosis | undefined> {
+async function diagnoseSkip(
+  check: RdyCheck,
+  provenance: KitProvenance | undefined,
+): Promise<SkipDiagnosis | undefined> {
   let raw: unknown;
+  let outcome: unknown;
   try {
     // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their author
     // wrote, whatever the declared type promised.
     raw = await check.check();
+    outcome = resolveCheckReturn(raw, check, provenance);
   } catch (error_: unknown) {
     const error = error_ instanceof Error ? error_ : new Error(String(error_));
     return { name: check.name, verdict: 'inconclusive', reason: error.message };
   }
 
-  if (typeof raw === 'boolean') return raw ? { name: check.name, verdict: 'masked-pass' } : undefined;
-  if (isCheckOutcome(raw)) return raw.ok ? { name: check.name, verdict: 'masked-pass' } : undefined;
+  if (typeof outcome === 'boolean') return outcome ? { name: check.name, verdict: 'masked-pass' } : undefined;
+  if (isCheckOutcome(outcome)) return outcome.ok ? { name: check.name, verdict: 'masked-pass' } : undefined;
 
   return { name: check.name, verdict: 'inconclusive', reason: describeUninterpretableReturn(raw) };
 }

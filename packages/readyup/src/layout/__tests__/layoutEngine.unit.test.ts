@@ -33,6 +33,17 @@ describe('formatCheckLine', () => {
     expect(line).toBe(`${PASSED} suite [7 of 10]`);
   });
 
+  it('brackets a check id ahead of the progress, so identity reads before quantity', () => {
+    const line = engine.formatCheckLine({
+      token: 'failedError',
+      name: 'suite',
+      checkId: 'toolbelt.errors/no-instanceof-error',
+      progress: '7 of 10',
+    });
+
+    expect(line).toBe(`${FAILED_ERROR} suite [toolbelt.errors/no-instanceof-error] [7 of 10]`);
+  });
+
   it('carries exactly one separator when both detail and progress are present', () => {
     const line = engine.formatCheckLine({
       token: 'failedError',

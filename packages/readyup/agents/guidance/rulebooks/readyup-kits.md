@@ -53,6 +53,8 @@ Your own repo is where the defect surfaces first. An adoption kit's `ownImplemen
 
 Suppression is readyup's rather than yours. A finding reported through `buildFindingReport` is declinable with an `rdy-ignore` pragma already, so publish no token of your own for it, and reach for no path filter to silence the one site a consumer reviewed and kept.
 
+Give every check that names located sites an `id`. Without one, a consumer declining a finding of yours declines every other check's finding on that line too, your kit's and every other kit's alike. Write it bare and kebab-cased, restating the claim rather than the defect -- `no-hand-rolled-describe-error`, not `bad-error-handling` -- because it is a name a consumer types into their source and reads back a year later. The runner namespaces it under the package publishing your kit, so it has to be unique within the kit and nowhere wider, and changing it silently un-declines every site that named the old one.
+
 Expect the site count to move in both directions. Blanking unmasks sites a comment was hiding, because a comment sitting mid-expression blanks to a run of spaces as wide as it was rather than breaking the anchor scan. Write an anchor that tolerates a whitespace run, not one that admits a single space.
 
 One pattern must not read blanked text: one matching a literal's own content, such as an import specifier, which blanking erases. `countPackageUsage` already answers that question against the text it needs; reach for it rather than hand-rolling the sweep.
