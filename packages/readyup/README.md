@@ -622,6 +622,26 @@ FAIL  Total: 1 error, 1 passed, 1 skipped (151ms)
 
 Once a style is named explicitly, output is byte-identical to a terminal or a pipe. `--style` is independent of `--json`: the JSON document never changes.
 
+### Declining a finding
+
+A check naming located sites reports each as `path:line`. A source declines one by carrying a pragma:
+
+```ts
+// rdy-ignore-next-line -- the bootstrap shim, no deps allowed
+error instanceof Error ? error.message : String(error);
+```
+
+| Token                  | Covers              |
+| ---------------------- | ------------------- |
+| `rdy-ignore`           | The line it sits on |
+| `rdy-ignore-next-line` | The line below it   |
+
+With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is declined. One or more comma-separated check ids may follow the token; they are accepted and narrow nothing yet.
+
+A declined finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short.
+
+The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string declines a finding sited on it.
+
 ### Advisory warnings
 
 `rdy run` raises advisories about the run it is performing. Warnings go to stderr in both modes and appear under `warnings` in JSON; none affects the exit code.
@@ -1306,6 +1326,8 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and names each selected finding as `symbol (path:line)`, or `path:line` where it declares no symbol. Its fraction is derived from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
 Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A file qualifies by sitting inside a workspace whose `package.json` names the package and exporting one of the named exports, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is file-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off; a second file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
+
+`buildFindingReport` also honors the [`rdy-ignore` pragma](#declining-a-finding), dropping a declined finding from the detail and from both halves of the fraction. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own.
 
 `undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
 

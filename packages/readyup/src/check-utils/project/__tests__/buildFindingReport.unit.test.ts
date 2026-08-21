@@ -135,6 +135,54 @@ describe(buildFindingReport, () => {
       expect(outcome).toStrictEqual({ ok: true, progress: { count: 2, passedCount: 2, type: 'fraction' } });
     });
   });
+
+  describe('given a source declining a finding', () => {
+    it('drops a finding on a line carrying `rdy-ignore`', ({ temp }) => {
+      writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
+
+      const outcome = buildFindingReport({
+        adoptedCount: 0,
+        findings: [CLONE, INLINE],
+        shouldReport: () => true,
+      });
+
+      expect(outcome.detail).toBe('src/report.ts:44');
+    });
+
+    it('drops a finding on the line after an `rdy-ignore-next-line`', ({ temp }) => {
+      writeSourceLine(temp, 'src/errors.ts', 11, '// rdy-ignore-next-line -- the bootstrap shim, no deps allowed');
+
+      const outcome = buildFindingReport({ adoptedCount: 0, findings: [CLONE], shouldReport: () => true });
+
+      expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
+    });
+
+    it('counts a declined finding in neither half of the fraction', ({ temp }) => {
+      writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
+
+      const outcome = buildFindingReport({
+        adoptedCount: 1,
+        findings: [CLONE, INLINE],
+        shouldReport: () => true,
+      });
+
+      expect(outcome.progress).toStrictEqual({ count: 2, passedCount: 1, type: 'fraction' });
+    });
+
+    it('honors a pragma for a check that also names its own package', ({ temp }) => {
+      writeMonorepo(temp);
+      writeSourceLine(temp, 'packages/errors/src/format.ts', 5, 'formatError(); // rdy-ignore');
+
+      const outcome = buildFindingReport({
+        adoptedCount: 0,
+        findings: [SIBLING_CLONE],
+        ownImplementation: OWN_IMPLEMENTATION,
+        shouldReport: () => true,
+      });
+
+      expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
+    });
+  });
 });
 
 // region | Helpers
@@ -145,6 +193,11 @@ function writeMonorepo(temp: TempTree): void {
   temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));
   temp.writeJson('packages/errors/package.json', { name: '@scope/errors', version: '1.0.0' });
   temp.writeJson('packages/app/package.json', { name: '@scope/app', version: '1.0.0' });
+}
+
+/** Writes a source whose 1-based `line` reads `text`, padded above with the blank lines that put it there. */
+function writeSourceLine(temp: TempTree, path: string, line: number, text: string): void {
+  temp.write(path, [...Array.from({ length: line - 1 }, () => ''), text, ''].join('\n'));
 }
 
 // endregion | Helpers

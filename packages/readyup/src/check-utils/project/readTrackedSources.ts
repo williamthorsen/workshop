@@ -21,6 +21,20 @@ const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/ki
 const textsByCwd = new Map<string, Map<string, string | undefined>>();
 
 /**
+ * Reads one path's text, from the cache where a sweep already read it, and `undefined` where the path holds none.
+ *
+ * The exclusions governing what a sweep reads do not apply here. This answers about a path its caller already holds,
+ * such as the one a finding names, rather than deciding what a sweep goes looking at.
+ */
+export function readSourceText(path: string): string | undefined {
+  const texts = resolveTextCache(process.cwd());
+  if (!texts.has(path)) {
+    texts.set(path, readText(path));
+  }
+  return texts.get(path);
+}
+
+/**
  * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree.
  *
  * The filter decides a path before anything reads it, so a caller never pays for a file it excluded. Text is held per
@@ -32,17 +46,12 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
   const tracked = await listTrackedFiles();
   if (tracked === undefined) return undefined;
 
-  const texts = resolveTextCache(process.cwd());
   const sources: ProjectSource[] = [];
   for (const path of tracked) {
     if (isExcluded(path)) continue;
     if (filter !== undefined && !filter(path)) continue;
 
-    if (!texts.has(path)) {
-      texts.set(path, readText(path));
-    }
-
-    const text = texts.get(path);
+    const text = readSourceText(path);
     if (text !== undefined) {
       sources.push({ path, text });
     }

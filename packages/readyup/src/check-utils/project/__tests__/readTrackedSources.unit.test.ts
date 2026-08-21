@@ -36,7 +36,7 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-import { readTrackedSources } from '../readTrackedSources.ts';
+import { readSourceText, readTrackedSources } from '../readTrackedSources.ts';
 
 const it = test.extend(
   'temp',
@@ -137,6 +137,42 @@ describe(readTrackedSources, () => {
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
 
     await expect(readTrackedSources()).resolves.toBeUndefined();
+  });
+});
+
+describe(readSourceText, () => {
+  beforeEach(() => {
+    existsProbes.length = 0;
+    readPaths.length = 0;
+  });
+
+  it('returns the text a sweep read, reading the file no second time', async ({ temp }) => {
+    temp.write('src/swept.ts', 'swept');
+    trackPaths('src/swept.ts');
+    await readTrackedSources();
+
+    expect(readSourceText('src/swept.ts')).toBe('swept');
+    expect(countReads('src/swept.ts')).toBe(1);
+  });
+
+  it('reads a path no sweep selected, and reads it once across calls', ({ temp }) => {
+    temp.write('src/unswept.ts', 'unswept');
+
+    expect(readSourceText('src/unswept.ts')).toBe('unswept');
+    expect(readSourceText('src/unswept.ts')).toBe('unswept');
+    expect(countReads('src/unswept.ts')).toBe(1);
+  });
+
+  it('reads a path a sweep excludes, since exclusion governs what a sweep goes looking at', ({ temp }) => {
+    temp.write('node_modules/dependency/index.js', 'dependency');
+
+    expect(readSourceText('node_modules/dependency/index.js')).toBe('dependency');
+  });
+
+  it('returns undefined for a path holding no text, and probes the filesystem for it once', () => {
+    expect(readSourceText('src/absent.ts')).toBeUndefined();
+    expect(readSourceText('src/absent.ts')).toBeUndefined();
+    expect(countProbes('src/absent.ts')).toBe(1);
   });
 });
 
