@@ -1,6 +1,6 @@
-import { declinesFinding } from '../check-utils/project/declinesFinding.ts';
 import { readSourceText } from '../check-utils/project/readTrackedSources.ts';
 import type { CheckOutcome, FindingOutcome, OutcomeFinding } from '../kits/types.ts';
+import { declinesFinding } from './declinesFinding.ts';
 
 /**
  * Returns a check's verdict, reason, and fraction, the findings a pragma declined for it having been dropped.
