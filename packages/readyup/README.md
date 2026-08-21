@@ -658,13 +658,13 @@ error instanceof Error ? error.message : String(error);
 A failed check prints its id bracketed ahead of its fraction, and that printed form is what a pragma writes:
 
 ```
-❌ No source defines its own description helper [toolbelt.errors/no-instanceof-error] [2 of 5]
+❌ No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
    src/a.ts:4, src/b.ts:9
 ```
 
 A kit an installed package publishes namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace is what keeps two kits' same-named checks apart. A kit reached any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id stands. An id naming no check in the run declines nothing, as does a pragma on a check that declares no id at all.
 
-The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Under `--json`, each check entry carries its `id` in both detail projections.
+The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` declines for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry carries its `id` in both detail projections.
 
 A declined finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short. An unqualified pragma takes the site out of every check's fraction at once, which is what keeps the checks of one run comparable; a qualified one takes it out of the checks it names and leaves it standing in the rest.
 
