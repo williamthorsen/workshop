@@ -1,5 +1,7 @@
 import type { CheckOutcome } from '../../kits/types.ts';
+import { declinesFinding } from './declinesFinding.ts';
 import { definesOwnImplementation, type OwnImplementation } from './definesOwnImplementation.ts';
+import { readSourceText } from './readTrackedSources.ts';
 
 /** One located site a check names. */
 export interface Finding {
@@ -24,14 +26,20 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * denominator the reader can compare across them. Passing only the reported findings would state a fraction of a
  * different whole for each check, which is why the selection is made here rather than by the caller.
  *
- * A check naming its own package drops the findings sited in that package's implementation, from the detail and from
- * both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit reporting it there
- * spends the credibility it needs in every other repo it runs in.
+ * A source declines a finding with an `rdy-ignore` pragma, which drops it from the detail and from both halves of
+ * the fraction, so a project that has settled every remaining site reaches completion rather than resting one short.
+ * The pragma belongs to readyup rather than to any kit, so a kit inherits it by reporting here and declares nothing
+ * for it.
+ *
+ * A check naming its own package drops the findings sited in that package's implementation the same way. The repo
+ * publishing an idiom is where the idiom lives, and a kit reporting it there spends the credibility it needs in
+ * every other repo it runs in.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): CheckOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;
 
-  const retained = excludeOwnImplementation(findings, ownImplementation);
+  const undeclined = excludeDeclined(findings);
+  const retained = excludeOwnImplementation(undeclined, ownImplementation);
   const reported = retained.filter((finding) => shouldReport(finding));
   const progress = {
     count: adoptedCount + retained.length,
@@ -49,6 +57,24 @@ export function buildFindingReport<F extends Finding>(options: BuildFindingRepor
 function describeFinding(finding: Finding): string {
   const location = `${finding.path}:${finding.line}`;
   return finding.symbol === undefined ? location : `${finding.symbol} (${location})`;
+}
+
+/**
+ * Drops the findings a source declined with an `rdy-ignore` pragma.
+ *
+ * Each path is parted into lines once, so a file holding ten findings costs one read and one split between them. A
+ * path holding no readable text declines nothing.
+ */
+function excludeDeclined<F extends Finding>(findings: readonly F[]): readonly F[] {
+  const linesByPath = new Map<string, readonly string[] | undefined>();
+  return findings.filter((finding) => {
+    if (!linesByPath.has(finding.path)) {
+      linesByPath.set(finding.path, readSourceText(finding.path)?.split('\n'));
+    }
+
+    const lines = linesByPath.get(finding.path);
+    return lines === undefined || !declinesFinding(lines, finding.line);
+  });
 }
 
 /**
