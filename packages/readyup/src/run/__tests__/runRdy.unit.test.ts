@@ -988,6 +988,18 @@ describe(runRdy, () => {
       expect(report.diagnoses).toStrictEqual([]);
     });
 
+    it('reports a skipped check whose findings cannot be read as inconclusive', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [{ name: 'malformed', check: returning({ findings: [null] }), skip: () => 'not applicable' }],
+      };
+
+      const report = await runRdy(checklist, { diagnose: true });
+
+      expect(report.diagnoses).toHaveLength(1);
+      expect(report.diagnoses?.[0]).toMatchObject({ name: 'malformed', verdict: 'inconclusive' });
+    });
+
     it('reads a verdict off a skipped check that would have returned findings', async () => {
       const checklist: RdyChecklist = {
         name: 'adoption',
