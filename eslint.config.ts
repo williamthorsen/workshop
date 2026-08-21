@@ -114,6 +114,7 @@ const config = defineConfig([
       'packages/readyup/src/portable/__tests__/walkDirectories.unit.test.ts',
       'packages/readyup/src/projects/__tests__/project-discovery.unit.test.ts',
       'packages/readyup/src/run/__tests__/resolveConfiguredPackages.unit.test.ts',
+      'packages/readyup/src/run/__tests__/resolveFindingOutcome.unit.test.ts',
     ],
     rules: {
       'vitest/consistent-test-it': 'off',
