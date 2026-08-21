@@ -124,6 +124,12 @@ describe(assertIsRdyKit, () => {
       await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].fix:');
     });
 
+    it('throws when id is not a string', async () => {
+      const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, id: 42 }] }] };
+
+      await expect(messageFrom(raw)).resolves.toContain('checklists[0].checks[0].id:');
+    });
+
     it('throws when quiet is not a boolean', async () => {
       const raw = { checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, quiet: 'true' }] }] };
 

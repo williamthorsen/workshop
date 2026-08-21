@@ -1,6 +1,9 @@
-import type { CheckOutcome, FindingOutcome } from '../kits/types.ts';
+import type { KitProvenance } from '../kits/KitProvenance.ts';
+import type { CheckOutcome, FindingOutcome, RdyCheck } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import { resolveCheckIds } from './resolveCheckIds.ts';
+import { resolveFindingOutcome } from './resolveFindingOutcome.ts';
 
 /** Describes a `check` return value that expresses no verdict, naming what was expected instead. */
 export function describeUninterpretableReturn(raw: unknown): string {
@@ -25,4 +28,18 @@ export function isCheckOutcome(raw: unknown): raw is CheckOutcome {
  */
 export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
   return isRecord(raw) && Array.isArray(raw['findings']);
+}
+
+/**
+ * Returns a check's return value with a set of findings resolved into an outcome, and any other value as
+ * it came.
+ *
+ * Which pragmas decline a finding is settled against the check's ids, so the resolution belongs to the run
+ * rather than to the check. The runner and the skip diagnosis both read a verdict off the result, and one
+ * resolution between them is what keeps a diagnosed skip agreeing with the run it stands in for.
+ */
+export function resolveCheckReturn(raw: unknown, check: RdyCheck, provenance: KitProvenance | undefined): unknown {
+  if (!isFindingOutcome(raw)) return raw;
+
+  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? []);
 }

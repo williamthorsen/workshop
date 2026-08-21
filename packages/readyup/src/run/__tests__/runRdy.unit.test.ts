@@ -988,6 +988,28 @@ describe(runRdy, () => {
       expect(report.diagnoses).toStrictEqual([]);
     });
 
+    it('reads a verdict off a skipped check that would have returned findings', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [
+          {
+            name: 'would-fail',
+            check: () => ({ findings: [{ line: 1, path: 'fixture/errors.ts', reported: true }] }),
+            skip: () => 'not applicable',
+          },
+          {
+            name: 'would-pass',
+            check: () => ({ findings: [{ line: 1, path: 'fixture/errors.ts', reported: false }] }),
+            skip: () => 'not applicable',
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist, { diagnose: true });
+
+      expect(report.diagnoses).toStrictEqual([{ name: 'would-pass', verdict: 'masked-pass' }]);
+    });
+
     it('reports a check that throws as inconclusive, carrying its message', async () => {
       const checklist: RdyChecklist = {
         name: 'unreachable',

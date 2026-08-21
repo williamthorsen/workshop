@@ -2,7 +2,9 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
   CheckOutcome,
+  FindingOutcome,
   FixLocation,
+  OutcomeFinding,
   Progress,
   RdyCheck,
   RdyChecklist,
@@ -31,10 +33,24 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     expectTypeOf<CheckOutcome['progress']>().toEqualTypeOf<Progress | undefined>();
   });
 
+  it('FindingOutcome allows explicit undefined on optional fields', () => {
+    function makeOutcome(opts: { adoptedCount?: number; symbol?: string }): FindingOutcome {
+      return {
+        adoptedCount: opts.adoptedCount,
+        findings: [{ line: 1, path: 'src/a.ts', reported: true, symbol: opts.symbol }],
+      };
+    }
+
+    expectTypeOf(makeOutcome).returns.toEqualTypeOf<FindingOutcome>();
+    expectTypeOf<FindingOutcome['adoptedCount']>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<OutcomeFinding['symbol']>().toEqualTypeOf<string | undefined>();
+  });
+
   it('RdyCheck allows explicit undefined on optional fields', () => {
-    function makeCheck(opts: { name: string; fix?: string; severity?: Severity }): RdyCheck {
+    function makeCheck(opts: { name: string; fix?: string; id?: string; severity?: Severity }): RdyCheck {
       return {
         name: opts.name,
+        id: opts.id,
         check: () => true,
         fix: opts.fix,
         severity: opts.severity,
@@ -42,6 +58,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     }
 
     expectTypeOf(makeCheck).returns.toEqualTypeOf<RdyCheck>();
+    expectTypeOf<RdyCheck['id']>().toEqualTypeOf<string | undefined>();
     expectTypeOf<RdyCheck['severity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyCheck['skip']>().toEqualTypeOf<(() => SkipResult | Promise<SkipResult>) | undefined>();
     expectTypeOf<RdyCheck['fix']>().toEqualTypeOf<string | undefined>();

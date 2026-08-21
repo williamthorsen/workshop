@@ -17,9 +17,8 @@ import type {
 import { isFlatChecklist } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
-import { describeUninterpretableReturn, isCheckOutcome, isFindingOutcome } from './check-return.ts';
+import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
-import { resolveFindingOutcome } from './resolveFindingOutcome.ts';
 import { diagnoseSkips } from './skip-diagnosis.ts';
 
 /** Options controlling failure and severity defaults for a run. */
@@ -208,10 +207,8 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     const raw: unknown = await check.check();
     const durationMs = performance.now() - start;
     // Findings become an outcome before anything reads a verdict off them, so the two structured arms are
-    // one branch below: only this layer knows which check reported them, and so which pragmas decline them.
-    const outcome: unknown = isFindingOutcome(raw)
-      ? resolveFindingOutcome(raw, resolveCheckIds(check.id, run.provenance)?.accepted ?? [])
-      : raw;
+    // one branch below.
+    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance);
     let result: PassedResult | FailedResult;
     if (typeof outcome === 'boolean') {
       result = outcome
@@ -409,7 +406,9 @@ export async function runRdy(
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   const diagnoses: SkipDiagnosis[] | undefined =
-    options.diagnose === true ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses)) : undefined;
+    options.diagnose === true
+      ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses), run.provenance)
+      : undefined;
 
   return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }
