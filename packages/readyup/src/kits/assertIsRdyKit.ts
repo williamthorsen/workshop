@@ -45,7 +45,7 @@ const CheckSchema: z.ZodType = z.preprocess(
   hideAccessorFix,
   z.looseObject({
     name: NameSchema,
-    id: z.string().optional(),
+    id: NameSchema.optional(),
     check: FunctionSchema,
     severity: SeveritySchema.optional(),
     quiet: z.boolean().optional(),
