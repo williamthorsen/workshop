@@ -26,4 +26,11 @@ describe(toError, () => {
   ])('wraps %s in an Error carrying its text', (_label, value, expected) => {
     expect(toError(value).message).toBe(expected);
   });
+
+  it('wraps a value that has no rendering rather than throwing', () => {
+    // A null-prototype object inherits no `toString`, so `String()` on it throws.
+    const unrenderable: unknown = Object.create(null);
+
+    expect(toError(unrenderable)).toBeInstanceOf(Error);
+  });
 });
