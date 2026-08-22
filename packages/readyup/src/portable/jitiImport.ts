@@ -1,3 +1,5 @@
+import { isError } from '@williamthorsen/toolbelt.errors';
+
 import { buildInstallCommand } from './buildInstallCommand.ts';
 import { isRecord } from './isRecord.ts';
 import { toDisplayPath } from './toDisplayPath.ts';
@@ -27,7 +29,7 @@ export async function jitiImport(
     imported = await jiti.import(resolvedPath);
   } catch (error: unknown) {
     if (
-      error instanceof Error &&
+      isError(error) &&
       'code' in error &&
       (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND')
     ) {

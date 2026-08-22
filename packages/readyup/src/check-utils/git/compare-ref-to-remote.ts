@@ -1,4 +1,5 @@
 import type { RemoteRefCompareResult } from '../../kits/types.ts';
+import { toError } from '../../portable/toError.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Compare a local ref to its counterpart on a remote. Uses `ls-remote` (no fetch). */
@@ -68,10 +69,4 @@ async function resolveAheadBehind(
   } catch {
     return undefined;
   }
-}
-
-/** Coerce an unknown value to an Error. */
-function toError(value: unknown): Error {
-  if (value instanceof Error) return value;
-  return new Error(String(value));
 }

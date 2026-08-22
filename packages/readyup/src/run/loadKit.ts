@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors';
+import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 import { extractHint } from '../errors/error-handling.ts';
 import { kitLoadError, type RdyError } from '../errors/RdyError.ts';
@@ -56,7 +56,7 @@ export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<
 
 /** Detects module-not-found errors that mention a specific package name. */
 function isModuleNotFoundError(error: unknown, packageName: string): boolean {
-  if (!(error instanceof Error)) return false;
+  if (!isError(error)) return false;
   if (!('code' in error)) return false;
   if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
   return error.message.includes(packageName);

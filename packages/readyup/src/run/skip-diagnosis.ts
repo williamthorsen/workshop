@@ -3,6 +3,7 @@ import process from 'node:process';
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyCheck, SkipDiagnosis } from '../kits/types.ts';
+import { toError } from '../portable/toError.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
@@ -78,7 +79,7 @@ async function diagnoseSkip(
     raw = await check.check();
     outcome = resolveCheckReturn(raw, check, provenance);
   } catch (error_: unknown) {
-    const error = error_ instanceof Error ? error_ : new Error(String(error_));
+    const error = toError(error_);
     return { name: check.name, verdict: 'inconclusive', reason: error.message };
   }
 

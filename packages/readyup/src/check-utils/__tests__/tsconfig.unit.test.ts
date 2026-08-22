@@ -574,7 +574,7 @@ function installPackage(temp: TempTree, name: string, files: Record<string, unkn
 /** Writes a package outside `node_modules` and links it in, as a pnpm install does. */
 function linkPackage(temp: TempTree, name: string, files: Record<string, unknown>): void {
   writePackageFiles(temp, `store/${name}`, files);
-  temp.symlink(`node_modules/${name}`, `store/${name}`);
+  temp.symlink(`node_modules/${name}`, temp.resolve(`store/${name}`));
 }
 
 /** Writes each entry of `files` as JSON under `packageDir`. */
