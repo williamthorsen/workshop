@@ -74,6 +74,48 @@ describe(buildFindingReport, () => {
     expect(outcome.findings).toHaveLength(1);
   });
 
+  describe('given a check declaring the sources it swept', () => {
+    it('reports every swept path as examined', () => {
+      const outcome = buildFindingReport({
+        adoptedCount: 0,
+        findings: [CLONE],
+        shouldReport: () => true,
+        sources: [
+          { path: 'src/errors.ts', text: '' },
+          { path: 'src/quiet.ts', text: '' },
+        ],
+      });
+
+      expect(outcome.scanned).toStrictEqual(['src/errors.ts', 'src/quiet.ts']);
+    });
+
+    it('reports a path the own-implementation exemption dropped every finding from', ({ temp }) => {
+      writeMonorepo(temp);
+
+      const outcome = buildFindingReport({
+        adoptedCount: 0,
+        findings: [OWN_CLONE],
+        ownImplementation: OWN_IMPLEMENTATION,
+        shouldReport: () => true,
+        sources: [{ path: IMPLEMENTATION_PATH, text: '' }],
+      });
+
+      expect(outcome).toStrictEqual({ adoptedCount: 0, findings: [], scanned: [IMPLEMENTATION_PATH] });
+    });
+
+    it('omits `scanned` where the check declared no sources', () => {
+      const outcome = buildFindingReport({ adoptedCount: 0, findings: [CLONE], shouldReport: () => true });
+
+      expect(outcome).not.toHaveProperty('scanned');
+    });
+
+    it('reports an empty sweep as one, distinguishing it from a check declaring none', () => {
+      const outcome = buildFindingReport({ adoptedCount: 0, findings: [], shouldReport: () => true, sources: [] });
+
+      expect(outcome.scanned).toStrictEqual([]);
+    });
+  });
+
   describe('given a check that names its own package', () => {
     it('drops every finding sited in the implementation it names', ({ temp }) => {
       writeMonorepo(temp);
