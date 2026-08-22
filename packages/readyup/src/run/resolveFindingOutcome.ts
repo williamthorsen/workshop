@@ -1,6 +1,7 @@
 import { readSourceText } from '../check-utils/project/readTrackedSources.ts';
 import type { CheckOutcome, FindingOutcome, OutcomeFinding } from '../kits/types.ts';
 import { declinesFinding } from './declinesFinding.ts';
+import type { PragmaLedger } from './PragmaLedger.ts';
 
 /**
  * Returns a check's verdict, reason, and fraction, the findings a pragma declined for it having been dropped.
@@ -8,9 +9,18 @@ import { declinesFinding } from './declinesFinding.ts';
  * The denominator counts every surviving site, reported or not, so the checks of one run share a denominator
  * the reader can compare across them, and a declined site leaves both halves of it. `adoptedCount` is the
  * numerator; omitted, the outcome carries no progress at all.
+ *
+ * A ledger, where one is passed, is told what the check examined and which sites its pragmas declined. This is
+ * the one layer that sees both, so a caller wanting the run to hold no record of a check passes none.
  */
-export function resolveFindingOutcome(outcome: FindingOutcome, checkIds: readonly string[]): CheckOutcome {
-  const surviving = excludeDeclined(outcome.findings, checkIds);
+export function resolveFindingOutcome(
+  outcome: FindingOutcome,
+  checkIds: readonly string[],
+  ledger?: PragmaLedger,
+): CheckOutcome {
+  if (outcome.scanned !== undefined) ledger?.recordScanned(outcome.scanned);
+
+  const surviving = excludeDeclined(outcome.findings, checkIds, ledger);
   const reported = surviving.filter((finding) => finding.reported);
 
   const { adoptedCount } = outcome;
@@ -37,7 +47,11 @@ function describeFinding(finding: OutcomeFinding): string {
  * Each path is parted into lines once, so a file holding ten findings costs one read and one split between
  * them. A path holding no readable text declines nothing.
  */
-function excludeDeclined(findings: readonly OutcomeFinding[], checkIds: readonly string[]): readonly OutcomeFinding[] {
+function excludeDeclined(
+  findings: readonly OutcomeFinding[],
+  checkIds: readonly string[],
+  ledger: PragmaLedger | undefined,
+): readonly OutcomeFinding[] {
   const linesByPath = new Map<string, readonly string[] | undefined>();
   return findings.filter((finding) => {
     if (!linesByPath.has(finding.path)) {
@@ -45,7 +59,9 @@ function excludeDeclined(findings: readonly OutcomeFinding[], checkIds: readonly
     }
 
     const lines = linesByPath.get(finding.path);
-    return lines === undefined || !declinesFinding(lines, finding.line, checkIds);
+    const isDeclined = lines !== undefined && declinesFinding(lines, finding.line, checkIds);
+    if (isDeclined) ledger?.recordDeclined(finding.path, finding.line);
+    return !isDeclined;
   });
 }
 

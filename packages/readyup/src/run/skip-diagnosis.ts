@@ -66,6 +66,9 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
  * verdict leaves the question undecided: reporting any of them as a masked pass would assert something
  * the run never established. Resolving the return value sits inside the guard for that reason, as it
  * does in the runner.
+ *
+ * The resolution reaches no ledger. A diagnosed check is one the run turned off, so what it examined and
+ * what its pragmas declined are answers to a question the invocation never asked.
  */
 async function diagnoseSkip(
   check: RdyCheck,
