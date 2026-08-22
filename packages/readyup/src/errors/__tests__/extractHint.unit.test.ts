@@ -14,7 +14,7 @@ describe(extractHint, () => {
     expect(extractHint(Object.assign(new Error('boom'), { hint: 'Install it.' }))).toBe('Install it.');
   });
 
-  it('returns the hint carried by an error thrown in another realm, as a jiti-loaded kit throws', () => {
+  it('returns the hint carried by an error thrown in another realm', () => {
     // A foreign realm has its own `Error`, so `instanceof` reports false for this value.
     const foreign: unknown = runInNewContext('Object.assign(new Error("boom"), { hint: "Install it." })');
 

@@ -11,7 +11,7 @@ describe(toError, () => {
     expect(toError(error)).toBe(error);
   });
 
-  it('returns an error thrown in another realm unchanged, as a jiti-loaded kit throws', () => {
+  it('returns an error thrown in another realm unchanged', () => {
     // A foreign realm has its own `Error`, so `instanceof` reports false for this value.
     const foreign: unknown = runInNewContext('new Error("boom")');
 
