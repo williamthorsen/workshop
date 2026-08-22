@@ -1,4 +1,4 @@
-import { describeError } from '@williamthorsen/toolbelt.errors';
+import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 /**
  * Translate a caught `node:util.parseArgs` error into a user-facing message.
@@ -10,7 +10,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
  * already clear.
  */
 export function translateParseArgsError(error: unknown, command: string, hints: Record<string, string> = {}): string {
-  if (!(error instanceof Error) || !('code' in error)) {
+  if (!isError(error) || !('code' in error)) {
     return describeError(error);
   }
 

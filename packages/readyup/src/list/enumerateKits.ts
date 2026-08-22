@@ -1,6 +1,8 @@
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
+import { isError } from '@williamthorsen/toolbelt.errors';
+
 interface EnumerateKitsOptions {
   dir: string;
   extension: string;
@@ -31,5 +33,5 @@ export function enumerateKits({ dir, extension }: EnumerateKitsOptions): string[
 
 /** Type guard for Node.js filesystem errors with a `code` property. */
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
+  return isError(error) && 'code' in error;
 }

@@ -1,3 +1,5 @@
+import { runInNewContext } from 'node:vm';
+
 import { describe, expect, it } from 'vitest';
 
 import { extractHint } from '../error-handling.ts';
@@ -10,6 +12,13 @@ describe(extractHint, () => {
 
   it('returns the hint attached to a plain Error, which is how a non-RdyError forwards one', () => {
     expect(extractHint(Object.assign(new Error('boom'), { hint: 'Install it.' }))).toBe('Install it.');
+  });
+
+  it('returns the hint carried by an error thrown in another realm, as a jiti-loaded kit throws', () => {
+    // A foreign realm has its own `Error`, so `instanceof` reports false for this value.
+    const foreign: unknown = runInNewContext('Object.assign(new Error("boom"), { hint: "Install it." })');
+
+    expect(extractHint(foreign)).toBe('Install it.');
   });
 
   it('returns undefined for an error carrying no hint', () => {

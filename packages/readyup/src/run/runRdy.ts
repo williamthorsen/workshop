@@ -16,6 +16,7 @@ import type {
 } from '../kits/types.ts';
 import { isFlatChecklist } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
+import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
@@ -85,7 +86,7 @@ function resolveFix(check: RdyCheck): string | null {
     // wrote, whatever the declared type promised.
     raw = check.fix;
   } catch (error_: unknown) {
-    const error = error_ instanceof Error ? error_ : new Error(String(error_));
+    const error = toError(error_);
     // Quoted so the kit's message stays distinguishable from the sentence carrying it.
     return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
   }
@@ -195,7 +196,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
         return [result, ...childResults];
       }
     } catch (error_: unknown) {
-      const error = error_ instanceof Error ? error_ : new Error(String(error_));
+      const error = toError(error_);
       const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
       const childResults = skipAllDescendants(children, run, depth + 1);
       return [result, ...childResults];
@@ -230,7 +231,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     const childResults = await collectChildResults(result, children, run, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
-    const error = error_ instanceof Error ? error_ : new Error(String(error_));
+    const error = toError(error_);
     const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
     const childResults = skipAllDescendants(children, run, depth + 1);
     return [result, ...childResults];
