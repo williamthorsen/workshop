@@ -41,7 +41,6 @@ export async function runJsonMode(
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const tracking = readManifestTracking(isJit);
-  // One ledger spans every kit, so a file two kits both examined is scanned once and its pragmas reported once.
   const pragmaLedger = createPragmaLedger();
   let allPassed = true;
   let anyKitFailed = false;
@@ -91,7 +90,6 @@ export async function runJsonMode(
     }
   }
 
-  // Raised once the last kit has run, the report being about the invocation rather than about any one kit.
   warnings.push(...warnOnUnusedPragmas(pragmaLedger));
 
   // The top-level thresholds say what the invocation asked for, so an absent flag stays absent

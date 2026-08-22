@@ -48,7 +48,6 @@ export async function runHumanMode(
 
   const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
-  // One ledger spans every kit, so a file two kits both examined is scanned once and its pragmas reported once.
   const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
@@ -94,8 +93,7 @@ export async function runHumanMode(
   // dropped block earns the table even where a single row is all it has to carry.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
-  // Written last, after every block the pragmas' files may have been named in, and about the invocation rather
-  // than about any one kit.
+  // Written after the summary table, the last block a reported pragma's file may have been named in.
   warnOnUnusedPragmas(pragmaLedger);
 
   return resolveRunExitCode(anyKitFailed, allPassed);

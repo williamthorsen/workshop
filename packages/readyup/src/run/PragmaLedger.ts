@@ -9,14 +9,14 @@ import process from 'node:process';
  * report at all, and a site some check declined is a pragma that did its work.
  */
 export interface PragmaLedger {
-  /** Records the paths a check examined. */
-  recordScanned: (paths: readonly string[]) => void;
+  /** Reports whether a pragma declined a finding at a site. */
+  hasDeclined: (filePath: string, line: number) => boolean;
 
   /** Records that a pragma declined a finding at a site. */
   recordDeclined: (filePath: string, line: number) => void;
 
-  /** Reports whether a pragma declined a finding at a site. */
-  hasDeclined: (filePath: string, line: number) => boolean;
+  /** Records the paths a check examined. */
+  recordScanned: (paths: readonly string[]) => void;
 
   /** The paths every check of the run examined, in the order they were first recorded. */
   scannedPaths: () => readonly string[];
@@ -35,7 +35,9 @@ export function createPragmaLedger(): PragmaLedger {
 
   return {
     hasDeclined: (filePath, line) => declined.has(toSiteKey(filePath, line)),
-    recordDeclined: (filePath, line) => void declined.add(toSiteKey(filePath, line)),
+    recordDeclined: (filePath, line) => {
+      declined.add(toSiteKey(filePath, line));
+    },
     recordScanned: (paths) => {
       for (const filePath of paths) scanned.add(resolvePath(filePath));
     },
