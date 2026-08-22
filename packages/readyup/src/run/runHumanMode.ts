@@ -11,6 +11,8 @@ import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
 import { loadKit } from './loadKit.ts';
+import { warnOnUnusedPragmas } from './pragma-report.ts';
+import { createPragmaLedger, type PragmaLedger } from './PragmaLedger.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
@@ -46,6 +48,8 @@ export async function runHumanMode(
 
   const isMultiKit = kitEntries.length > 1;
   const tracking = readManifestTracking(isJit);
+  // One ledger spans every kit, so a file two kits both examined is scanned once and its pragmas reported once.
+  const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
   let allPassed = true;
@@ -64,6 +68,7 @@ export async function runHumanMode(
         entry,
         isMultiKit,
         kitSegments,
+        pragmaLedger,
         writeBlock,
       });
       rows.push(...kitResult.rows);
@@ -88,6 +93,10 @@ export async function runHumanMode(
   // the table covering the checklists that did run. A dropped block is reported by its row alone, so one
   // dropped block earns the table even where a single row is all it has to carry.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
+
+  // Written last, after every block the pragmas' files may have been named in, and about the invocation rather
+  // than about any one kit.
+  warnOnUnusedPragmas(pragmaLedger);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }
@@ -157,6 +166,7 @@ interface KitBlockContext {
   entry: ResolvedKitEntry;
   isMultiKit: boolean;
   kitSegments: BreadcrumbSegment[];
+  pragmaLedger: PragmaLedger;
   writeBlock: BlockWriter;
 }
 
@@ -172,7 +182,7 @@ async function runKit(
   kit: RdyKit,
   checklistFilter: string[],
   settings: HumanRunSettings,
-  { entry, isMultiKit, kitSegments, writeBlock }: KitBlockContext,
+  { entry, isMultiKit, kitSegments, pragmaLedger, writeBlock }: KitBlockContext,
 ): Promise<KitRunResult> {
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
@@ -189,6 +199,7 @@ async function runKit(
       defaultSeverity: thresholds.defaultSeverity,
       diagnose: settings.diagnose,
       failOn: thresholds.failOn,
+      pragmaLedger,
       provenance: entry.provenance,
     });
     const fixLocation = resolveFixLocation(checklist, kit.fixLocation);

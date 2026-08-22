@@ -1,13 +1,14 @@
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Severity } from '../../kits/types.ts';
+import type { RdyReport, Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 import type { JsonDetail } from '../../schemas/reportSchema.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
+import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn());
+const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
 const mockFormatJsonReport = vi.hoisted(() => vi.fn());
 const mockReportRdy = vi.hoisted(() => vi.fn());
 const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
@@ -15,6 +16,7 @@ const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
+const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -57,6 +59,11 @@ vi.mock(import('../kit-staleness.ts'), () => ({
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
+// Mocked so no case reads the sources the ledger names; what the report itself writes is covered by its own tests.
+vi.mock(import('../pragma-report.ts'), () => ({
+  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+}));
+
 import { runJsonMode } from '../runJsonMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
@@ -65,6 +72,7 @@ describe(runJsonMode, () => {
     mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
     mockReadManifestTracking.mockReturnValue(undefined);
     mockWarnOnKitStaleness.mockReturnValue([]);
+    mockWarnOnUnusedPragmas.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -78,6 +86,7 @@ describe(runJsonMode, () => {
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
     mockWarnOnKitStaleness.mockReset();
+    mockWarnOnUnusedPragmas.mockReset();
   });
 
   it('emits JSON output and no human-readable text', async () => {
@@ -330,6 +339,40 @@ describe(runJsonMode, () => {
         expect.anything(),
         expect.not.objectContaining({ warnings: expect.anything() }),
       );
+    });
+  });
+
+  describe('unused-pragma advisories', () => {
+    const PRAGMA_UNUSED = {
+      code: 'pragma-unused',
+      message: '`rdy-ignore` pragma at src/a.ts:3 declined no finding in this run.',
+      remedy: 'Remove the pragma, or run the kit whose check it was written for.',
+    };
+
+    it('reports once over one ledger shared by every checklist of the invocation', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runJson(singleKitEntry());
+
+      const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
+      expect(ledgers).toHaveLength(2);
+      expect(new Set(ledgers).size).toBe(1);
+      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+    });
+
+    it('carries the entries into the report’s warnings', async () => {
+      mockWarnOnUnusedPragmas.mockReturnValue([PRAGMA_UNUSED]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const { exitCode } = await runJson(singleKitEntry(['deploy']));
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ warnings: [PRAGMA_UNUSED] }),
+      );
+      expect(exitCode).toBe(0);
     });
   });
 

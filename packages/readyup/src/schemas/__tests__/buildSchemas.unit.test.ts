@@ -67,7 +67,14 @@ describe('generated JSON Schemas', () => {
       expect(valueAt(report, '$defs', 'WarningCode', 'anyOf')).toStrictEqual([
         {
           type: 'string',
-          enum: ['diagnosis-inconclusive', 'input-stale', 'skip-masks-pass', 'source-stale', 'target-drift'],
+          enum: [
+            'diagnosis-inconclusive',
+            'input-stale',
+            'pragma-unused',
+            'skip-masks-pass',
+            'source-stale',
+            'target-drift',
+          ],
         },
         { type: 'string' },
       ]);

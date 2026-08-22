@@ -1,0 +1,74 @@
+import path from 'node:path';
+import process from 'node:process';
+
+import { readSourceText } from '../check-utils/project/readTrackedSources.ts';
+import type { RaisedWarning } from '../schemas/common.ts';
+import { isJsFamilyPath, listPragmaSites, type PragmaSite } from './listPragmaSites.ts';
+import type { PragmaLedger } from './PragmaLedger.ts';
+
+/** One pragma that declined nothing, named the way the warning about it prints. */
+interface UnusedPragma extends PragmaSite {
+  /** The path relative to `cwd`, the form findings print in. */
+  displayPath: string;
+}
+
+/**
+ * Emits an advisory stderr warning for each pragma that declined nothing, and returns the entries.
+ *
+ * The evidence is what the run's checks declared: a pragma is reported only where some check examined the file
+ * holding it and no check declined a finding on the line it covers. A file no check examined yields nothing,
+ * because the run holds no evidence either way about the pragmas in it.
+ *
+ * Each examined file is read and scanned once however many checks examined it, and only a JS-family source is
+ * scanned at all, recognition resting on syntax the blanking reads.
+ *
+ * Mirrors `warnOnMaskedSkips`: the stderr lines are written in both output modes, and the returned entries are
+ * what JSON mode captures into the report for a consumer that owns only stdout.
+ */
+export function warnOnUnusedPragmas(ledger: PragmaLedger): RaisedWarning[] {
+  const unused = listUnusedPragmas(ledger).toSorted(byPathThenLine);
+
+  const warnings = unused.map((pragma) => toWarning(pragma));
+  for (const warning of warnings) {
+    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
+  }
+  return warnings;
+}
+
+// region | Helpers
+
+/** Orders two pragmas by the path printed for them, then by the line they sit on. */
+function byPathThenLine(a: UnusedPragma, b: UnusedPragma): number {
+  if (a.displayPath !== b.displayPath) return a.displayPath < b.displayPath ? -1 : 1;
+  return a.line - b.line;
+}
+
+/** Returns every pragma the run's examined sources carry against which no check declined a finding. */
+function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
+  const unused: UnusedPragma[] = [];
+
+  for (const scannedPath of ledger.scannedPaths()) {
+    if (!isJsFamilyPath(scannedPath)) continue;
+
+    const text = readSourceText(scannedPath);
+    if (text === undefined) continue;
+
+    const displayPath = path.relative(process.cwd(), scannedPath);
+    for (const site of listPragmaSites(text)) {
+      if (!ledger.hasDeclined(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
+    }
+  }
+
+  return unused;
+}
+
+/** Composes the warning one unused pragma raises. */
+function toWarning(pragma: UnusedPragma): RaisedWarning {
+  return {
+    code: 'pragma-unused',
+    message: `\`${pragma.token}\` pragma at ${pragma.displayPath}:${pragma.line} declined no finding in this run.`,
+    remedy: 'Remove the pragma, or run the kit whose check it was written for.',
+  };
+}
+
+// endregion | Helpers

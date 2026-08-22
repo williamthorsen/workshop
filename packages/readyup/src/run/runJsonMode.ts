@@ -8,6 +8,8 @@ import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
 import { loadKit } from './loadKit.ts';
+import { warnOnUnusedPragmas } from './pragma-report.ts';
+import { createPragmaLedger } from './PragmaLedger.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
@@ -39,6 +41,8 @@ export async function runJsonMode(
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const tracking = readManifestTracking(isJit);
+  // One ledger spans every kit, so a file two kits both examined is scanned once and its pragmas reported once.
+  const pragmaLedger = createPragmaLedger();
   let allPassed = true;
   let anyKitFailed = false;
 
@@ -58,6 +62,7 @@ export async function runJsonMode(
           defaultSeverity: thresholds.defaultSeverity,
           diagnose,
           failOn: thresholds.failOn,
+          pragmaLedger,
           provenance: entry.provenance,
         });
         entries.push({ name: checklist.name, report });
@@ -85,6 +90,9 @@ export async function runJsonMode(
       anyKitFailed = true;
     }
   }
+
+  // Raised once the last kit has run, the report being about the invocation rather than about any one kit.
+  warnings.push(...warnOnUnusedPragmas(pragmaLedger));
 
   // The top-level thresholds say what the invocation asked for, so an absent flag stays absent
   // rather than being reported as a default nobody requested. What governed each kit, including a
