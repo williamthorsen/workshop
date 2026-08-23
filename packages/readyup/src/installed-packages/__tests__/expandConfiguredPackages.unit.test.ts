@@ -82,9 +82,9 @@ describe(expandConfiguredPackages, () => {
     ]);
   });
 
-  it('names the package when it is not installed', ({ temp }) => {
+  it('names the package when it is neither installed nor a workspace', ({ temp }) => {
     expect(() => expandConfiguredPackages(['absent-package'], '.js', temp.dir)).toThrow(
-      /Configured package "absent-package" is not installed/,
+      /Configured package "absent-package" was not found/,
     );
   });
 

@@ -89,13 +89,13 @@ describe(collectKitPackageGroups, () => {
   });
 
   // Listing is read-only, so a dependency nobody can read costs its own group rather than the answer.
-  it('warns and omits a configured package that is not installed', ({ temp }) => {
+  it('warns and omits a configured package that cannot be resolved', ({ temp }) => {
     using io = captureStdio();
 
     const groups = collectKitPackageGroups({ configuredPackages: ['absent-package'], fromDir: temp.dir });
 
     expect(groups.map((group) => group.packageName)).not.toContain('absent-package');
-    expect(io.stderr).toContain('Configured package "absent-package" is not installed');
+    expect(io.stderr).toContain('Configured package "absent-package" was not found');
   });
 
   it('warns and omits a configured package that publishes no kits', ({ temp }) => {
