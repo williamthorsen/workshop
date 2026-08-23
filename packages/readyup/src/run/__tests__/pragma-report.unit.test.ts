@@ -29,12 +29,12 @@ describe(warnOnUnusedPragmas, () => {
     expect(warnings).toStrictEqual([
       {
         code: 'pragma-unused',
-        message: '`rdy-ignore-next-line` pragma at src/a.ts:3 declined no finding in this run.',
+        message: '`rdy-ignore-next-line` pragma at src/a.ts:3 suppressed no finding in this run.',
         remedy: REMEDY,
       },
     ]);
     expect(stderr).toBe(
-      `Warning: \`rdy-ignore-next-line\` pragma at src/a.ts:3 declined no finding in this run. ${REMEDY}\n`,
+      `Warning: \`rdy-ignore-next-line\` pragma at src/a.ts:3 suppressed no finding in this run. ${REMEDY}\n`,
     );
   });
 
@@ -75,7 +75,7 @@ describe(warnOnUnusedPragmas, () => {
     const { warnings } = warn(scanning([temp.resolve('src/a.ts')]));
 
     expect(warnings.map((warning) => warning.message)).toStrictEqual([
-      '`rdy-ignore` pragma at src/a.ts:1 declined no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
     ]);
   });
 
@@ -96,9 +96,9 @@ describe(warnOnUnusedPragmas, () => {
     const { warnings } = warn(scanning(['src/b.ts', 'src/a.ts']));
 
     expect(warnings.map((warning) => warning.message)).toStrictEqual([
-      '`rdy-ignore` pragma at src/a.ts:1 declined no finding in this run.',
-      '`rdy-ignore` pragma at src/a.ts:3 declined no finding in this run.',
-      '`rdy-ignore` pragma at src/b.ts:1 declined no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:3 suppressed no finding in this run.',
+      '`rdy-ignore` pragma at src/b.ts:1 suppressed no finding in this run.',
     ]);
   });
 

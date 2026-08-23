@@ -67,7 +67,7 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
 function toWarning(pragma: UnusedPragma): RaisedWarning {
   return {
     code: 'pragma-unused',
-    message: `\`${pragma.token}\` pragma at ${pragma.displayPath}:${pragma.line} declined no finding in this run.`,
+    message: `\`${pragma.token}\` pragma at ${pragma.displayPath}:${pragma.line} suppressed no finding in this run.`,
     remedy: 'Remove the pragma, or run the kit whose check it was written for.',
   };
 }
