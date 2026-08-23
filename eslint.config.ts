@@ -108,6 +108,7 @@ const config = defineConfig([
       'packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts',
       'packages/readyup/src/installed-packages/__tests__/collectKitPackageGroups.unit.test.ts',
       'packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.unit.test.ts',
+      'packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.workspaces.unit.test.ts',
       'packages/readyup/src/list/__tests__/listCommand.packages.unit.test.ts',
       'packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts',
       'packages/readyup/src/list/__tests__/listCommand.recursivePackages.unit.test.ts',
