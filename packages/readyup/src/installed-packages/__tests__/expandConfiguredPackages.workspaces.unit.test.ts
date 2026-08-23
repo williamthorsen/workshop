@@ -26,7 +26,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
     ]);
   });
 
-  it('expands a private workspace, which publication to a registry is what `private` withholds', ({ temp }) => {
+  it('expands a private workspace, since `private` withholds publication rather than discovery', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
     writeKitPackage(temp, 'packages/sealed', { name: 'sealed', private: true, version: '1.2.0' }, 'default');
 

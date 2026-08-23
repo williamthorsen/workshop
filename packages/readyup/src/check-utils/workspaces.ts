@@ -53,7 +53,7 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
  * ambient answer is the one a kit author wants.
  */
 export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {
-  // Resolved before it keys the memo, so a relative path and its absolute form share one discovery.
+  // Resolve before keying the memo, so a relative path and its absolute form share one discovery.
   const rootDir = resolve(dir);
 
   let workspaces = workspacesByDir.get(rootDir);

@@ -1086,7 +1086,7 @@ A listed package that is absent, or that publishes no kits at all, fails the run
 
 Where `node_modules` misses, a configured name matching one of the project's own workspaces resolves to that workspace's directory, and its kits are read from there as for any installed package. A monorepo therefore runs its own packages' kits over itself without declaring a dependency on them purely to make them findable. The workspace matches by the `name` its manifest declares, `private: true` included, and resolution is anchored to the directory whose config named the package, so a `--recursive` sweep reads each project's own workspaces.
 
-Two limitations follow from resolving through `node_modules`, and neither reaches a workspace, which never resolves through it. A package that is not a workspace must be a **direct** dependency: a strict pnpm layout links nothing else into the project, so a transitive package is genuinely unreachable. And Yarn Plug'n'Play keeps no `node_modules` on disk, so package sources do not resolve under it.
+Two limitations follow from resolving through `node_modules`, and neither can withhold a workspace, which the fallback reaches wherever the walk misses. A package that is not a workspace must be a **direct** dependency: a strict pnpm layout links nothing else into the project, so a transitive package is genuinely unreachable. And Yarn Plug'n'Play keeps no `node_modules` on disk, so package sources do not resolve under it.
 
 A published version other than the installed one is not yet reachable through `npm:` -- naming one says so. Use `--url` with the published address in the meantime:
 
