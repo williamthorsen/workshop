@@ -1,11 +1,14 @@
 /**
- * Matches either ignore pragma, capturing the `-next-line` suffix that moves what it covers to the following line.
+ * Returns a matcher for either ignore pragma, capturing the `-next-line` suffix that moves what it covers to the
+ * following line.
  *
  * Both sides are bounded against a word character or a hyphen, so `rdy-ignored` and `rdy-ignore-nextline` are words
  * of their own rather than pragmas, while a token a block comment closes against without a space is a pragma.
  *
- * Shared by the two readers of a pragma: the one deciding whether a source declines a finding, and the one listing
- * the sites a run reports as having declined nothing. Both recognize the same token, and differ only in what they
- * require of the text around it.
+ * A fresh matcher per scan, because a global regular expression carries a `lastIndex` its readers all share: one
+ * `test` or `exec` anywhere would leave it set, and every later `matchAll` would skip the text before that offset
+ * and answer that a pragma declining a finding is not there.
  */
-export const IGNORE_PRAGMA = /(?<![\w-])rdy-ignore(-next-line)?(?![\w-])/g;
+export function createIgnorePragmaMatcher(): RegExp {
+  return /(?<![\w-])rdy-ignore(-next-line)?(?![\w-])/g;
+}

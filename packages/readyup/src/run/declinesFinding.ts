@@ -1,4 +1,4 @@
-import { IGNORE_PRAGMA } from './pragma-token.ts';
+import { createIgnorePragmaMatcher } from './pragma-token.ts';
 
 /** Matches one check id at the head of a pragma's tail, with the whitespace leading up to it. */
 const LEADING_CHECK_ID = /^[ \t]*[A-Za-z0-9@][\w@./-]*/;
@@ -33,7 +33,7 @@ export function declinesFinding(lines: readonly string[], line: number, checkIds
 function carriesPragma(line: string | undefined, scope: 'line' | 'next-line', checkIds: readonly string[]): boolean {
   if (line === undefined) return false;
 
-  for (const match of line.matchAll(IGNORE_PRAGMA)) {
+  for (const match of line.matchAll(createIgnorePragmaMatcher())) {
     const covered = match[1] === undefined ? 'line' : 'next-line';
     if (covered !== scope) continue;
 

@@ -1,6 +1,6 @@
 import { blankComments } from '../portable/blankNonCode.ts';
 import { getLineAtOffset } from '../portable/getLineAtOffset.ts';
-import { IGNORE_PRAGMA } from './pragma-token.ts';
+import { createIgnorePragmaMatcher } from './pragma-token.ts';
 
 /** One pragma a source carries, and the line it covers. */
 export interface PragmaSite {
@@ -16,6 +16,11 @@ export interface PragmaSite {
 
 /** Characters a comment may hold between its opening delimiter and a pragma anchored to it. */
 const ANCHOR_GAP = /[ \t\r\n*]/;
+
+/** Reports whether a path names a source whose pragmas this module recognizes. */
+export function isJsFamilyPath(path: string): boolean {
+  return /\.[cm]?[jt]sx?$/.test(path);
+}
 
 /**
  * Returns the pragmas a source anchors to a comment's opening delimiter.
@@ -35,7 +40,7 @@ export function listPragmaSites(text: string): readonly PragmaSite[] {
   const blanked = blankComments(text);
   const sites: PragmaSite[] = [];
 
-  for (const match of text.matchAll(IGNORE_PRAGMA)) {
+  for (const match of text.matchAll(createIgnorePragmaMatcher())) {
     if (!isCommentAnchored(text, blanked, match.index)) continue;
 
     const line = getLineAtOffset(text, match.index);
@@ -43,11 +48,6 @@ export function listPragmaSites(text: string): readonly PragmaSite[] {
   }
 
   return sites;
-}
-
-/** Reports whether a path names a source whose pragmas this module recognizes. */
-export function isJsFamilyPath(path: string): boolean {
-  return /\.[cm]?[jt]sx?$/.test(path);
 }
 
 // region | Helpers

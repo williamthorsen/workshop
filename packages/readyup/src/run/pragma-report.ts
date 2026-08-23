@@ -50,10 +50,11 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   for (const scannedPath of ledger.scannedPaths()) {
     if (!isJsFamilyPath(scannedPath)) continue;
 
-    const text = readSourceText(scannedPath);
+    // Read by the path a sweep read it under, so the sweep's cached text is what the scan reads.
+    const displayPath = path.relative(process.cwd(), scannedPath);
+    const text = readSourceText(displayPath);
     if (text === undefined) continue;
 
-    const displayPath = path.relative(process.cwd(), scannedPath);
     for (const site of listPragmaSites(text)) {
       if (!ledger.hasDeclined(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
     }

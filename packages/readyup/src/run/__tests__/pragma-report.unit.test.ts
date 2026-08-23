@@ -69,6 +69,16 @@ describe(warnOnUnusedPragmas, () => {
     expect(warn(ledger).warnings).toStrictEqual([]);
   });
 
+  it('reads and prints an examined path a check declared in absolute form', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
+
+    const { warnings } = warn(scanning([temp.resolve('src/a.ts')]));
+
+    expect(warnings.map((warning) => warning.message)).toStrictEqual([
+      '`rdy-ignore` pragma at src/a.ts:1 declined no finding in this run.',
+    ]);
+  });
+
   it('passes over an examined path outside the JS family', ({ temp }) => {
     temp.write('docs/guide.md', ['<!-- rdy-ignore -->', ''].join('\n'));
 
