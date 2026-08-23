@@ -1370,8 +1370,6 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and returns them as a `FindingOutcome` for the runner to decline, render, and count. The runner names each reported finding as `symbol (path:line)`, or `path:line` where it declares no symbol, and derives the fraction from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
-Pass `sources` -- the sweep the check read -- and the outcome carries their paths as `scanned`, which is the evidence the [`pragma-unused` advisory](#advisory-warnings) rests on. A path the `ownImplementation` exemption dropped every finding from is listed as any other, the file having been examined either way. Omit it and the check declares no sweep, which is a different answer from declaring an empty one.
-
 Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A file qualifies by sitting inside a workspace whose `package.json` names the package and exporting one of the named exports, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is file-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off; a second file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
 
 The [`rdy-ignore` pragma](#declining-a-finding) is honored by the runner rather than here, which is the layer holding both the check and the provenance a pragma naming that check is matched against. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own. Give the check an `id` and a consumer can decline its findings by name.
@@ -1400,7 +1398,6 @@ const check = {
       findings,
       ownImplementation: { ...usage, sources },
       shouldReport: (finding) => finding.kind === 'clone',
-      sources,
     });
   },
 };

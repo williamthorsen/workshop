@@ -1,6 +1,5 @@
 import type { FindingOutcome, OutcomeFinding } from '../../kits/types.ts';
 import { definesOwnImplementation, type OwnImplementation } from './definesOwnImplementation.ts';
-import type { ProjectSource } from './readTrackedSources.ts';
 
 /** One located site a check names. */
 export interface Finding {
@@ -16,14 +15,6 @@ export interface BuildFindingReportOptions<F extends Finding> {
   adoptedCount: number;
   /** The package the check is about, whose own implementation the report passes over. */
   ownImplementation?: OwnImplementation | undefined;
-
-  /**
-   * The sources the check swept, which the outcome reports as the paths it examined.
-   *
-   * A path the own-implementation exemption dropped findings from was still examined, so it is declared
-   * here as any other. Omitted, the outcome declares no sweep at all.
-   */
-  sources?: readonly ProjectSource[] | undefined;
 }
 
 /**
@@ -39,14 +30,10 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * in every other repo it runs in.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
-  const { adoptedCount, findings, ownImplementation, shouldReport, sources } = options;
+  const { adoptedCount, findings, ownImplementation, shouldReport } = options;
 
   const retained = excludeOwnImplementation(findings, ownImplementation);
-  return {
-    adoptedCount,
-    findings: retained.map((finding) => toOutcomeFinding(finding, shouldReport(finding))),
-    ...(sources !== undefined && { scanned: sources.map((source) => source.path) }),
-  };
+  return { adoptedCount, findings: retained.map((finding) => toOutcomeFinding(finding, shouldReport(finding))) };
 }
 
 // region | Helpers
