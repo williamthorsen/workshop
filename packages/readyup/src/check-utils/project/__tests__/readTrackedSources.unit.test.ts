@@ -37,6 +37,8 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 import { readSourceText, readTrackedSources } from '../readTrackedSources.ts';
+import { withSweepRecorder } from '../sweepRecorder.ts';
+import { createRecorder } from '../test-utils/sweep-recording.ts';
 
 const it = test.extend(
   'temp',
@@ -138,6 +140,50 @@ describe(readTrackedSources, () => {
 
     await expect(readTrackedSources()).resolves.toBeUndefined();
   });
+
+  it('reports the paths it returns to the recorder in scope', async ({ temp }) => {
+    temp.write('src/kept.ts', 'kept');
+    temp.write('src/rejected.ts', 'rejected');
+    trackPaths('src/kept.ts', 'src/rejected.ts');
+    const { recorder, scanned } = createRecorder();
+
+    await withSweepRecorder(recorder, () => readTrackedSources((path) => path === 'src/kept.ts'));
+
+    expect(scanned).toStrictEqual([['src/kept.ts']]);
+  });
+
+  it('reports a path it could not read to nobody, that being a file no check examined', async ({ temp }) => {
+    temp.write('src/present.ts', 'present');
+    trackPaths('src/deleted.ts', 'src/present.ts');
+    const { recorder, scanned } = createRecorder();
+
+    await withSweepRecorder(recorder, () => readTrackedSources());
+
+    expect(scanned).toStrictEqual([['src/present.ts']]);
+  });
+
+  it('reports a second sweep, which a check repeating one has examined the files of again', async ({ temp }) => {
+    temp.write('src/kept.ts', 'kept');
+    trackPaths('src/kept.ts');
+    const { recorder, scanned } = createRecorder();
+
+    await withSweepRecorder(recorder, async () => {
+      await readTrackedSources();
+      await readTrackedSources();
+    });
+
+    expect(scanned).toStrictEqual([['src/kept.ts'], ['src/kept.ts']]);
+  });
+
+  it('reports nothing outside a git working tree', async ({ temp }) => {
+    temp.write('src/present.ts', 'present');
+    execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
+    const { recorder, scanned } = createRecorder();
+
+    await withSweepRecorder(recorder, () => readTrackedSources());
+
+    expect(scanned).toStrictEqual([]);
+  });
 });
 
 describe(readSourceText, () => {
@@ -173,6 +219,15 @@ describe(readSourceText, () => {
     expect(readSourceText('src/absent.ts')).toBeUndefined();
     expect(readSourceText('src/absent.ts')).toBeUndefined();
     expect(countProbes('src/absent.ts')).toBe(1);
+  });
+
+  it('reports nothing to the recorder in scope, a single read being no sweep', ({ temp }) => {
+    temp.write('src/read.ts', 'read');
+    const { recorder, scanned } = createRecorder();
+
+    withSweepRecorder(recorder, () => readSourceText('src/read.ts'));
+
+    expect(scanned).toStrictEqual([]);
   });
 });
 

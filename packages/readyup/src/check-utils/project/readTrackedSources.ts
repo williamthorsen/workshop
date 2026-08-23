@@ -1,5 +1,6 @@
 import { readFile } from '../filesystem.ts';
 import { listTrackedFiles } from './listTrackedFiles.ts';
+import { recordSweep } from './sweepRecorder.ts';
 
 /** Selects the tracked paths a sweep reads. */
 export type PathFilter = (path: string) => boolean;
@@ -41,6 +42,9 @@ export function readSourceText(path: string): string | undefined {
  * `cwd` for the life of the process, so a file two kits both select costs one read between them, and each pays only
  * for the remainder the other did not ask for. A path that cannot be read as text is omitted and remembered as
  * unreadable, so a later filter selecting it probes the filesystem no second time.
+ *
+ * The paths returned are reported to the sweep recorder the runner has in scope, which is the evidence the
+ * unused-pragma report rests on. A check reading the project this way declares nothing to have its sweep recorded.
  */
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
   const tracked = await listTrackedFiles();
@@ -57,6 +61,7 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
     }
   }
 
+  recordSweep(sources.map((source) => source.path));
   return sources;
 }
 
