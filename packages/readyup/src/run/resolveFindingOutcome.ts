@@ -10,8 +10,9 @@ import type { PragmaLedger } from './PragmaLedger.ts';
  * the reader can compare across them, and a declined site leaves both halves of it. `adoptedCount` is the
  * numerator; omitted, the outcome carries no progress at all.
  *
- * A ledger, where one is passed, is told what the check examined and which sites its pragmas declined. This is
- * the one layer that sees both, so a caller wanting the run to hold no record of a check passes none.
+ * A ledger, where one is passed, is told which sites the check's pragmas declined, and the paths it declared in
+ * `scanned`. A sweep read through `readTrackedSources` reports itself, so what arrives here is the reading a
+ * check did some other way. A caller wanting the run to hold no record of a check passes none.
  */
 export function resolveFindingOutcome(
   outcome: FindingOutcome,

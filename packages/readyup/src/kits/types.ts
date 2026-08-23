@@ -149,10 +149,11 @@ export interface FindingOutcome {
   adoptedCount?: number | undefined;
 
   /**
-   * The paths this check examined, whether or not any of them yielded a finding.
+   * The paths this check examined and read no other way, whether or not any of them yielded a finding.
    *
-   * The check is the only layer that knows its own sweep, and the run reports an unused pragma only in a
-   * file some check declared here. Omitted, the check contributes no evidence and its files stay unreported.
+   * A sweep read through `readTrackedSources` is recorded on its own, so this is the escape hatch for a check
+   * reading files another way: shelling out to a tool, or reaching for `fs` directly. The run reports an
+   * unused pragma only in a file some check examined, by either route.
    */
   scanned?: readonly string[] | undefined;
 }

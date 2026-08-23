@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
+import { withSweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type {
   FailedResult,
@@ -39,6 +40,10 @@ export interface RunRdyOptions {
    *
    * One ledger spans every kit of an invocation, so a file two kits both examined is reported once. A run
    * passing none records nothing and reports nothing.
+   *
+   * It is in scope around each check's `skip` and `check` alike, so a sweep read through `readTrackedSources`
+   * is recorded wherever the check makes it. A kit memoizing one sweep across its checks makes it in the first
+   * `skip` that runs, which a scope covering `check` alone would miss.
    */
   pragmaLedger?: PragmaLedger | undefined;
 }
@@ -191,8 +196,9 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     const start = performance.now();
     try {
       // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their
-      // author wrote, whatever the declared type promised.
-      const skipResult: unknown = await check.skip();
+      // author wrote, whatever the declared type promised. Called optionally because the guard above does not
+      // narrow inside the closure, and called on `check` so an accessor-backed `skip` keeps its receiver.
+      const skipResult: unknown = await withSweepRecorder(run.pragmaLedger, () => check.skip?.());
       if (typeof skipResult === 'string') {
         const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
         run.pendingDiagnoses.push({ check, result });
@@ -217,7 +223,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
 
   const start = performance.now();
   try {
-    const raw: unknown = await check.check();
+    const raw: unknown = await withSweepRecorder(run.pragmaLedger, () => check.check());
     const durationMs = performance.now() - start;
     // Findings become an outcome before anything reads a verdict off them, so the two structured arms are
     // one branch below.
