@@ -2,6 +2,7 @@ import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { CheckOutcome, FindingOutcome, RdyCheck } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import type { PragmaLedger } from './PragmaLedger.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
 import { resolveFindingOutcome } from './resolveFindingOutcome.ts';
 
@@ -37,9 +38,17 @@ export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
  * Which pragmas decline a finding is settled against the check's ids, so the resolution belongs to the run
  * rather than to the check. The runner and the skip diagnosis both read a verdict off the result, and one
  * resolution between them is what keeps a diagnosed skip agreeing with the run it stands in for.
+ *
+ * A ledger reaches the resolution where the caller keeps one, which is how a run records what its checks
+ * examined and declined while a diagnosis, passing none, leaves no trace of a check that did not run.
  */
-export function resolveCheckReturn(raw: unknown, check: RdyCheck, provenance: KitProvenance | undefined): unknown {
+export function resolveCheckReturn(
+  raw: unknown,
+  check: RdyCheck,
+  provenance: KitProvenance | undefined,
+  ledger?: PragmaLedger,
+): unknown {
   if (!isFindingOutcome(raw)) return raw;
 
-  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? []);
+  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger);
 }

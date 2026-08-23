@@ -4,6 +4,7 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, test } from 'vitest';
 
 import type { OutcomeFinding } from '../../kits/types.ts';
+import { createPragmaLedger } from '../PragmaLedger.ts';
 import { resolveFindingOutcome } from '../resolveFindingOutcome.ts';
 
 const CLONE: OutcomeFinding = { line: 12, path: 'src/errors.ts', reported: true, symbol: 'describeError' };
@@ -120,6 +121,51 @@ describe(resolveFindingOutcome, () => {
         passedCount: 1,
         type: 'fraction',
       });
+    });
+  });
+
+  describe('given a ledger', () => {
+    it('records the paths the outcome declares as examined', ({ temp }) => {
+      const ledger = createPragmaLedger();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [], scanned: ['src/quiet.ts'] }, [], ledger);
+
+      expect(ledger.scannedPaths()).toStrictEqual([temp.resolve('src/quiet.ts')]);
+    });
+
+    it('records an examined path whose findings all survived', () => {
+      const ledger = createPragmaLedger();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE], scanned: ['src/errors.ts'] }, [], ledger);
+
+      expect(ledger.scannedPaths()).toHaveLength(1);
+    });
+
+    it('records nothing examined where the outcome declares no sweep', () => {
+      const ledger = createPragmaLedger();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, [], ledger);
+
+      expect(ledger.scannedPaths()).toStrictEqual([]);
+    });
+
+    it('records the site of every finding a pragma declined', ({ temp }) => {
+      writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore');
+      const ledger = createPragmaLedger();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE, INLINE] }, [], ledger);
+
+      expect(ledger.hasDeclined('src/errors.ts', 12)).toBe(true);
+      expect(ledger.hasDeclined('src/report.ts', 44)).toBe(false);
+    });
+
+    it('records no decline where the pragma names another check', ({ temp }) => {
+      writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore other/check');
+      const ledger = createPragmaLedger();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, NAMED, ledger);
+
+      expect(ledger.hasDeclined('src/errors.ts', 12)).toBe(false);
     });
   });
 });

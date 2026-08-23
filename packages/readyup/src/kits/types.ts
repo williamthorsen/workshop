@@ -147,6 +147,14 @@ export interface FindingOutcome {
 
   /** Sites already settled, the numerator of the fraction the runner renders. Omitted, it renders none. */
   adoptedCount?: number | undefined;
+
+  /**
+   * The paths this check examined, whether or not any of them yielded a finding.
+   *
+   * The check is the only layer that knows its own sweep, and the run reports an unused pragma only in a
+   * file some check declared here. Omitted, the check contributes no evidence and its files stay unreported.
+   */
+  scanned?: readonly string[] | undefined;
 }
 
 /** The value a check function may return (or resolve to). */

@@ -231,8 +231,11 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 | -------------- | ------------------ | ----------------------------------------------------------------------- |
 | `findings`     | `OutcomeFinding[]` | Every located site, as `{ path, line, symbol?, reported }`              |
 | `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none |
+| `scanned`      | `string[]`         | The paths this check examined; omitted, it declares no sweep            |
 
 `reported` marks the sites this check names; the rest count toward the fraction and do nothing else. The runner drops the sites a [pragma declines](#declining-a-finding), renders the reported survivors as the `detail`, reads `ok` off whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](#project-sources).
+
+`scanned` lists the files the check looked at, whether or not any of them yielded a finding. The check is the only layer that knows its own sweep, and declaring it is what lets the run report a [pragma that declined nothing](#advisory-warnings); a check declaring none contributes no evidence and its files stay unreported.
 
 ### Naming checks
 
@@ -670,6 +673,8 @@ A declined finding leaves the audit rather than being downgraded: out of the det
 
 The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string declines a finding sited on it.
 
+A pragma that outlives the finding it was written for is reported under [`pragma-unused`](#advisory-warnings), so a site rewritten or a check retired leaves a comment the next run names rather than dead text nobody notices.
+
 ### Advisory warnings
 
 `rdy run` raises advisories about the run it is performing. Warnings go to stderr in both modes and appear under `warnings` in JSON; none affects the exit code.
@@ -692,6 +697,18 @@ Two more come from [`--diagnose`](#run-options), and are raised only where that 
 | `skip-masks-pass`        | A check its own `skip` turned off would have passed had it run     |
 
 These read the checks rather than the manifest, so none of the silencing conditions above reaches them: they apply wherever the kit came from, `--url`, `--from`, `--packages`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
+
+One more reads the sources the run's checks examined and reports the pragmas among them that declined nothing.
+
+| Code            | Raised when                                                                    |
+| --------------- | ------------------------------------------------------------------------------ |
+| `pragma-unused` | An [`rdy-ignore` pragma](#declining-a-finding) declined no finding in this run |
+
+The evidence is what the checks declared. A pragma is reported only where some check named the file holding it in [`scanned`](#checks) and no check of the run declined a finding on the line the pragma covers; a pragma in a file no check examined is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form findings print in. One ledger spans the invocation, so a file two kits both examined is scanned once. A diagnosed check contributes neither examined paths nor declines, the run having turned it off.
+
+Recognition for the report is stricter than for declining. A token is a site when it sits in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Declining is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never license a finding.
+
+Two limits follow from that. Recognition reads JavaScript-family syntax, so a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported where another check examined its file: the run holds no evidence that check would have declined anything.
 
 ### Kit import compatibility
 

@@ -2,19 +2,21 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
-import type { FailedResult, PassedResult, Severity } from '../../kits/types.ts';
+import type { FailedResult, PassedResult, RdyReport, Severity } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
+import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn());
+const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
 const mockReportRdy = vi.hoisted(() => vi.fn());
 const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) => string>());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
+const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -51,6 +53,11 @@ vi.mock(import('../kit-staleness.ts'), () => ({
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
+// Mocked so no case reads the sources the ledger names; what the report itself writes is covered by its own tests.
+vi.mock(import('../pragma-report.ts'), () => ({
+  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+}));
+
 import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
@@ -70,6 +77,7 @@ describe(runHumanMode, () => {
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue(undefined);
     mockWarnOnKitStaleness.mockReturnValue([]);
+    mockWarnOnUnusedPragmas.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -82,6 +90,7 @@ describe(runHumanMode, () => {
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
     mockWarnOnKitStaleness.mockReset();
+    mockWarnOnUnusedPragmas.mockReset();
   });
 
   it('says the run selected no kits rather than printing nothing', async () => {
@@ -561,6 +570,48 @@ describe(runHumanMode, () => {
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
       expect(exitCode).toBe(0);
+    });
+  });
+
+  describe('unused-pragma advisories', () => {
+    /** Builds two entries whose names and compiled paths differ, so a per-kit ledger would show as two. */
+    function twoKitEntries() {
+      return [
+        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
+        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
+      ];
+    }
+
+    it('reports once over one ledger shared by every kit of the invocation', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runHuman(twoKitEntries());
+
+      const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
+      expect(ledgers).toHaveLength(2);
+      expect(new Set(ledgers).size).toBe(1);
+      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+    });
+
+    it('reports after the summary table, the last block a pragma’s file may be named in', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runHuman(twoKitEntries());
+
+      const [summaryOrder] = mockFormatCombinedSummary.mock.invocationCallOrder;
+      const [reportOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
+      expect(summaryOrder).toBeLessThan(reportOrder ?? 0);
+    });
+
+    it('reports over the kits that ran where another failed to load', async () => {
+      mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
+
+      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
+
+      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledTimes(1);
+      expect(exitCode).toBe(2);
     });
   });
 

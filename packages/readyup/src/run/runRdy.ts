@@ -19,6 +19,7 @@ import { describeValue } from '../portable/describe-value.ts';
 import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
+import type { PragmaLedger } from './PragmaLedger.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
 import { diagnoseSkips } from './skip-diagnosis.ts';
 
@@ -32,6 +33,14 @@ export interface RunRdyOptions {
 
   /** Where the kit came from, which is what namespaces its checks' ids. */
   provenance?: KitProvenance | undefined;
+
+  /**
+   * The invocation's record of what its checks examined and declined, which the unused-pragma report reads.
+   *
+   * One ledger spans every kit of an invocation, so a file two kits both examined is reported once. A run
+   * passing none records nothing and reports nothing.
+   */
+  pragmaLedger?: PragmaLedger | undefined;
 }
 
 /** A check whose `skip` fired, paired with the result standing in for it. */
@@ -43,6 +52,9 @@ interface PendingDiagnosis {
 /** What every step of a checklist walk carries with it. */
 interface RunContext {
   defaultSeverity: Severity;
+
+  /** The invocation's record of what its checks examined and declined, absent where nothing reads one. */
+  pragmaLedger: PragmaLedger | undefined;
 
   /** Where the kit came from, read for every check's ids and for nothing else. */
   provenance: KitProvenance | undefined;
@@ -209,7 +221,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     const durationMs = performance.now() - start;
     // Findings become an outcome before anything reads a verdict off them, so the two structured arms are
     // one branch below.
-    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance);
+    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance, run.pragmaLedger);
     let result: PassedResult | FailedResult;
     if (typeof outcome === 'boolean') {
       result = outcome
@@ -393,7 +405,12 @@ export async function runRdy(
   const start = performance.now();
   const results: RdyResult[] = [];
 
-  const run: RunContext = { defaultSeverity, pendingDiagnoses: [], provenance: options.provenance };
+  const run: RunContext = {
+    defaultSeverity,
+    pendingDiagnoses: [],
+    pragmaLedger: options.pragmaLedger,
+    provenance: options.provenance,
+  };
 
   const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
 
