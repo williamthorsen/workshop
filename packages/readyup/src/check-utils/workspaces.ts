@@ -9,7 +9,7 @@ import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
 /** A monorepo workspace, or the single workspace of a single-workspace repo. */
 export interface Workspace {
-  /** Workspace directory, relative to `cwd`. `'.'` for a single-workspace repo. */
+  /** Workspace directory, relative to the directory discovery was anchored to. `'.'` for a single-workspace repo. */
   readonly dir: string;
   /** Absolute filesystem path to the workspace directory. */
   readonly absolutePath: string;
@@ -29,26 +29,38 @@ export interface DiscoverWorkspacesOptions {
 
 type WorkspacePatternSource = 'pnpm-workspace.yaml' | 'package.json';
 
-/** Discovered workspaces by the `cwd` they were resolved against, held for the life of the process. */
-const workspacesByCwd = new Map<string, Workspace[]>();
+/** Discovered workspaces by the directory they were resolved against, held for the life of the process. */
+const workspacesByDir = new Map<string, Workspace[]>();
 
 /**
  * Discovers the workspaces of the current repo.
  * Detects pnpm (`pnpm-workspace.yaml`), then npm/yarn (`package.json.workspaces`),
  * and falls back to a single-workspace repo using the root `package.json`.
  *
- * Memoized per `cwd` for the life of the process: repeated calls in one run share a single directory walk
+ * Memoized per directory for the life of the process: repeated calls in one run share a single directory walk
  * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
  * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
  */
 export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspace[] {
-  const cwd = process.cwd();
+  return discoverWorkspacesAt(process.cwd(), options);
+}
 
-  let workspaces = workspacesByCwd.get(cwd);
+/**
+ * Discovers the workspaces of the repo rooted at `dir`, which a relative path names against `cwd`.
+ *
+ * The directory-taking half of `discoverWorkspaces`, for a caller resolving against a project other than the
+ * one it is running in. It stays out of `check-utils`'s exports: a kit runs in the project it checks, so the
+ * ambient answer is the one a kit author wants.
+ */
+export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {
+  // Resolved before it keys the memo, so a relative path and its absolute form share one discovery.
+  const rootDir = resolve(dir);
+
+  let workspaces = workspacesByDir.get(rootDir);
   if (workspaces === undefined) {
     // Build before storing, so a discovery that throws leaves nothing behind and the next call retries it.
-    workspaces = buildWorkspaces(cwd);
-    workspacesByCwd.set(cwd, workspaces);
+    workspaces = buildWorkspaces(rootDir);
+    workspacesByDir.set(rootDir, workspaces);
   }
 
   return applyFilter(workspaces, options?.filter);
@@ -62,11 +74,11 @@ function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions[
   return workspaces.filter(filter);
 }
 
-/** Builds the unfiltered workspace list for the repo at `cwd`. */
-function buildWorkspaces(cwd: string): Workspace[] {
-  const rootPackageJsonPath = join(cwd, 'package.json');
+/** Builds the unfiltered workspace list for the repo at `rootDir`. */
+function buildWorkspaces(rootDir: string): Workspace[] {
+  const rootPackageJsonPath = join(rootDir, 'package.json');
 
-  const patternResult = resolveWorkspacePatterns(cwd);
+  const patternResult = resolveWorkspacePatterns(rootDir);
 
   if (patternResult === null) {
     // Single-workspace fallback uses the root package.json, which MUST exist.
@@ -74,7 +86,7 @@ function buildWorkspaces(cwd: string): Workspace[] {
     if (rootPackageJson === undefined) {
       throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
     }
-    return [buildWorkspaceFromPackageJson('.', cwd, rootPackageJson)];
+    return [buildWorkspaceFromPackageJson('.', rootDir, rootPackageJson)];
   }
 
   // Monorepo path: still require a root package.json (both pnpm and npm workspaces do).
@@ -84,10 +96,10 @@ function buildWorkspaces(cwd: string): Workspace[] {
 
   // `matchedDirs` is already sorted ascending by `expandPatterns`, and each workspace's
   // `dir` equals its entry in that list, so the result is sorted without an extra pass.
-  const matchedDirs = expandPatterns(cwd, patternResult.patterns, patternResult.source);
+  const matchedDirs = expandPatterns(rootDir, patternResult.patterns, patternResult.source);
   const workspaces: Workspace[] = [];
   for (const relDir of matchedDirs) {
-    const workspace = buildWorkspace(cwd, relDir);
+    const workspace = buildWorkspace(rootDir, relDir);
     if (workspace !== undefined) {
       workspaces.push(workspace);
     }
@@ -97,11 +109,11 @@ function buildWorkspaces(cwd: string): Workspace[] {
 }
 
 /**
- * Resolves the workspace pattern list for the repo at `cwd`.
+ * Resolves the workspace pattern list for the repo at `rootDir`.
  * Returns `null` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
  */
-function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: WorkspacePatternSource } | null {
-  const pnpmWorkspacePath = join(cwd, 'pnpm-workspace.yaml');
+function resolveWorkspacePatterns(rootDir: string): { patterns: string[]; source: WorkspacePatternSource } | null {
+  const pnpmWorkspacePath = join(rootDir, 'pnpm-workspace.yaml');
   if (existsSync(pnpmWorkspacePath)) {
     const patterns = readPnpmWorkspacePackages(pnpmWorkspacePath);
     if (patterns !== null) {
@@ -110,7 +122,7 @@ function resolveWorkspacePatterns(cwd: string): { patterns: string[]; source: Wo
     // `packages` key absent — fall through to npm/single detection.
   }
 
-  const rootPackageJson = readJsonFile(join(cwd, 'package.json'));
+  const rootPackageJson = readJsonFile(join(rootDir, 'package.json'));
   if (rootPackageJson !== undefined) {
     const workspaces = rootPackageJson['workspaces'];
     const npmPatterns = extractNpmWorkspacePatterns(workspaces);
@@ -147,7 +159,7 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
  * Each pattern is rewritten to name the `package.json` inside the directories it matches, so
  * `walkDirectories` yields those directories.
  */
-function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatternSource): string[] {
+function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePatternSource): string[] {
   if (patterns.length === 0) return [];
 
   // Check for negation patterns up front — the pnpm reader already rejects these in YAML,
@@ -165,7 +177,7 @@ function expandPatterns(cwd: string, patterns: string[], source: WorkspacePatter
   const match = patterns.map((pattern) => `${normalizePattern(pattern)}/package.json`);
 
   // The root is not a workspace, and a pattern of `**` translates to a glob matching its own manifest.
-  return walkDirectories({ root: cwd, match }).filter((relDir) => relDir !== '.');
+  return walkDirectories({ root: rootDir, match }).filter((relDir) => relDir !== '.');
 }
 
 /**
@@ -178,8 +190,8 @@ function normalizePattern(pattern: string): string {
 }
 
 /** Builds a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */
-function buildWorkspace(cwd: string, relDir: string): Workspace | undefined {
-  const absoluteDir = resolve(cwd, relDir);
+function buildWorkspace(rootDir: string, relDir: string): Workspace | undefined {
+  const absoluteDir = resolve(rootDir, relDir);
   const packageJson = readJsonFile(join(absoluteDir, 'package.json'));
   if (packageJson === undefined) return undefined;
   return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
