@@ -2,6 +2,60 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.31.0 — 2026-08-23
+
+### 🎉 Features
+
+- Exempt the publishing package's own source from its adoption checks (#378)
+
+  Adds `ownImplementation` to `buildFindingReport` in `readyup/check-utils`. When a file in the package's own source exports one of that package's recommended exports, that file is no longer flagged as a candidate to use it. The exemption is file-scoped, so other files in the package are not exempt from the check.
+
+- Widen `readyup/check-utils` to absolute paths and reconcile workspace discovery's `cwd` (#379)
+
+  Widens the path readers of `readyup/check-utils` (`fileExists`, `readFile`, and `filesExist`, and every reader layered on them) to accept an absolute path, which now names the file itself. A relative path resolves against `cwd` exactly as before. An absolute path used to be appended to `cwd`, producing a path that never existed, so these readers silently returned nothing.
+
+  Reconciles the helpers behind `discoverWorkspaces` with the directory they are handed: each now reads its manifests there rather than through the ambient `cwd`.
+
+- Let a source decline a finding with an `rdy-ignore` pragma (#380)
+
+  Adds an `rdy-ignore` pragma that can be included in a comment to decline a ReadyUp finding: `rdy-ignore` covers the line it sits on; `rdy-ignore-next-line` covers the line below it. A declined finding is excluded from the report.
+
+  A pragma without an argument covers every check for the line. The pragma accepts a comma-separated list of check IDs, but narrowing is not yet implemented. A trailing `-- <reason>` is optional.
+
+- 🚨 **Breaking:** Let a pragma name the check whose finding it declines (#381)
+
+  Now supports check IDs in `rdy-ignore` comments, so that a comment can suppress a single check on a line instead of every check.
+
+  Migration: `buildFindingReport` now returns a `FindingOutcome` instead of a `CheckOutcome`. The runner turns that value into the verdict, the detail, and the fraction. A kit that returns it unchanged needs no edit.
+
+- Report a pragma that declined nothing (#384)
+
+  Adds `pragma-unused`, a warning `rdy run` prints for each `rdy-ignore` pragma that declined no finding in the run.
+
+  readyup can only warn about files it knows a check read, so `FindingOutcome` gains a `scanned` field where a check lists the paths it read. Only `.ts` and `.js` files a check reported reading are searched for dead pragmas.
+
+  No kit sets `scanned` yet, so nothing warns today. #385 will record what a check read automatically, so no kit has to declare anything.
+
+- Record a check's sweep without asking it to declare one (#387)
+
+  The sources read by a check through `readTrackedSources` are now recorded, providing an automatic way to gather the evidence needed for the `pragma-unused` warning. A check that reads files some other way declares them in `FindingOutcome.scanned`, and those paths are recorded too.
+
+### ♻️ Refactoring
+
+- Say a pragma suppresses a finding, not declines it (#388)
+
+  Renames readyup's pragma vocabulary from `decline` to `suppress` across `packages/readyup`: the `rdy-ignore` prose in the README and the kit rulebook, the run layer's identifiers and doc comments, and the `pragma-unused` warning, which had not yet been released. Where the same word described a check that skipped, in the ⚪ legend of both documents, it becomes "does not apply".
+
+### 📦 Dependencies
+
+- Upgrade the `toolbelt.*` packages and adopt `isError` (#383)
+
+  Upgrades four `@williamthorsen/toolbelt.*` packages: `errors`, `filesystem`, `packaging`, and `vitest`. `TempTree.symlink` now stores its target as given rather than rewriting it to an absolute path inside the tree, and ReadyUp's affected caller passes `tree.resolve` to keep the link it had.
+
+  ReadyUp now narrows thrown values with `isError` from `@williamthorsen/toolbelt.errors`, replacing inline `instanceof Error`. Inline error coercers have been consolidated into a common `toError` function.
+
+  Also fixes an issue where a kit throwing a value with no string rendering, such as a null-prototype object, crashed the run instead of being reported as an authoring error.
+
 ## 0.30.0 — 2026-08-19
 
 ### 🎉 Features

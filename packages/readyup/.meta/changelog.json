@@ -1,5 +1,70 @@
 [
   {
+    "version": "0.31.0",
+    "date": "2026-08-23",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Exempt the publishing package's own source from its adoption checks (#378)",
+            "body": "Adds `ownImplementation` to `buildFindingReport` in `readyup/check-utils`. When a file in the package's own source exports one of that package's recommended exports, that file is no longer flagged as a candidate to use it. The exemption is file-scoped, so other files in the package are not exempt from the check.",
+            "hash": "618b92d760092a28b283fd1edba9cde5c9a8579f"
+          },
+          {
+            "description": "Widen `readyup/check-utils` to absolute paths and reconcile workspace discovery's `cwd` (#379)",
+            "body": "Widens the path readers of `readyup/check-utils` (`fileExists`, `readFile`, and `filesExist`, and every reader layered on them) to accept an absolute path, which now names the file itself. A relative path resolves against `cwd` exactly as before. An absolute path used to be appended to `cwd`, producing a path that never existed, so these readers silently returned nothing.\n\nReconciles the helpers behind `discoverWorkspaces` with the directory they are handed: each now reads its manifests there rather than through the ambient `cwd`.",
+            "hash": "1b0ab0f69f2c6b771728b45c8c7daaf65a571018"
+          },
+          {
+            "description": "Let a source decline a finding with an `rdy-ignore` pragma (#380)",
+            "body": "Adds an `rdy-ignore` pragma that can be included in a comment to decline a ReadyUp finding: `rdy-ignore` covers the line it sits on; `rdy-ignore-next-line` covers the line below it. A declined finding is excluded from the report.\n\nA pragma without an argument covers every check for the line. The pragma accepts a comma-separated list of check IDs, but narrowing is not yet implemented. A trailing `-- <reason>` is optional.",
+            "hash": "018a3d3182530a4287bbb83c8b8f6e1cbaacc02b"
+          },
+          {
+            "description": "Let a pragma name the check whose finding it declines (#381)",
+            "body": "Now supports check IDs in `rdy-ignore` comments, so that a comment can suppress a single check on a line instead of every check.\n\nMigration: `buildFindingReport` now returns a `FindingOutcome` instead of a `CheckOutcome`. The runner turns that value into the verdict, the detail, and the fraction. A kit that returns it unchanged needs no edit.",
+            "breaking": true,
+            "hash": "899e53ae163d8cb41c5a6fb82be7dc446ad77cb9"
+          },
+          {
+            "description": "Report a pragma that declined nothing (#384)",
+            "body": "Adds `pragma-unused`, a warning `rdy run` prints for each `rdy-ignore` pragma that declined no finding in the run.\n\nreadyup can only warn about files it knows a check read, so `FindingOutcome` gains a `scanned` field where a check lists the paths it read. Only `.ts` and `.js` files a check reported reading are searched for dead pragmas.\n\nNo kit sets `scanned` yet, so nothing warns today. #385 will record what a check read automatically, so no kit has to declare anything.",
+            "hash": "685ccfbb0f50fef7e5553d987825528cc62f9355"
+          },
+          {
+            "description": "Record a check's sweep without asking it to declare one (#387)",
+            "body": "The sources read by a check through `readTrackedSources` are now recorded, providing an automatic way to gather the evidence needed for the `pragma-unused` warning. A check that reads files some other way declares them in `FindingOutcome.scanned`, and those paths are recorded too.",
+            "hash": "14b9219d50738bf18307ed128a785ab892b4d434"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Say a pragma suppresses a finding, not declines it (#388)",
+            "body": "Renames readyup's pragma vocabulary from `decline` to `suppress` across `packages/readyup`: the `rdy-ignore` prose in the README and the kit rulebook, the run layer's identifiers and doc comments, and the `pragma-unused` warning, which had not yet been released. Where the same word described a check that skipped, in the ⚪ legend of both documents, it becomes \"does not apply\".",
+            "hash": "f8e8ea1cf3070b3e6c8831e21a4419ca441e4b09"
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade the `toolbelt.*` packages and adopt `isError` (#383)",
+            "body": "Upgrades four `@williamthorsen/toolbelt.*` packages: `errors`, `filesystem`, `packaging`, and `vitest`. `TempTree.symlink` now stores its target as given rather than rewriting it to an absolute path inside the tree, and ReadyUp's affected caller passes `tree.resolve` to keep the link it had.\n\nReadyUp now narrows thrown values with `isError` from `@williamthorsen/toolbelt.errors`, replacing inline `instanceof Error`. Inline error coercers have been consolidated into a common `toError` function.\n\nAlso fixes an issue where a kit throwing a value with no string rendering, such as a null-prototype object, crashed the run instead of being reported as an authoring error.",
+            "hash": "21604a70b8b0cb9da960b491da43c66a02342c78"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.30.0",
     "date": "2026-08-19",
     "sections": [
