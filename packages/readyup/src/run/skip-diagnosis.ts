@@ -68,8 +68,8 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
  * does in the runner.
  *
  * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope the runner
- * opens around a live one, so a sweep it reads reports to nobody. A diagnosed check is one the run turned off,
- * so what it examined and what its pragmas declined are answers to a question the invocation never asked.
+ * opens around a live one, so a sweep it reads here reports to nobody. A sweep it read in its live `skip` was
+ * recorded then and stands: what this diagnosis adds is nothing, not what the check contributed while running.
  */
 async function diagnoseSkip(
   check: RdyCheck,
