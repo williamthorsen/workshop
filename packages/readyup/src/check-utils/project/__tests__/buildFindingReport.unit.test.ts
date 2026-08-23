@@ -4,7 +4,7 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, test } from 'vitest';
 
 import { buildFindingReport, type Finding } from '../buildFindingReport.ts';
-import type { OwnImplementation } from '../definesOwnImplementation.ts';
+import type { OwnImplementation } from '../listOwnImplementationSpans.ts';
 
 interface KindedFinding extends Finding {
   kind: 'clone' | 'inline';
@@ -14,8 +14,21 @@ const CLONE: KindedFinding = { kind: 'clone', line: 12, path: 'src/errors.ts', s
 const INLINE: KindedFinding = { kind: 'inline', line: 44, path: 'src/report.ts' };
 
 const IMPLEMENTATION_PATH = 'packages/errors/src/describeError.ts';
-const OWN_CLONE: KindedFinding = { kind: 'clone', line: 8, path: IMPLEMENTATION_PATH, symbol: 'describeError' };
-const OWN_INLINE: KindedFinding = { kind: 'inline', line: 20, path: IMPLEMENTATION_PATH };
+// `describeError` owns lines 1 to 5, and `toDetail`, which the file does not export, owns 6 to 8.
+const IMPLEMENTATION_TEXT = [
+  'export function describeError(error: unknown) {',
+  '  const prefix = String(error);',
+  '  return prefix;',
+  '}',
+  '',
+  'function toDetail(error: unknown) {',
+  '  return String(error);',
+  '}',
+  '',
+].join('\n');
+const OWN_CLONE: KindedFinding = { kind: 'clone', line: 2, path: IMPLEMENTATION_PATH, symbol: 'describeError' };
+const OWN_INLINE: KindedFinding = { kind: 'inline', line: 3, path: IMPLEMENTATION_PATH };
+const NEIGHBOUR_CLONE: KindedFinding = { kind: 'clone', line: 7, path: IMPLEMENTATION_PATH, symbol: 'toDetail' };
 const SIBLING_CLONE: KindedFinding = {
   kind: 'clone',
   line: 5,
@@ -27,7 +40,7 @@ const OWN_IMPLEMENTATION: OwnImplementation = {
   exportNames: ['describeError'],
   packageName: '@scope/errors',
   sources: [
-    { path: IMPLEMENTATION_PATH, text: 'export function describeError(error: unknown) {}' },
+    { path: IMPLEMENTATION_PATH, text: IMPLEMENTATION_TEXT },
     { path: 'packages/errors/src/format.ts', text: 'function formatError(error: unknown) {}' },
   ],
 };
@@ -87,6 +100,21 @@ describe(buildFindingReport, () => {
 
       expect(outcome.findings).toStrictEqual([
         { line: 12, path: 'src/errors.ts', reported: true, symbol: 'describeError' },
+      ]);
+    });
+
+    it('reports a finding in another top-level declaration of the defining file', ({ temp }) => {
+      writeMonorepo(temp);
+
+      const outcome = buildFindingReport({
+        adoptedCount: 0,
+        findings: [OWN_CLONE, NEIGHBOUR_CLONE],
+        ownImplementation: OWN_IMPLEMENTATION,
+        shouldReport: () => true,
+      });
+
+      expect(outcome.findings).toStrictEqual([
+        { line: 7, path: IMPLEMENTATION_PATH, reported: true, symbol: 'toDetail' },
       ]);
     });
 

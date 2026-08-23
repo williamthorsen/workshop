@@ -3,7 +3,7 @@ import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, test } from 'vitest';
 
-import { definesOwnImplementation, type OwnImplementation } from '../definesOwnImplementation.ts';
+import { listOwnImplementationSpans, type OwnImplementation } from '../listOwnImplementationSpans.ts';
 import type { ProjectSource } from '../readTrackedSources.ts';
 
 const EXPORT_NAMES = ['describeError'];
@@ -20,14 +20,17 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-describe(definesOwnImplementation, () => {
+describe(listOwnImplementationSpans, () => {
   describe('in a monorepo', () => {
-    it('exempts a file in the publishing workspace that declares a recommended export', ({ temp }) => {
+    it('exempts the lines of a declaration exported under a recommended name', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
-      const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
+      const text = 'export function describeError(error: unknown) {\n  return String(error);\n}\n';
+      const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(true);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 3, name: 'describeError', startLine: 1 },
+      ]);
     });
 
     it.for([
@@ -38,102 +41,150 @@ describe(definesOwnImplementation, () => {
       ['async function', 'export async function describeError(error: unknown) {}'],
       ['generator function', 'export function* describeError(error: unknown) {}'],
       ['default function', 'export default function describeError(error: unknown) {}'],
-    ] as const)('exempts a file declaring the export as an exported %s', ([, text], { temp }) => {
+    ] as const)('exempts the export declared as an exported %s', ([, text], { temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(true);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 1, name: 'describeError', startLine: 1 },
+      ]);
     });
 
-    it('exempts a file that renames a local binding to a recommended export', ({ temp }) => {
+    it('exempts the local binding a file renames to a recommended export', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const text = 'function toMessage(error: unknown) {}\nexport { toMessage as describeError };\n';
       const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(true);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([{ endLine: 1, name: 'toMessage', startLine: 1 }]);
     });
 
-    it('exempts a file that exports a separately declared binding under its own name', ({ temp }) => {
+    it('exempts a separately declared binding exported under its own name', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const text = 'function describeError(error: unknown) {}\nexport { describeError };\n';
       const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(true);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 1, name: 'describeError', startLine: 1 },
+      ]);
     });
 
-    it('reports a file in the publishing workspace that declares the name without exporting it', ({ temp }) => {
+    it('exempts no other top-level declaration of the defining file', ({ temp }) => {
+      writeMonorepo(temp);
+      const path = 'packages/errors/src/describeError.ts';
+      const text = [
+        'const PREFIX = 1;',
+        'export function describeError(error: unknown) {',
+        '  return PREFIX + String(error);',
+        '}',
+        'export function formatError(error: unknown) {',
+        '  return String(error);',
+        '}',
+        '',
+      ].join('\n');
+      const own = buildOwnImplementation([{ path, text }]);
+
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 4, name: 'describeError', startLine: 2 },
+      ]);
+    });
+
+    it('exempts a clause whose next statement begins with a from-prefixed identifier', ({ temp }) => {
+      writeMonorepo(temp);
+      const path = 'packages/errors/src/describeError.ts';
+      const text = [
+        'function describeError(error: unknown) {}',
+        'export { describeError }',
+        'fromEntries(pairs);',
+        '',
+      ].join('\n');
+      const own = buildOwnImplementation([{ path, text }]);
+
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 1, name: 'describeError', startLine: 1 },
+      ]);
+    });
+
+    it('exempts nothing in a barrel that re-exports the name from another file', ({ temp }) => {
+      writeMonorepo(temp);
+      const path = 'packages/errors/src/index.ts';
+      const own = buildOwnImplementation([{ path, text: "export { describeError } from './describeError.ts';\n" }]);
+
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
+    });
+
+    it('exempts nothing in a file that declares the name without exporting it', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/format.ts';
       const own = buildOwnImplementation([{ path, text: 'function describeError(error: unknown) {}\n' }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports a file exporting the name under a different one', ({ temp }) => {
+    it('exempts nothing in a file exporting the name under a different one', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/format.ts';
       const text = 'function describeError(error: unknown) {}\nexport { describeError as toMessage };\n';
       const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports a file in the publishing workspace that only imports and calls the export', ({ temp }) => {
+    it('exempts nothing in a file that only imports and calls the export', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/report.ts';
       const text = "import { describeError } from '@scope/errors';\nconst message = describeError(error);\n";
       const own = buildOwnImplementation([{ path, text }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports a declaration that appears only in a comment', ({ temp }) => {
+    it('exempts nothing for a declaration that appears only in a comment', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/report.ts';
-      const own = buildOwnImplementation([{ path, text: '// function describeError(error: unknown) {}\n' }]);
+      const own = buildOwnImplementation([{ path, text: '// export function describeError(error: unknown) {}\n' }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports a defining file outside the publishing workspace', ({ temp }) => {
+    it('exempts nothing in a defining file outside the publishing workspace', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/app/src/describeError.ts';
       const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports every file when no workspace carries the declared name', ({ temp }) => {
+    it('exempts nothing when no workspace carries the declared name', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const sources = [{ path, text: 'export function describeError(error: unknown) {}' }];
       const own = { ...buildOwnImplementation(sources), packageName: '@scope/absent' };
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('reports a path the sweep never read', ({ temp }) => {
+    it('exempts nothing for a path the sweep never read', ({ temp }) => {
       writeMonorepo(temp);
       const own = buildOwnImplementation([]);
 
-      expect(definesOwnImplementation('packages/errors/src/describeError.ts', own)).toBe(false);
+      expect(listOwnImplementationSpans('packages/errors/src/describeError.ts', own)).toStrictEqual([]);
     });
 
-    it('reports every file when the check names no exports', ({ temp }) => {
+    it('exempts nothing when the check names no exports', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const sources = [{ path, text: 'export function describeError(error: unknown) {}' }];
       const own = { ...buildOwnImplementation(sources), exportNames: [] };
 
-      expect(definesOwnImplementation(path, own)).toBe(false);
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
   });
 
   describe('in a single-package repo', () => {
-    it('exempts the defining file alone, not the repo', ({ temp }) => {
+    it('exempts the defining declaration alone, not the repo', ({ temp }) => {
       writeSinglePackage(temp);
       const sources = [
         { path: 'src/describeError.ts', text: 'export function describeError(error: unknown) {}' },
@@ -141,16 +192,18 @@ describe(definesOwnImplementation, () => {
       ];
       const own = buildOwnImplementation(sources);
 
-      expect(definesOwnImplementation('src/describeError.ts', own)).toBe(true);
-      expect(definesOwnImplementation('src/report.ts', own)).toBe(false);
+      expect(listOwnImplementationSpans('src/describeError.ts', own)).toStrictEqual([
+        { endLine: 1, name: 'describeError', startLine: 1 },
+      ]);
+      expect(listOwnImplementationSpans('src/report.ts', own)).toStrictEqual([]);
     });
   });
 
-  it('reports every file in a repo whose workspaces cannot be discovered', () => {
+  it('exempts nothing in a repo whose workspaces cannot be discovered', () => {
     const path = 'src/describeError.ts';
     const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
 
-    expect(definesOwnImplementation(path, own)).toBe(false);
+    expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
   });
 });
 

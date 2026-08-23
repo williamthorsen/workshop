@@ -103,7 +103,7 @@ const config = defineConfig([
       'packages/readyup/src/check-utils/__tests__/workspaces.unit.test.ts',
       'packages/readyup/src/check-utils/__tests__/workspaces.walk.unit.test.ts',
       'packages/readyup/src/check-utils/project/__tests__/buildFindingReport.unit.test.ts',
-      'packages/readyup/src/check-utils/project/__tests__/definesOwnImplementation.unit.test.ts',
+      'packages/readyup/src/check-utils/project/__tests__/listOwnImplementationSpans.unit.test.ts',
       'packages/readyup/src/check-utils/project/__tests__/listTrackedFiles.tool.test.ts',
       'packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts',
       'packages/readyup/src/installed-packages/__tests__/collectKitPackageGroups.unit.test.ts',

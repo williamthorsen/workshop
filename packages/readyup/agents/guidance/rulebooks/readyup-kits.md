@@ -49,7 +49,7 @@ A blocked subtree does not consult a descendant's own `skip`, so a check that wo
 
 A detector reads what `blankNonCode` returns, never a source's raw text. An idiom written in a comment or a string is prose about the code rather than a site in it, and reporting one is a false positive -- which is what discredits a kit permanently, because a reader who finds one stops trusting the rest of what it says.
 
-Your own repo is where the defect surfaces first. An adoption kit's `ownImplementation` declaration exempts the file defining the package's exports and nothing else, so the detector runs against every other source you wrote, comments included. A false positive there is the one a consumer would have got; fix the detector rather than the source.
+Your own repo is where the defect surfaces first. An adoption kit's `ownImplementation` declaration exempts the declarations defining the package's exports and nothing else, so the detector runs against every other declaration in those files and every other source you wrote, comments included. A false positive there is the one a consumer would have got; fix the detector rather than the source.
 
 Suppression is readyup's rather than yours. A finding reported through `buildFindingReport` is suppressible with an `rdy-ignore` pragma already, so publish no token of your own for it, and reach for no path filter to silence the one site a consumer reviewed and kept.
 
