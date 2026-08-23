@@ -85,6 +85,15 @@ describe('a run recording what its checks examined and declined', () => {
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
 
+  it('records a sweep a check read in its skip before that skip turned the check off', async ({ temp }) => {
+    temp.write(SOURCE_PATH, SOURCE_TEXT);
+    const ledger = createPragmaLedger();
+
+    await runRdy(adoptionChecklist(skipSweepingCheck(SOURCE_PATH, 'not applicable')), { pragmaLedger: ledger });
+
+    expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
+  });
+
   it('records no sweep for a diagnosed check running alongside one that records', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     temp.write(OTHER_PATH, SOURCE_TEXT);
@@ -137,13 +146,16 @@ function scanningChecklist(skipReason?: string): RdyChecklist {
   };
 }
 
-/** Builds a check that sweeps its path in `skip` and then runs, as a kit memoizing one sweep does. */
-function skipSweepingCheck(path: string): RdyCheck {
+/**
+ * Builds a check that sweeps its path in `skip`, as a kit memoizing one sweep does, then skips for the reason
+ * given or runs where none is.
+ */
+function skipSweepingCheck(path: string, skipReason?: string): RdyCheck {
   return {
     name: `No source at ${path} hand-rolls the idiom`,
     skip: async (): Promise<SkipResult> => {
       await sweep(path);
-      return false;
+      return skipReason ?? false;
     },
     check: () => true,
   };
