@@ -7,7 +7,7 @@ export interface PragmaSite {
   /** The 1-based line the token sits on. */
   readonly line: number;
 
-  /** The 1-based line the pragma declines a finding on. */
+  /** The 1-based line the pragma suppresses a finding on. */
   readonly coveredLine: number;
 
   /** The token as written, which is what a report names it by. */
@@ -25,10 +25,10 @@ export function isJsFamilyPath(path: string): boolean {
 /**
  * Returns the pragmas a source anchors to a comment's opening delimiter.
  *
- * A token qualifies where it sits inside a comment and nothing but whitespace and `*` parts it from the `//` or
- * `/*` that opened one. That is stricter than declining, which matches the token in raw text wherever it appears:
- * a report naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token
- * following anything else in its comment, or a second token on a line, is withheld rather than guessed at.
+ * A token qualifies where it sits inside a comment and nothing but whitespace and `*` parts it from the `//` or `/*`
+ * that opened one. That is stricter than suppression, which matches the token in raw text wherever it appears: a report
+ * naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token following anything
+ * else in its comment, or a second token on a line, is withheld rather than guessed at.
  *
  * `blankComments` is the comment oracle, no second tokenizer being needed to answer a question it already answers.
  * It preserves its input's length, so an offset found in the raw text reads the blanked text at the same place.
