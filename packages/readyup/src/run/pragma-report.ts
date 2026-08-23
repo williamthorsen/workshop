@@ -15,9 +15,9 @@ interface UnusedPragma extends PragmaSite {
 /**
  * Emits an advisory stderr warning for each pragma that declined nothing, and returns the entries.
  *
- * The evidence is what the run's checks declared: a pragma is reported only where some check examined the file
- * holding it and no check declined a finding on the line it covers. A file no check examined yields nothing,
- * because the run holds no evidence either way about the pragmas in it.
+ * The evidence is what the run's checks read: a pragma is reported only where some check examined the file
+ * holding it, by sweeping it or by declaring it, and no check declined a finding on the line it covers. A file
+ * no check examined yields nothing, because the run holds no evidence either way about the pragmas in it.
  *
  * Each examined file is read and scanned once however many checks examined it, and only a JS-family source is
  * scanned at all, recognition resting on syntax the blanking reads.

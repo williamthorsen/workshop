@@ -67,8 +67,9 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
  * the run never established. Resolving the return value sits inside the guard for that reason, as it
  * does in the runner.
  *
- * The resolution reaches no ledger. A diagnosed check is one the run turned off, so what it examined and
- * what its pragmas declined are answers to a question the invocation never asked.
+ * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope the runner
+ * opens around a live one, so a sweep it reads reports to nobody. A diagnosed check is one the run turned off,
+ * so what it examined and what its pragmas declined are answers to a question the invocation never asked.
  */
 async function diagnoseSkip(
   check: RdyCheck,

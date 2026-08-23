@@ -196,7 +196,8 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     const start = performance.now();
     try {
       // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their
-      // author wrote, whatever the declared type promised.
+      // author wrote, whatever the declared type promised. Called optionally because the guard above does not
+      // narrow inside the closure, and called on `check` so an accessor-backed `skip` keeps its receiver.
       const skipResult: unknown = await withSweepRecorder(run.pragmaLedger, () => check.skip?.());
       if (typeof skipResult === 'string') {
         const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
