@@ -37,16 +37,16 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-describe('a run recording what its checks examined and declined', () => {
-  it('records the examined paths and the declined sites', async ({ temp }) => {
+describe('a run recording what its checks examined and suppressed', () => {
+  it('records the examined paths and the suppressed sites', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
     await runRdy(scanningChecklist(), { pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
-    expect(ledger.hasDeclined(SOURCE_PATH, 1)).toBe(true);
-    expect(ledger.hasDeclined(SOURCE_PATH, 2)).toBe(false);
+    expect(ledger.hasSuppressed(SOURCE_PATH, 1)).toBe(true);
+    expect(ledger.hasSuppressed(SOURCE_PATH, 2)).toBe(false);
   });
 
   it('records nothing for a diagnosed check', async ({ temp }) => {
@@ -56,10 +56,10 @@ describe('a run recording what its checks examined and declined', () => {
     await runRdy(scanningChecklist('not applicable'), { diagnose: true, pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([]);
-    expect(ledger.hasDeclined(SOURCE_PATH, 1)).toBe(false);
+    expect(ledger.hasSuppressed(SOURCE_PATH, 1)).toBe(false);
   });
 
-  it('declines and reports as before for an invocation keeping no ledger', async ({ temp }) => {
+  it('suppresses and reports as before for an invocation keeping no ledger', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
 
     const report = await runRdy(scanningChecklist());

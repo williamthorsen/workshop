@@ -19,10 +19,10 @@ export interface BuildFindingReportOptions<F extends Finding> {
 
 /**
  * Returns the findings a project holds, each marked whether the calling check reports it, for the runner to
- * decline, render, and count.
+ * suppress, render, and count.
  *
  * Every retained finding is returned rather than only the reported ones, so the checks of one run share a
- * denominator the reader can compare across them, and so a site a pragma declines leaves every check's
+ * denominator the reader can compare across them, and so a site a pragma suppresses leaves every check's
  * fraction rather than only the fraction of the check that names it.
  *
  * A check naming its own package drops the findings sited in that package's implementation. The repo

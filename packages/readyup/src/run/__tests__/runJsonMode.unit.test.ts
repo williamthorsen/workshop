@@ -345,7 +345,7 @@ describe(runJsonMode, () => {
   describe('unused-pragma advisories', () => {
     const PRAGMA_UNUSED = {
       code: 'pragma-unused',
-      message: '`rdy-ignore` pragma at src/a.ts:3 declined no finding in this run.',
+      message: '`rdy-ignore` pragma at src/a.ts:3 suppressed no finding in this run.',
       remedy: 'Remove the pragma, or run the kit whose check it was written for.',
     };
 

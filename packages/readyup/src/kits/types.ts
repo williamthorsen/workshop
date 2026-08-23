@@ -130,7 +130,7 @@ export interface OutcomeFinding {
   /**
    * Whether the check reports this site, rather than only counting it toward the fraction.
    *
-   * An unreported site reaches the runner all the same, because a site a pragma declines has to leave
+   * An unreported site reaches the runner all the same, because a site a pragma suppresses has to leave
    * every check's denominator rather than only the denominator of the check naming it.
    */
   reported: boolean;
@@ -139,7 +139,7 @@ export interface OutcomeFinding {
 /**
  * A check's located sites, from which the runner derives the verdict, the detail, and the fraction.
  *
- * The sites a pragma declines drop there rather than here: the runner is the only layer holding both the
+ * The sites a pragma suppresses drop there rather than here: the runner is the only layer holding both the
  * check and the kit's provenance, which is what a pragma naming a check is matched against.
  */
 export interface FindingOutcome {
@@ -173,7 +173,7 @@ export interface RdyCheck {
   name: string;
 
   /**
-   * Stable identifier a pragma writes to decline this check's findings and no other check's.
+   * Stable identifier a pragma writes to suppress this check's findings and no other check's.
    *
    * Bare here: the runner namespaces it under the publishing package where the kit has one. A check
    * naming no located site needs none, and one declaring none is named by no pragma.

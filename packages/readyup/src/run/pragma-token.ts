@@ -7,7 +7,7 @@
  *
  * A fresh matcher per scan, because a global regular expression carries a `lastIndex` its readers all share: one
  * `test` or `exec` anywhere would leave it set, and every later `matchAll` would skip the text before that offset
- * and answer that a pragma declining a finding is not there.
+ * and answer that a pragma suppressing a finding is not there.
  */
 export function createIgnorePragmaMatcher(): RegExp {
   return /(?<![\w-])rdy-ignore(-next-line)?(?![\w-])/g;

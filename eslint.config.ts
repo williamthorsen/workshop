@@ -115,7 +115,7 @@ const config = defineConfig([
       'packages/readyup/src/projects/__tests__/project-discovery.unit.test.ts',
       'packages/readyup/src/run/__tests__/pragma-report.unit.test.ts',
       'packages/readyup/src/run/__tests__/pragmaRecording.wiring.unit.test.ts',
-      'packages/readyup/src/run/__tests__/qualifiedDeclining.wiring.unit.test.ts',
+      'packages/readyup/src/run/__tests__/qualifiedSuppression.wiring.unit.test.ts',
       'packages/readyup/src/run/__tests__/resolveConfiguredPackages.unit.test.ts',
       'packages/readyup/src/run/__tests__/resolveFindingOutcome.unit.test.ts',
     ],

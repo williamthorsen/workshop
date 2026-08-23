@@ -29,19 +29,19 @@ describe(warnOnUnusedPragmas, () => {
     expect(warnings).toStrictEqual([
       {
         code: 'pragma-unused',
-        message: '`rdy-ignore-next-line` pragma at src/a.ts:3 declined no finding in this run.',
+        message: '`rdy-ignore-next-line` pragma at src/a.ts:3 suppressed no finding in this run.',
         remedy: REMEDY,
       },
     ]);
     expect(stderr).toBe(
-      `Warning: \`rdy-ignore-next-line\` pragma at src/a.ts:3 declined no finding in this run. ${REMEDY}\n`,
+      `Warning: \`rdy-ignore-next-line\` pragma at src/a.ts:3 suppressed no finding in this run. ${REMEDY}\n`,
     );
   });
 
-  it('stays silent about a pragma whose covered line a check declined', ({ temp }) => {
+  it('stays silent about a pragma whose covered line a check suppressed', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
     const ledger = scanning(['src/a.ts']);
-    ledger.recordDeclined('src/a.ts', 1);
+    ledger.recordSuppressed('src/a.ts', 1);
 
     expect(warn(ledger).warnings).toStrictEqual([]);
   });
@@ -61,10 +61,10 @@ describe(warnOnUnusedPragmas, () => {
     expect(warn(ledger).warnings).toHaveLength(1);
   });
 
-  it('matches a declined site declared in absolute form against a relative examined path', ({ temp }) => {
+  it('matches a suppressed site declared in absolute form against a relative examined path', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
     const ledger = scanning(['src/a.ts']);
-    ledger.recordDeclined(temp.resolve('src/a.ts'), 1);
+    ledger.recordSuppressed(temp.resolve('src/a.ts'), 1);
 
     expect(warn(ledger).warnings).toStrictEqual([]);
   });
@@ -75,7 +75,7 @@ describe(warnOnUnusedPragmas, () => {
     const { warnings } = warn(scanning([temp.resolve('src/a.ts')]));
 
     expect(warnings.map((warning) => warning.message)).toStrictEqual([
-      '`rdy-ignore` pragma at src/a.ts:1 declined no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
     ]);
   });
 
@@ -96,9 +96,9 @@ describe(warnOnUnusedPragmas, () => {
     const { warnings } = warn(scanning(['src/b.ts', 'src/a.ts']));
 
     expect(warnings.map((warning) => warning.message)).toStrictEqual([
-      '`rdy-ignore` pragma at src/a.ts:1 declined no finding in this run.',
-      '`rdy-ignore` pragma at src/a.ts:3 declined no finding in this run.',
-      '`rdy-ignore` pragma at src/b.ts:1 declined no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
+      '`rdy-ignore` pragma at src/a.ts:3 suppressed no finding in this run.',
+      '`rdy-ignore` pragma at src/b.ts:1 suppressed no finding in this run.',
     ]);
   });
 
@@ -111,7 +111,7 @@ describe(warnOnUnusedPragmas, () => {
 
 // region | Helpers
 
-/** Opens a ledger holding the given paths as examined and nothing as declined. */
+/** Opens a ledger holding the given paths as examined and nothing as suppressed. */
 function scanning(paths: readonly string[]): PragmaLedger {
   const ledger = createPragmaLedger();
   ledger.recordScanned(paths);

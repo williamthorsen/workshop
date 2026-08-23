@@ -41,7 +41,7 @@ To make a whole checklist inapplicable, nest its checks under one parent check w
 
 ## Reading a run
 
-⚪ means the check declined to apply. 🚫 means the check never ran.
+⚪ means the check does not apply. 🚫 means the check never ran.
 
 A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
 
@@ -51,9 +51,9 @@ A detector reads what `blankNonCode` returns, never a source's raw text. An idio
 
 Your own repo is where the defect surfaces first. An adoption kit's `ownImplementation` declaration exempts the file defining the package's exports and nothing else, so the detector runs against every other source you wrote, comments included. A false positive there is the one a consumer would have got; fix the detector rather than the source.
 
-Suppression is readyup's rather than yours. A finding reported through `buildFindingReport` is declinable with an `rdy-ignore` pragma already, so publish no token of your own for it, and reach for no path filter to silence the one site a consumer reviewed and kept.
+Suppression is readyup's rather than yours. A finding reported through `buildFindingReport` is suppressible with an `rdy-ignore` pragma already, so publish no token of your own for it, and reach for no path filter to silence the one site a consumer reviewed and kept.
 
-Give every check that names located sites an `id`. Without one, a consumer declining a finding of yours declines every other check's finding on that line too, your kit's and every other kit's alike. Write it bare and kebab-cased, restating the claim rather than the defect -- `no-hand-rolled-describe-error`, not `bad-error-handling` -- because it is a name a consumer types into their source and reads back a year later. The runner namespaces it under the package publishing your kit, so it has to be unique within the kit and nowhere wider. Changing it un-declines every site that named the old one, and the next run reports each such site under `pragma-unused`, provided some check examined the file holding it.
+Give every check that names located sites an `id`. Without one, a consumer suppressing a finding of yours suppresses every other check's finding on that line too, your kit's and every other kit's alike. Write it bare and kebab-cased, restating the claim rather than the defect -- `no-hand-rolled-describe-error`, not `bad-error-handling` -- because it is a name a consumer types into their source and reads back a year later. The runner namespaces it under the package publishing your kit, so it has to be unique within the kit and nowhere wider. Changing it stops suppressing every site that named the old one, and the next run reports each such site under `pragma-unused`, provided some check examined the file holding it.
 
 Expect the site count to move in both directions. Blanking unmasks sites a comment was hiding, because a comment sitting mid-expression blanks to a run of spaces as wide as it was rather than breaking the anchor scan. Write an anchor that tolerates a whitespace run, not one that admits a single space.
 

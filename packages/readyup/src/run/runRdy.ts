@@ -36,7 +36,7 @@ export interface RunRdyOptions {
   provenance?: KitProvenance | undefined;
 
   /**
-   * The invocation's record of what its checks examined and declined, which the unused-pragma report reads.
+   * The invocation's record of what its checks examined and suppressed, which the unused-pragma report reads.
    *
    * One ledger spans every kit of an invocation, so a file two kits both examined is reported once. A run
    * passing none records nothing and reports nothing.
@@ -58,7 +58,7 @@ interface PendingDiagnosis {
 interface RunContext {
   defaultSeverity: Severity;
 
-  /** The invocation's record of what its checks examined and declined, absent where nothing reads one. */
+  /** The invocation's record of what its checks examined and suppressed, absent where nothing reads one. */
   pragmaLedger: PragmaLedger | undefined;
 
   /** Where the kit came from, read for every check's ids and for nothing else. */

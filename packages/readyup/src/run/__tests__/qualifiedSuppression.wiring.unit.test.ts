@@ -13,7 +13,7 @@ const SOURCE_PATH = 'src/errors.ts';
 
 const it = test.extend(
   'temp',
-  makeFixture(() => createTempTree({}, { prefix: 'rdy-qualified-declining-' })),
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-qualified-suppression-' })),
 );
 
 it.aroundEach(async (runTest, { temp }) => {
@@ -23,7 +23,7 @@ it.aroundEach(async (runTest, { temp }) => {
 });
 
 describe('a pragma reaching the check ids the runner resolved', () => {
-  it('declines the named check and leaves its sibling standing on the same line', async ({ temp }) => {
+  it('suppresses the named check and leaves its sibling standing on the same line', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
     const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
@@ -34,7 +34,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     ]);
   });
 
-  it('declines the named check where the pragma writes the fully-qualified form', async ({ temp }) => {
+  it('suppresses the named check where the pragma writes the fully-qualified form', async ({ temp }) => {
     const pragma = '// rdy-ignore @williamthorsen/toolbelt.errors/no-instanceof-error';
     temp.write(SOURCE_PATH, `error instanceof Error; ${pragma}\n`);
 
@@ -43,7 +43,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     expect(verdicts(report.results)[0]?.status).toBe('passed');
   });
 
-  it('declines neither where the pragma names a check the run does not hold', async ({ temp }) => {
+  it('suppresses neither where the pragma names a check the run does not hold', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore other.kit/no-instanceof-error\n');
 
     const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
@@ -51,7 +51,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
   });
 
-  it('declines both where the pragma names no check', async ({ temp }) => {
+  it('suppresses both where the pragma names no check', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore\n');
 
     const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
@@ -59,7 +59,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['passed', 'passed']);
   });
 
-  it('declines nothing by name where the kit has no publishing package to namespace under', async ({ temp }) => {
+  it('suppresses nothing by name where the kit has no publishing package to namespace under', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
     const report = await runRdy(twoChecksOverOneLine());
@@ -91,7 +91,7 @@ function twoChecksOverOneLine(): RdyChecklist {
   };
 }
 
-/** Reduces results to what a declining decision shows up in. */
+/** Reduces results to what a suppression shows up in. */
 function verdicts(results: RdyResult[]): Array<{ detail: string | null; id: string | null; status: string }> {
   return results.map((result) => ({ detail: result.detail, id: result.id, status: result.status }));
 }
