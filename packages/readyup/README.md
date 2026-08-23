@@ -206,16 +206,16 @@ A checklist carries either `checks` or `groups`, never both.
 
 ### Checks
 
-| Field      | Type                                              | Default                     | Meaning                                      |
-| ---------- | ------------------------------------------------- | --------------------------- | -------------------------------------------- |
-| `name`     | `string`                                          | required                    | The claim being asserted                     |
-| `id`       | `string`                                          | --                          | What a pragma writes to decline its findings |
-| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                  |
-| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`        |
-| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass    |
-| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run        |
-| `fix`      | `string`                                          | --                          | Remediation, shown when the check fails      |
-| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes   |
+| Field      | Type                                              | Default                     | Meaning                                       |
+| ---------- | ------------------------------------------------- | --------------------------- | --------------------------------------------- |
+| `name`     | `string`                                          | required                    | The claim being asserted                      |
+| `id`       | `string`                                          | --                          | What a pragma writes to suppress its findings |
+| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                   |
+| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`         |
+| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass     |
+| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run         |
+| `fix`      | `string`                                          | --                          | Remediation, shown when the check fails       |
+| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes    |
 
 A check returns a boolean or a `CheckOutcome`:
 
@@ -233,9 +233,9 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 | `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none    |
 | `scanned`      | `string[]`         | Paths this check examined and read no other way; omitted, it declares none |
 
-`reported` marks the sites this check names; the rest count toward the fraction and do nothing else. The runner drops the sites a [pragma declines](#declining-a-finding), renders the reported survivors as the `detail`, reads `ok` off whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](#project-sources).
+`reported` marks the sites this check names; the rest count toward the fraction and do nothing else. The runner drops the sites a [pragma suppresses](#suppressing-a-finding), renders the reported survivors as the `detail`, reads `ok` off whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](#project-sources).
 
-`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](#project-sources) is recorded on its own, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that declined nothing](#advisory-warnings). Declare `scanned` where the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or reaching for `fs` directly -- because nothing else can see what those read.
+`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](#project-sources) is recorded on its own, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](#advisory-warnings). Declare `scanned` where the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or reaching for `fs` directly -- because nothing else can see what those read.
 
 ### Naming checks
 
@@ -356,7 +356,7 @@ The third row is the failure mode to watch for: `skip` and `check` ran the ident
 
 **Only a skipping parent collapses a group.** A parent whose `skip` fires reports alone: its descendants are not run, not reported, and not counted. A parent that _fails_ instead renders every descendant as its own 🚫, which is one blocked line per descendant where one skipped line was wanted. `quiet` helps with neither, suppressing passes only.
 
-**⚪ and 🚫 read differently.** ⚪ means the check declined to apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
+**⚪ and 🚫 read differently.** ⚪ means the check does not apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
 
 **Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
 
@@ -635,9 +635,9 @@ FAIL  Total: 1 error, 1 passed, 1 skipped (151ms)
 
 Once a style is named explicitly, output is byte-identical to a terminal or a pipe. `--style` is independent of `--json`: the JSON document never changes.
 
-### Declining a finding
+### Suppressing a finding
 
-A check naming located sites reports each as `path:line`. A source declines one by carrying a pragma:
+A check naming located sites reports each as `path:line`. A source suppresses one by carrying a pragma:
 
 ```ts
 // rdy-ignore-next-line -- the bootstrap shim, no deps allowed
@@ -649,9 +649,9 @@ error instanceof Error ? error.message : String(error);
 | `rdy-ignore`           | The line it sits on |
 | `rdy-ignore-next-line` | The line below it   |
 
-With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is declined.
+With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is suppressed.
 
-One or more comma-separated check ids may follow the token, and the pragma then declines for those checks alone:
+One or more comma-separated check ids may follow the token, and the pragma then suppresses for those checks alone:
 
 ```ts
 // rdy-ignore-next-line toolbelt.errors/no-instanceof-error -- the bootstrap shim, no deps allowed
@@ -665,13 +665,13 @@ A failed check prints its id bracketed ahead of its fraction, and that printed f
    src/a.ts:4, src/b.ts:9
 ```
 
-A kit an installed package publishes namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace is what keeps two kits' same-named checks apart. A kit reached any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id stands. An id naming no check in the run declines nothing, as does a pragma on a check that declares no id at all.
+A kit an installed package publishes namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace is what keeps two kits' same-named checks apart. A kit reached any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id stands. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all.
 
-The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` declines for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry carries its `id` in both detail projections.
+The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry carries its `id` in both detail projections.
 
-A declined finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short. An unqualified pragma takes the site out of every check's fraction at once, which is what keeps the checks of one run comparable; a qualified one takes it out of the checks it names and leaves it standing in the rest.
+A suppressed finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short. An unqualified pragma takes the site out of every check's fraction at once, which is what keeps the checks of one run comparable; a qualified one takes it out of the checks it names and leaves it standing in the rest.
 
-The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string declines a finding sited on it.
+The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string suppresses a finding sited on it.
 
 A pragma that outlives the finding it was written for is reported under [`pragma-unused`](#advisory-warnings), so a site rewritten or a check retired leaves a comment the next run names rather than dead text nobody notices.
 
@@ -698,17 +698,17 @@ Two more come from [`--diagnose`](#run-options), and are raised only where that 
 
 These read the checks rather than the manifest, so none of the silencing conditions above reaches them: they apply wherever the kit came from, `--url`, `--from`, `--packages`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
 
-One more reads the sources the run's checks examined and reports the pragmas among them that declined nothing.
+One more reads the sources the run's checks examined and reports the pragmas among them that suppressed nothing.
 
-| Code            | Raised when                                                                    |
-| --------------- | ------------------------------------------------------------------------------ |
-| `pragma-unused` | An [`rdy-ignore` pragma](#declining-a-finding) declined no finding in this run |
+| Code            | Raised when                                                                        |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `pragma-unused` | An [`rdy-ignore` pragma](#suppressing-a-finding) suppressed no finding in this run |
 
-The evidence is what the checks read. A pragma is reported only where some check examined the file holding it -- swept it through [`readTrackedSources`](#project-sources), or named it in [`scanned`](#checks) -- and no check of the run declined a finding on the line the pragma covers; a pragma in a file no check examined is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form findings print in. One ledger spans the invocation, so a file two kits both examined is scanned once. A diagnosis contributes neither examined paths nor declines, the run having turned that check off; a sweep the check read in its own `skip` before returning the reason was recorded when it ran, and stands.
+The evidence is what the checks read. A pragma is reported only where some check examined the file holding it -- swept it through [`readTrackedSources`](#project-sources), or named it in [`scanned`](#checks) -- and no check of the run suppressed a finding on the line the pragma covers; a pragma in a file no check examined is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form findings print in. One ledger spans the invocation, so a file two kits both examined is scanned once. A diagnosis contributes neither examined paths nor suppressions, the run having turned that check off; a sweep the check read in its own `skip` before returning the reason was recorded when it ran, and stands.
 
-Recognition for the report is stricter than for declining. A token is a site when it sits in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Declining is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never license a finding.
+Recognition for the report is stricter than for suppression. A token is a site when it sits in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Suppression is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never license a finding.
 
-Two limits follow from that. Recognition reads JavaScript-family syntax, so a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported where any check examined its file, that skipped check's own `skip` included where it swept before skipping: the run holds no evidence the check would have declined anything.
+Two limits follow from that. Recognition reads JavaScript-family syntax, so a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported where any check examined its file, that skipped check's own `skip` included where it swept before skipping: the run holds no evidence the check would have suppressed anything.
 
 ### Kit import compatibility
 
@@ -1354,7 +1354,7 @@ It answers best effort: a project manifest it cannot read or parse yields `[]`. 
 | `blankNonCode(text)`                  | The same text with every comment and literal blanked           |
 | `getLineAtOffset(text, offset)`       | The 1-based line holding an offset                             |
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
-| `buildFindingReport(options)`         | A `FindingOutcome` the runner declines, renders, and counts    |
+| `buildFindingReport(options)`         | A `FindingOutcome` the runner suppresses, renders, and counts  |
 
 These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
 
@@ -1362,7 +1362,7 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 
 `readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
 
-It also reports the paths it returns to the run, which is the evidence a [pragma that declined nothing](#advisory-warnings) is judged against, so a check reading the project this way declares no `scanned` of its own and a sweep it reads in `skip` counts as much as one it reads in `check`. `listTrackedFiles` reports nothing, so a check taking that listing and reading the files itself declares `scanned`.
+It also reports the paths it returns to the run, which is the evidence a [pragma that suppressed nothing](#advisory-warnings) is judged against, so a check reading the project this way declares no `scanned` of its own and a sweep it reads in `skip` counts as much as one it reads in `check`. `listTrackedFiles` reports nothing, so a check taking that listing and reading the files itself declares `scanned`.
 
 `blankNonCode` is what a detector scans instead of the raw text. It replaces every comment and every literal's text with spaces, so an idiom written in prose is invisible to an anchor scan while the code around the prose is not; a recommendation pointing at a comment is a false positive, and a false positive is what discredits a kit. Literal delimiters survive and only the text between them blanks, because a literal is an operand -- a scan reading the token before a `[` would otherwise take `'abc'[0]` for an array literal -- and an expression interpolated into a template literal stays visible as the code it is. Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted string or regular expression whose closing delimiter never arrives on its line was neither, so a misjudgment leaves text standing rather than blanking an expression that runs. That direction holds because a `/` is classified against the operand before it, so every construct completing an operand has to present itself as one: a postfix operator -- `++`, `--`, and TypeScript's `!` -- attaches to its operand rather than replacing it, and a member name keeps the `.` or `#` that introduced it, so a property spelled like a keyword is read as the property it is. `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning with `/` blanks as far as its closing tag's slash. It reads JavaScript-family syntax; a source in another language yields arbitrary output rather than an error, so a filter selecting `.md` or `.yaml` paths should not reach for it.
 
@@ -1370,11 +1370,11 @@ It also reports the paths it returns to the run, which is the evidence a [pragma
 
 `countPackageUsage` counts calls to the named exports and counts none in a source that never imports the package, from its root or any subpath. The import is what separates adoption from a name collision: a project hand-rolling its own `describeError` calls that name as often as an adopter calls the real one. Its two patterns read two texts -- the call scan reads a blanked source, so a call named in prose is not counted as one made, while the import test locates its match in a source with comments alone blanked, because the specifier it matches is itself a string literal that full blanking would erase, then reads the blanked text at that offset so a source quoting an import is not taken for one making it.
 
-`buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and returns them as a `FindingOutcome` for the runner to decline, render, and count. The runner names each reported finding as `symbol (path:line)`, or `path:line` where it declares no symbol, and derives the fraction from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
+`buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and returns them as a `FindingOutcome` for the runner to suppress, render, and count. The runner names each reported finding as `symbol (path:line)`, or `path:line` where it declares no symbol, and derives the fraction from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
 Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A file qualifies by sitting inside a workspace whose `package.json` names the package and exporting one of the named exports, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is file-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off; a second file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
 
-The [`rdy-ignore` pragma](#declining-a-finding) is honored by the runner rather than here, which is the layer holding both the check and the provenance a pragma naming that check is matched against. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own. Give the check an `id` and a consumer can decline its findings by name.
+The [`rdy-ignore` pragma](#suppressing-a-finding) is honored by the runner rather than here, which is the layer holding both the check and the provenance a pragma naming that check is matched against. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own. Give the check an `id` and a consumer can suppress its findings by name.
 
 `undefined` is what a check skips on. Reporting it as a pass would say the project holds no hand-rolled sites, when what happened is that nothing was looked at.
 
