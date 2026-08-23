@@ -10,7 +10,7 @@ describe(createPragmaLedger, () => {
     const ledger = createPragmaLedger();
 
     expect(ledger.scannedPaths()).toStrictEqual([]);
-    expect(ledger.hasDeclined('src/a.ts', 3)).toBe(false);
+    expect(ledger.hasSuppressed('src/a.ts', 3)).toBe(false);
   });
 
   it('resolves every recorded path against the working directory', () => {
@@ -30,20 +30,20 @@ describe(createPragmaLedger, () => {
     expect(ledger.scannedPaths()).toHaveLength(2);
   });
 
-  it('matches a relative decline against the absolute form of the same site', () => {
+  it('matches a relative suppression against the absolute form of the same site', () => {
     const ledger = createPragmaLedger();
 
-    ledger.recordDeclined('src/a.ts', 3);
+    ledger.recordSuppressed('src/a.ts', 3);
 
-    expect(ledger.hasDeclined(path.resolve(process.cwd(), 'src/a.ts'), 3)).toBe(true);
+    expect(ledger.hasSuppressed(path.resolve(process.cwd(), 'src/a.ts'), 3)).toBe(true);
   });
 
-  it('holds a decline to the line it was recorded on', () => {
+  it('holds a suppression to the line it was recorded on', () => {
     const ledger = createPragmaLedger();
 
-    ledger.recordDeclined('src/a.ts', 3);
+    ledger.recordSuppressed('src/a.ts', 3);
 
-    expect(ledger.hasDeclined('src/a.ts', 4)).toBe(false);
-    expect(ledger.hasDeclined('src/b.ts', 3)).toBe(false);
+    expect(ledger.hasSuppressed('src/a.ts', 4)).toBe(false);
+    expect(ledger.hasSuppressed('src/b.ts', 3)).toBe(false);
   });
 });

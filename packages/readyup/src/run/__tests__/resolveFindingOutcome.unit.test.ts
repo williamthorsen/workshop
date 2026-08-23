@@ -50,7 +50,7 @@ describe(resolveFindingOutcome, () => {
     expect(outcome.progress).toBeUndefined();
   });
 
-  describe('given a source declining a finding', () => {
+  describe('given a source suppressing a finding', () => {
     it('drops a finding on a line carrying `rdy-ignore`', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
 
@@ -67,7 +67,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome).toStrictEqual({ ok: true, progress: { count: 0, passedCount: 0, type: 'fraction' } });
     });
 
-    it('counts a declined finding in neither half of the fraction', ({ temp }) => {
+    it('counts a suppressed finding in neither half of the fraction', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
 
       const outcome = resolveFindingOutcome({ adoptedCount: 1, findings: [CLONE, INLINE] }, []);
@@ -149,23 +149,23 @@ describe(resolveFindingOutcome, () => {
       expect(ledger.scannedPaths()).toStrictEqual([]);
     });
 
-    it('records the site of every finding a pragma declined', ({ temp }) => {
+    it('records the site of every finding a pragma suppressed', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore');
       const ledger = createPragmaLedger();
 
       resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE, INLINE] }, [], ledger);
 
-      expect(ledger.hasDeclined('src/errors.ts', 12)).toBe(true);
-      expect(ledger.hasDeclined('src/report.ts', 44)).toBe(false);
+      expect(ledger.hasSuppressed('src/errors.ts', 12)).toBe(true);
+      expect(ledger.hasSuppressed('src/report.ts', 44)).toBe(false);
     });
 
-    it('records no decline where the pragma names another check', ({ temp }) => {
+    it('records no suppression where the pragma names another check', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore other/check');
       const ledger = createPragmaLedger();
 
       resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, NAMED, ledger);
 
-      expect(ledger.hasDeclined('src/errors.ts', 12)).toBe(false);
+      expect(ledger.hasSuppressed('src/errors.ts', 12)).toBe(false);
     });
   });
 });

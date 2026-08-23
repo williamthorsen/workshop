@@ -6,17 +6,17 @@ import type { RaisedWarning } from '../schemas/common.ts';
 import { isJsFamilyPath, listPragmaSites, type PragmaSite } from './listPragmaSites.ts';
 import type { PragmaLedger } from './PragmaLedger.ts';
 
-/** One pragma that declined nothing, named the way the warning about it prints. */
+/** One pragma that suppressed nothing, named the way the warning about it prints. */
 interface UnusedPragma extends PragmaSite {
   /** The path relative to `cwd`, the form findings print in. */
   displayPath: string;
 }
 
 /**
- * Emits an advisory stderr warning for each pragma that declined nothing, and returns the entries.
+ * Emits an advisory stderr warning for each pragma that suppressed nothing, and returns the entries.
  *
  * The evidence is what the run's checks read: a pragma is reported only where some check examined the file
- * holding it, by sweeping it or by declaring it, and no check declined a finding on the line it covers. A file
+ * holding it, by sweeping it or by declaring it, and no check suppressed a finding on the line it covers. A file
  * no check examined yields nothing, because the run holds no evidence either way about the pragmas in it.
  *
  * Each examined file is read and scanned once however many checks examined it, and only a JS-family source is
@@ -43,7 +43,7 @@ function byPathThenLine(a: UnusedPragma, b: UnusedPragma): number {
   return a.line - b.line;
 }
 
-/** Returns every pragma the run's examined sources carry against which no check declined a finding. */
+/** Returns every pragma the run's examined sources carry against which no check suppressed a finding. */
 function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   const unused: UnusedPragma[] = [];
 
@@ -56,7 +56,7 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
     if (text === undefined) continue;
 
     for (const site of listPragmaSites(text)) {
-      if (!ledger.hasDeclined(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
+      if (!ledger.hasSuppressed(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
     }
   }
 

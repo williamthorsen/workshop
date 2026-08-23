@@ -3,17 +3,17 @@ import process from 'node:process';
 
 /**
  * What one invocation observed about the sources its checks read: which paths were examined, and which
- * sites a pragma declined a finding on.
+ * sites a pragma suppressed a finding on.
  *
  * Together they are the evidence the unused-pragma report rests on. A path no check examined yields no
- * report at all, and a site some check declined is a pragma that did its work.
+ * report at all, and a site some check suppressed is a pragma that did its work.
  */
 export interface PragmaLedger {
-  /** Reports whether a pragma declined a finding at a site. */
-  hasDeclined: (filePath: string, line: number) => boolean;
+  /** Reports whether a pragma suppressed a finding at a site. */
+  hasSuppressed: (filePath: string, line: number) => boolean;
 
-  /** Records that a pragma declined a finding at a site. */
-  recordDeclined: (filePath: string, line: number) => void;
+  /** Records that a pragma suppressed a finding at a site. */
+  recordSuppressed: (filePath: string, line: number) => void;
 
   /** Records the paths a check examined. */
   recordScanned: (paths: readonly string[]) => void;
@@ -31,12 +31,12 @@ export interface PragmaLedger {
  */
 export function createPragmaLedger(): PragmaLedger {
   const scanned = new Set<string>();
-  const declined = new Set<string>();
+  const suppressed = new Set<string>();
 
   return {
-    hasDeclined: (filePath, line) => declined.has(toSiteKey(filePath, line)),
-    recordDeclined: (filePath, line) => {
-      declined.add(toSiteKey(filePath, line));
+    hasSuppressed: (filePath, line) => suppressed.has(toSiteKey(filePath, line)),
+    recordSuppressed: (filePath, line) => {
+      suppressed.add(toSiteKey(filePath, line));
     },
     recordScanned: (paths) => {
       for (const filePath of paths) scanned.add(resolvePath(filePath));
