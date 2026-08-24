@@ -41,8 +41,8 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
   // Search `node_modules` first, so a package that is both installed and a workspace resolves to the installed copy.
   const root = resolvePackageRoot(packageName, fromDir) ?? resolveWorkspaceRoot(packageName, fromDir);
   if (root === undefined) {
-    // Only a configured name reaches this: a discovered one resolved through this same call before it was
-    // named, so the config is the one place the reader can act on.
+    // Only a configured package name can be unresolved here: A discovered name has already been located
+    // through `resolvePackageRoot`, so the config is what the reader must correct.
     throw configError(
       `Configured package "${packageName}" was not found; it must be a direct dependency of this project or one of its workspaces.`,
     );
