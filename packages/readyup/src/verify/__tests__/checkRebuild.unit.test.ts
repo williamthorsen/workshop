@@ -186,7 +186,7 @@ function kit() {
   return { name: 'demo', path: 'demo.js', source: 'demo.ts' };
 }
 
-/** Returns a `buildBundle` result whose bytes mismatch the bundle `writeKitFiles` lays down. */
+/** Returns a `buildBundle` result that mismatches the bundle `writeKitFiles` lays down. */
 function rebuildResult(overrides: { esbuildVersion?: string; bundledDependencies?: Record<string, string> } = {}) {
   return {
     bundledDependencies: {},

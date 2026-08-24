@@ -97,7 +97,7 @@ export const RebuildDependencyChangeSchema = z
  * consumer pinned to this schema still validates a payload from a readyup that predates either.
  *
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
- * payload it always did. `rebuildExpected` is the hash of the recompiled bytes and `rebuildActual`
+ * payload it always did. `rebuildExpected` is the hash of the recompiled bundle and `rebuildActual`
  * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` carries the
  * compile failure on `failed`. `rebuildCompiledWith` names the readyup a mismatched bundle was
  * built by, present only when it differs from the running one, which is what separates a mismatch

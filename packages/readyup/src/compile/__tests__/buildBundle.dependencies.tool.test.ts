@@ -26,6 +26,9 @@ describe('buildBundle bundled dependencies', () => {
 
   beforeAll(async () => {
     treeRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'dependencies-')));
+    // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
+    // temporary directory happens to hold a manifest.
+    writeFileSync(path.join(treeRoot, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
     writeFileSync(path.join(treeRoot, 'kit.ts'), KIT_SOURCE);
 
     writePackage(path.join(treeRoot, 'node_modules', 'tiny-dep'), { name: 'tiny-dep', version: '1.0.0' }, [

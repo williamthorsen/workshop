@@ -27,7 +27,7 @@ export interface CompileResult {
  * Bundles a TypeScript checklist file and writes the result to disk.
  *
  * The bundle itself is `buildBundle`'s; this adds the destination. Writing is skipped when the
- * bytes already on disk are identical, so a compile that changes nothing leaves the file's mtime
+ * file already on disk is identical, so a compile that changes nothing leaves the file's mtime
  * alone.
  */
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {

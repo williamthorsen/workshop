@@ -1,5 +1,5 @@
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,12 +18,18 @@ vi.mock(import('../loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
 }));
 
-vi.mock(import('node:fs'), () => ({
+// Spreads the original so that `realpathSync`, which the compile root is resolved through, stays real.
+vi.mock(import('node:fs'), async (importOriginal) => ({
+  ...(await importOriginal()),
   existsSync: mockExistsSync,
   mkdirSync: mockMkdirSync,
   readFileSync: mockReadFileSync,
   writeFileSync: mockWriteFileSync,
 }));
+
+// Names a directory that exists whatever the working directory is, because the compile root is resolved
+// through `realpathSync` of the entry's own directory once `existsSync` reports no `package.json` above it.
+const CONFIG_PATH = path.join(import.meta.dirname, 'readyup.config.ts');
 
 describe(compileConfig, () => {
   beforeEach(() => {
@@ -45,11 +51,13 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    await compileConfig('config/readyup.config.ts');
+    await compileConfig(CONFIG_PATH);
 
     expect(mockBuild).toHaveBeenCalledWith({
-      entryPoints: [path.resolve('config/readyup.config.ts')],
-      absWorkingDir: process.cwd(),
+      entryPoints: [CONFIG_PATH],
+      // `existsSync` reports no `package.json` anywhere, so the compile root falls back to the source's
+      // own directory.
+      absWorkingDir: realpathSync(import.meta.dirname),
       bundle: true,
       format: 'esm',
       platform: 'node',
@@ -67,7 +75,7 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    await compileConfig('config/readyup.config.ts');
+    await compileConfig(CONFIG_PATH);
 
     expect(mockBuild).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -80,7 +88,7 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/readyup.config.ts');
+    const result = await compileConfig(CONFIG_PATH);
 
     expect(result.esbuildVersion).toBe('0.99.0-test');
   });
@@ -89,7 +97,7 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/readyup.config.ts');
+    const result = await compileConfig(CONFIG_PATH);
 
     expect(result.bundledDependencies).toStrictEqual({});
   });
@@ -98,16 +106,16 @@ describe(compileConfig, () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/readyup.config.ts');
+    const result = await compileConfig(CONFIG_PATH);
 
-    expect(result.outputPath).toBe(path.resolve('config/readyup.config.js'));
+    expect(result.outputPath).toBe(path.join(import.meta.dirname, 'readyup.config.js'));
   });
 
   it('uses a custom output path when provided', async () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
-    const result = await compileConfig('config/readyup.config.ts', 'dist/bundle.js');
+    const result = await compileConfig(CONFIG_PATH, 'dist/bundle.js');
 
     expect(result.outputPath).toBe(path.resolve('dist/bundle.js'));
   });

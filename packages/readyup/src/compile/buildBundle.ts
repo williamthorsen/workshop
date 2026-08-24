@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
@@ -12,6 +11,7 @@ import { identifyInput } from './CompiledInput.ts';
 import { createCompileRecorder } from './createCompileRecorder.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
+import { resolveCompileRoot } from './resolveCompileRoot.ts';
 
 /**
  * Directory whose contents stay out of a kit's recorded closure.
@@ -28,10 +28,10 @@ export const KIT_COMPILE_TARGET = 'es2025';
 /**
  * TypeScript settings kits compile under.
  *
- * Supplying this at all is what stops esbuild searching for a `tsconfig.json` above the kit, so a kit's
- * bytes are a function of its own sources rather than of whatever configuration the host repo happens to
- * keep above it. The two settings are the ones esbuild derives rather than fixes; stating them keeps a
- * version bump from moving kit semantics quietly. Everything else stays at esbuild's default.
+ * Supplying this at all is what stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles
+ * from its own sources rather than from whatever configuration the host repo happens to keep above it. The two
+ * settings are the ones esbuild derives rather than fixes; stating them keeps a version bump from moving kit
+ * semantics quietly. Everything else stays at esbuild's default.
  *
  * `target` is left undeclared, which is what keeps class-field semantics independent of
  * `KIT_COMPILE_TARGET`: esbuild derives `useDefineForClassFields` from the TypeScript `target`, so
@@ -59,8 +59,8 @@ const UNRESOLVED_SPECIFIER_HINT =
  *
  * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
  * readyup version a kit was compiled against and the runner's own version at execution time. The
- * constant is part of the bundle's bytes, so a kit rebuilt under a different readyup differs from
- * the one on disk even when its source has not moved.
+ * constant is part of the bundle, so a kit rebuilt under a different readyup differs from the one on
+ * disk even when its source has not moved.
  */
 const GENERATED_HEADER = [
   '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
@@ -69,7 +69,7 @@ const GENERATED_HEADER = [
   '',
 ].join('\n');
 
-/** A kit's compiled bytes and the closure of files the compile read to produce them. */
+/** A kit's compiled bundle and the closure of files the compile read to produce it. */
 export interface BundleResult {
   /** Every package the bundle inlined, by name, with the version its `package.json` declares. */
   bundledDependencies: Record<string, string>;
@@ -84,7 +84,7 @@ export interface BundleResult {
 }
 
 /**
- * Bundles a TypeScript checklist file into a self-contained ESM bundle and returns its bytes.
+ * Bundles a TypeScript checklist file into a self-contained ESM bundle and returns it.
  *
  * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are kept
  * external; all other imports are inlined. The externalized `readyup` specifiers are resolved at
@@ -96,16 +96,17 @@ export interface BundleResult {
  * compile would have produced -- a property that holds by construction rather than by two option
  * objects being kept in agreement.
  *
- * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`. The bytes
- * are a function of the entry point, the plugin, and the working directory, against which esbuild renders
- * each bundled module's path into the output.
+ * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`. The bundle
+ * is determined by the entry point and the plugin. esbuild renders each bundled module's path into the
+ * output against the working directory, which `resolveCompileRoot` derives from the kit itself, so the
+ * directory the compile was invoked from does not reach the bundle.
  *
  * The one place a compile's input closure is known, which is why it returns the closure alongside the
- * bytes rather than leaving a later reader to reconstruct it.
+ * bundle rather than leaving a later reader to reconstruct it.
  */
 export async function buildBundle(inputPath: string): Promise<BundleResult> {
   const resolvedInput = path.resolve(inputPath);
-  const workingDir = process.cwd();
+  const workingDir = resolveCompileRoot(resolvedInput);
 
   let esbuild: typeof import('esbuild');
   try {
@@ -190,7 +191,7 @@ function collectBundledDependencies(metafileKeys: string[], workingDir: string):
  *
  * A recorded read wins over the metafile's account of the same file, because only the recorder knows an
  * inline input's path specifier. The metafile keys are relative to the working directory esbuild ran
- * under, which is pinned rather than defaulted so that resolving them cannot drift.
+ * under, which is the kit's own compile root rather than the invocation's, so resolving them cannot drift.
  *
  * Sorted so that recompiling a kit whose inputs have not moved rewrites the manifest identically.
  */

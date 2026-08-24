@@ -110,7 +110,7 @@ function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
  * Compares what was hashed against the hash recorded for it, and reports how it differs.
  *
  * `verb` names what the digest covers: an inline input's is over the projection substituted into the
- * bundle, not over the bytes of the file holding it.
+ * bundle, not over the contents of the file holding it.
  */
 function describeHashDrift(filePath: string, hashed: string, expected: string, verb: string): string | undefined {
   const actual = computeHash(hashed).slice(0, expected.length);
