@@ -131,6 +131,21 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
   });
 
+  it('resolves the `catalog:default` spelling through the default catalog', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:default' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vitest: 2.1.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('vitest', '3.0.0')).toBe(false);
+  });
+
+  it('returns false when a catalog entry opens a construct the reader cannot follow', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vue: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vue: {version: 3.5.0}', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vue', '3.0.0')).toBe(false);
+  });
+
   it('measures a catalog version carrying a range operator', ({ temp }) => {
     writePackageJson(temp, { devDependencies: { react: 'catalog:' } });
     writeWorkspaceYaml(temp, ['catalog:', '  react: ^19.0.0', ''].join('\n'));

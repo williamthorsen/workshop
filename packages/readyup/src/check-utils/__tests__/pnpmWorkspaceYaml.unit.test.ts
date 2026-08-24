@@ -35,6 +35,25 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'readyup')).toBe('workspace:*');
   });
 
+  it('reads the default catalog under the name the shorthand expands to', () => {
+    const yaml = ['catalog:', '  esbuild: 0.28.2', ''].join('\n');
+
+    expect(findPnpmCatalogVersion(yaml, 'esbuild', 'default')).toBe('0.28.2');
+  });
+
+  it('reads the default catalog from a `default` block under `catalogs:`', () => {
+    const yaml = ['catalogs:', '  default:', '    esbuild: 0.28.2', ''].join('\n');
+
+    expect(findPnpmCatalogVersion(yaml, 'esbuild')).toBe('0.28.2');
+    expect(findPnpmCatalogVersion(yaml, 'esbuild', 'default')).toBe('0.28.2');
+  });
+
+  it('prefers the top-level block when both spellings of the default catalog are present', () => {
+    const yaml = ['catalog:', '  esbuild: 0.28.2', 'catalogs:', '  default:', '    esbuild: 0.1.0', ''].join('\n');
+
+    expect(findPnpmCatalogVersion(yaml, 'esbuild')).toBe('0.28.2');
+  });
+
   it('resolves a package from a named catalog', () => {
     const yaml = ['catalogs:', '  react17:', '    react: ^17.0.2', '  react18:', '    react: ^18.2.0', ''].join('\n');
 
@@ -96,11 +115,38 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'react17', 'react17')).toBeUndefined();
   });
 
+  it('reports no version for a value opening a construct it cannot follow', () => {
+    const yaml = [
+      'catalog:',
+      '  aliased: *pinned',
+      '  anchored: &shared 19.0.0',
+      '  flow: {version: 3.5.0}',
+      '  sequence: [3.5.0]',
+      '  folded: >',
+      '  literal: |',
+      '',
+    ].join('\n');
+
+    expect(findPnpmCatalogVersion(yaml, 'aliased')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'anchored')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'flow')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'sequence')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'folded')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'literal')).toBeUndefined();
+  });
+
+  it('reads a quoted value whose text opens with an indicator', () => {
+    const yaml = ['catalog:', "  vitest: '>=1.2.3'", ''].join('\n');
+
+    expect(findPnpmCatalogVersion(yaml, 'vitest')).toBe('>=1.2.3');
+  });
+
   it('reports no version rather than throwing on YAML it cannot read', () => {
     const yaml = ['catalog: &shared', '  react: *pinned', '  vue: {version: 3.5.0}', ''].join('\n');
 
     expect(() => findPnpmCatalogVersion(yaml, 'react')).not.toThrow();
-    expect(findPnpmCatalogVersion(yaml, 'missing')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'react')).toBeUndefined();
+    expect(findPnpmCatalogVersion(yaml, 'vue')).toBeUndefined();
   });
 });
 

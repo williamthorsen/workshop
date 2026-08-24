@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 
 /**
- * Leading characters that mark a sequence item as using an unsupported YAML feature, mapped to the
+ * Leading characters that mark a plain scalar as opening an unsupported YAML feature, mapped to the
  * feature name reported for each. A feature with two spellings appears once per character.
  */
-const UNSUPPORTED_ITEM_LEADERS = new Map([
+const UNSUPPORTED_SCALAR_LEADERS = new Map([
   ['&', 'anchor (&name)'],
   ['*', 'alias (*name)'],
   ['[', 'flow sequence or mapping'],
@@ -13,16 +13,22 @@ const UNSUPPORTED_ITEM_LEADERS = new Map([
   ['>', 'block scalar (| or >)'],
 ]);
 
+/** The catalog a bare `catalog:` specifier names, which pnpm documents the shorthand as expanding to. */
+const DEFAULT_CATALOG_NAME = 'default';
+
 /**
- * Read the version a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
- * `catalogName` selects a block under `catalogs:`; omitted, it reads the default `catalog:`.
- * Returns `undefined` when no catalog resolves the package, an unreadable block included.
+ * Reads the version a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
+ * `catalogName` names the catalog to read, defaulting to the one `catalog:` expands to.
+ * Returns `undefined` when no catalog resolves the package, an entry this reader cannot follow included.
  */
-export function findPnpmCatalogVersion(yaml: string, packageName: string, catalogName?: string): string | undefined {
+export function findPnpmCatalogVersion(
+  yaml: string,
+  packageName: string,
+  catalogName: string = DEFAULT_CATALOG_NAME,
+): string | undefined {
   const lines = yaml.split(/\r?\n/);
 
-  const blockLineIndex =
-    catalogName === undefined ? findTopLevelKeyLine(lines, 'catalog') : findNamedCatalogLine(lines, catalogName);
+  const blockLineIndex = findCatalogBlockLine(lines, catalogName);
   if (blockLineIndex === -1) return undefined;
 
   for (const entry of collectBlockEntries(lines, blockLineIndex)) {
@@ -72,7 +78,7 @@ function rejectGlobalUnsupportedFeatures(absolutePath: string, lines: string[]):
   }
 }
 
-/** Find the line containing a named top-level key. Returns -1 if absent. */
+/** Finds the line containing a named top-level key. Returns -1 if absent. */
 function findTopLevelKeyLine(lines: string[], key: string): number {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
@@ -86,7 +92,19 @@ function findTopLevelKeyLine(lines: string[], key: string): number {
   return -1;
 }
 
-/** Find the line declaring `catalogName` under the top-level `catalogs:` key. Returns -1 if absent. */
+/**
+ * Finds the line opening a catalog's block. The default catalog is written as the top-level `catalog:`
+ * key or as a `default` block under `catalogs:`, so both are tried for it. Returns -1 if absent.
+ */
+function findCatalogBlockLine(lines: string[], catalogName: string): number {
+  if (catalogName === DEFAULT_CATALOG_NAME) {
+    const topLevelLineIndex = findTopLevelKeyLine(lines, 'catalog');
+    if (topLevelLineIndex !== -1) return topLevelLineIndex;
+  }
+  return findNamedCatalogLine(lines, catalogName);
+}
+
+/** Finds the line declaring `catalogName` under the top-level `catalogs:` key. Returns -1 if absent. */
 function findNamedCatalogLine(lines: string[], catalogName: string): number {
   const catalogsLineIndex = findTopLevelKeyLine(lines, 'catalogs');
   if (catalogsLineIndex === -1) return -1;
@@ -100,7 +118,7 @@ function findNamedCatalogLine(lines: string[], catalogName: string): number {
 }
 
 /**
- * Collect the entries of the block-mapping directly under a key line: the lines at the first indent
+ * Collects the entries of the block-mapping directly under a key line: the lines at the first indent
  * deeper than the key's. Blank lines, comments, and more deeply nested lines are skipped, and a line
  * indented no deeper than the key ends the block.
  */
@@ -124,16 +142,20 @@ function collectBlockEntries(lines: string[], keyLineIndex: number): { index: nu
 }
 
 /**
- * Split a `key: value` mapping line into its parts, or return undefined when the line is not one.
- * The key may be quoted, as a scoped package name in a catalog is; the value keeps any `:` it carries,
- * so a `workspace:*` entry survives.
+ * Splits a `key: value` mapping line into its parts, or returns undefined when the line is not one or
+ * carries a value this reader cannot follow. The key may be quoted, as a scoped package name in a
+ * catalog is; the value keeps any `:` it carries, so a `workspace:*` entry survives.
  */
 function parseMappingEntry(text: string): { key: string; value: string } | undefined {
   const match = /^(?:('[^']*')|("[^"]*")|([^:#]+?))\s*:(.*)$/.exec(text.trim());
   if (match === null) return undefined;
 
+  // An indicator opens a construct rather than a scalar, and only on a plain value: a quoted one is text.
+  const rawValue = stripInlineComment(match[4] ?? '').trim();
+  if (UNSUPPORTED_SCALAR_LEADERS.has(rawValue.charAt(0))) return undefined;
+
   const rawKey = match[1] ?? match[2] ?? match[3] ?? '';
-  return { key: stripQuotes(rawKey), value: stripQuotes(stripInlineComment(match[4] ?? '').trim()) };
+  return { key: stripQuotes(rawKey), value: stripQuotes(rawValue) };
 }
 
 /** Return the trimmed value after a `key:` on the same line, or null if there's no inline value. */
@@ -204,7 +226,7 @@ function rejectItemLevelUnsupportedFeatures(
   const trimmed = after.replace(/^\s*/, '');
   if (trimmed === '') return;
 
-  const feature = UNSUPPORTED_ITEM_LEADERS.get(trimmed.charAt(0));
+  const feature = UNSUPPORTED_SCALAR_LEADERS.get(trimmed.charAt(0));
   if (feature !== undefined) {
     throwUnsupported(absolutePath, lineIndex, line, feature);
   }
@@ -217,7 +239,7 @@ function rejectItemLevelUnsupportedFeatures(
   }
 }
 
-/** Strip outer quotes from a sequence-item value, rejecting an unterminated one. Does not interpret escapes. */
+/** Strips outer quotes from a sequence-item value, rejecting an unterminated one. Does not interpret escapes. */
 function unquote(value: string, absolutePath: string, lineIndex: number, line: string): string {
   const stripped = stripQuotes(value);
   if (stripped === value && (value.startsWith("'") || value.startsWith('"'))) {
@@ -226,7 +248,7 @@ function unquote(value: string, absolutePath: string, lineIndex: number, line: s
   return stripped;
 }
 
-/** Strip matching outer quotes from a scalar, leaving an unquoted or unterminated one as it is. */
+/** Strips matching outer quotes from a scalar, leaving an unquoted or unterminated one as it is. */
 function stripQuotes(value: string): string {
   if (value.length >= 2) {
     const first = value[0];
