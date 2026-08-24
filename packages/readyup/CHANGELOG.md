@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.32.1 — 2026-08-24
+
+### 🐛 Bug fixes
+
+- Resolve a catalog specifier when checking a devDependency floor (#395)
+
+  Fixes an issue where `hasMinDevDependencyVersion` reported every devDependency declared with pnpm's `catalog:` protocol as failing its minimum version. The check now resolves a `catalog:` specifier through `pnpm-workspace.yaml` and measures the floor against the version it finds there; a specifier the file does not resolve still meets no floor.
+
+  Separately, a specifier naming fewer than three version segments (`7`, `^6`) is now measured rather than rejected.
+
 ## 0.32.0 — 2026-08-24
 
 ### 🎉 Features

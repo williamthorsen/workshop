@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.32.1",
+    "date": "2026-08-24",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Resolve a catalog specifier when checking a devDependency floor (#395)",
+            "body": "Fixes an issue where `hasMinDevDependencyVersion` reported every devDependency declared with pnpm's `catalog:` protocol as failing its minimum version. The check now resolves a `catalog:` specifier through `pnpm-workspace.yaml` and measures the floor against the version it finds there; a specifier the file does not resolve still meets no floor.\n\nSeparately, a specifier naming fewer than three version segments (`7`, `^6`) is now measured rather than rejected.",
+            "hash": "e2c8343ccc1f2ca7341bbdf978c3d952aadc69ea"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.32.0",
     "date": "2026-08-24",
     "sections": [
