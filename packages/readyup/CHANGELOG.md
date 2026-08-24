@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.32.0 — 2026-08-24
+
+### 🎉 Features
+
+- Narrow ownImplementation to the declaration holding the finding (#392)
+
+  Narrows the `ownImplementation` exemption that `buildFindingReport` accepts in `readyup/check-utils` from the file to the declaration. A finding is exempt only where it sits inside the top-level declaration exported under one of the package's recommended names; a neighbouring declaration in the same file is ordinary code and is reported, and a re-exporting barrel exempts nothing.
+
+- Resolve a configured package through the workspace when it is not in node_modules (#393)
+
+  Resolves a configured package through the running project's own workspaces when the package is not present in `node_modules`, so a monorepo can run its own packages' kits over itself without declaring a dependency on them purely to make them resolvable. The fallback applies to both `rdy run --packages` and `rdy list --packages`.
+
+  `node_modules` is still searched first, so an installed package resolves exactly as before. When a configured name matches neither an installed package nor a workspace, readyup now reports `Configured package "X" was not found; it must be a direct dependency of this project or one of its workspaces.`
+
 ## 0.31.0 — 2026-08-23
 
 ### 🎉 Features

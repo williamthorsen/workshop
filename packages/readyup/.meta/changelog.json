@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.32.0",
+    "date": "2026-08-24",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Narrow ownImplementation to the declaration holding the finding (#392)",
+            "body": "Narrows the `ownImplementation` exemption that `buildFindingReport` accepts in `readyup/check-utils` from the file to the declaration. A finding is exempt only where it sits inside the top-level declaration exported under one of the package's recommended names; a neighbouring declaration in the same file is ordinary code and is reported, and a re-exporting barrel exempts nothing.",
+            "hash": "38e308781078bbc6d42744e8d23e3893583e9759"
+          },
+          {
+            "description": "Resolve a configured package through the workspace when it is not in node_modules (#393)",
+            "body": "Resolves a configured package through the running project's own workspaces when the package is not present in `node_modules`, so a monorepo can run its own packages' kits over itself without declaring a dependency on them purely to make them resolvable. The fallback applies to both `rdy run --packages` and `rdy list --packages`.\n\n`node_modules` is still searched first, so an installed package resolves exactly as before. When a configured name matches neither an installed package nor a workspace, readyup now reports `Configured package \"X\" was not found; it must be a direct dependency of this project or one of its workspaces.`",
+            "hash": "087fed57a8192742829b032af85384c50be9f1cb"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.31.0",
     "date": "2026-08-23",
     "sections": [
