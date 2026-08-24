@@ -6,12 +6,13 @@ import { discoverWorkspacesAt, type Workspace } from '../check-utils/workspaces.
 /**
  * Locates the root directory of the workspace publishing `packageName`, or `undefined` when no workspace does.
  *
- * The second answer behind `resolvePackageRoot`, for a project whose own workspaces publish kits: a monorepo
- * declares no dependency on them at its root, so nothing links them into `node_modules` and the walk misses.
- * A workspace matches by the `name` its manifest declares, `private: true` included, since privacy governs
- * publication to a registry rather than discovery inside the repo.
+ * The fallback behind `resolvePackageRoot`, for a project whose own workspaces publish kits: a monorepo
+ * declares no dependency on them at its root, so nothing links them into `node_modules` and the upward walk
+ * does not find them. A workspace matches by the `name` its manifest declares, `private: true` included,
+ * because `private` prevents publication to a registry and has no bearing on discovery inside the repo.
  *
- * Answers with the real path, matching what the `node_modules` walk reports for a workspace linked into it.
+ * Returns the real path, so the result matches what `resolvePackageRoot` returns for a workspace that is
+ * linked into `node_modules`.
  */
 export function resolveWorkspaceRoot(packageName: string, fromDir: string = process.cwd()): string | undefined {
   const workspaces = discoverWorkspacesOrNone(fromDir);
@@ -24,11 +25,11 @@ export function resolveWorkspaceRoot(packageName: string, fromDir: string = proc
 // region | Helpers
 
 /**
- * Discovers the workspaces of the project at `fromDir`, answering with none where discovery cannot.
+ * Discovers the workspaces of the project at `fromDir`, returning an empty list where discovery fails.
  *
- * Discovery throws for a project with no root manifest and for workspace globs readyup cannot expand. Both
- * mean the same thing here -- no workspace answers to this name -- and letting either escape would replace
- * the caller's actionable "configured package was not found" with a diagnostic about the repository's shape.
+ * Discovery throws for a project with no root manifest and for workspace globs readyup cannot expand. In
+ * both cases no workspace can match the requested name, and propagating the error would replace the
+ * caller's actionable "configured package was not found" with a diagnostic about the repository's layout.
  */
 function discoverWorkspacesOrNone(fromDir: string): Workspace[] {
   try {

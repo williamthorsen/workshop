@@ -38,7 +38,7 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 
 /** Expands one configured package into the kits it publishes. */
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
-  // `node_modules` answers first, so an installed package resolves as it does without a workspace to fall back on.
+  // Search `node_modules` first, so a package that is both installed and a workspace resolves to the installed copy.
   const root = resolvePackageRoot(packageName, fromDir) ?? resolveWorkspaceRoot(packageName, fromDir);
   if (root === undefined) {
     // Only a configured name reaches this: a discovered one resolved through this same call before it was
