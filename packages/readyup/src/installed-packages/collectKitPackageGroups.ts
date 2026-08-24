@@ -22,8 +22,9 @@ interface KitPackageGroupOptions {
  * Groups every kit-publishing dependency with the kits it publishes, sorted by package name.
  *
  * The set unions the installed direct dependencies discovery names with the packages the config names.
- * Discovery reads the project's declared dependencies, while package resolution walks `node_modules`
- * upward, so a configured package installed without being declared is one only the config half reports.
+ * Discovery reads the project's declared dependencies, while package resolution walks `node_modules` upward
+ * and falls back to the project's workspaces, so a configured package that is installed without being declared,
+ * or published by a workspace, is one only the config half reports.
  *
  * Configured membership arrives as an argument rather than being read here, which leaves the answer a
  * function of a directory and a list: a caller sweeping a repository already holds each project's config.

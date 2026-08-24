@@ -6,6 +6,7 @@ import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
+import { resolveWorkspaceRoot } from './resolveWorkspaceRoot.ts';
 
 /** A kit published by an installed package, carrying the provenance its output is labelled with. */
 export interface PackageKit {
@@ -37,12 +38,13 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 
 /** Expands one configured package into the kits it publishes. */
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
-  const root = resolvePackageRoot(packageName, fromDir);
+  // Search `node_modules` first, so a package that is both installed and a workspace resolves to the installed copy.
+  const root = resolvePackageRoot(packageName, fromDir) ?? resolveWorkspaceRoot(packageName, fromDir);
   if (root === undefined) {
-    // Only a configured name reaches this: a discovered one resolved through this same call before it was
-    // named, so the config is the one place the reader can act on.
+    // Only a configured package name can be unresolved here: A discovered name has already been located
+    // through `resolvePackageRoot`, so the config is what the reader must correct.
     throw configError(
-      `Configured package "${packageName}" is not installed; it must be a direct dependency of this project.`,
+      `Configured package "${packageName}" was not found; it must be a direct dependency of this project or one of its workspaces.`,
     );
   }
 

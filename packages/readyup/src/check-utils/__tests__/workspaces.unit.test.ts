@@ -5,7 +5,7 @@ import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, test } from 'vitest';
 
-import { discoverWorkspaces } from '../workspaces.ts';
+import { discoverWorkspaces, discoverWorkspacesAt } from '../workspaces.ts';
 
 const it = test.extend(
   'temp',
@@ -324,6 +324,28 @@ describe(discoverWorkspaces, () => {
   });
 });
 
+describe(discoverWorkspacesAt, () => {
+  it('reads the repo at the directory it is handed rather than the ambient cwd', ({ temp }) => {
+    writeWorkspacePackage(temp, 'nested', { name: 'nested-root', private: true, workspaces: ['packages/*'] });
+    writeWorkspacePackage(temp, 'nested/packages/alpha', { name: 'alpha' });
+
+    const workspaces = discoverWorkspacesAt(temp.resolve('nested'));
+
+    expect(workspaces.map((w) => w.name)).toStrictEqual(['alpha']);
+    // The ambient cwd holds no manifest, so an answer read through it could not be this one.
+    expect(() => discoverWorkspaces()).toThrow(/no package.json found/);
+  });
+
+  it('resolves a relative directory against the cwd', ({ temp }) => {
+    writeWorkspacePackage(temp, 'nested', { name: 'nested-root', private: true, workspaces: ['packages/*'] });
+    writeWorkspacePackage(temp, 'nested/packages/beta', { name: 'beta' });
+
+    expect(discoverWorkspacesAt('nested').map((w) => w.absolutePath)).toStrictEqual([
+      temp.resolve('nested/packages/beta'),
+    ]);
+  });
+});
+
 // region | Helpers
 
 /** Writes the root manifest that declares the workspace globs. */
@@ -331,7 +353,7 @@ function writeRootPackageJson(temp: TempTree, content: Record<string, unknown>):
   temp.writeJson('package.json', content);
 }
 
-/** Writes a workspace member's manifest at a root-relative directory. */
+/** Writes a package manifest at a root-relative directory. */
 function writeWorkspacePackage(temp: TempTree, relDir: string, content: Record<string, unknown>): void {
   temp.writeJson(join(relDir, 'package.json'), content);
 }
