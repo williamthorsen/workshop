@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 
 /**
- * Leading characters that mark a sequence item as using an unsupported YAML feature, mapped to the
+ * Leading characters that mark a plain scalar as opening an unsupported YAML feature, mapped to the
  * feature name reported for each. A feature with two spellings appears once per character.
  */
-const UNSUPPORTED_ITEM_LEADERS = new Map([
+const UNSUPPORTED_SCALAR_LEADERS = new Map([
   ['&', 'anchor (&name)'],
   ['*', 'alias (*name)'],
   ['[', 'flow sequence or mapping'],
@@ -12,6 +12,33 @@ const UNSUPPORTED_ITEM_LEADERS = new Map([
   ['|', 'block scalar (| or >)'],
   ['>', 'block scalar (| or >)'],
 ]);
+
+/** The catalog a bare `catalog:` specifier names, which pnpm documents the shorthand as expanding to. */
+const DEFAULT_CATALOG_NAME = 'default';
+
+/**
+ * Reads the version a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
+ * `catalogName` names the catalog to read, defaulting to the one `catalog:` expands to.
+ * Returns `undefined` when no catalog resolves the package, an entry this reader cannot follow included.
+ */
+export function findPnpmCatalogVersion(
+  yaml: string,
+  packageName: string,
+  catalogName: string = DEFAULT_CATALOG_NAME,
+): string | undefined {
+  const lines = yaml.split(/\r?\n/);
+
+  const blockLineIndex = findCatalogBlockLine(lines, catalogName);
+  if (blockLineIndex === -1) return undefined;
+
+  for (const entry of collectBlockEntries(lines, blockLineIndex)) {
+    const mapping = parseMappingEntry(entry.text);
+    if (mapping?.key === packageName) {
+      return mapping.value === '' ? undefined : mapping.value;
+    }
+  }
+  return undefined;
+}
 
 /**
  * Read the `packages` block-sequence from a `pnpm-workspace.yaml` file.
@@ -25,7 +52,7 @@ export function readPnpmWorkspacePackages(absolutePath: string): string[] | null
 
   rejectGlobalUnsupportedFeatures(absolutePath, lines);
 
-  const packagesLineIndex = findPackagesKeyLine(lines);
+  const packagesLineIndex = findTopLevelKeyLine(lines, 'packages');
   if (packagesLineIndex === -1) return null;
 
   const packagesLine = lines[packagesLineIndex] ?? '';
@@ -51,8 +78,8 @@ function rejectGlobalUnsupportedFeatures(absolutePath: string, lines: string[]):
   }
 }
 
-/** Find the line containing the top-level `packages:` key. Returns -1 if absent. */
-function findPackagesKeyLine(lines: string[]): number {
+/** Finds the line containing a named top-level key. Returns -1 if absent. */
+function findTopLevelKeyLine(lines: string[], key: string): number {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
     if (isBlankOrComment(line)) continue;
@@ -60,9 +87,75 @@ function findPackagesKeyLine(lines: string[]): number {
     if (/^\s/.test(line)) continue;
     const match = /^([A-Za-z_][\w-]*)\s*:(.*)$/.exec(line);
     if (match === null) continue;
-    if (match[1] === 'packages') return index;
+    if (match[1] === key) return index;
   }
   return -1;
+}
+
+/**
+ * Finds the line opening a catalog's block. The default catalog is written as the top-level `catalog:`
+ * key or as a `default` block under `catalogs:`, so both are tried for it. Returns -1 if absent.
+ */
+function findCatalogBlockLine(lines: string[], catalogName: string): number {
+  if (catalogName === DEFAULT_CATALOG_NAME) {
+    const topLevelLineIndex = findTopLevelKeyLine(lines, 'catalog');
+    if (topLevelLineIndex !== -1) return topLevelLineIndex;
+  }
+  return findNamedCatalogLine(lines, catalogName);
+}
+
+/** Finds the line declaring `catalogName` under the top-level `catalogs:` key. Returns -1 if absent. */
+function findNamedCatalogLine(lines: string[], catalogName: string): number {
+  const catalogsLineIndex = findTopLevelKeyLine(lines, 'catalogs');
+  if (catalogsLineIndex === -1) return -1;
+
+  for (const entry of collectBlockEntries(lines, catalogsLineIndex)) {
+    const mapping = parseMappingEntry(entry.text);
+    // A named catalog opens a block of its own, so it declares a key and no value.
+    if (mapping?.key === catalogName && mapping.value === '') return entry.index;
+  }
+  return -1;
+}
+
+/**
+ * Collects the entries of the block-mapping directly under a key line: the lines at the first indent
+ * deeper than the key's. Blank lines, comments, and more deeply nested lines are skipped, and a line
+ * indented no deeper than the key ends the block.
+ */
+function collectBlockEntries(lines: string[], keyLineIndex: number): { index: number; text: string }[] {
+  const keyIndent = countLeadingSpaces(lines[keyLineIndex] ?? '');
+  const entries: { index: number; text: string }[] = [];
+  let childIndent: number | undefined;
+
+  for (let index = keyLineIndex + 1; index < lines.length; index += 1) {
+    const text = lines[index] ?? '';
+    if (isBlankOrComment(text)) continue;
+
+    const indent = countLeadingSpaces(text);
+    if (indent <= keyIndent) break;
+
+    childIndent ??= indent;
+    if (indent === childIndent) entries.push({ index, text });
+  }
+
+  return entries;
+}
+
+/**
+ * Splits a `key: value` mapping line into its parts, or returns undefined when the line is not one or
+ * carries a value this reader cannot follow. The key may be quoted, as a scoped package name in a
+ * catalog is; the value keeps any `:` it carries, so a `workspace:*` entry survives.
+ */
+function parseMappingEntry(text: string): { key: string; value: string } | undefined {
+  const match = /^(?:('[^']*')|("[^"]*")|([^:#]+?))\s*:(.*)$/.exec(text.trim());
+  if (match === null) return undefined;
+
+  // An indicator opens a construct rather than a scalar, and only on a plain value: a quoted one is text.
+  const rawValue = stripInlineComment(match[4] ?? '').trim();
+  if (UNSUPPORTED_SCALAR_LEADERS.has(rawValue.charAt(0))) return undefined;
+
+  const rawKey = match[1] ?? match[2] ?? match[3] ?? '';
+  return { key: stripQuotes(rawKey), value: stripQuotes(rawValue) };
 }
 
 /** Return the trimmed value after a `key:` on the same line, or null if there's no inline value. */
@@ -133,7 +226,7 @@ function rejectItemLevelUnsupportedFeatures(
   const trimmed = after.replace(/^\s*/, '');
   if (trimmed === '') return;
 
-  const feature = UNSUPPORTED_ITEM_LEADERS.get(trimmed.charAt(0));
+  const feature = UNSUPPORTED_SCALAR_LEADERS.get(trimmed.charAt(0));
   if (feature !== undefined) {
     throwUnsupported(absolutePath, lineIndex, line, feature);
   }
@@ -146,21 +239,22 @@ function rejectItemLevelUnsupportedFeatures(
   }
 }
 
-/** Strip outer quotes from a sequence-item value. Does not interpret escapes. */
+/** Strips outer quotes from a sequence-item value, rejecting an unterminated one. Does not interpret escapes. */
 function unquote(value: string, absolutePath: string, lineIndex: number, line: string): string {
+  const stripped = stripQuotes(value);
+  if (stripped === value && (value.startsWith("'") || value.startsWith('"'))) {
+    throwUnsupported(absolutePath, lineIndex, line, 'unterminated quoted scalar');
+  }
+  return stripped;
+}
+
+/** Strips matching outer quotes from a scalar, leaving an unquoted or unterminated one as it is. */
+function stripQuotes(value: string): string {
   if (value.length >= 2) {
     const first = value[0];
-    const last = value.at(-1);
-    if (first === "'" && last === "'") {
+    if ((first === "'" || first === '"') && value.at(-1) === first) {
       return value.slice(1, -1);
     }
-    if (first === '"' && last === '"') {
-      return value.slice(1, -1);
-    }
-  }
-  if (value.startsWith("'") || value.startsWith('"')) {
-    // Unterminated quoted scalar.
-    throwUnsupported(absolutePath, lineIndex, line, 'unterminated quoted scalar');
   }
   return value;
 }

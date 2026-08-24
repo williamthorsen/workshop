@@ -117,10 +117,79 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('core', '2.0.0')).toBe(true);
   });
 
-  it('returns false for a catalog specifier', ({ temp }) => {
+  it('returns true when the default catalog resolves the specifier above the minimum', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vitest: 2.1.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(true);
+  });
+
+  it('returns false when the default catalog resolves the specifier below the minimum', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vitest: 0.34.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
+  });
+
+  it('resolves the `catalog:default` spelling through the default catalog', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:default' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vitest: 2.1.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('vitest', '3.0.0')).toBe(false);
+  });
+
+  it('returns false when a catalog entry opens a construct the reader cannot follow', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vue: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vue: {version: 3.5.0}', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vue', '3.0.0')).toBe(false);
+  });
+
+  it('measures a catalog version carrying a range operator', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { react: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  react: ^19.0.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('react', '19.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('react', '20.0.0')).toBe(false);
+  });
+
+  it('resolves a named catalog specifier through its own block', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { react: 'catalog:react17' } });
+    writeWorkspaceYaml(
+      temp,
+      ['catalog:', '  react: 19.0.0', 'catalogs:', '  react17:', '    react: 17.0.2', ''].join('\n'),
+    );
+
+    expect(hasMinDevDependencyVersion('react', '17.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('react', '18.0.0')).toBe(false);
+  });
+
+  it('returns false for a catalog specifier when no workspace manifest is present', ({ temp }) => {
     writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
 
     expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
+  });
+
+  it('returns false when the catalog names no entry for the dependency', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  esbuild: 0.28.2', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(false);
+  });
+
+  it('returns false when the named catalog is absent', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { react: 'catalog:react17' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  react: 19.0.0', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('react', '1.0.0')).toBe(false);
+  });
+
+  it('returns true when a catalog entry resolves to a workspace specifier', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { core: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  core: workspace:*', ''].join('\n'));
+
+    expect(hasMinDevDependencyVersion('core', '99.0.0')).toBe(true);
   });
 
   it('returns true when the exempt predicate matches', ({ temp }) => {
@@ -131,6 +200,51 @@ describe(hasMinDevDependencyVersion, () => {
         exempt: (specifier) => specifier.startsWith('link:'),
       }),
     ).toBe(true);
+  });
+
+  it('passes the exempt predicate the specifier as declared, not the version a catalog resolves', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
+    writeWorkspaceYaml(temp, ['catalog:', '  vitest: 0.34.0', ''].join('\n'));
+    const seen: string[] = [];
+
+    const result = hasMinDevDependencyVersion('vitest', '1.0.0', {
+      exempt: (specifier) => {
+        seen.push(specifier);
+        return false;
+      },
+    });
+
+    expect(seen).toStrictEqual(['catalog:']);
+    expect(result).toBe(false);
+  });
+
+  it('measures a specifier naming fewer than three version segments', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { nmr: '7', eslintConfig: '^6' } });
+
+    expect(hasMinDevDependencyVersion('nmr', '7.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('eslintConfig', '6.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('eslintConfig', '7.0.0')).toBe(false);
+  });
+
+  it('measures a prerelease specifier by its release version', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: '1.2.3-beta.1' } });
+
+    expect(hasMinDevDependencyVersion('vitest', '1.2.3')).toBe(true);
+    expect(hasMinDevDependencyVersion('vitest', '1.3.0')).toBe(false);
+  });
+
+  it('measures a specifier whose version follows an alias protocol', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: 'npm:vitest-fork@1.2.3' } });
+
+    expect(hasMinDevDependencyVersion('vitest', '1.0.0')).toBe(true);
+    expect(hasMinDevDependencyVersion('vitest', '2.0.0')).toBe(false);
+  });
+
+  it('measures a specifier behind a comparison operator', ({ temp }) => {
+    writePackageJson(temp, { devDependencies: { vitest: '>=1.2.3', esbuild: '~0.28.2' } });
+
+    expect(hasMinDevDependencyVersion('vitest', '1.2.3')).toBe(true);
+    expect(hasMinDevDependencyVersion('esbuild', '0.28.0')).toBe(true);
   });
 
   it('returns false when the version range has no extractable version', ({ temp }) => {
@@ -145,6 +259,11 @@ describe(hasMinDevDependencyVersion, () => {
 /** Writes the project manifest the check-utils under test read from the working directory. */
 function writePackageJson(temp: TempTree, content: Record<string, unknown>): void {
   temp.writeJson('package.json', content);
+}
+
+/** Writes the pnpm workspace manifest a `catalog:` specifier is resolved through. */
+function writeWorkspaceYaml(temp: TempTree, content: string): void {
+  temp.write('pnpm-workspace.yaml', content);
 }
 
 // endregion | Helpers
