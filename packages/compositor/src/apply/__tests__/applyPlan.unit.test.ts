@@ -331,41 +331,93 @@ describe(applyPlan, () => {
     await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/inside the target's root/);
   });
 
-  it('refuses entries ownership, which it would write whole, before writing the files beside it', async () => {
-    using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
-    const base = buildSingleFilePlan(targetRoot.dir, {
-      targetId: 'claude',
-      path: LINT_SKILL,
-      status: 'added',
-      ownership: { kind: 'full' },
-      planned: { hash: PLANNED_HASH },
-      contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
-    });
-    const plan: Plan = {
-      ...base,
-      files: [
-        ...base.files,
-        {
-          targetId: 'claude',
-          path: 'settings.json',
-          status: 'added',
-          ownership: {
-            kind: 'entries',
-            format: 'json',
-            collections: [{ path: ['hooks'], sentinel: { path: ['source'], value: 'codeassembly' } }],
-          },
-          planned: { hash: PLANNED_HASH },
-          contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
-        },
-      ],
-    };
+  describe('an entries host', () => {
+    it('is written whole, the plan carrying the host with the engine’s items already spliced in', async () => {
+      using targetRoot = createTempTree({ 'settings.json': HELD_SETTINGS }, { prefix: 'compositor-target-' });
+      const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
 
-    await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/entries ownership/);
-    await expect(statIfPresent(path.join(targetRoot.dir, LINT_SKILL))).resolves.toBeUndefined();
+      const outcome = await applyPlan(plan, { baseDir: targetRoot.dir });
+
+      expect(outcome.files).toStrictEqual([
+        { targetId: 'claude', path: 'settings.json', action: 'written', hash: hashUtf8(PLANNED_SETTINGS) },
+      ]);
+      await expect(readFile(path.join(targetRoot.dir, 'settings.json'), 'utf8')).resolves.toBe(PLANNED_SETTINGS);
+    });
+
+    it('is left alone by a second apply, the destination already holding the planned body', async () => {
+      using targetRoot = createTempTree({ 'settings.json': HELD_SETTINGS }, { prefix: 'compositor-target-' });
+      const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
+
+      await applyPlan(plan, { baseDir: targetRoot.dir });
+      const second = await applyPlan(plan, { baseDir: targetRoot.dir });
+
+      expect(second.files.map(({ action }) => action)).toStrictEqual(['unchanged']);
+    });
+
+    it('is passed over when the host moved after the plan was composed', async () => {
+      using targetRoot = createTempTree({ 'settings.json': '{ "hooks": [] }\n' }, { prefix: 'compositor-target-' });
+      const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
+
+      const outcome = await applyPlan(plan, { baseDir: targetRoot.dir });
+
+      expect(outcome.files.map(({ action }) => action)).toStrictEqual(['skipped-drifted']);
+      await expect(readFile(path.join(targetRoot.dir, 'settings.json'), 'utf8')).resolves.toBe('{ "hooks": [] }\n');
+    });
+
+    it('is written over drift under force, which the caller asked for', async () => {
+      using targetRoot = createTempTree({ 'settings.json': '{ "hooks": [] }\n' }, { prefix: 'compositor-target-' });
+      const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
+
+      const outcome = await applyPlan(plan, { baseDir: targetRoot.dir, force: true });
+
+      expect(outcome.files.map(({ action }) => action)).toStrictEqual(['written']);
+    });
+
+    it('decides the same action under dryRun and writes nothing', async () => {
+      using targetRoot = createTempTree({ 'settings.json': HELD_SETTINGS }, { prefix: 'compositor-target-' });
+      const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
+
+      const outcome = await applyPlan(plan, { baseDir: targetRoot.dir, dryRun: true });
+
+      expect(outcome.files.map(({ action }) => action)).toStrictEqual(['written']);
+      await expect(readFile(path.join(targetRoot.dir, 'settings.json'), 'utf8')).resolves.toBe(HELD_SETTINGS);
+    });
   });
 });
 
 // region | Helpers
+
+/** What a host holds before the engine's items reach it: one foreign hook, compactly written. */
+const HELD_SETTINGS = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
+
+/** What the composition plans there: the foreign hook reflowed by the round trip, beside the engine's own. */
+const PLANNED_SETTINGS =
+  '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n' +
+  '    {\n      "command": "relay --on=stop",\n      "source": "codeassembly"\n    }\n  ]\n}\n';
+
+/** Builds a plan writing one entries host, with both sides registered as bodies. */
+function buildEntriesPlan(root: string, current: string, planned: string): Plan {
+  return buildSingleFilePlan(
+    root,
+    {
+      targetId: 'claude',
+      path: 'settings.json',
+      status: 'changed',
+      ownership: {
+        kind: 'entries',
+        format: 'json',
+        collections: [{ path: ['hooks'], sentinel: { path: ['source'], value: 'codeassembly' } }],
+      },
+      current: { hash: hashUtf8(current) },
+      planned: { hash: hashUtf8(planned) },
+      contributors: { artifacts: [], partials: [] },
+    },
+    {
+      [hashUtf8(current)]: { encoding: 'utf8', data: current },
+      [hashUtf8(planned)]: { encoding: 'utf8', data: planned },
+    },
+  );
+}
 
 /** Builds a plan writing `file` into `root`, with the bodies a destination's planned side names. */
 function buildSingleFilePlan(root: string, file: FileEntry, blobs?: Record<Hash, Blob>): Plan {

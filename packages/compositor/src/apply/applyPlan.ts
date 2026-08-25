@@ -42,6 +42,11 @@ export interface ApplyPlanOptions {
  * content is among the inputs the fingerprint covers precisely because planned content is derived from it: a moved host
  * is what capturing afresh answers.
  *
+ * An entries host is written the same way, its planned body being the host with the engine's items spliced among the
+ * ones another tool wrote. A JSON host that needed a change comes back re-serialized, so content another tool wrote is
+ * reflowed; one already holding the planned items is returned untouched by the composition and never written at all.
+ * The plan carries those bytes on both sides, so what the reflow will do is visible before anything is written.
+ *
  * Removal takes away the directory it empties, bounded by the container directories the target names. A target naming
  * none, which an older plan is, has the climb unbounded and keeps every directory it holds.
  */
