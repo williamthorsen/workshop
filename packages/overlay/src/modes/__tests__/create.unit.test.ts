@@ -95,7 +95,7 @@ describe(runCreate, () => {
 
   it('short-circuits before the scripts pass when the file-apply fails', async () => {
     mockCapturedStatus(' A .new\n R normalize.sh\n');
-    const streamed = vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(1);
+    const streamed = mockStreamedRun(1);
 
     const result = await runCreate(context);
 
