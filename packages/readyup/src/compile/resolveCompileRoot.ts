@@ -13,8 +13,8 @@ const PACKAGE_MANIFEST = 'package.json';
  * reproducible from any directory, and it keeps a bundle's paths naming the kit's place in the package
  * that ships it.
  *
- * Answers with a real path. esbuild reports the paths it resolved modules to, and a compile resolves
- * the metafile's keys against this directory, so an answer reached through a symlink would record a
+ * The path is real. esbuild reports the paths it resolved modules to, and a compile resolves
+ * the metafile's keys against this directory, so a path reached through a symlink would record a
  * closure whose paths no reader of it can match.
  */
 export function resolveCompileRoot(inputPath: string): string {

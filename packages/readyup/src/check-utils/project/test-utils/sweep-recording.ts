@@ -1,6 +1,6 @@
 import type { SweepRecorder } from '../sweepRecorder.ts';
 
-/** A recorder paired with the sweeps reported to it, in the order they arrived. */
+/** Returns a recorder paired with the sweeps reported to it, in the order they arrived. */
 export function createRecorder(): { recorder: SweepRecorder; scanned: (readonly string[])[] } {
   const scanned: (readonly string[])[] = [];
   return {

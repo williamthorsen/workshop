@@ -514,7 +514,7 @@ describe(compileCommand, () => {
   });
 
   describe('sweep completion', () => {
-    /** A two-kit batch whose first kit fails to compile and whose second succeeds. */
+    /** Arranges a two-kit batch whose first kit fails to compile and whose second succeeds. */
     function arrangeMixedBatch(): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
@@ -775,7 +775,7 @@ describe(compileCommand, () => {
     expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
   });
 
-  /** A two-kit batch in which both kits compile successfully. */
+  /** Arranges a two-kit batch in which both kits compile successfully. */
   function arrangeTwoKitBatch(hashes: { alphaHash?: string; betaHash?: string } = {}): void {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined },

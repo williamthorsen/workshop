@@ -175,7 +175,7 @@ describe(checkInputDrift, () => {
 
   // region | Helpers
 
-  /** A manifest entry recording the given closure and nothing else this axis reads. */
+  /** Returns a manifest entry recording the given closure and nothing else this axis reads. */
   function kitWith(inputs: RdyManifestInput[]): RdyManifestKit {
     return { inputs, name: 'demo' };
   }

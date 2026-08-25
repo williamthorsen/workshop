@@ -170,7 +170,7 @@ describe(suppressesFinding, () => {
 
 // region | Helpers
 
-/** Parts a source into the lines `suppressesFinding` reads. */
+/** Splits a source into the lines `suppressesFinding` reads. */
 function linesOf(source: string): readonly string[] {
   return source.split('\n');
 }

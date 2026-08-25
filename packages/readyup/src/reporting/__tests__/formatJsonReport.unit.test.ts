@@ -558,7 +558,7 @@ describe(formatJsonReport, () => {
   describe('kits that produced no results', () => {
     const FAILURE = { name: 'release', error: { code: 'kit-load' as const, message: 'Cannot find release.js' } };
 
-    /** A one-check kit that passes in 10ms, for pairing with a failed kit. */
+    /** Returns a one-check kit that passes in 10ms, for pairing with a failed kit. */
     function ranKit(name: string) {
       const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true, durationMs: 10 });
       return { name, entries: [{ name: 'check', report }] };
