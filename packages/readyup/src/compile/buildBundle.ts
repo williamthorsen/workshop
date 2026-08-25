@@ -218,7 +218,7 @@ function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workin
 }
 
 /**
- * Reports whether an esbuild failure carries an import esbuild could not resolve.
+ * Reports whether an esbuild failure names an import esbuild could not resolve.
  *
  * Reads the failure's own error list rather than its rendered message, and matches on message text
  * because esbuild leaves the machine-readable `id` empty on a resolve error.

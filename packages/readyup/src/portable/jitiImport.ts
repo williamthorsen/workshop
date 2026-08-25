@@ -8,13 +8,12 @@ import { toDisplayPath } from './toDisplayPath.ts';
 const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
 
 /**
- * Import a TypeScript file via jiti with module-resolution error handling.
+ * Imports a TypeScript file through jiti, returning the plain object it exports.
  *
- * Catches `MODULE_NOT_FOUND` and `ERR_MODULE_NOT_FOUND` errors and rethrows naming the file being
- * evaluated and the caller-provided `moduleErrorDetail`, with the install command carried as a
- * `hint` property beside the message. The hint rides on the error rather than being raised as a
- * typed failure here, because the two callers classify the same failure under different codes.
- * Validates the imported value is a plain object, using `exportNoun` in the error message if not.
+ * A `MODULE_NOT_FOUND` or `ERR_MODULE_NOT_FOUND` failure is rethrown naming the file being evaluated
+ * and `moduleErrorDetail`, with the install command on a `hint` property beside the message. The hint
+ * rides on the error rather than a typed failure, because the same failure is classified under two
+ * different codes. An imported value that is not a plain object raises an error naming `exportNoun`.
  */
 export async function jitiImport(
   resolvedPath: string,
@@ -55,7 +54,7 @@ interface UnresolvedModuleReport {
 }
 
 /**
- * Compose the diagnosis and remediation for a specifier jiti could not resolve.
+ * Returns the diagnosis and remediation for a specifier jiti could not resolve.
  *
  * The install command is offered only for a specifier that names a package: installing a relative
  * import or a builtin is not the remedy, and a specifier jiti did not name cannot be installed at all.
@@ -78,7 +77,7 @@ function describeUnresolvedModule(
   };
 }
 
-/** Report whether a specifier names an installable package rather than a file or a builtin. */
+/** Reports whether a specifier names an installable package rather than a file or a builtin. */
 function isPackageSpecifier(specifier: string): boolean {
   return NON_PACKAGE_PREFIXES.every((prefix) => !specifier.startsWith(prefix));
 }

@@ -33,7 +33,7 @@ const LOCKFILE_MANAGERS = [
 ] as const;
 
 /**
- * Build the command that installs a package as a dev dependency of the current project.
+ * Returns the command that installs a package as a dev dependency of the current project.
  *
  * The package manager comes from the nearest directory that names one, falling back to npm when
  * none does.
@@ -43,7 +43,7 @@ export function buildInstallCommand(moduleName: string): string {
 }
 
 /**
- * Find the install command for the package manager governing the current directory.
+ * Returns the install command for the package manager governing the current directory.
  *
  * The search walks up from the current directory because in a workspace the lockfile and the
  * `packageManager` declaration sit at the repo root while commands run from a package
@@ -67,7 +67,7 @@ function findInstallCommand(): string | undefined {
   return undefined;
 }
 
-/** Read the package-manager name from a `package.json`, dropping the version Corepack pins. */
+/** Returns the package-manager name in a `package.json`, dropping the version Corepack pins. */
 function readDeclaredManager(packageJsonPath: string): string | undefined {
   if (!existsSync(packageJsonPath)) return undefined;
 
@@ -82,7 +82,7 @@ function readDeclaredManager(packageJsonPath: string): string | undefined {
   return typeof declared === 'string' ? /^[a-z]+/.exec(declared)?.[0] : undefined;
 }
 
-/** List a directory and every directory above it, nearest first. */
+/** Returns a directory and every directory above it, nearest first. */
 function listSelfAndAncestors(from: string): string[] {
   const directories = [from];
   let current = from;

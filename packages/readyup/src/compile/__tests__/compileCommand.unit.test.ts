@@ -102,12 +102,12 @@ function compileResult(
   };
 }
 
-/** Returns the `inputs` an entry carries when its compile read only the entry point, stated against the manifest. */
+/** Returns the `inputs` an entry has when its compile read only the entry point, stated against the manifest. */
 function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
   return [{ hash, kind: 'module', path: relativePath }];
 }
 
-/** Metadata as `validateCompiledOutput` returns it, defaulting to a kit with no checklists to record. */
+/** Returns metadata as `validateCompiledOutput` yields it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
   return { checklists: [], ...overrides };
 }

@@ -46,11 +46,7 @@ const compileHints: Record<string, string> = {
   '--output': '--output requires a path argument',
 };
 
-/**
- * Handle the `compile` subcommand: parse arguments, invoke the bundler, and report the result.
- *
- * Returns a numeric exit code.
- */
+/** Runs the `compile` subcommand, returning the exit code its parse, bundle, and report produced. */
 export async function compileCommand(args: string[]): Promise<number> {
   let parsed;
   try {
@@ -102,7 +98,7 @@ interface CompileSingleArgs {
   json: boolean;
 }
 
-/** Compile a single explicit input file, applying the drift gate before overwriting. */
+/** Compiles a single explicit input file, applying the drift gate before overwriting. */
 async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const { inputPath, outputPath, skipManifest, force, manifestPath, json } = args;
   const manifestDir = path.dirname(manifestPath);
@@ -160,7 +156,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 }
 
 /**
- * Emit the compile payload under `--json` and reduce the run's per-kit statuses to an exit code.
+ * Emits the compile payload under `--json` and reduces the run's per-kit statuses to an exit code.
  *
  * A kit left alone because it drifted counts against the run just as a failed one does: both mean
  * the compiled output on disk is not what the source says it should be.
@@ -176,12 +172,12 @@ function finishCompile(kits: JsonCompileKitEntry[], json: boolean): number {
   return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
-/** Describe a drift skip for the JSON payload, where there is no formatted line to read. */
+/** Returns a drift skip described for the JSON payload, where there is no formatted line to read. */
 function formatDriftReason(status: Extract<DriftStatus, { kind: 'drift' }>): string {
   return `Compiled output has drifted from the manifest (expected ${status.expected}, got ${status.actual})`;
 }
 
-/** Resolve the manifest output path from the optional `--manifest` flag. */
+/** Returns the manifest output path, taken from `--manifest` where that flag was given. */
 function resolveManifestPath(flagValue: string | undefined): string {
   return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
 }
@@ -195,11 +191,11 @@ interface CompileBatchArgs {
 }
 
 /**
- * Compile all matching `.ts` files from the config-driven source directory.
+ * Compiles every matching `.ts` file in the config-driven source directory.
  *
  * The sweep runs to completion: a kit that fails to compile is reported and the next one is tried,
  * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
- * the sweep — an unreadable config, an unwritable manifest — still throw, because they say nothing
+ * the sweep -- an unreadable config, an unwritable manifest -- still throw, because they say nothing
  * about any individual kit.
  */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
@@ -285,7 +281,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       kitResults.push({ name: kitName, status: 'compiled' });
     } catch (error: unknown) {
       // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
-      // carries on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
+      // goes on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
       // survive, and it still describes the tree: an esbuild failure leaves the previous output and
       // its hash intact, and a validation failure deletes the output for `verify` to report missing.
       const existingKit = existingKitsByName.get(kitName);
@@ -408,7 +404,7 @@ function relativizeInput(input: CompiledInput, manifestDir: string): RdyManifest
     : { hash: input.hash, kind: 'module', path: relativePath };
 }
 
-/** Read an existing manifest (if any), upsert a kit entry, and write back. */
+/** Upserts a kit entry into the manifest at `manifestPath`, writing the result back. */
 function upsertManifest(
   manifestPath: string,
   kitName: string,
@@ -450,7 +446,12 @@ function upsertManifest(
   writeManifest(manifestPath, { version: 1, kits });
 }
 
-/** Read the manifest and index its kits by name. Missing manifest is expected (first compile); other failures are surfaced on stderr and treated as a no-op drift gate. */
+/**
+ * Returns the manifest's kits indexed by name, or an empty index where the manifest is missing.
+ *
+ * A missing manifest is the normal state of a first compile. Any other failure is written to stderr
+ * and leaves the drift gate a no-op.
+ */
 function loadExistingKitsByName(manifestPath: string): Map<string, RdyManifestKit> {
   const map = new Map<string, RdyManifestKit>();
   try {
@@ -482,8 +483,8 @@ interface DriftSkip {
 }
 
 /**
- * Evaluate the drift gate for a single kit. Returns the drift status and the manifest entry
- * to preserve when a skip is warranted, or undefined when the kit should proceed to compile.
+ * Returns a single kit's drift status alongside the manifest entry to preserve, or undefined where
+ * the kit should proceed to compile.
  */
 function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   const { skipManifest, force, existingKit, manifestDir } = args;

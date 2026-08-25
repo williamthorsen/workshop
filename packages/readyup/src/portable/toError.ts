@@ -1,7 +1,7 @@
 import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 /**
- * Coerces a thrown value to an Error, wrapping anything else in an Error carrying its text.
+ * Coerces a thrown value to an Error, wrapping anything else in an Error holding its text.
  *
  * A value with no rendering, such as a null-prototype object, yields a placeholder rather than throwing, so a catch
  * block reporting a failure cannot itself fail.

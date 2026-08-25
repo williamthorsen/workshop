@@ -21,7 +21,7 @@ interface SpawnResult {
   stderr: string;
 }
 
-/** Spawn `node` with the given arguments and collect stdio. */
+/** Spawns `node` with the given arguments and returns its collected stdio. */
 function spawnNode(args: string[]): Promise<SpawnResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });

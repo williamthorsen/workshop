@@ -1,4 +1,4 @@
-/** Parse a JSON string, returning `undefined` instead of throwing on invalid input. */
+/** Returns a JSON string parsed, or `undefined` where the input is invalid. */
 export function safeJsonParse(content: string): unknown {
   try {
     const parsed: unknown = JSON.parse(content);

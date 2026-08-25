@@ -10,7 +10,7 @@ export function isSkippableFilesystemError(error: unknown): boolean {
 
 // region | Helpers
 
-/** Type guard for Node.js filesystem errors carrying a `code`. */
+/** Reports whether an error is a Node.js filesystem error, which is one with a `code`. */
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return isError(error) && 'code' in error;
 }

@@ -31,7 +31,7 @@ export function resolveCompileRoot(inputPath: string): string {
 /**
  * Returns a directory's real path, or the directory itself where it cannot be read.
  *
- * A source that does not exist has no real directory to answer with, and is left to fail where the
+ * A source that does not exist has no real directory to resolve to, and is left to fail where the
  * bundler reports it rather than as an `ENOENT` raised on the way there.
  */
 function toRealPath(directory: string): string {

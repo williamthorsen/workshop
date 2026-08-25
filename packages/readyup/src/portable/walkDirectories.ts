@@ -58,7 +58,7 @@ export function walkDirectories(options: WalkDirectoriesOptions): string[] {
 
 // region | Helpers
 
-/** Everything the recursive sweep carries down, bound once by `walkDirectories`. */
+/** Everything the recursive sweep passes down, bound once by `walkDirectories`. */
 interface SweepContext {
   root: string;
   isMatch: (entryPath: string) => boolean;
