@@ -26,7 +26,7 @@ export function assertMarkersAreUsable(markers: RegionMarkers): void {
  * Builds the pattern matching one whole region: its open marker line, its body as the sole capture, and its close
  * marker line.
  *
- * The body is lazy, so on a host carrying a stray marker above a well-formed region the match runs from the stray
+ * The body is lazy, so on a host with a stray marker above a well-formed region the match runs from the stray
  * marker through the region's close marker. That is why `classifyRegion` gates every use of this pattern instead of
  * callers testing it for themselves.
  */

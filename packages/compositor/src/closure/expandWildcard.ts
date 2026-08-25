@@ -3,10 +3,10 @@ import type { ArtifactId, KindId } from '../schemas/scalar-schemas.ts';
 import type { CatalogIndex } from '../selection/buildCatalogIndex.ts';
 
 /**
- * Expands one artifact's wildcard to the artifacts its own source carries.
+ * Expands one artifact's wildcard to the artifacts its own source contains.
  *
  * The source is the one the declaring artifact resolved from, so an aggregate shipped by a source takes in that
- * source's own contents rather than some other source's. It reads what that source carries whether or not a
+ * source's own contents rather than some other source's. It reads what that source contains whether or not a
  * higher-precedence source shadows a copy: shadowing settles which copy an artifact resolves from, and this settles
  * which artifacts are named, the same distinction selection draws for a source taken whole.
  *

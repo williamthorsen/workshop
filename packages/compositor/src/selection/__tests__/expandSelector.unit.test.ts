@@ -12,10 +12,10 @@ const index = buildCatalogIndex(
     kinds: ['rulebook', 'skill'],
     sources: ['local', 'acme'],
     entries: [
-      { kindId: 'skill', slug: 'lint', carriedBy: ['acme'] },
-      { kindId: 'skill', slug: 'format', carriedBy: ['acme'] },
-      { kindId: 'skill', slug: 'review', carriedBy: ['local', 'acme'] },
-      { kindId: 'rulebook', slug: 'house-style', carriedBy: ['local'] },
+      { kindId: 'skill', slug: 'lint', copySourceIds: ['acme'] },
+      { kindId: 'skill', slug: 'format', copySourceIds: ['acme'] },
+      { kindId: 'skill', slug: 'review', copySourceIds: ['local', 'acme'] },
+      { kindId: 'rulebook', slug: 'house-style', copySourceIds: ['local'] },
     ],
   }),
 );
@@ -26,7 +26,7 @@ describe(expandSelector, () => {
     expect(expand({ artifact: 'lint' }).matched).toStrictEqual(['skill:lint']);
   });
 
-  it('expands a source to every artifact that source carries of the kind', () => {
+  it('expands a source to every artifact that source contains of the kind', () => {
     expect(expand({ source: 'acme' }).matched.toSorted()).toStrictEqual(['skill:format', 'skill:lint', 'skill:review']);
   });
 
@@ -35,7 +35,7 @@ describe(expandSelector, () => {
   });
 
   it.each([
-    ['an artifact no source carries', { artifact: 'absent' }, 'unknown-artifact'],
+    ['an artifact no source contains', { artifact: 'absent' }, 'unknown-artifact'],
     ['a source that is not declared', { source: 'nowhere' }, 'unknown-source'],
   ])('matches nothing and reports %s', (_label, selector, code) => {
     const { matched, diagnostics } = expand(selector);
@@ -44,7 +44,7 @@ describe(expandSelector, () => {
     expect(diagnostics.at(0)?.code).toBe(code);
   });
 
-  it('reports a source carrying nothing of the kind, having matched nothing to report', () => {
+  it('reports a source containing nothing of the kind, having matched nothing to report', () => {
     const { matched, diagnostics } = expand({ source: 'acme' }, 'rulebook');
 
     expect(matched).toStrictEqual([]);

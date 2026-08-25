@@ -13,7 +13,7 @@ export type FileAction = 'removed' | 'skipped-blocked' | 'skipped-drifted' | 'un
 /** What became of one destination, and what it holds afterwards. */
 export interface AppliedFile {
   readonly targetId: TargetId;
-  /** Posix-separated and relative to the target's root, as the plan carries it. */
+  /** Posix-separated and relative to the target's root, as the plan records it. */
   readonly path: string;
   readonly action: FileAction;
   /** What the destination holds when the run ends, absent where it holds nothing. */
@@ -32,7 +32,7 @@ export interface PrunedDirectory {
 /**
  * Everything one apply did, and the plan it did it from.
  *
- * `fingerprint` is the plan's own, so a persisted outcome identifies what it applied without carrying the plan beside
+ * `fingerprint` is the plan's own, so a persisted outcome identifies what it applied without keeping the plan beside
  * it. `files` runs in plan order, and `prunedDirs` deepest first, which is the order the directories were taken away
  * in and the order a replay would have to follow.
  *

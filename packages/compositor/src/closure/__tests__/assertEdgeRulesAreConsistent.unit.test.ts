@@ -18,7 +18,7 @@ const declared: EdgeRule = { kindId: 'skill', key: 'dependencies', via: 'declare
 const injected: EdgeRule = { kindId: 'subagent', key: 'skills', via: 'injected', form: 'flat', targetKindId: 'skill' };
 
 describe(assertEdgeRulesAreConsistent, () => {
-  it('accepts rules whose kinds are all ones the catalog carries', () => {
+  it('accepts rules whose kinds are all ones the catalog contains', () => {
     expect(() => assertEdgeRulesAreConsistent([declared, injected], kindKeys, kinds)).not.toThrow();
   });
 
@@ -26,13 +26,13 @@ describe(assertEdgeRulesAreConsistent, () => {
     expect(() => assertEdgeRulesAreConsistent([], {}, kinds)).not.toThrow();
   });
 
-  it('if a rule is keyed to a kind no descriptor carries, faults it, no artifact being read for it', async () => {
+  it('if a rule is keyed to a kind no descriptor declares, faults it, no artifact being read for it', async () => {
     await expect(violationsOf([{ ...declared, kindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].kindId', message: 'references "rulebook", which is not an entry in kinds' },
     ]);
   });
 
-  it('if a flat rule targets a kind no descriptor carries, faults it', async () => {
+  it('if a flat rule targets a kind no descriptor declares, faults it', async () => {
     await expect(violationsOf([{ ...injected, targetKindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].targetKindId', message: 'references "rulebook", which is not an entry in kinds' },
     ]);
@@ -56,7 +56,7 @@ describe(assertEdgeRulesAreConsistent, () => {
     expect(() => assertEdgeRulesAreConsistent([declared, shared], kindKeys, kinds)).not.toThrow();
   });
 
-  it('if a declaration key names a kind no descriptor carries, faults it', async () => {
+  it('if a declaration key names a kind no descriptor declares, faults it', async () => {
     await expect(violationsOf([declared], { rulebooks: 'rulebook' })).resolves.toStrictEqual([
       { path: 'kindKeys.rulebooks', message: 'references "rulebook", which is not an entry in kinds' },
     ]);

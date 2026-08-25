@@ -23,7 +23,7 @@ describe('EdgeRuleSchema', () => {
     expect(EdgeRuleSchema.parse(flat)).toStrictEqual(flat);
   });
 
-  it('accepts a wildcard on the kind-keyed form, recording the origin its expansion carries', () => {
+  it('accepts a wildcard on the kind-keyed form, recording the origin its expansion uses', () => {
     expect(EdgeRuleSchema.parse(aggregate)).toStrictEqual(aggregate);
   });
 

@@ -24,7 +24,7 @@ const rules: ReadonlyArray<EdgeRule> = [
 ];
 
 describe(buildEdgeGraph, () => {
-  it('reads every artifact the catalog carries, whichever kind layout holds it', async () => {
+  it('reads every artifact the catalog contains, whichever kind layout holds it', async () => {
     const graph = await buildEdgeGraph({ catalog: await buildCatalog(), rules, kindKeys });
 
     expect([...graph.edges]).toStrictEqual([
@@ -40,7 +40,7 @@ describe(buildEdgeGraph, () => {
     ]);
   });
 
-  it('carries no entry for an artifact declaring nothing, an absent key and an empty list being one fact', async () => {
+  it('has no entry for an artifact declaring nothing, an absent key and an empty list being one fact', async () => {
     const graph = await buildEdgeGraph({ catalog: await buildCatalog(), rules, kindKeys });
 
     expect(graph.edges.has('skill:lint')).toBe(false);
@@ -56,7 +56,7 @@ describe(buildEdgeGraph, () => {
     ]);
     const graph = await buildEdgeGraph({ catalog, rules, kindKeys });
 
-    // `team` wins the aggregate and carries nothing that emits; the skill belongs to the copy that lost.
+    // `team` wins the aggregate and contains nothing that emits; the skill belongs to the copy that lost.
     expect(graph.edges.has('collection:all')).toBe(false);
   });
 
@@ -79,7 +79,7 @@ describe(buildEdgeGraph, () => {
     ]);
   });
 
-  it('carries the edges and partials a contributor supplies, so a body reaches the closure', async () => {
+  it('keeps the edges and partials a contributor supplies, so a body reaches the closure', async () => {
     const graph = await buildEdgeGraph({
       catalog: await buildCatalog(),
       rules,

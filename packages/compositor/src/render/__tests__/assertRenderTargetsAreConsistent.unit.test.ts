@@ -207,12 +207,12 @@ describe(assertRenderTargetsAreConsistent, () => {
       await expect(violationsOf([unmarkable])).resolves.toStrictEqual([
         {
           path: 'targets[0].ownedItems[0].items[0]',
-          message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
+          message: 'does not have the sentinel, which this declaration cannot write, so it could never be found again',
         },
       ]);
     });
 
-    it('accepts an item that already carries a sentinel the declaration cannot write', () => {
+    it('accepts an item that already has a sentinel the declaration cannot write', () => {
       const marked: RenderTarget = {
         ...claude,
         ownedItems: [
@@ -244,7 +244,7 @@ describe(assertRenderTargetsAreConsistent, () => {
     ]);
   });
 
-  it('reports a deployment naming a kind no descriptor carries', async () => {
+  it('reports a deployment naming a kind no descriptor declares', async () => {
     const unknown: RenderTarget = {
       ...claude,
       deployments: [{ ...skillDeployment, kindId: 'subagent' }],
@@ -473,7 +473,7 @@ describe(assertRenderTargetsAreConsistent, () => {
 
   it('reports two targets sharing an id', async () => {
     await expect(violationsOf([claude, claude])).resolves.toStrictEqual([
-      { path: 'targets', message: 'carries "claude" more than once' },
+      { path: 'targets', message: 'lists "claude" more than once' },
     ]);
   });
 

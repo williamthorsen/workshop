@@ -12,14 +12,14 @@
  * pipeline through those would inherit their defaults, and a default silently inherited is the assumption this fixture
  * exists to have none of.
  *
- * The three kinds are the ones bearing a genericity claim. The guidance fixture's other structural cases -- an
- * aggregate emitting no files, a kind no target deploys -- bear none, and mirroring its structure would make this a
+ * The three kinds are the ones making a genericity claim. The guidance fixture's other structural cases -- an
+ * aggregate emitting no files, a kind no target deploys -- make none, and mirroring its structure would make this a
  * translation of that fixture rather than an independent consumer.
  *
  * No frontmatter stage is declared, and `edgeRules` is empty for the same reason. `mergeFrontmatter` emits a
  * `---`-fenced YAML block by construction, and `readFrontmatterEdges` reads its declarations through
  * `parseFrontmatter`, which finds a block only where the content opens with that delimiter. Both mechanisms serve
- * formats carrying such a header, and AsciiDoc is not one. That is where the genericity claim stops, rather than a
+ * formats with such a header, and AsciiDoc is not one. That is where the genericity claim stops, rather than a
  * gap in the coverage of it.
  */
 
@@ -111,7 +111,7 @@ export function buildJurisdictionTarget(targetRoot: string): RenderTarget {
  * Captures a composition over a temporary source tree and destination root, both removed when the test ends.
  *
  * Only the `indemnity` clause is selected. The `governing-law` clause is reached through the referent token a
- * definition carries, so a closure that failed to read a token behind this consumer's delimiter would leave it out of
+ * definition contains, so a closure that failed to read a token behind this consumer's delimiter would leave it out of
  * the composition, and `standard-terms` is reached by the binding that fills the inlay `indemnity` declares.
  */
 export async function captureGenericityComposition(): Promise<GenericityFixture> {
@@ -165,10 +165,10 @@ export const FILL_MARKERS: MarkerPair = {
 };
 
 /**
- * The kinds the fixture is written against, each bearing a claim that a mechanism reads its vocabulary declaratively.
+ * The kinds the fixture is written against, each making a claim that a mechanism reads its vocabulary declaratively.
  *
  * `clause` is one file per artifact and deploys under a name template; `definition` routes into a shared host; and
- * `exhibit` is a directory per artifact, so it ships an asset beside the entry file carrying its body.
+ * `exhibit` is a directory per artifact, so it ships an asset beside the entry file containing its body.
  */
 export const GENERICITY_KINDS: ReadonlyArray<ResolveKind> = [
   {
@@ -208,7 +208,7 @@ export const GENERICITY_TOKEN_KINDS: ReadonlyArray<TokenKind> = [
   { id: 'party', label: 'Party', form: 'mapping', pattern: String.raw`<<party:(\w+)>>` },
 ];
 
-/** A captured composition, with the config it answers and the directories it was captured over. */
+/** A captured composition, with the config it was captured for and the directories it was captured over. */
 export interface GenericityFixture {
   readonly config: CompositorConfig;
   readonly snapshot: CompositionSnapshot;
@@ -236,7 +236,7 @@ export const REGION_MARKERS: MarkerPair = {
 /**
  * Contributes the closure edges an artifact's own body declares through its referent tokens.
  *
- * The body is read as written rather than expanded first: what carries a genericity claim is the declared pattern, not
+ * The body is read as written rather than expanded first: what makes a genericity claim is the declared pattern, not
  * the attribution of an edge to the partial it arrived through.
  */
 function contributeTokenEdges(read: ArtifactRead): EdgeContribution {

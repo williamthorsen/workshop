@@ -35,7 +35,7 @@ export interface RenderArtifactInput {
 /**
  * What rendering one artifact for one target produced.
  *
- * `not-deployed` is the target taking none of the artifact's kind, which is an answer rather than a fault: a caller
+ * `not-deployed` is the target taking none of the artifact's kind, which is an outcome rather than a fault: a caller
  * rendering every artifact for every target reaches it by walking the pairs.
  */
 export type ArtifactRender =
@@ -54,20 +54,20 @@ export type ArtifactRender =
 /**
  * Runs the stages `target` declares over one artifact's file, in the order the engine fixes.
  *
- * Transclusion runs first, since every later stage reads the segments it produces and the attribution they carry. Link
- * rewriting runs before the token rewrite, so a link target opening with a token still carries the token the link stage
- * recognizes: a consumer writes `{name}` for a value to be inserted where it stands and `./{name}` for one to be
+ * Transclusion runs first, since every later stage reads the segments it produces and the attribution they record. Link
+ * rewriting runs before the token rewrite, so a link target opening with a token still contains the token the link
+ * stage recognizes: a consumer writes `{name}` for a value to be inserted where it stands and `./{name}` for one to be
  * resolved against the file. The frontmatter overlay runs last, over the joined document, since it parses a block
  * rather than a run of lines and its values are already the target's own. The inlay stage runs last of all, after that
  * overlay: it reports the line each removed directive stood on, and the overlay re-emits its block and so can move
- * every line beneath it. Each ordering is load-bearing, which is why a target declares which stages run and never
- * their sequence.
+ * every line beneath it. Each ordering is load-bearing, which is why a target declares which stages run and never their
+ * sequence.
  *
- * A target declaring no transclusion stage still has its file read: a body with no directives in it is one segment.
- * A target declaring no inlay stage recognizes no inlay directive, so one deploys as text, which is the answer an
+ * A target declaring no transclusion stage still has its file read: a body with no directives in it is one segment. A
+ * target declaring no inlay stage recognizes no inlay directive, so one deploys as text, which is the same treatment an
  * `include:` line already gets under no transclusion stage.
  *
- * A directive that cannot be resolved ends the render, since a cycle or a missing target leaves no body to carry on
+ * A directive that cannot be resolved ends the render, since a cycle or a missing target leaves no body to continue
  * with, and an unreadable inlay directive ends it the same way. Everything a later stage could not resolve comes back
  * as a diagnostic beside the content, so a plan records the file it would write next to the reasons it is incomplete.
  * Frontmatter the overlay cannot be applied to throws, on the reasoning that no reading of a malformed block lets the

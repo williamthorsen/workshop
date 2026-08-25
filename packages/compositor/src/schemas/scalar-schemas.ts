@@ -13,7 +13,7 @@ export const IdSchema = z.string().min(1).meta({ id: 'Id' });
 /**
  * A content digest, compared only for equality.
  *
- * The algorithm belongs to the producer, and no consumer recomputes one: a digest answers "did this change" against
+ * The algorithm belongs to the producer, and no consumer recomputes one: a digest reports a change against
  * another digest from the same plan or from the plan before it.
  */
 export const HashSchema = z.string().min(1).meta({ id: 'Hash' });

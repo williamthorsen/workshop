@@ -13,7 +13,7 @@ describe(collectResolutions, () => {
     ]);
   });
 
-  it('carries the resolution each artifact holds', () => {
+  it('passes through the resolution each artifact holds', () => {
     const closure = buildClosure();
 
     expect(requireEntry(collectResolutions(closure), 2).resolution).toStrictEqual(

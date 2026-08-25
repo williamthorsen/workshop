@@ -76,7 +76,7 @@ describe('FileOwnershipSchema', () => {
 });
 
 describe('BlobSchema', () => {
-  it('carries bytes that do not survive a UTF-8 round trip', () => {
+  it('has bytes that do not survive a UTF-8 round trip', () => {
     const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
     const parsed = BlobSchema.parse({ encoding: 'base64', data: bytes.toString('base64') });
@@ -90,7 +90,7 @@ describe('BlobSchema', () => {
 });
 
 describe('FileEntrySchema', () => {
-  it('accepts a file whose two sides carry differing hashes', () => {
+  it('accepts a file whose two sides have differing hashes', () => {
     expect(FileEntrySchema.parse(file)).toStrictEqual(file);
   });
 

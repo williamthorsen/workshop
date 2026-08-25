@@ -55,7 +55,7 @@ export interface CaptureSnapshotInput {
  * graph and the render matrix read the winning candidate alone, so a config that moves the source set invalidates all
  * three and has to be captured afresh.
  *
- * `renders` is keyed by target and then by artifact, and carries a pair only where the target deploys that artifact's
+ * `renders` is keyed by target and then by artifact, and contains a pair only where the target deploys that artifact's
  * kind. `assets` is keyed by artifact alone, the files an artifact ships beside its entry file being byte copies no
  * target transforms. `targetState` is absent where the scan was skipped.
  */
@@ -77,7 +77,7 @@ export interface CompositionSnapshot {
  * Reads everything a plan is computed from, so that computing one reads nothing.
  *
  * This is the engine's whole filesystem contact for the plan flow. The render matrix covers every artifact the catalog
- * carries rather than the ones a config happens to select, which is what makes it selection-independent: a reader
+ * contains rather than the ones a config happens to select, which is what makes it selection-independent: a reader
  * toggling a selection recomputes as often as it likes against one capture, and that loop is what the eager gather
  * exists to serve.
  *
@@ -172,7 +172,7 @@ function collectShipping(catalog: Catalog): Array<ShippingArtifact> {
   });
 }
 
-/** Digests each source over its whole directory, in the precedence order the catalog carries them in. */
+/** Digests each source over its whole directory, in the precedence order the catalog records them in. */
 async function digestSources(sources: ReadonlyArray<SourceSpec>): Promise<ReadonlyArray<SourceDigest>> {
   return Promise.all(sources.map(async (source) => ({ sourceId: source.id, digest: await hashDirectory(source.dir) })));
 }
@@ -265,12 +265,12 @@ async function renderTarget(
   return { targetId: target.id, renders: new Map(rendered.map(({ artifactId, render }) => [artifactId, render])) };
 }
 
-/** Reads the source an entry resolved from, which a catalog the engine produced always carries. */
+/** Reads the source an entry resolved from, which a catalog the engine produced always contains. */
 function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogEntry): SourceSpec {
   const source = sources.get(entry.resolution.winner.sourceId);
   if (source === undefined) {
     throw new Error(
-      `Catalog entry "${entry.id}" resolved from "${entry.resolution.winner.sourceId}", which it does not carry.`,
+      `Catalog entry "${entry.id}" resolved from "${entry.resolution.winner.sourceId}", which it does not contain.`,
     );
   }
   return source;

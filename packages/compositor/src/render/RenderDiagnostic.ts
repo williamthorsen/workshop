@@ -18,7 +18,7 @@ export type RenderDiagnostic =
  * The one fault that ended a render, tagged with the stage that raised it.
  *
  * Separate from `RenderDiagnostic` because it is a different kind of event: a token or a link that cannot be rewritten
- * travels beside the content produced anyway, while a directive that cannot be read leaves no body to carry on with.
+ * travels beside the content produced anyway, while a directive that cannot be read leaves no body to continue with.
  * Tagged for the same reason `RenderDiagnostic` is, the stages locating a fault by what each of them reads.
  *
  * `binding` is raised by the fill rather than by `renderArtifact`, the fill being the one stage a target's own

@@ -32,12 +32,12 @@ describe('TokenKindSchema', () => {
     expect(findIssuePaths(TokenKindSchema, incomplete)).toStrictEqual([['artifactKindId']]);
   });
 
-  it('carries the descriptor fields a plan records, so one declaration serves both', () => {
+  it('uses the descriptor fields a plan records, so one declaration serves both', () => {
     expect(findIssuePaths(TokenKindSchema, { form: 'mapping', pattern: '(x)' })).toStrictEqual([['id'], ['label']]);
   });
 
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it('accepts a kind carrying an unrecognized key, and strips it', () => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it('accepts a kind containing an unrecognized key, and strips it', () => {
     expect(TokenKindSchema.parse({ ...mapping, addedLater: 'ignored' })).toStrictEqual(mapping);
   });
 

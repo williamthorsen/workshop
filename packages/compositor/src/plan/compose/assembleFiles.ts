@@ -46,7 +46,7 @@ export interface FileAssembly {
  * visible at all, and leaving both would repeat a destination the payload keys by `(targetId, path)`.
  *
  * Each target's inlays are filled once, above its deployments, so both planners read filled bodies. What the fill got
- * wrong is dropped here rather than carried: a plan reports a fault as a blocked destination, which the fill already
+ * wrong is dropped here rather than kept: a plan reports a fault as a blocked destination, which the fill already
  * produces for every fault that leaves a body unwritable, and the rest are the validation report's to list.
  *
  * A target's owned-items declarations are planned after its deployments and join the same draft, so an entries host
@@ -70,7 +70,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
 
   for (const target of targets) {
     const state = stateByTarget.get(target.id);
-    // Every target the snapshot carries was scanned, the scan running over the same list.
+    // Every target the snapshot contains was scanned, the scan running over the same list.
     if (state === undefined) {
       continue;
     }
@@ -133,10 +133,10 @@ function describeContestedDestination(contributors: FileContributors): string {
 }
 
 /**
- * Finds the artifacts a host still carries a block for that the closure no longer holds.
+ * Finds the artifacts a host still records a block for that the closure no longer holds.
  *
  * A contribution names its contributor by id alone, its markers standing an id rather than a slug, so one the catalog
- * no longer carries cannot be described and is left out. Its block vanishes from the planned region either way.
+ * no longer contains cannot be described and is left out. Its block vanishes from the planned region either way.
  */
 function findDepartedContributors(
   state: TargetState,
@@ -240,10 +240,10 @@ interface Removals {
  *
  * Neither `resolveDeployedNames` nor the render-target consistency pass can see the collision: one holds a single
  * lookup with no artifact set to compare against, and the other has no catalog to learn which slugs a template will
- * produce. The destination stands at what it holds, which is the answer the claim side already gives a path whose
+ * produce. The destination stands at what it holds, which is the verdict the claim side already gives a path whose
  * provenance is undecidable.
  *
- * The contenders keep the verdicts their content earned, so an artifact whose body differs from what is deployed still
+ * The contenders keep the verdicts their content decided, so an artifact whose body differs from what is deployed still
  * reads as changed. An artifact's status measures its own content rather than the files it lands in, and withdrawing
  * the verdict would report an artifact that genuinely moved as one with nothing to do. What will happen at the
  * destination is the file's to say, and `blocked` is where it says it.

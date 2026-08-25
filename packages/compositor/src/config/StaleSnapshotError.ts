@@ -1,4 +1,4 @@
-/** The package a snapshot could not answer for, where an unlocated package is what went stale. */
+/** The package a snapshot could not locate, where an unlocated package is what went stale. */
 export interface UnlocatedPackage {
   readonly package: string;
   /** The base directory it would have been located from. */
@@ -18,7 +18,7 @@ export interface UnlocatedPackage {
 export class StaleSnapshotError extends Error {
   override readonly name = 'StaleSnapshotError';
 
-  /** The package name that went unanswered, absent where the source list itself is what moved. */
+  /** The package name that went unlocated, absent where the source list itself is what moved. */
   readonly package: string | undefined;
   /** The base directory it would have been located from. */
   readonly baseDir: string | undefined;

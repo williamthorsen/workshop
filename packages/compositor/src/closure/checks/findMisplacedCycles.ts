@@ -2,10 +2,10 @@ import type { Violation } from '../../consistency/Violation.ts';
 import type { Closure } from '../../schemas/closure-schemas.ts';
 
 /**
- * Reports each diagnostic carrying a cycle it could not have found.
+ * Reports each diagnostic containing a cycle it could not have found.
  *
  * A cycle is the one diagnostic whose fault runs through several artifacts, so it is the only one with members to name.
- * A `misplaced-key` carrying them would offer a reader a path through a graph that had nothing to do with the fault.
+ * A `misplaced-key` containing them would offer a reader a path through a graph that had nothing to do with the fault.
  */
 export function findMisplacedCycles(closure: Closure): Array<Violation> {
   const violations: Array<Violation> = [];

@@ -5,11 +5,11 @@ import { requireEntry } from '../../../test-utils/requireEntry.ts';
 import { findStatusDisagreements } from '../findStatusDisagreements.ts';
 
 describe(findStatusDisagreements, () => {
-  it('accepts a file whose recorded status agrees with the sides it carries', () => {
+  it('accepts a file whose recorded status agrees with the sides it has', () => {
     expect(findStatusDisagreements(buildPlan())).toStrictEqual([]);
   });
 
-  it('if both sides carry the same hash, rejects a status of changed', () => {
+  it('if both sides have the same hash, rejects a status of changed', () => {
     const plan = buildPlan();
     requireEntry(plan.files, 0).planned = { hash: 'hash:review-current' };
 
@@ -18,13 +18,13 @@ describe(findStatusDisagreements, () => {
     ]);
   });
 
-  it('if a file carries neither side, rejects it', () => {
+  it('if a file has neither side, rejects it', () => {
     const plan = buildPlan();
     delete requireEntry(plan.files, 0).current;
     delete requireEntry(plan.files, 0).planned;
 
     expect(findStatusDisagreements(plan)).toStrictEqual([
-      { path: 'files[0]', message: 'carries neither a current nor a planned side' },
+      { path: 'files[0]', message: 'has neither a current nor a planned side' },
     ]);
   });
 

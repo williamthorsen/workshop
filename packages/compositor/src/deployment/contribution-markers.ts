@@ -12,7 +12,7 @@ export const ARTIFACT_ID_PLACEHOLDER = '{artifactId}';
 /**
  * Renders the markers `artifactId`'s contribution is written behind.
  *
- * The substitution goes through a function rather than a string, so an id carrying `$&` or `$'` is inserted verbatim
+ * The substitution goes through a function rather than a string, so an id containing `$&` or `$'` is inserted verbatim
  * instead of being read as a replacement pattern -- the same care `resolveDeployedNames` takes over a slug.
  */
 export function renderContributionMarkers(template: MarkerPair, artifactId: ArtifactId): RegionMarkers {
@@ -34,7 +34,7 @@ export function renderContributionMarkers(template: MarkerPair, artifactId: Arti
  * The capture is lazy and line-bounded rather than narrowed to an id-shaped character class, which keeps the derivation
  * free of any assumption about what a consumer's ids look like. Under the conventional pairing, where a close marker is
  * an open marker with one more character in it, the open pattern also matches a close marker line and captures a key no
- * artifact carries. That is harmless: `readContributions` pairs an open with a close capturing the same key, and drops
+ * artifact declares. That is harmless: `readContributions` pairs an open with a close capturing the same key, and drops
  * an open that finds none.
  *
  * One capture group per pattern is what `readContributions` requires, so a template stands its placeholder exactly

@@ -6,13 +6,13 @@ import { z } from 'zod';
  * The key path within an item, and the value at it, that marks the item as the engine's.
  *
  * A sentinel in the data rather than a comment fence, because interleaved ownership has no contiguous span a fence
- * could delimit, and because JSON carries no comments at all. Data rather than a predicate, because a declaration a
+ * could delimit, and because JSON has no comments at all. Data rather than a predicate, because a declaration a
  * consumer authors has to survive being read from a file.
  *
  * A `*` segment stands for every element of the array at that position, and a `contains` match claims a string holding
  * the value rather than one equal to it. Together they reach a mark a host buries inside a list of command strings,
  * which is where a tool that had to survive shell execution put its own. Neither names a place the engine can write, so
- * a sentinel using either requires its items to carry the mark already rather than stamping them.
+ * a sentinel using either requires its items to have the mark already rather than stamping them.
  */
 export const OwnedItemsSentinelSchema = z
   .object({

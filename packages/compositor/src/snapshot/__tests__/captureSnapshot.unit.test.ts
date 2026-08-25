@@ -51,7 +51,7 @@ const kinds: ReadonlyArray<ResolveKind> = [
 ];
 
 describe(captureSnapshot, () => {
-  it('carries every artifact the sources hold, whatever any config selects', async () => {
+  it('contains every artifact the sources hold, whatever any config selects', async () => {
     const snapshot = await capture();
 
     expect(snapshot.catalog.entries.map(({ id }) => id)).toStrictEqual([
@@ -75,7 +75,7 @@ describe(captureSnapshot, () => {
     expect(renderOf(snapshot, 'skill:review')).toMatchObject({ status: 'rendered', content: '# Review\n' });
   });
 
-  it('carries a render that could not resolve a directive as data', async () => {
+  it('records a render that could not resolve a directive as data', async () => {
     const snapshot = await capture();
 
     expect(renderOf(snapshot, 'skill:broken')).toMatchObject({

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { HashSchema, IdSchema } from './scalar-schemas.ts';
 
-/** One source that carries an artifact, whether or not it won resolution. */
+/** One source that contains an artifact, whether or not it won resolution. */
 export const ResolutionCandidateSchema = z
   .object({
     sourceId: IdSchema,
@@ -16,7 +16,7 @@ export const ResolutionCandidateSchema = z
 /**
  * Which source an artifact resolved from, and which lost.
  *
- * `shadowed` holds losers only, in precedence order, so an artifact carried by exactly one source has an empty array.
+ * `shadowed` holds losers only, in precedence order, so an artifact exactly one source contains has an empty array.
  */
 export const ArtifactResolutionSchema = z
   .object({

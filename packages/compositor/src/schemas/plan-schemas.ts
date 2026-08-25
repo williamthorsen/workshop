@@ -31,8 +31,8 @@ export const TargetDigestSchema = z.object({ targetId: IdSchema, digest: HashSch
  * The inputs a plan was computed from, so a consumer detects staleness without watching files.
  *
  * `targetState` is an input because some planned content is derived by reading the destination, which makes a target's
- * own contents part of what the plan depends on. `composite` answers "is this plan stale" in one comparison; the parts
- * beside it name what moved when the answer is yes.
+ * own contents part of what the plan depends on. `composite` settles whether a plan is stale in one comparison; the
+ * parts beside it name what moved when it is.
  */
 export const PlanFingerprintSchema = z
   .object({
@@ -53,7 +53,7 @@ export const PlanFingerprintSchema = z
  * `contentAvailability` states up front whether `blobs` holds every body the plan references, so a consumer knows what
  * it is holding without discovering a miss part-way through rendering.
  *
- * The payload carries no timestamp: identical inputs produce an identical plan, and a clock-derived field would make
+ * The payload has no timestamp: identical inputs produce an identical plan, and a clock-derived field would make
  * every plan differ from the one before it.
  */
 export const PlanSchema = z

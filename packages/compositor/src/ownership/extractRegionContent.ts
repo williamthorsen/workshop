@@ -7,7 +7,7 @@ import type { RegionMarkers } from './RegionMarkers.ts';
  * present.
  *
  * A damaged host yields `undefined` rather than the widened span the region pattern matches there, so a caller
- * carrying region content across a re-render cannot carry text the region does not own back into it.
+ * moving region content across a re-render cannot move text the region does not own back into it.
  */
 export function extractRegionContent(content: string, markers: RegionMarkers): string | undefined {
   if (classifyRegion(content, markers).state !== 'complete') {

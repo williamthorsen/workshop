@@ -40,12 +40,12 @@ export interface ApplyPlanOptions {
  * A region host is written whole, its planned body being the host with the owned region injected into it, so an edit
  * elsewhere in that host reads as drift like any other. The plan shows the bytes that will be written, and a host's own
  * content is among the inputs the fingerprint covers precisely because planned content is derived from it: a moved host
- * is what capturing afresh answers.
+ * is what capturing afresh resolves.
  *
  * An entries host is written the same way, its planned body being the host with the engine's items spliced among the
  * ones another tool wrote. A JSON host that needed a change comes back re-serialized, so content another tool wrote is
  * reflowed; one already holding the planned items is returned untouched by the composition and never written at all.
- * The plan carries those bytes on both sides, so what the reflow will do is visible before anything is written.
+ * The plan contains those bytes on both sides, so what the reflow will do is visible before anything is written.
  *
  * Removal takes away the directory it empties, bounded by the container directories the target names. A target naming
  * none, which an older plan is, has the climb unbounded and keeps every directory it holds.
@@ -219,11 +219,11 @@ function requireBody(blobs: Record<Hash, Blob>, file: FileEntry): Uint8Array {
   return decodeBlob(blob);
 }
 
-/** Reads the root a file's target resolves to, which the pre-flight has established the plan carries. */
+/** Reads the root a file's target resolves to, which the pre-flight has established the plan contains. */
 function requireRoot(roots: ReadonlyMap<TargetId, string>, file: FileEntry): string {
   const root = roots.get(file.targetId);
   if (root === undefined) {
-    throw new Error(`Plan carries no target "${file.targetId}", which "${file.path}" is deployed to.`);
+    throw new Error(`Plan has no target "${file.targetId}", which "${file.path}" is deployed to.`);
   }
   return root;
 }

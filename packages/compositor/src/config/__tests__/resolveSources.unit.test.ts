@@ -86,7 +86,7 @@ describe(resolveSources, () => {
     await expect(collectNames(config)).resolves.toStrictEqual(['local']);
   });
 
-  // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two answers.
+  // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two results.
   it('anchors a relative path at the tier that declared it, not at the last tier', async () => {
     const config = buildConfig([
       { id: 'global', baseDir: '/srv/global', sources: { use: [{ name: 'shared', path: './content' }] } },

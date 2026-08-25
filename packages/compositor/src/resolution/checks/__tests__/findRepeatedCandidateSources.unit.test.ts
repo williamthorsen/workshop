@@ -9,7 +9,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(buildCatalog())).toStrictEqual([]);
   });
 
-  it('if a shadowed candidate repeats the winner, names the source that already carries the artifact', () => {
+  it('if a shadowed candidate repeats the winner, names the source that already contains the artifact', () => {
     const catalog = buildCatalog();
     requireEntry(catalog.entries, 2).resolution.shadowed = [
       { sourceId: 'local', path: 'skills/review/SKILL.md', hash: 'hash:review-again' },
@@ -18,7 +18,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(catalog)).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[0].sourceId',
-        message: 'repeats "local", which already carries this artifact',
+        message: 'repeats "local", which already contains this artifact',
       },
     ]);
   });
@@ -33,7 +33,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(catalog)).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[1].sourceId',
-        message: 'repeats "team", which already carries this artifact',
+        message: 'repeats "team", which already contains this artifact',
       },
     ]);
   });

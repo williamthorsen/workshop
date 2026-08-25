@@ -16,7 +16,7 @@ export function expandSelector(
     if (artifactId === undefined) {
       diagnostics.push({
         code: 'unknown-artifact',
-        message: `No source carries "${selector.artifact}" of kind "${kindId}".`,
+        message: `No source contains "${selector.artifact}" of kind "${kindId}".`,
         at,
       });
       return [];
@@ -29,13 +29,13 @@ export function expandSelector(
     return [];
   }
 
-  const carried = index.bySource.get(kindId)?.get(selector.source) ?? [];
-  if (carried.length === 0) {
+  const sourceArtifactIds = index.bySource.get(kindId)?.get(selector.source) ?? [];
+  if (sourceArtifactIds.length === 0) {
     diagnostics.push({
       code: 'empty-source',
-      message: `Source "${selector.source}" carries nothing of kind "${kindId}".`,
+      message: `Source "${selector.source}" contains nothing of kind "${kindId}".`,
       at,
     });
   }
-  return carried;
+  return sourceArtifactIds;
 }

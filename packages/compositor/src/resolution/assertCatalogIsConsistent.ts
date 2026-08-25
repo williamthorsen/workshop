@@ -22,8 +22,8 @@ export class CatalogConsistencyError extends ConsistencyError {
 }
 
 /**
- * Verifies the invariants the structural schema does not carry: that every id reference resolves, that each entry's id
- * agrees with the kind and slug it names, and that shadowed candidates descend in source precedence order.
+ * Verifies the invariants the structural schema does not express: that every id reference resolves, that each entry's
+ * id agrees with the kind and slug it names, and that shadowed candidates descend in source precedence order.
  *
  * A catalog the engine produced satisfies these by construction, so `resolveCatalog` does not call this on its own
  * output. It is for a catalog that arrived as data, which is the case a reader rendering a payload it did not compute

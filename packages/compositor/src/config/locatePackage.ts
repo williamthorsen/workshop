@@ -24,7 +24,7 @@ export interface LocatePackageOptions {
  * `./package.json` and a content-only package has no importable entry.
  *
  * Throws when the name is a filesystem path rather than a package name, when the package is not installed, or when it
- * declares no content directory. Whether that directory exists is the caller's source validation to answer.
+ * declares no content directory. Whether that directory exists is the caller's source validation to decide.
  */
 export async function locatePackage(name: string, options: LocatePackageOptions): Promise<string> {
   assertPackageName(name);
@@ -42,7 +42,7 @@ export async function locatePackage(name: string, options: LocatePackageOptions)
 /**
  * Throws when `name` is a filesystem path rather than a package name.
  *
- * Node's resolver answers a relative specifier with the anchor directory itself, so `./content` would otherwise resolve
+ * Node's resolver resolves a relative specifier to the anchor directory itself, so `./content` would otherwise resolve
  * to `<baseDir>/content` and `../sibling` would escape `baseDir` entirely -- a second, undocumented directory-source
  * route beside the one a `path` declaration already provides.
  */
@@ -54,7 +54,7 @@ function assertPackageName(name: string): void {
   }
 }
 
-/** Finds the installed directory of `name` with its parsed manifest, or nothing when no candidate carries one. */
+/** Finds the installed directory of `name` with its parsed manifest, or nothing when no candidate has one. */
 async function findInstalledPackage(
   name: string,
   baseDir: string,
@@ -72,7 +72,7 @@ async function findInstalledPackage(
 function listCandidateDirs(name: string, baseDir: string): ReadonlyArray<string> {
   // `createRequire` needs only a path to anchor resolution; the file itself need not exist.
   const requireFromBase = createRequire(path.join(baseDir, 'package.json'));
-  // `resolve.paths` answers null for a core module, which a garbage declaration can produce; an empty candidate list
+  // `resolve.paths` returns null for a core module, which a garbage declaration can produce; an empty candidate list
   // then reports it as not installed.
   return (requireFromBase.resolve.paths(name) ?? []).map((nodeModules) => path.join(nodeModules, name));
 }

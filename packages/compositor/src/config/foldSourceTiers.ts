@@ -36,7 +36,7 @@ export interface SourceResolution {
  * `assertSourceIsReadable`'s question.
  *
  * A package the fold adopts fails one of two ways, and the two mean different things: a location recording a failed
- * walk raises that walk's reason, the fault a consumer's declaration or workspace carries; no location at all raises
+ * walk raises that walk's reason, the fault in a consumer's declaration or workspace; no location at all raises
  * `StaleSnapshotError`, which only a config naming a package the walk never saw can produce.
  */
 export function foldSourceTiers(config: CompositorConfig, locations: ReadonlyArray<PackageLocation>): SourceResolution {

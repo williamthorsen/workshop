@@ -62,7 +62,7 @@ describe(assembleFiles, () => {
     });
   });
 
-  it('carries an asset byte for byte, no target transforming what an artifact ships alongside', async () => {
+  it('copies an asset byte for byte, no target transforming what an artifact ships alongside', async () => {
     const { assembly, blobs } = await assemble();
 
     expect(bodyOf(blobs, assembly, 'skills/review/diagram.png')).toStrictEqual({
@@ -202,7 +202,7 @@ describe(assembleFiles, () => {
     expect(assembly.verdicts.get('rulebook:style')).toStrictEqual(['changed']);
   });
 
-  it('records the artifact departing with a contribution the host still carries', async () => {
+  it('records the artifact departing with a contribution the host still records', async () => {
     const first = await assemble();
     const { assembly } = await assemble({
       select: { rulebook: { use: ['naming'] }, skill: { use: [{ source: 'team' }] } },

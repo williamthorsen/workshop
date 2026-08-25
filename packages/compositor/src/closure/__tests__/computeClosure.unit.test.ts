@@ -16,10 +16,10 @@ const catalog = buildCatalogFromSpec({
   traversalOnlyKinds: ['collection'],
   sources: ['team', 'library'],
   entries: [
-    { kindId: 'collection', slug: 'core', carriedBy: ['team'] },
-    { kindId: 'skill', slug: 'review', carriedBy: ['team', 'library'] },
-    { kindId: 'skill', slug: 'lint', carriedBy: ['library'] },
-    { kindId: 'skill', slug: 'unused', carriedBy: ['library'] },
+    { kindId: 'collection', slug: 'core', copySourceIds: ['team'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['team', 'library'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['library'] },
+    { kindId: 'skill', slug: 'unused', copySourceIds: ['library'] },
   ],
 });
 
@@ -39,7 +39,7 @@ describe(computeClosure, () => {
     ]);
   });
 
-  it('keeps every route to a diamond, and answers the reverse direction through the shared helpers', () => {
+  it('keeps every route to a diamond, and gives the reverse direction through the shared helpers', () => {
     const closure = computeClosure(inputFor(['collection:core']));
 
     expect(buildDependentsIndex(closure)('skill:lint')).toStrictEqual(['collection:core', 'skill:review']);
@@ -51,7 +51,7 @@ describe(computeClosure, () => {
     expect(closure.artifacts.map(({ id }) => id)).not.toContain('skill:unused');
   });
 
-  it('carries the tiers that decided each seed, so an inherited opt-in is told from a project one', () => {
+  it('records the tiers that decided each seed, so an inherited opt-in is told from a project one', () => {
     const closure = computeClosure(inputFor(['collection:core']));
 
     expect(closure.artifacts.find(({ id }) => id === 'collection:core')?.seededBy).toStrictEqual([
@@ -76,14 +76,14 @@ describe(computeClosure, () => {
     expect(ClosureSchema.parse(closure)).toStrictEqual(closure);
   });
 
-  it('carries no on-disk layout or resolved directory, neither meaning anything to a reader of a closure', () => {
+  it('has no on-disk layout or resolved directory, neither meaning anything to a reader of a closure', () => {
     const closure = computeClosure(inputFor(['collection:core']));
 
     expect(closure.kinds[0]).not.toHaveProperty('layout');
     expect(closure.sources[0]).not.toHaveProperty('dir');
   });
 
-  it('carries the partials its surviving token edges name, and no others', () => {
+  it('contains the partials its surviving token edges name, and no others', () => {
     const partials: ReadonlyArray<PartialEntry> = [
       { id: 'team:_data/shared.md', sourceId: 'team', path: '_data/shared.md', hash: 'hash:shared' },
       { id: 'team:_data/spare.md', sourceId: 'team', path: '_data/spare.md', hash: 'hash:spare' },
@@ -97,7 +97,7 @@ describe(computeClosure, () => {
     expect(closure.partials.map(({ id }) => id)).toStrictEqual(['team:_data/shared.md']);
   });
 
-  describe('when an edge names an artifact no source carries', () => {
+  describe('when an edge names an artifact no source contains', () => {
     const graph = buildGraph({ edges: [['collection:core', [{ to: 'skill:absent', via: 'declared' }]]] });
     const closure = computeClosure({ graph, selection: seedsFor(['collection:core']), tiers });
 
@@ -105,7 +105,7 @@ describe(computeClosure, () => {
       expect(closure.diagnostics).toStrictEqual([
         {
           code: 'unknown-reference',
-          message: 'collection:core names "skill:absent" as a dependency, which no source carries.',
+          message: 'collection:core names "skill:absent" as a dependency, which no source contains.',
           at: { artifactId: 'collection:core' },
         },
       ]);
@@ -176,7 +176,7 @@ describe(computeClosure, () => {
     expect(closure.diagnostics).toHaveLength(1);
   });
 
-  it('carries a read fault for an artifact it reached, and drops one for an artifact it did not', () => {
+  it('records a read fault for an artifact it reached, and drops one for an artifact it did not', () => {
     const graph = buildGraph({
       diagnostics: [
         { code: 'misplaced-key', message: 'reached', at: { artifactId: 'collection:core' } },
@@ -188,7 +188,7 @@ describe(computeClosure, () => {
     expect(closure.diagnostics.map(({ message }) => message)).toStrictEqual(['reached']);
   });
 
-  it('if a seed names an artifact the catalog does not carry, fails the call', () => {
+  it('if a seed names an artifact the catalog does not contain, fails the call', () => {
     expect(() => computeClosure(inputFor(['skill:absent']))).toThrow(/skill:absent/);
   });
 });

@@ -5,7 +5,7 @@ import type { Id, KindId } from '../schemas/scalar-schemas.ts';
  *
  * `list` and `index` are absent together when the whole block is at fault rather than one entry in it. `inlayName` is
  * present for an entry under an `inlays` binding and absent for one under `select`, the two blocks sharing a selector
- * grammar and so sharing every diagnostic a selector can earn.
+ * grammar and so sharing every diagnostic a selector can produce.
  */
 export interface ConfigEntryRef {
   readonly tierId: Id;
@@ -15,7 +15,7 @@ export interface ConfigEntryRef {
   readonly index?: number;
 }
 
-/** One selector that named something the catalog does not carry. */
+/** One selector that named something the catalog does not contain. */
 export interface SelectionDiagnostic {
   readonly code: 'unknown-artifact' | 'unknown-kind' | 'unknown-source' | 'empty-source';
   readonly message: string;

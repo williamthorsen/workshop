@@ -26,7 +26,7 @@ describe(assertSourcesFit, () => {
     expect(() => assertSourcesFit(config, snapshot)).not.toThrow();
   });
 
-  it('refuses a config that adopts a source the snapshot does not carry', async () => {
+  it('refuses a config that adopts a source the snapshot does not contain', async () => {
     const { snapshot, sourceDir } = await captureComposition();
     const added = buildConfig([
       {
@@ -44,7 +44,7 @@ describe(assertSourcesFit, () => {
     expect(() => assertSourcesFit(added, snapshot)).toThrow(/adopts "library"/);
   });
 
-  it('refuses a config that drops a source the snapshot carries', async () => {
+  it('refuses a config that drops a source the snapshot contains', async () => {
     const { snapshot } = await captureComposition();
     const dropped = buildConfig([{ id: 'project', sources: { use: [] } }]);
 

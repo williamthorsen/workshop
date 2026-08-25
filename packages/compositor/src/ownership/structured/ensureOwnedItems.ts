@@ -2,7 +2,7 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { type DocumentAccess, type ItemHandle, openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import { applySentinel, carriesSentinel } from './sentinel.ts';
+import { applySentinel, hasSentinel } from './sentinel.ts';
 
 /**
  * Installs `items` as the engine's contribution to a structured host, leaving everything else in it alone.
@@ -12,9 +12,9 @@ import { applySentinel, carriesSentinel } from './sentinel.ts';
  * four behaviours at once -- a re-run is a no-op, a drifted item is replaced in place, accidental duplicates collapse,
  * and foreign items keep their relative order.
  *
- * Each item carries the sentinel before it is written, so nothing reaches the host that could not be found again.
+ * Each item has the sentinel before it is written, so nothing reaches the host that could not be found again.
  * A sentinel the engine can write is stamped on; one it cannot is required of the item already, and an item
- * lacking it is refused. A collection the host does not carry is created, unless there is nothing to put in it.
+ * lacking it is refused. A collection the host does not have is created, unless there is nothing to put in it.
  *
  * Content that needs no change is returned untouched rather than re-serialized, which is what keeps a re-run
  * byte-identical: re-emitting a parsed document reproduces its comments but not necessarily every formatting choice.
@@ -45,7 +45,7 @@ export function ensureOwnedItems(
     return { content: document.serialize() };
   }
 
-  const merged = spliceOwned(located.items, desired, (item) => carriesSentinel(document.toPlain(item), spec.sentinel));
+  const merged = spliceOwned(located.items, desired, (item) => hasSentinel(document.toPlain(item), spec.sentinel));
   if (readsIdentically(document, located.items, merged)) {
     return { content };
   }
@@ -55,7 +55,7 @@ export function ensureOwnedItems(
 
 // region | Helpers
 
-/** True when two item lists carry the same data, which is how an ensure pass recognizes it has nothing to do. */
+/** True when two item lists contain the same data, which is how an ensure pass recognizes it has nothing to do. */
 function readsIdentically(
   document: DocumentAccess,
   before: ReadonlyArray<ItemHandle>,
@@ -76,16 +76,16 @@ function renderItems(document: DocumentAccess, items: ReadonlyArray<ItemHandle>)
 function spliceOwned(
   current: ReadonlyArray<ItemHandle>,
   desired: ReadonlyArray<ItemHandle>,
-  carriesOwnership: (item: ItemHandle) => boolean,
+  isOwned: (item: ItemHandle) => boolean,
 ): ReadonlyArray<ItemHandle> {
-  const firstOwned = current.findIndex((item) => carriesOwnership(item));
+  const firstOwned = current.findIndex((item) => isOwned(item));
   if (firstOwned === -1) {
     return [...current, ...desired];
   }
   return [
     ...current.slice(0, firstOwned),
     ...desired,
-    ...current.slice(firstOwned + 1).filter((item) => !carriesOwnership(item)),
+    ...current.slice(firstOwned + 1).filter((item) => !isOwned(item)),
   ];
 }
 

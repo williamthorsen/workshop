@@ -8,7 +8,7 @@ import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
 import { buildConfig } from './buildConfig.ts';
 import { buildClaudeTarget, buildCompositionSourceFiles, COMPOSITION_KINDS } from './composition-fixture.ts';
 
-/** A captured composition, with the config it answers and the directories it was captured over. */
+/** A captured composition, with the config it was captured for and the directories it was captured over. */
 export interface CompositionFixture {
   readonly config: CompositorConfig;
   readonly snapshot: CompositionSnapshot;
@@ -22,7 +22,7 @@ export interface CaptureCompositionOptions {
   /** The `sources` block the sole tier declares, defaulting to the temporary source tree under the name `team`. */
   readonly buildSources?: (sourceDir: string) => unknown;
   readonly targetFiles?: Record<string, string | Uint8Array>;
-  /** The `select` block the sole tier declares, defaulting to everything the source carries of each deployed kind. */
+  /** The `select` block the sole tier declares, defaulting to everything the source contains of each deployed kind. */
   readonly select?: unknown;
   /** The `inlays` block the sole tier declares, defaulting to binding nothing. */
   readonly inlays?: unknown;

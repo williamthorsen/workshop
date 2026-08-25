@@ -21,7 +21,7 @@ export interface CollectPrunableDirsInput {
  * Emptiness is computed rather than observed: a directory is empty when everything it holds is either a destination
  * this run removes or a directory this run already took away, and when nothing the run writes lands anywhere beneath
  * it. Both halves of the run have to be read. A real run has deleted its files and written its own by the time it
- * asks, and a dry run has done neither, so a listing answers differently for the two; `removed` and `written` are what
+ * asks, and a dry run has done neither, so a listing reports differently for the two; `removed` and `written` are what
  * make them agree without a second code path.
  *
  * The walk climbs from each removed destination and stops at a container directory, which the target holds whether or

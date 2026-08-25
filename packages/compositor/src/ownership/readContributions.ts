@@ -3,7 +3,7 @@
  * naming which contributor the block belongs to.
  *
  * Patterns rather than literal marker pairs, because a caller supplying literals could only confirm contributions it
- * already knew about, and the question worth asking of a host is which contributions it carries. They are sources
+ * already knew about, and the question worth asking of a host is which contributions it contains. They are sources
  * rather than compiled expressions so that a consumer's declaration stays serializable.
  *
  * Anchor each pattern to its line with `^` and `$`. Both compile multiline, so those anchors bind to a line rather
@@ -15,14 +15,14 @@ export interface ContributionPatterns {
   readonly close: string;
 }
 
-/** One contribution a host carries: the key its markers captured, and the body between them. */
+/** One contribution a host contains: the key its markers captured, and the body between them. */
 export interface Contribution {
   readonly key: string;
   readonly body: string;
 }
 
 /**
- * Reads the contributions `content` carries, in document order.
+ * Reads the contributions `content` contains, in document order.
  *
  * A block counts only when an open marker is followed by a close marker capturing the same key, which is what keeps a
  * half-written block from reading as a contribution. Each close marker is claimed once, so the nearest unclaimed one
@@ -73,7 +73,7 @@ function findClosingMarker(
 }
 
 /**
- * Compiles a marker pattern for a whole-host scan, throwing unless it carries exactly one capture group.
+ * Compiles a marker pattern for a whole-host scan, throwing unless it has exactly one capture group.
  *
  * A pattern that does not compile, or that captures a number of things other than the one key, is a fault in the
  * declaration a consumer wrote, so it throws where a damaged host blocks.
@@ -83,7 +83,7 @@ function toGlobalPattern(source: string, role: string): RegExp {
   const groupCount = (new RegExp(`${source}|`).exec('') ?? []).length - 1;
   if (groupCount !== 1) {
     throw new Error(
-      `A contribution's ${role} pattern must carry exactly one capture group naming the contributor, but "${source}" carries ${groupCount}.`,
+      `A contribution's ${role} pattern must have exactly one capture group naming the contributor, but "${source}" has ${groupCount}.`,
     );
   }
   return pattern;

@@ -34,7 +34,7 @@ export interface LinkRewrite {
  * link that climbs out of one kind's tree and into another's lands where that other kind actually deploys.
  *
  * A target that already names its destination is left alone: an anchor, an absolute or home-relative path, anything
- * carrying a URI scheme, and anything opening with a declared token, which resolves to its own destination when the
+ * with a URI scheme, and anything opening with a declared token, which resolves to its own destination when the
  * token rewrite runs. That last case is why the delimiter is the consumer's: nothing here knows what a token looks
  * like beyond the patterns it was handed.
  *
@@ -87,7 +87,7 @@ function namesItsOwnDestination(target: string, openers: ReadonlyArray<RegExp>):
   );
 }
 
-/** Everything one rewrite carries across the lines it renders. */
+/** Everything one rewrite needs across the lines it renders. */
 interface RewriteContext {
   readonly diagnostics: Array<LinkDiagnostic>;
   readonly fileDir: string;

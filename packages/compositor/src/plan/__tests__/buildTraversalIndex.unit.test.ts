@@ -18,7 +18,7 @@ describe(buildTraversalIndex, () => {
     expect(index.findContributedFiles('collection:core')).toStrictEqual([]);
   });
 
-  it('answers the artifact-to-artifact direction it composes from the shared index', () => {
+  it('reports the artifact-to-artifact direction it composes from the shared index', () => {
     const index = buildTraversalIndex(buildPlan());
 
     expect(index.findDependents('skill:lint')).toStrictEqual(['skill:review']);

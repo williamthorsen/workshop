@@ -18,7 +18,7 @@ const segments: ReadonlyArray<Segment> = [
   { lines: ['{skill:format}'], partialId: 'team:_data/shared.md' },
 ];
 
-// A pattern spanning the whole of what each surface feeds it: an anchor answers differently against one line than
+// A pattern spanning the whole of what each surface feeds it: an anchor matches differently against one line than
 // against a segment's lines joined, so it is the shape that separates the two surfaces if they ever diverge again.
 const anchored: TokenKind = {
   id: 'skill-invocation',

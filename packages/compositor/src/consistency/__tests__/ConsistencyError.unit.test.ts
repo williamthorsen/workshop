@@ -6,15 +6,13 @@ describe(ConsistencyError, () => {
   it('composes the message from the subject and one line per violation', () => {
     const error = new ConsistencyError('Widget', [
       { path: 'parts[0].id', message: 'is empty' },
-      { path: 'parts', message: 'carries "bolt" more than once' },
+      { path: 'parts', message: 'lists "bolt" more than once' },
     ]);
 
-    expect(error.message).toBe(
-      'Widget is inconsistent:\n  parts[0].id is empty\n  parts carries "bolt" more than once',
-    );
+    expect(error.message).toBe('Widget is inconsistent:\n  parts[0].id is empty\n  parts lists "bolt" more than once');
   });
 
-  it('carries the violations it was raised with', () => {
+  it('has the violations it was raised with', () => {
     const violations = [{ path: 'parts', message: 'is empty' }];
 
     expect(new ConsistencyError('Widget', violations).violations).toStrictEqual(violations);

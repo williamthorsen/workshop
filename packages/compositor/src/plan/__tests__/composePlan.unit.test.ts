@@ -29,7 +29,7 @@ describe(composePlan, () => {
     expect(() => assertPlanIsConsistent(composePlan(config, snapshot))).not.toThrow();
   });
 
-  it('holds every invariant over a plan carrying a removal and a block', async () => {
+  it('holds every invariant over a plan containing a removal and a block', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: { 'skills/lint/SKILL.md': '<!-- include: ./gone.md /-->\n', 'rulebooks/naming.md': 'Name.\n' },
       targetFiles: { 'skills/lint/SKILL.md': '# Old lint\n', 'skills/retired/SKILL.md': '# Retired\n' },
@@ -79,10 +79,10 @@ describe(composePlan, () => {
     const { config, snapshot } = await captureComposition();
     const plan = composePlan(config, snapshot);
     const named = plan.files.flatMap(({ current, planned }) => [current?.hash, planned?.hash]);
-    const carried = new Set(Object.keys(plan.blobs));
+    const storedHashes = new Set(Object.keys(plan.blobs));
 
     expect(plan.contentAvailability).toBe('complete');
-    expect(named.filter((hash) => hash !== undefined).every((hash) => carried.has(hash))).toBe(true);
+    expect(named.filter((hash) => hash !== undefined).every((hash) => storedHashes.has(hash))).toBe(true);
   });
 
   it('runs every id-keyed table lexicographically', async () => {
@@ -117,7 +117,7 @@ describe(composePlan, () => {
     expect(hashes).toStrictEqual(hashes.toSorted());
   });
 
-  it('carries the target as an entry alone, its pipeline and deployments being engine input', async () => {
+  it('contains the target as an entry alone, its pipeline and deployments being engine input', async () => {
     const { config, snapshot } = await captureComposition();
 
     expect(composePlan(config, snapshot).targets).toStrictEqual([
@@ -161,7 +161,7 @@ describe(composePlan, () => {
     ]);
   });
 
-  it('carries no body no file names, a discarded destination taking its bodies with it', async () => {
+  it('contains no body no file names, a discarded destination taking its bodies with it', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: {
         'rulebooks/naming.md': 'Name things well.\n',
@@ -176,7 +176,7 @@ describe(composePlan, () => {
     expect(Object.keys(plan.blobs).filter((hash) => !named.has(hash))).toStrictEqual([]);
   });
 
-  it('leaves a contested destination’s contenders at the status their own content earned', async () => {
+  it('leaves a contested destination’s contenders at the status their own content decided', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: {
         'rulebooks/naming.md': 'Name things well.\n',

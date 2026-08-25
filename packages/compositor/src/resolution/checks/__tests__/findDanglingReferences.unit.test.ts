@@ -9,7 +9,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(buildCatalog())).toStrictEqual([]);
   });
 
-  it('if an entry names a kind no table carries, locates the dangling reference', () => {
+  it('if an entry names a kind no table contains, locates the dangling reference', () => {
     const catalog = buildCatalog();
     requireEntry(catalog.entries, 0).kindId = 'rulebook';
 
@@ -21,7 +21,7 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
-  it('if a winner names a source no table carries, locates the dangling reference', () => {
+  it('if a winner names a source no table contains, locates the dangling reference', () => {
     const catalog = buildCatalog();
     requireEntry(catalog.entries, 1).resolution.winner.sourceId = 'vendor';
 
@@ -33,7 +33,7 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
-  it('if a shadowed candidate names a source no table carries, locates the dangling reference', () => {
+  it('if a shadowed candidate names a source no table contains, locates the dangling reference', () => {
     const catalog = buildCatalog();
     requireEntry(requireEntry(catalog.entries, 2).resolution.shadowed, 0).sourceId = 'vendor';
 

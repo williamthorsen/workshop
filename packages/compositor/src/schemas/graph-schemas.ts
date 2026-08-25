@@ -21,7 +21,7 @@ export const EdgeOriginSchema = z
  * One outgoing dependency edge.
  *
  * `partialId` names the partial a token was read from, and is present only for a `token` edge whose token reached the
- * artifact through transclusion. An edge whose token sits in the artifact's own body carries no partial.
+ * artifact through transclusion. An edge whose token sits in the artifact's own body has no partial.
  */
 export const DependencyEdgeSchema = z
   .object({
@@ -34,7 +34,7 @@ export const DependencyEdgeSchema = z
 /**
  * How an artifact entered the closure as a root.
  *
- * `declaration` is a tier naming the artifact itself. `source-catalog` is a tier taking everything one source carries,
+ * `declaration` is a tier naming the artifact itself. `source-catalog` is a tier taking everything one source contains,
  * which names no artifact and so cannot say which one it meant. `binding` is a tier naming the artifact as the filler
  * of an inlay, which is a root rather than an edge: an edge would have to run from the artifact declaring the inlay,
  * and finding those means reading bodies for a directive whose syntax lives on a target, while the edge graph is
@@ -45,8 +45,8 @@ export const SeedOriginSchema = z.enum(['binding', 'declaration', 'source-catalo
 /**
  * One reason an artifact is a closure root, with the config tier that decided it.
  *
- * An artifact seeded by several tiers carries one record each, which is what lets a consumer tell a project-level opt-in
- * from an inherited one. An artifact reached only as a dependency carries none.
+ * An artifact seeded by several tiers has one record each, which is what lets a consumer tell a project-level opt-in
+ * from an inherited one. An artifact reached only as a dependency has none.
  */
 export const SeedSchema = z
   .object({
@@ -77,8 +77,8 @@ export const PresentArtifactSchema = z
  * An artifact deployed previously and no longer part of the closure.
  *
  * Removal follows from the artifact no longer being declared, so it usually still resolves from a source and still
- * carries the edges it had: both fields are populated when they are knowable, and absent when a dropped source leaves
- * the artifact unresolvable. It is seeded by nothing, so it carries no `seededBy`.
+ * has the edges it had: both fields are populated when they are knowable, and absent when a dropped source leaves
+ * the artifact unresolvable. It is seeded by nothing, so it has no `seededBy`.
  */
 export const RemovedArtifactSchema = z
   .object({
@@ -99,7 +99,7 @@ export const ArtifactEntrySchema = z
 /**
  * One partial whose content is transcluded into artifact bodies.
  *
- * A partial is addressed by path within the source that carries it, so it neither shadows across sources nor deploys,
+ * A partial is addressed by path within the source that contains it, so it neither shadows across sources nor deploys,
  * and it holds no diff status of its own.
  */
 export const PartialEntrySchema = z

@@ -10,18 +10,18 @@ const catalog = buildCatalogFromSpec({
   traversalOnlyKinds: ['collection'],
   sources: ['team', 'library'],
   entries: [
-    { kindId: 'collection', slug: 'core', carriedBy: ['team'] },
-    { kindId: 'collection', slug: 'extra', carriedBy: ['team'] },
-    { kindId: 'skill', slug: 'review', carriedBy: ['team', 'library'] },
-    { kindId: 'skill', slug: 'lint', carriedBy: ['library'] },
-    { kindId: 'subagent', slug: 'auditor', carriedBy: ['team'] },
+    { kindId: 'collection', slug: 'core', copySourceIds: ['team'] },
+    { kindId: 'collection', slug: 'extra', copySourceIds: ['team'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['team', 'library'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['library'] },
+    { kindId: 'subagent', slug: 'auditor', copySourceIds: ['team'] },
   ],
 });
 const index = buildCatalogIndex(catalog);
 const emittingKindIds = catalog.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id);
 
 describe(expandWildcard, () => {
-  it('names every emitting artifact the declaring source carries, in kind then catalog order', () => {
+  it('names every emitting artifact the declaring source contains, in kind then catalog order', () => {
     expect(expandWildcard(entryFor('collection:core'), index, emittingKindIds)).toStrictEqual([
       'skill:review',
       'subagent:auditor',
@@ -40,11 +40,11 @@ describe(expandWildcard, () => {
     expect(expandWildcard(entryFor('skill:review'), index, emittingKindIds)).toStrictEqual(['subagent:auditor']);
   });
 
-  it('names nothing when the declaring source carries nothing else that emits', () => {
+  it('names nothing when the declaring source contains nothing else that emits', () => {
     const alone = buildCatalogFromSpec({
       traversalOnlyKinds: ['collection'],
       sources: ['team'],
-      entries: [{ kindId: 'collection', slug: 'core', carriedBy: ['team'] }],
+      entries: [{ kindId: 'collection', slug: 'core', copySourceIds: ['team'] }],
     });
 
     expect(expandWildcard(requireEntry(alone.entries, 0), buildCatalogIndex(alone), ['skill'])).toStrictEqual([]);
@@ -53,11 +53,11 @@ describe(expandWildcard, () => {
 
 // region | Helpers
 
-/** Reads the catalog entry with `id`, failing the test when the fixture carries none. */
+/** Reads the catalog entry with `id`, failing the test when the fixture contains none. */
 function entryFor(id: string): CatalogEntry {
   const entry = catalog.entries.find((candidate) => candidate.id === id);
   if (entry === undefined) {
-    throw new Error(`Fixture carries no entry "${id}".`);
+    throw new Error(`Fixture has no entry "${id}".`);
   }
   return entry;
 }

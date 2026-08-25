@@ -27,7 +27,7 @@ export interface DeploymentDiagnostic {
   readonly at: DeploymentRef;
 }
 
-/** Where a render fault sits: the artifact whose content carries it, and the target it was being rendered for. */
+/** Where a render fault sits: the artifact whose content contains it, and the target it was being rendered for. */
 export interface RenderRef {
   readonly targetId: TargetId;
   readonly artifactId: ArtifactId;
@@ -37,7 +37,7 @@ export interface RenderRef {
  * One authoring fault, tagged with the domain that found it.
  *
  * Each domain's own diagnostic rides along unchanged, keeping the location that domain gives it: a selector at the
- * config entry an author wrote, a frontmatter edge at the artifact carrying it, a directive at the line it occupies, a
+ * config entry an author wrote, a frontmatter edge at the artifact declaring it, a directive at the line it occupies, a
  * token or a link at the artifact hosting it. Wrapping rather than flattening is what keeps a reader able to reach the
  * file an author would open, which one merged shape could only approximate.
  *
@@ -46,7 +46,7 @@ export interface RenderRef {
  * content that was produced anyway. They stand apart from each other because each locates its fault differently -- a
  * transclusion directive in the file an author wrote it in, an inlay directive in the body it was rendered into.
  *
- * A binding carries no `at` of its own here, unlike every other located domain, because its diagnostic already knows
+ * A binding has no `at` of its own here, unlike every other located domain, because its diagnostic already knows
  * where it belongs: a fault the config alone commits sits at the config, and one a target commits names the target and
  * the site. A `RenderRef` wrapper would have to be empty for the first of those.
  */
@@ -60,10 +60,10 @@ export type ValidationDiagnostic =
   | { readonly domain: 'deployment'; readonly diagnostic: DeploymentDiagnostic };
 
 /**
- * Every authoring fault a config and the content it reaches carry.
+ * Every authoring fault a config and the content it reaches contain.
  *
  * A list rather than a per-domain shape, because a reader fixing mistakes works through them and the domain each
- * carries is what groups them. An empty list is a composition with nothing wrong in it.
+ * names is what groups them. An empty list is a composition with nothing wrong in it.
  */
 export interface ValidationReport {
   readonly diagnostics: ReadonlyArray<ValidationDiagnostic>;

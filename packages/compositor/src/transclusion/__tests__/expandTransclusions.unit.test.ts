@@ -9,7 +9,7 @@ import { joinSegments } from '../joinSegments.ts';
 const COMMENT: DirectiveSyntax = { open: '<!--', close: '-->' };
 
 describe(expandTransclusions, () => {
-  it('returns a body carrying no directives as one unattributed segment', async () => {
+  it('returns a body with no directives as one unattributed segment', async () => {
     using tree = createTempTree({ 'skills/review.md': '# Review\n\nRead the diff.\n' });
 
     const result = await expand(tree.dir, 'skills/review.md');
@@ -176,7 +176,7 @@ describe(expandTransclusions, () => {
     expect(requireFailed(result).at).toStrictEqual({ path: 'skills/review.md', line: 2 });
   });
 
-  it('if a partial carries no children placeholder, reports the slot it cannot hold', async () => {
+  it('if a partial has no children placeholder, reports the slot it cannot hold', async () => {
     using tree = createTempTree({
       '_data/frame.md': 'Framed.\n',
       'skills/review.md': '<!-- include: ../_data/frame.md -->\nBody.\n<!-- /include -->\n',
@@ -196,7 +196,7 @@ describe(expandTransclusions, () => {
     expect(requireFailed(result).code).toBe('unrecognized-parameter');
   });
 
-  it('accepts a partial carrying a placeholder that no slot fills, dropping the placeholder line', async () => {
+  it('accepts a partial with a placeholder that no slot fills, dropping the placeholder line', async () => {
     using tree = createTempTree({
       '_data/frame.md': 'Before.\n<!-- children -->\nAfter.\n',
       'skills/review.md': '<!-- include: ../_data/frame.md / -->\n',

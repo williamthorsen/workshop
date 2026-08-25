@@ -22,7 +22,7 @@ export interface ArtifactVerdict {
  * A destination whose content could not be computed yields a file and no verdict: nothing was computed there for a
  * comparison to speak about, and an artifact blocked everywhere is one whose status rests on nothing. That is a
  * narrower rule than "a blocked destination yields no verdict" -- a contested destination is blocked with its
- * contenders' content computed, and each keeps the verdict that content earned.
+ * contenders' content computed, and each keeps the verdict that content decided.
  */
 export interface PlannedFiles {
   readonly files: ReadonlyArray<FileEntry>;
@@ -41,7 +41,7 @@ export interface TargetPlanContext {
   readonly claimed: ReadonlyMap<string, ClaimedFile>;
   /** What the target's region hosts hold now, by the kind whose deployment declared each. */
   readonly hosts: ReadonlyMap<KindId, HostState>;
-  /** What the target's entries hosts hold now, by path: an entries host answers to no kind. */
+  /** What the target's entries hosts hold now, by path: an entries host belongs to no kind. */
   readonly ownedHosts: ReadonlyMap<string, OwnedHostState>;
   readonly resolveDeployedName: DeployedNameLookup;
 }

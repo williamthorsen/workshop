@@ -12,7 +12,7 @@ describe(collectResolutions, () => {
     ]);
   });
 
-  it('carries each resolution through untouched', () => {
+  it('passes each resolution through untouched', () => {
     const plan = buildPlan();
 
     expect(collectResolutions(plan).map(({ resolution }) => resolution)).toStrictEqual(

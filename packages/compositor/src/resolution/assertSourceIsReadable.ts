@@ -7,7 +7,7 @@ import type { SourceSpec } from '../schemas/catalog-schemas.ts';
  * Throws unless `source` points at a readable directory.
  *
  * A source that is absent, or is a file where a directory was declared, is a mistake in the declaration rather than an
- * empty source, and every artifact it was meant to carry would otherwise resolve from somewhere else without a word.
+ * empty source, and every artifact it was meant to contain would otherwise resolve from somewhere else without a word.
  */
 export async function assertSourceIsReadable(source: SourceSpec): Promise<void> {
   let entry;

@@ -145,7 +145,7 @@ function plan(
   return { files: planOwnedItemsFiles(context, declarations), bodyOf: (file) => readBody(blobs, file) };
 }
 
-/** Reads the planned body of `file`, failing the test when the store carries none. */
+/** Reads the planned body of `file`, failing the test when the store contains none. */
 function readBody(blobs: BlobStore, file: FileEntry | undefined): string {
   const blob = file?.planned === undefined ? undefined : blobs.toTable()[file.planned.hash];
   if (blob === undefined) {

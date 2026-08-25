@@ -2,15 +2,15 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import { carriesSentinel } from './sentinel.ts';
+import { hasSentinel } from './sentinel.ts';
 
 /**
  * Deletes every item the engine owns from a structured host, then prunes the structure the deletion emptied.
  *
  * A collection left holding foreign items survives with those items alone; one left holding nothing is removed, along
- * with any ancestor the removal emptied. An ancestor still carrying other keys stays.
+ * with any ancestor the removal emptied. An ancestor that still has other keys stays.
  *
- * A host carrying no owned items is returned untouched rather than re-serialized, so removing nothing writes nothing.
+ * A host with no owned items is returned untouched rather than re-serialized, so removing nothing writes nothing.
  */
 export function removeOwnedItems(content: string, spec: OwnedItemsSpec): OwnershipOutcome {
   const opened = openDocument(content, spec.format);
@@ -27,7 +27,7 @@ export function removeOwnedItems(content: string, spec: OwnedItemsSpec): Ownersh
     return { content };
   }
 
-  const kept = located.items.filter((item) => !carriesSentinel(document.toPlain(item), spec.sentinel));
+  const kept = located.items.filter((item) => !hasSentinel(document.toPlain(item), spec.sentinel));
   if (kept.length === located.items.length) {
     return { content };
   }

@@ -63,7 +63,7 @@ describe(mergeFrontmatter, () => {
     expect(parseFrontmatter(mergeFrontmatter(content, overlay, 'reviewer')).body).toBe('Above.\n\n---\n\nBelow.\n');
   });
 
-  it('if the artifact carries no block, writes one above the content it had', () => {
+  it('if the artifact has no block, writes one above the content it had', () => {
     const overlay: FrontmatterOverlay = { defaults: { model: 'opus' } };
 
     expect(mergeFrontmatter('# Reviewer\n', overlay, 'reviewer')).toBe('---\nmodel: opus\n---\n# Reviewer\n');
@@ -93,11 +93,11 @@ describe(mergeFrontmatter, () => {
 
 // region | Helpers
 
-/** Reads the merged frontmatter back as data, failing the test when the result carries no block. */
+/** Reads the merged frontmatter back as data, failing the test when the result has no block. */
 function readFrontmatter(merged: string): unknown {
   const { frontmatter } = parseFrontmatter(merged);
   if (frontmatter === undefined) {
-    throw new Error('Expected the merged artifact to carry a frontmatter block.');
+    throw new Error('Expected the merged artifact to have a frontmatter block.');
   }
   const parsed: unknown = parseYaml(frontmatter);
   return parsed;

@@ -23,23 +23,23 @@ export function allowsStamping(sentinel: Sentinel): boolean {
  *
  * A sentinel the engine can write makes an unmarked item unconstructable, which is what lets a caller build items
  * without knowing the mark. One it cannot write puts that back on the caller: the item is refused unless it already
- * carries the mark, since an item written without one could never be found again.
+ * has the mark, since an item written without one could never be found again.
  */
 export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
   if (allowsStamping(sentinel)) {
     return stampSentinel(item, sentinel);
   }
-  if (!carriesSentinel(item, sentinel)) {
+  if (!hasSentinel(item, sentinel)) {
     throw new Error(
       `Cannot mark an item with the sentinel at "${sentinel.path.join('.')}": the sentinel cannot be written, and the ` +
-        'item does not already carry it.',
+        'item does not already have it.',
     );
   }
   return item;
 }
 
-/** Reports whether `item` carries the sentinel, which is what makes it the engine's to rewrite or remove. */
-export function carriesSentinel(item: unknown, sentinel: Sentinel): boolean {
+/** Reports whether `item` has the sentinel, which is what makes it the engine's to rewrite or remove. */
+export function hasSentinel(item: unknown, sentinel: Sentinel): boolean {
   return findsMark(item, sentinel.path, sentinel);
 }
 
@@ -67,7 +67,7 @@ export function stampSentinel(item: unknown, sentinel: Sentinel): unknown {
 /**
  * Reports whether the sentinel's value stands anywhere `path` reaches into `value`.
  *
- * A wildcard segment branches over an array's elements and claims the item when any one of them carries the mark,
+ * A wildcard segment branches over an array's elements and claims the item when any one of them has the mark,
  * which is how a mark buried in a list of commands is found without the declaration naming a position.
  */
 function findsMark(value: unknown, path: ReadonlyArray<string>, sentinel: Sentinel): boolean {
@@ -99,7 +99,7 @@ function matchesValue(value: unknown, sentinel: Sentinel): boolean {
   return value === sentinel.value;
 }
 
-/** Returns a copy of `target` carrying `value` at `path`, creating the mappings the path descends through. */
+/** Returns a copy of `target` with `value` at `path`, creating the mappings the path descends through. */
 function writeAtPath(
   target: Record<string, unknown>,
   path: ReadonlyArray<string>,

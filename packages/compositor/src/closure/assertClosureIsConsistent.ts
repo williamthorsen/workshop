@@ -22,7 +22,7 @@ export class ClosureConsistencyError extends ConsistencyError {
 }
 
 /**
- * Verifies the invariants the structural schema does not carry: that every id reference resolves, that a partial is
+ * Verifies the invariants the structural schema does not express: that every id reference resolves, that a partial is
  * named only by the edge origin read from one, and that shadowed candidates descend in source precedence order.
  *
  * A closure `computeClosure` produced satisfies all of it by construction, so the walk does not pay for the checks.

@@ -3,16 +3,16 @@ import { composeArtifactId } from '../resolution/composeArtifactId.ts';
 import type { Catalog } from '../schemas/catalog-schemas.ts';
 import { CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
 
-/** One artifact the catalog carries, and the sources carrying a copy of it, highest precedence first. */
+/** One artifact the catalog contains, and the sources with a copy of it, highest precedence first. */
 export interface CatalogEntrySpec {
   readonly kindId: string;
   readonly slug: string;
-  readonly carriedBy: ReadonlyArray<string>;
+  readonly copySourceIds: ReadonlyArray<string>;
 }
 
-/** What a catalog should carry, stated as briefly as a selection test needs. */
+/** What a catalog should contain, stated as briefly as a selection test needs. */
 export interface CatalogSpec {
-  /** Defaults to the kinds the entries name. State it to declare a kind that carries no entries. */
+  /** Defaults to the kinds the entries name. State it to declare a kind that has no entries. */
   readonly kinds?: ReadonlyArray<string>;
   /** The kinds that take part in the graph without producing output. Every other kind emits files. */
   readonly traversalOnlyKinds?: ReadonlyArray<string>;
@@ -21,7 +21,7 @@ export interface CatalogSpec {
 }
 
 /**
- * Builds a catalog carrying exactly what `spec` describes, with entries in the id order a real catalog runs in.
+ * Builds a catalog containing exactly what `spec` describes, with entries in the id order a real catalog runs in.
  *
  * Every source points at a directory that does not exist. Selection never reads one, so a test that accidentally grew a
  * filesystem dependency fails rather than passing against whatever happened to be on disk.
@@ -45,14 +45,14 @@ export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
       dir: `/nonexistent/${name}`,
     })),
     entries: spec.entries
-      .map(({ kindId, slug, carriedBy }) => {
-        const [winner, ...shadowed] = carriedBy.map((sourceId) => ({
+      .map(({ kindId, slug, copySourceIds }) => {
+        const [winner, ...shadowed] = copySourceIds.map((sourceId) => ({
           sourceId,
           path: `${kindId}/${slug}.md`,
           hash: `hash:${sourceId}:${slug}`,
         }));
         if (winner === undefined) {
-          throw new Error(`Entry "${kindId}:${slug}" names no source carrying it.`);
+          throw new Error(`Entry "${kindId}:${slug}" names no source containing it.`);
         }
         return { id: composeArtifactId(kindId, slug), kindId, slug, resolution: { winner, shadowed } };
       })

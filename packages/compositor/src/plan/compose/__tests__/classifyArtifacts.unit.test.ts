@@ -49,7 +49,7 @@ describe(classifyArtifacts, () => {
     });
   });
 
-  it('carries a departing artifact’s resolution where a source still holds it', () => {
+  it('keeps a departing artifact’s resolution where a source still holds it', () => {
     const table = classify({
       departed: [{ id: 'skill:retired', kindId: 'skill', slug: 'retired' }],
       resolutions: new Map([['skill:retired', reviewResolution]]),
@@ -58,13 +58,13 @@ describe(classifyArtifacts, () => {
     expect(table.find(({ id }) => id === 'skill:retired')).toHaveProperty('resolution', reviewResolution);
   });
 
-  it('leaves a departing artifact’s resolution out once no source carries it', () => {
+  it('leaves a departing artifact’s resolution out once no source contains it', () => {
     const table = classify({ departed: [{ id: 'skill:retired', kindId: 'skill', slug: 'retired' }] });
 
     expect(table.find(({ id }) => id === 'skill:retired')).not.toHaveProperty('resolution');
   });
 
-  it('keeps a departing artifact’s edge that points at something the table carries', () => {
+  it('keeps a departing artifact’s edge that points at something the table contains', () => {
     const table = classify({
       departed: [{ id: 'skill:retired', kindId: 'skill', slug: 'retired' }],
       edges: new Map<ArtifactId, ReadonlyArray<DependencyEdge>>([
@@ -88,7 +88,7 @@ describe(classifyArtifacts, () => {
     expect(table.find(({ id }) => id === 'skill:retired')).toHaveProperty('dependsOn', []);
   });
 
-  it('drops a departing artifact’s token edge naming a partial the plan does not carry', () => {
+  it('drops a departing artifact’s token edge naming a partial the plan does not contain', () => {
     const table = classify({
       departed: [{ id: 'skill:retired', kindId: 'skill', slug: 'retired' }],
       edges: new Map<ArtifactId, ReadonlyArray<DependencyEdge>>([

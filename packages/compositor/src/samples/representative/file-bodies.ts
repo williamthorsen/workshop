@@ -1,4 +1,4 @@
-/** File bodies: the content the representative sample's files carry on each side of their diffs. */
+/** File bodies: the content the representative sample's files contain on each side of their diffs. */
 
 import { Buffer } from 'node:buffer';
 
@@ -20,9 +20,9 @@ export const DIAGRAM_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x
 export const LINT_SKILL = '# Lint\n\nRun the linter.\n';
 export const RETIRED_SKILL_CURRENT = '# Retired\n\nSuperseded.\n';
 export const REVIEW_SKILL_CURRENT = '# Review\n\nRead the diff.\n';
-// The rulebook fills the inlay this body declares, so one file carries contributions from two artifacts.
+// The rulebook fills the inlay this body declares, so one file contains contributions from two artifacts.
 export const REVIEW_SKILL_PLANNED = `# Review\n\nRead the diff, then the tests.\n\n${INLAY_OPEN}\n${FILL_OPEN}\n${NAMING_RULE}\n${FILL_CLOSE}\n${INLAY_CLOSE}\n`;
-// The first hook belongs to another tool and carries no sentinel; the engine owns only the entries marked with one.
+// The first hook belongs to another tool and has no sentinel; the engine owns only the entries marked with one.
 // The planned side is what entry ownership writes, expanded because an indented `JSON.stringify` holds no item inline.
 export const SETTINGS_JSON_CURRENT =
   '{\n  "hooks": [\n    { "command": "vendor-tool sync" },\n    { "command": "relay --on=stop", "source": "codeassembly" }\n  ]\n}\n';

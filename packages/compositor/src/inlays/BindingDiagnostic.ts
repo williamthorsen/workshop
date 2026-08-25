@@ -3,10 +3,10 @@ import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
 /**
  * Where a binding fault sits, which is as much of the inlay, the target, the host, and the filler as the fault knows.
  *
- * `inlayName` is the one field every code carries, a binding being addressed by the inlay it names. Each other field is
+ * `inlayName` is the one field every code has, a binding being addressed by the inlay it names. Each other field is
  * present only where it is part of what went wrong: `targetId` where the fault is one target's rather than the config's
  * alone, `artifactId` where one filler is at fault rather than the binding as a whole, and `hostArtifactId` where the
- * fault belongs to one host. A fault decided by the filler and the target together carries no host, being answered once
+ * fault belongs to one host. A fault decided by the filler and the target together has no host, being reported once
  * for every host that declares the inlay.
  */
 export interface BindingRef {
@@ -21,9 +21,9 @@ export interface BindingRef {
 /**
  * One fault in what a config bound to an inlay.
  *
- * Data rather than a thrown error, so one run reports every mistake a config carries and a reader attaches each to the
- * entry an author wrote. A fault that leaves a body silently short of content it was written to carry also blocks the
- * file, which is the plan's own answer and not this diagnostic's.
+ * Data rather than a thrown error, so one run reports every mistake a config contains and a reader attaches each to the
+ * entry an author wrote. A fault that leaves a body silently short of content it was written to hold also blocks the
+ * file, which is the plan's own verdict and not this diagnostic's.
  */
 export interface BindingDiagnostic {
   readonly code: BindingFailure;

@@ -18,7 +18,7 @@ export class EdgeRuleConsistencyError extends ConsistencyError {
 }
 
 /**
- * Verifies what the structural schema cannot: that every kind a declaration names is one the catalog carries, and that
+ * Verifies what the structural schema cannot: that every kind a declaration names is one the catalog contains, and that
  * no two rules claim one key of one kind.
  *
  * Both faults are otherwise silent. A rule keyed to a kind no catalog entry has is read for no artifact, and a key two

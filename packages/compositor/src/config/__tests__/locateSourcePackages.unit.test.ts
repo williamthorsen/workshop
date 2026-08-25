@@ -62,7 +62,7 @@ describe(locateSourcePackages, () => {
     await expect(locateSourcePackages(config, options)).resolves.toHaveLength(1);
   });
 
-  // Each tier installs its own copy under one package name, so the two are separate questions with separate answers.
+  // Each tier installs its own copy under one package name, so the two are separate questions with separate results.
   it('walks one package once per base directory that declares it', async () => {
     const root = buildConfigDir({
       'global/node_modules/@acme/guidance/package.json': manifest,

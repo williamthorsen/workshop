@@ -25,7 +25,7 @@ const RULEBOOKS = [
   { slug: 'tests', body: 'Name tests for the behavior they pin.' },
 ];
 
-// The sample bodies are the repo's committed statement of the shapes a plan carries, so driving one to the other
+// The sample bodies are the repo's committed statement of the shapes a plan contains, so driving one to the other
 // exercises these mechanisms against a fixture nothing else in the change authored.
 describe('region ownership over the representative sample', () => {
   it('drives the current guidance file to the planned one, byte for byte', () => {
@@ -38,7 +38,7 @@ describe('region ownership over the representative sample', () => {
     );
   });
 
-  it('reads the one contribution the current guidance file carries', () => {
+  it('reads the one contribution the current guidance file contains', () => {
     expect(readContributions(CLAUDE_MD_CURRENT, PATTERNS)).toStrictEqual([
       { key: 'style', body: 'Use sentence case.' },
     ]);
@@ -47,7 +47,7 @@ describe('region ownership over the representative sample', () => {
 
 // region | Helpers
 
-/** Renders the aggregated region body the planned guidance file carries: one block per rulebook, blank-line separated. */
+/** Renders the aggregated region body the planned guidance file contains: one block per rulebook, blank-line separated. */
 function renderRulebooks(): string {
   return RULEBOOKS.map((rulebook) =>
     renderContribution(

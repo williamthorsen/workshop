@@ -38,7 +38,7 @@ describe(resolveCatalog, () => {
     expect(resolution.shadowed.map((candidate) => candidate.sourceId)).toStrictEqual(['team', 'library']);
   });
 
-  it('gives the lowest-precedence source the win when it alone carries the artifact', async () => {
+  it('gives the lowest-precedence source the win when it alone contains the artifact', async () => {
     const sources = buildSources({
       local: {},
       team: {},
@@ -51,7 +51,7 @@ describe(resolveCatalog, () => {
     expect(resolution.shadowed).toStrictEqual([]);
   });
 
-  it('leaves shadowed empty for an artifact only one source carries', async () => {
+  it('leaves shadowed empty for an artifact only one source contains', async () => {
     const sources = buildSources({
       local: { 'skills/only/SKILL.md': 'local' },
       library: {},
@@ -60,7 +60,7 @@ describe(resolveCatalog, () => {
     await expect(requireOnlyEntry(sources)).resolves.toMatchObject({ resolution: { shadowed: [] } });
   });
 
-  it('records each candidate at the path and digest of the source carrying it', async () => {
+  it('records each candidate at the path and digest of the source containing it', async () => {
     const sources = buildSources({
       local: { 'guidance/rulebooks/style.md': 'local text' },
       library: { 'guidance/rulebooks/style.md': 'library text' },
@@ -83,7 +83,7 @@ describe(resolveCatalog, () => {
     expect(resolution.shadowed.at(0)?.hash).toBe(resolution.winner.hash);
   });
 
-  it('unions what the sources carry rather than taking only the winner source contents', async () => {
+  it('unions what the sources contain rather than taking only the winner source contents', async () => {
     const sources = buildSources({
       local: { 'skills/review/SKILL.md': 'local' },
       library: { 'skills/lint/SKILL.md': 'library', 'guidance/rulebooks/style.md': 'library' },
@@ -151,7 +151,7 @@ describe(resolveCatalog, () => {
     }).not.toThrow();
   });
 
-  it('carries nothing when the sources are empty', async () => {
+  it('contains nothing when the sources are empty', async () => {
     const sources = buildSources({ local: {}, library: {} });
 
     await expect(resolveCatalog({ kinds, sources })).resolves.toMatchObject({ entries: [] });
@@ -177,12 +177,12 @@ function buildSources(byName: Record<string, Record<string, string>>): ReadonlyA
   return Object.entries(byName).map(([name, files]) => buildSource(files, name));
 }
 
-/** Reads the catalog's single entry, failing the test when it carries any other number. */
+/** Reads the catalog's single entry, failing the test when it contains any other number. */
 async function requireOnlyEntry(sources: ReadonlyArray<SourceSpec>): Promise<CatalogEntry> {
   const { entries } = await resolveCatalog({ kinds, sources });
   const entry = entries.at(0);
   if (entries.length !== 1 || entry === undefined) {
-    throw new Error(`Expected exactly one entry, and the catalog carries ${entries.length}.`);
+    throw new Error(`Expected exactly one entry, and the catalog contains ${entries.length}.`);
   }
   return entry;
 }

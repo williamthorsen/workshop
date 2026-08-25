@@ -1,4 +1,4 @@
-/** Catalog: every artifact the sources carry, and which source won each one. */
+/** Catalog: every artifact the sources contain, and which source won each one. */
 
 import { z } from 'zod';
 
@@ -33,7 +33,7 @@ export const ResolveKindSchema = KindDescriptorSchema.extend({ layout: KindLayou
 export const SourceSpecSchema = SourceEntrySchema.extend({ dir: z.string() }).meta({ id: 'SourceSpec' });
 
 /**
- * One artifact some source carries, and how precedence settled it.
+ * One artifact some source contains, and how precedence settled it.
  *
  * `id` composes `kindId` and `slug`, matching the id a plan gives the same artifact, so a plan entry addresses its
  * catalog entry.
@@ -48,9 +48,9 @@ export const CatalogEntrySchema = z
   .meta({ id: 'CatalogEntry' });
 
 /**
- * Every artifact the declared sources carry, each with the source that won it and the sources that lost.
+ * Every artifact the declared sources contain, each with the source that won it and the sources that lost.
  *
- * This is the whole of what resolution answers: what exists, not what a consumer selected. Selection reads a catalog
+ * This is the whole of what resolution reports: what exists, not what a consumer selected. Selection reads a catalog
  * rather than re-walking the sources, which is what lets a-la-carte opt-in offer a list to pick from and lets a
  * "take everything from this source" declaration be a query rather than a second filesystem pass.
  *

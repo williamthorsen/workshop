@@ -18,7 +18,7 @@ export const CLOSURE_SCHEMA_VERSION = 2;
  * One artifact the closure reached.
  *
  * Derived from the plan's present artifact rather than declared beside it, so the edge, seed, and resolution shapes
- * cannot drift from what a plan carries. `status` is what a plan adds: it measures an artifact against current target
+ * cannot drift from what a plan contains. `status` is what a plan adds: it measures an artifact against current target
  * state, which a closure has not looked at.
  */
 export const ClosureArtifactSchema = PresentArtifactSchema.omit({ status: true }).meta({ id: 'ClosureArtifact' });
@@ -41,7 +41,7 @@ export const ClosureEntryRefSchema = z
  * met them, and is present only on a `dependency-cycle`; that placement is checked by the exported assertion, a
  * refinement here being invisible to `z.toJSONSchema`.
  *
- * The artifact an `unknown-reference` names is carried by the message rather than by a field, because it is by
+ * The artifact an `unknown-reference` names appears in the message rather than in a field, because it is by
  * definition an id no table resolves: as a field it would be the one dangling reference the assertion had to exempt.
  */
 export const ClosureDiagnosticSchema = z
@@ -59,7 +59,7 @@ export const ClosureDiagnosticSchema = z
  * Its own contract rather than a stage inside the plan's: a consumer recomputing a closure over an edited config holds
  * one of these long before any target is chosen, and the What-if flow is exactly that recomputation.
  *
- * `artifacts` and `partials` run lexicographically by id, `kinds` and `tiers` in the order a plan carries them, and
+ * `artifacts` and `partials` run lexicographically by id, `kinds` and `tiers` in the order a plan records them, and
  * `sources` in precedence order, so two closures of the same shape diff cleanly. `diagnostics` runs in the order the
  * faults were found, which is deterministic because the reads and the walk both are.
  */

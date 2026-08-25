@@ -44,7 +44,7 @@ describe(listFilesRecursively, () => {
     await expect(sorted(tree.dir, (name) => name.startsWith('.'))).resolves.toStrictEqual(['notes.md']);
   });
 
-  it('reports an absent directory as carrying nothing', async () => {
+  it('reports an absent directory as containing nothing', async () => {
     using tree = createTempTree({});
 
     await expect(sorted(path.join(tree.dir, 'never-created'))).resolves.toStrictEqual([]);

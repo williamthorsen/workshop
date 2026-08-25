@@ -34,7 +34,7 @@ export type PackageLocation =
  * every declared package is walked, including one a later tier drops, so a fold over a modified config can re-adopt a
  * dropped source without touching disk again. Nothing here throws for a package that will not resolve.
  *
- * A package this walk never saw is the one thing a later fold cannot answer for, which is what bounds how far a
+ * A package this walk never saw is the one thing a later fold cannot resolve, which is what bounds how far a
  * modified config may travel against one set of locations.
  */
 export async function locateSourcePackages(
@@ -59,7 +59,7 @@ export async function locateSourcePackages(
 
 // region | Helpers
 
-/** Locates one package, answering with the reason in place of the directory where the walk failed. */
+/** Locates one package, returning the reason in place of the directory where the walk failed. */
 async function locateOne(
   request: { readonly baseDir: string; readonly package: string },
   options: LocateSourcePackagesOptions,

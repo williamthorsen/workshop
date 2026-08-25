@@ -15,7 +15,7 @@ describe(renderContributionMarkers, () => {
     });
   });
 
-  it('inserts an id carrying replacement-pattern syntax verbatim', () => {
+  it('inserts an id containing replacement-pattern syntax verbatim', () => {
     expect(renderContributionMarkers(template, 'rulebook:$&x').open).toBe('<!-- rulebook:$&x -->');
   });
 
@@ -45,7 +45,7 @@ describe(buildContributionPatterns, () => {
     ]);
   });
 
-  it('reads back an id carrying regular-expression syntax', () => {
+  it('reads back an id containing regular-expression syntax', () => {
     const host = write('rulebook:a.b(c)', 'one');
 
     expect(readContributions(host, buildContributionPatterns(template))).toStrictEqual([

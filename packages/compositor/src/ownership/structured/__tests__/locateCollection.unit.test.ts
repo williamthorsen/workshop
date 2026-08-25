@@ -12,7 +12,7 @@ describe(locateCollection, () => {
     expect('items' in located && located.items).toHaveLength(1);
   });
 
-  it('if the host carries nothing at the path, reports it absent', () => {
+  it('if the host has nothing at the path, reports it absent', () => {
     expect(locateCollection(open('other: 1\n'), ['hooks'])).toStrictEqual({ absent: true });
   });
 

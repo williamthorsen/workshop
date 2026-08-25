@@ -45,7 +45,7 @@ export const DeclaredSourceSchema = z.union([
 /**
  * One tier's source declarations: the sources it adds, and the inherited names it drops.
  *
- * `drop` names sources rather than carrying entries, because a name is the whole of what identifies one.
+ * `drop` names sources rather than containing entries, because a name is the whole of what identifies one.
  */
 export const SourceDeclarationSchema = z.strictObject({
   use: z.array(DeclaredSourceSchema).default([]),

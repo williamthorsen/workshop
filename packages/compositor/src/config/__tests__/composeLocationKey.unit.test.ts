@@ -9,7 +9,7 @@ describe(composeLocationKey, () => {
     expect(composeLocationKey('/srv/app/', '@acme/x')).toBe(composeLocationKey('/srv/app', '@acme/x'));
   });
 
-  it('composes one key for a base directory carrying a redundant segment', () => {
+  it('composes one key for a base directory containing a redundant segment', () => {
     expect(composeLocationKey('/srv/./app', '@acme/x')).toBe(composeLocationKey('/srv/app', '@acme/x'));
   });
 

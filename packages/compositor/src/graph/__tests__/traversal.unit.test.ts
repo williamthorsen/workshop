@@ -15,7 +15,7 @@ describe(resolveInclusionPaths, () => {
     ]);
   });
 
-  it("orders paths by the document's own edge order, so the same document always answers the same way", () => {
+  it("orders paths by the document's own edge order, so the same document always reports the same way", () => {
     const plan = buildDiamond();
 
     expect(resolveInclusionPaths(plan, 'skill:lint')).toStrictEqual(
@@ -58,7 +58,7 @@ describe(resolveInclusionPaths, () => {
     ]);
   });
 
-  it('resolves paths through a document carrying only ids, edges, and seeds', () => {
+  it('resolves paths through a document containing only ids, edges, and seeds', () => {
     expect(resolveInclusionPaths(buildClosureShaped(), 'skill:lint')).toStrictEqual([
       ['collection:core', 'skill:review', 'skill:lint'],
     ]);
@@ -91,7 +91,7 @@ describe(buildDependentsIndex, () => {
     expect(findDependents('collection:core')).toStrictEqual([]);
   });
 
-  it('indexes a document carrying only ids and edges', () => {
+  it('indexes a document containing only ids and edges', () => {
     const findDependents = buildDependentsIndex(buildClosureShaped());
 
     expect(findDependents('skill:review')).toStrictEqual(['collection:core']);
@@ -101,9 +101,9 @@ describe(buildDependentsIndex, () => {
 // region | Helpers
 
 /**
- * Builds a graph carrying only what traversal reads.
+ * Builds a graph containing only what traversal reads.
  *
- * Nothing here is a plan: no status, no resolution, no kind. Traversal reads none of them, so a fixture that carried
+ * Nothing here is a plan: no status, no resolution, no kind. Traversal reads none of them, so a fixture that contained
  * them could pass while depending on a field a closure does not have.
  */
 function buildClosureShaped(): DependencyGraphView {

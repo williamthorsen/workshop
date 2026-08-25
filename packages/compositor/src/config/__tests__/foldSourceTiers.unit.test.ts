@@ -92,7 +92,7 @@ describe(foldSourceTiers, () => {
     expect(collectNames(config)).toStrictEqual(['local']);
   });
 
-  // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two answers.
+  // Both tiers declare the same relative path, so anchoring every tier at one base directory collapses the two results.
   it('anchors a relative path at the tier that declared it, not at the last tier', () => {
     const config = buildConfig([
       { id: 'global', baseDir: '/srv/global', sources: { use: [{ name: 'shared', path: './content' }] } },
@@ -184,14 +184,14 @@ describe(foldSourceTiers, () => {
     expect(foldSourceTiers(config, [acme]).sources.at(0)?.dir).toBe(acme.dir);
   });
 
-  it('raises a stale-snapshot error for an adopted package no location answers', () => {
+  it('raises a stale-snapshot error for an adopted package no location matches', () => {
     const config = buildConfig([{ id: 'project', sources: { use: [{ name: 'acme', package: '@acme/added' }] } }]);
 
     expect(() => foldSourceTiers(config, [acme])).toThrow(StaleSnapshotError);
     expect(() => foldSourceTiers(config, [acme])).toThrow(/Source "acme", declared by tier "project"/);
   });
 
-  it('carries the unanswered package on the stale-snapshot error', () => {
+  it('records the unlocated package on the stale-snapshot error', () => {
     const config = buildConfig([
       { baseDir: '/srv/here', sources: { use: [{ name: 'acme', package: '@acme/added' }] } },
     ]);
