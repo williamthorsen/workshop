@@ -11,7 +11,7 @@ interface SemverParts {
 const MINIMUM_VERSION: SemverParts = { major: 2, minor: 46, patch: 0 };
 
 /**
- * Verify chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
+ * Verifies chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
  *
  * Throws an actionable error (which the caller maps to exit 2) when chezmoi is absent, its version cannot be parsed,
  * or it is below the minimum.
@@ -33,7 +33,7 @@ export async function assertChezmoiVersion(context: ChezmoiContext): Promise<voi
 /** Minimum chezmoi version as a display string (e.g. `2.46.0`). */
 export const MIN_CHEZMOI_VERSION = formatVersion(MINIMUM_VERSION);
 
-/** Extract the first `major.minor.patch` triple from chezmoi's version string. */
+/** Extracts the first `major.minor.patch` triple from chezmoi's version string. */
 export function parseVersion(text: string): SemverParts | undefined {
   const match = text.match(/(\d+)\.(\d+)\.(\d+)/);
   if (match === null) return undefined;

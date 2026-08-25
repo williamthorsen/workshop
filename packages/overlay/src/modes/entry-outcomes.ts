@@ -11,7 +11,7 @@ export interface PartitionedStatus {
 }
 
 /**
- * Partition parsed status rows into overlay entries using a mode's outcome map.
+ * Partitions parsed status rows into overlay entries using a mode's outcome map.
  *
  * Rows whose code is absent from the map (other than `R`) are dropped; `R` rows are tallied into `pendingScriptCount`
  * rather than becoming entries.
@@ -32,7 +32,7 @@ export function partitionStatus(status: StatusEntry[], outcomes: OutcomeMap): Pa
   return { entries, pendingScriptCount };
 }
 
-/** Count entries with the given outcome. */
+/** Counts entries with the given outcome. */
 export function countOutcome(entries: OverlayEntry[], outcome: EntryOutcome): number {
   return entries.filter((entry) => entry.outcome === outcome).length;
 }

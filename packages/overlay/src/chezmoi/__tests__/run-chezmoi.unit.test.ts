@@ -96,7 +96,7 @@ interface ChildStub {
   on: (event: string, handler: (value: unknown) => void) => ChildStub;
 }
 
-/** Create a child stub and arrange for `spawn` to return it and emit `event` with `value` on the next microtask. */
+/** Creates a child stub and arranges for `spawn` to return it and emit `event` with `value` on the next microtask. */
 function arrangeSpawn(event: string, value: unknown): ChildStub {
   const handlers: ChildStub['handlers'] = new Map();
   const child: ChildStub = {
@@ -113,7 +113,7 @@ function arrangeSpawn(event: string, value: unknown): ChildStub {
   return child;
 }
 
-/** Read the args array passed to the first `execFile` call. */
+/** Reads the args array passed to the first `execFile` call. */
 function readFirstExecFileArgs(): string[] {
   const call = execFileMock.mock.calls[0];
   const args: unknown = call?.[1];
@@ -121,7 +121,7 @@ function readFirstExecFileArgs(): string[] {
   return args.filter((arg): arg is string => typeof arg === 'string');
 }
 
-/** Extract the `stdio` option from a spawn options object, returning `undefined` when absent. */
+/** Extracts the `stdio` option from a spawn options object, returning `undefined` when absent. */
 function readStdio(options: unknown): unknown {
   if (typeof options === 'object' && options !== null && 'stdio' in options) {
     return options.stdio;
@@ -132,14 +132,14 @@ function readStdio(options: unknown): unknown {
 /** Signature of the Node-style callback the promisified `execFile` drives. */
 type ExecFileCallback = (error: unknown, result?: { stdout: string; stderr: string }) => void;
 
-/** Drive the promisified `execFile` callback with a rejection carrying captured streams. */
+/** Drives the promisified `execFile` callback with a rejection carrying captured streams. */
 function rejectExecFile(error: Record<string, unknown>): void {
   execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
     callback(error);
   });
 }
 
-/** Drive the promisified `execFile` callback with a successful result. */
+/** Drives the promisified `execFile` callback with a successful result. */
 function resolveExecFile(stdout: string): void {
   execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
     callback(null, { stdout, stderr: '' });

@@ -38,7 +38,7 @@ Exit codes:
 `;
 
 /**
- * Run the overlay CLI for the given argv and return the process exit code.
+ * Runs the overlay CLI for the given argv and returns the process exit code.
  *
  * Writes the help text or the run result (text report, or JSON under `--json`)
  * to stdout, and any error as a single-line JSON object to stderr. Never calls

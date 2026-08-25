@@ -15,7 +15,7 @@ export interface OverlayOptions {
 }
 
 /**
- * Converge a target directory toward a chezmoi source tree.
+ * Converges a target directory toward a chezmoi source tree.
  *
  * Resolves defaults (`target = process.cwd()`, `mode = 'verify'`), preflights the chezmoi version, then dispatches to
  * the mode strategy. A failed preflight (chezmoi missing or below the minimum version) throws; the CLI maps that to
