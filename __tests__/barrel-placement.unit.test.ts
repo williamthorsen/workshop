@@ -44,7 +44,8 @@ function collectUnpublishedBarrels(): string[] {
   const manifests = globSync('packages/*/package.json', { cwd: repoRoot });
   for (const manifest of manifests) {
     const packageDir = toPosix(path.dirname(manifest));
-    // Matching is exact: no wildcard entry here targets `dist/`, so a barrel published only by a wildcard escapes.
+    // Matching is exact, so a wildcard entry targeting `dist/` would leave the barrels it publishes reported as
+    // offenders. No entry here uses one.
     const published = collectExportTargets(readExports(manifest));
     for (const barrel of findBarrels(packageDir)) {
       if (!published.has(deriveCompiledTarget(packageDir, barrel))) unpublished.push(barrel);
