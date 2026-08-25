@@ -36,7 +36,7 @@ describe(listPragmaSites, () => {
       expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
     });
 
-    it('carries the line of each token in a source holding several', () => {
+    it('reports the line of each token in a source holding several', () => {
       const sites = listPragmaSites(['// rdy-ignore', 'x;', '/* rdy-ignore-next-line */', 'y;', ''].join('\n'));
 
       expect(sites).toStrictEqual([

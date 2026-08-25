@@ -612,7 +612,7 @@ describe(runRdy, () => {
   });
 
   describe('structured check outcomes', () => {
-    it('carries detail from a passing CheckOutcome', async () => {
+    it('takes detail from a passing CheckOutcome', async () => {
       const checklist: RdyChecklist = {
         name: 'outcome',
         checks: [{ name: 'with-detail', check: () => ({ ok: true, detail: 'all files present' }) }],
@@ -625,7 +625,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.detail).toBe('all files present');
     });
 
-    it('carries progress from a failing CheckOutcome', async () => {
+    it('takes progress from a failing CheckOutcome', async () => {
       const checklist: RdyChecklist = {
         name: 'outcome',
         checks: [
@@ -643,7 +643,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.progress).toStrictEqual({ type: 'fraction', passedCount: 7, count: 10 });
     });
 
-    it('carries both detail and progress', async () => {
+    it('takes both detail and progress', async () => {
       const checklist: RdyChecklist = {
         name: 'outcome',
         checks: [
@@ -745,7 +745,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.quiet).toBe(false);
     });
 
-    it('carries a declared quiet onto a passed result', async () => {
+    it('sets a declared quiet on a passed result', async () => {
       const checklist: RdyChecklist = {
         name: 'quiet',
         checks: [{ name: 'passes', check: () => true, quiet: true }],
@@ -756,7 +756,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.quiet).toBe(true);
     });
 
-    it('carries a declared quiet onto a failed result', async () => {
+    it('sets a declared quiet on a failed result', async () => {
       const checklist: RdyChecklist = {
         name: 'quiet',
         checks: [{ name: 'fails', check: () => false, quiet: true }],
@@ -767,7 +767,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.quiet).toBe(true);
     });
 
-    it('carries a declared quiet onto an n/a-skipped result', async () => {
+    it('sets a declared quiet on an n/a-skipped result', async () => {
       const checklist: RdyChecklist = {
         name: 'quiet',
         checks: [{ name: 'not-applicable', check: () => true, quiet: true, skip: () => 'no target' }],
@@ -778,7 +778,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.quiet).toBe(true);
     });
 
-    it('carries a declared quiet onto a precondition-skipped result', async () => {
+    it('sets a declared quiet on a precondition-skipped result', async () => {
       const checklist: RdyChecklist = {
         name: 'quiet',
         preconditions: [{ name: 'gate', check: () => false }],
@@ -792,7 +792,7 @@ describe(runRdy, () => {
       expect(blocked.quiet).toBe(true);
     });
 
-    it('carries a declared quiet onto a check broken rather than failing', async () => {
+    it('sets a declared quiet on a check broken rather than failing', async () => {
       const checklist: RdyChecklist = {
         name: 'quiet',
         checks: [
@@ -1022,7 +1022,7 @@ describe(runRdy, () => {
       expect(report.diagnoses).toStrictEqual([{ name: 'would-pass', verdict: 'masked-pass' }]);
     });
 
-    it('reports a check that throws as inconclusive, carrying its message', async () => {
+    it('reports a check that throws as inconclusive, with its message', async () => {
       const checklist: RdyChecklist = {
         name: 'unreachable',
         checks: [
@@ -1862,7 +1862,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.id).toBe('no-instanceof-error');
     });
 
-    it('carries no id for a check declaring none', async () => {
+    it('reports no id for a check declaring none', async () => {
       const checklist: RdyChecklist = { name: 'adoption', checks: [{ name: 'claim', check: () => true }] };
 
       const report = await runRdy(checklist);

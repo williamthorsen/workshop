@@ -44,7 +44,7 @@ describe('richFormatter', () => {
       expect(width).toBe(2);
     });
 
-    it('carries no variation selector', () => {
+    it('renders no variation selector', () => {
       expect(glyph).not.toContain(VARIATION_SELECTOR_16);
     });
 

@@ -33,7 +33,7 @@ describe('--packages run path wiring', () => {
     rmSync(projectRoot, { recursive: true, force: true });
   });
 
-  it('expands a configured package into entries carrying its name and version', () => {
+  it('expands a configured package into entries with its name and version', () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
@@ -106,7 +106,7 @@ describe('--packages run path wiring', () => {
     expect(stdout).toBe('No kits to run.\n');
   });
 
-  it('carries the package and version into the JSON report', async () => {
+  it('passes the package and version into the JSON report', async () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
@@ -170,7 +170,7 @@ describe('--packages run path wiring', () => {
   });
 
   // A row is an index into the blocks above it, so it repeats its heading rather than naming its own scheme.
-  it('names each row by the breadcrumb heading its block carries', async () => {
+  it('names each row by the breadcrumb heading its block has', async () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
     installPackage('plain-kit', ['default'], { version: '1.0.0' });
     const entries = resolveKitSources({

@@ -49,7 +49,7 @@ describe(discoverKitPackages, () => {
     expect(discoverKitPackages(temp.dir)).not.toContain('undeclared-kit');
   });
 
-  it('answers with nothing when the project manifest cannot be read', () => {
+  it('returns nothing when the project manifest cannot be read', () => {
     using manifestless = createTempTree({}, { prefix: 'discover-no-manifest-' });
 
     expect(discoverKitPackages(manifestless.dir)).toStrictEqual([]);

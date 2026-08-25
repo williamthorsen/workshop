@@ -34,7 +34,7 @@ describe(loadRemoteKit, () => {
     );
   });
 
-  it.each([401, 403, 404])('throws RemoteFetchError carrying the %i status', async (status) => {
+  it.each([401, 403, 404])('throws RemoteFetchError with the %i status', async (status) => {
     mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
     const error = await captureError(RemoteFetchError, () => loadRemoteKit({ url: 'https://example.com/config.js' }));

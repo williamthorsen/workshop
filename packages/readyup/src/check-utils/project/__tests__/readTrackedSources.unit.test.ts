@@ -90,7 +90,7 @@ describe(readTrackedSources, () => {
     expect(countProbes('src/rejected.ts')).toBe(0);
   });
 
-  it('never reads an excluded path, whatever the filter answers for it', async ({ temp }) => {
+  it('never reads an excluded path, whatever the filter returns for it', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('node_modules/dependency/index.js', 'dependency');
     temp.write('.readyup/kits/default.js', 'bundle');

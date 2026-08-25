@@ -99,7 +99,7 @@ describe('JSON payload schemas', () => {
       expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).not.toThrow();
     });
 
-    it('accepts an error body carrying no hint', () => {
+    it('accepts an error body with no hint', () => {
       expect(() => ErrorEnvelopeSchema.parse(errorEnvelopePayload)).not.toThrow();
     });
 
@@ -137,7 +137,7 @@ describe('JSON payload schemas', () => {
   });
 
   describe('thresholds', () => {
-    it('carries the kit-declared threshold that governed a kit, not the one the run requested', () => {
+    it('reports the kit-declared threshold that governed a kit, not the one the run requested', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
       assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
@@ -182,7 +182,7 @@ describe('JSON payload schemas', () => {
       expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
     });
 
-    it('accepts a rebuild mismatch carrying both hashes', () => {
+    it('accepts a rebuild mismatch with both hashes', () => {
       const kits = [
         {
           name: 'deploy',
@@ -230,7 +230,7 @@ describe('JSON payload schemas', () => {
       expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).not.toThrow();
     });
 
-    it('rejects a kit that carries neither results nor an error', () => {
+    it('rejects a kit with neither results nor an error', () => {
       expect(() => ReportSchema.parse({ ...minimalReportPayload, kits: [{ name: 'orphan' }] })).toThrow(ZodError);
     });
   });

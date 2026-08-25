@@ -138,7 +138,7 @@ describe('list --packages', () => {
       });
     });
 
-    it('carries the description a publisher records, and omits the field where there is none', async () => {
+    it('reports the description a publisher records, and omits the field where there is none', async () => {
       const payload = await runForPayload();
 
       expect(findKit(payload, 'default')).toMatchObject({ description: 'Dependency drift' });

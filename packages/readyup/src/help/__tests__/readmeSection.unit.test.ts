@@ -52,17 +52,17 @@ describe(extractSection, () => {
     expect(extractSection(MARKDOWN, 'Second')).not.toContain('```');
   });
 
-  it('returns undefined for a heading the document does not carry', () => {
+  it('returns undefined for a heading the document does not have', () => {
     expect(extractSection(MARKDOWN, 'Fourth')).toBeUndefined();
   });
 
-  it('matches a level-2 heading rather than a deeper one carrying the same text', () => {
+  it('matches a level-2 heading rather than a deeper one with the same text', () => {
     const markdown = ['### Concepts', '', 'Subsection body.', '', '## Concepts', '', 'Section body.', ''].join('\n');
 
     expect(extractSection(markdown, 'Concepts')).toBe(['## Concepts', '', 'Section body.', ''].join('\n'));
   });
 
-  it('returns undefined when only a deeper heading carries the text', () => {
+  it('returns undefined when only a deeper heading has the text', () => {
     expect(extractSection(['## Other', '', '### Concepts', '', 'Body.', ''].join('\n'), 'Concepts')).toBeUndefined();
   });
 });

@@ -105,7 +105,7 @@ describe('ManifestSchema', () => {
     expect(firstKit.targetHash).toBe('e5f6a7b8');
   });
 
-  it('accepts an entry carrying a targetHash but no sourceHash', () => {
+  it('accepts an entry with a targetHash but no sourceHash', () => {
     const input = {
       version: 1,
       kits: [{ name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts', targetHash: 'e5f6a7b8' }],
@@ -171,7 +171,7 @@ describe('ManifestSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('round-trips an entry carrying recorded inputs', () => {
+  it('round-trips an entry with recorded inputs', () => {
     const inputs = [
       { hash: 'a1b2c3d4', kind: 'inline', path: '../package.json', paths: ['version', ['engines', 'node']] },
       { hash: 'e5f6a7b8', kind: 'module', path: 'kits/checks/shared.ts' },

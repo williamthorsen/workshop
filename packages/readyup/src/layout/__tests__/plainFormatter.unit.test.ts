@@ -50,7 +50,7 @@ describe('rendered output', () => {
     expect(engine.formatCheckLine({ token: 'failedError', name: 'migrations' })).toBe('FAIL  migrations');
   });
 
-  it('reserves the gutter for a token carrying no glyph, so names stay in one column', () => {
+  it('reserves the gutter for a token with no glyph, so names stay in one column', () => {
     const noun = engine.formatCheckLine({ token: 'kit', name: 'deploy' });
     const status = engine.formatCheckLine({ token: 'passed', name: 'deploy' });
 

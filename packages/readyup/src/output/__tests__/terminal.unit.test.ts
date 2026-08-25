@@ -17,7 +17,7 @@ function makeResult(overrides: Partial<WriteResult> = {}): WriteResult {
 }
 
 describe(printStep, () => {
-  it('renders a step label as a section heading, parted from what precedes it', () => {
+  it('renders a step label as a section heading, separated from what precedes it', () => {
     using silent = silenceConsole(['info']);
 
     printStep('Scaffolding config');

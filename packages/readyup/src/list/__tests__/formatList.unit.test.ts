@@ -481,7 +481,7 @@ describe(formatRecursiveView, () => {
     setStyle('rich');
   });
 
-  it('heads each project with its directory, carrying a trailing slash', () => {
+  it('heads each project with its directory, with a trailing slash', () => {
     const result = formatRecursiveView({
       projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/ui', kits: ['deploy'] })],
     });

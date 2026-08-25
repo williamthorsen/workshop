@@ -218,7 +218,7 @@ describe(loadRdyKit, () => {
     expect(kit.checklists[0]?.name).toBe('test');
   });
 
-  it('carries through fixLocation when present', async () => {
+  it('passes fixLocation through when present', async () => {
     const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ checklists: validChecklists, fixLocation: 'inline' });

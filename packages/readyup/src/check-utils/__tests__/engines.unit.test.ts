@@ -72,7 +72,7 @@ describe(satisfiesNodeFloor, () => {
     expect(satisfiesNodeFloor('23.9.9', '24')).toBe(false);
   });
 
-  it('accepts a leading `v`, as `process.version` carries', () => {
+  it('accepts a leading `v`, as `process.version` has', () => {
     expect(satisfiesNodeFloor('v24.18.0', '24')).toBe(true);
     expect(satisfiesNodeFloor('v20.6.0', 'v24')).toBe(false);
   });

@@ -50,7 +50,7 @@ describe('compile-time readyup version in the run report', () => {
     expect(parsed).toHaveProperty('kits.0.compiledWith', VERSION);
   });
 
-  it('omits the key for a bundle carrying no stamp', async () => {
+  it('omits the key for a bundle with no stamp', async () => {
     using io = captureStdio();
 
     await routeCommand(['unstamped', '--json']);

@@ -45,7 +45,7 @@ describe(listDeclarationSpans, () => {
     ]);
   });
 
-  it('covers a body through a head carrying a brace-bearing generic constraint', () => {
+  it('covers a body through a head with a generic constraint that contains braces', () => {
     const spans = listSpans([
       'export function describeError<T extends { message: string }>(error: T): string {',
       '  return error.message;',
@@ -55,7 +55,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 3, name: 'describeError', startLine: 1 }]);
   });
 
-  it('covers a body through a head carrying a brace-bearing return-type annotation', () => {
+  it('covers a body through a head with a return-type annotation that contains braces', () => {
     const spans = listSpans([
       'export function describeError(error: unknown): { message: string } {',
       '  return { message: String(error) };',

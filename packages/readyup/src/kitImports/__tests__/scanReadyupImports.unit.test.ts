@@ -79,7 +79,7 @@ describe(scanReadyupImports, () => {
     expect(found[0]?.names).toStrictEqual(['fileExists']);
   });
 
-  it('keeps every name in a clause where only one carries a comment', async () => {
+  it('keeps every name in a clause where only one has a comment', async () => {
     const found = await scanReadyupImports('import { a, /* c */ b } from "readyup";');
 
     expect(found[0]?.names).toStrictEqual(['a', 'b']);

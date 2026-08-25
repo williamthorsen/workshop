@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest';
 
 import { listTrackedFiles } from '../listTrackedFiles.ts';
 
-// Separated from the module's unit suite, which answers git from a stub: only real git escapes and quotes a path,
+// Separated from the module's unit suite, which stubs git: only real git escapes and quotes a path,
 // so only real git can show that `-z` defeats it.
 const it = test.extend(
   'temp',

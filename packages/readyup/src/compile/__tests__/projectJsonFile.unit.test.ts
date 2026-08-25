@@ -68,7 +68,7 @@ describe(projectJsonFile, () => {
   });
 
   // The detail names the root as JSON sees it, so an array and a null are distinguishable from an object.
-  it('reports a non-object root as not-an-object, carrying the type it found', async () => {
+  it('reports a non-object root as not-an-object, naming the type it found', async () => {
     const error = await captureProjectionError('[1,2,3]');
 
     expect(error.reason).toBe('not-an-object');

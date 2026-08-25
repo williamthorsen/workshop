@@ -50,7 +50,7 @@ describe('loadRemoteKit validation', () => {
     );
   });
 
-  it('carries through fixLocation when exported', async () => {
+  it('passes fixLocation through when exported', async () => {
     const jsBody = `
       export const fixLocation = 'inline';
       export const checklists = [

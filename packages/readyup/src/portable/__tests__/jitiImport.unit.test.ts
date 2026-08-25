@@ -37,7 +37,7 @@ describe(jitiImport, () => {
     );
   });
 
-  it('carries the install command as a hint rather than in the message', async () => {
+  it('reports the install command as a hint rather than in the message', async () => {
     mockExistsSync.mockImplementation((target: string) => target.endsWith('pnpm-lock.yaml'));
     mockImport.mockRejectedValue(
       Object.assign(new Error("Cannot find package 'readyup'"), { code: 'ERR_MODULE_NOT_FOUND' }),

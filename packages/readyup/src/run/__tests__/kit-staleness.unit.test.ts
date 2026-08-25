@@ -40,7 +40,7 @@ describe(readManifestTracking, () => {
     mockReadManifest.mockReset();
   });
 
-  it('answers with the manifest and the directory holding it', () => {
+  it('returns the manifest and the directory holding it', () => {
     const manifest = { version: 1, kits: [] };
     mockReadManifest.mockReturnValue(manifest);
 
@@ -55,7 +55,7 @@ describe(readManifestTracking, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
-  it('answers with nothing when no manifest exists', () => {
+  it('returns nothing when no manifest exists', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file not found: /abs/.readyup/manifest.json');
     });
@@ -63,7 +63,7 @@ describe(readManifestTracking, () => {
     expect(readManifestTracking(false)).toBeUndefined();
   });
 
-  it('answers with nothing when the manifest cannot be parsed', () => {
+  it('returns nothing when the manifest cannot be parsed', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file contains invalid JSON: /abs/.readyup/manifest.json');
     });
@@ -137,7 +137,7 @@ describe(warnOnKitStaleness, () => {
       ]);
     });
 
-    it('raises all three advisories when every axis has parted from the manifest', () => {
+    it('raises all three advisories when every axis differs from the manifest', () => {
       arrangeTargetDrift();
       arrangeSourceStale();
       arrangeInputStale();
@@ -149,7 +149,7 @@ describe(warnOnKitStaleness, () => {
       ]);
     });
 
-    it('raises both advisories when both artifacts have parted from the manifest', () => {
+    it('raises both advisories when both artifacts differ from the manifest', () => {
       arrangeTargetDrift();
       arrangeSourceStale();
 

@@ -37,7 +37,7 @@ function renderLines(rows: SummaryRow[]): string[] {
 
 describe(formatCombinedSummary, () => {
   // The run's writer separates one block from the next, so a table with its own blank would double the gap.
-  it('carries no separation of its own', () => {
+  it('renders no separation of its own', () => {
     expect(renderLines([makeRow()])[0]).not.toBe('');
   });
 
@@ -128,7 +128,7 @@ describe(formatCombinedSummary, () => {
       expect(totalLine).not.toContain('passed');
     });
 
-    it('carries no per-field tokens', () => {
+    it('renders no per-field tokens', () => {
       const output = formatCombinedSummary([makeRow({ passed: 1, errors: 1, worstSeverity: 'error' })]);
       const totalLine = output.split('\n').at(-1) ?? '';
 

@@ -104,7 +104,7 @@ describe('list --recursive --packages', () => {
       expect(stdout).not.toContain('packages/bare');
     });
 
-    // Configured membership is a fact about one project's config, so the same package answers differently.
+    // Configured membership is a fact about one project's config, so the same package reports differently.
     it('marks a package against the config of the project reporting it', async () => {
       configureProjects({ '.': ['@acme/kits'], 'packages/app': ['plain-kit'] });
 

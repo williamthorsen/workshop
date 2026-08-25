@@ -410,7 +410,7 @@ describe(routeCommand, () => {
     });
   });
 
-  it('writes no hint line for a failure that carries none', async () => {
+  it('writes no hint line for a failure that has none', async () => {
     mockParseRunArgs.mockImplementation(() => {
       throw usageError('nothing found');
     });
@@ -651,7 +651,7 @@ describe(routeCommand, () => {
       expect(stderr).toBe('');
     });
 
-    it('carries a hint as its own envelope field, leaving the message unchanged', async () => {
+    it('reports a hint as its own envelope field, leaving the message unchanged', async () => {
       mockParseRunArgs.mockImplementation(() => {
         throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
       });
@@ -812,7 +812,7 @@ describe(routeCommand, () => {
       expect(mockParseRunArgs).toHaveBeenCalledWith(args);
     });
 
-    it('runs a bare word carrying a checklist filter as a kit', async () => {
+    it('runs a bare word with a checklist filter as a kit', async () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lis', checklists: ['t'] }] }));
       mockRunCommand.mockResolvedValue(0);
 

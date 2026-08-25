@@ -65,7 +65,7 @@ describe(collectKitPackageGroups, () => {
     expect(group?.kits.map((kit) => kit.kitName)).toStrictEqual(['drift', 'preflight']);
   });
 
-  it('carries the description a publisher records for its kit', ({ temp }) => {
+  it('reports the description a publisher records for its kit', ({ temp }) => {
     const group = collect([], temp.dir).find((one) => one.packageName === '@acme/kits');
 
     expect(group?.kits.map((kit) => kit.description)).toStrictEqual(['Dependency drift', undefined]);

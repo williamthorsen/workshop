@@ -17,13 +17,13 @@ describe(toRdyError, () => {
     expect(coerced.message).toBe('boom');
   });
 
-  it('forwards a hint carried by an unrecognized failure', () => {
+  it('forwards a hint on an unrecognized failure', () => {
     const coerced = toRdyError(Object.assign(new Error('boom'), { hint: 'Install it.' }));
 
     expect(coerced.hint).toBe('Install it.');
   });
 
-  it('leaves the hint absent when the failure carries none', () => {
+  it('leaves the hint absent when the failure has none', () => {
     expect(toRdyError(new Error('boom')).hint).toBeUndefined();
   });
 

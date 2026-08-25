@@ -53,7 +53,7 @@ describe('buildBundle input closure', () => {
     expect(inputs).toContainEqual({ hash: expect.any(String), kind: 'module', path: path.join(treeRoot, 'helper.ts') });
   });
 
-  it('records a projected JSON file as an inline input carrying its path specifier', () => {
+  it('records a projected JSON file as an inline input with its path specifier', () => {
     expect(inputs).toContainEqual({
       hash: expect.any(String),
       kind: 'inline',

@@ -36,7 +36,7 @@ describe(checkRebuild, () => {
     expect(status.kind).toBe('ok');
   });
 
-  it('returns mismatch carrying the recompiled and on-disk hashes when the bytes differ', async () => {
+  it('returns mismatch with the recompiled and on-disk hashes when the bytes differ', async () => {
     const onDisk = Buffer.from('stale output');
     const rebuilt = Buffer.from('fresh output');
     writeKitFiles(tempDir, onDisk);
@@ -88,7 +88,7 @@ describe(checkRebuild, () => {
     expect(status).toMatchObject({ kind: 'mismatch', esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' } });
   });
 
-  it('carries the esbuild comparison even when the recorded version matches the rebuild', async () => {
+  it('reports the esbuild comparison even when the recorded version matches the rebuild', async () => {
     writeKitFiles(tempDir, Buffer.from('stale output'));
     mockBuildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
 
@@ -138,7 +138,7 @@ describe(checkRebuild, () => {
     expect(status).not.toHaveProperty('dependencyChanges');
   });
 
-  it('returns failed carrying the compile error when the source no longer compiles', async () => {
+  it('returns failed with the compile error when the source no longer compiles', async () => {
     writeKitFiles(tempDir, Buffer.from('compiled output'));
     mockBuildBundle.mockRejectedValue(new Error('Unexpected token'));
 

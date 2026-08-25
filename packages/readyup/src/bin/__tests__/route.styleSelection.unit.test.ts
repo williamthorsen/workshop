@@ -105,7 +105,7 @@ describe('a style named ahead of the command', () => {
     expect(stdout).toMatch(/^\d+\.\d+\.\d+/u);
   });
 
-  it('still rejects a trailing --style that carries no value', async () => {
+  it('still rejects a trailing --style with no value', async () => {
     const { exitCode } = await route(['--style']);
 
     expect(exitCode).toBe(2);

@@ -39,7 +39,7 @@ describe('rdy help', () => {
     },
   );
 
-  it('carries the subsections of a topic that has them', async () => {
+  it('includes the subsections of a topic that has them', async () => {
     const { stdout } = await route(['help', 'concepts']);
 
     expect(stdout).toContain('### Severities');

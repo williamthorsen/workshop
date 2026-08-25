@@ -157,7 +157,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing when no workspace carries the declared name', ({ temp }) => {
+    it('exempts nothing when no workspace has the declared name', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const sources = [{ path, text: 'export function describeError(error: unknown) {}' }];

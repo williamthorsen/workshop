@@ -4,7 +4,7 @@ import { configError, internalError, kitLoadError, usageError } from '../../erro
 import { formatJsonError } from '../formatJsonError.ts';
 
 describe(formatJsonError, () => {
-  it('wraps the code and message in a versioned envelope carrying nothing else', () => {
+  it('wraps the code and message in a versioned envelope with nothing else', () => {
     const output = formatJsonError(usageError('something went wrong'));
     const parsed: unknown = JSON.parse(output);
 
@@ -29,7 +29,7 @@ describe(formatJsonError, () => {
     expect(output).not.toContain('\n');
   });
 
-  it('carries a hint beside the message rather than inside it', () => {
+  it('reports a hint beside the message rather than inside it', () => {
     const error = configError('No manifest found at https://example.com/manifest.json.', {
       hint: 'If the repository is private, set GITHUB_TOKEN.',
     });
@@ -44,7 +44,7 @@ describe(formatJsonError, () => {
     });
   });
 
-  it('omits the field entirely when the error carries no hint', () => {
+  it('omits the field entirely when the error has no hint', () => {
     expect(formatJsonError(usageError('x'))).not.toContain('hint');
   });
 });

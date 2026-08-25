@@ -46,7 +46,7 @@ describe('generated JSON Schemas', () => {
   describe('report document', () => {
     const report = documentFor('report.v1.json');
 
-    it('requires exactly the fields every report carries', () => {
+    it('requires exactly the fields every report has', () => {
       expect(valueAt(report, 'required')).toStrictEqual([
         'schemaVersion',
         'readyupVersion',
@@ -143,11 +143,11 @@ describe('generated JSON Schemas', () => {
       expect(validatorFor('report.v1.json')({ ...withoutCounts, ...counts })).toBe(false);
     });
 
-    it('rejects a report carrying the old numeric warnings field', () => {
+    it('rejects a report with the old numeric warnings field', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, warnings: 2 })).toBe(false);
     });
 
-    it('accepts a report carrying a field it has never heard of', () => {
+    it('accepts a report with a field it has never heard of', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, addedLater: 'ok' })).toBe(true);
     });
   });

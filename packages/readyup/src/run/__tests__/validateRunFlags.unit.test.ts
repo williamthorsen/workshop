@@ -4,7 +4,7 @@ import type { KitSpecifier } from '../parseKitSpecifiers.ts';
 import { type RunFlagConstraints, validateRunFlags } from '../validateRunFlags.ts';
 
 describe(validateRunFlags, () => {
-  it('accepts an invocation carrying no flags', () => {
+  it('accepts an invocation with no flags', () => {
     expect(() => validateRunFlags(buildConstraints(), [])).not.toThrow();
   });
 

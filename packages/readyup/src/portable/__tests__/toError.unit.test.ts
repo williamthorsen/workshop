@@ -23,7 +23,7 @@ describe(toError, () => {
     ['a number', 42, '42'],
     ['null', null, 'null'],
     ['undefined', undefined, 'undefined'],
-  ])('wraps %s in an Error carrying its text', (_label, value, expected) => {
+  ])('wraps %s in an Error with its text', (_label, value, expected) => {
     expect(toError(value).message).toBe(expected);
   });
 

@@ -40,7 +40,7 @@ describe(suppressesFinding, () => {
   });
 
   describe('given a pragma naming no check', () => {
-    it('suppresses whatever ids the check carries', () => {
+    it('suppresses whatever ids the check has', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
@@ -66,7 +66,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
     });
 
-    it('suppresses nothing for a check carrying no id at all', () => {
+    it('suppresses nothing for a check with no id at all', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
@@ -154,14 +154,14 @@ describe(suppressesFinding, () => {
     expect(suppressesFinding(lines, 1, [])).toBe(true);
   });
 
-  it('answers for each scope where one line carries both tokens', () => {
+  it('reports for each scope where one line has both tokens', () => {
     const lines = linesOf('// rdy-ignore rdy-ignore-next-line\nerror;');
 
     expect(suppressesFinding(lines, 1, [])).toBe(true);
     expect(suppressesFinding(lines, 2, [])).toBe(true);
   });
 
-  it('suppresses nothing where no line carries a pragma', () => {
+  it('suppresses nothing where no line has a pragma', () => {
     const lines = linesOf('const a = 1;\nerror instanceof Error;');
 
     expect(suppressesFinding(lines, 2, [])).toBe(false);

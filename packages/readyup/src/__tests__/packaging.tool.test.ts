@@ -18,11 +18,11 @@ describe('published tarball', () => {
     packedPaths = listPackedPaths();
   }, 120_000);
 
-  it('carries the CodeAssembly content root declared by codeassembly.content', () => {
+  it('includes the CodeAssembly content root declared by codeassembly.content', () => {
     expect(packedPaths).toContain('agents/guidance/rulebooks/readyup-kits.md');
   });
 
-  it('carries the README that `rdy help <topic>` reads its sections from', () => {
+  it('includes the README that `rdy help <topic>` reads its sections from', () => {
     expect(packedPaths).toContain('README.md');
   });
 });

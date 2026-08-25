@@ -34,7 +34,7 @@ describe(toRemoteRdyError, () => {
       expect(error.message).toBe('Failed to fetch manifest: 500 Boom');
     });
 
-    it('supplies the URL for a transport failure, which carries none', () => {
+    it('supplies the URL for a transport failure, which has none', () => {
       const error = toRemoteRdyError(new Error('ECONNREFUSED'), context());
 
       expect(error.message).toBe(`Failed to reach ${GITHUB_URL}: ECONNREFUSED`);
