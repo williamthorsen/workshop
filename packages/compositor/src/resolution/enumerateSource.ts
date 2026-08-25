@@ -11,7 +11,7 @@ import type { ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { Hash, KindId } from '../schemas/scalar-schemas.ts';
 import { namesAnArtifact } from './namesAnArtifact.ts';
 
-/** One artifact a source carries, located and digested within that source. */
+/** One artifact a source contains, located and digested within that source. */
 export interface SourceArtifact {
   readonly kindId: KindId;
   readonly slug: string;
@@ -22,10 +22,10 @@ export interface SourceArtifact {
 }
 
 /**
- * Enumerates every artifact `source` carries, across every kind in `kinds`.
+ * Enumerates every artifact `source` contains, across every kind in `kinds`.
  *
- * Resolution ranks shadowed candidates across sources, so it needs the whole of what each source carries. A kind whose
- * root is absent from this source contributes nothing, because a source is free to carry only some of the kinds in
+ * Resolution ranks shadowed candidates across sources, so it needs the whole of what each source contains. A kind whose
+ * root is absent from this source contributes nothing, because a source is free to contain only some of the kinds in
  * play; an unreadable root is a failure, so a permission problem cannot pass for an empty one and let a
  * lower-precedence source win by default.
  *
@@ -55,8 +55,8 @@ async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Arra
 /**
  * Reads one artifact at `name` under `rootDir`, or nothing when the entry is not one.
  *
- * A `file` kind's entry must be a file carrying the declared extension. A `directory` kind's must be a directory whose
- * entry file exists and is itself a file, since a directory bearing the entry file's own name is not an artifact.
+ * A `file` kind's entry must be a file with the declared extension. A `directory` kind's must be a directory whose
+ * entry file exists and is itself a file, since a directory with the entry file's own name is not an artifact.
  */
 async function readArtifact(rootDir: string, name: string, kind: ResolveKind): Promise<SourceArtifact | undefined> {
   const { layout } = kind;

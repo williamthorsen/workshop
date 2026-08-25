@@ -37,7 +37,7 @@ export interface FrontmatterEdgesInput {
  * attaches each to the file an author wrote. What a rule cannot make sense of contributes no edge, which keeps a
  * malformed block from silently becoming a smaller closure with nothing to say why.
  *
- * An artifact carrying no frontmatter declares nothing, and neither does a block that parses to something other than a
+ * An artifact with no frontmatter declares nothing, and neither does a block that parses to something other than a
  * mapping: a block is metadata, and a document whose metadata is a list has declared no keys rather than bad ones. A
  * block opened and never closed is a fault, because an author who opened one meant to declare something.
  *
@@ -105,7 +105,7 @@ type Fault = (code: ClosureDiagnostic['code'], key: string | undefined, message:
  * Creates a recorder appending to `diagnostics`, so each caller states the fault and not where it belongs.
  *
  * A key-scoped fault reads as a sentence about that key, since every such message is a predicate on the key rather than
- * on the artifact carrying it.
+ * on the artifact declaring it.
  */
 function createFault(artifactId: ArtifactId, diagnostics: Array<ClosureDiagnostic>): Fault {
   return (code, key, message) => {
@@ -148,9 +148,9 @@ function parseBlock(block: string): unknown {
 }
 
 /**
- * Reads `key` from `record`, or reports nothing when the record does not carry it itself.
+ * Reads `key` from `record`, or reports nothing when the record does not have it itself.
  *
- * Both records read here are keyed by strings someone else wrote, and a plain object answers `constructor`, `toString`,
+ * Both records read here are keyed by strings someone else wrote, and a plain object returns `constructor`, `toString`,
  * and every other inherited member with something that is not a declaration.
  */
 function readOwn<T>(record: Record<string, T>, key: string): T | undefined {

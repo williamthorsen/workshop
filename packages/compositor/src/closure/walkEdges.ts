@@ -26,8 +26,8 @@ export interface WalkResult {
  *
  * Neither fault it can meet stops it. A cycle records a diagnostic and the walk turns back, so everything reachable is
  * still reached and no caller waits on a walk that will not end; one cycle reports once however many seeds reach it. An
- * edge naming an artifact no source carries records a diagnostic and is dropped, which is what keeps every edge in the
- * result pointing at something the result carries.
+ * edge naming an artifact no source contains records a diagnostic and is dropped, which is what keeps every edge in the
+ * result pointing at something the result contains.
  *
  * Artifacts come back in the order they were first reached, which follows the seeds and then each artifact's own edge
  * order.
@@ -98,7 +98,7 @@ export function walkEdges(input: WalkInput): WalkResult {
 
 // region | Helpers
 
-/** Names the origin an edge carries, for a message a reader reads rather than decodes. */
+/** Names the origin an edge records, for a message a reader reads rather than decodes. */
 function describeOrigin(edge: DependencyEdge): string {
   switch (edge.via) {
     case 'declared':

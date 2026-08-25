@@ -22,7 +22,7 @@ describe(assertCatalogIsConsistent, () => {
     expect(CatalogSchema.parse(catalog)).toStrictEqual(catalog);
   });
 
-  it('if a table carries one id twice, names the repeated id', async () => {
+  it('if a table lists one id twice, names the repeated id', async () => {
     const catalog = buildCatalog();
     catalog.sources = [...catalog.sources, { ...requireEntry(catalog.sources, 0), name: 'local-again' }];
 

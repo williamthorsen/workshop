@@ -4,7 +4,7 @@ import type { Catalog } from '../../schemas/catalog-schemas.ts';
 /**
  * Reports each entry naming one source more than once among its candidates.
  *
- * A source carries an artifact at one path, so it either wins resolution or loses it. Appearing twice would let one
+ * A source contains an artifact at one path, so it either wins resolution or loses it. Appearing twice would let one
  * source both shadow and be shadowed by itself.
  */
 export function findRepeatedCandidateSources(catalog: Catalog): Array<Violation> {

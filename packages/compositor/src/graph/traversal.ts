@@ -5,7 +5,7 @@ import type { ArtifactId, DiffStatus } from '../schemas/scalar-schemas.ts';
 /**
  * One artifact as traversal reads it: an identity, the edges leaving it, and what seeded it.
  *
- * Every field but the id is optional, because a removed artifact carries no seeds and, once the source carrying it is
+ * Every field but the id is optional, because a removed artifact has no seeds and, once the source containing it is
  * gone, no edges either. A plan's entry and a closure's both satisfy this shape without an adapter, which is what keeps
  * one implementation serving both documents.
  */
@@ -16,7 +16,7 @@ export interface TraversableArtifact {
   readonly status?: DiffStatus | undefined;
 }
 
-/** Any document carrying a dependency graph: a plan, or the closure a plan is computed from. */
+/** Any document containing a dependency graph: a plan, or the closure a plan is computed from. */
 export interface DependencyGraphView {
   readonly artifacts: ReadonlyArray<TraversableArtifact>;
 }
@@ -25,7 +25,7 @@ export interface DependencyGraphView {
 export type DependentsIndex = (artifactId: ArtifactId) => ReadonlyArray<ArtifactId>;
 
 /**
- * Builds the reverse index for one document, answering the "used by" direction the payload stores only forwards.
+ * Builds the reverse index for one document, giving the "used by" direction the payload stores only forwards.
  *
  * Build once per document: a provenance pane issues many lookups against one of them.
  */
@@ -44,7 +44,7 @@ export function buildDependentsIndex(view: DependencyGraphView): DependentsIndex
  * Derives every path from a seeded artifact to `artifactId`, following dependency edges.
  *
  * A diamond yields one path per route. Precomputing them is not an option: enumerating paths is exponential in a
- * diamond-heavy graph, and a document recomputed on every toggle cannot afford to carry them. One lookup covers one
+ * diamond-heavy graph, and a document recomputed on every toggle cannot afford to hold them. One lookup covers one
  * artifact, at the moment a reader asks why it is present.
  *
  * Each path runs seed-first and ends at `artifactId`, so a seeded artifact yields a single one-element path. Ordering

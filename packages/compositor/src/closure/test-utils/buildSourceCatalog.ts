@@ -5,7 +5,7 @@ import { resolveCatalog } from '../../resolution/resolveCatalog.ts';
 import type { Catalog, ResolveKind } from '../../schemas/catalog-schemas.ts';
 import { SAMPLE_KINDS } from './sample-kinds.ts';
 
-/** One source's content, as the files it carries relative to its own directory. */
+/** One source's content, as the files it contains relative to its own directory. */
 export interface SourceContent {
   readonly id: string;
   readonly files: Record<string, string>;

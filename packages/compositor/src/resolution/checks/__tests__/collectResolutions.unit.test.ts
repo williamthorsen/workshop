@@ -12,7 +12,7 @@ describe(collectResolutions, () => {
     ]);
   });
 
-  it('carries each resolution through untouched', () => {
+  it('passes each resolution through untouched', () => {
     const catalog = buildCatalog();
 
     expect(collectResolutions(catalog).map(({ resolution }) => resolution)).toStrictEqual(

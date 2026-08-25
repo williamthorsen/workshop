@@ -14,7 +14,7 @@ describe(collectIdTables, () => {
     ]);
   });
 
-  it('carries each table by reference, so a check reads the entries the closure holds', () => {
+  it('passes each table by reference, so a check reads the entries the closure holds', () => {
     const closure = buildClosure();
     const [, entries] = collectIdTables(closure)[0] ?? [];
 

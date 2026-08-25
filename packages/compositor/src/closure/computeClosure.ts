@@ -16,7 +16,7 @@ export interface SeedView {
 export interface ComputeClosureInput {
   readonly graph: EdgeGraph;
   readonly selection: SeedView;
-  /** The tiers a seed may name, lowest precedence first, as a plan carries them. */
+  /** The tiers a seed may name, lowest precedence first, as a plan records them. */
   readonly tiers: ReadonlyArray<TierDescriptor>;
 }
 
@@ -28,12 +28,12 @@ export interface ComputeClosureInput {
  * steps rather than one.
  *
  * `selection` is the smallest shape the walk reads, so a full selection satisfies it as it stands and a caller holding
- * bare seeds needs to invent nothing around them. A seed naming an artifact the catalog does not carry fails the call:
- * a selection is derived from a catalog, so one that names something else was built by hand and built wrong.
+ * bare seeds needs to invent nothing around them. A seed naming an artifact the catalog does not contain fails the
+ * call: a selection is derived from a catalog, so one that names something else was built by hand and built wrong.
  *
- * The document carries only what a reader of it needs, so a kind arrives without the on-disk layout resolution used and
- * a source without the directory it resolved to. Neither means anything to a reader of a closure, and a filesystem path
- * has no business travelling inside a payload.
+ * The document contains only what a reader of it needs, so a kind arrives without the on-disk layout resolution used
+ * and a source without the directory it resolved to. Neither means anything to a reader of a closure, and a filesystem
+ * path has no business travelling inside a payload.
  */
 export function computeClosure(input: ComputeClosureInput): Closure {
   const { graph, selection, tiers } = input;
@@ -57,7 +57,7 @@ export function computeClosure(input: ComputeClosureInput): Closure {
 
 // region | Helpers
 
-/** Collects the partials the surviving token edges name, the only ones a closure has to carry. */
+/** Collects the partials the surviving token edges name, the only ones a closure has to keep. */
 function collectNamedPartials(artifacts: ReadonlyArray<ClosureArtifact>): ReadonlySet<PartialId> {
   const named = new Set<PartialId>();
   for (const artifact of artifacts) {

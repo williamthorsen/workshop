@@ -31,7 +31,7 @@ export interface EdgeGraphInput {
  * would put a disk read behind every toggle, which is what the What-if flow exists to avoid.
  *
  * Wildcards expand here rather than during the walk, depending as they do on the catalog alone: a config change cannot
- * move what a source carries, so an expansion computed once stays correct for every closure taken from this graph.
+ * move what a source contains, so an expansion computed once stays correct for every closure taken from this graph.
  *
  * A fault in the rules throws, having no artifact to belong to, while a fault in an artifact's content is a diagnostic.
  * An entry file that cannot be read throws as well: a permissions fault is not an authoring mistake, and treating it as
@@ -112,7 +112,7 @@ interface EntryRead {
 }
 
 /**
- * Groups the rules by the kind they read, and collects the keys each kind's artifacts must not carry.
+ * Groups the rules by the kind they read, and collects the keys each kind's artifacts must not declare.
  *
  * A key some other kind's rule owns is a misplaced declaration: an author who wrote it meant to declare edges, and
  * nothing would otherwise read it. A key no rule anywhere owns is ordinary metadata and passes unremarked.
@@ -163,7 +163,7 @@ async function readEntry(entry: CatalogEntry, context: EntryContext): Promise<En
  *
  * A contributed token edge naming its own artifact is dropped: a body naming itself renders per target, but it is not a
  * dependency, and letting it through would report every self-naming artifact as a cycle. A self-dependency written in
- * frontmatter is left alone, an author who declared one having said something a cycle diagnostic should answer.
+ * frontmatter is left alone, an author who declared one having said something a cycle diagnostic should report.
  */
 async function contribute(
   entry: CatalogEntry,
@@ -189,7 +189,7 @@ async function contribute(
   };
 }
 
-/** Reads the source an entry resolved from, which a catalog the engine produced always carries. */
+/** Reads the source an entry resolved from, which a catalog the engine produced always contains. */
 function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogEntry): SourceSpec {
   const source = sources.get(entry.resolution.winner.sourceId);
   if (source === undefined) {

@@ -26,7 +26,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('reads a slug written as an object naming it, so an authored entry may carry other keys', () => {
+  it('reads a slug written as an object naming it, so an authored entry may have other keys', () => {
     const content = block(['dependencies:', '  skills:', '    - name: lint', '      note: kept']);
 
     expect(edgesOf(content)).toStrictEqual([{ to: 'skill:lint', via: 'declared' }]);
@@ -64,7 +64,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('reads no edges from an artifact carrying no frontmatter, and faults nothing', () => {
+  it('reads no edges from an artifact with no frontmatter, and faults nothing', () => {
     expect(readFrontmatterEdges(inputFor('# Lint\n'))).toStrictEqual({ edges: [], diagnostics: [] });
   });
 
@@ -132,7 +132,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('if a key another kind owns is carried, faults it, nothing here reading it as an edge', () => {
+  it('if a key another kind owns is present, faults it, nothing here reading it as an edge', () => {
     const rules: KindEdgeRules = { rules: [declared], foreignKeys: new Set(['members']) };
     const content = block(['members:', '  skills:', '    - lint']);
 
@@ -159,7 +159,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('reads no edges from a rule key an artifact did not write, whatever a prototype answers for it', () => {
+  it('reads no edges from a rule key an artifact did not write, whatever a prototype returns for it', () => {
     const rules: KindEdgeRules = {
       rules: [{ ...declared, key: 'toString' }],
       foreignKeys: new Set(),
@@ -171,7 +171,7 @@ describe(readFrontmatterEdges, () => {
     });
   });
 
-  it('keeps a self-dependency an author declared, which a cycle diagnostic is what answers', () => {
+  it('keeps a self-dependency an author declared, which a cycle diagnostic is what reports', () => {
     expect(edgesOf(block(['dependencies:', '  skills:', '    - review']))).toStrictEqual([
       { to: 'skill:review', via: 'declared' },
     ]);

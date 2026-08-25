@@ -13,7 +13,7 @@ describe(assertClosureIsConsistent, () => {
     expect(() => assertClosureIsConsistent(buildClosure())).not.toThrow();
   });
 
-  it('if an edge names an artifact the closure does not carry, faults it', async () => {
+  it('if an edge names an artifact the closure does not contain, faults it', async () => {
     const closure = buildClosure();
     requireEntry(closure.artifacts, 1).dependsOn = [{ to: 'skill:absent', via: 'declared' }];
 
@@ -78,7 +78,7 @@ describe(assertClosureIsConsistent, () => {
     ]);
   });
 
-  it('if one id is carried twice, faults the repeat, which would make every reference to it ambiguous', async () => {
+  it('if one id is listed twice, faults the repeat, which would make every reference to it ambiguous', async () => {
     const closure = buildClosure();
     closure.artifacts = [...closure.artifacts, requireEntry(closure.artifacts, 1)];
 

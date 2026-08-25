@@ -45,7 +45,7 @@ describe(enumerateSource, () => {
     expect((await enumerateSource(source, [skillKind])).at(0)?.path).toBe('skills/lint/SKILL.md');
   });
 
-  it('skips a directory that carries no entry file', async () => {
+  it('skips a directory that has no entry file', async () => {
     const source = buildSource({
       'skills/lint/SKILL.md': 'lint',
       'skills/notaskill/README.md': 'support content',
@@ -106,14 +106,14 @@ describe(enumerateSource, () => {
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint', 'shared']);
   });
 
-  it('skips a symlinked artifact whose target is gone, rather than carrying one nothing can read', async () => {
+  it('skips a symlinked artifact whose target is gone, rather than keeping one nothing can read', async () => {
     const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
     await symlink(path.join(source.dir, 'skills/never-created'), path.join(source.dir, 'skills/dangling'));
 
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
-  it('carries nothing for a kind whose root the source does not have', async () => {
+  it('contains nothing for a kind whose root the source does not have', async () => {
     const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
     await expect(collectSlugs(source, [rulebookKind, skillKind])).resolves.toStrictEqual(['lint']);
@@ -176,16 +176,16 @@ describe('artifact digests', () => {
 
 // region | Helpers
 
-/** Collects the slugs the source carries across `kinds`, in enumeration order. */
+/** Collects the slugs the source contains across `kinds`, in enumeration order. */
 async function collectSlugs(source: SourceSpec, kinds: ReadonlyArray<ResolveKind>): Promise<Array<string>> {
   return (await enumerateSource(source, kinds)).map((artifact: SourceArtifact) => artifact.slug);
 }
 
-/** Reads the digest of the source's single artifact of `kind`, failing the test when it carries none. */
+/** Reads the digest of the source's single artifact of `kind`, failing the test when it contains none. */
 async function requireArtifactHash(source: SourceSpec, kind: ResolveKind): Promise<string> {
   const artifact = (await enumerateSource(source, [kind])).at(0);
   if (artifact === undefined) {
-    throw new Error(`Fixture carries no ${kind.id}.`);
+    throw new Error(`Fixture has no ${kind.id}.`);
   }
   return artifact.hash;
 }

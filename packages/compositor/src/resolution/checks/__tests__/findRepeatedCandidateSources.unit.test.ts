@@ -9,7 +9,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(buildCatalog())).toStrictEqual([]);
   });
 
-  it('if a shadowed candidate repeats the winner, names the source that already carries the artifact', () => {
+  it('if a shadowed candidate repeats the winner, names the source that already contains the artifact', () => {
     const catalog = buildCatalog();
     requireEntry(catalog.entries, 2).resolution.shadowed = [
       { sourceId: 'local', path: 'skills/review/SKILL.md', hash: 'hash:review-again' },

@@ -21,7 +21,7 @@ const index = buildCatalogIndex(catalog);
 const emittingKindIds = catalog.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id);
 
 describe(expandWildcard, () => {
-  it('names every emitting artifact the declaring source carries, in kind then catalog order', () => {
+  it('names every emitting artifact the declaring source contains, in kind then catalog order', () => {
     expect(expandWildcard(entryFor('collection:core'), index, emittingKindIds)).toStrictEqual([
       'skill:review',
       'subagent:auditor',
@@ -40,7 +40,7 @@ describe(expandWildcard, () => {
     expect(expandWildcard(entryFor('skill:review'), index, emittingKindIds)).toStrictEqual(['subagent:auditor']);
   });
 
-  it('names nothing when the declaring source carries nothing else that emits', () => {
+  it('names nothing when the declaring source contains nothing else that emits', () => {
     const alone = buildCatalogFromSpec({
       traversalOnlyKinds: ['collection'],
       sources: ['team'],
@@ -53,11 +53,11 @@ describe(expandWildcard, () => {
 
 // region | Helpers
 
-/** Reads the catalog entry with `id`, failing the test when the fixture carries none. */
+/** Reads the catalog entry with `id`, failing the test when the fixture contains none. */
 function entryFor(id: string): CatalogEntry {
   const entry = catalog.entries.find((candidate) => candidate.id === id);
   if (entry === undefined) {
-    throw new Error(`Fixture carries no entry "${id}".`);
+    throw new Error(`Fixture has no entry "${id}".`);
   }
   return entry;
 }

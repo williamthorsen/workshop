@@ -9,9 +9,9 @@ import type { ArtifactId } from '../schemas/scalar-schemas.ts';
  * Built from a catalog and nothing else, which is what makes it stable across config changes: a consumer holds one of
  * these and recomputes as many closures from it as a reader toggles selections, none of them reading a file.
  *
- * `edges` carries an artifact only when it declares one, so an absent key and an empty list mean the same thing and
+ * `edges` contains an artifact only when it declares one, so an absent key and an empty list mean the same thing and
  * neither has to be written. `diagnostics` covers faults found while reading, whichever artifact a later selection
- * turns out to reach; a closure carries the subset that concerns the artifacts it holds.
+ * turns out to reach; a closure contains the subset that concerns the artifacts it holds.
  */
 export interface EdgeGraph {
   readonly catalog: Catalog;

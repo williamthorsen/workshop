@@ -8,7 +8,7 @@ import type { Closure } from '../../schemas/closure-schemas.ts';
  * Reports each id reference that names no entry in the table it points at.
  *
  * The artifact and partial tables are checked by the shared graph check, which a plan calls too; what is left here is
- * the diagnostics, which a closure alone carries. A diagnostic pointing at an artifact the closure dropped would leave
+ * the diagnostics, which a closure alone contains. A diagnostic pointing at an artifact the closure dropped would leave
  * a reader with a fault and nothing to attach it to.
  */
 export function findDanglingReferences(closure: Closure): Array<Violation> {
