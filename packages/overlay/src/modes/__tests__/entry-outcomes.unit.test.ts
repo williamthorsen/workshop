@@ -60,7 +60,7 @@ describe(partitionStatus, () => {
 });
 
 describe(countOutcome, () => {
-  it('counts only the entries carrying the given outcome', () => {
+  it('counts only the entries with the given outcome', () => {
     const entries: OverlayEntry[] = [
       { path: '.a', outcome: 'created' },
       { path: '.b', outcome: 'conflict' },
@@ -70,7 +70,7 @@ describe(countOutcome, () => {
     expect(countOutcome(entries, 'created')).toBe(2);
   });
 
-  it('returns 0 when no entry carries the given outcome', () => {
+  it('returns 0 when no entry has the given outcome', () => {
     expect(countOutcome([{ path: '.a', outcome: 'created' }], 'forced')).toBe(0);
   });
 });
