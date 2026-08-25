@@ -5,7 +5,7 @@ import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
 import { ensureOwnedItems } from '../ensureOwnedItems.ts';
 import { readOwnedItems } from '../readOwnedItems.ts';
 
-// The sample declares this destination `{ kind: 'entries', sentinel: 'codeassembly', format: 'json' }`, so its two
+// The sample declares this destination entries-owned over `hooks`, under this sentinel, so its two
 // sides are what this mechanism is supposed to produce and read. The region family has the same pairing in
 // `region.sample.unit.test.ts`.
 const SPEC: OwnedItemsSpec = {

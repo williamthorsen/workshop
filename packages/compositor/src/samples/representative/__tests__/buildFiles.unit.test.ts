@@ -21,6 +21,10 @@ describe(buildFiles, () => {
     expect(aggregated.contributors.artifacts.every((contribution) => contribution.marker !== undefined)).toBe(true);
   });
 
+  it('names no contributor on an entries host, nothing artifact-shaped reaching one', () => {
+    expect(findFile('settings.json').contributors).toStrictEqual({ artifacts: [], partials: [] });
+  });
+
   it('owns individual entries within a structured config', () => {
     expect(findFile('settings.json').ownership).toStrictEqual({
       kind: 'entries',

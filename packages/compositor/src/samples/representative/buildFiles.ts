@@ -61,7 +61,8 @@ export function buildFiles(blobs: BlobStore): Array<FileEntry> {
       },
       current: blobs.addUtf8(SETTINGS_JSON_CURRENT),
       planned: blobs.addUtf8(SETTINGS_JSON_PLANNED),
-      contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
+      // Nothing artifact-shaped reaches an entries host: a target declares its items, and no kind routes there.
+      contributors: { artifacts: [], partials: [] },
     },
     {
       targetId: 'claude',

@@ -450,11 +450,7 @@
         "hash": "sha256:17846c43781848d3cfbc5a8fe0a31b97f60626d87f4844f73669f10cc38ec21d"
       },
       "contributors": {
-        "artifacts": [
-          {
-            "artifactId": "skill:review"
-          }
-        ],
+        "artifacts": [],
         "partials": []
       }
     },
