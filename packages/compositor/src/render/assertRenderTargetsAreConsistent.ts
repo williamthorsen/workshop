@@ -10,7 +10,7 @@ import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
 import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
 import { INLAY_NAME_PLACEHOLDER } from '../inlays/inlay-markers.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
-import { allowsStamping, carriesSentinel } from '../ownership/structured/sentinel.ts';
+import { allowsStamping, carriesSentinel, stampSentinel } from '../ownership/structured/sentinel.ts';
 import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
 import type { OwnedItemsDeclaration } from '../schemas/owned-items-schemas.ts';
@@ -33,8 +33,8 @@ export class RenderTargetConsistencyError extends ConsistencyError {
  * every deployment names a kind in `kinds`, that a region deployment's markers and host can do their jobs, that each
  * link grammar compiles and captures exactly one group, that an inlay stage's two marker templates can delimit a span
  * and name what they stand for with a reshape rule that compiles, and that no owned-items declaration contends for a
- * collection another already owns, disagrees with a sibling about its host's format, sits on a region host, or carries
- * an item its sentinel could never find again.
+ * collection another already owns or nests inside, disagrees with a sibling about its host's format, sits on a region
+ * host, or carries an item its sentinel could never write or find again.
  *
  * A stage declared twice would run twice, and a kind deployed twice would put one artifact in two places; both are
  * authoring mistakes a declaration can express and no render could act on. Checking them here rather than at the first
@@ -101,6 +101,7 @@ export function assertRenderTargetsAreConsistent(
     for (const [position, declaration] of ownedItems.entries()) {
       const ownedAt = `${at}.ownedItems[${position}]`;
       collectHostCollisions(declaration.host, layoutRoots, `${ownedAt}.host`, violations);
+      collectNestedCollections(declaration, ownedItems.slice(0, position), ownedAt, violations);
       const declaredFormat = formatsByHost.get(declaration.host);
       if (declaredFormat === undefined) {
         formatsByHost.set(declaration.host, declaration.format);
@@ -182,22 +183,56 @@ function collectHostCollisions(
 }
 
 /**
- * Reports a declared item that its own sentinel could never find again.
+ * Reports a declared collection path that nests inside one an earlier declaration on the same host already owns.
  *
- * Only a sentinel the engine cannot write is checked, because one it can write is stamped onto every item regardless.
- * Catching it here turns what would otherwise throw at the first host the declaration was run over into a located
- * authoring fault, reported beside every other mistake in the declarations.
+ * A collection is an array, and no key descends through an array, so a path and a prefix of it cannot both name one.
+ * The fold runs the outer declaration first and the inner one then refuses; on a host the target does not yet hold,
+ * that refusal produces no entry at all, nothing standing there for it to be recorded on.
+ */
+function collectNestedCollections(
+  declaration: OwnedItemsDeclaration,
+  earlier: ReadonlyArray<OwnedItemsDeclaration>,
+  path: string,
+  violations: Array<Violation>,
+): void {
+  for (const other of earlier) {
+    if (other.host === declaration.host && nestsWithin(declaration.collection, other.collection)) {
+      violations.push({
+        path: `${path}.collection`,
+        message: `nests with "${other.collection.join('.')}" on the same host, and no key descends through a collection`,
+      });
+      return;
+    }
+  }
+}
+
+/**
+ * Reports a declared item the declaration's own sentinel could never reach.
+ *
+ * The two branches fault differently and both are decidable from the declaration alone. A sentinel the engine cannot
+ * write needs the item to carry the mark already, so one that does not could never be found again. A sentinel it can
+ * write needs somewhere to write it, and an item that is not a mapping the path descends through offers none. Catching
+ * both here turns what would otherwise throw at the first host the declaration was run over into a located authoring
+ * fault, reported beside every other mistake in the declarations.
  */
 function collectUnmarkableItems(declaration: OwnedItemsDeclaration, path: string, violations: Array<Violation>): void {
-  if (allowsStamping(declaration.sentinel)) {
-    return;
-  }
+  const stamps = allowsStamping(declaration.sentinel);
+
   for (const [position, item] of declaration.items.entries()) {
-    if (!carriesSentinel(item, declaration.sentinel)) {
-      violations.push({
-        path: `${path}.items[${position}]`,
-        message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
-      });
+    const at = `${path}.items[${position}]`;
+    if (!stamps) {
+      if (!carriesSentinel(item, declaration.sentinel)) {
+        violations.push({
+          path: at,
+          message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
+        });
+      }
+      continue;
+    }
+    try {
+      stampSentinel(item, declaration.sentinel);
+    } catch (error: unknown) {
+      violations.push({ path: at, message: describeError(error) });
     }
   }
 }
@@ -292,6 +327,24 @@ function collectRepeats(names: ReadonlyArray<string>, path: string, verb: string
   for (const name of repeated) {
     violations.push({ path, message: `${verb} "${name}" more than once` });
   }
+}
+
+/**
+ * Reports whether either path is a strict prefix of the other, the two then naming a collection and something inside it.
+ *
+ * Two identical paths are the repeat check's, so they read as no nesting here and one fault reports one message.
+ */
+function nestsWithin(left: ReadonlyArray<string>, right: ReadonlyArray<string>): boolean {
+  if (left.length === right.length) {
+    return false;
+  }
+  const shared = Math.min(left.length, right.length);
+  for (let index = 0; index < shared; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // endregion | Helpers

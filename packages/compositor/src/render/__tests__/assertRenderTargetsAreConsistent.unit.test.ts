@@ -68,7 +68,10 @@ describe(assertRenderTargetsAreConsistent, () => {
     it('accepts two declarations owning different collections of one host', () => {
       const owning: RenderTarget = {
         ...claude,
-        ownedItems: [settingsHooks, { ...settingsHooks, collection: ['hooks', 'Stop'] }],
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
+          { ...settingsHooks, collection: ['hooks', 'Stop'] },
+        ],
       };
 
       expect(() => assertRenderTargetsAreConsistent([owning], kinds)).not.toThrow();
@@ -85,13 +88,79 @@ describe(assertRenderTargetsAreConsistent, () => {
     it('reports two declarations disagreeing about their host\u{2019}s format, a file having one', async () => {
       const mixed: RenderTarget = {
         ...claude,
-        ownedItems: [settingsHooks, { ...settingsHooks, collection: ['hooks', 'Stop'], format: 'yaml' }],
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
+          { ...settingsHooks, collection: ['hooks', 'Stop'], format: 'yaml' },
+        ],
       };
 
       await expect(violationsOf([mixed])).resolves.toStrictEqual([
         {
           path: 'targets[0].ownedItems[1].format',
           message: 'is "yaml" where the same host is declared "json", and a file has one',
+        },
+      ]);
+    });
+
+    it.each([
+      ['an outer collection declared first', ['hooks'], ['hooks', 'Stop']],
+      ['an inner collection declared first', ['hooks', 'Stop'], ['hooks']],
+    ])('reports %s nesting inside the other on one host', async (_label, first, second) => {
+      const nested: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: [...first] },
+          { ...settingsHooks, collection: [...second] },
+        ],
+      };
+
+      await expect(violationsOf([nested])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[1].collection',
+          message: `nests with "${first.join('.')}" on the same host, and no key descends through a collection`,
+        },
+      ]);
+    });
+
+    it('accepts two declarations owning collections that branch apart below a shared key', () => {
+      const siblings: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
+          { ...settingsHooks, collection: ['hooks', 'Stop'] },
+        ],
+      };
+
+      expect(() => assertRenderTargetsAreConsistent([siblings], kinds)).not.toThrow();
+    });
+
+    it('reports an item a stampable sentinel could not be written into', async () => {
+      const scalar: RenderTarget = { ...claude, ownedItems: [{ ...settingsHooks, items: ['relay --on=stop'] }] };
+
+      await expect(violationsOf([scalar])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].items[0]',
+          message: 'Cannot mark an item with a sentinel at "source": the item is not a mapping.',
+        },
+      ]);
+    });
+
+    it('reports an item whose sentinel path runs through a value that is not a mapping', async () => {
+      const blocked: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          {
+            ...settingsHooks,
+            sentinel: { path: ['meta', 'writtenBy'], value: 'codeassembly' },
+            items: [{ meta: 'vendor-tool' }],
+          },
+        ],
+      };
+
+      await expect(violationsOf([blocked])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].items[0]',
+          message: 'Cannot mark an item with a sentinel at "meta.writtenBy": "meta" is not a mapping.',
         },
       ]);
     });
