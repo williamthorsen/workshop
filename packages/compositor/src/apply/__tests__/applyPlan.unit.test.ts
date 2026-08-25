@@ -42,7 +42,7 @@ describe(applyPlan, () => {
     await expect(readFile(path.join(targetRoot, LINT_SKILL), 'utf8')).resolves.toBe('# Lint\n');
   });
 
-  it('applies a plan carrying no file without touching the destination', async () => {
+  it('applies a plan containing no file without touching the destination', async () => {
     const { config, snapshot, targetRoot } = await captureComposition({ select: {} });
     const before = await readDirNames(targetRoot);
 
@@ -53,7 +53,7 @@ describe(applyPlan, () => {
     await expect(readDirNames(targetRoot)).resolves.toStrictEqual(before);
   });
 
-  it('carries the plan’s fingerprint, so a persisted outcome names what it applied', async () => {
+  it('records the plan’s fingerprint, so a persisted outcome names what it applied', async () => {
     const { config, snapshot, targetRoot } = await captureComposition();
     const plan = composePlan(config, snapshot);
 
@@ -276,7 +276,7 @@ describe(applyPlan, () => {
     );
   });
 
-  it('refuses a plan that does not carry every body it would write', async () => {
+  it('refuses a plan that does not contain every body it would write', async () => {
     using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
     const plan = { ...buildPlan(), contentAvailability: 'partial' as const };
 
@@ -301,7 +301,7 @@ describe(applyPlan, () => {
     await expect(applyPlan(plan, { baseDir: targetRoot.dir })).rejects.toThrow(/blobs do not hold/);
   });
 
-  it('refuses a plan whose file names a target it does not carry', async () => {
+  it('refuses a plan whose file names a target it does not contain', async () => {
     using targetRoot = createTempTree({ '.keep': '' }, { prefix: 'compositor-target-' });
     const plan = buildSingleFilePlan(targetRoot.dir, {
       targetId: 'rovodev',
@@ -333,7 +333,7 @@ describe(applyPlan, () => {
   });
 
   describe('an entries host', () => {
-    it('is written whole, the plan carrying the host with the engine’s items already spliced in', async () => {
+    it('is written whole, the plan containing the host with the engine’s items already spliced in', async () => {
       using targetRoot = createTempTree({ 'settings.json': HELD_SETTINGS }, { prefix: 'compositor-target-' });
       const plan = buildEntriesPlan(targetRoot.dir, HELD_SETTINGS, PLANNED_SETTINGS);
 
@@ -374,7 +374,7 @@ describe(applyPlan, () => {
       expect(outcome.files.map(({ action }) => action)).toStrictEqual(['written']);
     });
 
-    it('composes and applies beside a region host, each destination carrying its own ownership kind', async () => {
+    it('composes and applies beside a region host, each destination with its own ownership kind', async () => {
       const { config, snapshot, targetRoot } = await captureComposition({
         targetFiles: { 'settings.json': HELD_SETTINGS },
         buildTargets: buildOwningTarget,
@@ -464,7 +464,7 @@ function buildSingleFilePlan(root: string, file: FileEntry, blobs?: Record<Hash,
   };
 }
 
-/** Reads what became of one destination, by the path the plan carries it at. */
+/** Reads what became of one destination, by the path the plan records it at. */
 function findAction(files: ReadonlyArray<{ path: string; action: string }>, filePath: string): string | undefined {
   return files.find((file) => file.path === filePath)?.action;
 }
@@ -473,7 +473,7 @@ function findAction(files: ReadonlyArray<{ path: string; action: string }>, file
 function kindAt(plan: Plan, filePath: string): string {
   const file = plan.files.find((entry) => entry.path === filePath);
   if (file === undefined) {
-    throw new Error(`The plan carries no file at "${filePath}".`);
+    throw new Error(`The plan has no file at "${filePath}".`);
   }
   return file.ownership.kind;
 }

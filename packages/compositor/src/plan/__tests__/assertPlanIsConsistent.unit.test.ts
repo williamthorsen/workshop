@@ -16,7 +16,7 @@ describe(assertPlanIsConsistent, () => {
     }).not.toThrow();
   });
 
-  it('if the tier table carries one id twice, names the repeated id', async () => {
+  it('if the tier table lists one id twice, names the repeated id', async () => {
     const plan = buildPlan();
     plan.tiers = [...plan.tiers, { id: 'project', label: 'Project, again' }];
 

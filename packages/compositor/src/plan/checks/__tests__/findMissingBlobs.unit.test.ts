@@ -4,7 +4,7 @@ import { buildPlan } from '../../../test-utils/buildPlan.ts';
 import { findMissingBlobs } from '../findMissingBlobs.ts';
 
 describe(findMissingBlobs, () => {
-  it('accepts a plan carrying every body it references', () => {
+  it('accepts a plan containing every body it references', () => {
     expect(findMissingBlobs(buildPlan())).toStrictEqual([]);
   });
 
@@ -18,7 +18,7 @@ describe(findMissingBlobs, () => {
     ]);
   });
 
-  it('if a plan declares partial content, tolerates a body it does not carry', () => {
+  it('if a plan declares partial content, tolerates a body it does not contain', () => {
     const plan = buildPlan();
     plan.contentAvailability = 'partial';
     plan.blobs = {};

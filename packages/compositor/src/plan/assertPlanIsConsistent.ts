@@ -24,8 +24,9 @@ export class PlanConsistencyError extends ConsistencyError {
 }
 
 /**
- * Verifies the invariants the structural schema does not carry: that every id reference resolves, that a plan claiming
- * complete content holds every body it references, and that each file's recorded status agrees with its two sides.
+ * Verifies the invariants the structural schema does not express: that every id reference resolves, that a plan
+ * claiming complete content holds every body it references, and that each file's recorded status agrees with its two
+ * sides.
  *
  * Normalizing the payload into id-keyed tables is what makes a dangling reference expressible at all, so these checks
  * close the hazard that design introduced. They live here because a refinement inside the schema would be invisible to

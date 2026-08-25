@@ -8,14 +8,14 @@ import { UnapplicablePlanError } from './UnapplicablePlanError.ts';
  * Refuses a plan this engine will not write, before a single destination is touched.
  *
  * Checking up front is the whole point: a refusal met part-way through the walk would leave a destination half
- * applied, some of its files written against a plan the rest of them cannot carry out.
+ * applied, some of its files written against a plan the rest of them cannot apply.
  *
- * Three refusals. A plan carrying only part of its content names bodies no `blobs` table holds. A file whose target the
- * plan does not carry has no root to resolve against. A path that is absolute or climbs out of the target names a
+ * Three refusals. A plan containing only part of its content names bodies no `blobs` table holds. A file whose target
+ * the plan does not contain has no root to resolve against. A path that is absolute or climbs out of the target names a
  * destination outside the tree the plan describes, and apply writes and deletes, so that one is the refusal whose
  * absence costs a file somebody else owns.
  *
- * The engine composes no escaping path, so a plan carrying one came from elsewhere, which is the case apply is built
+ * The engine composes no escaping path, so a plan containing one came from elsewhere, which is the case apply is built
  * to be safe under: a consumer applies a payload it was handed. Entries ownership is not among the refusals: an
  * entries host is written whole exactly as a region host is, under the drift guard that protects every destination.
  *

@@ -4,7 +4,7 @@ import type { Plan } from '../../schemas/plan-schemas.ts';
 import type { DiffStatus } from '../../schemas/scalar-schemas.ts';
 
 /**
- * Reports each file whose recorded status disagrees with the sides it carries.
+ * Reports each file whose recorded status disagrees with the sides it has.
  *
  * A block on an unchanged file is not one of those disagreements. A destination whose planned content could not be
  * computed -- a render that failed, a region host whose markers are damaged -- stands at the body it holds, and the
@@ -28,7 +28,7 @@ export function findStatusDisagreements(plan: Plan): Array<Violation> {
 
 // region | Helpers
 
-/** Derives the status a file's two sides describe, or `undefined` when it carries neither. */
+/** Derives the status a file's two sides describe, or `undefined` when it has neither. */
 function implyStatus(file: FileEntry): DiffStatus | undefined {
   if (file.current === undefined) {
     return file.planned === undefined ? undefined : 'added';

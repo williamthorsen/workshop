@@ -69,7 +69,7 @@ export function composePlan(config: CompositorConfig, snapshot: CompositionSnaps
 // region | Helpers
 
 /**
- * Collects the bodies the plan's files name, leaving behind whatever was registered for a destination none carries.
+ * Collects the bodies the plan's files name, leaving behind whatever was registered for a destination none names.
  *
  * A body is registered as its destination is planned, and a destination can still be discarded afterwards: a contested
  * one collapses into a single blocked entry naming neither of the bodies computed for it. Deriving the table from the
@@ -97,7 +97,7 @@ function collectContainerDirs(target: RenderTarget): Array<string> {
 }
 
 /**
- * Collects the partials a plan carries: those the closure's token edges name, and those transclusion drew into a file.
+ * Collects the partials a plan contains: those the closure's token edges name, and those transclusion drew into a file.
  *
  * The two sets differ. A closure keeps only the partials an edge was read from, while a file's contributors name every
  * partial whose content reached it, and every one of those has to resolve in the table.
@@ -131,7 +131,7 @@ function sortById<Entry extends { id: Id }>(entries: ReadonlyArray<Entry>): Arra
   return entries.toSorted((left, right) => compareStrings(left.id, right.id));
 }
 
-/** Reads a render target as the entry a plan carries, its pipeline and deployments being engine input alone. */
+/** Reads a render target as the entry a plan contains, its pipeline and deployments being engine input alone. */
 function toTargetEntry(target: RenderTarget): TargetEntry {
   return {
     id: target.id,

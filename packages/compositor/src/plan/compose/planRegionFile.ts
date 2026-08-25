@@ -126,7 +126,7 @@ type ContributionRead =
   | { readonly status: 'read'; readonly contributions: ReadonlyArray<RenderedContribution> }
   | { readonly status: 'unrenderable'; readonly reason: string };
 
-/** Judges each contributor against the block the host carries for it now. */
+/** Judges each contributor against the block the host records for it now. */
 function judgeContributions(
   deployment: RegionKindDeployment,
   contributions: ReadonlyArray<RenderedContribution>,
@@ -157,7 +157,7 @@ function markersFor(deployment: RegionKindDeployment, artifact: ClosureArtifact)
  *
  * A routed artifact keeps the region markers its own block was written behind, even where a fill names it too: the
  * outer attribution is the one a reader of the host needs to find its bytes. A blocked host names its routed
- * contributors, which route there whether or not it could be assembled; it names no filler and carries no partials,
+ * contributors, which route there whether or not it could be assembled; it names no filler and has no partials,
  * nothing having been read.
  */
 function nameContributors(

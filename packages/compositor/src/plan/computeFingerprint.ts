@@ -9,7 +9,7 @@ import { assertSnapshotFits } from './compose/assertSnapshotFits.ts';
  * Computes the fingerprint of the inputs a plan over `config` and `snapshot` would be composed from.
  *
  * Exported beside `composePlan` so that detecting staleness is one comparison: a consumer holding a plan captures
- * afresh, computes this, and compares `composite`. The parts beside it name what moved when the answer is yes.
+ * afresh, computes this, and compares `composite`. The parts beside it name what moved when the two differ.
  *
  * The config is digested over its parsed value rather than over the bytes of any file, so a config loaded from disk and
  * the same config edited in memory fingerprint alike -- which is what makes a what-if plan comparable to the plan it

@@ -4,7 +4,7 @@ import type { FileEntry } from '../schemas/file-schemas.ts';
 import type { Plan } from '../schemas/plan-schemas.ts';
 import type { ArtifactId } from '../schemas/scalar-schemas.ts';
 
-/** Reverse lookups over a plan's graph, answering the two "used by" directions the payload stores only forwards. */
+/** Reverse lookups over a plan's graph, giving the two "used by" directions the payload stores only forwards. */
 export interface TraversalIndex {
   /** Finds the artifacts whose edges point at `artifactId`. */
   findDependents(artifactId: ArtifactId): ReadonlyArray<ArtifactId>;

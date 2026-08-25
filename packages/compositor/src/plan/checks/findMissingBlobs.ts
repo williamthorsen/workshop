@@ -1,7 +1,7 @@
 import type { Violation } from '../../consistency/Violation.ts';
 import type { Plan } from '../../schemas/plan-schemas.ts';
 
-/** Reports each file body a plan claiming complete content does not carry. */
+/** Reports each file body a plan claiming complete content does not contain. */
 export function findMissingBlobs(plan: Plan): Array<Violation> {
   if (plan.contentAvailability !== 'complete') {
     return [];

@@ -24,7 +24,7 @@ describe(computeFingerprint, () => {
     expect(computeFingerprint(config, snapshot).composite).toMatch(/^sha256:/);
   });
 
-  it('answers alike twice over one snapshot, which is what makes staleness one comparison', async () => {
+  it('reports alike twice over one snapshot, which is what makes staleness one comparison', async () => {
     const { config, snapshot } = await captureComposition();
 
     expect(computeFingerprint(config, snapshot)).toStrictEqual(computeFingerprint(config, snapshot));

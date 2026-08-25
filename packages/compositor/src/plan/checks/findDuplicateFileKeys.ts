@@ -4,7 +4,7 @@ import type { Plan } from '../../schemas/plan-schemas.ts';
 /**
  * Reports each destination two file entries both claim.
  *
- * `files` carries no id because `(targetId, path)` is its natural key, so this is the id check applied to that pair: a
+ * `files` has no id because `(targetId, path)` is its natural key, so this is the id check applied to that pair: a
  * consumer keying files by destination silently drops one of a repeated pair, and the two can disagree on status,
  * ownership, and contributors.
  */

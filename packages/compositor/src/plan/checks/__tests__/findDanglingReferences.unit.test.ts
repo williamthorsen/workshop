@@ -9,7 +9,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(buildPlan())).toStrictEqual([]);
   });
 
-  it('if an edge names an artifact no table carries, locates the dangling reference', () => {
+  it('if an edge names an artifact no table contains, locates the dangling reference', () => {
     const plan = buildPlan();
     requireEntry(plan.artifacts, 1).dependsOn = [{ to: 'skill:absent', via: 'declared' }];
 
@@ -33,7 +33,7 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
-  it('if a token mapping names a token kind no table carries, locates the dangling reference', () => {
+  it('if a token mapping names a token kind no table contains, locates the dangling reference', () => {
     const plan = buildPlan();
     plan.tokenKinds = [];
 
@@ -45,7 +45,7 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
-  it('if a seed names a tier no table carries, locates the dangling reference', () => {
+  it('if a seed names a tier no table contains, locates the dangling reference', () => {
     const plan = buildPlan();
     plan.tiers = [];
 
@@ -72,7 +72,7 @@ describe(findDanglingReferences, () => {
     ]);
   });
 
-  it('tolerates a removed artifact, which is seeded by nothing and carries no seeds to check', () => {
+  it('tolerates a removed artifact, which is seeded by nothing and has no seeds to check', () => {
     const plan = buildPlan();
     const retired = requireEntry(plan.artifacts, 2);
     plan.artifacts = [...plan.artifacts, { id: retired.id, kindId: 'skill', slug: 'lint', status: 'removed' }];
