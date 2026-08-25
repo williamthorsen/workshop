@@ -106,7 +106,7 @@ kit
 
 ### Severities
 
-Every check carries a severity. It decides whether a failure fails the run and whether the result is reported, and it never decides whether that check itself runs. It reaches later work in one place only: a failed check at or above the failure threshold stops the remaining groups of a [staged checklist](#staged-checklists).
+Every check has a severity. It decides whether a failure fails the run and whether the result is reported, and it never decides whether that check itself runs. It reaches later work in one place only: a failed check at or above the failure threshold stops the remaining groups of a [staged checklist](#staged-checklists).
 
 | Severity    | Meaning           |
 | ----------- | ----------------- |
@@ -129,7 +129,7 @@ A check result has one of three statuses -- `passed`, `failed`, or `skipped`. Th
 
 💊 `FIX` marks a remediation hint rather than a result.
 
-Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: position carries the meaning instead.
+Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: position shows the meaning instead.
 
 | Rich | Names                                                  |
 | ---- | ------------------------------------------------------ |
@@ -202,7 +202,7 @@ See [internal kits](#internal-kits) for what the `internal` keys select, and [pa
 | `preconditions` | `RdyCheck[]`        | --                 | Gating checks                               |
 | `fixLocation`   | `'inline' \| 'end'` | the kit's setting  | Overrides the kit's setting                 |
 
-A checklist carries either `checks` or `groups`, never both.
+A checklist has either `checks` or `groups`, never both.
 
 ### Checks
 
@@ -264,7 +264,7 @@ Neither is a `quiet` check, though it looks like one: its name reaches the reade
 
 ### The detail contract
 
-`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and carrying no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
+`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and with no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
@@ -350,7 +350,7 @@ The second question is a fast check, not the rule. A skip is correct whenever th
 | `code-quality workflow does not use nmr prepush`  | pass                                    | the skip masks a pass                                  |
 | `.github/labels.yaml exists`                      | pass                                    | the skip is correct; release-kit does not own the file |
 
-The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo carrying that file without the block would have passed `fileExists` and still deserves the skip.
+The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo with that file but no such block would have passed `fileExists` and still deserves the skip.
 
 The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass. [`rdy run --diagnose`](#run-options) decides that mechanical half, reporting every check its own `skip` turned off that would have passed. It decides nothing about applicability.
 
@@ -364,7 +364,7 @@ The third row is the failure mode to watch for: `skip` and `check` ran the ident
 
 The doctrine above ships as agent guidance too, in a CodeAssembly content root under `agents/` in the installed package. A repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync` gets it as the `consult-readyup-kits` skill, in every harness that repo targets.
 
-The skill carries the judgment a kit author needs while writing; this README stays the reference for everything mechanical.
+The skill holds the judgment a kit author needs while writing; this README stays the reference for everything mechanical.
 
 ### Staged checklists
 
@@ -490,7 +490,7 @@ rdy deploy:fast       # a suite
 rdy deploy release    # two kits
 ```
 
-`--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already carries a `:checklist` filter, is an error rather than a merge.
+`--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already has a `:checklist` filter, is an error rather than a merge.
 
 Kit names may contain `/`, as in `shared/deploy`. To name one that starts with `-`, place it last, after `--`:
 
@@ -518,9 +518,9 @@ rdy run -- "--odd-kit-name"
 
 `--quiet` filters by status where `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
 
-A checklist either filter empties renders no block at all: its summary-table row states the same counts in a column the reader can compare across the run. A block is withheld only where a table will carry its row, so a run of one checklist reports its block however little it has to say, and a run that withholds one always ends with the table.
+A checklist either filter empties renders no block at all: its summary-table row states the same counts in a column the reader can compare across the run. A block is withheld only where a table will include its row, so a run of one checklist reports its block however little it has to say, and a run that withholds one always ends with the table.
 
-`--diagnose` runs the `check` of every check its own `skip` turned off, and reports the ones that would have passed: a `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](#when-a-check-skips) carries the judgment this flag cannot decide. It is opt-in because it executes exactly the work a skip was written to avoid, which may reach a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
+`--diagnose` runs the `check` of every check its own `skip` turned off, and reports the ones that would have passed: a `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](#when-a-check-skips) holds the judgment this flag cannot decide. It is opt-in because it executes exactly the work a skip was written to avoid, which may reach a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
 
 A check's own [`quiet`](#checks) is this flag narrowed to that one check, and a kit whose every check declares it renders what `--quiet` renders. It is not `skip`, which reports that the check did not run and why: a quiet check runs, and its pass reaches the count line and the exit code like any other -- only the line is withheld. `--json` is unaffected, so `rdy run --json --detail full` shows a quiet check that passed.
 
@@ -553,11 +553,11 @@ Private repositories use ambient tokens: `GITHUB_TOKEN` (falling back to `gh aut
 
 A check line reads `token name <separator> detail [progress] (duration)`. The separator is `·` in `rich` and `-` in `plain`; progress takes brackets. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
 
-**A failed line carries only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. Passes and skips keep their detail inline.
+**A failed line states only its claim.** The reason renders beneath it, indented to the name column -- the authored `detail` first, then any thrown exception behind its `Error:` label. Passes and skips keep their detail inline.
 
-**Every block closes with its count line.** A count line is labelled `Total:`, leads with the run's worst severity, and reports counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero, parted by commas. The label is what tells the line from the check lines above it, which lead with a token in the same column. It is the block's last line, following any `Fixes` recap.
+**Every block closes with its count line.** A count line is labelled `Total:`, leads with the run's worst severity, and reports counts in a fixed order -- errors, warnings, recommendations, passed, blocked, skipped -- omitting any that is zero, separated by commas. The label is what tells the line from the check lines above it, which lead with a token in the same column. It is the block's last line, following any `Fixes` recap.
 
-**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, parted by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, which heads a section and nothing else.
+**Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, separated by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, which heads a section and nothing else.
 
 Blank lines part blocks rather than decorate headings: none opens a command's output, follows a heading, or falls inside a block, and exactly one parts one block from the next, a kit boundary included. More than one checklist anywhere in the run adds a summary table:
 
@@ -593,7 +593,7 @@ A kit from an installed package, a repository, or a URL names where it came from
 ━━ 📁 ../shared-kits / 📓 default
 ```
 
-A run spanning several kits tallies them together, each row naming its source and kit so it reads without reference to the blocks above. Row names carry no role glyphs, since the padding that aligns the columns counts characters rather than terminal cells:
+A run spanning several kits tallies them together, each row naming its source and kit so it reads without reference to the blocks above. Row names have no role glyphs, since the padding that aligns the columns counts characters rather than terminal cells:
 
 ```
 ━━ Summary
@@ -608,7 +608,7 @@ A run spanning several kits tallies them together, each row naming its source an
 
 ### Output styles
 
-`--style` selects rendering; `RDY_STYLE` carries a standing preference. The flag outranks the environment variable, which outranks detection.
+`--style` selects rendering; `RDY_STYLE` holds a standing preference. The flag outranks the environment variable, which outranks detection.
 
 | Value   | Renders                                                                       |
 | ------- | ----------------------------------------------------------------------------- |
@@ -637,7 +637,7 @@ Once a style is named explicitly, output is identical to a terminal or a pipe. `
 
 ### Suppressing a finding
 
-A check naming located sites reports each as `path:line`. A source suppresses one by carrying a pragma:
+A check naming located sites reports each as `path:line`. A source suppresses one with a pragma:
 
 ```ts
 // rdy-ignore-next-line -- the bootstrap shim, no deps allowed
@@ -667,7 +667,7 @@ A failed check prints its id bracketed ahead of its fraction, and that printed f
 
 A kit an installed package publishes namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace is what keeps two kits' same-named checks apart. A kit reached any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id stands. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all.
 
-The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry carries its `id` in both detail projections.
+The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason behind `--`. Under `--json`, each check entry includes its `id` in both detail projections.
 
 A suppressed finding leaves the audit rather than being downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than resting one short. An unqualified pragma takes the site out of every check's fraction at once, which is what keeps the checks of one run comparable; a qualified one takes it out of the checks it names and leaves it standing in the rest.
 
@@ -798,7 +798,7 @@ Configured packages are resolved through `node_modules` rather than through the 
 📓 smoke (readyup v0.22.0)
 ```
 
-A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows carry a name and path only. A remote source still requires a manifest.
+A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A remote source still requires a manifest.
 
 #### Listing a whole repository
 
@@ -844,15 +844,15 @@ The sweep considers every directory holding a `package.json`, the working direct
       📓 npm-auto-publish
 ```
 
-Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency is reachable from nowhere else, so its command carries the `cd` that gets there: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
+Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency is reachable from nowhere else, so its command includes the `cd` that gets there: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
 
 This sweep is wider than the one `--recursive` makes alone. It considers every directory holding a `package.json`, whether or not that directory has a readyup footprint, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one the question is about. A project with no kit-publishing dependency is not rendered at all, its directory line included, and a sweep left with nothing prints `No dependency of any project below this directory publishes kits.`
 
-Unlike every other listing, this view carries no heading rules. The two rule weights it would otherwise need are a stroke apart, and the roles they would mark are already told apart by their glyphs; under `--style plain`, where the role glyphs are empty, the indentation carries all three levels on its own. That is also why each command is labelled `To run:`: it shares a column with the kits beneath it, and the label is what keeps it from reading as one more kit.
+Unlike every other listing, this view has no heading rules. The two rule weights it would otherwise need are a stroke apart, and the roles they would mark are already told apart by their glyphs; under `--style plain`, where the role glyphs are empty, the indentation marks all three levels on its own. That is also why each command is labelled `To run:`: it shares a column with the kits beneath it, and the label is what keeps it from reading as one more kit.
 
 Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package it records rather than by a kind of its own, so `name` and `kind` alone collide between your kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each hold a `default`, and under `--recursive --packages` between two workspaces depending on the same package. A consumer indexing on less than the full key silently drops a row.
 
-Every kit a package published carries `origin.configured`, reporting whether the config names that package and so whether `rdy run --packages` would reach it. It is emitted under `--packages`, under `--recursive --packages`, and under a plain `rdy list` alike, so a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which accompanies the owner listing alone: under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
+Every kit a package published has `origin.configured`, reporting whether the config names that package and so whether `rdy run --packages` would reach it. It is emitted under `--packages`, under `--recursive --packages`, and under a plain `rdy list` alike, so a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which accompanies the owner listing alone: under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
 
 ### Scaffolding
 
@@ -867,11 +867,11 @@ rdy init                       Scaffold a starter config and kit
 
 ## JSON output
 
-`run`, `compile`, `list`, and `verify` accept `--json`; `init` does not. With `--json`, stdout carries exactly one JSON document and every human-readable line goes to stderr. `--help` and `--version` have no JSON form.
+`run`, `compile`, `list`, and `verify` accept `--json`; `init` does not. With `--json`, stdout holds exactly one JSON document and every human-readable line goes to stderr. `--help` and `--version` have no JSON form.
 
 ### Published schemas
 
-Each payload is specified by a JSON Schema shipped with the package and carries an integer `schemaVersion` matching the `vN` in its filename.
+Each payload is specified by a JSON Schema shipped with the package and includes an integer `schemaVersion` matching the `vN` in its filename.
 
 | Payload        | Import path                              |
 | -------------- | ---------------------------------------- |
@@ -889,7 +889,7 @@ The five payloads version independently.
 
 - **Adding an optional field does not bump `schemaVersion`.** A validator pinned to `v1` keeps accepting payloads from a later ReadyUp.
 - **Removing, renaming, or re-typing a field does bump it**, publishing a new `vN` beside the old. Widening a closed set counts as re-typing.
-- **A field is `required` only when every payload carries it.** Omission is reserved for absent or empty data.
+- **A field is `required` only when every payload has it.** Omission is reserved for absent or empty data.
 - **`warnings[].code` is an open set**, exempt from the widening rule. Consumers must tolerate an unknown code, displaying its `message` and `remedy`. `error.code` stays closed.
 
 ### Error envelope
@@ -906,9 +906,9 @@ An invocation that fails before producing anything else emits:
 { "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }
 ```
 
-An error entry carries no counts and no verdict, and the top-level totals cover only the kits that ran.
+An error entry has no counts and no verdict, and the top-level totals cover only the kits that ran.
 
-An error body may also carry `hint`, one action that would clear the failure:
+An error body may also include `hint`, one action that would clear the failure:
 
 ```json
 {
@@ -950,14 +950,14 @@ An error body may also carry `hint`, one action that would clear the failure:
 }
 ```
 
-- **`passed`** is the run verdict, agreeing with exit code 0 in every case. Kit and checklist entries carry their own.
+- **`passed`** is the run verdict, agreeing with exit code 0 in every case. Kit and checklist entries have their own.
 - **`counts`** holds the six tallies at report, kit, and checklist level, nested so count names and verdict names share no namespace.
 - **`worstSeverity`** is derived verdict data, omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear at the top level only when the corresponding flag was passed, and on every kit that ran as the value that governed it. See [thresholds](#thresholds) for how each resolves.
-- **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit that ran whose bundle carries a compile-time stamp, including where that stamp matches the report's own `readyupVersion`, and is absent for a bundle compiled before the stamp existed or for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](#verifying-by-recompiling) reports the same value under a narrower rule, appearing only where it disagrees with the running readyup: that field explains a mismatch, this one records what ran.
-- **`warnings`** carries any advisory as `{ code, message, remedy? }`, absent when none was raised.
+- **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit that ran whose bundle has a compile-time stamp, including where that stamp matches the report's own `readyupVersion`, and is absent for a bundle compiled before the stamp existed or for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](#verifying-by-recompiling) reports the same value under a narrower rule, appearing only where it disagrees with the running readyup: that field explains a mismatch, this one records what ran.
+- **`warnings`** lists any advisory as `{ code, message, remedy? }`, absent when none was raised.
 
-Payloads are slim by construction: a field carrying nothing is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks.
+Payloads are slim by construction: an empty field is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks.
 
 ### Detail level
 
@@ -975,7 +975,7 @@ The path from source to a consumer:
 4. Consumers run `rdy run --from github:org/repo`, which fetches the bundle the manifest describes.
 5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled, or `rdy verify --rebuild` to catch a bundle stale in anything the hashes do not record.
 
-A published package can carry its kits instead, so consumers reach them through the dependency they already have rather than through a repository URL. See [package-hosted kits](#package-hosted-kits).
+A published package can ship its kits instead, so consumers reach them through the dependency they already have rather than through a repository URL. See [package-hosted kits](#package-hosted-kits).
 
 ### Compiling
 
@@ -1035,9 +1035,9 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 
 The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.
 
-What the closure leaves out is recorded as versions instead: `esbuildVersion` names the bundler and `bundledDependencies` each inlined package, one entry per package rather than one per file. A package a bundle inlines at two versions at once records both, sorted and comma-separated. `bundledDependencies` is absent for a kit that bundles nothing, so `esbuildVersion` is the marker that an entry carries the record at all.
+What the closure leaves out is recorded as versions instead: `esbuildVersion` names the bundler and `bundledDependencies` each inlined package, one entry per package rather than one per file. A package a bundle inlines at two versions at once records both, sorted and comma-separated. `bundledDependencies` is absent for a kit that bundles nothing, so `esbuildVersion` is the marker that an entry has the record at all.
 
-An entry compiled before readyup recorded the closure carries no `inputs`; one compiled before the version record carries no `esbuildVersion`.
+An entry compiled before readyup recorded the closure has no `inputs`; one compiled before the version record has no `esbuildVersion`.
 
 ### Package-hosted kits
 
@@ -1076,7 +1076,7 @@ rdy run --packages       # the kit named `default`, from every listed package
 rdy run --packages drift # the kit named `drift`, from every listed package publishing it
 ```
 
-The kit name is the selector, exactly as it is for every other source, and each result carries the package and version it came from. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, leaving the checklists no single one to select within.
+The kit name is the selector, exactly as it is for every other source, and each result names the package and version it came from. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, leaving the checklists no single one to select within.
 
 A listed package that does not publish the requested kit is skipped. `rdy run --packages` asks whether this project satisfies what its listed packages require of it, and a package publishing no `default` requires nothing of it: that package contributes no kit, and a run that selects nothing reports as much and passes. The named form differs in one respect, because naming a kit asks for something specific: a name no listed package publishes is a usage error rather than an empty run.
 
@@ -1101,7 +1101,7 @@ ReadyUp publishes two kits of its own, about readyup projects themselves. Any pr
 ```bash
 rdy run --from npm:readyup            # default: authoring hygiene, advisory
 rdy run --from npm:readyup publishing # publication readiness, blocking
-rdy list --from npm:readyup           # both, with the checklists each one carries
+rdy list --from npm:readyup           # both, with the checklists each one has
 ```
 
 `default` reports at `warn` and below, so it is safe to run mid-edit:
@@ -1158,7 +1158,7 @@ rdy verify --rebuild           Also recompile each kit and compare it to the com
 1 of 2 kits failed verification.
 ```
 
-Each kit carries three independent verdicts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`; the [recorded inputs](#what-a-manifest-entry-records) are `ok`, `stale`, or `unverified`. `drift` means someone edited the bundle by hand; a stale source means the TypeScript moved on and nobody recompiled; stale inputs mean the same of a module the bundle inlined or a JSON projection it substituted. A kit can be all three at once.
+Each kit has three independent verdicts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`; the [recorded inputs](#what-a-manifest-entry-records) are `ok`, `stale`, or `unverified`. `drift` means someone edited the bundle by hand; a stale source means the TypeScript moved on and nobody recompiled; stale inputs mean the same of a module the bundle inlined or a JSON projection it substituted. A kit can be all three at once.
 
 The inputs verdict names every input that failed rather than the first, each on its own line, separating a changed module from a changed inline projection. A projected file that is still present while the fields the kit picked are gone is reported as `unprojectable`, which says something about the kit rather than about the file:
 
@@ -1170,7 +1170,7 @@ The inputs verdict names every input that failed rather than the first, each on 
 
 Anything other than `ok` or `unverified` on any axis fails the run. `unverified` does not, since an entry with no recorded hash -- or one compiled before readyup recorded the input closure -- says nothing about whether the kit changed.
 
-Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict carries `expected` and `actual`; a stale source carries `sourceExpected` and `sourceActual`; stale inputs carry `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has.
+Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict reports `expected` and `actual`; a stale source reports `sourceExpected` and `sourceActual`; stale inputs report `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has.
 
 In CI:
 
@@ -1206,7 +1206,7 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
 
 The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
 
-Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
+Under `--json`, each kit adds `rebuildStatus`. A `mismatch` reports `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` reports `rebuildError`. Without the flag, none of these fields appears.
 
 Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled; an esbuild or dependency upgrade mismatches wherever it changes a bundle, and the mismatch clause names it. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
 
@@ -1270,7 +1270,7 @@ Every path a check utility takes resolves against `cwd` unless it is absolute, i
 | `hasDevDependency(name)`                              | Dev dependency is declared                |
 | `hasMinDevDependencyVersion(name, version, options?)` | Dev dependency meets a minimum            |
 
-`hasMinDevDependencyVersion` compares the floor against the version it reads out of the specifier in `package.json`, so the specifier's protocol can settle the answer before any comparison happens. Any `workspace:`-prefixed specifier satisfies any floor, `workspace:^1.2.3` included: it links to the package the repo builds, and a repo that publishes a package is not a consumer of it. A `catalog:` specifier settles nothing on its own and is resolved through `pnpm-workspace.yaml` in the working directory, and the version found there is what the floor is compared against. `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its own block under `catalogs:`. A specifier the file does not resolve meets no floor, as does one whose catalog entry opens a YAML construct this reader does not follow, such as an alias or a flow mapping. A version reached that way is read the same as a declared one, so a catalog entry of `workspace:*` satisfies any floor in its turn. The version is read from the start of the specifier, past any range operator, so one naming fewer than three segments (`7`, `^6`) is measured rather than skipped; a specifier carrying its version elsewhere, as the `npm:` alias protocol does, is read for a three-segment version anywhere in it. Pass `options.exempt` to exempt further specifiers; it receives the specifier as written, so a catalogued dependency reaches it as `catalog:` rather than as the version behind it, and it adds to the built-in exemption rather than replacing it.
+`hasMinDevDependencyVersion` compares the floor against the version it reads out of the specifier in `package.json`, so the specifier's protocol can settle the answer before any comparison happens. Any `workspace:`-prefixed specifier satisfies any floor, `workspace:^1.2.3` included: it links to the package the repo builds, and a repo that publishes a package is not a consumer of it. A `catalog:` specifier settles nothing on its own and is resolved through `pnpm-workspace.yaml` in the working directory, and the version found there is what the floor is compared against. `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its own block under `catalogs:`. A specifier the file does not resolve meets no floor, as does one whose catalog entry opens a YAML construct this reader does not follow, such as an alias or a flow mapping. A version reached that way is read the same as a declared one, so a catalog entry of `workspace:*` satisfies any floor in its turn. The version is read from the start of the specifier, past any range operator, so one naming fewer than three segments (`7`, `^6`) is measured rather than skipped; a specifier with its version elsewhere, as the `npm:` alias protocol does, is read for a three-segment version anywhere in it. Pass `options.exempt` to exempt further specifiers; it receives the specifier as written, so a catalogued dependency reaches it as `catalog:` rather than as the version behind it, and it adds to the built-in exemption rather than replacing it.
 
 ### Versions and runtime alignment
 
@@ -1284,7 +1284,7 @@ Every path a check utility takes resolves against `cwd` unless it is absolute, i
 | `readTsconfigLanguageLevel(path)`    | Effective `lib` and `target`, resolved through `extends`                                 |
 | `readTsconfigChain(path)`            | Each config the `extends` chain reaches, and what it declares in its own right           |
 
-Each reader answers only what it can see, so a check composing them decides for itself what each unknown means. `readEnginesNodeFloor` recognizes only forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`); a union or wildcard comes back `unparseable` rather than an invented floor. `readTsconfigLanguageLevel` resolves `extends` as TypeScript does, following relative paths and published base configs alike; it also returns `chain` (the configs it read) and `unresolvedExtends` (references it could not follow), so a check can tell an incomplete answer from an undeclared setting. `readTsconfigChain` reports that same walk one layer down: every config it reached, the `extends` specifier that reached each one, and what each declares in its own right, with values left exactly as written. Reach for it to ask which config declared a setting, or to read a field the language-level reader does not cover, such as `files` or `include`. The specifier is a chain entry's stable identity: a package's path shifts with install layout, resolving under `node_modules/.pnpm/` in one project and under a linked workspace directory in another. Where two `extends` branches reach one config, the entry names the branch that reached it first.
+Each reader reports only what it can see, so a check composing them decides for itself what each unknown means. `readEnginesNodeFloor` recognizes only forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`); a union or wildcard comes back `unparseable` rather than an invented floor. `readTsconfigLanguageLevel` resolves `extends` as TypeScript does, following relative paths and published base configs alike; it also returns `chain` (the configs it read) and `unresolvedExtends` (references it could not follow), so a check can tell an incomplete answer from an undeclared setting. `readTsconfigChain` reports that same walk one layer down: every config it reached, the `extends` specifier that reached each one, and what each declares in its own right, with values left exactly as written. Reach for it to ask which config declared a setting, or to read a field the language-level reader does not cover, such as `files` or `include`. The specifier is a chain entry's stable identity: a package's path shifts with install layout, resolving under `node_modules/.pnpm/` in one project and under a linked workspace directory in another. Where two `extends` branches reach one config, the entry names the branch that reached it first.
 
 ```ts
 import {
@@ -1329,7 +1329,7 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 
 ### Workspaces
 
-`discoverWorkspaces()` returns a uniform `Workspace[]` collapsing pnpm, npm, and yarn monorepo conventions -- and single-workspace repos -- into one iteration shape. Each entry carries `dir` (relative to `cwd`; `'.'` for the repo root), `absolutePath`, `name`, `isPackage` (`package.json.private !== true`), `isRoot`, and the parsed `packageJson`.
+`discoverWorkspaces()` returns a uniform `Workspace[]` collapsing pnpm, npm, and yarn monorepo conventions -- and single-workspace repos -- into one iteration shape. Each entry has `dir` (relative to `cwd`; `'.'` for the repo root), `absolutePath`, `name`, `isPackage` (`package.json.private !== true`), `isRoot`, and the parsed `packageJson`.
 
 The repo root is reported in every shape, exactly once, so every call shape is a filter over one list rather than a list a caller adds the root to and dedupes.
 
@@ -1352,7 +1352,7 @@ Discovery is memoized per `cwd` for the life of the process: Repeated calls in o
 const missing = discoverKitPackages().filter((name) => !configuredPackages.includes(name));
 ```
 
-It answers best effort: a project manifest it cannot read or parse yields `[]`. An empty result therefore does not distinguish a project with no kit-publishing dependencies from one whose manifest could not be read, which a check treating the result as authoritative would report as a pass either way.
+It is best effort: a project manifest it cannot read or parse yields `[]`. An empty result therefore does not distinguish a project with no kit-publishing dependencies from one whose manifest could not be read, which a check treating the result as authoritative would report as a pass either way.
 
 ### Project sources
 
@@ -1369,7 +1369,7 @@ These six are what an adoption kit needs -- one reporting where a project hand-r
 
 `listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope a relative `readFile` path works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 
-`readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter answers for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
+`readTrackedSources` applies its filter before any read, so a caller never pays for a file it excluded, and holds what it read for the life of the process. A file two kits both select costs one read between them, and each pays only for the remainder the other did not ask for. That cache lives here rather than in a kit because a compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run; a cache inside a bundled helper would be one per bundle. Listings are held the same way and are shared by checks that start together, which the runner does. The sweep never reads `node_modules/` or `.readyup/kits/*.js` whatever the filter returns for them -- the latter is readyup's own generated artifact, and sweeping it would report a kit's bundled source back to its author. That kit exclusion names the default `compile.outDir`; a project compiling its kits elsewhere excludes that directory itself. A caller wanting further exclusions applies them in its own filter.
 
 It also reports the paths it returns to the run, which is the evidence a [pragma that suppressed nothing](#advisory-warnings) is judged against, so a check reading the project this way declares no `scanned` of its own and a sweep it reads in `skip` counts as much as one it reads in `check`. `listTrackedFiles` reports nothing, so a check taking that listing and reading the files itself declares `scanned`.
 
@@ -1381,7 +1381,7 @@ It also reports the paths it returns to the run, which is the evidence a [pragma
 
 `buildFindingReport` takes every finding the project holds plus a predicate selecting the ones the calling check reports, and returns them as a `FindingOutcome` for the runner to suppress, render, and count. The runner names each reported finding as `symbol (path:line)`, or `path:line` where it declares no symbol, and derives the fraction from every finding passed rather than only the reported ones, so the checks of one run share a denominator the reader can compare across them.
 
-Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A declaration qualifies by being exported under one of the named exports from a file inside a workspace whose `package.json` names the package, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is declaration-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off, and the argument carries one step further: the reasoning reaches the wrapper alone, so a neighbouring declaration in the same file is ordinary code and is still reported. A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it is the last, because a generic constraint's braces and a return-type annotation's both defeat a scan for the closing brace and a span cut short reports the implementation the rule exists to exempt. A re-exporting barrel declares no implementation and holds no exempted lines; a file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
+Pass `ownImplementation` -- the package name, the export names, and the swept sources -- and every finding sited in that package's own implementation drops, from the detail and from both halves of the fraction. A declaration qualifies by being exported under one of the named exports from a file inside a workspace whose `package.json` names the package, so the repo publishing an idiom is not told it hand-rolled it. The same doctrine governs `hasMinDevDependencyVersion`: a repo that publishes a package is not a consumer of it. The rule is declaration-scoped, because a workspace is the whole repository in a single-package project, where a workspace-wide rule would turn the check off, and the argument goes one step further: the reasoning reaches the wrapper alone, so a neighbouring declaration in the same file is ordinary code and is still reported. A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it is the last, because a generic constraint's braces and a return-type annotation's both defeat a scan for the closing brace and a span cut short reports the implementation the rule exists to exempt. A re-exporting barrel declares no implementation and holds no exempted lines; a file in the package that declares the name without exporting it is a hand-roll and is still reported. A file that declares the export under another name and renames it on export from a second file is not recognized, which surfaces in the publishing repo itself rather than in a consumer's.
 
 The [`rdy-ignore` pragma](#suppressing-a-finding) is honored by the runner rather than here, which is the layer holding both the check and the provenance a pragma naming that check is matched against. A kit passes nothing for it and recognizes nothing: the pragma is readyup's, so every kit reporting through this path speaks one dialect of it rather than each publishing its own. Give the check an `id` and a consumer can suppress its findings by name.
 
