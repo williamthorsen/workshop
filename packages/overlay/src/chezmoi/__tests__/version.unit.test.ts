@@ -56,7 +56,11 @@ describe(assertChezmoiVersion, () => {
   });
 });
 
+// region | Helpers
+
 /** Stub `chezmoi --version` to return the given stdout and exit code. */
 function mockVersionOutput(stdout: string, code = 0): void {
   vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code });
 }
+
+// endregion | Helpers

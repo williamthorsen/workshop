@@ -59,8 +59,12 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
   };
 }
 
+// region | Helpers
+
 function computeExitCode(ok: boolean, conflicts: number): 0 | 1 | 2 {
   if (!ok) return 2;
   if (conflicts > 0) return 1;
   return 0;
 }
+
+// endregion | Helpers

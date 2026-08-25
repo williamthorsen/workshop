@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import * as runChezmoiModule from '../../chezmoi/runChezmoi.ts';
+import { mockCapturedStatus } from '../test-utils/chezmoi-mocks.ts';
 import { runVerify } from '../verify.ts';
 
 const context = { source: '/src', target: '/target' };
@@ -11,7 +11,7 @@ describe(runVerify, () => {
   });
 
   it('exits 0 with no entries when status is clean', async () => {
-    mockStatus('');
+    mockCapturedStatus('');
 
     const result = await runVerify(context);
 
@@ -21,7 +21,7 @@ describe(runVerify, () => {
   });
 
   it('reports A/M/D rows as drift and exits 1', async () => {
-    mockStatus(' A .new\n M .diff\n D .gone\n');
+    mockCapturedStatus(' A .new\n M .diff\n D .gone\n');
 
     const result = await runVerify(context);
 
@@ -35,7 +35,7 @@ describe(runVerify, () => {
   });
 
   it('ignores R rows for the verdict and exits 0 when only scripts are pending', async () => {
-    mockStatus(' R normalize.sh\n R seed.sh\n');
+    mockCapturedStatus(' R normalize.sh\n R seed.sh\n');
 
     const result = await runVerify(context);
 
@@ -45,7 +45,7 @@ describe(runVerify, () => {
   });
 
   it('surfaces pending scripts while still failing on file drift', async () => {
-    mockStatus(' A .new\n R normalize.sh\n');
+    mockCapturedStatus(' A .new\n R normalize.sh\n');
 
     const result = await runVerify(context);
 
@@ -54,8 +54,3 @@ describe(runVerify, () => {
     expect(result.counts.pending).toBe(1);
   });
 });
-
-/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
