@@ -136,6 +136,7 @@ export type {
   FileEntry,
   FileOwnership,
   FileSide,
+  OwnedCollection,
 } from './schemas/file-schemas.ts';
 export {
   ArtifactContributionSchema,
@@ -145,6 +146,7 @@ export {
   FileEntrySchema,
   FileOwnershipSchema,
   FileSideSchema,
+  OwnedCollectionSchema,
 } from './schemas/file-schemas.ts';
 export type {
   ArtifactEntry,

@@ -349,7 +349,11 @@ describe(applyPlan, () => {
           targetId: 'claude',
           path: 'settings.json',
           status: 'added',
-          ownership: { kind: 'entries', sentinel: 'codeassembly', format: 'json' },
+          ownership: {
+            kind: 'entries',
+            format: 'json',
+            collections: [{ path: ['hooks'], sentinel: { path: ['source'], value: 'codeassembly' } }],
+          },
           planned: { hash: PLANNED_HASH },
           contributors: { artifacts: [{ artifactId: 'skill:review' }], partials: [] },
         },

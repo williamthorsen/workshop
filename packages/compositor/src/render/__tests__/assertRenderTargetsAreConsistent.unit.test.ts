@@ -82,6 +82,20 @@ describe(assertRenderTargetsAreConsistent, () => {
       ]);
     });
 
+    it('reports two declarations disagreeing about their host\u{2019}s format, a file having one', async () => {
+      const mixed: RenderTarget = {
+        ...claude,
+        ownedItems: [settingsHooks, { ...settingsHooks, collection: ['hooks', 'Stop'], format: 'yaml' }],
+      };
+
+      await expect(violationsOf([mixed])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[1].format',
+          message: 'is "yaml" where the same host is declared "json", and a file has one',
+        },
+      ]);
+    });
+
     it('reports a host a region deployment already writes whole', async () => {
       const contested: RenderTarget = {
         ...claude,

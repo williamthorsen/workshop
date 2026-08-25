@@ -33,7 +33,8 @@ export class RenderTargetConsistencyError extends ConsistencyError {
  * every deployment names a kind in `kinds`, that a region deployment's markers and host can do their jobs, that each
  * link grammar compiles and captures exactly one group, that an inlay stage's two marker templates can delimit a span
  * and name what they stand for with a reshape rule that compiles, and that no owned-items declaration contends for a
- * collection another already owns, sits on a region host, or carries an item its sentinel could never find again.
+ * collection another already owns, disagrees with a sibling about its host's format, sits on a region host, or carries
+ * an item its sentinel could never find again.
  *
  * A stage declared twice would run twice, and a kind deployed twice would put one artifact in two places; both are
  * authoring mistakes a declaration can express and no render could act on. Checking them here rather than at the first
@@ -96,9 +97,19 @@ export function assertRenderTargetsAreConsistent(
       violations,
     );
 
+    const formatsByHost = new Map<string, string>();
     for (const [position, declaration] of ownedItems.entries()) {
       const ownedAt = `${at}.ownedItems[${position}]`;
       collectHostCollisions(declaration.host, layoutRoots, `${ownedAt}.host`, violations);
+      const declaredFormat = formatsByHost.get(declaration.host);
+      if (declaredFormat === undefined) {
+        formatsByHost.set(declaration.host, declaration.format);
+      } else if (declaredFormat !== declaration.format) {
+        violations.push({
+          path: `${ownedAt}.format`,
+          message: `is "${declaration.format}" where the same host is declared "${declaredFormat}", and a file has one`,
+        });
+      }
       if (regionHosts.has(declaration.host)) {
         violations.push({
           path: `${ownedAt}.host`,

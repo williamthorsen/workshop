@@ -6,6 +6,8 @@ import { computeClosure } from '../../../closure/computeClosure.ts';
 import type { BlobStore } from '../../../portable/createBlobStore.ts';
 import { createBlobStore } from '../../../portable/createBlobStore.ts';
 import type { Blob, FileEntry } from '../../../schemas/file-schemas.ts';
+import type { OwnedItemsDeclaration } from '../../../schemas/owned-items-schemas.ts';
+import type { RenderTarget } from '../../../schemas/render-target-schemas.ts';
 import { selectArtifacts } from '../../../selection/selectArtifacts.ts';
 import type { CaptureCompositionOptions } from '../../../test-utils/captureComposition.ts';
 import { captureComposition } from '../../../test-utils/captureComposition.ts';
@@ -24,6 +26,19 @@ import { assertSnapshotFits } from '../assertSnapshotFits.ts';
 
 const brokenSkill = { ...buildCompositionSourceFiles(), 'skills/review/SKILL.md': '<!-- include: ./gone.md /-->\n' };
 
+const settingsHooks: OwnedItemsDeclaration = {
+  format: 'json',
+  collection: ['hooks'],
+  sentinel: { path: ['source'], value: 'codeassembly' },
+  host: 'settings.json',
+  items: [{ command: 'relay --on=stop' }],
+};
+
+/** Builds the fixture's target with one owned-items declaration added, which is the only thing these cases vary. */
+function buildOwningTarget(targetRoot: string): ReadonlyArray<RenderTarget> {
+  return [{ ...buildClaudeTarget(targetRoot), ownedItems: [settingsHooks] }];
+}
+
 describe(assembleFiles, () => {
   it('plans every destination a target does not yet hold as added', async () => {
     const { assembly } = await assemble();
@@ -34,6 +49,31 @@ describe(assembleFiles, () => {
       ['skills/review/SKILL.md', 'added'],
       ['skills/review/diagram.png', 'added'],
     ]);
+  });
+
+  it('plans an owned-items host beside the files the target\u{2019}s deployments write', async () => {
+    const { assembly } = await assemble({ buildTargets: buildOwningTarget });
+
+    expect(assembly.files.map(({ path, status }) => [path, status])).toStrictEqual([
+      ['CLAUDE.md', 'added'],
+      ['settings.json', 'added'],
+      ['skills/lint/SKILL.md', 'added'],
+      ['skills/review/SKILL.md', 'added'],
+      ['skills/review/diagram.png', 'added'],
+    ]);
+  });
+
+  it('plans an entries host the target already holds as changed, never sweeping it as removed', async () => {
+    const { assembly } = await assemble({
+      targetFiles: { 'settings.json': '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    }\n  ]\n}\n' },
+      buildTargets: buildOwningTarget,
+    });
+
+    expect(fileAt(assembly, 'settings.json')).toMatchObject({
+      status: 'changed',
+      ownership: { kind: 'entries', format: 'json' },
+      contributors: { artifacts: [], partials: [] },
+    });
   });
 
   it('carries an asset byte for byte, no target transforming what an artifact ships alongside', async () => {

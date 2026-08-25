@@ -28,9 +28,32 @@ describe('FileOwnershipSchema', () => {
   });
 
   it('accepts entry-level ownership within a structured document', () => {
-    const entries = { kind: 'entries', sentinel: 'codeassembly', format: 'yaml' };
+    const entries = {
+      kind: 'entries',
+      format: 'yaml',
+      collections: [{ path: ['eventHooks', 'events'], sentinel: { path: ['source'], value: 'codeassembly' } }],
+    };
 
     expect(FileOwnershipSchema.parse(entries)).toStrictEqual(entries);
+  });
+
+  it('accepts entry ownership over several collections of one host, which one file may hold', () => {
+    const entries = {
+      kind: 'entries',
+      format: 'json',
+      collections: [
+        { path: ['hooks', 'SessionStart'], sentinel: { path: ['source'], value: 'codeassembly' } },
+        { path: ['hooks', 'Stop'], sentinel: { path: ['source'], value: 'codeassembly' } },
+      ],
+    };
+
+    expect(FileOwnershipSchema.parse(entries)).toStrictEqual(entries);
+  });
+
+  it('if entry ownership names no collection, rejects it: the engine owns items somewhere or nowhere', () => {
+    const empty = { kind: 'entries', format: 'json', collections: [] };
+
+    expect(findIssuePaths(FileOwnershipSchema, empty)).toStrictEqual([['collections']]);
   });
 
   it('if a region omits its markers, rejects it for those fields', () => {
@@ -38,7 +61,11 @@ describe('FileOwnershipSchema', () => {
   });
 
   it('if entry ownership names an unsupported document format, rejects it for that field', () => {
-    const unsupported = { kind: 'entries', sentinel: 'codeassembly', format: 'toml' };
+    const unsupported = {
+      kind: 'entries',
+      format: 'toml',
+      collections: [{ path: ['hooks'], sentinel: { path: ['source'], value: 'codeassembly' } }],
+    };
 
     expect(findIssuePaths(FileOwnershipSchema, unsupported)).toStrictEqual([['format']]);
   });

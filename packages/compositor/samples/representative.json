@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "engineVersion": "0.0.0",
   "contentAvailability": "complete",
   "fingerprint": {
@@ -428,8 +428,20 @@
       "status": "changed",
       "ownership": {
         "kind": "entries",
-        "sentinel": "codeassembly",
-        "format": "json"
+        "format": "json",
+        "collections": [
+          {
+            "path": [
+              "hooks"
+            ],
+            "sentinel": {
+              "path": [
+                "source"
+              ],
+              "value": "codeassembly"
+            }
+          }
+        ]
       },
       "current": {
         "hash": "sha256:89d5530d09cda931790bdaba9c9a7c479d1472e873055af2a2576cd5c114d611"

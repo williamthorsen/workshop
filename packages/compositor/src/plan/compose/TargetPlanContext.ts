@@ -4,7 +4,7 @@ import type { ClosureArtifact } from '../../schemas/closure-schemas.ts';
 import type { FileEntry } from '../../schemas/file-schemas.ts';
 import type { ArtifactId, KindId, TargetId } from '../../schemas/scalar-schemas.ts';
 import type { ArtifactAsset } from '../../snapshot/readArtifactAssets.ts';
-import type { ClaimedFile, HostState } from '../../snapshot/readTargetState.ts';
+import type { ClaimedFile, HostState, OwnedHostState } from '../../snapshot/readTargetState.ts';
 import type { DeployedNameLookup } from '../../tokens/rewriteTokens.ts';
 
 /** How one artifact's own content at one destination stands against what that destination holds. */
@@ -41,5 +41,7 @@ export interface TargetPlanContext {
   readonly claimed: ReadonlyMap<string, ClaimedFile>;
   /** What the target's region hosts hold now, by the kind whose deployment declared each. */
   readonly hosts: ReadonlyMap<KindId, HostState>;
+  /** What the target's entries hosts hold now, by path: an entries host answers to no kind. */
+  readonly ownedHosts: ReadonlyMap<string, OwnedHostState>;
   readonly resolveDeployedName: DeployedNameLookup;
 }
