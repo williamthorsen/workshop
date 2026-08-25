@@ -6,7 +6,7 @@ const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
 /**
  * Schema for one file the compile read to produce a kit's bundle.
  *
- * `kind` decides what the hash covers. A `module` records the file's bytes; an `inline` records the
+ * `kind` decides what the hash covers. A `module` records the file's contents; an `inline` records the
  * projection `pickJson` substituted, so an edit to a field the kit did not pick is not staleness. Only
  * an inline record carries `paths`, which is the specifier that produced the projection and so what a
  * reader needs to reproduce it.

@@ -10,7 +10,7 @@ export async function runGit(path: string, ...args: string[]): Promise<string> {
 }
 
 /**
- * Runs a git command in the given directory and returns its stdout byte for byte.
+ * Runs a git command in the given directory and returns its stdout unaltered.
  *
  * Reach for this where a path is part of the output: trimming strips a leading space or tab from the first path of a
  * listing, and the file it names then reads as missing.

@@ -448,7 +448,7 @@ Two consequences follow from the value being resolved at compile time:
 
 ### TypeScript settings
 
-Kits compile with no `tsconfig.json`. Whatever config sits above a kit is ignored, so the same source compiles to the same bytes in any repository and a published bundle is the one its author built.
+Kits compile with no `tsconfig.json`. Whatever config sits above a kit is ignored, so the same source compiles to the same bundle in any repository and a published bundle is the one its author built.
 
 Kits are bundled by esbuild, and its defaults apply, with two settings declared:
 
@@ -633,7 +633,7 @@ FAIL  Total: 1 error, 1 passed, 1 skipped (151ms)
 == @acme/release-kit@2.1.0 / npm-auto-publish / repo
 ```
 
-Once a style is named explicitly, output is byte-identical to a terminal or a pipe. `--style` is independent of `--json`: the JSON document never changes.
+Once a style is named explicitly, output is identical to a terminal or a pipe. `--style` is independent of `--json`: the JSON document never changes.
 
 ### Suppressing a finding
 
@@ -1031,7 +1031,7 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 | `sourceHash`          | Hash of that source, read back out of its own `inputs` record                               |
 | `targetHash`          | Hash of the compiled bundle                                                                 |
 
-`inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its bytes. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
+`inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its contents. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
 
 The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.
 
@@ -1208,7 +1208,9 @@ The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `m
 
 Under `--json`, each kit adds `rebuildStatus`. A `mismatch` carries `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` carries `rebuildError`. Without the flag, none of these fields appears.
 
-Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled; an esbuild or dependency upgrade mismatches wherever it changes a bundle's bytes, and the mismatch clause names it. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
+Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled; an esbuild or dependency upgrade mismatches wherever it changes a bundle, and the mismatch clause names it. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
+
+The directory the command runs in is not one of them. The same source in the same package always compiles to the same bundle, so `rdy verify --rebuild` returns the same verdict from anywhere in the repository.
 
 ```yaml
 - run: npx rdy verify --rebuild

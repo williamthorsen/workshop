@@ -49,7 +49,7 @@ export interface EsbuildComparison {
  * mismatch compares the entry's recorded `esbuildVersion` and `bundledDependencies` against the
  * rebuild's own record to name which versions changed.
  *
- * Compares against the on-disk bytes and never against `targetHash`, so the verdict is independent
+ * Compares against the bundle on disk and never against `targetHash`, so the verdict is independent
  * of the manifest's bookkeeping and can contradict it. A kit whose recorded hash has gone wrong
  * reports drift and a passing rebuild together, which is how the two verdicts distinguish a corrupt
  * bundle from corrupt bookkeeping.
@@ -92,7 +92,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
   }
 
   // The generated banner embeds the compiling readyup's version, so a version move alone makes an
-  // untouched source rebuild to different bytes. Carry the recorded version to keep that cause
+  // untouched source rebuild to a different bundle. Carry the recorded version to keep that cause
   // distinguishable from a hand edit.
   const compiledWith = kit.readyupVersion !== VERSION ? kit.readyupVersion : undefined;
 

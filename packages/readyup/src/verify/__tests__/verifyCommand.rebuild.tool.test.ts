@@ -49,10 +49,12 @@ describe('verifyCommand --rebuild', () => {
     tempDir = mkdtempSync(path.join(tmpdir(), 'verify-rebuild-'));
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '1.0.0' }));
     writeFileSync(path.join(tempDir, 'kit.ts'), KIT_SOURCE);
+    // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
+    // temporary directory happens to hold a manifest.
+    writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
 
     originalCwd = process.cwd();
-    // esbuild renders each module's path against the working directory, so the fixture is compiled from
-    // the directory it is verified from, as a real project is.
+    // `runVerify` names the manifest by a relative path, as a real project's invocation does.
     process.chdir(tempDir);
 
     // Record the manifest from a real compile, so its hashes are the ones the pipeline produces.
@@ -87,6 +89,18 @@ describe('verifyCommand --rebuild', () => {
 
   it('passes an untouched tree', async () => {
     const { exitCode, stdout } = await runVerify();
+
+    expect(exitCode).toBe(0);
+    expect(readPayload(stdout)).toMatchObject({
+      passed: true,
+      kits: [{ name: 'demo', status: 'ok', sourceStatus: 'ok', rebuildStatus: 'ok' }],
+    });
+  });
+
+  it('passes an untouched tree from a directory other than the one the kit was compiled in', async () => {
+    process.chdir(originalCwd);
+
+    const { exitCode, stdout } = await runVerify({ manifestPath: path.join(tempDir, 'manifest.json') });
 
     expect(exitCode).toBe(0);
     expect(readPayload(stdout)).toMatchObject({
@@ -234,7 +248,7 @@ function readPayload(stdout: string): JsonVerifyOutput {
 }
 
 /**
- * Rewrites the bundle's version stamp and re-records the manifest against the restamped bytes.
+ * Rewrites the bundle's version stamp and re-records the manifest against the restamped bundle.
  *
  * The stamp, the recorded `targetHash`, and the recorded `readyupVersion` all name the earlier
  * readyup, which is the state a version bump leaves behind.
@@ -254,11 +268,11 @@ function restampBundle(tempDir: string, version: string): void {
  * Runs `verify` over the tempdir's manifest with JSON output on and the rebuild check on unless waived,
  * returning its exit code alongside what it wrote.
  */
-async function runVerify({ rebuild = true }: { rebuild?: boolean } = {}) {
+async function runVerify({ rebuild = true, manifestPath = 'manifest.json' } = {}) {
   using io = captureStdio();
 
   const rebuildFlag = rebuild ? ['--rebuild'] : [];
-  const exitCode = await verifyCommand(['--manifest', 'manifest.json', ...rebuildFlag, '--json']);
+  const exitCode = await verifyCommand(['--manifest', manifestPath, ...rebuildFlag, '--json']);
 
   return { exitCode, stdout: io.stdout };
 }

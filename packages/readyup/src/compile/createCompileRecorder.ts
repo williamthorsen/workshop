@@ -18,7 +18,7 @@ export interface CompileRecorder {
   /** Every file read so far, one record per path and kind, in the order the reads happened. */
   readonly inputs: CompiledInput[];
 
-  /** Reads a module and records its bytes. */
+  /** Reads a module and records its contents. */
   readModule(filePath: string): string;
 
   /**

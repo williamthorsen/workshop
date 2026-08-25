@@ -15,8 +15,8 @@ import { JsonProjectionError } from './JsonProjectionError.ts';
  * projection's serialization is hashed it is a format, so a second implementation of it would drift and
  * the two would disagree about a file neither had changed.
  *
- * Returns the serialized form rather than the projected object, which is what makes the bytes a compile
- * hashes the bytes it substitutes.
+ * Returns the serialized form rather than the projected object, so a compile hashes exactly what it
+ * substitutes.
  */
 export function projectJsonFile(filePath: string, paths: JsonPathSpec): string {
   let contents: string;
