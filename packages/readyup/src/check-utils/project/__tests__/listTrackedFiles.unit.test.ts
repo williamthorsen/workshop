@@ -95,7 +95,7 @@ function listInvocationCount(): number {
   return execFileAsync.mock.calls.filter(([, args]) => args.includes('ls-files')).length;
 }
 
-/** Answers the repo probe and the listing that follows it, defaulting the probe to a working tree. */
+/** Stubs the repo probe and the listing that follows it, defaulting the probe to a working tree. */
 function respondWith(options: { isRepo?: boolean; trackedOutput?: string }): void {
   const { isRepo = true, trackedOutput = '' } = options;
   execFileAsync.mockImplementation((_file, args) => {

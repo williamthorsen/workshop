@@ -197,7 +197,7 @@ describe(runHumanMode, () => {
   });
 
   // One blank separates blocks of the same kit, and the summary that tallies them is separated the same way.
-  it('parts one block from the next with a single blank line', async () => {
+  it('separates one block from the next with a single blank line', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -290,7 +290,7 @@ describe(runHumanMode, () => {
 
   // The heading below a gap names the kit it opens, so a kit boundary takes the same one blank line every
   // other boundary takes. The run's first block opens with none.
-  it('parts one kit from the next with the same single blank line, opening with none', async () => {
+  it('separates one kit from the next with the same single blank line, opening with none', async () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });

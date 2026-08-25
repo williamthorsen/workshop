@@ -98,7 +98,7 @@ export function warnOnKitStaleness(
 /**
  * Finds the manifest entry describing a kit, matching on resolved compiled path.
  *
- * Matching by name instead would misfire wherever a kit's name and its file part company: `--file`
+ * Matching by name instead would misfire wherever a kit's name and its file differ: `--file`
  * names a kit by an arbitrary path, and a custom `outDir` puts a differently-named entry's output
  * where this one's would go.
  */

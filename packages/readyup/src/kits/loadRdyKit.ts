@@ -83,7 +83,7 @@ function diagnoseMissingKit(resolvedPath: string): string {
   const available = listAvailableKits(dir, extension);
 
   // Scaffolding is the remedy only for a project that has no kits at all. A directory holding kits
-  // under other names is answered with those names, whichever kit was asked for.
+  // under other names gets those names back, whichever kit was asked for.
   if (available.length === 0 && name === 'default' && dir === path.resolve(process.cwd(), KITS_DIR)) {
     return `Kit "default" not found at ${toDisplayPath(resolvedPath)}. Run 'rdy init' to create one.`;
   }

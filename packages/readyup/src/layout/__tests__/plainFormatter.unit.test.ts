@@ -58,7 +58,7 @@ describe('rendered output', () => {
     expect(noun).toBe('      deploy');
   });
 
-  it('parts a detail from the name with an ASCII separator', () => {
+  it('separates a detail from the name with an ASCII separator', () => {
     expect(engine.formatCheckLine({ token: 'failedWarn', name: 'lint', detail: 'not installed' })).toBe(
       'WARN  lint - not installed',
     );

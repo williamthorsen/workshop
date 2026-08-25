@@ -15,7 +15,7 @@ export interface UnresolvableImports {
 /**
  * A compiled kit binding readyup symbols the running readyup cannot supply.
  *
- * Carries findings rather than a composed message: the remedy depends on where the kit came from, which only the
+ * Holds findings rather than a composed message: the remedy depends on where the kit came from, which only the
  * boundary that resolved the kit knows.
  */
 export class UnresolvableKitImportsError extends Error {

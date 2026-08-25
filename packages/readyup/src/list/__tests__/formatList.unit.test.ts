@@ -85,7 +85,7 @@ describe(formatOwnerView, () => {
   });
 
   // A blank separates one section from the next, and the first section opens the output with no blank at all.
-  it('parts one section from the next with a blank line, opening with none', () => {
+  it('separates one section from the next with a blank line, opening with none', () => {
     const lines = formatOwnerView({
       internalKits: ['deploy'],
       compiledKits: ['monitor'],
@@ -460,7 +460,7 @@ describe(formatPackagesView, () => {
     expect(result).not.toContain('preflight \u{00B7}');
   });
 
-  it('parts one package block from the next with a blank line', () => {
+  it('separates one package block from the next with a blank line', () => {
     const result = formatPackagesView({
       groups: [
         buildGroup({ packageName: '@acme/kits', kits: ['drift'] }),
@@ -548,7 +548,7 @@ describe(formatRecursiveView, () => {
     expect(result).toContain('demo');
   });
 
-  it('parts one project block from the next with a blank line, opening with none', () => {
+  it('separates one project block from the next with a blank line, opening with none', () => {
     const lines = formatRecursiveView({
       projects: [buildProject({ dir: '.', kits: ['demo'] }), buildProject({ dir: 'packages/ui', kits: ['deploy'] })],
     }).split('\n');
@@ -674,7 +674,7 @@ describe(formatRecursivePackagesView, () => {
     expect(result).toContain(`${COMPILED} drift \u{00B7} Dependency drift`);
   });
 
-  it('parts one package from the next with a blank line, and keeps the directory against its first', () => {
+  it('separates one package from the next with a blank line, and keeps the directory against its first', () => {
     const result = formatRecursivePackagesView({
       projects: [
         buildProjectPackages({

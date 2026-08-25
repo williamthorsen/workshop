@@ -559,7 +559,7 @@ A check line reads `token name <separator> detail [progress] (duration)`. The se
 
 **Every block heads itself with a breadcrumb.** A run block is headed `━━`, and its segments read source, then kit, then checklist, separated by a spaced slash. A segment appears only where it distinguishes something: the source where the kit came from anywhere but the local kits directory or the working directory, the kit where the run holds more than one or a source segment is already there, the checklist where the kit runs more than one. A lone local kit running one checklist heads nothing at all. The summary table heads itself at `━━` too, as a peer of the blocks it tallies, and each of its rows repeats the breadcrumb of the block it summarizes, the same segments elided; `Fixes` and each command's own heading stay at `──`, which heads a section and nothing else.
 
-Blank lines part blocks rather than decorate headings: none opens a command's output, follows a heading, or falls inside a block, and exactly one parts one block from the next, a kit boundary included. More than one checklist anywhere in the run adds a summary table:
+Blank lines separate blocks rather than decorate headings: none opens a command's output, follows a heading, or falls inside a block, and exactly one separates one block from the next, a kit boundary included. More than one checklist anywhere in the run adds a summary table:
 
 ```
 ━━ 📋 build
@@ -618,7 +618,7 @@ A run spanning several kits tallies them together, each row naming its source an
 
 `CI` catches a runner that attaches a pseudo-terminal; the terminal check catches an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. Naming a style that does not exist fails the invocation.
 
-In `plain`, every character is printable ASCII, heading rules and separators included. A role glyph is omitted while keeping its column, so names stay aligned; in a breadcrumb, where there is no column to keep, the spaced separator is what parts one segment from the next:
+In `plain`, every character is printable ASCII, heading rules and separators included. A role glyph is omitted while keeping its column, so names stay aligned; in a breadcrumb, where there is no column to keep, the spaced separator is what separates one segment from the next:
 
 ```
 == integration

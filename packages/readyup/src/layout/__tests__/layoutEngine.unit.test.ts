@@ -199,7 +199,7 @@ describe('formatHeading', () => {
 });
 
 describe('formatBreadcrumb', () => {
-  it('parts each segment from the next with a spaced separator', () => {
+  it('separates each segment from the next with a spaced separator', () => {
     const rendered = engine.formatBreadcrumb(
       [
         { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
