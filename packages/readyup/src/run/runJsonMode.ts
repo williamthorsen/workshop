@@ -30,7 +30,7 @@ interface JsonRunSettings {
  * Each iteration is its own error boundary: once the run has dispatched, anything the loop body
  * throws is attributable to that kit alone, so it becomes an entry in the report rather than
  * discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
- * — a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
+ * -- a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
  */
 export async function runJsonMode(
   kitEntries: ResolvedKitEntry[],

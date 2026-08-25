@@ -108,7 +108,7 @@ function resolveConfigPath(fromDir: string, overridePath: string | undefined): s
 /**
  * Fills every key the config file left out with its default.
  *
- * The guards are redundant at runtime — Zod validated the shape already — but they narrow `raw`, which
+ * The guards are redundant at runtime -- Zod validated the shape already -- but they narrow `raw`, which
  * is `Record<string, unknown> & RdyConfig` after the assertion.
  */
 function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyConfig {

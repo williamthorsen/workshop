@@ -21,10 +21,9 @@ export interface LoadRemoteKitOptions {
  * embedded `__readyupVersion`, which is undefined for a kit compiled before that field existed or
  * fetched from a third-party source that omits it.
  *
- * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so
- * `Authorization` and anything else, such as a corporate proxy or telemetry header, arrive already
- * formatted. The fetched content is written to a temp file for dynamic import and cleaned up
- * afterwards. Throws `RemoteFetchError` for a non-2xx
+ * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so `Authorization` and
+ * anything else, such as a corporate proxy or telemetry header, arrive already formatted. The fetched content is
+ * written to a temp file for dynamic import and cleaned up afterwards. Throws `RemoteFetchError` for a non-2xx
  * response, and a plain `Error` for a body that is not an evaluable kit.
  */
 export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {

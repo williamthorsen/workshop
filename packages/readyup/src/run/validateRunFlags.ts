@@ -63,7 +63,7 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
 
 // region | Helpers
 
-/** Names the source flags this invocation gave, alphabetically, as the exclusivity error lists them. */
+/** Names the source flags present in this invocation, alphabetically, as the exclusivity error lists them. */
 function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');

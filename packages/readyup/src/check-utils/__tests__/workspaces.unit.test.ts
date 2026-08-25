@@ -228,7 +228,7 @@ describe(discoverWorkspaces, () => {
     it('does not traverse into node_modules', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['**/*'] });
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
-      // A fake workspace hiding inside node_modules — must not appear in results.
+      // A fake workspace hiding inside node_modules -- must not appear in results.
       writeWorkspacePackage(temp, 'node_modules/sneaky', { name: 'sneaky' });
 
       const workspaces = discoverWorkspaces();

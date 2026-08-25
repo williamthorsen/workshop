@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Version of the `compile` payload.
  *
- * Bumped when a field is removed, renamed, or re-typed — never when an optional field is added.
+ * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
 export const SCHEMA_VERSION = 1;
 

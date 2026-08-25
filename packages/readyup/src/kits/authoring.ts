@@ -1,28 +1,28 @@
 import type { RdyChecklist, RdyConfig, RdyKit, RdyStagedChecklist } from './types.ts';
 
-/** Type-safe identity function for defining repo-level rdy settings. */
+/** Returns repo-level rdy settings unchanged, so their literal is type-checked where it is written. */
 export function defineRdyConfig(config: RdyConfig): RdyConfig {
   return config;
 }
 
-/** Type-safe identity function for defining a rdy kit in a config file. */
+/** Returns a rdy kit unchanged, so its literal is type-checked where it is written in a config file. */
 export function defineRdyKit(kit: RdyKit): RdyKit {
   return kit;
 }
 
-/** Type-safe identity function for defining an array of checklists in a config file. */
+/** Returns an array of checklists unchanged, so its literal is type-checked where it is written. */
 export function defineChecklists(
   checklists: Array<RdyChecklist | RdyStagedChecklist>,
 ): Array<RdyChecklist | RdyStagedChecklist> {
   return checklists;
 }
 
-/** Type-safe identity function for defining a flat checklist. */
+/** Returns a flat checklist unchanged, so its literal is type-checked where it is written. */
 export function defineRdyChecklist(checklist: RdyChecklist): RdyChecklist {
   return checklist;
 }
 
-/** Type-safe identity function for defining a staged checklist. */
+/** Returns a staged checklist unchanged, so its literal is type-checked where it is written. */
 export function defineRdyStagedChecklist(checklist: RdyStagedChecklist): RdyStagedChecklist {
   return checklist;
 }

@@ -44,8 +44,8 @@ export function findPnpmCatalogVersion(
  * Returns the pattern strings in a `pnpm-workspace.yaml` file's `packages` block-sequence, or `null`
  * when the `packages` key is absent.
  *
- * Throws a pathful, line-pointing error on YAML features outside the supported subset: anchors, flow
- * sequences, tags, and negation patterns.
+ * Throws a pathful, line-pointing error on any YAML construct outside the block-sequence subset it
+ * reads, anchors, flow sequences, tags, and negation patterns among them.
  */
 export function readPnpmWorkspacePackages(absolutePath: string): string[] | null {
   const content = readFileSync(absolutePath, 'utf8');

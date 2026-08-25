@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Version of the `list` payload.
  *
- * Bumped when a field is removed, renamed, or re-typed — never when an optional field is added.
+ * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
 export const SCHEMA_VERSION = 1;
 
@@ -14,7 +14,7 @@ export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKin
  * The installed package a listed kit was published by.
  *
  * Present only for a kit reached through a package source. Such a kit keeps `kind: 'compiled'`, because
- * that is what it is — a compiled bundle — and only its provenance is new. Recording provenance here
+ * that is what it is -- a compiled bundle -- and only its provenance is new. Recording provenance here
  * rather than as a third `kind` also keeps the payload additive: widening a closed set would bump
  * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
  *

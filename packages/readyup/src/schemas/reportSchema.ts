@@ -5,7 +5,7 @@ import { CountsSchema, ErrorBodySchema, SeveritySchema, WarningSchema } from './
 /**
  * Version of the run-report payload.
  *
- * Bumped when a field is removed, renamed, or re-typed — never when an optional field is added.
+ * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
 export const SCHEMA_VERSION = 1;
 
@@ -32,7 +32,7 @@ export const ProgressSchema = z
  *
  * `ok` is three-valued rather than optional: `null` is the verdict a skipped check has, not a
  * missing field. Every other optional field is omitted when it holds nothing, so a passed check
- * with no detail serializes to five keys. Nesting is recursive — `checks` holds the results of
+ * with no detail serializes to five keys. Nesting is recursive -- `checks` holds the results of
  * checks that ran only because this one passed.
  */
 export const CheckEntrySchema = z

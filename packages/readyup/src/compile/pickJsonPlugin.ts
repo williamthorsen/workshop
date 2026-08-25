@@ -120,7 +120,7 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Jso
 
   let parsed: unknown;
   try {
-    // JSON.parse requires double quotes — replace single-quote delimiters only (not interior chars).
+    // JSON.parse requires double quotes -- replace single-quote delimiters only (not interior chars).
     // Path keys must be plain identifiers (no embedded quotes or special characters).
     const jsonText = rest.replace(/'([^']*?)'/g, '"$1"');
     parsed = JSON.parse(jsonText);

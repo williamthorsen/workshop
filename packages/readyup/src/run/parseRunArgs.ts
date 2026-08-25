@@ -110,7 +110,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   validateRunFlags(parsed, kitSpecifiers);
 
   // Parse checklists from the flag value. An empty list selects every checklist, so a value that
-  // names none — `,,,` — would invert what an explicit filter asks for.
+  // names none -- `,,,` -- would invert what an explicit filter asks for.
   const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
   if (checklists?.length === 0) {
     throw usageError(CHECKLISTS_HINT);

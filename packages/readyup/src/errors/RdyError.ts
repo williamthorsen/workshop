@@ -5,11 +5,11 @@ import { extractHint } from './error-handling.ts';
 /**
  * Diagnosis of a failure that prevented rdy from completing an invocation.
  *
- * - `usage`: the invocation is malformed — an unknown flag, a missing value, an impossible
+ * - `usage`: the invocation is malformed -- an unknown flag, a missing value, an impossible
  *   combination of arguments.
  * - `config`: repo configuration or a kit manifest could not be read, written, or parsed.
  * - `kit-load`: a kit could not be resolved, fetched, or evaluated.
- * - `internal`: anything else — a defect in rdy or an unexpected environment failure.
+ * - `internal`: anything else -- a defect in rdy or an unexpected environment failure.
  */
 export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 

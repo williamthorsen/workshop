@@ -73,7 +73,7 @@ describe('--packages run path wiring', () => {
     ]);
   });
 
-  // Selection reads names, so the manifest-less path needs no handling of its own — but it has to answer alike.
+  // Selection reads names, so the manifest-less path needs no handling of its own -- but it has to answer alike.
   it('selects by name when a package ships no manifest', () => {
     installPackage('plain-kit', ['default', 'preflight'], { hasManifest: false });
 

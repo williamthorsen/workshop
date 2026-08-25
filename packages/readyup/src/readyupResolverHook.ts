@@ -6,7 +6,7 @@
  * Registered by `src/bin/rdy.ts` via `module.register()` before any kit is loaded.
  * Compiled kits leave `readyup` imports as live specifiers (see `compileConfig.ts`
  * external list); this hook ensures those specifiers resolve to the runner's
- * installation regardless of where the kit file lives on disk — making
+ * installation regardless of where the kit file lives on disk -- making
  * `npx readyup` and `rdy run --from ...` work without requiring readyup as a
  * project dependency.
  *

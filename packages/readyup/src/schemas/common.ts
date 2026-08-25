@@ -12,7 +12,7 @@ export const SeveritySchema = z.enum(['error', 'warn', 'recommend']).meta({ id: 
 export const ErrorCodeSchema = z.enum(['config', 'internal', 'kit-load', 'usage']).meta({ id: 'ErrorCode' });
 
 /**
- * The error body the envelope holds and, verbatim, a per-kit error entry inside a report holds too.
+ * The error body in the envelope and, verbatim, in a per-kit error entry inside a report.
  *
  * `hint` names one action that would clear the failure, present only where the diagnosis alone would
  * not suggest it. It is absent rather than empty when there is nothing to suggest, and never appears
@@ -30,7 +30,7 @@ export const ErrorBodySchema = z
 const CountSchema = z.int().min(0);
 
 /**
- * Result tallies for one scope of a run — the whole report, one kit, or one checklist.
+ * Result tallies for one scope of a run -- the whole report, one kit, or one checklist.
  *
  * `errors`/`warnings`/`recommendations` bucket failures by severity; `blocked` (precondition-skipped)
  * and `optional` (n/a-skipped) bucket skips by reason. Counts nest under their own object so they

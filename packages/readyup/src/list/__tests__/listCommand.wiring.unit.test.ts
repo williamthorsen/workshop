@@ -12,7 +12,7 @@ import { listCommand } from '../listCommand.ts';
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the
  * filesystem enumerator. The unit tests cover each mode's branches; this locks in the wiring the
- * manifest-less fallback depends on — that `list --from` looks where `run --from` loads.
+ * manifest-less fallback depends on -- that `list --from` looks where `run --from` loads.
  */
 describe('listCommand wiring', () => {
   let tempDir: string;
