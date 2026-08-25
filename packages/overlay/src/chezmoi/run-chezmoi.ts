@@ -75,7 +75,7 @@ function buildArgs(context: ChezmoiContext, persistentStatePath: string, configP
 function interpretExecFileError(error: unknown): CapturedResult {
   if (isExecFileError(error)) {
     if (error.code === 'ENOENT') {
-      throw new Error('chezmoi not found on PATH — install it (e.g. `brew install chezmoi`)');
+      throw new Error('chezmoi not found on PATH; install it (e.g. `brew install chezmoi`)');
     }
     return {
       stdout: typeof error.stdout === 'string' ? error.stdout : '',
@@ -86,7 +86,7 @@ function interpretExecFileError(error: unknown): CapturedResult {
   throw error;
 }
 
-/** Shape of a Node `execFile` rejection carrying captured streams and an exit code. */
+/** Shape of a Node `execFile` rejection with captured streams and an exit code. */
 interface ExecFileError {
   code?: number | string;
   stdout?: unknown;

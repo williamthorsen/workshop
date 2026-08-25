@@ -32,7 +32,7 @@ export interface OverlayCounts {
   pending: number;
 }
 
-/** The structured result of an overlay run — never printed text. */
+/** The structured result of an overlay run, never printed text. */
 export interface OverlayResult {
   mode: OverlayMode;
   entries: OverlayEntry[];

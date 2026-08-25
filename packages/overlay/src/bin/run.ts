@@ -7,7 +7,7 @@ import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { formatReport } from '../reporting/formatReport.ts';
 import { parseArgs } from './parseArgs.ts';
 
-export const HELP = `overlay — overlay a chezmoi source tree onto a target directory
+export const HELP = `overlay: overlay a chezmoi source tree onto a target directory
 
 Usage:
   overlay <source-dir> [target-dir] [--verify|--create|--force] [--json] [--help]
@@ -42,7 +42,7 @@ Exit codes:
  *
  * Writes the help text or the run result (text report, or JSON under `--json`)
  * to stdout, and any error as a single-line JSON object to stderr. Never calls
- * `process.exit` — the bin entrypoint owns that, keeping this function testable.
+ * `process.exit`: The bin entrypoint owns that, keeping this function testable.
  */
 export async function run(argv: string[]): Promise<number> {
   try {
