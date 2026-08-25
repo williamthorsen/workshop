@@ -195,7 +195,7 @@ Examples:
   rdy run --fail-on warn                 Fail the run on warnings as well as errors
   rdy run --quiet                        Report only what is not passing
   rdy run --diagnose                     Report skips whose check would have passed
-  rdy run --json --detail summary        Emit a JSON report carrying only failed checks
+  rdy run --json --detail summary        Emit a JSON report with only failed checks
 
 ${DOCS_POINTER}
 `;

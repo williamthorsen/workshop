@@ -11,7 +11,7 @@ const CREDENTIAL_STATUSES = new Set([401, 403, 404]);
 /**
  * Remediation a provider's credential failure calls for.
  *
- * Phrased conditionally because 404 is genuinely ambiguous: GitHub answers it for a private
+ * Phrased conditionally because 404 is genuinely ambiguous: GitHub returns it for a private
  * repository fetched anonymously as well as for one that does not exist, so the hint must not assert
  * which case the reader is in.
  */

@@ -24,7 +24,7 @@ const textsByCwd = new Map<string, Map<string, string | undefined>>();
 /**
  * Reads one path's text, from the cache where a sweep already read it, and `undefined` where the path holds none.
  *
- * The exclusions governing what a sweep reads do not apply here. This answers about a path its caller already holds,
+ * The exclusions governing what a sweep reads do not apply here. This reports on a path its caller already holds,
  * such as the one a finding names, rather than deciding what a sweep goes looking at.
  */
 export function readSourceText(path: string): string | undefined {
