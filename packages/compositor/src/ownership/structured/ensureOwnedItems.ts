@@ -2,7 +2,7 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { type DocumentAccess, type ItemHandle, openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import { applySentinel, carriesSentinel } from './sentinel.ts';
+import { applySentinel, hasSentinel } from './sentinel.ts';
 
 /**
  * Installs `items` as the engine's contribution to a structured host, leaving everything else in it alone.
@@ -45,7 +45,7 @@ export function ensureOwnedItems(
     return { content: document.serialize() };
   }
 
-  const merged = spliceOwned(located.items, desired, (item) => carriesSentinel(document.toPlain(item), spec.sentinel));
+  const merged = spliceOwned(located.items, desired, (item) => hasSentinel(document.toPlain(item), spec.sentinel));
   if (readsIdentically(document, located.items, merged)) {
     return { content };
   }
@@ -76,16 +76,16 @@ function renderItems(document: DocumentAccess, items: ReadonlyArray<ItemHandle>)
 function spliceOwned(
   current: ReadonlyArray<ItemHandle>,
   desired: ReadonlyArray<ItemHandle>,
-  carriesOwnership: (item: ItemHandle) => boolean,
+  isOwned: (item: ItemHandle) => boolean,
 ): ReadonlyArray<ItemHandle> {
-  const firstOwned = current.findIndex((item) => carriesOwnership(item));
+  const firstOwned = current.findIndex((item) => isOwned(item));
   if (firstOwned === -1) {
     return [...current, ...desired];
   }
   return [
     ...current.slice(0, firstOwned),
     ...desired,
-    ...current.slice(firstOwned + 1).filter((item) => !carriesOwnership(item)),
+    ...current.slice(firstOwned + 1).filter((item) => !isOwned(item)),
   ];
 }
 

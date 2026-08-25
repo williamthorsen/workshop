@@ -10,7 +10,7 @@ import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
 import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
 import { INLAY_NAME_PLACEHOLDER } from '../inlays/inlay-markers.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
-import { allowsStamping, carriesSentinel, stampSentinel } from '../ownership/structured/sentinel.ts';
+import { allowsStamping, hasSentinel, stampSentinel } from '../ownership/structured/sentinel.ts';
 import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
 import type { OwnedItemsDeclaration } from '../schemas/owned-items-schemas.ts';
@@ -221,7 +221,7 @@ function collectUnmarkableItems(declaration: OwnedItemsDeclaration, path: string
   for (const [position, item] of declaration.items.entries()) {
     const at = `${path}.items[${position}]`;
     if (!stamps) {
-      if (!carriesSentinel(item, declaration.sentinel)) {
+      if (!hasSentinel(item, declaration.sentinel)) {
         violations.push({
           path: at,
           message: 'does not have the sentinel, which this declaration cannot write, so it could never be found again',

@@ -2,7 +2,7 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import { carriesSentinel } from './sentinel.ts';
+import { hasSentinel } from './sentinel.ts';
 
 /**
  * Deletes every item the engine owns from a structured host, then prunes the structure the deletion emptied.
@@ -27,7 +27,7 @@ export function removeOwnedItems(content: string, spec: OwnedItemsSpec): Ownersh
     return { content };
   }
 
-  const kept = located.items.filter((item) => !carriesSentinel(document.toPlain(item), spec.sentinel));
+  const kept = located.items.filter((item) => !hasSentinel(document.toPlain(item), spec.sentinel));
   if (kept.length === located.items.length) {
     return { content };
   }

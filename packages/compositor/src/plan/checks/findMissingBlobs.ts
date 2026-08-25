@@ -7,12 +7,12 @@ export function findMissingBlobs(plan: Plan): Array<Violation> {
     return [];
   }
 
-  const stored = new Set(Object.keys(plan.blobs));
+  const storedHashes = new Set(Object.keys(plan.blobs));
   const violations: Array<Violation> = [];
   for (const [index, file] of plan.files.entries()) {
     for (const side of ['current', 'planned'] as const) {
       const hash = side === 'current' ? file.current?.hash : file.planned?.hash;
-      if (hash !== undefined && !stored.has(hash)) {
+      if (hash !== undefined && !storedHashes.has(hash)) {
         violations.push({
           path: `files[${index}].${side}.hash`,
           message: `names "${hash}", which blobs does not contain`,

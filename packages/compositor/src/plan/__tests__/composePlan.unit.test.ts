@@ -79,10 +79,10 @@ describe(composePlan, () => {
     const { config, snapshot } = await captureComposition();
     const plan = composePlan(config, snapshot);
     const named = plan.files.flatMap(({ current, planned }) => [current?.hash, planned?.hash]);
-    const stored = new Set(Object.keys(plan.blobs));
+    const storedHashes = new Set(Object.keys(plan.blobs));
 
     expect(plan.contentAvailability).toBe('complete');
-    expect(named.filter((hash) => hash !== undefined).every((hash) => stored.has(hash))).toBe(true);
+    expect(named.filter((hash) => hash !== undefined).every((hash) => storedHashes.has(hash))).toBe(true);
   });
 
   it('runs every id-keyed table lexicographically', async () => {

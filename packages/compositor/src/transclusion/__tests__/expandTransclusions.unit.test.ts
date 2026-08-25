@@ -196,7 +196,7 @@ describe(expandTransclusions, () => {
     expect(requireFailed(result).code).toBe('unrecognized-parameter');
   });
 
-  it('accepts a partial containing a placeholder that no slot fills, dropping the placeholder line', async () => {
+  it('accepts a partial with a placeholder that no slot fills, dropping the placeholder line', async () => {
     using tree = createTempTree({
       '_data/frame.md': 'Before.\n<!-- children -->\nAfter.\n',
       'skills/review.md': '<!-- include: ../_data/frame.md / -->\n',

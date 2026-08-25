@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
-import { allowsStamping, applySentinel, carriesSentinel, stampSentinel } from '../sentinel.ts';
+import { allowsStamping, applySentinel, hasSentinel, stampSentinel } from '../sentinel.ts';
 
 type Sentinel = OwnedItemsSpec['sentinel'];
 
@@ -21,55 +21,55 @@ const CLAUDE_GROUP = {
 };
 const ROVO_ENTRY = { name: 'on_session_start', commands: ['node relay.mjs --sentinel codeassembly-agents'] };
 
-describe(carriesSentinel, () => {
+describe(hasSentinel, () => {
   it('if the item has the value at the sentinel path, claims it', () => {
-    expect(carriesSentinel({ name: 'relay', source: 'compositor' }, SENTINEL)).toBe(true);
+    expect(hasSentinel({ name: 'relay', source: 'compositor' }, SENTINEL)).toBe(true);
   });
 
   it('if the item has another value there, does not claim it', () => {
-    expect(carriesSentinel({ name: 'relay', source: 'vendor-tool' }, SENTINEL)).toBe(false);
+    expect(hasSentinel({ name: 'relay', source: 'vendor-tool' }, SENTINEL)).toBe(false);
   });
 
   it('if the item has nothing there, does not claim it', () => {
-    expect(carriesSentinel({ name: 'relay' }, SENTINEL)).toBe(false);
+    expect(hasSentinel({ name: 'relay' }, SENTINEL)).toBe(false);
   });
 
   it('reads a sentinel nested below the item root', () => {
-    expect(carriesSentinel({ meta: { writtenBy: 'compositor' } }, NESTED)).toBe(true);
+    expect(hasSentinel({ meta: { writtenBy: 'compositor' } }, NESTED)).toBe(true);
   });
 
   it('if the item is a scalar, does not claim it', () => {
-    expect(carriesSentinel('relay', SENTINEL)).toBe(false);
+    expect(hasSentinel('relay', SENTINEL)).toBe(false);
   });
 
   it('claims an item whose mark sits inside a command string below an array', () => {
-    expect(carriesSentinel(CLAUDE_GROUP, CLAUDE_HOOK)).toBe(true);
+    expect(hasSentinel(CLAUDE_GROUP, CLAUDE_HOOK)).toBe(true);
   });
 
   it('claims an item whose mark sits inside an array of strings', () => {
-    expect(carriesSentinel(ROVO_ENTRY, ROVO_HOOK)).toBe(true);
+    expect(hasSentinel(ROVO_ENTRY, ROVO_HOOK)).toBe(true);
   });
 
   it('claims an item when any one of the array elements has the mark', () => {
     const group = { hooks: [{ command: 'vendor-tool sync' }, { command: 'relay --sentinel codeassembly-agents' }] };
 
-    expect(carriesSentinel(group, CLAUDE_HOOK)).toBe(true);
+    expect(hasSentinel(group, CLAUDE_HOOK)).toBe(true);
   });
 
   it('does not claim an item whose array has the mark nowhere', () => {
-    expect(carriesSentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toBe(false);
+    expect(hasSentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toBe(false);
   });
 
   it('if a wildcard reaches something that is not an array, does not claim it', () => {
-    expect(carriesSentinel({ hooks: { command: 'relay --sentinel codeassembly-agents' } }, CLAUDE_HOOK)).toBe(false);
+    expect(hasSentinel({ hooks: { command: 'relay --sentinel codeassembly-agents' } }, CLAUDE_HOOK)).toBe(false);
   });
 
   it('under a containment match, does not claim a value that merely equals part of the mark', () => {
-    expect(carriesSentinel({ commands: ['--sentinel'] }, ROVO_HOOK)).toBe(false);
+    expect(hasSentinel({ commands: ['--sentinel'] }, ROVO_HOOK)).toBe(false);
   });
 
   it('under an equality match, does not claim a value that only contains the mark', () => {
-    expect(carriesSentinel({ name: 'relay', source: 'compositor-v2' }, SENTINEL)).toBe(false);
+    expect(hasSentinel({ name: 'relay', source: 'compositor-v2' }, SENTINEL)).toBe(false);
   });
 });
 
@@ -112,7 +112,7 @@ describe(stampSentinel, () => {
     const stamped = stampSentinel({ name: 'relay' }, SENTINEL);
 
     expect(stamped).toStrictEqual({ name: 'relay', source: 'compositor' });
-    expect(carriesSentinel(stamped, SENTINEL)).toBe(true);
+    expect(hasSentinel(stamped, SENTINEL)).toBe(true);
   });
 
   it('creates the mappings a nested sentinel path descends through', () => {

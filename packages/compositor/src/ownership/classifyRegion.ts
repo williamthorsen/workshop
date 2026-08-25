@@ -16,7 +16,7 @@ export type RegionClassification =
  * Reports whether `content` holds no markers, exactly one well-formed region, or a region no transform may touch.
  *
  * This is the gate every other region transform is defined in terms of, and the whole reason the family is safe. The
- * region pattern is lazy, so on a host containing a stray marker above a well-formed region it matches from the stray
+ * region pattern is lazy, so on a host with a stray marker above a well-formed region it matches from the stray
  * marker through the region's close marker, and replacing that span would discard every line between them. Classifying
  * such a host as malformed is what keeps any transform from running there.
  *

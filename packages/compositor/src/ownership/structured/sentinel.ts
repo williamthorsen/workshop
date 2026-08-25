@@ -29,7 +29,7 @@ export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
   if (allowsStamping(sentinel)) {
     return stampSentinel(item, sentinel);
   }
-  if (!carriesSentinel(item, sentinel)) {
+  if (!hasSentinel(item, sentinel)) {
     throw new Error(
       `Cannot mark an item with the sentinel at "${sentinel.path.join('.')}": the sentinel cannot be written, and the ` +
         'item does not already have it.',
@@ -39,7 +39,7 @@ export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
 }
 
 /** Reports whether `item` has the sentinel, which is what makes it the engine's to rewrite or remove. */
-export function carriesSentinel(item: unknown, sentinel: Sentinel): boolean {
+export function hasSentinel(item: unknown, sentinel: Sentinel): boolean {
   return findsMark(item, sentinel.path, sentinel);
 }
 

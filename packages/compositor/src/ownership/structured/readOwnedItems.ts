@@ -2,7 +2,7 @@ import type { FileBlock } from '../../schemas/file-schemas.ts';
 import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import { openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import { carriesSentinel } from './sentinel.ts';
+import { hasSentinel } from './sentinel.ts';
 
 /** The engine's items as plain data, or the refusal to read them. */
 export type OwnedItemsRead = { readonly items: ReadonlyArray<unknown> } | { readonly blocked: FileBlock };
@@ -30,6 +30,6 @@ export function readOwnedItems(content: string, spec: OwnedItemsSpec): OwnedItem
   return {
     items: located.items
       .map((item) => opened.document.toPlain(item))
-      .filter((item) => carriesSentinel(item, spec.sentinel)),
+      .filter((item) => hasSentinel(item, spec.sentinel)),
   };
 }

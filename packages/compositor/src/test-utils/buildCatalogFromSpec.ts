@@ -7,7 +7,7 @@ import { CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
 export interface CatalogEntrySpec {
   readonly kindId: string;
   readonly slug: string;
-  readonly carriedBy: ReadonlyArray<string>;
+  readonly copySourceIds: ReadonlyArray<string>;
 }
 
 /** What a catalog should contain, stated as briefly as a selection test needs. */
@@ -45,8 +45,8 @@ export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
       dir: `/nonexistent/${name}`,
     })),
     entries: spec.entries
-      .map(({ kindId, slug, carriedBy }) => {
-        const [winner, ...shadowed] = carriedBy.map((sourceId) => ({
+      .map(({ kindId, slug, copySourceIds }) => {
+        const [winner, ...shadowed] = copySourceIds.map((sourceId) => ({
           sourceId,
           path: `${kindId}/${slug}.md`,
           hash: `hash:${sourceId}:${slug}`,

@@ -10,11 +10,11 @@ const catalog = buildCatalogFromSpec({
   traversalOnlyKinds: ['collection'],
   sources: ['team', 'library'],
   entries: [
-    { kindId: 'collection', slug: 'core', carriedBy: ['team'] },
-    { kindId: 'collection', slug: 'extra', carriedBy: ['team'] },
-    { kindId: 'skill', slug: 'review', carriedBy: ['team', 'library'] },
-    { kindId: 'skill', slug: 'lint', carriedBy: ['library'] },
-    { kindId: 'subagent', slug: 'auditor', carriedBy: ['team'] },
+    { kindId: 'collection', slug: 'core', copySourceIds: ['team'] },
+    { kindId: 'collection', slug: 'extra', copySourceIds: ['team'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['team', 'library'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['library'] },
+    { kindId: 'subagent', slug: 'auditor', copySourceIds: ['team'] },
   ],
 });
 const index = buildCatalogIndex(catalog);
@@ -44,7 +44,7 @@ describe(expandWildcard, () => {
     const alone = buildCatalogFromSpec({
       traversalOnlyKinds: ['collection'],
       sources: ['team'],
-      entries: [{ kindId: 'collection', slug: 'core', carriedBy: ['team'] }],
+      entries: [{ kindId: 'collection', slug: 'core', copySourceIds: ['team'] }],
     });
 
     expect(expandWildcard(requireEntry(alone.entries, 0), buildCatalogIndex(alone), ['skill'])).toStrictEqual([]);

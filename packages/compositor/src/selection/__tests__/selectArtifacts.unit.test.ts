@@ -8,11 +8,11 @@ const catalog = buildCatalogFromSpec({
   kinds: ['rulebook', 'skill'],
   sources: ['local', 'acme'],
   entries: [
-    { kindId: 'skill', slug: 'lint', carriedBy: ['acme'] },
-    { kindId: 'skill', slug: 'format', carriedBy: ['acme'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['acme'] },
+    { kindId: 'skill', slug: 'format', copySourceIds: ['acme'] },
     // The contested entry: local wins it, and acme contains the shadowed copy.
-    { kindId: 'skill', slug: 'review', carriedBy: ['local', 'acme'] },
-    { kindId: 'rulebook', slug: 'house-style', carriedBy: ['local'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['local', 'acme'] },
+    { kindId: 'rulebook', slug: 'house-style', copySourceIds: ['local'] },
   ],
 });
 

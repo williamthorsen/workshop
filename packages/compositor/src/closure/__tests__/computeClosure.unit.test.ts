@@ -16,10 +16,10 @@ const catalog = buildCatalogFromSpec({
   traversalOnlyKinds: ['collection'],
   sources: ['team', 'library'],
   entries: [
-    { kindId: 'collection', slug: 'core', carriedBy: ['team'] },
-    { kindId: 'skill', slug: 'review', carriedBy: ['team', 'library'] },
-    { kindId: 'skill', slug: 'lint', carriedBy: ['library'] },
-    { kindId: 'skill', slug: 'unused', carriedBy: ['library'] },
+    { kindId: 'collection', slug: 'core', copySourceIds: ['team'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['team', 'library'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['library'] },
+    { kindId: 'skill', slug: 'unused', copySourceIds: ['library'] },
   ],
 });
 

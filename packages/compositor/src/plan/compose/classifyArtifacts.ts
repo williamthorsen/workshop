@@ -30,13 +30,13 @@ export interface ClassifyArtifactsInput {
  * `unchanged`: nothing records where it previously stood, and no other verdict is honest.
  */
 export function classifyArtifacts(input: ClassifyArtifactsInput): Array<ArtifactEntry> {
-  const inTable = new Set([...input.artifacts.map(({ id }) => id), ...input.departed.map(({ id }) => id)]);
+  const tableArtifactIds = new Set([...input.artifacts.map(({ id }) => id), ...input.departed.map(({ id }) => id)]);
 
   const present: Array<ArtifactEntry> = input.artifacts.map((artifact) => ({
     ...artifact,
     status: foldVerdicts(input.verdicts.get(artifact.id)),
   }));
-  const removed = input.departed.map((artifact) => describeRemoval(artifact, inTable, input));
+  const removed = input.departed.map((artifact) => describeRemoval(artifact, tableArtifactIds, input));
 
   return [...present, ...removed].toSorted((left, right) => compareStrings(left.id, right.id));
 }
@@ -52,11 +52,11 @@ export function classifyArtifacts(input: ClassifyArtifactsInput): Array<Artifact
  */
 function describeRemoval(
   artifact: ClaimedArtifact,
-  inTable: ReadonlySet<ArtifactId>,
+  tableArtifactIds: ReadonlySet<ArtifactId>,
   input: ClassifyArtifactsInput,
 ): RemovedArtifact {
   const edges = (input.edges.get(artifact.id) ?? []).filter(
-    (edge) => inTable.has(edge.to) && (edge.partialId === undefined || input.partialIds.has(edge.partialId)),
+    (edge) => tableArtifactIds.has(edge.to) && (edge.partialId === undefined || input.partialIds.has(edge.partialId)),
   );
   const resolution = input.resolutions.get(artifact.id);
 

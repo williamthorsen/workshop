@@ -7,9 +7,9 @@ const catalog = buildCatalogFromSpec({
   kinds: ['rulebook', 'skill', 'partial'],
   sources: ['local', 'acme'],
   entries: [
-    { kindId: 'skill', slug: 'lint', carriedBy: ['acme'] },
-    { kindId: 'skill', slug: 'review', carriedBy: ['local', 'acme'] },
-    { kindId: 'rulebook', slug: 'house-style', carriedBy: ['local'] },
+    { kindId: 'skill', slug: 'lint', copySourceIds: ['acme'] },
+    { kindId: 'skill', slug: 'review', copySourceIds: ['local', 'acme'] },
+    { kindId: 'rulebook', slug: 'house-style', copySourceIds: ['local'] },
   ],
 });
 
