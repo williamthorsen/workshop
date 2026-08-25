@@ -12,7 +12,7 @@ import type { OverlayResult } from './types.ts';
  * report). A non-zero apply (typically a failing script) maps to exit `2`.
  */
 export async function runForce(context: ChezmoiContext): Promise<OverlayResult> {
-  const { entries, pendingScripts } = partitionStatus(parseStatus(await readStatus(context)), {
+  const { entries, pendingScriptCount } = partitionStatus(parseStatus(await readStatus(context)), {
     A: 'created',
     D: 'deleted',
     M: 'forced',
@@ -24,7 +24,7 @@ export async function runForce(context: ChezmoiContext): Promise<OverlayResult> 
   return {
     mode: 'force',
     entries,
-    scripts: { ran: pendingScripts, ok },
+    scripts: { ran: pendingScriptCount, ok },
     counts: {
       created: countOutcome(entries, 'created'),
       deleted: countOutcome(entries, 'deleted'),

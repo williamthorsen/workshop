@@ -36,7 +36,7 @@ describe(partitionStatus, () => {
     expect(result.entries).toStrictEqual([{ path: '.new', outcome: 'created' }]);
   });
 
-  it('tallies R rows into pendingScripts instead of emitting entries', () => {
+  it('tallies R rows into pendingScriptCount instead of emitting entries', () => {
     const result = partitionStatus(
       [
         { path: 'normalize.sh', code: 'R' },
@@ -45,17 +45,17 @@ describe(partitionStatus, () => {
       OUTCOMES,
     );
 
-    expect(result).toStrictEqual({ entries: [], pendingScripts: 2 });
+    expect(result).toStrictEqual({ entries: [], pendingScriptCount: 2 });
   });
 
   it('tallies an R row even when the outcome map names R', () => {
     const result = partitionStatus([{ path: 'normalize.sh', code: 'R' }], { ...OUTCOMES, R: 'created' });
 
-    expect(result).toStrictEqual({ entries: [], pendingScripts: 1 });
+    expect(result).toStrictEqual({ entries: [], pendingScriptCount: 1 });
   });
 
   it('returns no entries and no pending scripts for empty status', () => {
-    expect(partitionStatus([], OUTCOMES)).toStrictEqual({ entries: [], pendingScripts: 0 });
+    expect(partitionStatus([], OUTCOMES)).toStrictEqual({ entries: [], pendingScriptCount: 0 });
   });
 });
 

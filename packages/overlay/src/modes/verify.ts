@@ -15,7 +15,7 @@ import type { OverlayResult } from './types.ts';
  * `deleted`, and `M` as `conflict`.
  */
 export async function runVerify(context: ChezmoiContext): Promise<OverlayResult> {
-  const { entries, pendingScripts } = partitionStatus(parseStatus(await readStatus(context)), {
+  const { entries, pendingScriptCount } = partitionStatus(parseStatus(await readStatus(context)), {
     A: 'created',
     D: 'deleted',
     M: 'conflict',
@@ -24,7 +24,7 @@ export async function runVerify(context: ChezmoiContext): Promise<OverlayResult>
   return {
     mode: 'verify',
     entries,
-    scripts: { ran: pendingScripts, ok: true },
+    scripts: { ran: pendingScriptCount, ok: true },
     counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: entries.length },
     exitCode: entries.length > 0 ? 1 : 0,
   };
