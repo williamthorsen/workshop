@@ -41,14 +41,6 @@ const config = defineConfig([
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
   },
   {
-    // `prefer-simple-condition-first` reorders conditions to save a property read, at the cost of the reading
-    // order the surrounding error messages use. Its own diagnostic concedes it cannot verify the reorder is safe.
-    files: patterns.typeScriptFiles,
-    rules: {
-      'unicorn/prefer-simple-condition-first': 'off',
-    },
-  },
-  {
     files: patterns.codeFiles,
     rules: {
       'n/no-missing-import': 'off',
