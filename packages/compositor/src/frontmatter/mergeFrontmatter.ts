@@ -32,7 +32,7 @@ export function mergeFrontmatter(content: string, overlay: FrontmatterOverlay, s
   }
 
   // An artifact declaring no metadata starts from an empty mapping, which is what lets a block be written where the
-  // artifact carried none.
+  // artifact had none.
   const document: Document =
     frontmatter === undefined || frontmatter.trim() === '' ? new Document({}) : parseDocument(frontmatter);
 

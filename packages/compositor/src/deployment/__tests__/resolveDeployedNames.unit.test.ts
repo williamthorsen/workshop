@@ -61,7 +61,7 @@ describe(resolveDeployedNames, () => {
     expect(resolve('claude', 'rulebook:shell')).toBe('shell-conventions');
   });
 
-  it('inserts a slug carrying replacement-pattern syntax verbatim', () => {
+  it('inserts a slug containing replacement-pattern syntax verbatim', () => {
     const target = withDeployment(claude, {
       form: 'tree',
       kindId: 'rulebook',
@@ -123,7 +123,7 @@ describe(resolveDeployedNames, () => {
 
 // region | Helpers
 
-/** Builds a target carrying one more deployment than `target`, leaving the original untouched. */
+/** Builds a target with one more deployment than `target`, leaving the original untouched. */
 function withDeployment(target: RenderTarget, deployment: RenderTarget['deployments'][number]): RenderTarget {
   return { ...target, deployments: [...target.deployments, deployment] };
 }

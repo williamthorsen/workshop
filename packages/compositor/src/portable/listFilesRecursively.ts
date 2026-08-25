@@ -23,7 +23,7 @@ export async function listFilesRecursively(
 
 // region | Helpers
 
-/** Lists files beneath `dir` as posix paths carrying `prefix`, the walk's position relative to where it started. */
+/** Lists files beneath `dir` as posix paths with `prefix`, the walk's position relative to where it started. */
 async function listFrom(
   dir: string,
   prefix: string,

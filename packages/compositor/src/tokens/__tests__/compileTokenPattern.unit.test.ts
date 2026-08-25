@@ -6,11 +6,11 @@ import { compileTokenPattern } from '../compileTokenPattern.ts';
 const kind: TokenKind = { id: 'tool', label: 'Tool name', form: 'mapping', pattern: String.raw`\{tool:(\w+)\}` };
 
 describe(compileTokenPattern, () => {
-  it('compiles the declared source and captures the name the token carries', () => {
+  it('compiles the declared source and captures the name the token contains', () => {
     expect(compileTokenPattern(kind).exec('Use {tool:Read}.')?.[1]).toBe('Read');
   });
 
-  it('matches globally, so a line carrying several tokens yields them all', () => {
+  it('matches globally, so a line containing several tokens yields them all', () => {
     const matches = '{tool:Read} and {tool:Edit}'.matchAll(compileTokenPattern(kind)).toArray();
 
     expect(matches.map((match) => match[1])).toStrictEqual(['Read', 'Edit']);

@@ -109,7 +109,7 @@ function resolveToken(match: TokenMatch, input: RewriteTokensInput): TokenResolu
   return { rendered: `${sigil}${deployed}` };
 }
 
-/** Everything one rewrite carries across the lines it renders. */
+/** Everything one rewrite needs across the lines it renders. */
 interface RewriteContext {
   readonly diagnostics: Array<TokenDiagnostic>;
   readonly input: RewriteTokensInput;

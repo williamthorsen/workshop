@@ -25,7 +25,7 @@ export interface DeployableArtifact {
  * depend on each other.
  *
  * An artifact whose kind a target declares no deployment for resolves to nothing, which is the deployability check a
- * token naming an artifact answers before rendering. That check is per kind: whether one artifact of a deployed kind
+ * token naming an artifact passes before rendering. That check is per kind: whether one artifact of a deployed kind
  * suppresses its own deployment is a fact the artifact declares, and nothing reads artifact declarations yet.
  *
  * A region-routed artifact resolves to the host path, so a token naming one renders the file a reader would open to

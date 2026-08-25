@@ -1,4 +1,4 @@
-/** The package a snapshot could not answer for, where an unlocated package is what went stale. */
+/** The package a snapshot could not locate, where an unlocated package is what went stale. */
 export interface UnlocatedPackage {
   readonly package: string;
   /** The base directory it would have been located from. */

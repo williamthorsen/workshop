@@ -15,7 +15,7 @@ describe(reportsMissingPath, () => {
     expect(reportsMissingPath(Object.assign(new Error('denied'), { code: 'EACCES' }))).toBe(false);
   });
 
-  it('does not report a value carrying no error code', () => {
+  it('does not report a value with no error code', () => {
     expect(reportsMissingPath(new Error('thrown by something else'))).toBe(false);
     expect(reportsMissingPath('not an error at all')).toBe(false);
     expect(reportsMissingPath(undefined)).toBe(false);

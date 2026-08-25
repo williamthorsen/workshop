@@ -49,7 +49,7 @@ describe(assertTokenKindsAreConsistent, () => {
     ]);
   });
 
-  it('if a referent names an artifact kind no descriptor carries, faults it', async () => {
+  it('if a referent names an artifact kind no descriptor declares, faults it', async () => {
     const dangling: TokenKind = { ...referent, artifactKindId: 'rulebook' };
 
     await expect(violationsOf([dangling])).resolves.toStrictEqual([

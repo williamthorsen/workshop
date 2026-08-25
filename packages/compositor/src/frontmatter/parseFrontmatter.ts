@@ -1,13 +1,13 @@
 /** An artifact split into the metadata block a target may overlay and the content beneath it. */
 export interface ParsedFrontmatter {
-  /** The block between the delimiters, without them, or `undefined` when the content carries no complete block. */
+  /** The block between the delimiters, without them, or `undefined` when the content has no complete block. */
   readonly frontmatter: string | undefined;
   /** Everything below the closing delimiter, or the whole content when there is no block. */
   readonly body: string;
   /**
    * True when the content opens a block that no delimiter closes.
    *
-   * This case and an artifact carrying no block at all both report `frontmatter: undefined`, so this flag is what
+   * This case and an artifact with no block at all both report `frontmatter: undefined`, so this flag is what
    * tells them apart. An artifact that opened a block declared metadata, and reading that as body would let a caller
    * write a second block above a declaration it could not see.
    */

@@ -13,7 +13,7 @@ describe(createBlobStore, () => {
     expect(blobs.addUtf8('# Lint\n')).toStrictEqual({ hash: hashUtf8('# Lint\n') });
   });
 
-  it('carries a UTF-8 body as text, so a consumer reads it without decoding', () => {
+  it('stores a UTF-8 body as text, so a consumer reads it without decoding', () => {
     const blobs = createBlobStore();
     const side = blobs.addUtf8('# Lint\n');
 
@@ -47,7 +47,7 @@ describe(createBlobStore, () => {
     expect(Object.keys(blobs.toTable())).toStrictEqual(bodies.map(hashUtf8).toSorted(compareStrings));
   });
 
-  it('registers one entry for a body added twice, so a body two files share is carried once', () => {
+  it('registers one entry for a body added twice, so a body two files share is stored once', () => {
     const blobs = createBlobStore();
     blobs.addUtf8('# Lint\n');
     blobs.addUtf8('# Lint\n');

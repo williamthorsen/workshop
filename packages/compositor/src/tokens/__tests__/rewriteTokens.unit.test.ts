@@ -50,7 +50,7 @@ describe(rewriteTokens, () => {
     expect(joinSegments(result.segments)).toBe('Run /code-review first.');
   });
 
-  it('passes text carrying no token through unchanged', () => {
+  it('passes text with no token through unchanged', () => {
     const result = rewrite([{ lines: ['# Review', '', 'Read the diff.'] }]);
 
     expect(joinSegments(result.segments)).toBe('# Review\n\nRead the diff.');

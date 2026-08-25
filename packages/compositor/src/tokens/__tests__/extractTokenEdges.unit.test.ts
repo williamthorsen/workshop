@@ -16,13 +16,13 @@ const tool: TokenKind = { id: 'tool', label: 'Tool name', form: 'mapping', patte
 const kinds = [invocation, tool];
 
 describe(extractTokenEdges, () => {
-  it('reads a referent token in the host body as an edge carrying no partial', () => {
+  it('reads a referent token in the host body as an edge with no partial', () => {
     const segments = [{ lines: ['Run {skill:review} first.'] }];
 
     expect(extractTokenEdges(segments, kinds)).toStrictEqual([{ to: 'skill:review', via: 'token' }]);
   });
 
-  it('reads a referent token in a partial as an edge carrying that partial', () => {
+  it('reads a referent token in a partial as an edge with that partial', () => {
     const segments = [{ lines: ['Run {skill:review} first.'], partialId: 'team:_data/shared.md' }];
 
     expect(extractTokenEdges(segments, kinds)).toStrictEqual([

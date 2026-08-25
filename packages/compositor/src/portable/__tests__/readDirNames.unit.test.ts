@@ -19,7 +19,7 @@ describe(readDirNames, () => {
     await expect(readDirNames(tree.dir)).resolves.toStrictEqual(['nested']);
   });
 
-  it('reports an absent directory as carrying nothing', async () => {
+  it('reports an absent directory as containing nothing', async () => {
     using tree = createTempTree({});
 
     await expect(readDirNames(path.join(tree.dir, 'never-created'))).resolves.toStrictEqual([]);

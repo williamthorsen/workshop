@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { escapeForRegExp } from '../escapeForRegExp.ts';
 
 describe(escapeForRegExp, () => {
-  it('leaves a string carrying no metacharacter alone', () => {
+  it('leaves a string with no metacharacter alone', () => {
     expect(escapeForRegExp('rulebook:naming')).toBe('rulebook:naming');
   });
 

@@ -50,7 +50,7 @@ describe(renderDeployedName, () => {
     expect(renderDeployedName(undefined, 'review')).toBe('review');
   });
 
-  it('inserts a slug carrying replacement-pattern syntax verbatim', () => {
+  it('inserts a slug containing replacement-pattern syntax verbatim', () => {
     expect(renderDeployedName('x-{slug}', '$&y')).toBe('x-$&y');
   });
 });
