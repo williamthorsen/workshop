@@ -10,7 +10,7 @@ const catalog = buildCatalogFromSpec({
   entries: [
     { kindId: 'skill', slug: 'lint', carriedBy: ['acme'] },
     { kindId: 'skill', slug: 'format', carriedBy: ['acme'] },
-    // The contested entry: local wins it, and acme carries the shadowed copy.
+    // The contested entry: local wins it, and acme contains the shadowed copy.
     { kindId: 'skill', slug: 'review', carriedBy: ['local', 'acme'] },
     { kindId: 'rulebook', slug: 'house-style', carriedBy: ['local'] },
   ],
@@ -25,13 +25,13 @@ describe(selectArtifacts, () => {
     ]);
   });
 
-  it('seeds everything a source carries when a tier takes the source whole', () => {
+  it('seeds everything a source contains when a tier takes the source whole', () => {
     const selection = select([{ id: 'project', select: { skill: { use: [{ source: 'acme' }] } } }]);
 
     expect(collectIds(selection)).toStrictEqual(['skill:format', 'skill:lint', 'skill:review']);
   });
 
-  it('takes an artifact a higher-precedence source shadows, because the named source still carries it', () => {
+  it('takes an artifact a higher-precedence source shadows, because the named source still contains it', () => {
     const selection = select([{ id: 'project', select: { skill: { use: [{ source: 'acme' }] } } }]);
 
     expect(collectIds(selection)).toContain('skill:review');
@@ -49,7 +49,7 @@ describe(selectArtifacts, () => {
     expect(selection.seeded.at(0)?.seededBy).toStrictEqual([{ via: 'source-catalog', tierId: 'project' }]);
   });
 
-  it('carries one seed per tier when several tiers seed one artifact', () => {
+  it('records one seed per tier when several tiers seed one artifact', () => {
     const selection = select([
       { id: 'global', select: { skill: { use: ['lint'] } } },
       { id: 'project', select: { skill: { use: ['lint'] } } },
@@ -61,14 +61,14 @@ describe(selectArtifacts, () => {
     ]);
   });
 
-  it('carries one seed when a tier names the same artifact twice', () => {
+  it('records one seed when a tier names the same artifact twice', () => {
     const selection = select([{ id: 'project', select: { skill: { use: ['lint', 'lint'] } } }]);
 
     expect(selection.seeded.at(0)?.seededBy).toStrictEqual([{ via: 'declaration', tierId: 'project' }]);
   });
 
   // Naming an artifact and taking its source whole are two different decisions, so both are recorded.
-  it('carries both seeds when a tier names an artifact and also takes its source whole', () => {
+  it('records both seeds when a tier names an artifact and also takes its source whole', () => {
     const selection = select([{ id: 'project', select: { skill: { use: ['lint', { source: 'acme' }] } } }]);
 
     expect(selection.seeded.find(({ artifactId }) => artifactId === 'skill:lint')?.seededBy).toStrictEqual([
@@ -128,7 +128,7 @@ describe(selectArtifacts, () => {
   });
 
   // A block naming an absent kind faults whole: every entry under it would name the same missing kind.
-  it('reports a kind the catalog does not carry as one diagnostic, rather than one per entry', () => {
+  it('reports a kind the catalog does not contain as one diagnostic, rather than one per entry', () => {
     const selection = select([{ id: 'project', select: { partial: { use: ['x', 'y'] } } }]);
 
     expect(selection.diagnostics).toHaveLength(1);

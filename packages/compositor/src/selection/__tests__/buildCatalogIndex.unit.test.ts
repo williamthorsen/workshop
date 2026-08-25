@@ -14,7 +14,7 @@ const catalog = buildCatalogFromSpec({
 });
 
 describe(buildCatalogIndex, () => {
-  it('names every kind the catalog declares, including one carrying no entries', () => {
+  it('names every kind the catalog declares, including one with no entries', () => {
     expect([...buildCatalogIndex(catalog).kindIds].toSorted()).toStrictEqual(['partial', 'rulebook', 'skill']);
   });
 
@@ -30,15 +30,15 @@ describe(buildCatalogIndex, () => {
     expect(buildCatalogIndex(catalog).bySlug.get('rulebook')?.get('lint')).toBeUndefined();
   });
 
-  it('carries an artifact under the source that won it', () => {
+  it('indexes an artifact under the source that won it', () => {
     expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('acme')).toContain('skill:lint');
   });
 
-  it('carries an artifact under a source whose copy is shadowed, not the winner alone', () => {
+  it('indexes an artifact under a source whose copy is shadowed, not the winner alone', () => {
     expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('local')).toStrictEqual(['skill:review']);
   });
 
-  it('carries nothing for a kind a source has no entries of', () => {
+  it('indexes nothing for a kind a source has no entries of', () => {
     expect(buildCatalogIndex(catalog).bySource.get('rulebook')?.get('acme')).toBeUndefined();
   });
 });

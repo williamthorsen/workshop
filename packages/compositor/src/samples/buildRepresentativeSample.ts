@@ -12,7 +12,7 @@ import { buildTiers } from './representative/buildTiers.ts';
 import { buildTokenKinds } from './representative/buildTokenKinds.ts';
 
 /**
- * Builds a plan exercising every shape the contract has to carry.
+ * Builds a plan exercising every shape the contract defines.
  *
  * Modelled on a guidance-distribution run: three precedence-ordered sources feeding two targets, with an artifact
  * reached by three routes, an artifact shadowing two losers beside one the lowest-precedence source wins, three

@@ -37,7 +37,7 @@ describe(validateComposition, () => {
     expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([]);
   });
 
-  it('reports a selector naming an artifact the catalog does not carry, at the config entry', async () => {
+  it('reports a selector naming an artifact the catalog does not contain, at the config entry', async () => {
     const { config, snapshot } = await captureComposition({ select: { skill: { use: ['absent'] } } });
 
     expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([
@@ -52,7 +52,7 @@ describe(validateComposition, () => {
     ]);
   });
 
-  it('reports a frontmatter edge naming an artifact nothing carries, at the artifact declaring it', async () => {
+  it('reports a frontmatter edge naming an artifact nothing contains, at the artifact declaring it', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: { 'collections/core.md': '---\nskills:\n  - absent\n---\n\n# Core\n' },
       select: { collection: { use: [{ source: 'team' }] } },
@@ -125,7 +125,7 @@ describe(validateComposition, () => {
     ]);
   });
 
-  it('reports a filler whose own body declares an inlay, the render it ended carrying the fault', async () => {
+  it('reports a filler whose own body declares an inlay, the render it ended recording the fault', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: {
         'rulebooks/naming.md': 'Naming.\n<!-- inlay: deeper -->\n',
@@ -193,7 +193,7 @@ describe(validateComposition, () => {
     ]);
   });
 
-  it('locates a binding naming an artifact no source carries at the inlay it was written under', async () => {
+  it('locates a binding naming an artifact no source contains at the inlay it was written under', async () => {
     const { config, snapshot } = await captureComposition({
       sourceFiles: { 'skills/lint/SKILL.md': '# Lint\n<!-- inlay: preferences -->\n' },
       select: { skill: { use: [{ source: 'team' }] } },
@@ -400,7 +400,7 @@ function buildHostCollidingTarget(targetRoot: string): RenderTarget {
   };
 }
 
-/** Builds the inlaying target's stages with link rewriting added, so one body can carry a link fault and an inlay. */
+/** Builds the inlaying target's stages with link rewriting added, so one body can have a link fault and an inlay. */
 function buildLinkingInlayStages(targetRoot: string): RenderTarget['stages'] {
   return [...buildInlayingTarget(targetRoot).stages, { kind: 'links', pattern: MARKDOWN_LINK }];
 }

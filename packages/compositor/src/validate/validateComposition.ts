@@ -14,10 +14,10 @@ import { findDeploymentCollisions } from './findDeploymentCollisions.ts';
 import type { ValidationDiagnostic, ValidationReport } from './ValidationDiagnostic.ts';
 
 /**
- * Reports every authoring fault a config and the content it reaches carry, each located where an author can fix it.
+ * Reports every authoring fault a config and the content it reaches contain, each located where an author can fix it.
  *
  * Pure and synchronous, reading the snapshot alone. What a destination holds takes no part: the faults reported here
- * are in what someone wrote, and a report that moved with a destination would answer a different question each time it
+ * are in what someone wrote, and a report that moved with a destination would say something different each time it
  * ran. So a snapshot captured with the destination scan skipped validates as well as one captured with it, and the two
  * yield the same report.
  *
@@ -26,7 +26,7 @@ import type { ValidationDiagnostic, ValidationReport } from './ValidationDiagnos
  * composition other than the one being asked about.
  *
  * Only what the config reaches is reported. The render matrix covers the whole catalog by design, so an artifact this
- * config does not select carries faults that are somebody else's to fix, and reporting them would bury the ones that
+ * config does not select has faults that are somebody else's to fix, and reporting them would bury the ones that
  * are not.
  *
  * Ordering is fixed, so two reports of one shape diff cleanly: selection in config order, closure in the order the

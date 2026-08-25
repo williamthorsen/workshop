@@ -63,7 +63,7 @@ describe(readTargetState, () => {
     ]);
   });
 
-  it('recovers the kind and slug behind a claimed id, which no catalog answers once it is deleted', async () => {
+  it('recovers the kind and slug behind a claimed id, which no catalog reports once it is deleted', async () => {
     const state = await readState({ 'skills/review/SKILL.md': '# Review\n' }, [skills]);
 
     expect(claimOf(state.claimed, 'skills/review/SKILL.md')?.claims).toStrictEqual([
@@ -86,7 +86,7 @@ describe(readTargetState, () => {
     ]);
   });
 
-  it('carries each claimed body, which is the current side a plan diffs against', async () => {
+  it('records each claimed body, which is the current side a plan diffs against', async () => {
     const state = await readState({ 'rulebooks/consult-shell.md': 'Shell rules.\n' }, [rulebooks]);
 
     expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.body).toStrictEqual({
@@ -154,7 +154,7 @@ describe(readTargetState, () => {
     expect(state.claimed.map(({ path }) => path)).toStrictEqual(['README.md']);
   });
 
-  it('reads the contributions a host’s region carries', async () => {
+  it('reads the contributions a host’s region contains', async () => {
     const state = await readState({ 'CLAUDE.md': hostContent }, [ambient]);
 
     expect(presentHost(state.hosts)).toMatchObject({
@@ -169,7 +169,7 @@ describe(readTargetState, () => {
     expect(state.hosts).toStrictEqual([{ kindId: 'rulebook', path: 'CLAUDE.md', state: 'absent' }]);
   });
 
-  it('reads no contribution out of a damaged host, and carries the reason a reader repairs it by', async () => {
+  it('reads no contribution out of a damaged host, and records the reason a reader repairs it by', async () => {
     const damaged = `<!-- codeassembly -->\n<!-- rulebook:shell -->\nStray.\n<!-- /rulebook:shell -->\n`;
     const state = await readState({ 'CLAUDE.md': damaged }, [ambient]);
 
@@ -267,7 +267,7 @@ function claimOf(claimed: ReadonlyArray<ClaimedFile>, filePath: string): Claimed
   return claimed.find((file) => file.path === filePath);
 }
 
-/** Narrows to the one present host a test built, the absent arm carrying none of the fields under assertion. */
+/** Narrows to the one present host a test built, the absent arm with none of the fields under assertion. */
 function presentHost(hosts: ReadonlyArray<HostState>): Extract<HostState, { state: 'present' }> | undefined {
   return hosts.find((host) => host.state === 'present');
 }

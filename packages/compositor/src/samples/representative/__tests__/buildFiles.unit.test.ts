@@ -42,7 +42,7 @@ describe(buildFiles, () => {
     expect(parsed.hooks.filter((hook) => hook.source === undefined)).toHaveLength(1);
   });
 
-  it('carries a byte-encoded body for an asset copied verbatim', () => {
+  it('records a byte-encoded body for an asset copied verbatim', () => {
     const asset = findFile('skills/review/diagram.png');
     const blob = asset.planned === undefined ? undefined : bodies[asset.planned.hash];
 
@@ -65,11 +65,11 @@ describe(buildFiles, () => {
 
 // region | Helpers
 
-/** Finds the file at the given path, failing the test when the table carries none. */
+/** Finds the file at the given path, failing the test when the table contains none. */
 function findFile(filePath: string): FileEntry {
   const file = files.find((entry) => entry.path === filePath);
   if (file === undefined) {
-    throw new Error(`The representative sample carries no file "${filePath}".`);
+    throw new Error(`The representative sample has no file "${filePath}".`);
   }
   return file;
 }
@@ -86,11 +86,11 @@ function readEntriesSentinel(file: FileEntry): string {
   return owned.sentinel.value;
 }
 
-/** Reads the body planned for `file`, failing the test when the store carries none. */
+/** Reads the body planned for `file`, failing the test when the store contains none. */
 function readPlannedBody(file: FileEntry): string {
   const blob = file.planned === undefined ? undefined : bodies[file.planned.hash];
   if (blob === undefined) {
-    throw new Error(`The representative sample carries no planned body for "${file.path}".`);
+    throw new Error(`The representative sample has no planned body for "${file.path}".`);
   }
   return blob.data;
 }

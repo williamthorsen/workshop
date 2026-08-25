@@ -49,7 +49,7 @@ describe(readArtifactAssets, () => {
     expect(assets.map(({ relativePath }) => relativePath)).toStrictEqual(['_data/table.md']);
   });
 
-  it('carries an asset no UTF-8 reading survives byte for byte', async () => {
+  it('copies an asset no UTF-8 reading survives byte for byte', async () => {
     using tree = createTempTree({ 'SKILL.md': '# Review\n', 'diagram.png': diagramBytes });
 
     const [asset] = await readArtifactAssets(tree.dir, 'SKILL.md');

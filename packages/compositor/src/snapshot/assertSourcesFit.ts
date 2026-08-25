@@ -12,7 +12,7 @@ import type { CompositionSnapshot } from './captureSnapshot.ts';
  * change against one snapshot is a selection.
  *
  * Re-folding is what makes the check cheap enough to run on every call: the fold is pure arithmetic over locations the
- * snapshot already carries.
+ * snapshot already contains.
  */
 export function assertSourcesFit(config: CompositorConfig, snapshot: CompositionSnapshot): void {
   const folded = foldSourceTiers(config, snapshot.locations);

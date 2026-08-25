@@ -2,22 +2,22 @@ import { appendTo } from '../portable/appendTo.ts';
 import type { Catalog } from '../schemas/catalog-schemas.ts';
 import type { ArtifactId, Id, KindId } from '../schemas/scalar-schemas.ts';
 
-/** The catalog as selection reads it: what exists, and which artifacts each source carries. */
+/** The catalog as selection reads it: what exists, and which artifacts each source contains. */
 export interface CatalogIndex {
   readonly kindIds: ReadonlySet<KindId>;
   readonly sourceIds: ReadonlySet<Id>;
   /** Keyed by kind, then slug. */
   readonly bySlug: ReadonlyMap<KindId, ReadonlyMap<string, ArtifactId>>;
-  /** Keyed by kind, then source, in catalog order. Carries an artifact under every source that has a copy of it. */
+  /** Keyed by kind, then source, in catalog order. Indexes an artifact under every source that has a copy of it. */
   readonly bySource: ReadonlyMap<KindId, ReadonlyMap<Id, ReadonlyArray<ArtifactId>>>;
 }
 
 /**
  * Indexes the catalog for lookup by slug and by source.
  *
- * The by-source index carries an artifact under every source that has a copy, shadowed as well as winning. Shadowing
+ * The by-source index holds an artifact under every source that has a copy, shadowed as well as winning. Shadowing
  * decides which copy an artifact resolves from; selection decides which artifacts are in play, and a source a consumer
- * took whole carries the artifact whether or not it won it.
+ * took whole contains the artifact whether or not it won it.
  */
 export function buildCatalogIndex(catalog: Catalog): CatalogIndex {
   const bySlug = new Map<KindId, Map<string, ArtifactId>>();

@@ -33,7 +33,7 @@ export interface SeededArtifact {
  *
  * `seeded` and `declined` run in artifact-id order, `bindings` in inlay-name order, and `diagnostics` in config order,
  * so two selections of the same shape diff cleanly. Each artifact's `seededBy` runs in tier order instead, matching
- * the order a plan carries it in, and each binding's `artifactIds` in the order a fill splices them.
+ * the order a plan records it in, and each binding's `artifactIds` in the order a fill splices them.
  */
 export interface Selection {
   readonly seeded: ReadonlyArray<SeededArtifact>;
@@ -120,7 +120,7 @@ function addSeed(seeds: Map<ArtifactId, Array<Seed>>, artifactId: ArtifactId, se
 /**
  * Applies one kind block's selectors, under `select` where `inlayName` is absent and under that binding where it is.
  *
- * The two blocks share a selector grammar, so they share `expandSelector` and every diagnostic a selector can earn.
+ * The two blocks share a selector grammar, so they share `expandSelector` and every diagnostic a selector can produce.
  * What differs is what a decision means: a `select` use seeds by how the selector named its artifact, while a binding
  * seeds `binding` whichever way it named it, the artifact being there to fill an inlay either way. A `select` drop
  * clears the artifact's seeds and declines it, while a binding's drop unbinds it from that one inlay and leaves the

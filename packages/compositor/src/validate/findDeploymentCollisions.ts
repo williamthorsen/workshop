@@ -39,7 +39,7 @@ export interface FindDeploymentCollisionsInput {
  * is a composition change, not a validation one.
  *
  * Only the entry file each artifact deploys is compared. What an artifact ships beside it lands under the same name, so
- * a collision among assets is one among the entries that carry them.
+ * a collision among assets is one among the entries that contain them.
  */
 export function findDeploymentCollisions(input: FindDeploymentCollisionsInput): Array<DeploymentDiagnostic> {
   const { artifacts, targets } = input;
@@ -82,7 +82,7 @@ export function findDeploymentCollisions(input: FindDeploymentCollisionsInput): 
 
 // region | Helpers
 
-/** States that a destination more than one of a target's deployments writes has no answer a declaration decides. */
+/** States that a destination more than one of a target's deployments writes has no winner a declaration decides. */
 function describeCollision(targetId: TargetId, path: string, writers: ReadonlyArray<Writer>): DeploymentDiagnostic {
   const kindIds = orderIds(writers.map(({ kindId }) => kindId));
   const artifactIds = orderIds(writers.flatMap(({ artifactIds: ids }) => ids));
@@ -100,7 +100,7 @@ function orderIds<Value extends string>(ids: ReadonlyArray<Value>): Array<Value>
   return [...new Set(ids)].toSorted(compareStrings);
 }
 
-/** One deployment's claim on a destination, carrying the content it would write there. */
+/** One deployment's claim on a destination, with the content it would write there. */
 interface Writer {
   readonly kindId: KindId;
   readonly artifactIds: ReadonlyArray<ArtifactId>;
