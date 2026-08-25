@@ -63,7 +63,7 @@ const UNRESOLVED_SPECIFIER_HINT =
  * disk even when its source has not moved.
  */
 const GENERATED_HEADER = [
-  '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
+  '/** @noformat -- @generated. Do not edit. Compiled by rdy. */',
   '/* eslint-disable */',
   `export const __readyupVersion = ${JSON.stringify(VERSION)};`,
   '',

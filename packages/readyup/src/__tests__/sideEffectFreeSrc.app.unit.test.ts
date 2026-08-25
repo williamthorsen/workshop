@@ -50,7 +50,7 @@ describe('readyup source tree is side-effect-free', () => {
 
   it.each(checked)('%s contains only declarative top-level statements', (_rel, absolutePath) => {
     const offenders = findTopLevelSideEffects(absolutePath);
-    const formatted = offenders.map((o) => `  line ${o.line}: ${o.kind} — ${o.snippet}`).join('\n');
+    const formatted = offenders.map((o) => `  line ${o.line}: ${o.kind} -- ${o.snippet}`).join('\n');
     expect(offenders, `Found non-declarative top-level statements:\n${formatted}`).toStrictEqual([]);
   });
 
