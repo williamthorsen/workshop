@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as runChezmoiModule from '../../chezmoi/runChezmoi.ts';
 import { runCreate } from '../create.ts';
+import { mockCapturedStatus, mockStreamedRun } from '../test-utils/chezmoi-mocks.ts';
 
 const context = { source: '/src', target: '/target' };
 
@@ -11,8 +12,8 @@ describe(runCreate, () => {
   });
 
   it('applies A and D entries by absolute target path', async () => {
-    mockStatus(' A .new\n D .gone\n');
-    const streamed = mockStreamed(0);
+    mockCapturedStatus(' A .new\n D .gone\n');
+    const streamed = mockStreamedRun(0);
 
     const result = await runCreate(context);
 
@@ -28,8 +29,8 @@ describe(runCreate, () => {
   });
 
   it('reports a differing file as a conflict and never includes it in the apply call', async () => {
-    mockStatus(' A .new\n M .diff\n');
-    const streamed = mockStreamed(0);
+    mockCapturedStatus(' A .new\n M .diff\n');
+    const streamed = mockStreamedRun(0);
 
     const result = await runCreate(context);
 
@@ -40,8 +41,8 @@ describe(runCreate, () => {
   });
 
   it('skips the targeted apply entirely when there are no A/D entries', async () => {
-    mockStatus(' M .diff\n');
-    const streamed = mockStreamed(0);
+    mockCapturedStatus(' M .diff\n');
+    const streamed = mockStreamedRun(0);
 
     const result = await runCreate(context);
 
@@ -51,8 +52,8 @@ describe(runCreate, () => {
   });
 
   it('runs a separate scripts pass when R rows are present', async () => {
-    mockStatus(' A .new\n R normalize.sh\n');
-    const streamed = mockStreamed(0);
+    mockCapturedStatus(' A .new\n R normalize.sh\n');
+    const streamed = mockStreamedRun(0);
 
     await runCreate(context);
 
@@ -61,8 +62,8 @@ describe(runCreate, () => {
   });
 
   it('does not run a scripts pass when no R rows are present', async () => {
-    mockStatus(' A .new\n');
-    const streamed = mockStreamed(0);
+    mockCapturedStatus(' A .new\n');
+    const streamed = mockStreamedRun(0);
 
     await runCreate(context);
 
@@ -71,7 +72,7 @@ describe(runCreate, () => {
   });
 
   it('maps a failing scripts pass to exit 2', async () => {
-    mockStatus(' A .new\n R failing.sh\n');
+    mockCapturedStatus(' A .new\n R failing.sh\n');
     vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockImplementation((_context, args) =>
       Promise.resolve(args.includes('--include=scripts') ? 1 : 0),
     );
@@ -83,8 +84,8 @@ describe(runCreate, () => {
   });
 
   it('maps a failing file-apply pass to exit 2 without masking it as drift', async () => {
-    mockStatus(' A .new\n M .diff\n');
-    mockStreamed(1);
+    mockCapturedStatus(' A .new\n M .diff\n');
+    mockStreamedRun(1);
 
     const result = await runCreate(context);
 
@@ -93,7 +94,7 @@ describe(runCreate, () => {
   });
 
   it('short-circuits before the scripts pass when the file-apply fails', async () => {
-    mockStatus(' A .new\n R normalize.sh\n');
+    mockCapturedStatus(' A .new\n R normalize.sh\n');
     const streamed = vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(1);
 
     const result = await runCreate(context);
@@ -105,13 +106,3 @@ describe(runCreate, () => {
     expect(streamed).not.toHaveBeenCalledWith(context, ['apply', '--include=scripts']);
   });
 });
-
-/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
-
-/** Stub every streamed `chezmoi apply` to resolve with the given exit code. */
-function mockStreamed(code: number): ReturnType<typeof vi.spyOn> {
-  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
-}

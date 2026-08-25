@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import * as runChezmoiModule from '../../chezmoi/runChezmoi.ts';
 import { runForce } from '../force.ts';
+import { mockCapturedStatus, mockStreamedRun } from '../test-utils/chezmoi-mocks.ts';
 
 const context = { source: '/src', target: '/target' };
 
@@ -11,8 +11,8 @@ describe(runForce, () => {
   });
 
   it('runs a full apply and reports M rows as forced, exiting 0 on success', async () => {
-    mockStatus(' A .new\n M .diff\n D .gone\n R normalize.sh\n');
-    const apply = mockApply(0);
+    mockCapturedStatus(' A .new\n M .diff\n D .gone\n R normalize.sh\n');
+    const apply = mockStreamedRun(0);
 
     const result = await runForce(context);
 
@@ -23,8 +23,8 @@ describe(runForce, () => {
   });
 
   it('maps a non-zero apply (script failure) to exit 2', async () => {
-    mockStatus(' R failing.sh\n');
-    mockApply(1);
+    mockCapturedStatus(' R failing.sh\n');
+    mockStreamedRun(1);
 
     const result = await runForce(context);
 
@@ -33,8 +33,8 @@ describe(runForce, () => {
   });
 
   it('never reports conflicts under force', async () => {
-    mockStatus(' M .diff\n');
-    mockApply(0);
+    mockCapturedStatus(' M .diff\n');
+    mockStreamedRun(0);
 
     const result = await runForce(context);
 
@@ -42,13 +42,3 @@ describe(runForce, () => {
     expect(result.entries.every((entry) => entry.outcome !== 'conflict')).toBe(true);
   });
 });
-
-/** Stub `chezmoi status` to return the given stdout with a zero exit code. */
-function mockStatus(stdout: string): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code: 0 });
-}
-
-/** Stub the streamed `chezmoi apply` to resolve with the given exit code. */
-function mockApply(code: number): ReturnType<typeof vi.spyOn> {
-  return vi.spyOn(runChezmoiModule, 'runChezmoiStreamed').mockResolvedValue(code);
-}
