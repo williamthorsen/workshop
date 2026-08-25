@@ -63,7 +63,7 @@ export function buildClosure(): Closure {
     diagnostics: [
       {
         code: 'unknown-reference',
-        message: 'names "skill:absent", which no source carries.',
+        message: 'names "skill:absent", which no source contains.',
         at: { artifactId: 'skill:review', key: 'dependencies' },
       },
     ],

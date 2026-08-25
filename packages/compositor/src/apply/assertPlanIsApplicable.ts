@@ -28,7 +28,7 @@ export function assertPlanIsApplicable(plan: Plan): void {
   if (plan.contentAvailability !== 'complete') {
     refusals.push({
       path: 'contentAvailability',
-      message: `is "${plan.contentAvailability}", so the plan does not carry every body it would write.`,
+      message: `is "${plan.contentAvailability}", so the plan does not contain every body it would write.`,
     });
   }
 
@@ -36,7 +36,7 @@ export function assertPlanIsApplicable(plan: Plan): void {
     if (!targetIds.has(file.targetId)) {
       refusals.push({
         path: `files[${index}].targetId`,
-        message: `is "${file.targetId}", which the plan's targets do not carry, so no root resolves for it.`,
+        message: `is "${file.targetId}", which the plan's targets do not contain, so no root resolves for it.`,
       });
     }
     if (!staysInsideRoot(file.path)) {

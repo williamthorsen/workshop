@@ -15,7 +15,7 @@ export function findMissingBlobs(plan: Plan): Array<Violation> {
       if (hash !== undefined && !carried.has(hash)) {
         violations.push({
           path: `files[${index}].${side}.hash`,
-          message: `names "${hash}", which blobs does not carry`,
+          message: `names "${hash}", which blobs does not contain`,
         });
       }
     }

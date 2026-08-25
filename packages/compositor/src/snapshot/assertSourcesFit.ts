@@ -41,7 +41,7 @@ function findMove(captured: ReadonlyArray<SourceSpec>, folded: ReadonlyArray<Sou
     const after = folded.at(index);
 
     if (before === undefined) {
-      return after === undefined ? undefined : `adopts ${describeSource(after)}, which the snapshot does not carry`;
+      return after === undefined ? undefined : `adopts ${describeSource(after)}, which the snapshot does not contain`;
     }
     if (after === undefined) {
       return `no longer adopts ${describeSource(before)}`;

@@ -102,7 +102,7 @@ describe(applySentinel, () => {
 
   it('if the sentinel cannot be written and the item does not carry it, throws naming the path', () => {
     expect(() => applySentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toThrow(
-      /hooks\.\*\.command.*does not already carry it/s,
+      /hooks\.\*\.command.*does not already have it/s,
     );
   });
 });

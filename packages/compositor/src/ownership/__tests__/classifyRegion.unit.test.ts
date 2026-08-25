@@ -46,7 +46,7 @@ describe(classifyRegion, () => {
 
     expect(classifyRegion(content, MARKERS)).toStrictEqual({
       state: 'malformed',
-      reason: 'The host carries a close marker before its open marker.',
+      reason: 'The host has a close marker before its open marker.',
     });
   });
 

@@ -223,7 +223,7 @@ function requireBody(blobs: Record<Hash, Blob>, file: FileEntry): Uint8Array {
 function requireRoot(roots: ReadonlyMap<TargetId, string>, file: FileEntry): string {
   const root = roots.get(file.targetId);
   if (root === undefined) {
-    throw new Error(`Plan carries no target "${file.targetId}", which "${file.path}" is deployed to.`);
+    throw new Error(`Plan has no target "${file.targetId}", which "${file.path}" is deployed to.`);
   }
   return root;
 }

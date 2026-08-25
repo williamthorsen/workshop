@@ -15,7 +15,7 @@ export function findStatusDisagreements(plan: Plan): Array<Violation> {
   for (const [index, file] of plan.files.entries()) {
     const implied = implyStatus(file);
     if (implied === undefined) {
-      violations.push({ path: `files[${index}]`, message: 'carries neither a current nor a planned side' });
+      violations.push({ path: `files[${index}]`, message: 'has neither a current nor a planned side' });
     } else if (implied !== file.status) {
       violations.push({
         path: `files[${index}].status`,

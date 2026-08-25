@@ -130,7 +130,7 @@ function applyBlock(fold: Fold, tierId: Id, block: KindSelection, inlayName: str
   if (!fold.index.kindIds.has(block.kindId)) {
     fold.diagnostics.push({
       code: 'unknown-kind',
-      message: `Kind "${block.kindId}" is not one the catalog carries.`,
+      message: `Kind "${block.kindId}" is not one the catalog contains.`,
       at: { tierId, kindId: block.kindId, ...(inlayName !== undefined && { inlayName }) },
     });
     return;

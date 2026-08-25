@@ -37,12 +37,12 @@ export function classifyRegion(content: string, markers: RegionMarkers): RegionC
     return {
       state: 'malformed',
       reason:
-        `The host carries ${describeCount(openCount, 'open marker')} and ${describeCount(closeCount, 'close marker')}, ` +
+        `The host has ${describeCount(openCount, 'open marker')} and ${describeCount(closeCount, 'close marker')}, ` +
         'but a region is exactly one of each.',
     };
   }
   if (!buildRegionPattern(markers).test(content)) {
-    return { state: 'malformed', reason: 'The host carries a close marker before its open marker.' };
+    return { state: 'malformed', reason: 'The host has a close marker before its open marker.' };
   }
   return { state: 'complete' };
 }

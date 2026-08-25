@@ -270,7 +270,7 @@ function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogE
   const source = sources.get(entry.resolution.winner.sourceId);
   if (source === undefined) {
     throw new Error(
-      `Catalog entry "${entry.id}" resolved from "${entry.resolution.winner.sourceId}", which it does not carry.`,
+      `Catalog entry "${entry.id}" resolved from "${entry.resolution.winner.sourceId}", which it does not contain.`,
     );
   }
   return source;

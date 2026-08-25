@@ -207,7 +207,7 @@ describe(assertRenderTargetsAreConsistent, () => {
       await expect(violationsOf([unmarkable])).resolves.toStrictEqual([
         {
           path: 'targets[0].ownedItems[0].items[0]',
-          message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
+          message: 'does not have the sentinel, which this declaration cannot write, so it could never be found again',
         },
       ]);
     });
@@ -473,7 +473,7 @@ describe(assertRenderTargetsAreConsistent, () => {
 
   it('reports two targets sharing an id', async () => {
     await expect(violationsOf([claude, claude])).resolves.toStrictEqual([
-      { path: 'targets', message: 'carries "claude" more than once' },
+      { path: 'targets', message: 'lists "claude" more than once' },
     ]);
   });
 

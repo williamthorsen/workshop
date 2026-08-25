@@ -60,7 +60,7 @@ export function readFrontmatterEdges(input: FrontmatterEdgesInput): FrontmatterE
 
   const declaration = parseBlock(block.frontmatter);
   if (declaration === undefined) {
-    fault('invalid-declaration', undefined, 'carries a frontmatter block that is not valid YAML');
+    fault('invalid-declaration', undefined, 'has a frontmatter block that is not valid YAML');
     return { edges, diagnostics };
   }
   if (!isRecord(declaration)) {

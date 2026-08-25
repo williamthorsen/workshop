@@ -176,7 +176,7 @@ describe(readTargetState, () => {
     const host = presentHost(state.hosts);
     expect(host?.region).toStrictEqual({
       state: 'malformed',
-      reason: 'The host carries 1 open marker and no close marker, but a region is exactly one of each.',
+      reason: 'The host has 1 open marker and no close marker, but a region is exactly one of each.',
     });
     expect(host?.contributions).toStrictEqual([]);
   });

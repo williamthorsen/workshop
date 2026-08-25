@@ -182,7 +182,7 @@ describe(ensureOwnedItems, () => {
 
       expect(() =>
         ensureOwnedItems(content, UNWRITABLE_SPEC, [{ name: 'relay', commands: ['node relay.mjs'] }]),
-      ).toThrow(/does not already carry it/);
+      ).toThrow(/does not already have it/);
     });
   });
 });

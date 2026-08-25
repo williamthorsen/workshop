@@ -83,7 +83,7 @@ function toGlobalPattern(source: string, role: string): RegExp {
   const groupCount = (new RegExp(`${source}|`).exec('') ?? []).length - 1;
   if (groupCount !== 1) {
     throw new Error(
-      `A contribution's ${role} pattern must carry exactly one capture group naming the contributor, but "${source}" carries ${groupCount}.`,
+      `A contribution's ${role} pattern must have exactly one capture group naming the contributor, but "${source}" has ${groupCount}.`,
     );
   }
   return pattern;

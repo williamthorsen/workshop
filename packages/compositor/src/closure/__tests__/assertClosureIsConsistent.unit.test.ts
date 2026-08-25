@@ -83,7 +83,7 @@ describe(assertClosureIsConsistent, () => {
     closure.artifacts = [...closure.artifacts, requireEntry(closure.artifacts, 1)];
 
     await expect(violationsOf(closure)).resolves.toStrictEqual([
-      { path: 'artifacts', message: 'carries "skill:lint" more than once' },
+      { path: 'artifacts', message: 'lists "skill:lint" more than once' },
     ]);
   });
 

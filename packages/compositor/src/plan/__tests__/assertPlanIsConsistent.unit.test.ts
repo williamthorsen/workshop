@@ -22,7 +22,7 @@ describe(assertPlanIsConsistent, () => {
 
     const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
 
-    expect(failure.violations).toStrictEqual([{ path: 'tiers', message: 'carries "project" more than once' }]);
+    expect(failure.violations).toStrictEqual([{ path: 'tiers', message: 'lists "project" more than once' }]);
   });
 
   it('if two file entries claim one destination, names the repeated path', async () => {

@@ -28,7 +28,7 @@ describe(assertCatalogIsConsistent, () => {
 
     const failure = await captureError(CatalogConsistencyError, () => assertCatalogIsConsistent(catalog));
 
-    expect(failure.violations).toStrictEqual([{ path: 'sources', message: 'carries "local" more than once' }]);
+    expect(failure.violations).toStrictEqual([{ path: 'sources', message: 'lists "local" more than once' }]);
   });
 
   it('if shadowed candidates ascend rather than descend in precedence, locates the one out of order', async () => {
@@ -58,7 +58,7 @@ describe(assertCatalogIsConsistent, () => {
 
     expect(failure.violations).toContainEqual({
       path: 'entries[2].resolution.shadowed[0].sourceId',
-      message: 'repeats "local", which already carries this artifact',
+      message: 'repeats "local", which already contains this artifact',
     });
   });
 

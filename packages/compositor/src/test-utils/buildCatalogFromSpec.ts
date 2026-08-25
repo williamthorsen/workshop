@@ -52,7 +52,7 @@ export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
           hash: `hash:${sourceId}:${slug}`,
         }));
         if (winner === undefined) {
-          throw new Error(`Entry "${kindId}:${slug}" names no source carrying it.`);
+          throw new Error(`Entry "${kindId}:${slug}" names no source containing it.`);
         }
         return { id: composeArtifactId(kindId, slug), kindId, slug, resolution: { winner, shadowed } };
       })

@@ -15,7 +15,7 @@ export function findRepeatedCandidateSources(catalog: Catalog): Array<Violation>
       if (seen.has(loser.sourceId)) {
         violations.push({
           path: `entries[${index}].resolution.shadowed[${loserIndex}].sourceId`,
-          message: `repeats "${loser.sourceId}", which already carries this artifact`,
+          message: `repeats "${loser.sourceId}", which already contains this artifact`,
         });
       }
       seen.add(loser.sourceId);

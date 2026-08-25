@@ -59,7 +59,7 @@ describe(assertTokenKindsAreConsistent, () => {
 
   it('if one id is declared twice, faults the repeat, which would make every mapping against it ambiguous', async () => {
     await expect(violationsOf([mapping, { ...mapping, pattern: String.raw`\[tool:(\w+)\]` }])).resolves.toStrictEqual([
-      { path: 'tokenKinds', message: 'carries "tool" more than once' },
+      { path: 'tokenKinds', message: 'lists "tool" more than once' },
     ]);
   });
 

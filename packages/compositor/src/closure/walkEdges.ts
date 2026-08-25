@@ -58,7 +58,7 @@ export function walkEdges(input: WalkInput): WalkResult {
       }
       diagnostics.push({
         code: 'unknown-reference',
-        message: `${entry.id} names "${edge.to}" as ${describeOrigin(edge)}, which no source carries.`,
+        message: `${entry.id} names "${edge.to}" as ${describeOrigin(edge)}, which no source contains.`,
         at: { artifactId: entry.id },
       });
     }
@@ -88,7 +88,7 @@ export function walkEdges(input: WalkInput): WalkResult {
   for (const seed of seeds) {
     const entry = entries.get(seed.artifactId);
     if (entry === undefined) {
-      throw new Error(`Seeded artifact "${seed.artifactId}" is not one the catalog carries.`);
+      throw new Error(`Seeded artifact "${seed.artifactId}" is not one the catalog contains.`);
     }
     visit(entry);
   }

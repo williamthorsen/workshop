@@ -19,6 +19,6 @@ export function findDuplicateIds(tables: ReadonlyArray<IdTable>): Array<Violatio
       }
       seen.add(id);
     }
-    return [...repeated].map((id) => ({ path: name, message: `carries "${id}" more than once` }));
+    return [...repeated].map((id) => ({ path: name, message: `lists "${id}" more than once` }));
   });
 }

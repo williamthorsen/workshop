@@ -5,7 +5,7 @@ import { findDuplicateIds } from '../findDuplicateIds.ts';
 describe(findDuplicateIds, () => {
   it('if a table carries one id twice, reports the repeat under the table name', () => {
     expect(findDuplicateIds([['sources', [{ id: 'team' }, { id: 'team' }]]])).toStrictEqual([
-      { path: 'sources', message: 'carries "team" more than once' },
+      { path: 'sources', message: 'lists "team" more than once' },
     ]);
   });
 
@@ -15,7 +15,7 @@ describe(findDuplicateIds, () => {
 
   it('if one id repeats three times, reports it once rather than once per repeat', () => {
     expect(findDuplicateIds([['sources', [{ id: 'team' }, { id: 'team' }, { id: 'team' }]]])).toStrictEqual([
-      { path: 'sources', message: 'carries "team" more than once' },
+      { path: 'sources', message: 'lists "team" more than once' },
     ]);
   });
 

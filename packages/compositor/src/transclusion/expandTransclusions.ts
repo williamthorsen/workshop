@@ -198,7 +198,7 @@ async function expandPartial(
   const placeholder = findPlaceholder(expanded, context.patterns);
   if (placeholder === undefined) {
     if (slot.length > 0) {
-      const detail = `fills a slot in "${partialPosixPath}", which carries no children placeholder`;
+      const detail = `fills a slot in "${partialPosixPath}", which has no children placeholder`;
       throw fail('slot-without-children', detail, at);
     }
     return trimTrailingEmptyLine(expanded);

@@ -24,7 +24,7 @@ describe(findStatusDisagreements, () => {
     delete requireEntry(plan.files, 0).planned;
 
     expect(findStatusDisagreements(plan)).toStrictEqual([
-      { path: 'files[0]', message: 'carries neither a current nor a planned side' },
+      { path: 'files[0]', message: 'has neither a current nor a planned side' },
     ]);
   });
 

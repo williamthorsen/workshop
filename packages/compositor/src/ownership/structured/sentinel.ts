@@ -32,7 +32,7 @@ export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
   if (!carriesSentinel(item, sentinel)) {
     throw new Error(
       `Cannot mark an item with the sentinel at "${sentinel.path.join('.')}": the sentinel cannot be written, and the ` +
-        'item does not already carry it.',
+        'item does not already have it.',
     );
   }
   return item;

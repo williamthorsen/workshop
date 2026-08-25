@@ -13,8 +13,8 @@ describe(findMissingBlobs, () => {
     plan.blobs = {};
 
     expect(findMissingBlobs(plan)).toStrictEqual([
-      { path: 'files[0].current.hash', message: 'names "hash:review-current", which blobs does not carry' },
-      { path: 'files[0].planned.hash', message: 'names "hash:review-planned", which blobs does not carry' },
+      { path: 'files[0].current.hash', message: 'names "hash:review-current", which blobs does not contain' },
+      { path: 'files[0].planned.hash', message: 'names "hash:review-planned", which blobs does not contain' },
     ]);
   });
 

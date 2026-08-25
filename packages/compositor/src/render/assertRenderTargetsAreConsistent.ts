@@ -224,7 +224,7 @@ function collectUnmarkableItems(declaration: OwnedItemsDeclaration, path: string
       if (!carriesSentinel(item, declaration.sentinel)) {
         violations.push({
           path: at,
-          message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
+          message: 'does not have the sentinel, which this declaration cannot write, so it could never be found again',
         });
       }
       continue;

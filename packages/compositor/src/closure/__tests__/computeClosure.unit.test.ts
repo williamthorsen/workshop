@@ -105,7 +105,7 @@ describe(computeClosure, () => {
       expect(closure.diagnostics).toStrictEqual([
         {
           code: 'unknown-reference',
-          message: 'collection:core names "skill:absent" as a dependency, which no source carries.',
+          message: 'collection:core names "skill:absent" as a dependency, which no source contains.',
           at: { artifactId: 'collection:core' },
         },
       ]);
