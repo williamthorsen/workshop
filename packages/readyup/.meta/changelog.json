@@ -1,5 +1,34 @@
 [
   {
+    "version": "0.33.0",
+    "date": "2026-08-25",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Report the repo root in every discoverWorkspaces() result (#402)",
+            "body": "Reports the repo root in every `discoverWorkspaces()` result, flagged by a new `isRoot` field on each `Workspace`, so a kit selects what it needs by filtering one uniform list rather than by the repo's shape. `isRoot` is independent of `isPackage`: A monorepo may publish its root, and a member may be private.\n\nMigration: The returned array now includes the monorepo root, so a caller must filter on `!isRoot` to get only the members. A repo whose root `package.json` is missing or unparseable now throws.",
+            "breaking": true,
+            "hash": "4c1bbc1db4537ed0506295651b0b6f33fbc51910"
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Anchor a kit's compile on its own package root (#396)",
+            "body": "Fixes an issue where `rdy verify --rebuild` reported a mismatch for an unchanged kit whenever it ran from a directory other than the one the kit was compiled in. `rdy compile` now anchors a kit on the nearest package root above its source, so the same source in the same package always compiles to the same bundle.\n\nCommitted bundles are unchanged: The package root is the anchor they were already compiled under.",
+            "hash": "4830bd0f15e2e98ad9aad9b8aca49c0fe4b63e9f"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.32.1",
     "date": "2026-08-24",
     "sections": [

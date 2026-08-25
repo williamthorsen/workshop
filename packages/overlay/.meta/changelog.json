@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.3.6",
+    "date": "2026-08-25",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adopt region folds for module-level helpers (#400)",
+            "body": "Adopts the repo's declaration-order and naming conventions throughout `packages/overlay/src/`. Also deduplicates the chezmoi stubs.",
+            "hash": "d4925d3673ff5ca827dfa0dbf22c29e103e563cf"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.5",
     "date": "2026-08-15",
     "sections": [

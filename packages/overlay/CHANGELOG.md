@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.6 — 2026-08-25
+
+### ♻️ Refactoring
+
+- Adopt region folds for module-level helpers (#400)
+
+  Adopts the repo's declaration-order and naming conventions throughout `packages/overlay/src/`. Also deduplicates the chezmoi stubs.
+
 ## 0.3.5 — 2026-08-15
 
 ### ♻️ Refactoring

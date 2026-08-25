@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.33.0 — 2026-08-25
+
+### 🎉 Features
+
+- 🚨 **Breaking:** Report the repo root in every discoverWorkspaces() result (#402)
+
+  Reports the repo root in every `discoverWorkspaces()` result, flagged by a new `isRoot` field on each `Workspace`, so a kit selects what it needs by filtering one uniform list rather than by the repo's shape. `isRoot` is independent of `isPackage`: A monorepo may publish its root, and a member may be private.
+
+  Migration: The returned array now includes the monorepo root, so a caller must filter on `!isRoot` to get only the members. A repo whose root `package.json` is missing or unparseable now throws.
+
+### 🐛 Bug fixes
+
+- Anchor a kit's compile on its own package root (#396)
+
+  Fixes an issue where `rdy verify --rebuild` reported a mismatch for an unchanged kit whenever it ran from a directory other than the one the kit was compiled in. `rdy compile` now anchors a kit on the nearest package root above its source, so the same source in the same package always compiles to the same bundle.
+
+  Committed bundles are unchanged: The package root is the anchor they were already compiled under.
+
 ## 0.32.1 — 2026-08-24
 
 ### 🐛 Bug fixes
