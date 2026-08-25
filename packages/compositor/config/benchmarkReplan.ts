@@ -20,7 +20,7 @@ import { CompositorConfigSchema } from '../src/schemas/config-schemas.ts';
 import type { RenderTarget } from '../src/schemas/render-target-schemas.ts';
 import { captureSnapshot } from '../src/snapshot/captureSnapshot.ts';
 
-/** The kinds the synthetic workspace carries. */
+/** The kinds the synthetic workspace contains. */
 const KINDS: ReadonlyArray<ResolveKind> = [
   {
     id: 'rulebook',
@@ -85,7 +85,7 @@ try {
 
 // region | Helpers
 
-/** Builds the config the benchmark captures, taking everything the generated source carries. */
+/** Builds the config the benchmark captures, taking everything the generated source contains. */
 function buildConfig(sourceDir: string): CompositorConfig {
   return CompositorConfigSchema.parse({
     tiers: [

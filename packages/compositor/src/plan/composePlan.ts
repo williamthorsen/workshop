@@ -118,10 +118,10 @@ function collectPartials(
     }
   }
 
-  const carried = new Set([...named.map(({ id }) => id), ...files.flatMap((file) => file.contributors.partials)]);
+  const referenced = new Set([...named.map(({ id }) => id), ...files.flatMap((file) => file.contributors.partials)]);
   return known
     .values()
-    .filter((partial) => carried.has(partial.id))
+    .filter((partial) => referenced.has(partial.id))
     .toArray()
     .toSorted((left, right) => compareStrings(left.id, right.id));
 }

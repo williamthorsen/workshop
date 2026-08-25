@@ -29,13 +29,13 @@ export function expandSelector(
     return [];
   }
 
-  const carried = index.bySource.get(kindId)?.get(selector.source) ?? [];
-  if (carried.length === 0) {
+  const fromSource = index.bySource.get(kindId)?.get(selector.source) ?? [];
+  if (fromSource.length === 0) {
     diagnostics.push({
       code: 'empty-source',
       message: `Source "${selector.source}" contains nothing of kind "${kindId}".`,
       at,
     });
   }
-  return carried;
+  return fromSource;
 }
