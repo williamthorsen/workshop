@@ -1,7 +1,7 @@
 import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/runChezmoi.ts';
-import { partitionStatus } from './buildEntries.ts';
+import { partitionStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
 /**
