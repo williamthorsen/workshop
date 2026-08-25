@@ -10,16 +10,11 @@ export { readEnginesNodeFloor, satisfiesNodeFloor } from './engines.ts';
 export type { EsYear } from './es-year.ts';
 export { esYearForNodeMajor } from './es-year.ts';
 export { commandExists, fileContains, fileDoesNotContain, fileExists, filesExist, readFile } from './filesystem.ts';
-export {
-  compareLocalRefs,
-  compareRefToRemote,
-  expandHome,
-  isAtRepoRoot,
-  isGitRepo,
-  makeLocalRefSyncCheck,
-  makeRemoteRefSyncCheck,
-  runGit,
-} from './git/index.ts';
+export { compareLocalRefs } from './git/compare-local-refs.ts';
+export { compareRefToRemote } from './git/compare-ref-to-remote.ts';
+export { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from './git/factories.ts';
+export { isAtRepoRoot, isGitRepo } from './git/repo-predicates.ts';
+export { expandHome, runGit } from './git/run-git.ts';
 export { computeHash, fileMatchesHash } from './hashing.ts';
 export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json.ts';
 export { getJsonValue, hasJsonValue } from './json-value.ts';
