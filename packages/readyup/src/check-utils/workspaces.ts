@@ -7,9 +7,9 @@ import { walkDirectories } from '../portable/walkDirectories.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
-/** A monorepo workspace, or the single workspace of a single-workspace repo. */
+/** A repo's root, or one of a monorepo's members. */
 export interface Workspace {
-  /** Workspace directory, relative to the directory discovery was anchored to. `'.'` for a single-workspace repo. */
+  /** Workspace directory, relative to the directory discovery was anchored to. `'.'` for the repo root. */
   readonly dir: string;
   /** Absolute filesystem path to the workspace directory. */
   readonly absolutePath: string;
@@ -17,6 +17,8 @@ export interface Workspace {
   readonly name: string | undefined;
   /** True iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
   readonly isPackage: boolean;
+  /** True for the repo root, which every repo shape reports. Independent of `isPackage`: a root may publish. */
+  readonly isRoot: boolean;
   /** Parsed `package.json` contents, validated to be a record. */
   readonly packageJson: Readonly<Record<string, unknown>>;
 }
@@ -36,6 +38,9 @@ const workspacesByDir = new Map<string, Workspace[]>();
  * Discovers the workspaces of the current repo.
  * Detects pnpm (`pnpm-workspace.yaml`), then npm/yarn (`package.json.workspaces`),
  * and falls back to a single-workspace repo using the root `package.json`.
+ *
+ * The repo root is reported in every shape, once, flagged `isRoot`, so a caller wanting the members alone
+ * filters `!isRoot` rather than reconstructing the distinction from `dir`.
  *
  * Memoized per directory for the life of the process: repeated calls in one run share a single directory walk
  * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
@@ -74,30 +79,23 @@ function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions[
   return workspaces.filter(filter);
 }
 
-/** Builds the unfiltered workspace list for the repo at `rootDir`. */
+/** Builds the unfiltered workspace list for the repo at `rootDir`, the root entry leading it. */
 function buildWorkspaces(rootDir: string): Workspace[] {
+  // The root is reported in every repo shape, so its manifest MUST be readable in every shape.
   const rootPackageJsonPath = join(rootDir, 'package.json');
-
-  const patternResult = resolveWorkspacePatterns(rootDir);
-
-  if (patternResult === null) {
-    // Single-workspace fallback uses the root package.json, which MUST exist.
-    const rootPackageJson = readJsonFile(rootPackageJsonPath);
-    if (rootPackageJson === undefined) {
-      throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
-    }
-    return [buildWorkspaceFromPackageJson('.', rootDir, rootPackageJson)];
+  const rootPackageJson = readJsonFile(rootPackageJsonPath);
+  if (rootPackageJson === undefined) {
+    throw new Error(`Workspace discovery: no readable package.json at ${rootPackageJsonPath}`);
   }
+  const rootWorkspace = buildWorkspaceFromPackageJson('.', rootDir, rootPackageJson);
 
-  // Monorepo path: still require a root package.json (both pnpm and npm workspaces do).
-  if (!existsSync(rootPackageJsonPath)) {
-    throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
-  }
+  const patternResult = resolveWorkspacePatterns(rootDir, rootPackageJson);
+  if (patternResult === null) return [rootWorkspace];
 
-  // `matchedDirs` is already sorted ascending by `expandPatterns`, and each workspace's
-  // `dir` equals its entry in that list, so the result is sorted without an extra pass.
+  // `matchedDirs` is already sorted ascending by `expandPatterns` and holds no `.`, and each workspace's
+  // `dir` equals its entry in that list, so the root leads a sorted result without an extra pass.
   const matchedDirs = expandPatterns(rootDir, patternResult.patterns, patternResult.source);
-  const workspaces: Workspace[] = [];
+  const workspaces: Workspace[] = [rootWorkspace];
   for (const relDir of matchedDirs) {
     const workspace = buildWorkspace(rootDir, relDir);
     if (workspace !== undefined) {
@@ -109,10 +107,13 @@ function buildWorkspaces(rootDir: string): Workspace[] {
 }
 
 /**
- * Resolves the workspace pattern list for the repo at `rootDir`.
+ * Resolves the workspace pattern list for the repo at `rootDir`, whose parsed root manifest is `rootPackageJson`.
  * Returns `null` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
  */
-function resolveWorkspacePatterns(rootDir: string): { patterns: string[]; source: WorkspacePatternSource } | null {
+function resolveWorkspacePatterns(
+  rootDir: string,
+  rootPackageJson: Record<string, unknown>,
+): { patterns: string[]; source: WorkspacePatternSource } | null {
   const pnpmWorkspacePath = join(rootDir, 'pnpm-workspace.yaml');
   if (existsSync(pnpmWorkspacePath)) {
     const patterns = readPnpmWorkspacePackages(pnpmWorkspacePath);
@@ -122,13 +123,9 @@ function resolveWorkspacePatterns(rootDir: string): { patterns: string[]; source
     // `packages` key absent — fall through to npm/single detection.
   }
 
-  const rootPackageJson = readJsonFile(join(rootDir, 'package.json'));
-  if (rootPackageJson !== undefined) {
-    const workspaces = rootPackageJson['workspaces'];
-    const npmPatterns = extractNpmWorkspacePatterns(workspaces);
-    if (npmPatterns !== null) {
-      return { patterns: npmPatterns, source: 'package.json' };
-    }
+  const npmPatterns = extractNpmWorkspacePatterns(rootPackageJson['workspaces']);
+  if (npmPatterns !== null) {
+    return { patterns: npmPatterns, source: 'package.json' };
   }
 
   return null;
@@ -176,7 +173,8 @@ function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePa
 
   const match = patterns.map((pattern) => `${normalizePattern(pattern)}/package.json`);
 
-  // The root is not a workspace, and a pattern of `**` translates to a glob matching its own manifest.
+  // A pattern of `**` translates to a glob matching the root's own manifest; `buildWorkspaces` reports the
+  // root in its own right, so dropping it here is what leaves exactly one entry for it.
   return walkDirectories({ root: rootDir, match }).filter((relDir) => relDir !== '.');
 }
 
@@ -208,7 +206,7 @@ function buildWorkspaceFromPackageJson(
   const isPackage = packageJson['private'] !== true;
   // One call's mutation would otherwise reach every later call, which shares these objects.
   deepFreeze(packageJson);
-  return Object.freeze({ dir: relDir, absolutePath, name, isPackage, packageJson });
+  return Object.freeze({ dir: relDir, absolutePath, name, isPackage, isRoot: relDir === '.', packageJson });
 }
 
 // endregion | Helpers

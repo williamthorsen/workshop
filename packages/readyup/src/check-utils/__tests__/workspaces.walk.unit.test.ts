@@ -45,14 +45,14 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
   it('reads every readable directory when none fails', ({ temp }) => {
     writeMonorepo(temp);
 
-    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha', 'locked', 'inner']);
+    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha', 'locked', 'inner']);
   });
 
   it('drops a directory it cannot read for a benign reason along with its subtree, keeping the rest', ({ temp }) => {
     writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EACCES');
 
-    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['alpha']);
+    expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
 
   it('propagates a systemic read failure rather than answering with a partial walk', ({ temp }) => {

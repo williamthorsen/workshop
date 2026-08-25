@@ -150,7 +150,7 @@ describe(buildFindingReport, () => {
 
 // region | Helpers
 
-/** Writes a two-workspace repo in which `packages/errors` publishes the package the fixtures name. */
+/** Writes a monorepo with two member packages, of which `packages/errors` publishes the package the fixtures name. */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true });
   temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));

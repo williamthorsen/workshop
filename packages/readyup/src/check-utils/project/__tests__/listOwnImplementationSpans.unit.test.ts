@@ -183,6 +183,18 @@ describe(listOwnImplementationSpans, () => {
     });
   });
 
+  describe('in a monorepo whose root manifest publishes the package', () => {
+    it('exempts a defining declaration in any workspace, the root being the whole repo', ({ temp }) => {
+      writeMonorepoPublishingFromRoot(temp);
+      const path = 'packages/app/src/describeError.ts';
+      const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
+
+      expect(listOwnImplementationSpans(path, own)).toStrictEqual([
+        { endLine: 1, name: 'describeError', startLine: 1 },
+      ]);
+    });
+  });
+
   describe('in a single-package repo', () => {
     it('exempts the defining declaration alone, not the repo', ({ temp }) => {
       writeSinglePackage(temp);
@@ -214,11 +226,18 @@ function buildOwnImplementation(sources: readonly ProjectSource[]): OwnImplement
   return { exportNames: EXPORT_NAMES, packageName: PACKAGE_NAME, sources };
 }
 
-/** Writes a two-workspace repo in which `packages/errors` publishes the package under test. */
+/** Writes a monorepo with two member packages, of which `packages/errors` publishes the package under test. */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true });
   temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));
   temp.writeJson('packages/errors/package.json', { name: PACKAGE_NAME, version: '1.0.0' });
+  temp.writeJson('packages/app/package.json', { name: '@scope/app', version: '1.0.0' });
+}
+
+/** Writes a monorepo whose root manifest publishes the package under test, alongside a member that does not. */
+function writeMonorepoPublishingFromRoot(temp: TempTree): void {
+  temp.writeJson('package.json', { name: PACKAGE_NAME, version: '1.0.0' });
+  temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));
   temp.writeJson('packages/app/package.json', { name: '@scope/app', version: '1.0.0' });
 }
 

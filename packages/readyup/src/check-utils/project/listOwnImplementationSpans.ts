@@ -24,10 +24,11 @@ export interface OwnImplementation {
  * file exports under one of the package's recommended names, in a file inside the workspace publishing the package.
  *
  * Every narrowing is required. A repo publishing the package is where the idiom is supposed to live, but the workspace
- * is the whole repository in a single-package project, so a workspace-wide rule would turn the check off there, and in
- * any repo it would silence a second file hand-rolling the idiom instead of importing the local implementation. The
- * argument carries one step further, to the declaration: the reasoning reaches a wrapper of the idiom its own kit
- * detects, which cannot adopt itself, while its neighbours in the same file are ordinary code.
+ * is the whole repository wherever the root manifest declares the name, as a single-package project's always does, so a
+ * workspace-wide rule would turn the check off there, and in any repo it would silence a second file hand-rolling the
+ * idiom instead of importing the local implementation. The argument carries one step further, to the declaration: the
+ * reasoning reaches a wrapper of the idiom its own kit detects, which cannot adopt itself, while its neighbours in the
+ * same file are ordinary code.
  *
  * The declaration is read from the file's text, so a detector reporting sites that declare nothing is exempted on the
  * same terms as one reporting a declaration. A file the sweep never read cannot be shown to declare anything, and a

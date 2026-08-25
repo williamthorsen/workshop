@@ -49,7 +49,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     const privateWorkspaces = discoverWorkspaces({ filter: (workspace) => !workspace.isPackage });
 
     expect(packages.map((workspace) => workspace.name)).toStrictEqual(['alpha']);
-    expect(privateWorkspaces.map((workspace) => workspace.name)).toStrictEqual(['internal']);
+    expect(privateWorkspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'internal']);
     // Guards the equality below, which two zeroes would also satisfy.
     expect(walkedForFirstCall).toBeGreaterThan(0);
     expect(readDirectories).toHaveLength(walkedForFirstCall);
@@ -67,7 +67,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 
     const workspaces = discoverWorkspaces();
 
-    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['solo']);
+    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['second', 'solo']);
     expect(readDirectories.length).toBeGreaterThan(walkedForFirstRoot);
   });
 
@@ -77,14 +77,15 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     discoverWorkspaces().length = 0;
 
     expect(discoverWorkspaces().map((workspace) => workspace.dir)).toStrictEqual([
+      '.',
       'packages/alpha',
       'packages/internal',
     ]);
   });
 
   it('caches nothing when discovery throws, so a repaired repo is discovered on the next call', ({ temp }) => {
-    expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
-    expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
+    expect(() => discoverWorkspaces()).toThrow(/no readable package\.json at/);
+    expect(() => discoverWorkspaces()).toThrow(/no readable package\.json at/);
 
     temp.writeJson('package.json', { name: 'solo' });
 
@@ -94,7 +95,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 
 // region | Helpers
 
-/** Writes a two-workspace monorepo whose members differ in `private`, so a filter can tell them apart. */
+/** Writes a monorepo with two member packages that differ in `private`, so a filter can tell them apart. */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
   temp.writeJson(join('packages/alpha', 'package.json'), { name: 'alpha' });
