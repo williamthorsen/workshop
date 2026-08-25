@@ -131,7 +131,7 @@ describe(fillInlays, () => {
     expect(content.startsWith('<!-- inlay:first:start -->')).toBe(true);
   });
 
-  // Whether a filler deploys is a property of the filler and the target, so every host declaring the inlay gets one answer.
+  // Whether a filler deploys is a property of the filler and the target, so every host declaring the inlay gets one verdict.
   it('reports a filler the target deploys nowhere once, however many hosts declare the inlay', () => {
     const fill = run({
       renders: [

@@ -34,7 +34,7 @@ export class RenderTargetConsistencyError extends ConsistencyError {
  * link grammar compiles and captures exactly one group, that an inlay stage's two marker templates can delimit a span
  * and name what they stand for with a reshape rule that compiles, and that no owned-items declaration contends for a
  * collection another already owns or nests inside, disagrees with a sibling about its host's format, sits on a region
- * host, or carries an item its sentinel could never write or find again.
+ * host, or has an item its sentinel could never write or find again.
  *
  * A stage declared twice would run twice, and a kind deployed twice would put one artifact in two places; both are
  * authoring mistakes a declaration can express and no render could act on. Checking them here rather than at the first
@@ -163,7 +163,7 @@ export function assertRenderTargetsAreConsistent(
  * at the empty string is the target root, which every host is under and no host contradicts.
  *
  * A host whose shape a tree layout's claim rule could match, such as one at the target root under a file layout rooted
- * there, is decidable only against the slugs a catalog turns out to carry. The scan that reads current target state
+ * there, is decidable only against the slugs a catalog turns out to contain. The scan that reads current target state
  * excludes declared hosts instead.
  */
 function collectHostCollisions(
@@ -210,7 +210,7 @@ function collectNestedCollections(
  * Reports a declared item the declaration's own sentinel could never reach.
  *
  * The two branches fault differently and both are decidable from the declaration alone. A sentinel the engine cannot
- * write needs the item to carry the mark already, so one that does not could never be found again. A sentinel it can
+ * write needs the item to have the mark already, so one that does not could never be found again. A sentinel it can
  * write needs somewhere to write it, and an item that is not a mapping the path descends through offers none. Catching
  * both here turns what would otherwise throw at the first host the declaration was run over into a located authoring
  * fault, reported beside every other mistake in the declarations.
@@ -254,7 +254,7 @@ function collectMarkerFaults(markers: MarkerPair, path: string, violations: Arra
  * destination scan passes over on the rule a source is enumerated by. Either deploys files that are never diffed, never
  * reported as drifted, and never removed, which is the silent kind of fault this pass exists to make loud.
  *
- * A template leading with its placeholder needs no check, a slug carrying such a prefix never being enumerated.
+ * A template leading with its placeholder needs no check, a slug with such a prefix never being enumerated.
  */
 function collectNameTemplateFaults(template: string | undefined, path: string, violations: Array<Violation>): void {
   if (template === undefined) {
@@ -275,7 +275,7 @@ function collectNameTemplateFaults(template: string | undefined, path: string, v
 /**
  * Reports a contribution marker template that does not stand its contributor exactly once.
  *
- * Once, not at least once: the template renders to one pattern carrying one capture group, and a second placeholder
+ * Once, not at least once: the template renders to one pattern with one capture group, and a second placeholder
  * would leave the reader a choice of which capture named the contributor.
  */
 function collectContributorFaults(template: MarkerPair, path: string, violations: Array<Violation>): void {
@@ -314,7 +314,7 @@ function collectPlaceholderFaults(
   }
 }
 
-/** Reports each value `names` carries twice, appending to `violations` in the order the repeats first appear. */
+/** Reports each value `names` lists twice, appending to `violations` in the order the repeats first appear. */
 function collectRepeats(names: ReadonlyArray<string>, path: string, verb: string, violations: Array<Violation>): void {
   const seen = new Set<string>();
   const repeated = new Set<string>();

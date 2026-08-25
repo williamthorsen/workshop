@@ -212,7 +212,7 @@ describe(assertRenderTargetsAreConsistent, () => {
       ]);
     });
 
-    it('accepts an item that already carries a sentinel the declaration cannot write', () => {
+    it('accepts an item that already has a sentinel the declaration cannot write', () => {
       const marked: RenderTarget = {
         ...claude,
         ownedItems: [
@@ -244,7 +244,7 @@ describe(assertRenderTargetsAreConsistent, () => {
     ]);
   });
 
-  it('reports a deployment naming a kind no descriptor carries', async () => {
+  it('reports a deployment naming a kind no descriptor declares', async () => {
     const unknown: RenderTarget = {
       ...claude,
       deployments: [{ ...skillDeployment, kindId: 'subagent' }],

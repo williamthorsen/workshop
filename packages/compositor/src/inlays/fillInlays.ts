@@ -32,7 +32,7 @@ export interface InlayFill {
  * Fills every inlay this target's artifacts declared, from the artifacts the config bound to each.
  *
  * Pure and free of target state, which is what lets the validation flow run it for the faults alone while the plan
- * flow runs it for the content. It answers in the type it was given, so a caller substitutes the filled column for the
+ * flow runs it for the content. It returns the type it was given, so a caller substitutes the filled column for the
  * one it held and everything downstream reads filled bodies without knowing a fill happened.
  *
  * The splice happens here rather than during capture because a binding is a config's to make: filling at capture would
@@ -85,7 +85,7 @@ export function fillInlays(input: FillInlaysInput): InlayFill {
 /**
  * The fault that leaves a host with no body worth writing, held apart from the host that will raise it.
  *
- * One read serves every host declaring the inlay, while a block is one consequence per host, so the read carries what
+ * One read serves every host declaring the inlay, while a block is one consequence per host, so the read states what
  * the fault is and each host names itself when it raises it.
  */
 interface BlockingFault {
@@ -161,8 +161,8 @@ type FillerRead =
  * The sites are read forward and spliced backward. Reading forward is what puts the contributors in the order the body
  * declares them; splicing backward is what keeps every unfilled index addressing the line it was recorded against.
  *
- * Every site is read before the host is answered, even once one has blocked it, so a fault does not hide behind an
- * earlier one and a single run reports every mistake a config carries. The render is ended by the first block, in
+ * Every site is read before the host is decided, even once one has blocked it, so a fault does not hide behind an
+ * earlier one and a single run reports every mistake a config contains. The render is ended by the first block, in
  * declaration order, a blocked destination taking one reason while the report takes them all.
  *
  * A blocking fault travels twice: as a diagnostic, which is how the report lists it beside the host's other faults, and
@@ -213,7 +213,7 @@ function fillHost(context: FillContext, hostId: ArtifactId, render: RenderedArti
 /**
  * Names the host's own contributors alongside every artifact whose body reached it through an inlay.
  *
- * Each filler carries the markers its block was written behind, so a reader holding the deployed file can find the
+ * Each filler records the markers its block was written behind, so a reader holding the deployed file can find the
  * bytes each contributor put there. A filler the host already names keeps the entry it had: the host's own attribution
  * of an artifact outranks the one a fill would give it.
  */
@@ -288,7 +288,7 @@ function readFillers(context: FillContext, inlayName: string): FillerRead {
  * Reads every filler one inlay is bound to, once per target.
  *
  * Whether a filler deploys at this target, renders at all, or nests an inlay of its own are all properties of the
- * filler and the target, so re-deciding them per host would repeat one answer and report one fault as many.
+ * filler and the target, so re-deciding them per host would repeat one verdict and report one fault as many.
  */
 function readInlay(context: FillContext, inlayName: string): FillerRead {
   const held = context.reads.get(inlayName);

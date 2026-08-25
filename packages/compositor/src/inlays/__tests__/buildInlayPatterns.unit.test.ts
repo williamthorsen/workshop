@@ -14,7 +14,7 @@ describe(buildInlayPatterns, () => {
     expect(comment.inlay.test('<!-- inlay: -->')).toBe(false);
   });
 
-  it('matches a directive carrying an unrecognized parameter without capturing it as a name', () => {
+  it('matches a directive containing an unrecognized parameter without capturing it as a name', () => {
     const malformed = '<!-- inlay: preferences extra -->';
 
     expect(comment.anyInlay.test(malformed)).toBe(true);
@@ -32,7 +32,7 @@ describe(buildInlayPatterns, () => {
     expect(hash.anyInlay.test('# inlay:')).toBe(true);
   });
 
-  it('matches a fence carrying regular-expression syntax literally', () => {
+  it('matches a fence containing regular-expression syntax literally', () => {
     const brackets = buildInlayPatterns({ open: '[[', close: ']]' });
 
     expect(brackets.inlay.exec('[[ inlay: preferences ]]')?.[1]).toBe('preferences');

@@ -94,7 +94,7 @@ describe(renderArtifact, () => {
     });
   });
 
-  it('reports each partial with the record a plan carries', async () => {
+  it('reports each partial with the record a plan contains', async () => {
     using tree = createTempTree({
       '_data/shared.md': 'Shared text.\n',
       'skills/review/SKILL.md': '<!-- include: ../../_data/shared.md / -->\n',

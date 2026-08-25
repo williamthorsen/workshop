@@ -87,7 +87,7 @@ describe(ensureOwnedItems, () => {
     expect(merged).toContain('source: compositor');
   });
 
-  it('creates the collection and the structure above it when the host carries neither', () => {
+  it('creates the collection and the structure above it when the host has neither', () => {
     const merged = contentOf(ensureOwnedItems('other: 1\n', YAML_SPEC, [{ name: 'relay' }]));
 
     expect(merged).toContain('other: 1');
@@ -159,7 +159,7 @@ describe(ensureOwnedItems, () => {
       expect(outcome).toHaveProperty('blocked.reason', expect.stringContaining('other than a collection'));
     });
 
-    it('expands an item the host held inline, the indent unit and trailing newline being what carry over', () => {
+    it('expands an item the host held inline, the indent unit and trailing newline being what survive', () => {
       const content = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
 
       expect(contentOf(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]))).toBe(
@@ -170,7 +170,7 @@ describe(ensureOwnedItems, () => {
   });
 
   describe('under a sentinel the engine cannot write', () => {
-    it('writes an item that already carries the mark', () => {
+    it('writes an item that already has the mark', () => {
       const content = '{\n  "hooks": []\n}\n';
       const item = { name: 'relay', commands: ['node relay.mjs --sentinel compositor'] };
 
@@ -189,7 +189,7 @@ describe(ensureOwnedItems, () => {
 
 // region | Helpers
 
-/** Reads the content an outcome carries, failing the test when it blocked instead. */
+/** Reads the content an outcome contains, failing the test when it blocked instead. */
 function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
   if ('blocked' in outcome) {
     throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);

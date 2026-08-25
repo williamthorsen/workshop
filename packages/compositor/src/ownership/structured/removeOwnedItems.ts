@@ -8,9 +8,9 @@ import { carriesSentinel } from './sentinel.ts';
  * Deletes every item the engine owns from a structured host, then prunes the structure the deletion emptied.
  *
  * A collection left holding foreign items survives with those items alone; one left holding nothing is removed, along
- * with any ancestor the removal emptied. An ancestor still carrying other keys stays.
+ * with any ancestor the removal emptied. An ancestor that still has other keys stays.
  *
- * A host carrying no owned items is returned untouched rather than re-serialized, so removing nothing writes nothing.
+ * A host with no owned items is returned untouched rather than re-serialized, so removing nothing writes nothing.
  */
 export function removeOwnedItems(content: string, spec: OwnedItemsSpec): OwnershipOutcome {
   const opened = openDocument(content, spec.format);

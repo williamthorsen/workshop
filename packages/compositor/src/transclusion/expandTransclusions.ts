@@ -40,11 +40,11 @@ export interface TransclusionSource {
  * lines came from.
  *
  * `entryPath` is relative to `source.dir`, and each directive's target resolves against the directory of the file
- * carrying it. Slot content keeps the attribution of the file that supplied it rather than of the partial framing it,
+ * containing it. Slot content keeps the attribution of the file that supplied it rather than of the partial framing it,
  * so a token traces to the file an author wrote it in.
  *
  * A directive that cannot be resolved ends the expansion and comes back as a diagnostic, since a cycle or a missing
- * target leaves no body to carry on with. An unreadable file throws: a permissions fault is not an authoring mistake.
+ * target leaves no body to continue with. An unreadable file throws: a permissions fault is not an authoring mistake.
  */
 export async function expandTransclusions(
   entryPath: string,
@@ -81,12 +81,12 @@ function appendSegments(stack: Array<OpenFrame>, out: Array<MutableSegment>, inc
   pushMerged(stack.at(-1)?.slot ?? out, incoming);
 }
 
-/** Builds a segment, omitting the attribution rather than carrying it as `undefined`. */
+/** Builds a segment, omitting the attribution rather than recording it as `undefined`. */
 function createSegment(lines: Array<string>, partialId: PartialId | undefined): MutableSegment {
   return partialId === undefined ? { lines } : { lines, partialId };
 }
 
-/** Carries a diagnostic out of the recursion to the one boundary that turns it back into data. */
+/** Takes a diagnostic out of the recursion to the one boundary that turns it back into data. */
 class DirectiveFailure extends Error {
   override readonly name = 'DirectiveFailure';
   readonly diagnostic: TransclusionDiagnostic;
@@ -170,7 +170,7 @@ async function expandFile(
  * Expands one partial and fills its slot with `slot`, registering the partial so the caller learns what it drew from.
  *
  * `at` locates the directive that reached this partial, so a cycle or an unfillable slot is reported against the line
- * an author wrote rather than against the partial that ends up carrying the fault.
+ * an author wrote rather than against the partial that ends up containing the fault.
  */
 async function expandPartial(
   partialPath: string,
@@ -207,7 +207,7 @@ async function expandPartial(
   return trimTrailingEmptyLine(spliceSlot(expanded, placeholder, slot));
 }
 
-/** Everything one expansion carries from the entry file down through every partial it reaches. */
+/** Everything one expansion collects from the entry file down through every partial it reaches. */
 interface ExpansionContext {
   readonly partials: Map<PartialId, PartialEntry>;
   readonly patterns: DirectivePatterns;
@@ -271,12 +271,12 @@ function pushMerged(target: Array<MutableSegment>, incoming: ReadonlyArray<Segme
 }
 
 /**
- * Resolves a directive's target against the directory of the file carrying it.
+ * Resolves a directive's target against the directory of the file containing it.
  *
  * Containment is lexical: a symlink under the source pointing outside it is not resolved, because a source tree is not
- * expected to carry symlinks.
+ * expected to contain symlinks.
  *
- * A target must be a file. A directory answers the existence question the same way a file does, so a directive that
+ * A target must be a file. A directory passes the existence check the same way a file does, so a directive that
  * dropped its filename would otherwise pass this gate and fault at the read as an exception.
  */
 async function resolveTarget(

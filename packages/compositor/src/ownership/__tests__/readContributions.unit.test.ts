@@ -10,7 +10,7 @@ const PATTERNS: ContributionPatterns = {
 };
 
 describe(readContributions, () => {
-  it('reads each contribution the host carries, in document order', () => {
+  it('reads each contribution the host contains, in document order', () => {
     const content =
       '<!-- rulebook:naming -->\nName functions with a verb.\n<!-- /rulebook:naming -->\n\n' +
       '<!-- rulebook:style -->\nUse sentence case.\n<!-- /rulebook:style -->\n';
@@ -51,7 +51,7 @@ describe(readContributions, () => {
     ]);
   });
 
-  it('if the host carries no contributions, reports none', () => {
+  it('if the host has no contributions, reports none', () => {
     expect(readContributions('# Guidance\n', PATTERNS)).toStrictEqual([]);
   });
 

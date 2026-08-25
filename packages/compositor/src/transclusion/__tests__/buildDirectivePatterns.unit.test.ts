@@ -22,7 +22,7 @@ describe(buildDirectivePatterns, () => {
     expect(comment.open.test('<!-- include: _data/shared.md / -->')).toBe(false);
   });
 
-  it('matches a directive carrying an unrecognized parameter without capturing it as a target', () => {
+  it('matches a directive containing an unrecognized parameter without capturing it as a target', () => {
     const malformed = '<!-- include: _data/shared.md extra -->';
 
     expect(comment.anyInclude.test(malformed)).toBe(true);
@@ -39,7 +39,7 @@ describe(buildDirectivePatterns, () => {
     expect(hash.children.test('# children')).toBe(true);
   });
 
-  it('matches a fence carrying regular-expression syntax literally', () => {
+  it('matches a fence containing regular-expression syntax literally', () => {
     const brackets = buildDirectivePatterns({ open: '[[', close: ']]' });
 
     expect(brackets.children.test('[[ children ]]')).toBe(true);

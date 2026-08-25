@@ -9,7 +9,7 @@ export const INLAY_NAME_PLACEHOLDER = '{inlayName}';
 /**
  * Renders the markers a filled inlay is fenced by.
  *
- * The substitution goes through a function rather than a string, so a name carrying `$&` or `$'` is inserted verbatim
+ * The substitution goes through a function rather than a string, so a name containing `$&` or `$'` is inserted verbatim
  * instead of being read as a replacement pattern -- the same care `renderContributionMarkers` takes over an id.
  */
 export function renderInlayMarkers(template: MarkerPair, inlayName: string): RegionMarkers {

@@ -25,7 +25,7 @@ interface HostShape {
 // row rather than something a reader has to think to ask.
 const SHAPES: ReadonlyArray<HostShape> = [
   { name: 'an empty document', expected: 'absent', json: '', yaml: '' },
-  { name: 'a document carrying other keys', expected: 'absent', json: '{"other": 1}', yaml: 'other: 1\n' },
+  { name: 'a document containing other keys', expected: 'absent', json: '{"other": 1}', yaml: 'other: 1\n' },
   {
     name: 'a missing leaf below a present ancestor',
     expected: 'absent',
@@ -102,7 +102,7 @@ describe.each(['json', 'yaml'] as const)('DocumentAccess over a %s host', (forma
 
 // region | Helpers
 
-/** Reads the content an outcome carries, failing the test when it blocked instead. */
+/** Reads the content an outcome contains, failing the test when it blocked instead. */
 function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
   if ('blocked' in outcome) {
     throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);

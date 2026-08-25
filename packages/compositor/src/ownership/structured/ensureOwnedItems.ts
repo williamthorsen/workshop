@@ -12,9 +12,9 @@ import { applySentinel, carriesSentinel } from './sentinel.ts';
  * four behaviours at once -- a re-run is a no-op, a drifted item is replaced in place, accidental duplicates collapse,
  * and foreign items keep their relative order.
  *
- * Each item carries the sentinel before it is written, so nothing reaches the host that could not be found again.
+ * Each item has the sentinel before it is written, so nothing reaches the host that could not be found again.
  * A sentinel the engine can write is stamped on; one it cannot is required of the item already, and an item
- * lacking it is refused. A collection the host does not carry is created, unless there is nothing to put in it.
+ * lacking it is refused. A collection the host does not have is created, unless there is nothing to put in it.
  *
  * Content that needs no change is returned untouched rather than re-serialized, which is what keeps a re-run
  * byte-identical: re-emitting a parsed document reproduces its comments but not necessarily every formatting choice.
@@ -55,7 +55,7 @@ export function ensureOwnedItems(
 
 // region | Helpers
 
-/** True when two item lists carry the same data, which is how an ensure pass recognizes it has nothing to do. */
+/** True when two item lists contain the same data, which is how an ensure pass recognizes it has nothing to do. */
 function readsIdentically(
   document: DocumentAccess,
   before: ReadonlyArray<ItemHandle>,

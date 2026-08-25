@@ -22,15 +22,15 @@ const CLAUDE_GROUP = {
 const ROVO_ENTRY = { name: 'on_session_start', commands: ['node relay.mjs --sentinel codeassembly-agents'] };
 
 describe(carriesSentinel, () => {
-  it('if the item carries the value at the sentinel path, claims it', () => {
+  it('if the item has the value at the sentinel path, claims it', () => {
     expect(carriesSentinel({ name: 'relay', source: 'compositor' }, SENTINEL)).toBe(true);
   });
 
-  it('if the item carries another value there, does not claim it', () => {
+  it('if the item has another value there, does not claim it', () => {
     expect(carriesSentinel({ name: 'relay', source: 'vendor-tool' }, SENTINEL)).toBe(false);
   });
 
-  it('if the item carries nothing there, does not claim it', () => {
+  it('if the item has nothing there, does not claim it', () => {
     expect(carriesSentinel({ name: 'relay' }, SENTINEL)).toBe(false);
   });
 
@@ -50,13 +50,13 @@ describe(carriesSentinel, () => {
     expect(carriesSentinel(ROVO_ENTRY, ROVO_HOOK)).toBe(true);
   });
 
-  it('claims an item when any one of the array elements carries the mark', () => {
+  it('claims an item when any one of the array elements has the mark', () => {
     const group = { hooks: [{ command: 'vendor-tool sync' }, { command: 'relay --sentinel codeassembly-agents' }] };
 
     expect(carriesSentinel(group, CLAUDE_HOOK)).toBe(true);
   });
 
-  it('does not claim an item whose array carries the mark nowhere', () => {
+  it('does not claim an item whose array has the mark nowhere', () => {
     expect(carriesSentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toBe(false);
   });
 
@@ -96,11 +96,11 @@ describe(applySentinel, () => {
     expect(applySentinel({ name: 'relay' }, SENTINEL)).toStrictEqual({ name: 'relay', source: 'compositor' });
   });
 
-  it('passes through an item that already carries a sentinel the engine cannot write', () => {
+  it('passes through an item that already has a sentinel the engine cannot write', () => {
     expect(applySentinel(CLAUDE_GROUP, CLAUDE_HOOK)).toStrictEqual(CLAUDE_GROUP);
   });
 
-  it('if the sentinel cannot be written and the item does not carry it, throws naming the path', () => {
+  it('if the sentinel cannot be written and the item does not have it, throws naming the path', () => {
     expect(() => applySentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toThrow(
       /hooks\.\*\.command.*does not already have it/s,
     );

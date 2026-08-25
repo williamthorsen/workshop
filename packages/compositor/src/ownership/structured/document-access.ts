@@ -8,7 +8,7 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 /**
  * One item of a collection, held in whatever form its document keeps it.
  *
- * Opaque on purpose. A YAML item is a node carrying its own comments, and passing a foreign item back through as that
+ * Opaque on purpose. A YAML item is a node containing its own comments, and passing a foreign item back through as that
  * same node is what keeps its comments alive across an ensure pass; rebuilding it from plain data would silently drop
  * them. Reading an item as data goes through `toPlain`, which is all the sentinel check needs.
  */
@@ -50,7 +50,7 @@ export function openDocument(
  * The formatting a JSON host is written back in: the indent unit read from the source, and whether the file ends in a
  * newline.
  *
- * Those two are what carry over. `JSON.stringify` expands every object and array across lines when given an indent, so
+ * Those two are what survive. `JSON.stringify` expands every object and array across lines when given an indent, so
  * a host holding an item inline gets it back expanded.
  */
 interface JsonFormat {
@@ -76,10 +76,10 @@ function detectJsonFormat(content: string): JsonFormat {
 }
 
 /**
- * True for a YAML node carrying nothing, which a key written with no value parses to.
+ * True for a YAML node containing nothing, which a key written with no value parses to.
  *
  * Such a key is a host with nothing in it rather than a host holding something else, and reads as absent to match the
- * JSON side, where the same document carries a plain `null`. Without the scalar unwrapped, a stubbed-out key would be
+ * JSON side, where the same document has a plain `null`. Without the scalar unwrapped, a stubbed-out key would be
  * refused as a foreign value the engine must not write over.
  */
 function holdsNothing(node: unknown): boolean {

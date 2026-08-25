@@ -7,7 +7,7 @@ describe(composePartialId, () => {
     expect(composePartialId('team', '_data/shared.md')).toBe('team:_data/shared.md');
   });
 
-  it('gives two sources carrying one path two ids, since a partial belongs to the source that holds it', () => {
+  it('gives two sources containing one path two ids, since a partial belongs to the source that holds it', () => {
     expect(composePartialId('team', '_data/shared.md')).not.toBe(composePartialId('library', '_data/shared.md'));
   });
 });

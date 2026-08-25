@@ -1,4 +1,4 @@
-/** Where a directive sits: the file carrying it, relative to its source, and the line it occupies. */
+/** Where a directive sits: the file containing it, relative to its source, and the line it occupies. */
 export interface DirectiveRef {
   readonly path: string;
   readonly line: number;
@@ -15,7 +15,7 @@ export interface TransclusionDiagnostic {
  * Why a directive could not be resolved.
  *
  * `not-found`, `out-of-tree`, and `cycle` are faults in what a directive names; the rest are faults in how or where the
- * directives are written, and are reported against the line carrying the fault.
+ * directives are written, and are reported against the line containing the fault.
  */
 export type TransclusionFailure =
   | 'cycle'

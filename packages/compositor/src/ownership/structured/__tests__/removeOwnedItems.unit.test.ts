@@ -38,7 +38,7 @@ describe(removeOwnedItems, () => {
     expect(contentOf(removeOwnedItems(content, YAML_SPEC))).not.toContain('eventHooks');
   });
 
-  it('keeps an ancestor that still carries other keys', () => {
+  it('keeps an ancestor that still has other keys', () => {
     const content = 'eventHooks:\n  logFile: hooks.log\n  events:\n    - name: relay\n      source: compositor\n';
     const stripped = contentOf(removeOwnedItems(content, YAML_SPEC));
 
@@ -46,7 +46,7 @@ describe(removeOwnedItems, () => {
     expect(stripped).not.toContain('events:');
   });
 
-  it('if the host carries no owned items, returns it untouched', () => {
+  it('if the host has no owned items, returns it untouched', () => {
     const content = 'eventHooks:\n  events:\n    - name: vendor-sync\n';
 
     expect(removeOwnedItems(content, YAML_SPEC)).toStrictEqual({ content });
@@ -69,7 +69,7 @@ describe(removeOwnedItems, () => {
 
 // region | Helpers
 
-/** Reads the content an outcome carries, failing the test when it blocked instead. */
+/** Reads the content an outcome contains, failing the test when it blocked instead. */
 function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
   if ('blocked' in outcome) {
     throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);

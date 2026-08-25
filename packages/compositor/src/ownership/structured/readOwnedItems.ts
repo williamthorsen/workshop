@@ -10,7 +10,7 @@ export type OwnedItemsRead = { readonly items: ReadonlyArray<unknown> } | { read
 /**
  * Reads the items the engine owns within a structured host, in the order the host holds them.
  *
- * A collection the host does not carry reads as no items rather than blocking, the engine simply owning nothing there
+ * A collection the host does not have reads as no items rather than blocking, the engine simply owning nothing there
  * yet. A collection whose declared path holds something else does block, since that is a host a write would damage.
  */
 export function readOwnedItems(content: string, spec: OwnedItemsSpec): OwnedItemsRead {
