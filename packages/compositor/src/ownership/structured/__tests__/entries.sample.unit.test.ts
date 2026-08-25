@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { SETTINGS_JSON_CURRENT, SETTINGS_JSON_PLANNED } from '../../../samples/representative/file-bodies.ts';
+import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
 import { ensureOwnedItems } from '../ensureOwnedItems.ts';
-import type { OwnedItemsSpec } from '../OwnedItemsSpec.ts';
 import { readOwnedItems } from '../readOwnedItems.ts';
 
 // The sample declares this destination `{ kind: 'entries', sentinel: 'codeassembly', format: 'json' }`, so its two

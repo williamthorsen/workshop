@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { KindLayoutSchema } from './kind-layout-schemas.ts';
+import { OwnedItemsDeclarationSchema } from './owned-items-schemas.ts';
 import { IdSchema } from './scalar-schemas.ts';
 import { TargetEntrySchema } from './target-schemas.ts';
 
@@ -143,9 +144,14 @@ export const RenderStageSchema = z
  * serializable. The engine owns the flags and the splice, so the pattern states the grammar and nothing else. That it
  * compiles and carries exactly one capture group, and that no stage kind is declared twice, is checked in
  * `assertRenderTargetsAreConsistent`: a refinement here would be invisible to `z.toJSONSchema`.
+ *
+ * `ownedItems` is target-level content rather than a deployment, no artifact kind routing there, which is why it sits
+ * beside `deployments` rather than inside it. It is optional because a target owning items inside another tool's
+ * structured config is the exception, and absent says the same thing an empty list would.
  */
 export const RenderTargetSchema = TargetEntrySchema.extend({
   deployments: z.array(KindDeploymentSchema),
+  ownedItems: z.array(OwnedItemsDeclarationSchema).optional(),
   stages: z.array(RenderStageSchema),
 }).meta({ id: 'RenderTarget' });
 

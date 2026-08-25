@@ -1,7 +1,7 @@
+import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
 import { carriesSentinel } from './sentinel.ts';
 
 /**

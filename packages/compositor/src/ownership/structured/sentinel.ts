@@ -1,6 +1,6 @@
 /** Sentinels: reading and writing the mark that tells an engine's item from a foreign one. */
 
-import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
+import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 
 type Sentinel = OwnedItemsSpec['sentinel'];
 

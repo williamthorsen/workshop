@@ -63,7 +63,6 @@ export type { RegionMarkers } from './ownership/RegionMarkers.ts';
 export { removeRegion } from './ownership/removeRegion.ts';
 export { renderContribution } from './ownership/renderContribution.ts';
 export { ensureOwnedItems } from './ownership/structured/ensureOwnedItems.ts';
-export type { OwnedItemsSpec } from './ownership/structured/OwnedItemsSpec.ts';
 export type { OwnedItemsRead } from './ownership/structured/readOwnedItems.ts';
 export { readOwnedItems } from './ownership/structured/readOwnedItems.ts';
 export { removeOwnedItems } from './ownership/structured/removeOwnedItems.ts';
@@ -169,6 +168,12 @@ export {
 } from './schemas/graph-schemas.ts';
 export type { KindLayout } from './schemas/kind-layout-schemas.ts';
 export { KindLayoutSchema } from './schemas/kind-layout-schemas.ts';
+export type { OwnedItemsDeclaration, OwnedItemsSentinel, OwnedItemsSpec } from './schemas/owned-items-schemas.ts';
+export {
+  OwnedItemsDeclarationSchema,
+  OwnedItemsSentinelSchema,
+  OwnedItemsSpecSchema,
+} from './schemas/owned-items-schemas.ts';
 export type { Plan, PlanFingerprint, SourceDigest, TargetDigest } from './schemas/plan-schemas.ts';
 export {
   PLAN_SCHEMA_VERSION,

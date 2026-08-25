@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
 import { ensureOwnedItems } from '../ensureOwnedItems.ts';
-import type { OwnedItemsSpec } from '../OwnedItemsSpec.ts';
 
 const YAML_SPEC: OwnedItemsSpec = {
   format: 'yaml',

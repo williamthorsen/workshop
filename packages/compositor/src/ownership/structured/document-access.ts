@@ -3,7 +3,7 @@
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { type Document, isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLMap, YAMLSeq } from 'yaml';
 
-import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
+import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 
 /**
  * One item of a collection, held in whatever form its document keeps it.

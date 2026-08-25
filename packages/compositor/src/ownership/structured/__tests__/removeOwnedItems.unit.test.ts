@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { OwnedItemsSpec } from '../OwnedItemsSpec.ts';
+import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
 import { removeOwnedItems } from '../removeOwnedItems.ts';
 
 const YAML_SPEC: OwnedItemsSpec = {

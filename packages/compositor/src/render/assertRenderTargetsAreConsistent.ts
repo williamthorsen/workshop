@@ -10,8 +10,10 @@ import { ARTIFACT_ID_PLACEHOLDER } from '../deployment/contribution-markers.ts';
 import { SLUG_PLACEHOLDER } from '../deployment/name-templates.ts';
 import { INLAY_NAME_PLACEHOLDER } from '../inlays/inlay-markers.ts';
 import { assertMarkersAreUsable } from '../ownership/region-matching.ts';
+import { allowsStamping, carriesSentinel } from '../ownership/structured/sentinel.ts';
 import { namesAnArtifact } from '../resolution/namesAnArtifact.ts';
 import type { KindDescriptor } from '../schemas/descriptor-schemas.ts';
+import type { OwnedItemsDeclaration } from '../schemas/owned-items-schemas.ts';
 import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 
 /** One way a set of render-target declarations contradicts itself, located by a path into it. */
@@ -29,8 +31,9 @@ export class RenderTargetConsistencyError extends ConsistencyError {
 /**
  * Verifies what the structural schema cannot: that no target repeats an id, a stage kind, or a deployed kind, that
  * every deployment names a kind in `kinds`, that a region deployment's markers and host can do their jobs, that each
- * link grammar compiles and captures exactly one group, and that an inlay stage's two marker templates can delimit a
- * span and name what they stand for, with a reshape rule that compiles.
+ * link grammar compiles and captures exactly one group, that an inlay stage's two marker templates can delimit a span
+ * and name what they stand for with a reshape rule that compiles, and that no owned-items declaration contends for a
+ * collection another already owns, sits on a region host, or carries an item its sentinel could never find again.
  *
  * A stage declared twice would run twice, and a kind deployed twice would put one artifact in two places; both are
  * authoring mistakes a declaration can express and no render could act on. Checking them here rather than at the first
@@ -80,6 +83,29 @@ export function assertRenderTargetsAreConsistent(
       collectMarkerFaults(deployment.contributionMarkers, `${deployedAt}.contributionMarkers`, violations);
       collectContributorFaults(deployment.contributionMarkers, `${deployedAt}.contributionMarkers`, violations);
       collectHostCollisions(deployment.host, layoutRoots, `${deployedAt}.host`, violations);
+    }
+
+    const regionHosts = new Set(
+      target.deployments.filter((deployment) => deployment.form === 'region').map((deployment) => deployment.host),
+    );
+    const ownedItems = target.ownedItems ?? [];
+    collectRepeats(
+      ownedItems.map((declaration) => `${declaration.host} at ${declaration.collection.join('.')}`),
+      `${at}.ownedItems`,
+      'owns',
+      violations,
+    );
+
+    for (const [position, declaration] of ownedItems.entries()) {
+      const ownedAt = `${at}.ownedItems[${position}]`;
+      collectHostCollisions(declaration.host, layoutRoots, `${ownedAt}.host`, violations);
+      if (regionHosts.has(declaration.host)) {
+        violations.push({
+          path: `${ownedAt}.host`,
+          message: 'is also a region host, so two mechanisms would each compute the whole file',
+        });
+      }
+      collectUnmarkableItems(declaration, ownedAt, violations);
     }
 
     for (const [position, stage] of target.stages.entries()) {
@@ -139,6 +165,27 @@ function collectHostCollisions(
       violations.push({
         path,
         message: `collides with the layout root "${root}", which needs a directory where this host is a file`,
+      });
+    }
+  }
+}
+
+/**
+ * Reports a declared item that its own sentinel could never find again.
+ *
+ * Only a sentinel the engine cannot write is checked, because one it can write is stamped onto every item regardless.
+ * Catching it here turns what would otherwise throw at the first host the declaration was run over into a located
+ * authoring fault, reported beside every other mistake in the declarations.
+ */
+function collectUnmarkableItems(declaration: OwnedItemsDeclaration, path: string, violations: Array<Violation>): void {
+  if (allowsStamping(declaration.sentinel)) {
+    return;
+  }
+  for (const [position, item] of declaration.items.entries()) {
+    if (!carriesSentinel(item, declaration.sentinel)) {
+      violations.push({
+        path: `${path}.items[${position}]`,
+        message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
       });
     }
   }
