@@ -12,7 +12,7 @@ interface WriteLine {
   reason?: string;
 }
 
-/** Writes `message` to stdout as a section heading, parted from whatever precedes it by a blank line. */
+/** Writes `message` to stdout as a section heading, separated from whatever precedes it by a blank line. */
 export function printStep(message: string): void {
   console.info(`\n${getLayout().formatHeading(message, 'section')}`);
 }
@@ -20,7 +20,7 @@ export function printStep(message: string): void {
 /**
  * Writes a check line for `result`, naming the file and then its outcome.
  *
- * An outcome that failed carries its cause in a block beneath and goes to stderr; the rest go to stdout.
+ * An outcome that failed shows its cause in a block beneath and goes to stderr; the rest go to stdout.
  */
 export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
   const { claim, detail, reason, token } = describeWriteResult(result, dryRun);
@@ -38,7 +38,7 @@ export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
 /**
  * Returns the token and text for a write outcome, phrasing `dryRun` outcomes as what would happen.
  *
- * A skip carries a warning token only when an unreadable file left the outcome undetermined.
+ * A skip takes a warning token only when an unreadable file left the outcome undetermined.
  */
 function describeWriteResult(result: WriteResult, dryRun: boolean): WriteLine {
   const { error, filePath, outcome } = result;

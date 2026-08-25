@@ -63,7 +63,7 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
   return { results: [], passed: true, durationMs: 0, ...overrides };
 }
 
-/** Wrap a single checklist report as a single-kit input. */
+/** Wraps a single checklist report as a single-kit input. */
 function singleKit(checklistName: string, report: RdyReport, kitName = 'deploy') {
   return [{ name: kitName, entries: [{ name: checklistName, report }] }];
 }
@@ -219,7 +219,7 @@ describe(formatJsonReport, () => {
   });
 
   describe('per-kit thresholds', () => {
-    /** Two kits under one invocation, the second declaring thresholds of its own. */
+    /** Returns two kits under one invocation, the second declaring thresholds of its own. */
     function mixedThresholdKits() {
       const report = makeReport({
         results: [makeFailedResult({ name: 'warn-fail', severity: 'warn' })],
@@ -423,7 +423,7 @@ describe(formatJsonReport, () => {
       expect(output).not.toContain('worstSeverity');
     });
 
-    // Only a failed result carries a `fix`, so withholding it from a passed one is a type-level
+    // Only a failed result has a `fix`, so withholding it from a passed one is a type-level
     // guarantee rather than a behavior to assert.
     it('emits fix on a failed check', () => {
       const report = makeReport({

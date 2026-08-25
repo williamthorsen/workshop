@@ -9,9 +9,9 @@ const DURATION_FLOOR_MS = 100;
 const HEADING_SIGIL_WIDTH = 2;
 
 /**
- * Text parting one breadcrumb segment from the next.
+ * Text separating one breadcrumb segment from the next.
  *
- * Spaced on both sides because a segment's own text carries slashes -- a scoped package name, a relative
+ * Spaced on both sides because a segment's own text contains slashes -- a scoped package name, a relative
  * path -- and under a style whose roles have no glyph, that spacing is the only boundary a reader gets.
  */
 export const SEGMENT_SEPARATOR = ' / ';
@@ -30,7 +30,7 @@ const TOTAL_LABEL = 'Total:';
 /** Heading over the combined summary table. */
 const SUMMARY_HEADING = 'Summary';
 
-/** Text parting one count from the next. */
+/** Text separating one count from the next. */
 const COUNT_SEPARATOR = ', ';
 
 /** Statement a count line makes when there is nothing at all to report. */
@@ -112,10 +112,9 @@ export interface LayoutEngine {
 /** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
-   * Returns `segments` as one heading, each behind its role's glyph and parted by the segment separator.
+   * Returns `segments` as one heading, each behind its role's glyph and separated by the segment separator.
    *
-   * A role the formatter gives no glyph closes up rather than carrying the space that would have
-   * followed one.
+   * A role the formatter gives no glyph closes up, with no space where the glyph would sit.
    */
   function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel, detail?: string): string {
     const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);
@@ -149,10 +148,10 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns `name` behind a two-character rule whose weight comes from `level`, carrying `detail` behind
+   * Returns `name` behind a two-character rule whose weight comes from `level`, with `detail` behind
    * the formatter's separator where there is one.
    *
-   * A heading carries no blank line of its own. Separation is a property of the sequence a heading sits
+   * A heading has no blank line of its own. Separation is a property of the sequence a heading sits
    * in, which only the code emitting that sequence can see: a heading deciding for itself is how two
    * adjacent ones each contribute a blank and open a gap neither intended.
    */
@@ -169,7 +168,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns each reason indented to the name column of a check at `depth`, one gutter further in.
    *
-   * A reason carrying its own line breaks -- a bundler's rendered diagnostic, say -- is indented on
+   * A reason with its own line breaks -- a bundler's rendered diagnostic, say -- is indented on
    * every line, so it reads as one block rather than falling back to the left margin partway through.
    * Blank lines within it stay blank rather than becoming trailing whitespace.
    */
@@ -188,7 +187,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    *
    * Names are padded and durations right-aligned, so every row's counts begin at the same column. Both
    * rules span the widest line they enclose, the total included. A row names itself by its breadcrumb
-   * without the role glyphs the matching heading carries, because padding counts characters while the
+   * without the role glyphs the matching heading adds, because padding counts characters while the
    * terminal lays out display width, and a glyph makes the two disagree.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
@@ -226,8 +225,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns a token's glyph and one trailing space, for placement mid-sentence rather than at a line's head.
    *
-   * A formatter that gives the token no glyph returns nothing, so the sentence closes up instead of
-   * carrying the space that would have followed one.
+   * A formatter that gives the token no glyph returns nothing, so the sentence closes up with no space.
    */
   function inlineGlyph(name: TokenName): string {
     const { glyph } = formatter.tokens[name];
@@ -242,7 +240,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   // -- Helpers --
 
-  /** Returns everything a count line carries after its leading token. */
+  /** Returns everything a count line shows after its leading token. */
   function buildCountBody(counts: SummaryCounts, durationMs: number): string {
     return `${TOTAL_LABEL} ${formatCounts(counts)} (${formatDuration(durationMs)})`;
   }
@@ -263,7 +261,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   };
 }
 
-/** Returns `segments` parted as a heading parts them, carrying none of the role glyphs a heading adds. */
+/** Returns `segments` separated as a heading separates them, without the role glyphs a heading adds. */
 function formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
   return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }

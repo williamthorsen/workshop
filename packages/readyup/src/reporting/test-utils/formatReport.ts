@@ -12,7 +12,7 @@ export type TestKitInput =
   | (Omit<KitResultInput, 'failOn' | 'reportOn'> & Partial<Pick<KitResultInput, 'failOn' | 'reportOn'>>);
 
 /**
- * Serialize a report the way the CLI would for an invocation carrying the given flags.
+ * Returns a report serialized the way the CLI would for an invocation with the given flags.
  *
  * An override stands in for its CLI flag: it reaches the top level only when supplied, and resolves
  * against the default to give each kit the threshold that governs it. A kit input that names its own

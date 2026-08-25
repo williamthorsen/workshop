@@ -11,7 +11,7 @@ export type StyleSetting = (typeof STYLE_SETTINGS)[number];
 /** Flag naming the style for one invocation. */
 export const STYLE_FLAG = '--style';
 
-/** Environment variable carrying a standing style preference. */
+/** Environment variable holding a standing style preference. */
 export const STYLE_ENV_VAR = 'RDY_STYLE';
 
 /** The accepted settings widened to strings, so an arbitrary input can be tested for membership. */
@@ -23,7 +23,7 @@ export interface InvalidStyle {
   value: string;
 }
 
-/** A style to render with, alongside the complaint the inputs earned. */
+/** A style to render with, alongside any complaint the inputs provoked. */
 export interface StyleResolution {
   style: Style;
   invalid?: InvalidStyle;
@@ -97,7 +97,7 @@ function readStyleFlag(argv: string[]): string | undefined {
 /**
  * Returns the style the environment implies: plain wherever the output is not a person's terminal.
  *
- * Both signals carry their own weight. `CI` catches a runner that allocates a pseudo-terminal, where the
+ * Both signals matter on their own. `CI` catches a runner that allocates a pseudo-terminal, where the
  * terminal check alone would emit emoji into a log nobody can grep; the terminal check catches an
  * interactive pipe into `grep`, where `CI` is unset. `CI` is also not universal -- Jenkins does not set
  * it. An explicit `CI=false` is honored as a denial, which is how the wider ecosystem reads it.

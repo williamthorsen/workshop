@@ -20,7 +20,7 @@ interface ChecklistEntry {
 }
 
 /**
- * Input for a kit that ran, carrying the reports its checklists produced and the thresholds that
+ * Input for a kit that ran, with the reports its checklists produced and the thresholds that
  * governed them.
  *
  * The thresholds travel with the kit rather than with the run, because a kit may declare its own and
@@ -44,7 +44,7 @@ export interface KitResultInput {
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 
 /**
- * The run settings the report echoes back, plus anything it must carry alongside results.
+ * The run settings the report echoes back, plus anything else it must include alongside results.
  *
  * `failOn` and `reportOn` are what the invocation requested, so each is absent when its flag was not
  * given: a default echoed as though it had been asked for is what made a kit's own threshold
@@ -69,7 +69,7 @@ interface AggregatedKit {
   durationMs: number;
 }
 
-/** Transform kit-grouped checklist results into a JSON-serializable report string. */
+/** Returns kit-grouped checklist results as a JSON-serializable report string. */
 export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonReportOptions): string {
   const { failOn, reportOn, detail, warnings } = options;
   const kits: JsonKitEntry[] = [];
@@ -113,7 +113,7 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
   return JSON.stringify(report);
 }
 
-/** Build one kit's entry and the raw figures the report aggregates from it. */
+/** Returns one kit's entry alongside the raw figures the report aggregates from it. */
 function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit {
   const counts = emptyCounts();
   let durationMs = 0;
@@ -148,7 +148,7 @@ function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit 
 }
 
 /**
- * Split the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
+ * Splits the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
  * beside them.
  *
  * `worstSeverity` is derived verdict data rather than a count, so it sits outside the object it
@@ -160,10 +160,10 @@ function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity
 }
 
 /**
- * Build the `checks` property for a checklist entry, or nothing when the projection leaves it empty.
+ * Returns the `checks` property for a checklist entry, or nothing when the projection leaves it empty.
  *
  * The reporting threshold prunes first and the detail projection second, so `summary` shows the same
- * failures `full` would — just without the checks that passed around them.
+ * failures `full` would, without the checks that passed around them.
  */
 function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
   const visibleResults = selectVisibleResults(results, reportOn);
@@ -173,10 +173,10 @@ function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonD
 }
 
 /**
- * Project visible results down to what `--detail summary` carries: the failures and their remedies.
+ * Returns visible results reduced to what `--detail summary` shows: the failures and their remedies.
  *
  * Nesting is dropped along with the checks that passed, because what survives is a work list rather
- * than a trace of the run — the caller wants what to fix, and `full` remains one flag away.
+ * than a trace of the run.
  */
 function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
   return results
@@ -196,14 +196,12 @@ function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
 }
 
 /**
- * Reconstruct a tree of check entries from a flat depth-first results slice.
+ * Reconstructs a tree of check entries from a flat depth-first results slice, alongside the index of
+ * the first result it did not consume.
  *
- * Consumes results at `expectedDepth` as siblings, recursing into deeper results
- * as children. Returns the parsed entries and the index of the first unconsumed result.
- *
- * Assumes contiguous, monotonically increasing depths as produced by `runRdy`.
- * A depth gap (e.g., depth 0 followed by depth 2 with no depth 1) will silently
- * promote the deeper result to the nearest parent level.
+ * Results at `expectedDepth` become siblings and deeper ones recurse as their children. Depths must be
+ * contiguous and monotonically increasing; a gap, such as depth 0 followed by depth 2, silently
+ * promotes the deeper result to the nearest parent level.
  */
 function buildCheckEntries(
   results: RdyResult[],
@@ -218,12 +216,10 @@ function buildCheckEntries(
     if (result === undefined) break;
     const depth = result.depth;
 
-    // Stop when we encounter a result shallower than what we expect at this level.
     if (depth < expectedDepth) break;
 
     index++;
 
-    // Recursively collect children (results at depth + 1 and deeper).
     const { entries: children, nextIndex } = buildCheckEntries(results, index, depth + 1);
     index = nextIndex;
 
@@ -234,7 +230,7 @@ function buildCheckEntries(
 }
 
 /**
- * Build a single JSON check entry, omitting every field that carries nothing.
+ * Returns a single JSON check entry, omitting every field that holds nothing.
  *
  * A field is present only when it holds information the consumer could act on: no `null` placeholders,
  * no empty `checks` array, and no `fix` on a check that has nothing to remediate. Durations are whole

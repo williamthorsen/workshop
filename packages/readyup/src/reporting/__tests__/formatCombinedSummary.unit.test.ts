@@ -36,7 +36,7 @@ function renderLines(rows: SummaryRow[]): string[] {
 }
 
 describe(formatCombinedSummary, () => {
-  // The run's writer parts one block from the next, so a table carrying its own blank would double the gap.
+  // The run's writer separates one block from the next, so a table with its own blank would double the gap.
   it('carries no separation of its own', () => {
     expect(renderLines([makeRow()])[0]).not.toBe('');
   });
