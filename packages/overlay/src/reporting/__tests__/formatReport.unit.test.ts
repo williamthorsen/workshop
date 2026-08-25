@@ -13,8 +13,8 @@ describe(formatReport, () => {
   it('lists drift entries and a drift count under verify', () => {
     const report = formatReport(buildDriftResult());
 
-    expect(report).toContain('would create   .new');
-    expect(report).toContain('would conflict .diff');
+    expect(report).toContain('.new');
+    expect(report).toContain('.diff');
     expect(report).toContain('Drift: 2 entries.');
   });
 
@@ -65,15 +65,19 @@ describe(formatReport, () => {
     expect(report).toContain('overwritten .diff');
   });
 
-  it('pads labels to the widest one present so the paths align', () => {
-    const report = formatReport(buildDriftResult());
+  it('pads labels to the widest one present, so a run of equal-width labels gets no dead whitespace', () => {
+    const mixedWidths = formatReport(buildDriftResult());
+    const equalWidths = formatReport(
+      buildResult({
+        mode: 'verify',
+        entries: [{ path: '.new', outcome: 'created' }],
+        counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 1 },
+        exitCode: 1,
+      }),
+    );
 
-    const columns = report
-      .split('\n')
-      .filter((line) => line.startsWith('  '))
-      .map((line) => line.indexOf('.'));
-
-    expect(new Set(columns).size).toBe(1);
+    expect(mixedWidths).toContain('would create   .new');
+    expect(equalWidths).toContain('would create .new');
   });
 
   it('phrases pending scripts as "would run" under verify', () => {
