@@ -15,7 +15,7 @@ interface ScaffoldResult {
   kitResult: WriteResult;
 }
 
-/** Scaffold the rdy config and starter kit files. */
+/** Scaffolds the rdy config and starter kit files. */
 export function scaffoldConfig({ dryRun, force }: ScaffoldOptions): ScaffoldResult {
   const configResult = writeFileWithCheck(CONFIG_PATH, rdyConfigTemplate, { dryRun, overwrite: force });
   const kitResult = writeFileWithCheck(KIT_PATH, rdyKitTemplate, {

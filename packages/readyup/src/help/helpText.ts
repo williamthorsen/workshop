@@ -8,7 +8,7 @@ const TOPIC_LINES = Object.entries(TOPICS)
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the README explains it, and the skill carries the authoring judgment neither states. The
+ * Help lists the surface; the README explains it, and the skill holds the authoring judgment neither states. The
  * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
  * for a global install, where no such path exists.
  */

@@ -1,7 +1,7 @@
 import { isError } from '@williamthorsen/toolbelt.errors';
 
 /**
- * Extract a remediation hint from an unknown thrown value, or `undefined` when it carries none.
+ * Returns the remediation hint on an unknown thrown value, or `undefined` where it has none.
  *
  * Reads the property off any error rather than off `RdyError` alone, so a boundary that re-wraps a
  * failure forwards the hint with one extra argument instead of a branch per throwing module.

@@ -5,7 +5,7 @@ import { initialize, resolve } from '../readyupResolverHook.ts';
 const READYUP_PARENT_URL = 'file:///runner/node_modules/readyup/dist/esm/bin/rdy.js';
 const KIT_PARENT_URL = 'file:///tmp/rdy-XYZ/kit.js';
 
-/** Build the minimal `context` object Node passes to a resolve hook. */
+/** Returns the minimal `context` object Node passes to a resolve hook. */
 function buildContext(overrides: Partial<{ parentURL: string; conditions: string[] }> = {}) {
   return {
     conditions: overrides.conditions ?? ['node', 'import'],
@@ -14,7 +14,7 @@ function buildContext(overrides: Partial<{ parentURL: string; conditions: string
   };
 }
 
-/** Default `nextResolve` stub that returns a synthetic URL. */
+/** Stands in for `nextResolve`, returning a synthetic URL. */
 function buildNextResolve() {
   return vi.fn().mockReturnValue({ url: 'file:///resolved.js', shortCircuit: true });
 }

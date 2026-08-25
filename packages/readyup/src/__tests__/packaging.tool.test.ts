@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 const packageDir = path.resolve(import.meta.dirname, '../..');
 
 /**
- * Guards what the published tarball carries.
+ * Guards what the published tarball includes.
  *
  * This is the only check that exercises `files`: every other check here resolves readyup's guidance through a
  * `workspace:*` self-link to the live source tree, so a dropped `agents` entry breaks registry installs alone.

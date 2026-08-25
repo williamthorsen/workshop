@@ -103,7 +103,7 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
 }
 
 /**
- * Reports whether a directory carries any readyup footprint at all.
+ * Reports whether a directory has any readyup footprint at all.
  *
  * A project with neither falls back to the default config, which points inside `.readyup/`: declaring a
  * source directory anywhere else takes a config file to say so. Testing this before the directory reads

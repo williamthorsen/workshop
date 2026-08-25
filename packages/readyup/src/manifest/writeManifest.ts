@@ -5,9 +5,10 @@ import type { RdyManifest } from './manifestSchema.ts';
 import { ManifestSchema } from './manifestSchema.ts';
 
 /**
- * Validate and write a manifest to disk as formatted JSON.
+ * Validates a manifest and writes it to disk as formatted JSON, creating parent directories as
+ * needed.
  *
- * Creates parent directories as needed. Throws on invalid manifest data.
+ * Throws on invalid manifest data.
  */
 export function writeManifest(manifestPath: string, manifest: RdyManifest): void {
   const result = ManifestSchema.safeParse(manifest);

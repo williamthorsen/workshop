@@ -8,7 +8,7 @@ const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
  *
  * `kind` decides what the hash covers. A `module` records the file's contents; an `inline` records the
  * projection `pickJson` substituted, so an edit to a field the kit did not pick is not staleness. Only
- * an inline record carries `paths`, which is the specifier that produced the projection and so what a
+ * an inline record has `paths`, which is the specifier that produced the projection and so what a
  * reader needs to reproduce it.
  *
  * Paths are relative to the manifest directory, as `path` and `source` are.
@@ -40,7 +40,7 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  * Neither field is covered by `inputs`, whose closure stops at `node_modules`; `rdy verify
  * --rebuild` reads both to name which versions changed when a rebuild mismatches. Each is
  * optional on the same terms `checklists` is, and `bundledDependencies` is additionally absent
- * when the kit bundles nothing, so `esbuildVersion` is the marker that an entry carries the
+ * when the kit bundles nothing, so `esbuildVersion` is the marker that an entry has the
  * record at all.
  */
 const ManifestKitSchema = z.object({

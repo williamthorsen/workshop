@@ -58,7 +58,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
 }
 
 /**
- * Compose the numbered next steps printed after scaffolding.
+ * Returns the numbered next steps printed after scaffolding.
  *
  * The install step leads when readyup does not resolve from the project, because every later step
  * depends on it: compiling a kit resolves the kit's readyup import, and running one loads the CLI.

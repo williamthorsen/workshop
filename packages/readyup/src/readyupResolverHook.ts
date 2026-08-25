@@ -41,15 +41,13 @@ type NextResolve = (specifier: string, context?: Partial<ResolveContext>) => Res
 
 let readyupParentURL: string | undefined;
 
-/** Determine whether a specifier should be routed through the runner's readyup installation. */
+/** Reports whether a specifier should be routed through the runner's readyup installation. */
 function isReadyupSpecifier(specifier: string): boolean {
   return specifier === 'readyup' || specifier.startsWith('readyup/');
 }
 
 /**
- * Initialize the hook with data passed from `module.register()`.
- *
- * Called exactly once when the hook is registered.
+ * Initializes the hook with the data `module.register()` supplies, which happens exactly once.
  */
 export function initialize(data: ReadyupResolverHookData): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- `module.register()` supplies this once.
@@ -57,12 +55,11 @@ export function initialize(data: ReadyupResolverHookData): void {
 }
 
 /**
- * Resolve hook: routes `readyup` and `readyup/*` specifiers through the runner's
- * own readyup installation by rewriting `parentURL`. All other specifiers are
- * delegated to the default resolver unchanged. Throws if a readyup specifier is
- * encountered before `initialize()` has been called — silently falling back to
- * the original `parentURL` would defeat the hook's purpose and produce an opaque
- * `ERR_MODULE_NOT_FOUND` later.
+ * Routes `readyup` and `readyup/*` specifiers through the runner's own readyup installation by
+ * rewriting `parentURL`, and delegates every other specifier to the default resolver unchanged.
+ *
+ * A readyup specifier arriving before `initialize()` throws: falling back to the original
+ * `parentURL` would defeat the rewrite and surface later as an opaque `ERR_MODULE_NOT_FOUND`.
  */
 export function resolve(
   specifier: string,

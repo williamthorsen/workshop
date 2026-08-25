@@ -1,4 +1,4 @@
-/** Build a minimal mock Response with the given body and status. */
+/** Returns a minimal mock Response with the given body and status. */
 export function mockResponse(
   body: string,
   init?: { status?: number; statusText?: string },

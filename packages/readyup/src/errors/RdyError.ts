@@ -25,10 +25,10 @@ export interface RdyErrorOptions {
  * A failure that prevented rdy from completing the invocation.
  *
  * Every code maps to the same exit status, because the exit code answers "can I retry this
- * invocation?" while `code` carries the diagnosis.
+ * invocation?" while `code` holds the diagnosis.
  *
  * `hint` stays out of `message` so the two travel separately: human output renders the hint on its
- * own line through the selected style, and `--json` carries it as its own envelope field.
+ * own line through the selected style, and `--json` reports it as its own envelope field.
  */
 export class RdyError extends Error {
   readonly code: RdyErrorCode;
@@ -66,7 +66,7 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  * Coerces an unknown thrown value into an `RdyError`.
  *
  * Anything not already classified is `internal`: escaping the command boundary undiagnosed
- * is itself the definition of a defect rather than a known failure mode. A hint the value carries
+ * is itself the definition of a defect rather than a known failure mode. A hint the value holds
  * survives the coercion, so a throw site can attach one without every boundary between it and the
  * output having to forward it.
  */

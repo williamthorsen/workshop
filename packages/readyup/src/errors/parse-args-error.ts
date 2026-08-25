@@ -1,7 +1,7 @@
 import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 /**
- * Translate a caught `node:util.parseArgs` error into a user-facing message.
+ * Returns a caught `node:util.parseArgs` error as a user-facing message.
  *
  * An unknown option is reported against `command`, pointing at the help that lists what the command
  * accepts. For a string flag missing its value (`--flag`, `--flag=`, or `--flag --other`), returns
