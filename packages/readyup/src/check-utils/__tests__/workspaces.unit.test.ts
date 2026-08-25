@@ -280,14 +280,14 @@ describe(discoverWorkspaces, () => {
 
   describe('error: unreadable root package.json', () => {
     it('throws with a message that includes the resolved path', ({ temp }) => {
-      expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
+      expect(() => discoverWorkspaces()).toThrow(/no readable package\.json at/);
       expect(() => discoverWorkspaces()).toThrow(temp.dir);
     });
 
     it('throws even when pnpm-workspace.yaml is present', ({ temp }) => {
       writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
 
-      expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
+      expect(() => discoverWorkspaces()).toThrow(/no readable package\.json at/);
     });
 
     it("throws when a workspace-pattern repo's root package.json is unparseable", ({ temp }) => {
@@ -295,7 +295,7 @@ describe(discoverWorkspaces, () => {
       writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
 
-      expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
+      expect(() => discoverWorkspaces()).toThrow(/no readable package\.json at/);
     });
   });
 
@@ -313,7 +313,7 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('Workspace shape', () => {
-    it('includes absolutePath, name, isPackage, and packageJson for a monorepo workspace', ({ temp }) => {
+    it('includes absolutePath, name, isPackage, isRoot, and packageJson for a monorepo member', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha', version: '1.2.3' });
 
@@ -384,7 +384,7 @@ describe(discoverWorkspacesAt, () => {
 
     expect(workspaces.map((w) => w.name)).toStrictEqual(['nested-root', 'alpha']);
     // The ambient cwd holds no manifest, so an answer read through it could not be this one.
-    expect(() => discoverWorkspaces()).toThrow(/no package.json found/);
+    expect(() => discoverWorkspaces()).toThrow(/no readable package.json/);
   });
 
   it('resolves a relative directory against the cwd', ({ temp }) => {

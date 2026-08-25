@@ -85,7 +85,7 @@ function buildWorkspaces(rootDir: string): Workspace[] {
   const rootPackageJsonPath = join(rootDir, 'package.json');
   const rootPackageJson = readJsonFile(rootPackageJsonPath);
   if (rootPackageJson === undefined) {
-    throw new Error(`Workspace discovery: no package.json found at ${rootPackageJsonPath}`);
+    throw new Error(`Workspace discovery: no readable package.json at ${rootPackageJsonPath}`);
   }
   const rootWorkspace = buildWorkspaceFromPackageJson('.', rootDir, rootPackageJson);
 
