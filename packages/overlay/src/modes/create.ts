@@ -2,8 +2,8 @@ import path from 'node:path';
 
 import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
-import type { ChezmoiContext } from '../chezmoi/runChezmoi.ts';
-import { runChezmoiStreamed } from '../chezmoi/runChezmoi.ts';
+import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
+import { runChezmoiStreamed } from '../chezmoi/run-chezmoi.ts';
 import { countOutcome, partitionStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
@@ -17,7 +17,7 @@ import type { OverlayResult } from './types.ts';
  * or scripts pass failed, else `1` if any conflicts exist, else `0`.
  */
 export async function runCreate(context: ChezmoiContext): Promise<OverlayResult> {
-  const { entries, pendingScripts } = partitionStatus(parseStatus(await readStatus(context)), {
+  const { entries, pendingScriptCount } = partitionStatus(parseStatus(await readStatus(context)), {
     A: 'created',
     D: 'deleted',
     M: 'conflict',
@@ -44,16 +44,16 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
   // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
   // scripts against a target whose files never converged.
   if (applyCode !== 0) {
-    return { mode: 'create', entries, scripts: { ran: pendingScripts, ok: false }, counts, exitCode: 2 };
+    return { mode: 'create', entries, scripts: { ran: pendingScriptCount, ok: false }, counts, exitCode: 2 };
   }
 
-  const scriptsCode = pendingScripts > 0 ? await runChezmoiStreamed(context, ['apply', '--include=scripts']) : 0;
+  const scriptsCode = pendingScriptCount > 0 ? await runChezmoiStreamed(context, ['apply', '--include=scripts']) : 0;
   const ok = scriptsCode === 0;
 
   return {
     mode: 'create',
     entries,
-    scripts: { ran: pendingScripts, ok },
+    scripts: { ran: pendingScriptCount, ok },
     counts,
     exitCode: computeExitCode(ok, conflicts),
   };

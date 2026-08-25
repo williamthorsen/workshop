@@ -7,21 +7,21 @@ export type OutcomeMap = Partial<Record<StatusCode, EntryOutcome>>;
 /** Result of partitioning status rows: per-entry outcomes and the count of pending `R` scripts. */
 export interface PartitionedStatus {
   entries: OverlayEntry[];
-  pendingScripts: number;
+  pendingScriptCount: number;
 }
 
 /**
- * Partition parsed status rows into overlay entries using a mode's outcome map.
+ * Partitions parsed status rows into overlay entries using a mode's outcome map.
  *
- * Rows whose code is absent from the map (other than `R`) are dropped; `R` rows are tallied into `pendingScripts`
+ * Rows whose code is absent from the map (other than `R`) are dropped; `R` rows are tallied into `pendingScriptCount`
  * rather than becoming entries.
  */
 export function partitionStatus(status: StatusEntry[], outcomes: OutcomeMap): PartitionedStatus {
   const entries: OverlayEntry[] = [];
-  let pendingScripts = 0;
+  let pendingScriptCount = 0;
   for (const entry of status) {
     if (entry.code === 'R') {
-      pendingScripts += 1;
+      pendingScriptCount += 1;
       continue;
     }
     const outcome = outcomes[entry.code];
@@ -29,10 +29,10 @@ export function partitionStatus(status: StatusEntry[], outcomes: OutcomeMap): Pa
       entries.push({ path: entry.path, outcome });
     }
   }
-  return { entries, pendingScripts };
+  return { entries, pendingScriptCount };
 }
 
-/** Count entries with the given outcome. */
+/** Counts entries with the given outcome. */
 export function countOutcome(entries: OverlayEntry[], outcome: EntryOutcome): number {
   return entries.filter((entry) => entry.outcome === outcome).length;
 }

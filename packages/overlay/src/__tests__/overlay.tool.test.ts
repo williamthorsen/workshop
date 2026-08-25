@@ -87,7 +87,10 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     expect(result.scripts.ok).toBe(false);
   });
 
-  /** Build a chezmoi source tree with a new file, a differing file, a native removal, and a sentinel-writing run_ script. */
+  /**
+   * Builds a chezmoi source tree with a new file, a differing file, a native removal, and a sentinel-writing
+   * run_ script.
+   */
   async function buildConvergenceFixture(): Promise<void> {
     await writeFile(path.join(source, 'dot_newfile'), NEW_CONTENT);
     await writeFile(path.join(source, 'dot_difffile'), CANONICAL_CONTENT);

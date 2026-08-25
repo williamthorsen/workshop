@@ -1,8 +1,8 @@
-import type { ChezmoiContext } from './runChezmoi.ts';
-import { runChezmoiCaptured } from './runChezmoi.ts';
+import type { ChezmoiContext } from './run-chezmoi.ts';
+import { runChezmoiCaptured } from './run-chezmoi.ts';
 
 /**
- * Read `chezmoi status`, treating a non-zero exit as a hard error.
+ * Reads `chezmoi status`, treating a non-zero exit as a hard error.
  *
  * A non-zero `status` exit (missing source dir, rejected flag, config issue) yields empty stdout, which `parseStatus`
  * would read as "no drift" — silently masking the failure as a converged target. Throwing here propagates to the

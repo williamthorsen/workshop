@@ -21,7 +21,7 @@ export interface ChezmoiContext {
 }
 
 /**
- * Run chezmoi and capture its output. Used for read-only commands (`status`, `--version`) where overlay needs the
+ * Runs chezmoi and captures its output. Used for read-only commands (`status`, `--version`) where overlay needs the
  * text rather than live streaming.
  *
  * A non-zero exit does not reject: the captured `code` is returned so callers decide how to interpret it.
@@ -38,7 +38,7 @@ export async function runChezmoiCaptured(context: ChezmoiContext, args: string[]
 }
 
 /**
- * Run chezmoi with the child's stdout and stderr inherited to overlay's `process.stderr`, never stdout. Used for
+ * Runs chezmoi with the child's stdout and stderr inherited to overlay's `process.stderr`, never stdout. Used for
  * every `apply` that may run `run_` scripts, so script output streams live while overlay's stdout stays clean for the
  * reporter or `--json`. Resolves with the child's exit code.
  */
@@ -55,7 +55,7 @@ export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]
 // region | Helpers
 
 /**
- * Build the chezmoi arguments shared by every invocation.
+ * Builds the chezmoi arguments shared by every invocation.
  *
  * Injects `--source`/`--destination`, the throwaway `--persistent-state` and empty `--config` paths, and `--no-tty`,
  * then the caller's own arguments.
@@ -71,7 +71,7 @@ function buildArgs(context: ChezmoiContext, persistentStatePath: string, configP
   ];
 }
 
-/** Translate an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as a clear error. */
+/** Translates an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as a clear error. */
 function interpretExecFileError(error: unknown): CapturedResult {
   if (isExecFileError(error)) {
     if (error.code === 'ENOENT') {
@@ -98,7 +98,7 @@ function isExecFileError(error: unknown): error is ExecFileError {
 }
 
 /**
- * Run a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
+ * Runs a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
  * list. The sandbox is removed in a `finally`.
  */
 async function withSandbox<T>(

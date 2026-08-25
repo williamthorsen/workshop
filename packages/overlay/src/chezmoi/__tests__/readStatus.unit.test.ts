@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { readStatus } from '../readStatus.ts';
-import type { ChezmoiContext } from '../runChezmoi.ts';
-import * as runChezmoiModule from '../runChezmoi.ts';
+import type { ChezmoiContext } from '../run-chezmoi.ts';
+import * as runChezmoiModule from '../run-chezmoi.ts';
 
 const context: ChezmoiContext = { source: '/src', target: '/dst' };
 
