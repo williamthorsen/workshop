@@ -35,7 +35,7 @@ export const ListKitOriginSchema = z
  * One kit row.
  *
  * Every field but `name` and `kind` comes from the manifest, so a kit enumerated from the filesystem
- * without one carries only those two plus `path`. `checklists` is read from the manifest rather than
+ * without one has only those two plus `path`. `checklists` is read from the manifest rather than
  * from the kit itself: listing kits never executes kit code.
  */
 export const ListKitEntrySchema = z

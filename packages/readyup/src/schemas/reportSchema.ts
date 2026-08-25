@@ -9,7 +9,7 @@ import { CountsSchema, ErrorBodySchema, SeveritySchema, WarningSchema } from './
  */
 export const SCHEMA_VERSION = 1;
 
-/** How much of the detail tree a report carries. */
+/** How much of the detail tree a report includes. */
 export const DetailSchema = z.enum(['summary', 'full']).meta({ id: 'Detail' });
 
 /** Progress a check reported alongside its verdict, discriminated by `type`. */
@@ -31,7 +31,7 @@ export const ProgressSchema = z
  * One check result in a checklist's detail tree.
  *
  * `ok` is three-valued rather than optional: `null` is the verdict a skipped check has, not a
- * missing field. Every other optional field is omitted when it carries nothing, so a passed check
+ * missing field. Every other optional field is omitted when it holds nothing, so a passed check
  * with no detail serializes to five keys. Nesting is recursive — `checks` holds the results of
  * checks that ran only because this one passed.
  */
@@ -91,7 +91,7 @@ export const KitOriginSchema = z
  *
  * `compiledWith` is the readyup that built this kit's bundle, read from the stamp the bundle
  * exports. It is present whenever that stamp is, including when it equals the report's own
- * `readyupVersion`, so its absence means the kit carries no stamp: a bundle compiled before the
+ * `readyupVersion`, so its absence means the kit has no stamp: a bundle compiled before the
  * stamp existed, or a `--jit` run that loaded TypeScript source. `rdy verify` reports the same
  * value as `rebuildCompiledWith` under a narrower rule, appearing only where it differs from the
  * running readyup.
@@ -112,7 +112,7 @@ export const KitResultEntrySchema = z
   .meta({ id: 'KitResultEntry' });
 
 /**
- * A kit that produced no results, carrying the same error body as the envelope.
+ * A kit that produced no results, with the same error body as the envelope.
  *
  * Deliberately counts-free and verdict-free: a kit that never ran has no `errors: 0` to report and
  * no verdict to give, and emitting either would misstate the run.

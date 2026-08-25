@@ -84,7 +84,7 @@ describe(formatOwnerView, () => {
     expect(lines[2]).toBe(`${INTERNAL} deploy`);
   });
 
-  // A blank parts one section from the next, and the first section opens the output with no blank at all.
+  // A blank separates one section from the next, and the first section opens the output with no blank at all.
   it('parts one section from the next with a blank line, opening with none', () => {
     const lines = formatOwnerView({
       internalKits: ['deploy'],

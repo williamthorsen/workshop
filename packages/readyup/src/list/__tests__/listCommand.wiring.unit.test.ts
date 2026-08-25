@@ -30,7 +30,7 @@ describe('listCommand wiring', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  /** Create a kit directory holding compiled kits, with no manifest beside them. */
+  /** Creates a kit directory holding compiled kits, with no manifest beside them. */
   function writeKitsDir(dirName: string, kitNames: string[]): string {
     const dir = path.join(tempDir, dirName);
     mkdirSync(dir, { recursive: true });

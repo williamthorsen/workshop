@@ -15,7 +15,7 @@ export const DriftStatusSchema = z.enum(['drift', 'missing', 'ok', 'unverified']
  *
  * A separate vocabulary from `DriftStatus` rather than a widening of it. The two verdicts answer
  * different questions -- has the bundle been edited, and has the source moved on since it was
- * built -- and a kit can carry a distinct answer to each. Widening the closed `DriftStatus` enum
+ * built -- and a kit can give a distinct answer to each. Widening the closed `DriftStatus` enum
  * would also break a consumer that exhaustively switches on it.
  */
 export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified']).meta({ id: 'SourceStatus' });
@@ -24,7 +24,7 @@ export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified'
  * Outcome of reading one kit's recorded input closure back off disk.
  *
  * A vocabulary of its own rather than a widening of any above, for the reason `SourceStatus`
- * records. One axis carries every kind of input, with `inputFailures` naming which inputs failed
+ * records. One axis covers every kind of input, with `inputFailures` naming which inputs failed
  * and why, so a consumer branches on the cause rather than on a status per kind of input.
  */
 export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ id: 'InputsStatus' });
@@ -35,9 +35,9 @@ export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ i
  * `path` is the file as the manifest records it, relative to the manifest directory, and `kind`
  * separates a module the bundle inlined from a JSON projection `pickJson` substituted.
  *
- * Discriminated on `reason` so each cause carries exactly what it compared, as `ManifestInputSchema`
- * discriminates the record this reads back: `changed` carries the hash pair, `missing` carries
- * neither, and `unprojectable` carries a diagnosis instead and is inline-only, since only a
+ * Discriminated on `reason` so each cause states exactly what it compared, as `ManifestInputSchema`
+ * discriminates the record this reads back: `changed` has the hash pair, `missing` has
+ * neither, and `unprojectable` has a diagnosis instead and is inline-only, since only a
  * projection can fail to be reproduced. A consumer generating types from this narrows by `reason`
  * rather than by hand over three fields that are independently optional.
  */
@@ -78,7 +78,7 @@ export const RebuildEsbuildSchema = z
  * One bundled package whose recorded version the rebuild does not reproduce.
  *
  * `recorded` is the version the compile bundled and `rebuilt` the one the rebuild bundled; a side is
- * absent where the package was not bundled then or now. A side carrying several comma-separated
+ * absent where the package was not bundled then or now. A side with several comma-separated
  * versions is a package the bundle inlined at more than one version at once.
  */
 export const RebuildDependencyChangeSchema = z
@@ -92,13 +92,13 @@ export const RebuildDependencyChangeSchema = z
  * are present only on a `drift` verdict, since no other status has two hashes to compare.
  * `sourceExpected` and `sourceActual` are their counterparts for the source, present only on
  * `stale`. `inputFailures` is the same idea for the recorded input closure, present only on a
- * `stale` `inputsStatus` and carrying one entry per input rather than a pair of hashes, since a kit
+ * `stale` `inputsStatus` and holding one entry per input rather than a pair of hashes, since a kit
  * can be stale in several inputs at once. `sourceStatus` and `inputsStatus` are optional so a
  * consumer pinned to this schema still validates a payload from a readyup that predates either.
  *
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
  * payload it always did. `rebuildExpected` is the hash of the recompiled bundle and `rebuildActual`
- * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` carries the
+ * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` holds the
  * compile failure on `failed`. `rebuildCompiledWith` names the readyup a mismatched bundle was
  * built by, present only when it differs from the running one, which is what separates a mismatch
  * caused by a readyup upgrade from one caused by an edited bundle.

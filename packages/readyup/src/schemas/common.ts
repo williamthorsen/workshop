@@ -12,7 +12,7 @@ export const SeveritySchema = z.enum(['error', 'warn', 'recommend']).meta({ id: 
 export const ErrorCodeSchema = z.enum(['config', 'internal', 'kit-load', 'usage']).meta({ id: 'ErrorCode' });
 
 /**
- * The error body carried by the envelope and, verbatim, by a per-kit error entry inside a report.
+ * The error body the envelope holds and, verbatim, a per-kit error entry inside a report holds too.
  *
  * `hint` names one action that would clear the failure, present only where the diagnosis alone would
  * not suggest it. It is absent rather than empty when there is nothing to suggest, and never appears
@@ -64,7 +64,7 @@ export const WarningCodeSchema = z.enum([
  *
  * Open where `ErrorCodeSchema` is closed, because the two vocabularies do different jobs. An error
  * code selects a consumer's branch, so an unknown one leaves the consumer with nothing to dispatch
- * on and earns its version bump. A warning labels an advisory whose `message` and `remedy` a
+ * on and justifies its version bump. A warning labels an advisory whose `message` and `remedy` a
  * consumer can display verbatim, so a code it has never heard of must still validate: closing this
  * set would make the first new advisory a breaking change. The union keeps the known values visible
  * in the generated schema's `anyOf` rather than trading them for a bare `string`.

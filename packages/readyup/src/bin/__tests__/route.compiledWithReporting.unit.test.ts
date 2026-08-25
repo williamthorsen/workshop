@@ -74,7 +74,7 @@ describe('compile-time readyup version in the run report', () => {
 
 // region | Helpers
 
-/** Builds a kit source carrying the version stamp `rdy compile` embeds in a bundle. */
+/** Builds a kit source with the version stamp `rdy compile` embeds in a bundle. */
 function buildStampedKit(version: string): string {
   return `export const __readyupVersion = '${version}';\n${KIT_BODY}`;
 }

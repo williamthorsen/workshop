@@ -9,7 +9,7 @@ import { discoverWorkspacesAt, type Workspace } from '../check-utils/workspaces.
  * The fallback behind `resolvePackageRoot`, for a project whose own workspaces publish kits: A monorepo
  * declares no dependency on them at its root, so nothing links them into `node_modules` and the upward walk
  * does not find them. A workspace matches by the `name` its manifest declares, `private: true` included,
- * because `private` prevents publication to a registry and has no bearing on discovery inside the repo.
+ * because `private` prevents publication to a registry and does not affect discovery inside the repo.
  *
  * Returns the real path, so the result matches what `resolvePackageRoot` returns for a workspace that is
  * linked into `node_modules`.

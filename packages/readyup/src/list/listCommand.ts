@@ -56,11 +56,7 @@ const listOptions = {
   style: { type: 'string' },
 } as const;
 
-/**
- * Handle the `list` subcommand: enumerate kits from the manifest and filesystem, then print their names.
- *
- * Returns a numeric exit code.
- */
+/** Runs the `list` subcommand, returning the exit code its enumeration of manifest and filesystem kits produced. */
 export async function listCommand(args: string[]): Promise<number> {
   let parsed;
   try {
@@ -129,7 +125,7 @@ export async function listCommand(args: string[]): Promise<number> {
   return runOwnerMode(json);
 }
 
-/** Display kits from a manifest file. */
+/** Displays the kits a manifest file declares. */
 function runManifestMode(manifestArg: string, json: boolean): number {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
   const manifest = readManifestOrThrow(manifestPath);
@@ -143,7 +139,7 @@ function runManifestMode(manifestArg: string, json: boolean): number {
   );
 }
 
-/** Resolve the manifest path for a `--from` source and display its kits. */
+/** Resolves the manifest path for a `--from` source and displays its kits. */
 async function runFromMode(fromArg: string, json: boolean): Promise<number> {
   let source;
   try {
@@ -207,7 +203,7 @@ function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: stri
   return finishList(entries, json);
 }
 
-/** Fetch and display kits from a remote manifest URL, authenticating where the host is one readyup knows. */
+/** Fetches and displays the kits at a remote manifest URL, authenticating where the host is one readyup knows. */
 async function runRemoteFromMode({ url, json }: { url: string; json: boolean }): Promise<number> {
   const provider = resolveRemoteProvider(url);
   const headers = resolveRemoteAuthHeaders(provider);
@@ -229,7 +225,7 @@ async function runRemoteFromMode({ url, json }: { url: string; json: boolean }):
   );
 }
 
-/** Enumerate kits using the project config. */
+/** Enumerates the kits the project config names. */
 async function runOwnerMode(json: boolean): Promise<number> {
   const cwd = process.cwd();
   const config = await loadListingConfig();
@@ -434,7 +430,7 @@ function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
 /**
  * Labels a package kit, its package first, so a kit reads the same here as in the heading a run gives it.
  *
- * The row's own token supplies the package glyph, so the label carries only what follows it.
+ * The row's own token supplies the package glyph, so the label holds only what follows it.
  */
 function describePackageKit(kit: PackageKit): string {
   const version = kit.version === undefined ? '' : `@${kit.version}`;
@@ -482,7 +478,7 @@ async function loadListingConfig(): Promise<ResolvedRdyConfig> {
   }
 }
 
-/** Emit the list payload under `--json`. Listing succeeds whenever its source could be read. */
+/** Emits the list payload under `--json`, succeeding whenever the listing's source could be read. */
 function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: string[] = []): number {
   if (json) {
     const output: JsonListOutput = {
@@ -495,16 +491,16 @@ function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: 
   return EXIT_OK;
 }
 
-/** Build the rows a manifest declares, rebasing each recorded path onto the current directory. */
+/** Returns the rows a manifest declares, rebasing each recorded path onto the current directory. */
 function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListKitEntry[] {
   return manifest.kits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath)));
 }
 
 /**
- * Build a kit row from a manifest entry.
+ * Returns a kit row built from a manifest entry.
  *
  * Every field but `name` and `kind` comes from the manifest, so a kit compiled by an older readyup
- * simply carries fewer of them. `checklists` is read here rather than from the kit itself: listing
+ * simply has fewer of them. `checklists` is read here rather than from the kit itself: listing
  * kits never imports a compiled bundle, so it never runs kit code.
  *
  * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
@@ -528,17 +524,17 @@ function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined
   return entry;
 }
 
-/** Build a kit row for a TypeScript source awaiting compilation. */
+/** Returns a kit row for a TypeScript source awaiting compilation. */
 function buildInternalEntry(name: string, dir: string, extension: string): JsonListKitEntry {
   return { name, kind: 'internal', path: path.relative(process.cwd(), path.join(dir, `${name}${extension}`)) };
 }
 
 /**
- * Enumerate the compiled kits in a directory, for a source that has no manifest beside it.
+ * Enumerates the compiled kits in a directory, for a source that has no manifest beside it.
  *
  * `run --from` resolves a kit by filename alone, so a directory it can run from is one `list` must
- * be able to describe. The rows carry only what the filesystem knows: everything else — description,
- * checklist names, the readyup version a kit was built against — lives in the manifest that is absent.
+ * be able to describe. The rows hold only what the filesystem knows: everything else -- description,
+ * checklist names, the readyup version a kit was built against -- lives in the manifest that is absent.
  *
  * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a
  * path that does not exist would turn a mistyped `--from` into a clean, empty answer.
@@ -564,7 +560,7 @@ function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListK
   }));
 }
 
-/** Read a manifest, returning undefined when there is none and reporting any other failure. */
+/** Reads a manifest, returning undefined where there is none and reporting any other failure. */
 function readLocalManifestIfPresent(manifestPath: string): RdyManifest | undefined {
   try {
     return readManifest(manifestPath);
@@ -583,7 +579,7 @@ function readManifestOrThrow(manifestPath: string): RdyManifest {
   }
 }
 
-/** Resolve the manifest path for a parsed local `--from` source. */
+/** Returns the manifest path for a parsed local `--from` source. */
 function resolveFromManifestPath(source: LocalFromSource): string {
   if (source.type === 'global') {
     return path.join(resolveHomeDir(), '.readyup/manifest.json');
@@ -597,7 +593,7 @@ function resolveFromManifestPath(source: LocalFromSource): string {
   return path.join(path.resolve(source.path), '.readyup/manifest.json');
 }
 
-/** Resolve the directory a local `--from` source keeps its compiled kits in, matching `run --from`. */
+/** Returns the directory a local `--from` source keeps its compiled kits in, matching `run --from`. */
 function resolveFromKitsDir(source: LocalFromSource): string {
   if (source.type === 'global') {
     return path.join(resolveHomeDir(), KITS_DIR);

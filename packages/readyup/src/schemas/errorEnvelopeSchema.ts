@@ -10,7 +10,7 @@ import { ErrorBodySchema } from './common.ts';
 export const SCHEMA_VERSION = 1;
 
 /**
- * The single JSON document stdout carries when an invocation fails before it can produce anything else.
+ * The single JSON document stdout holds when an invocation fails before it can produce anything else.
  *
  * The envelope covers only failures that precede dispatch. Once a run has reached its kits, a kit
  * that fails becomes an entry inside the report rather than replacing it, so a consumer that sees an

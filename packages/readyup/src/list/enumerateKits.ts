@@ -9,10 +9,11 @@ interface EnumerateKitsOptions {
 }
 
 /**
- * Return sorted base names (extension stripped) of files in `dir` matching `extension`.
+ * Returns the sorted base names, extension stripped, of the files in `dir` matching `extension`, or
+ * `[]` where `dir` does not exist.
  *
- * Non-recursive. Hidden files (starting with `.`) are excluded. Returns `[]` when
- * `dir` does not exist; rethrows other filesystem errors (e.g., `EACCES`).
+ * The listing is not recursive, and a hidden file, meaning one whose name starts with `.`, is
+ * excluded. A filesystem error that is not a missing directory, such as `EACCES`, is rethrown.
  */
 export function enumerateKits({ dir, extension }: EnumerateKitsOptions): string[] {
   let entries;
@@ -31,7 +32,7 @@ export function enumerateKits({ dir, extension }: EnumerateKitsOptions): string[
     .toSorted();
 }
 
-/** Type guard for Node.js filesystem errors with a `code` property. */
+/** Reports whether an error is a Node.js filesystem error, which is one with a `code` property. */
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return isError(error) && 'code' in error;
 }
