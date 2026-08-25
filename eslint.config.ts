@@ -1,4 +1,4 @@
-import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
+import baseConfig, { createConfig, patterns } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
 /**
@@ -30,20 +30,20 @@ const config = defineConfig([
   {
     // `prefer-simple-condition-first` reorders conditions to save a property read, at the cost of the reading
     // order the surrounding error messages use. Its own diagnostic concedes it cannot verify the reorder is safe.
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    files: patterns.typeScriptFiles,
     rules: {
       'unicorn/prefer-simple-condition-first': 'off',
     },
   },
   {
-    files: ['**/*.js', '**/*.cjs', '**/*.mjs', '**/*.ts', '**/*.tsx'],
+    files: patterns.codeFiles,
     rules: {
       'n/no-missing-import': 'off',
       'n/no-unpublished-import': 'off',
     },
   },
   {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    files: patterns.typeScriptFiles,
     languageOptions: {
       parserOptions: {
         // Anchor the project service (enabled by the base config) at the repo root.
@@ -69,7 +69,7 @@ const config = defineConfig([
     },
   },
   defineConfig({
-    files: ['**/*.test.ts', '**/*.test.tsx'],
+    files: patterns.testFiles,
     extends: [await createConfig.vitest()],
   }),
   {
@@ -139,7 +139,7 @@ const config = defineConfig([
     },
   },
   {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    files: patterns.typeScriptFiles,
     rules: {
       'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX],
     },
