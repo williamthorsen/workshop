@@ -9,13 +9,11 @@ import { hashUtf8 } from '../../portable/hash-content.ts';
 import { readDirNames } from '../../portable/readDirNames.ts';
 import { statIfPresent } from '../../portable/statIfPresent.ts';
 import type { Blob, FileEntry } from '../../schemas/file-schemas.ts';
-import type { OwnedItemsDeclaration } from '../../schemas/owned-items-schemas.ts';
 import type { Plan } from '../../schemas/plan-schemas.ts';
-import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { Hash } from '../../schemas/scalar-schemas.ts';
 import { buildPlan } from '../../test-utils/buildPlan.ts';
 import { captureComposition } from '../../test-utils/captureComposition.ts';
-import { buildClaudeTarget } from '../../test-utils/composition-fixture.ts';
+import { buildClaudeTarget, buildOwningTarget, SETTINGS_HOOKS } from '../../test-utils/composition-fixture.ts';
 import { applyPlan } from '../applyPlan.ts';
 import { UnapplicablePlanError } from '../UnapplicablePlanError.ts';
 
@@ -402,7 +400,7 @@ describe(applyPlan, () => {
 
       const withdrawn = await captureComposition({
         targetFiles: { 'settings.json': await readFile(path.join(applied.targetRoot, 'settings.json'), 'utf8') },
-        buildTargets: (root) => [{ ...buildClaudeTarget(root), ownedItems: [{ ...settingsHooks, items: [] }] }],
+        buildTargets: (root) => [{ ...buildClaudeTarget(root), ownedItems: [{ ...SETTINGS_HOOKS, items: [] }] }],
       });
       await applyPlan(composePlan(withdrawn.config, withdrawn.snapshot), { baseDir: withdrawn.targetRoot });
 
@@ -431,29 +429,6 @@ const HELD_SETTINGS = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n 
 const PLANNED_SETTINGS =
   '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n' +
   '    {\n      "command": "relay --on=stop",\n      "source": "codeassembly"\n    }\n  ]\n}\n';
-
-/** The declaration the end-to-end cases own `settings.json` through. */
-const settingsHooks: OwnedItemsDeclaration = {
-  format: 'json',
-  collection: ['hooks'],
-  sentinel: { path: ['source'], value: 'codeassembly' },
-  host: 'settings.json',
-  items: [{ command: 'relay --on=stop' }],
-};
-
-/** Builds the fixture's target with the owned-items declaration added. */
-function buildOwningTarget(targetRoot: string): ReadonlyArray<RenderTarget> {
-  return [{ ...buildClaudeTarget(targetRoot), ownedItems: [settingsHooks] }];
-}
-
-/** Reads the ownership kind a plan records at `filePath`, failing the test when it plans nothing there. */
-function kindAt(plan: Plan, filePath: string): string {
-  const file = plan.files.find((entry) => entry.path === filePath);
-  if (file === undefined) {
-    throw new Error(`The plan carries no file at "${filePath}".`);
-  }
-  return file.ownership.kind;
-}
 
 /** Builds a plan writing one entries host, with both sides registered as bodies. */
 function buildEntriesPlan(root: string, current: string, planned: string): Plan {
@@ -492,6 +467,15 @@ function buildSingleFilePlan(root: string, file: FileEntry, blobs?: Record<Hash,
 /** Reads what became of one destination, by the path the plan carries it at. */
 function findAction(files: ReadonlyArray<{ path: string; action: string }>, filePath: string): string | undefined {
   return files.find((file) => file.path === filePath)?.action;
+}
+
+/** Reads the ownership kind a plan records at `filePath`, failing the test when it plans nothing there. */
+function kindAt(plan: Plan, filePath: string): string {
+  const file = plan.files.find((entry) => entry.path === filePath);
+  if (file === undefined) {
+    throw new Error(`The plan carries no file at "${filePath}".`);
+  }
+  return file.ownership.kind;
 }
 
 // endregion | Helpers

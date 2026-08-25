@@ -6,8 +6,6 @@ import { computeClosure } from '../../../closure/computeClosure.ts';
 import type { BlobStore } from '../../../portable/createBlobStore.ts';
 import { createBlobStore } from '../../../portable/createBlobStore.ts';
 import type { Blob, FileEntry } from '../../../schemas/file-schemas.ts';
-import type { OwnedItemsDeclaration } from '../../../schemas/owned-items-schemas.ts';
-import type { RenderTarget } from '../../../schemas/render-target-schemas.ts';
 import { selectArtifacts } from '../../../selection/selectArtifacts.ts';
 import type { CaptureCompositionOptions } from '../../../test-utils/captureComposition.ts';
 import { captureComposition } from '../../../test-utils/captureComposition.ts';
@@ -16,6 +14,7 @@ import {
   buildCompositionSourceFiles,
   buildInlayingTarget,
   buildOverlappingTargets,
+  buildOwningTarget,
   COMPOSITION_KINDS,
   HOST_PATH,
   REGION_MARKERS,
@@ -25,19 +24,6 @@ import { assembleFiles } from '../assembleFiles.ts';
 import { assertSnapshotFits } from '../assertSnapshotFits.ts';
 
 const brokenSkill = { ...buildCompositionSourceFiles(), 'skills/review/SKILL.md': '<!-- include: ./gone.md /-->\n' };
-
-const settingsHooks: OwnedItemsDeclaration = {
-  format: 'json',
-  collection: ['hooks'],
-  sentinel: { path: ['source'], value: 'codeassembly' },
-  host: 'settings.json',
-  items: [{ command: 'relay --on=stop' }],
-};
-
-/** Builds the fixture's target with one owned-items declaration added, which is the only thing these cases vary. */
-function buildOwningTarget(targetRoot: string): ReadonlyArray<RenderTarget> {
-  return [{ ...buildClaudeTarget(targetRoot), ownedItems: [settingsHooks] }];
-}
 
 describe(assembleFiles, () => {
   it('plans every destination a target does not yet hold as added', async () => {
