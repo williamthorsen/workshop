@@ -6,7 +6,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { discoverWorkspaces, type Workspace } from '../workspaces.ts';
 
 /**
- * The `node:fs` functions a repoint can be armed on: `existsSync` fires on the `pnpm-workspace.yaml` probe,
+ * The `node:fs` functions a repoint can be armed on: `existsSync` fires on the root manifest read,
  * discovery's first filesystem call after it snapshots the cwd, and `readdirSync` on the directory walk.
  */
 type FsTrigger = 'existsSync' | 'readdirSync';
@@ -62,7 +62,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
 
     const workspaces = discoverWithCwdRepointedAt(decoyDir, 'existsSync');
 
-    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['alpha']);
+    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
 
   it('reads the single-workspace manifest at the directory it snapshotted', ({ temp }) => {
@@ -82,7 +82,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
 
     const workspaces = discoverWithCwdRepointedAt(decoyDir, 'readdirSync');
 
-    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['alpha']);
+    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
 });
 

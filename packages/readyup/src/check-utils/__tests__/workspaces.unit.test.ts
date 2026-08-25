@@ -29,15 +29,15 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['apps/web', 'packages/alpha', 'packages/beta']);
-      expect(workspaces.map((w) => w.name)).toStrictEqual(['web', 'alpha', 'beta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'apps/web', 'packages/alpha', 'packages/beta']);
+      expect(workspaces.map((w) => w.name)).toStrictEqual(['root', 'web', 'alpha', 'beta']);
     });
 
-    it('returns an empty array when a pattern expands to zero directories', ({ temp }) => {
+    it('returns the root alone when a pattern expands to zero directories', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true });
       writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
 
-      expect(discoverWorkspaces()).toStrictEqual([]);
+      expect(discoverWorkspaces().map((w) => w.dir)).toStrictEqual(['.']);
     });
 
     it('falls through to npm/single detection when `packages` key is absent', ({ temp }) => {
@@ -52,6 +52,7 @@ describe(discoverWorkspaces, () => {
           absolutePath: temp.dir,
           name: 'root',
           isPackage: true,
+          isRoot: true,
           packageJson: { name: 'root', version: '1.0.0' },
         },
       ]);
@@ -73,7 +74,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha', 'packages/beta']);
     });
 
     it('discovers workspaces when `workspaces.packages` is a string array', ({ temp }) => {
@@ -87,7 +88,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['apps/web', 'packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'apps/web', 'packages/alpha']);
     });
 
     it('returns isPackage: false for a discovered workspace with `private: true`', ({ temp }) => {
@@ -98,7 +99,7 @@ describe(discoverWorkspaces, () => {
       const workspaces = discoverWorkspaces();
       const byDir = Object.fromEntries(workspaces.map((w) => [w.dir, w.isPackage]));
 
-      expect(byDir).toStrictEqual({ 'packages/alpha': true, 'packages/internal': false });
+      expect(byDir).toStrictEqual({ '.': false, 'packages/alpha': true, 'packages/internal': false });
     });
   });
 
@@ -114,6 +115,7 @@ describe(discoverWorkspaces, () => {
           absolutePath: temp.dir,
           name: 'solo',
           isPackage: true,
+          isRoot: true,
           packageJson: { name: 'solo', version: '1.0.0' },
         },
       ]);
@@ -150,6 +152,36 @@ describe(discoverWorkspaces, () => {
     });
   });
 
+  describe('repo root', () => {
+    it('reports the root once, flagged, alongside the members of a workspace-pattern repo', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+
+      const workspaces = discoverWorkspaces();
+
+      expect(workspaces.filter((w) => w.isRoot).map((w) => w.dir)).toStrictEqual(['.']);
+      expect(workspaces.map((w) => w.isRoot)).toStrictEqual([true, false]);
+    });
+
+    it('flags the sole workspace of a single-package repo as the root', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'solo' });
+
+      expect(discoverWorkspaces().map((w) => w.isRoot)).toStrictEqual([true]);
+    });
+
+    it('reports `isRoot` independently of `isPackage`, for a published root and a private member', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/internal', { name: 'internal', private: true });
+
+      const workspaces = discoverWorkspaces();
+
+      expect(workspaces.map((w) => [w.isRoot, w.isPackage])).toStrictEqual([
+        [true, true],
+        [false, false],
+      ]);
+    });
+  });
+
   describe('filter option', () => {
     it('excludes workspaces for which the filter returns false', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
@@ -159,6 +191,16 @@ describe(discoverWorkspaces, () => {
       const workspaces = discoverWorkspaces({ filter: (w) => w.isPackage });
 
       expect(workspaces.map((w) => w.name)).toStrictEqual(['alpha']);
+    });
+
+    it('yields the members alone when the filter excludes the root', ({ temp }) => {
+      writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
+      writeWorkspacePackage(temp, 'packages/beta', { name: 'beta' });
+
+      const members = discoverWorkspaces({ filter: (w) => !w.isRoot });
+
+      expect(members.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
     });
   });
 
@@ -170,7 +212,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha']);
     });
 
     it('skips a matched directory with an unparseable package.json', ({ temp }) => {
@@ -180,7 +222,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha']);
     });
 
     it('does not traverse into node_modules', ({ temp }) => {
@@ -206,13 +248,13 @@ describe(discoverWorkspaces, () => {
   });
 
   describe('pattern shapes', () => {
-    it('does not report the repo root as a workspace under a `**` pattern', ({ temp }) => {
+    it('reports the repo root exactly once under a `**` pattern, which matches its own manifest', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['**'] });
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha']);
     });
 
     it('resolves a trailing-slash pattern to the same set as its bare form', ({ temp }) => {
@@ -222,7 +264,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/beta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha', 'packages/beta']);
     });
 
     it('resolves a pattern that names its directory literally', ({ temp }) => {
@@ -232,11 +274,11 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['tools/formatter']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'tools/formatter']);
     });
   });
 
-  describe('error: missing root package.json', () => {
+  describe('error: unreadable root package.json', () => {
     it('throws with a message that includes the resolved path', ({ temp }) => {
       expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
       expect(() => discoverWorkspaces()).toThrow(temp.dir);
@@ -244,6 +286,14 @@ describe(discoverWorkspaces, () => {
 
     it('throws even when pnpm-workspace.yaml is present', ({ temp }) => {
       writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
+
+      expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
+    });
+
+    it("throws when a workspace-pattern repo's root package.json is unparseable", ({ temp }) => {
+      temp.write('package.json', '{ not valid json');
+      writePnpmWorkspaceYaml(temp, ['packages:', '  - packages/*', ''].join('\n'));
+      writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha' });
 
       expect(() => discoverWorkspaces()).toThrow(/no package\.json found at/);
     });
@@ -258,7 +308,7 @@ describe(discoverWorkspaces, () => {
 
       const workspaces = discoverWorkspaces();
 
-      expect(workspaces.map((w) => w.dir)).toStrictEqual(['packages/alpha', 'packages/mu', 'packages/zeta']);
+      expect(workspaces.map((w) => w.dir)).toStrictEqual(['.', 'packages/alpha', 'packages/mu', 'packages/zeta']);
     });
   });
 
@@ -267,13 +317,14 @@ describe(discoverWorkspaces, () => {
       writeRootPackageJson(temp, { name: 'root', private: true, workspaces: ['packages/*'] });
       writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha', version: '1.2.3' });
 
-      const [workspace] = discoverWorkspaces();
+      const workspace = discoverWorkspaces().find((w) => w.dir === 'packages/alpha');
 
       expect(workspace).toStrictEqual({
         dir: 'packages/alpha',
         absolutePath: join(temp.dir, 'packages/alpha'),
         name: 'alpha',
         isPackage: true,
+        isRoot: false,
         packageJson: { name: 'alpha', version: '1.2.3' },
       });
     });
@@ -331,7 +382,7 @@ describe(discoverWorkspacesAt, () => {
 
     const workspaces = discoverWorkspacesAt(temp.resolve('nested'));
 
-    expect(workspaces.map((w) => w.name)).toStrictEqual(['alpha']);
+    expect(workspaces.map((w) => w.name)).toStrictEqual(['nested-root', 'alpha']);
     // The ambient cwd holds no manifest, so an answer read through it could not be this one.
     expect(() => discoverWorkspaces()).toThrow(/no package.json found/);
   });
@@ -341,6 +392,7 @@ describe(discoverWorkspacesAt, () => {
     writeWorkspacePackage(temp, 'nested/packages/beta', { name: 'beta' });
 
     expect(discoverWorkspacesAt('nested').map((w) => w.absolutePath)).toStrictEqual([
+      temp.resolve('nested'),
       temp.resolve('nested/packages/beta'),
     ]);
   });

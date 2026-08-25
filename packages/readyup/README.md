@@ -1329,11 +1329,16 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 
 ### Workspaces
 
-`discoverWorkspaces()` returns a uniform `Workspace[]` collapsing pnpm, npm, and yarn monorepo conventions -- and single-workspace repos -- into one iteration shape. Each entry carries `dir` (relative to `cwd`; `'.'` for a single-workspace repo), `absolutePath`, `name`, `isPackage` (`package.json.private !== true`), and the parsed `packageJson`.
+`discoverWorkspaces()` returns a uniform `Workspace[]` collapsing pnpm, npm, and yarn monorepo conventions -- and single-workspace repos -- into one iteration shape. Each entry carries `dir` (relative to `cwd`; `'.'` for the repo root), `absolutePath`, `name`, `isPackage` (`package.json.private !== true`), `isRoot`, and the parsed `packageJson`.
+
+The repo root is reported in every shape, exactly once, so every call shape is a filter over one list rather than a list a caller adds the root to and dedupes.
 
 ```ts
+const members = discoverWorkspaces({ filter: (w) => !w.isRoot });
 const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 ```
+
+`isRoot` is independent of `isPackage`: a monorepo may publish its root, and a member may be private. A root `package.json` that is missing or unparseable throws, whatever the repo's shape.
 
 `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, or negation patterns raise a clear error.
 

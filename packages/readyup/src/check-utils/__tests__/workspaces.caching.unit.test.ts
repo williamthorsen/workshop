@@ -49,7 +49,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     const privateWorkspaces = discoverWorkspaces({ filter: (workspace) => !workspace.isPackage });
 
     expect(packages.map((workspace) => workspace.name)).toStrictEqual(['alpha']);
-    expect(privateWorkspaces.map((workspace) => workspace.name)).toStrictEqual(['internal']);
+    expect(privateWorkspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'internal']);
     // Guards the equality below, which two zeroes would also satisfy.
     expect(walkedForFirstCall).toBeGreaterThan(0);
     expect(readDirectories).toHaveLength(walkedForFirstCall);
@@ -67,7 +67,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 
     const workspaces = discoverWorkspaces();
 
-    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['solo']);
+    expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['second', 'solo']);
     expect(readDirectories.length).toBeGreaterThan(walkedForFirstRoot);
   });
 
@@ -77,6 +77,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     discoverWorkspaces().length = 0;
 
     expect(discoverWorkspaces().map((workspace) => workspace.dir)).toStrictEqual([
+      '.',
       'packages/alpha',
       'packages/internal',
     ]);
