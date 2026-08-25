@@ -73,6 +73,16 @@ export type HostState =
       readonly contributions: ReadonlyArray<Contribution>;
     };
 
+/**
+ * One entries host as the target holds it now, or the fact that it holds none.
+ *
+ * Keyed by path rather than by kind: an entries host answers to no artifact kind, and several declarations may own
+ * different collections of one host. The whole content rides along, the planned body being computed from it.
+ */
+export type OwnedHostState =
+  | { readonly path: string; readonly state: 'absent' }
+  | { readonly path: string; readonly state: 'present'; readonly content: string; readonly hash: Hash };
+
 /** What one target holds now of what the engine deployed there, and the digest identifying that state. */
 export interface TargetState {
   readonly targetId: TargetId;
@@ -80,6 +90,8 @@ export interface TargetState {
   readonly claimed: ReadonlyArray<ClaimedFile>;
   /** Ordered by path then kind, one per region deployment the target declares. */
   readonly hosts: ReadonlyArray<HostState>;
+  /** Ordered by path, one per distinct host the target's owned-items declarations name. */
+  readonly ownedHosts: ReadonlyArray<OwnedHostState>;
   readonly digest: Hash;
 }
 
@@ -103,8 +115,8 @@ export interface ReadTargetStateOptions {
  * Three exclusions bound the claim, and each answers a way the rule could take a file that is not the engine's. Names
  * beginning with a dot or an underscore are support content, the rule a source is enumerated by. Within a claimed
  * artifact, only tool state is passed over, the rule that artifact's digest is taken by, so what a source ships and
- * what a destination claims agree. Every declared region host is excluded wherever it falls, since a host is a file the
- * engine does not otherwise own and a tree claim over one would offer it up for deletion.
+ * what a destination claims agree. Every declared host is excluded wherever it falls, region and entries alike, since
+ * a host is a file the engine does not otherwise own and a tree claim over one would offer it up for deletion.
  *
  * A directory is claimed only when it holds its layout's entry file. A directory bearing an artifact's name and nothing
  * else is somebody else's, and this scan's output is what decides removal.
@@ -114,9 +126,14 @@ export interface ReadTargetStateOptions {
  */
 export async function readTargetState(target: RenderTarget, options: ReadTargetStateOptions): Promise<TargetState> {
   const root = expandPath(target.root, options.baseDir);
-  const hostPaths = new Set(
-    target.deployments.filter((deployment) => deployment.form === 'region').map((deployment) => deployment.host),
+  // One read per distinct host, several declarations being free to own different collections of one file.
+  const ownedPaths = [...new Set((target.ownedItems ?? []).map((declaration) => declaration.host))].toSorted(
+    compareStrings,
   );
+  const hostPaths = new Set([
+    ...target.deployments.filter((deployment) => deployment.form === 'region').map((deployment) => deployment.host),
+    ...ownedPaths,
+  ]);
 
   const located = await Promise.all(
     target.deployments
@@ -129,13 +146,21 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
       .map((deployment) => readHost(root, deployment)),
   );
 
+  const ownedHosts = await Promise.all(ownedPaths.map((host) => readOwnedHost(root, host)));
+
   const claimed = await readClaims(root, located.flat(), hostPaths);
   const ordered = hosts.toSorted((left, right) => {
     const byPath = compareStrings(left.path, right.path);
     return byPath === 0 ? compareStrings(left.kindId, right.kindId) : byPath;
   });
 
-  return { targetId: target.id, claimed, hosts: ordered, digest: digestState(claimed, ordered) };
+  return {
+    targetId: target.id,
+    claimed,
+    hosts: ordered,
+    ownedHosts,
+    digest: digestState(claimed, ordered, ownedHosts),
+  };
 }
 
 // region | Helpers
@@ -152,12 +177,16 @@ function composeClaimedArtifact(kindId: KindId, slug: string): ClaimedArtifact {
 }
 
 /** Digests a target's state over the sorted path-and-hash pairs of everything it holds, so scan order cannot reach it. */
-function digestState(claimed: ReadonlyArray<ClaimedFile>, hosts: ReadonlyArray<HostState>): Hash {
+function digestState(
+  claimed: ReadonlyArray<ClaimedFile>,
+  hosts: ReadonlyArray<HostState>,
+  ownedHosts: ReadonlyArray<OwnedHostState>,
+): Hash {
   const byPath = new Map<string, Hash>();
   for (const file of claimed) {
     byPath.set(file.path, file.hash);
   }
-  for (const host of hosts) {
+  for (const host of [...hosts, ...ownedHosts]) {
     if (host.state === 'present') {
       byPath.set(host.path, host.hash);
     }
@@ -250,6 +279,14 @@ async function readClaims(
       return { path: filePath, claims, hash: hashBytes(bytes), body: encodeBlob(bytes) };
     }),
   );
+}
+
+/** Reads one entries host, or reports that the target holds none there. */
+async function readOwnedHost(root: string, host: string): Promise<OwnedHostState> {
+  const content = await readFileIfPresent(path.join(root, host));
+  return content === undefined
+    ? { path: host, state: 'absent' }
+    : { path: host, state: 'present', content, hash: hashUtf8(content) };
 }
 
 /** Reads one region host, along with the contributions its region carries. */
