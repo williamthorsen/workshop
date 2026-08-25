@@ -3,7 +3,7 @@ import { createIgnorePragmaMatcher } from './pragma-token.ts';
 /** Matches one check id at the head of a pragma's tail, with the whitespace leading up to it. */
 const LEADING_CHECK_ID = /^[ \t]*[A-Za-z0-9@][\w@./-]*/;
 
-/** Matches the comma parting one check id from the next. */
+/** Matches the comma separating one check id from the next. */
 const LEADING_COMMA = /^[ \t]*,/;
 
 /** The tokens that open a pragma, which an id list therefore never names. */
@@ -27,8 +27,8 @@ export function suppressesFinding(lines: readonly string[], line: number, checkI
 // region | Helpers
 
 /**
- * Reports whether a line carries a pragma covering the named scope and suppressing for `checkIds`. A line past
- * either end of the source carries none.
+ * Reports whether a line has a pragma covering the named scope and suppressing for `checkIds`. A line past
+ * either end of the source has none.
  */
 function carriesPragma(line: string | undefined, scope: 'line' | 'next-line', checkIds: readonly string[]): boolean {
   if (line === undefined) return false;
@@ -48,7 +48,7 @@ function carriesPragma(line: string | undefined, scope: 'line' | 'next-line', ch
  *
  * The list is comma-separated and ends at the first candidate that is not an id: a `--` opening a reason, the
  * delimiter closing a block comment, either pragma token, or the line's end. Excluding the pragma tokens by name
- * is what keeps a line carrying both of them two unqualified pragmas rather than one naming a check called
+ * is what keeps a line with both of them two unqualified pragmas rather than one naming a check called
  * `rdy-ignore-next-line`.
  */
 function readCheckIds(tail: string): readonly string[] {

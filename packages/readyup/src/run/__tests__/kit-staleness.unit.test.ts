@@ -343,12 +343,12 @@ describe(warnOnKitStaleness, () => {
     });
   }
 
-  /** Tracking whose sole entry describes the kit at `KIT_PATH`. */
+  /** Returns tracking whose sole entry describes the kit at `KIT_PATH`. */
   function defaultTracking(): ManifestTracking {
     return trackingFor([{ name: 'default', path: MANIFEST_KIT_PATH, source: 'kits/default.ts' }]);
   }
 
-  /** Tracking as `readManifestTracking` would have built it, holding the given entries. */
+  /** Returns tracking as `readManifestTracking` would have built it, holding the given entries. */
   function trackingFor(kits: RdyManifestKit[]): ManifestTracking {
     return { manifest: { version: 1, kits }, manifestDir: path.resolve(process.cwd(), '.readyup') };
   }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { RdyKit } from '../../kits/types.ts';
 import { resolveRequestedNames } from '../resolveRequestedNames.ts';
 
-/** Build a minimal kit with named checklists and optional suites. */
+/** Returns a minimal kit with named checklists and optional suites. */
 function makeKit(overrides?: Partial<RdyKit>): RdyKit {
   return {
     checklists: [

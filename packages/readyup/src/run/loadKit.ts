@@ -14,7 +14,7 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  * Loads a rdy kit from a path or URL source.
  *
  * Takes the whole entry rather than its source alone: a kit whose readyup imports the runner cannot satisfy is
- * reported with a remedy chosen from the kit's provenance, which the source by itself does not carry.
+ * reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
  */
 export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
   const { source } = entry;

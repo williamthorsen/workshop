@@ -74,7 +74,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
 
 // region | Helpers
 
-/** Two checks reporting a finding on the same line, each addressable by an id of its own. */
+/** Returns two checks reporting a finding on the same line, each addressable by an id of its own. */
 function twoChecksOverOneLine(): RdyChecklist {
   const findings = [{ line: 1, path: SOURCE_PATH, reported: true }];
 

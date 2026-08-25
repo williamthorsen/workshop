@@ -52,7 +52,7 @@ export function warnOnMaskedSkips(
  * Names the check a warning is about, down to the checklist that holds it.
  *
  * A masked pass is a property of one check where the staleness advisories are properties of a kit,
- * and one run may carry many of both, so the check's name alone would not say which line to look at.
+ * and one run may have many of both, so the check's name alone would not say which line to look at.
  */
 function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: string): string {
   const kit = `kit "${entry.name}"${describeKitOwner(entry.provenance)}`;
@@ -112,7 +112,7 @@ function toWarning(entry: ResolvedKitEntry, checklistName: string, diagnosis: Sk
   };
 }
 
-/** Trims a reason's trailing period, so the sentence carrying it ends with exactly one. */
+/** Trims a reason's trailing period, so the sentence around it ends with exactly one. */
 function trimTrailingPeriod(reason: string): string {
   return reason.endsWith('.') ? reason.slice(0, -1) : reason;
 }

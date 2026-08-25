@@ -90,7 +90,7 @@ export async function runHumanMode(
 
   // Tallying follows the last kit rather than riding inside one, so a kit that failed to load still leaves
   // the table covering the checklists that did run. A dropped block is reported by its row alone, so one
-  // dropped block earns the table even where a single row is all it has to carry.
+  // dropped block justifies the table even where a single row is all it has to show.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
   // Written after the summary table, the last block a reported pragma's file may have been named in.
@@ -114,11 +114,11 @@ function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): Breadcr
   return [source, { role: 'kit', text: entry.name }];
 }
 
-/** Writes one block of a run to stdout, parted from the block before it by a blank line. */
+/** Writes one block of a run to stdout, separated from the block before it by a blank line. */
 type BlockWriter = (text: string) => void;
 
 /**
- * Returns a writer that parts each block of a run from the one before with a single blank line.
+ * Returns a writer that separates each block of a run from the one before with a single blank line.
  *
  * Separation lives here rather than in the headings because only a sequence can see what precedes it, and
  * the run's first block needs no blank at all. One width serves every boundary, a kit's included: the
@@ -140,7 +140,7 @@ function createBlockWriter(): BlockWriter {
  *
  * A kit the local kits directory holds has no source, and neither does one whose directory resolves to
  * the working directory: naming the directory the reader is standing in tells them nothing. A package
- * carries its version because the whole point of running a kit from an installed package is that it
+ * states its version because the whole point of running a kit from an installed package is that it
  * matches the version in place, which the reader can only confirm if it is stated.
  */
 function describeKitProvenance(provenance: KitProvenance | undefined): BreadcrumbSegment | undefined {
@@ -185,7 +185,7 @@ async function runKit(
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistSegment = checklists.length > 1;
-  // A block may go unwritten only where the summary table will carry the row it leaves behind. A run of
+  // A block may go unwritten only where the summary table will show the row it leaves behind. A run of
   // one checklist tabulates nothing, so its block stands however little it has to say.
   const willTabulate = isMultiKit || checklists.length > 1;
   const rows: SummaryRow[] = [];

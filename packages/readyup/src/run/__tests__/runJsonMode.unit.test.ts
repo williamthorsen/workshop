@@ -165,7 +165,7 @@ describe(runJsonMode, () => {
           reportOn: 'recommend',
         },
       ],
-      // The run named no threshold, so the run-level options carry none: the resolved values reach the
+      // The run named no threshold, so the run-level options have none: the resolved values reach the
       // serializer on the kit that they governed.
       { detail: 'full' },
     );

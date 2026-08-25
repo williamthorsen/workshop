@@ -22,7 +22,7 @@ import { runRdy } from '../runRdy.ts';
 const SOURCE_PATH = 'src/a.ts';
 const OTHER_PATH = 'src/b.ts';
 
-/** A source whose first line carries a pragma and whose second does not. */
+/** A source whose first line has a pragma and whose second does not. */
 const SOURCE_TEXT = ['x; // rdy-ignore', 'y;', ''].join('\n');
 
 const it = test.extend(

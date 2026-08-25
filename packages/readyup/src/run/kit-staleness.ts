@@ -20,7 +20,7 @@ export interface ManifestTracking {
 /**
  * Reads the default manifest for the run's advisories, best effort.
  *
- * Every failure here answers with no manifest at all: a missing one is the normal state of a
+ * Every failure here yields no manifest at all: a missing one is the normal state of a
  * project that never compiled, and an unreadable or unrecognized one says nothing about any kit. A
  * verification tool that refused to run because its own bookkeeping was unreadable would be worse
  * than one that runs and stays quiet. `--jit` runs from source, which the manifest does not

@@ -14,7 +14,7 @@ import { runCommand } from '../runCommand.ts';
 /**
  * Joins `--packages` to the kits an installed package publishes, against a real fixture project.
  * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
- * that a configured package becomes a run entry carrying the provenance the report and the headings render,
+ * that a configured package becomes a run entry with the provenance the report and the headings render,
  * and that the kit name selects which of its kits run.
  */
 describe('--packages run path wiring', () => {

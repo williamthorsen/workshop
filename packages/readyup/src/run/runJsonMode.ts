@@ -78,7 +78,7 @@ export async function runJsonMode(
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
-      // An entry built here carries no `compiledWith`: a kit that produced no results has nothing
+      // An entry built here has no `compiledWith`: a kit that produced no results has nothing
       // for a compile-time version to explain.
       const { code, hint, message } = toRdyError(error);
       kitInputs.push({

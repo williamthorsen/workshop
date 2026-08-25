@@ -43,7 +43,7 @@ function byPathThenLine(a: UnusedPragma, b: UnusedPragma): number {
   return a.line - b.line;
 }
 
-/** Returns every pragma the run's examined sources carry against which no check suppressed a finding. */
+/** Returns every pragma in the run's examined sources against which no check suppressed a finding. */
 function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   const unused: UnusedPragma[] = [];
 

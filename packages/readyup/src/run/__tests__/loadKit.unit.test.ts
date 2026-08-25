@@ -287,7 +287,7 @@ describe(loadKit, () => {
       expect(error.hint).toBeUndefined();
     });
 
-    /** Loads one kit from `url` against a fetch that failed with `status`, and answers with the hint raised. */
+    /** Loads one kit from `url` against a fetch that failed with `status`, returning the hint raised. */
     async function hintFor(url: string, status: number): Promise<string | undefined> {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${url}`, status));
       const error = await captureError(RdyError, () => loadKit(remoteEntry(url), false));
@@ -308,7 +308,7 @@ function makeKit(): RdyKit {
   return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] };
 }
 
-/** The failure a loader raises for a kit binding a symbol this runner does not export. */
+/** Returns the failure a loader raises for a kit binding a symbol this runner does not export. */
 function missingSymbolError(): UnresolvableKitImportsError {
   return new UnresolvableKitImportsError({
     unknownSubpaths: [],
@@ -316,7 +316,7 @@ function missingSymbolError(): UnresolvableKitImportsError {
   });
 }
 
-/** The failure Node raises for an import that resolves to no installed package. */
+/** Returns the failure Node raises for an import that resolves to no installed package. */
 function moduleNotFoundError(packageName: string): Error {
   return Object.assign(new Error(`Cannot find package '${packageName}'`), { code: 'MODULE_NOT_FOUND' });
 }

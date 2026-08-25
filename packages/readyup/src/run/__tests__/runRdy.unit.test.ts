@@ -14,12 +14,12 @@ import { runRdy } from '../runRdy.ts';
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
-/** Wrap a value as a check function that returns it. */
+/** Wraps a value as a check function that returns it. */
 function returning(value: unknown): RdyCheck['check'] {
   return () => value as CheckReturnValue;
 }
 
-/** Wrap a value as a skip function that returns it. */
+/** Wraps a value as a skip function that returns it. */
 function skipReturning(value: unknown): NonNullable<RdyCheck['skip']> {
   return () => value as SkipResult;
 }

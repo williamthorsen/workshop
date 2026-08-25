@@ -71,7 +71,7 @@ describe(warnOnMaskedSkips, () => {
   });
 
   describe('kit identity', () => {
-    // Every kit `--packages` resolves carries the same name, so the package is the only thing that
+    // Every kit `--packages` resolves has the same name, so the package is the only thing that
     // tells one run entry's warnings from another's.
     it('names the publishing package beside the kit', () => {
       const { warnings } = warn([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
