@@ -7,7 +7,7 @@ import { KITS_DIR } from '../kits/kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { isRecord } from '../portable/isRecord.ts';
 
-/** Manifest fields a kit-carrying dependency can be declared in. */
+/** Manifest fields a kit-publishing dependency can be declared in. */
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
 
 /**
@@ -29,7 +29,7 @@ export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
 
 // region | Helpers
 
-/** Reports whether an installed package carries at least one compiled kit. */
+/** Reports whether an installed package contains at least one compiled kit. */
 function publishesKits(packageName: string, fromDir: string): boolean {
   const root = resolvePackageRoot(packageName, fromDir);
   if (root === undefined) return false;

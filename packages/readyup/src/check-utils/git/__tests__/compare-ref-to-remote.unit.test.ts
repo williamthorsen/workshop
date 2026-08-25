@@ -156,7 +156,7 @@ describe(compareRefToRemote, () => {
 
 // region | Helpers
 
-/** Stub `runGit` to route calls by git subcommand and arguments. */
+/** Stubs `runGit` to route calls by git subcommand and arguments. */
 function stubRunGit(routes: Record<string, string | Error>): void {
   runGit.mockImplementation((_path: string, ...args: string[]) => {
     const key = args.join(' ');

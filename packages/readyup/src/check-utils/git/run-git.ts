@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-/** Run a git command in the given directory and return trimmed stdout. */
+/** Returns a git command's stdout, trimmed, from a run in the given directory. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {
   return (await runGitRaw(path, ...args)).trim();
 }
@@ -12,8 +12,8 @@ export async function runGit(path: string, ...args: string[]): Promise<string> {
 /**
  * Runs a git command in the given directory and returns its stdout unaltered.
  *
- * Reach for this where a path is part of the output: trimming strips a leading space or tab from the first path of a
- * listing, and the file it names then reads as missing.
+ * Trimming strips a leading space or tab from the first path of a listing, and the file it names then
+ * reads as missing, so output containing paths needs this variant.
  */
 export async function runGitRaw(path: string, ...args: string[]): Promise<string> {
   const resolved = expandHome(path);
@@ -22,10 +22,10 @@ export async function runGitRaw(path: string, ...args: string[]): Promise<string
 }
 
 /**
- * Determine whether an error from a git command represents a missing ref.
- * Exit code 128 is ambiguous: git uses it for missing refs, invalid paths,
- * and "not a git repo". Inspect stderr to distinguish ref-missing from
- * infrastructure failures.
+ * Reports whether an error from a git command means the ref was missing.
+ *
+ * Exit code 128 is ambiguous: git uses it for a missing ref, an invalid path, and "not a git repo"
+ * alike, so stderr is what separates a missing ref from an infrastructure failure.
  */
 export function isRefMissingError(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
@@ -42,7 +42,7 @@ export function isRefMissingError(error: unknown): boolean {
   );
 }
 
-/** Expand leading `~` or `~/` to the user's home directory. */
+/** Returns `path` with a leading `~` or `~/` expanded to the user's home directory. */
 export function expandHome(path: string): string {
   if (path === '~' || path === '~/') return homedir();
   if (path.startsWith('~/')) return homedir() + path.slice(1);

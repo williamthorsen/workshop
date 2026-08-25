@@ -105,7 +105,7 @@ function discoverWithCwdRepointedAt(decoyDir: string, fsFunction: FsTrigger): Wo
 }
 
 /**
- * Writes a second repo root whose manifests all carry the name `decoy`, at the same relative paths as the real
+ * Writes a second repo root whose manifests all use the name `decoy`, at the same relative paths as the real
  * root's, so a helper reading through the ambient cwd reports a wrong name rather than an empty result.
  */
 function writeDecoyRoot(temp: TempTree): string {

@@ -188,8 +188,8 @@ function resolvePackageDefaultConfig(packageName: string, configDir: string): st
 
   const manifest = readJsonFile(resolve(packageRoot, 'package.json'));
   if (manifest === undefined) return undefined;
-  // An `exports` map is exhaustive, so it answers for the package or nothing does. A null map has no
-  // entries to answer with, and TypeScript reads it as no map at all.
+  // An `exports` map is exhaustive, so it resolves the package or nothing does. A null map has no
+  // entries to resolve from, and TypeScript reads it as no map at all.
   if ('exports' in manifest && manifest['exports'] !== null) {
     return resolveThroughNodeResolver(packageName, configDir);
   }
@@ -218,7 +218,7 @@ function resolvePathSpecifier(specifier: string, baseDir: string): string | unde
 
 /**
  * Resolves a package specifier through Node's resolver anchored at the extending config, so `exports`
- * governs what is reachable and a pnpm symlink answers with the directory the package occupies.
+ * governs what is reachable and a pnpm symlink resolves to the directory the package occupies.
  *
  * Resolution runs under the `require` condition, which is the condition TypeScript resolves `extends`
  * under, so a specifier this reaches is a specifier `tsc` reaches.
@@ -231,7 +231,7 @@ function resolveThroughNodeResolver(specifier: string, configDir: string): strin
   } catch {
     return undefined;
   }
-  // A core module such as `"fs/promises"` answers with its own name rather than with a path.
+  // A core module such as `"fs/promises"` resolves to its own name rather than to a path.
   if (!isAbsolute(resolved)) return undefined;
   // TypeScript resolves `extends` under a JSON-only extension set, so a package's entry point is not a config.
   return resolved.endsWith('.json') ? resolved : undefined;

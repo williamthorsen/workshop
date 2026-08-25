@@ -220,7 +220,7 @@ describe(readTsconfigLanguageLevel, () => {
     });
 
     expect(readTsconfigLanguageLevel('packages/alpha/tsconfig.json')).toStrictEqual({
-      // `target` is undeclared in the package config, so the root's value carries through.
+      // `target` is undeclared in the package config, so the root's value applies.
       lib: ['es2022'],
       target: 'es2025',
       chain: ['packages/alpha/tsconfig.json', 'tsconfig.json'],

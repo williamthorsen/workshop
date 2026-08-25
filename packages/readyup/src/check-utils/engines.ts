@@ -45,7 +45,7 @@ export function satisfiesNodeFloor(version: string, floor: string): boolean | un
 
 // region | Helpers
 
-/** Trims a version string and strips the leading `v` that Node's own version carries. */
+/** Trims a version string and strips the leading `v` on Node's own version. */
 function normalizeVersion(version: string): string {
   const trimmed = version.trim();
   return trimmed.startsWith('v') ? trimmed.slice(1) : trimmed;

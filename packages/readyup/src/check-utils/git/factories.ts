@@ -32,7 +32,7 @@ interface RemoteRefSyncCheckOptions {
   severity?: Severity;
 }
 
-/** Create a check that verifies two local refs point to the same commit. */
+/** Returns a check that verifies two local refs point at the same commit. */
 export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyCheck {
   const { name, path, refA, refB, fix: customFix, severity } = options;
 
@@ -49,7 +49,12 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
   return check;
 }
 
-/** Create a check that verifies a local ref matches its remote counterpart. Uses a closure-cached probe so the network call runs at most once. */
+/**
+ * Returns a check that verifies a local ref matches its remote counterpart.
+ *
+ * A closure-cached probe holds the comparison, so the network call runs at most once however many
+ * times the check is evaluated.
+ */
 export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyCheck {
   const { name, path, ref, remote = 'origin', fix: customFix, severity } = options;
 
@@ -86,7 +91,7 @@ export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyC
   return rdyCheck;
 }
 
-/** Format a human-readable detail message for a local ref comparison failure. */
+/** Returns a human-readable detail message for a local ref comparison failure. */
 function formatLocalResult(
   result: Exclude<LocalRefsCompareResult, { status: 'match' }>,
   refA: string,
@@ -112,7 +117,7 @@ function formatLocalResult(
   return `${refA} is ahead of ${refB} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }
 
-/** Format a human-readable detail message for a remote ref comparison failure. */
+/** Returns a human-readable detail message for a remote ref comparison failure. */
 function formatRemoteResult(
   result: Exclude<RemoteRefCompareResult, { status: 'in-sync' }>,
   ref: string,

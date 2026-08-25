@@ -1,7 +1,7 @@
 import type { LocalRefsCompareResult } from '../../kits/types.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
-/** Compare two local git refs and return a discriminated-union result. */
+/** Returns how two local git refs relate, as a discriminated union. */
 export async function compareLocalRefs(path: string, refA: string, refB: string): Promise<LocalRefsCompareResult> {
   const missingRef = await findMissingRef(path, refA, refB);
   if (missingRef !== undefined) {
@@ -19,7 +19,7 @@ export async function compareLocalRefs(path: string, refA: string, refB: string)
   return { status: 'mismatch', shaA, shaB, ...(aheadBehind && { aheadBehind }) };
 }
 
-/** Return the name of the first ref that does not exist, or undefined if both exist. */
+/** Returns the name of the first ref that does not exist, or undefined where both exist. */
 async function findMissingRef(path: string, refA: string, refB: string): Promise<string | undefined> {
   const [existsA, existsB] = await Promise.all([refExists(path, refA), refExists(path, refB)]);
   if (!existsA) return refA;
@@ -27,7 +27,7 @@ async function findMissingRef(path: string, refA: string, refB: string): Promise
   return undefined;
 }
 
-/** Check whether a ref exists in the repository. Rethrow non-ref-missing errors. */
+/** Reports whether a ref exists in the repository, rethrowing errors that mean anything else. */
 async function refExists(path: string, ref: string): Promise<boolean> {
   try {
     await runGit(path, 'rev-parse', '--verify', ref);
@@ -38,7 +38,7 @@ async function refExists(path: string, ref: string): Promise<boolean> {
   }
 }
 
-/** Compute ahead/behind counts between two refs. Return undefined on failure. */
+/** Returns the ahead/behind counts between two refs, or undefined where they cannot be computed. */
 async function resolveAheadBehind(
   path: string,
   refA: string,

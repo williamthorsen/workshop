@@ -68,7 +68,7 @@ function isLineInSpans(line: number, spans: readonly DeclarationSpan[]): boolean
   return spans.some((span) => span.startLine <= line && line <= span.endLine);
 }
 
-/** Returns a finding as the runner reads it, carrying whether the reporting check names it. */
+/** Returns a finding as the runner reads it, with whether the reporting check names it. */
 function toOutcomeFinding(finding: Finding, reported: boolean): OutcomeFinding {
   const { line, path, symbol } = finding;
   return symbol === undefined ? { line, path, reported } : { line, path, reported, symbol };

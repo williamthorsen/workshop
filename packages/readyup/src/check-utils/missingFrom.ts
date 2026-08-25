@@ -1,6 +1,6 @@
 import type { CheckOutcome, FractionProgress } from '../kits/types.ts';
 
-/** Build a `CheckOutcome` with `FractionProgress` from expected vs. actual arrays. */
+/** Returns a `CheckOutcome` whose `FractionProgress` counts how many expected entries the actual list holds. */
 export function missingFrom(category: string, expected: string[], actual: string[]): CheckOutcome {
   const actualSet = new Set(actual);
   const missing = expected.filter((item) => !actualSet.has(item));

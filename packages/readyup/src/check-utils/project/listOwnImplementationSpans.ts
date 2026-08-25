@@ -26,7 +26,7 @@ export interface OwnImplementation {
  * Every narrowing is required. A repo publishing the package is where the idiom is supposed to live, but the workspace
  * is the whole repository wherever the root manifest declares the name, as a single-package project's always does, so a
  * workspace-wide rule would turn the check off there, and in any repo it would silence a second file hand-rolling the
- * idiom instead of importing the local implementation. The argument carries one step further, to the declaration: the
+ * idiom instead of importing the local implementation. The argument extends one step further, to the declaration: the
  * reasoning reaches a wrapper of the idiom its own kit detects, which cannot adopt itself, while its neighbours in the
  * same file are ordinary code.
  *
@@ -89,7 +89,7 @@ function findPublishingWorkspaceDirs(packageName: string): string[] {
  * of the same name, which is a hand-roll the check exists to report. A clause exporting the name under a different one
  * exports something else, and matches neither pattern.
  *
- * A clause carrying `from` declares nothing local, so a re-exporting barrel names no binding here and exempts no
+ * A clause with `from` declares nothing local, so a re-exporting barrel names no binding here and exempts no
  * lines.
  */
 function listLocalExportNames(code: string, exportNames: readonly string[]): Set<string> {
