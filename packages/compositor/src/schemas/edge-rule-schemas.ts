@@ -6,7 +6,7 @@ import { EdgeOriginSchema } from './graph-schemas.ts';
 import { IdSchema } from './scalar-schemas.ts';
 
 /**
- * The origin an edge read from frontmatter may carry.
+ * The origin an edge read from frontmatter may have.
  *
  * `token` is excluded: it names an edge an invocation token in a body contributed, which reaches the graph through the
  * contributor seam rather than through a key. A rule claiming it would attribute to a body what an author declared.
@@ -14,7 +14,7 @@ import { IdSchema } from './scalar-schemas.ts';
 export const FrontmatterEdgeOriginSchema = EdgeOriginSchema.exclude(['token']).meta({ id: 'FrontmatterEdgeOrigin' });
 
 /**
- * The token standing for every artifact the declaring artifact's own source carries.
+ * The token standing for every artifact the declaring artifact's own source contains.
  *
  * It rides on the rule that admits it rather than on the declaration as a whole, so one key can expand it while another
  * reads the same text as a slug.
@@ -31,7 +31,7 @@ export const EdgeWildcardSchema = z
  * required exactly where it means something. Only the kind-keyed form admits a wildcard, which is where the port needs
  * one; extending it to the flat form later adds an optional field and breaks no consumer.
  *
- * `kindId` names the kind whose artifacts carry the key, never the kind its slugs name.
+ * `kindId` names the kind whose artifacts declare the key, never the kind its slugs name.
  */
 export const EdgeRuleSchema = z
   .discriminatedUnion('form', [

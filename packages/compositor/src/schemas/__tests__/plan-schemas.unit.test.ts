@@ -18,7 +18,7 @@ const tables = [
 ] as const;
 
 describe('PlanSchema', () => {
-  it('accepts a plan carrying every table', () => {
+  it('accepts a plan containing every table', () => {
     const plan = buildPlan();
 
     expect(PlanSchema.parse(plan)).toStrictEqual(plan);
@@ -36,7 +36,7 @@ describe('PlanSchema', () => {
     ]);
   });
 
-  it('carries no clock-derived field, so identical inputs yield an identical payload', () => {
+  it('has no clock-derived field, so identical inputs yield an identical payload', () => {
     expect(PlanSchema.parse(buildPlan())).toStrictEqual(PlanSchema.parse(buildPlan()));
   });
 

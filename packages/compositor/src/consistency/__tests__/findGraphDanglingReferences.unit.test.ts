@@ -14,7 +14,7 @@ describe(findGraphDanglingReferences, () => {
     expect(findGraphDanglingReferences(buildClosure())).toStrictEqual([]);
   });
 
-  it('if an artifact names a kind no table carries, locates the dangling reference', () => {
+  it('if an artifact names a kind no table contains, locates the dangling reference', () => {
     const closure = buildClosure();
     closure.kinds = closure.kinds.filter((kind) => kind.id !== 'collection');
 
@@ -44,7 +44,7 @@ describe(findGraphDanglingReferences, () => {
     ]);
   });
 
-  it('tolerates a removed artifact, which is seeded by nothing and carries no seeds to check', () => {
+  it('tolerates a removed artifact, which is seeded by nothing and has no seeds to check', () => {
     const plan = buildPlan();
     const retired = requireEntry(plan.artifacts, 2);
     plan.artifacts = [

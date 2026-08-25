@@ -82,8 +82,8 @@ describe('RenderTargetSchema', () => {
     expect(findIssuePaths(RenderTargetSchema, incomplete)).toStrictEqual([[field]]);
   });
 
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it('accepts a target carrying an unrecognized key, and strips it', () => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it('accepts a target containing an unrecognized key, and strips it', () => {
     expect(RenderTargetSchema.parse({ ...target, addedLater: 'ignored' })).toStrictEqual(target);
   });
 

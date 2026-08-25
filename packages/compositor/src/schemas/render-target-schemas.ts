@@ -65,19 +65,19 @@ export const MarkerPairSchema = z
  * Where one artifact kind lands in a target, and the name it deploys under.
  *
  * A kind the target declares no deployment for does not deploy there, which is the deployability question a token
- * naming an artifact has to answer before it can render.
+ * naming an artifact has to pass before it can render.
  *
  * The two forms are the two ways a destination can hold a kind. `tree` gives each artifact its own file or directory,
  * laid out by the same vocabulary a source is read through. `region` routes every artifact of the kind into one file
  * the engine does not otherwise own, each behind its own markers inside a single fenced span.
  *
- * `nameTemplate` carries a `{slug}` placeholder the engine owns, so a kind that deploys under a derived name states
+ * `nameTemplate` contains a `{slug}` placeholder the engine owns, so a kind that deploys under a derived name states
  * the derivation as data. Absent means the slug itself, the case every kind whose name is its slug leaves unwritten.
- * The region form carries none: an artifact routed into a host has no name of its own, and deploys at the host path.
+ * The region form has none: an artifact routed into a host has no name of its own, and deploys at the host path.
  *
  * `contributionMarkers` is a template rather than a literal pair, its `{artifactId}` placeholder standing for the
  * contributor. The artifact id rather than the slug, because two kinds may aggregate into one host and only the id
- * carries the kind that tells their contributions apart.
+ * contains the kind that tells their contributions apart.
  */
 export const KindDeploymentSchema = z
   .discriminatedUnion('form', [
@@ -102,14 +102,14 @@ export const KindDeploymentSchema = z
   .meta({ id: 'KindDeployment' });
 
 /**
- * One transform stage a target runs, carrying the parameters that stage reads.
+ * One transform stage a target runs, with the parameters that stage reads.
  *
  * A target declares which stages run, never their sequence: transclusion precedes everything that reads the segments it
  * produces, the frontmatter overlay follows every transform over the body, and the inlay stage follows that, so a
  * declared sequence could render wrongly while type-checking. `tokens` takes no parameters, reading the engine's token
  * kinds and the target's own mappings.
  *
- * `inlay` carries its own `syntax` rather than reading the transclusion stage's, a target being free to declare either
+ * `inlay` declares its own `syntax` rather than reading the transclusion stage's, a target being free to declare either
  * without the other. Its two marker fields are templates, as a region deployment's are: `markers` stands `{inlayName}`
  * and fences a whole filled inlay, while `contributionMarkers` stands `{artifactId}` and delimits one bound artifact's
  * body within it. `reshape` is what makes a bound body sit level with its host, and it is declared rather than
@@ -137,12 +137,12 @@ export const RenderStageSchema = z
  * One destination as the transform pipeline reads it: the plan's target, plus where it deploys and what it runs.
  *
  * Extends the plan's target entry, so a declaration parses as a plan's `targets` entry and the two cannot drift.
- * Neither added field reaches the payload, on the reasoning that makes `TokenKind` engine input while the plan carries
+ * Neither added field reaches the payload, on the reasoning that makes `TokenKind` engine input while the plan contains
  * only the descriptor: a consumer reading a plan needs to resolve a target's identity, not to re-run its pipeline.
  *
  * The `links` pattern holds a regular-expression source rather than a compiled expression, which keeps a declaration
  * serializable. The engine owns the flags and the splice, so the pattern states the grammar and nothing else. That it
- * compiles and carries exactly one capture group, and that no stage kind is declared twice, is checked in
+ * compiles and has exactly one capture group, and that no stage kind is declared twice, is checked in
  * `assertRenderTargetsAreConsistent`: a refinement here would be invisible to `z.toJSONSchema`.
  *
  * `ownedItems` is target-level content rather than a deployment, no artifact kind routing there, which is why it sits

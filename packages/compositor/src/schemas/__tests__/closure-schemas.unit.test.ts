@@ -7,7 +7,7 @@ import { ClosureArtifactSchema, ClosureSchema } from '../closure-schemas.ts';
 import { findIssuePaths } from '../test-utils/findIssuePaths.ts';
 
 describe('ClosureSchema', () => {
-  it('accepts a closure carrying an aggregate, a diamond, a shadowed candidate, and a diagnostic', () => {
+  it('accepts a closure containing an aggregate, a diamond, a shadowed candidate, and a diagnostic', () => {
     expect(ClosureSchema.parse(buildClosure())).toStrictEqual(buildClosure());
   });
 
@@ -25,8 +25,8 @@ describe('ClosureSchema', () => {
     expect(findIssuePaths(ClosureSchema, broken)).toStrictEqual([['diagnostics', 0, 'code']]);
   });
 
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it('accepts a closure carrying an unrecognized key, and strips it', () => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it('accepts a closure containing an unrecognized key, and strips it', () => {
     expect(ClosureSchema.parse({ ...buildClosure(), addedLater: 'ignored' })).toStrictEqual(buildClosure());
   });
 
@@ -36,13 +36,13 @@ describe('ClosureSchema', () => {
 });
 
 describe('ClosureArtifactSchema', () => {
-  it('carries no status, a closure having measured nothing against a target', () => {
+  it('has no status, a closure having measured nothing against a target', () => {
     const artifact = requireEntry(buildClosure().artifacts, 0);
 
     expect(ClosureArtifactSchema.parse({ ...artifact, status: 'added' })).not.toHaveProperty('status');
   });
 
-  it('carries the seed and edge shapes a plan records, so neither can drift from the other', () => {
+  it('uses the seed and edge shapes a plan records, so neither can drift from the other', () => {
     const artifact = requireEntry(buildClosure().artifacts, 0);
 
     expect(ClosureArtifactSchema.parse(artifact)).toStrictEqual(artifact);

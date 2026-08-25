@@ -2,8 +2,8 @@
  * Config: the tiered declaration a consumer folds into sources and a selection.
  *
  * These schemas normalize as they parse -- a bare slug becomes an entry, an authored `path` becomes a source origin --
- * so they carry transforms and do not render to JSON Schema, unlike the plan and catalog contracts. Config is authored
- * input rather than an emitted payload, which is also why it carries no `schemaVersion`.
+ * so they include transforms and do not render to JSON Schema, unlike the plan and catalog contracts. Config is
+ * authored input rather than an emitted payload, which is also why it has no `schemaVersion`.
  *
  * Parsing is idempotent: every schema accepts its own output as well as the authored form, so a consumer holding a
  * normalized config can mutate it and re-parse it for a What-if pass without denormalizing first.
@@ -16,12 +16,12 @@ import { SelectSchema } from './selection-schemas.ts';
 import { SourceDeclarationSchema } from './source-declaration-schemas.ts';
 
 /**
- * What one tier file carries.
+ * What one tier file declares.
  *
  * Strict, so a misspelled key fails rather than declaring nothing. A block that is absent, or whose value is `null`
  * because every entry under it is commented out, reads as the empty declaration it means.
  *
- * `inlays` binds artifacts into the inlays a body declares, keyed by inlay name and carrying `select`'s own selector
+ * `inlays` binds artifacts into the inlays a body declares, keyed by inlay name and using `select`'s own selector
  * grammar under it. A second grammar would state one idea twice, and reusing this one is what lets a higher tier
  * unbind with `drop` and supplies the `kindId` that orders a fill.
  */
@@ -55,7 +55,7 @@ export const ConfigTierSchema = TierBodySchema.extend({
 /**
  * A whole tiered config, the value every flow downstream reads.
  *
- * `tiers` runs lowest precedence first, the order a fold applies them and the order a plan's `tiers` table carries. An
+ * `tiers` runs lowest precedence first, the order a fold applies them and the order a plan's `tiers` table runs in. An
  * empty array is a config declaring nothing, which is the only sentinel that case needs. Ids are unique: a tier id is
  * the identity that leaves this package, naming the tier in every seed and diagnostic, so a repeat makes each of those
  * references ambiguous.

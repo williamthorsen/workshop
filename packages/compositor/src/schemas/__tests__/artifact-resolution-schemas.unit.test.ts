@@ -18,7 +18,7 @@ describe('ResolutionCandidateSchema', () => {
 });
 
 describe('ArtifactResolutionSchema', () => {
-  it('reads an artifact carried by exactly one source as shadowing nothing', () => {
+  it('reads an artifact exactly one source contains as shadowing nothing', () => {
     const resolution = { winner, shadowed: [] };
 
     expect(ArtifactResolutionSchema.parse(resolution)).toStrictEqual(resolution);

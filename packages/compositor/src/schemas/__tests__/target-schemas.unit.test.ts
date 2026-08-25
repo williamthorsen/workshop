@@ -26,14 +26,14 @@ describe('TargetEntrySchema', () => {
     expect(findIssuePaths(TargetEntrySchema, withoutMappings)).toStrictEqual([['tokenMappings']]);
   });
 
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it('accepts a target carrying an unrecognized key, and strips it', () => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it('accepts a target containing an unrecognized key, and strips it', () => {
     expect(TargetEntrySchema.parse({ ...target, addedLater: 'ignored' })).toStrictEqual(target);
   });
 });
 
 describe('TokenMappingSchema', () => {
-  it('accepts a mapping carrying the sigil its rendered names are prefixed with', () => {
+  it('accepts a mapping containing the sigil its rendered names are prefixed with', () => {
     const withSigil = { kindId: 'skill-invocation', entries: [], sigil: '/' };
 
     expect(TokenMappingSchema.parse(withSigil)).toStrictEqual(withSigil);

@@ -4,7 +4,7 @@ import type { Violation } from './Violation.ts';
 /**
  * Reports each edge naming a partial it could not have been read from.
  *
- * Takes any document carrying artifacts and edges, so one copy checks a plan and a closure alike: a token is the only
+ * Takes any document containing artifacts and edges, so one copy checks a plan and a closure alike: a token is the only
  * origin read from a partial, wherever the edge is recorded.
  */
 export function findMisplacedPartialReferences(view: DependencyGraphView): Array<Violation> {

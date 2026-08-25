@@ -8,15 +8,15 @@ import type { Violation } from './Violation.ts';
 /**
  * One artifact as a cross-reference check reads it: the traversal shape, plus the two tables only this check follows.
  *
- * `resolution` is optional because a plan's removed artifact loses it when the source carrying it is dropped; a closure
- * artifact always has one.
+ * `resolution` is optional because a plan's removed artifact loses it when the source containing it is dropped; a
+ * closure artifact always has one.
  */
 export interface ReferencingArtifact extends TraversableArtifact {
   readonly kindId: Id;
   readonly resolution?: ArtifactResolution | undefined;
 }
 
-/** Any document carrying an artifact graph, with the tables its entries point at. */
+/** Any document containing an artifact graph, with the tables its entries point at. */
 export interface ArtifactGraphView {
   readonly artifacts: ReadonlyArray<ReferencingArtifact>;
   readonly kinds: ReadonlyArray<{ id: Id }>;
@@ -28,7 +28,7 @@ export interface ArtifactGraphView {
 /**
  * Reports each reference out of the artifact and partial tables that names no entry in the table it points at.
  *
- * Shared by the plan and closure assertions, which carry the same graph and differ only in what surrounds it: a plan
+ * Shared by the plan and closure assertions, which contain the same graph and differ only in what surrounds it: a plan
  * adds its fingerprint, target, and file references on top, and a closure has none of those to add. Violations follow
  * the artifact table and then the partial table, which is the order both documents report them in.
  */
@@ -50,7 +50,7 @@ export function findGraphDanglingReferences(view: ArtifactGraphView): Array<Viol
       requireKnown(artifactIds, edge.to, `${at}.dependsOn[${edgeIndex}].to`, 'artifacts');
       requireKnown(partialIds, edge.partialId, `${at}.dependsOn[${edgeIndex}].partialId`, 'partials');
     }
-    // A removed artifact carries no seeds at all, so the status narrowing is what reaches the field.
+    // A removed artifact has no seeds at all, so the status narrowing is what reaches the field.
     const seeds = artifact.status === 'removed' ? [] : (artifact.seededBy ?? []);
     for (const [seedIndex, seed] of seeds.entries()) {
       requireKnown(tierIds, seed.tierId, `${at}.seededBy[${seedIndex}].tierId`, 'tiers');

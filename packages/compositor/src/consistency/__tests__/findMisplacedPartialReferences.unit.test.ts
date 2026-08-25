@@ -9,7 +9,7 @@ describe(findMisplacedPartialReferences, () => {
     expect(findMisplacedPartialReferences(buildPlan())).toStrictEqual([]);
   });
 
-  it('tolerates an artifact carrying no edges, which a removed one never does', () => {
+  it('tolerates an artifact that has no edges, which a removed one never does', () => {
     const plan = buildPlan();
     plan.artifacts = [...plan.artifacts, { id: 'skill:gone', kindId: 'skill', slug: 'gone', status: 'removed' }];
 

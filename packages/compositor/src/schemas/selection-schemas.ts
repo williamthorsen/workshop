@@ -10,7 +10,7 @@ import { compareStrings } from '../portable/compareStrings.ts';
 import { IdSchema } from './scalar-schemas.ts';
 
 /**
- * One `use` or `drop` entry: an artifact named by slug, or everything a source carries.
+ * One `use` or `drop` entry: an artifact named by slug, or everything a source contains.
  *
  * A bare string is the artifact form, so the common case stays terse. The object forms are told apart by which key is
  * present rather than by a sentinel prefix, which would reserve a character out of the slug namespace. An entry naming

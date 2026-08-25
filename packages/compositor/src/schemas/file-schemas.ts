@@ -8,7 +8,7 @@ import { DiffStatusSchema, HashSchema, IdSchema } from './scalar-schemas.ts';
 /**
  * One file body, addressed by its hash.
  *
- * `base64` carries a file the engine copies byte for byte, such as an image or a script beside a text artifact, whose
+ * `base64` stores a file the engine copies byte for byte, such as an image or a script beside a text artifact, whose
  * bytes do not survive a round trip through a UTF-8 string.
  */
 export const BlobSchema = z
@@ -34,7 +34,7 @@ export const OwnedCollectionSchema = z
  * items other tools write, where no fence can delimit the boundary and a sentinel identifies each owned item.
  *
  * The entries form describes what produced the file, as a region's markers describe the span they delimit: `collections`
- * carries every collection the engine owns items in, because one host may hold several, and each names the sentinel
+ * names every collection the engine owns items in, because one host may hold several, and each names the sentinel
  * that tells the engine's items there from another tool's. `format` is the file's, so every collection in it shares one.
  */
 export const FileOwnershipSchema = z
@@ -55,7 +55,7 @@ export const FileOwnershipSchema = z
  * One artifact's contribution to a file.
  *
  * `marker` delimits the artifact's own block where several artifacts aggregate into one region, which is what makes a
- * single contributor's bytes locatable within the whole. A file carrying one artifact's content has no inner marker.
+ * single contributor's bytes locatable within the whole. A file containing one artifact's content has no inner marker.
  */
 export const ArtifactContributionSchema = z
   .object({

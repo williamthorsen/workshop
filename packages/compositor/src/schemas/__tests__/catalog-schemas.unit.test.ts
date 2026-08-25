@@ -40,7 +40,7 @@ const entry = {
 };
 
 describe('CatalogSchema', () => {
-  it('accepts a catalog carrying every table', () => {
+  it('accepts a catalog containing every table', () => {
     const catalog = buildMinimalCatalog();
 
     expect(CatalogSchema.parse(catalog)).toStrictEqual(catalog);
@@ -110,8 +110,8 @@ describe('catalog schema evolution', () => {
     ['SourceSpecSchema', SourceSpecSchema, source],
   ];
 
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it.each(openCases)('%s accepts an entry carrying an unrecognized key, and strips it', (_label, schema, value) => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it.each(openCases)('%s accepts an entry containing an unrecognized key, and strips it', (_label, schema, value) => {
     expect(schema.parse({ ...value, addedLater: 'ignored' })).toStrictEqual(value);
   });
 });

@@ -82,7 +82,7 @@ describe(findResolutionOrderViolations, () => {
     expect(violations).toStrictEqual([]);
   });
 
-  it('if an entry carries no resolution, skips it', () => {
+  it('if an entry has no resolution, skips it', () => {
     const violations = findResolutionOrderViolations(
       [{ basePath: 'entries[0].resolution', resolution: undefined }],
       sources,
@@ -94,7 +94,7 @@ describe(findResolutionOrderViolations, () => {
 
 // region | Helpers
 
-/** Builds a resolution won by `winner` over `shadowed`, each candidate carrying the path and hash the rule ignores. */
+/** Builds a resolution won by `winner` over `shadowed`, each candidate with the path and hash the rule ignores. */
 function buildResolution(
   winner: string,
   shadowed: ReadonlyArray<string>,
@@ -102,7 +102,7 @@ function buildResolution(
   return { winner: buildCandidate(winner), shadowed: shadowed.map(buildCandidate) };
 }
 
-/** Builds a candidate carried by `sourceId`. */
+/** Builds a candidate `sourceId` contains. */
 function buildCandidate(sourceId: string): ResolutionCandidate {
   return { sourceId, path: 'skills/review/SKILL.md', hash: `hash:review-${sourceId}` };
 }

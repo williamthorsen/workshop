@@ -23,8 +23,8 @@ const openCases: ReadonlyArray<readonly [string, z.ZodType, Record<string, unkno
 ];
 
 describe('descriptor schema evolution', () => {
-  // Objects stay open so a consumer pinned to this version accepts a payload carrying a field added later.
-  it.each(openCases)('%s accepts an entry carrying an unrecognized key, and strips it', (_label, schema, value) => {
+  // Objects stay open so a consumer pinned to this version accepts a payload containing a field added later.
+  it.each(openCases)('%s accepts an entry containing an unrecognized key, and strips it', (_label, schema, value) => {
     expect(schema.parse({ ...value, addedLater: 'ignored' })).toStrictEqual(value);
   });
 });
@@ -52,21 +52,21 @@ describe('SourceOriginSchema', () => {
 });
 
 describe('TierDescriptorSchema', () => {
-  it('accepts a tier carrying the label a reader shows for it', () => {
+  it('accepts a tier containing the label a reader shows for it', () => {
     expect(TierDescriptorSchema.parse(tier)).toStrictEqual(tier);
   });
 
-  it('if the tier carries no label, rejects it for that field', () => {
+  it('if the tier has no label, rejects it for that field', () => {
     expect(findIssuePaths(TierDescriptorSchema, { id: 'project' })).toStrictEqual([['label']]);
   });
 });
 
 describe('TokenKindDescriptorSchema', () => {
-  it('accepts a token kind carrying the label a reader shows for it', () => {
+  it('accepts a token kind containing the label a reader shows for it', () => {
     expect(TokenKindDescriptorSchema.parse(tokenKind)).toStrictEqual(tokenKind);
   });
 
-  it('if the token kind carries no label, rejects it for that field', () => {
+  it('if the token kind has no label, rejects it for that field', () => {
     expect(findIssuePaths(TokenKindDescriptorSchema, { id: 'tool' })).toStrictEqual([['label']]);
   });
 });

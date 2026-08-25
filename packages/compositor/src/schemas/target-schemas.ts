@@ -17,7 +17,7 @@ export const TokenMappingEntrySchema = z
  *
  * Token kinds are declared as consumer data, so a tool-name mapping and any other name-rewriting vocabulary share this
  * one shape. `sigil` prefixes whatever the kind resolved to, which is how one target addresses an artifact as `/name`
- * and another as `!name`; a kind resolving through `entries` alone carries none.
+ * and another as `!name`; a kind resolving through `entries` alone has none.
  */
 export const TokenMappingSchema = z
   .object({
@@ -36,7 +36,7 @@ export const TokenMappingSchema = z
  *
  * `containerDirs` names the directories the target holds independently of what the composition puts in them, POSIX and
  * relative to `root`, in lexicographic order. They precede the composition and outlive it, which is the one thing a
- * directory tree carries that a list of file paths cannot: a reader clearing an artifact's own directory away has to
+ * directory tree records that a list of file paths cannot: a reader clearing an artifact's own directory away has to
  * know where to stop, and the artifact directories under `skills` go where `skills` itself stays. The target's root is
  * not among them, being held by every target. Absent means a plan that does not state them: a reader whose reach they
  * bound has no bound at all then, and leaves every directory standing rather than reading the silence as licence. The

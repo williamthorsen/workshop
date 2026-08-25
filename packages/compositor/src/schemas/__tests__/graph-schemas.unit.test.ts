@@ -27,7 +27,7 @@ const edgeOrigins: ReadonlyArray<EdgeOrigin> = ['declared', 'enumerated', 'injec
 const seedOrigins: ReadonlyArray<SeedOrigin> = ['declaration', 'source-catalog'];
 
 describe('ArtifactEntrySchema', () => {
-  it('accepts a present artifact carrying its resolution and edges', () => {
+  it('accepts a present artifact containing its resolution and edges', () => {
     expect(ArtifactEntrySchema.parse(present)).toStrictEqual(present);
   });
 

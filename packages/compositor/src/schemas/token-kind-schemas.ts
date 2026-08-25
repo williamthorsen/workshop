@@ -18,7 +18,7 @@ import { IdSchema } from './scalar-schemas.ts';
  *
  * `pattern` holds a regular-expression source rather than a compiled expression, which keeps a declaration
  * serializable. The engine owns the flags and compiles with `g` alone, so no declaration can widen a match across
- * lines. That a pattern compiles and carries exactly one capture group is checked in
+ * lines. That a pattern compiles and has exactly one capture group is checked in
  * `assertTokenKindsAreConsistent`: a refinement here would be invisible to `z.toJSONSchema`.
  */
 export const TokenKindSchema = z
