@@ -22,7 +22,7 @@ export interface JsonProjectionErrorOptions {
  *
  * `reason` travels separately from `message` so a caller can report the failure in its own wording:
  * `pickJson` names the path as the kit wrote it, while a verdict over a recorded input names the kind
- * of staleness. Carrying the diagnosis as data is what keeps both from matching on message text.
+ * of staleness. Holding the diagnosis as data is what keeps both from matching on message text.
  */
 export class JsonProjectionError extends Error {
   /** The JSON file, absolute. */

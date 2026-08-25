@@ -90,7 +90,7 @@ describe(readTrackedSources, () => {
     expect(countProbes('src/rejected.ts')).toBe(0);
   });
 
-  it('never reads an excluded path, whatever the filter answers for it', async ({ temp }) => {
+  it('never reads an excluded path, whatever the filter returns for it', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('node_modules/dependency/index.js', 'dependency');
     temp.write('.readyup/kits/default.js', 'bundle');
@@ -243,7 +243,7 @@ function countReads(relativePath: string): number {
   return readPaths.filter((read) => read.endsWith(`/${relativePath}`)).length;
 }
 
-/** Answers the repo probe with a working tree, and the listing with the given paths. */
+/** Stubs the repo probe with a working tree, and the listing with the given paths. */
 function trackPaths(...paths: string[]): void {
   execFileAsync.mockImplementation((_file, args) => {
     if (args.includes('rev-parse')) return Promise.resolve({ stdout: '.git\n', stderr: '' });

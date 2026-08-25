@@ -132,7 +132,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   source file missing`);
     });
 
-    it('carries both source hashes in the JSON entry for a stale kit', async () => {
+    it('reports both source hashes in the JSON entry for a stale kit', async () => {
       const sourcePath = writeCompiledPair();
       const edited = Buffer.from('export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
       writeFileSync(sourcePath, edited);
@@ -235,7 +235,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('carries the axis and every failure into the JSON entry, at the schema version it always emitted', async () => {
+    it('passes the axis and every failure into the JSON entry, at the schema version it always emitted', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'demo' }));

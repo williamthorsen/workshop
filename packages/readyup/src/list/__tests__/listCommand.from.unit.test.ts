@@ -266,7 +266,7 @@ describe(listCommand, () => {
       expect(error.hint).toBe(BITBUCKET_HINT);
     });
 
-    it('leaves the message untouched, carrying the hint beside it', async () => {
+    it('leaves the message untouched, with the hint beside it', async () => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status: 401, statusText: 'Unauthorized' }));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));

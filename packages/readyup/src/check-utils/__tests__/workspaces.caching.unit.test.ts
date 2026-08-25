@@ -71,7 +71,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     expect(readDirectories.length).toBeGreaterThan(walkedForFirstRoot);
   });
 
-  it('answers a later call in full after a caller empties the array it returned', ({ temp }) => {
+  it('returns a full array to a later call after a caller empties the one it returned', ({ temp }) => {
     writeMonorepo(temp);
 
     discoverWorkspaces().length = 0;

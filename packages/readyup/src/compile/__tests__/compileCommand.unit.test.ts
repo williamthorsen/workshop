@@ -1371,7 +1371,7 @@ describe(compileCommand, () => {
     manifestExists: boolean;
   }
 
-  /** Answers `existsSync` per path, so the source directory and the manifest are arranged independently. */
+  /** Stubs `existsSync` per path, so the source directory and the manifest are arranged independently. */
   function arrangeExistence(existence: ArrangeExistenceArgs): void {
     const { srcDirExists, manifestExists } = existence;
     mockExistsSync.mockImplementation((target: unknown) =>

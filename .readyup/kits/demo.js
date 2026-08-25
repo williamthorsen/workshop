@@ -1,4 +1,4 @@
-/** @noformat — @generated. Do not edit. Compiled by rdy. */
+/** @noformat -- @generated. Do not edit. Compiled by rdy. */
 /* eslint-disable */
 export const __readyupVersion = "0.33.0";
 

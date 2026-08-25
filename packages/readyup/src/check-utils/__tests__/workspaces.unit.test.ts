@@ -334,7 +334,7 @@ describe(discoverWorkspaces, () => {
 
       const [workspace] = discoverWorkspaces();
 
-      // `Object.isFrozen` answers true for `undefined`, so each subject is pinned before it is tested.
+      // `Object.isFrozen` returns true for `undefined`, so each subject is pinned before it is tested.
       expect(workspace).toBeDefined();
       expect(Object.isFrozen(workspace)).toBe(true);
       expect(Object.isFrozen(workspace?.packageJson)).toBe(true);

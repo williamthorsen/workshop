@@ -40,7 +40,7 @@ describe(resolveCheckIds, () => {
       expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
     });
 
-    it('leaves the bare id standing where the kit carries no provenance', () => {
+    it('leaves the bare id standing where the kit has no provenance', () => {
       const ids = resolveCheckIds('no-instanceof-error', undefined);
 
       expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });

@@ -47,7 +47,7 @@ export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuil
 /**
  * Why an import a kit resolved under the host repo's configuration no longer resolves.
  *
- * esbuild answers an unresolved import by suggesting the path be marked external, which for a kit
+ * esbuild responds to an unresolved import by suggesting the path be marked external, which for a kit
  * yields a bundle that fails at run time instead of at compile time. This names the cause its
  * suggestion cannot: `KIT_TSCONFIG` leaves kits with no `paths` aliases to resolve through.
  */
@@ -63,7 +63,7 @@ const UNRESOLVED_SPECIFIER_HINT =
  * disk even when its source has not moved.
  */
 const GENERATED_HEADER = [
-  '/** @noformat — @generated. Do not edit. Compiled by rdy. */',
+  '/** @noformat -- @generated. Do not edit. Compiled by rdy. */',
   '/* eslint-disable */',
   `export const __readyupVersion = ${JSON.stringify(VERSION)};`,
   '',

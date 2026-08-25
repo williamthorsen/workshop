@@ -44,14 +44,14 @@ describe(resolveFindingOutcome, () => {
     expect(outcome.progress).toStrictEqual({ count: 3, passedCount: 1, type: 'fraction' });
   });
 
-  it('carries no progress where the outcome names no adopted count', () => {
+  it('reports no progress where the outcome names no adopted count', () => {
     const outcome = resolveFindingOutcome({ findings: [CLONE] }, []);
 
     expect(outcome.progress).toBeUndefined();
   });
 
   describe('given a source suppressing a finding', () => {
-    it('drops a finding on a line carrying `rdy-ignore`', ({ temp }) => {
+    it('drops a finding on a line with `rdy-ignore`', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'error instanceof Error; // rdy-ignore');
 
       const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE, INLINE] }, []);

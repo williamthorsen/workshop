@@ -30,7 +30,7 @@ interface HumanRunSettings {
 /**
  * Runs all kit entries in human-readable mode.
  *
- * Carries the same per-kit boundary as JSON mode, reporting the failure on stderr so it stays
+ * Uses the same per-kit boundary as JSON mode, reporting the failure on stderr so it stays
  * distinguishable from a failed check, which prints into the stdout report and means a different
  * exit code.
  */

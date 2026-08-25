@@ -179,7 +179,7 @@ describe(formatJsonReport, () => {
       expect(parsed).toHaveProperty('detail', 'full');
     });
 
-    it('carries collected warnings alongside the results', () => {
+    it('reports collected warnings alongside the results', () => {
       const warnings = [{ code: 'source-stale' as const, message: 'kit is stale', remedy: 'Run `rdy compile`.' }];
 
       const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport()), { warnings }));
@@ -211,7 +211,7 @@ describe(formatJsonReport, () => {
       expect(parsed).toHaveProperty('kits.0.compiledWith', VERSION);
     });
 
-    it('omits the compiling readyup for a kit that carries no stamp', () => {
+    it('omits the compiling readyup for a kit with no stamp', () => {
       const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
 
       expect(parsed).not.toHaveProperty('kits.0.compiledWith');
@@ -233,7 +233,7 @@ describe(formatJsonReport, () => {
       ];
     }
 
-    it('carries the threshold that governed each kit rather than one value for the run', () => {
+    it('reports the threshold that governed each kit rather than one value for the run', () => {
       const parsed: unknown = JSON.parse(formatReport(mixedThresholdKits()));
 
       expect(parsed).toMatchObject({
@@ -453,7 +453,7 @@ describe(formatJsonReport, () => {
   });
 
   describe('check entries', () => {
-    it('carries severity, ok, and skipReason where each applies', () => {
+    it('reports severity, ok, and skipReason where each applies', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'a', severity: 'warn', durationMs: 1 }),
@@ -564,7 +564,7 @@ describe(formatJsonReport, () => {
       return { name, entries: [{ name: 'check', report }] };
     }
 
-    it('passes a failed kit through carrying only its name and error', () => {
+    it('passes a failed kit through with only its name and error', () => {
       const parsed: unknown = JSON.parse(formatReport([FAILURE]));
 
       expect(parsed).toMatchObject({ counts: NO_COUNTS, durationMs: 0, kits: [FAILURE] });
@@ -842,7 +842,7 @@ describe(formatJsonReport, () => {
   });
 
   describe('check ids', () => {
-    it('carries the id of a check that declares one', () => {
+    it('reports the id of a check that declares one', () => {
       const withId = makeReport({
         results: [makePassedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
       });
@@ -860,7 +860,7 @@ describe(formatJsonReport, () => {
       expect(output).not.toContain('"id"');
     });
 
-    it('carries the id into the summary projection, where a failure is all that survives', () => {
+    it('passes the id into the summary projection, where a failure is all that survives', () => {
       const failing = makeReport({
         results: [makeFailedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
         passed: false,

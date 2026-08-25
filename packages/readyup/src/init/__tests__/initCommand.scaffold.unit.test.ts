@@ -43,7 +43,7 @@ describe('scaffolded kit', () => {
     expect(results).toMatchObject([{ name: 'NODE_ENV is set', status: 'passed', detail: 'NODE_ENV is production' }]);
   });
 
-  it('fails with NODE_ENV unset, reporting that the environment carries no value', async () => {
+  it('fails with NODE_ENV unset, reporting that the environment has no value', async () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', undefined);

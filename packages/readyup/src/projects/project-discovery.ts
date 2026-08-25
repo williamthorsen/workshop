@@ -141,7 +141,7 @@ async function readProjectConfig(absolutePath: string, dir: string): Promise<Res
   }
 }
 
-/** Answers `false` for a directory the sweep cannot read, rethrowing a failure it cannot skip past. */
+/** Returns `false` for a directory the sweep cannot read, rethrowing a failure it cannot skip past. */
 function skipUnreadableDir(dir: string, error: unknown): false {
   if (!isSkippableFilesystemError(error)) throw error;
   process.stderr.write(`Warning: Cannot read ${dir}. Reading the project without it.\n`);

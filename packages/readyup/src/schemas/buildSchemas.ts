@@ -9,7 +9,7 @@ import { ListOutputSchema, SCHEMA_VERSION as LIST_VERSION } from './listOutputSc
 import { ReportSchema, SCHEMA_VERSION as REPORT_VERSION } from './reportSchema.ts';
 import { SCHEMA_VERSION as VERIFY_VERSION, VerifyOutputSchema } from './verifyOutputSchema.ts';
 
-/** Where a published schema answers from once the package is on npm. */
+/** Where a published schema is served from once the package is on npm. */
 export const SCHEMA_BASE_URL = 'https://unpkg.com/readyup/schemas';
 
 /** One payload's published schema: what to call the file and what to put in it. */

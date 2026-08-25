@@ -390,7 +390,7 @@ describe(assertIsRdyKit, () => {
       ).not.toThrow();
     });
 
-    it('accepts a check carrying every optional field', () => {
+    it('accepts a check with every optional field', () => {
       expect(() =>
         assertIsRdyKit({
           checklists: [

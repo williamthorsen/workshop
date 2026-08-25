@@ -475,7 +475,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('recorded esbuild and dependency versions match the rebuild');
     });
 
-    it('carries the esbuild comparison and dependency changes in the JSON payload', async () => {
+    it('reports the esbuild comparison and dependency changes in the JSON payload', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({
         kind: 'mismatch',
@@ -508,7 +508,7 @@ describe(verifyCommand, () => {
       expect(stdout).not.toContain('rebuildDependencyChanges');
     });
 
-    it('fails a kit whose source no longer compiles, carrying the compile error', async () => {
+    it('fails a kit whose source no longer compiles, with the compile error', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });
 
@@ -545,7 +545,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('rebuild ok');
     });
 
-    it('carries the rebuild verdict and its hashes in the JSON payload', async () => {
+    it('reports the rebuild verdict and its hashes in the JSON payload', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'mismatch', expected: '1111aaaa', actual: '2222bbbb' });
 
@@ -587,7 +587,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain(`${UNVERIFIED} alpha`);
     });
 
-    it('carries the compiling version in the JSON payload when it differs from the runner', async () => {
+    it('reports the compiling version in the JSON payload when it differs from the runner', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({
         kind: 'mismatch',
@@ -611,7 +611,7 @@ describe(verifyCommand, () => {
       expect(stdout).not.toContain('rebuildCompiledWith');
     });
 
-    it('carries the compile error in the JSON payload for a kit that failed to build', async () => {
+    it('reports the compile error in the JSON payload for a kit that failed to build', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({ kind: 'failed', message: 'Unexpected token' });
 
@@ -694,7 +694,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('\u{2500}\u{2500} Verifying kits against ');
     });
 
-    it('leaves a wholly verified kit carrying nothing beyond its token', async () => {
+    it('leaves a wholly verified kit with nothing beyond its token', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js', targetHash: 'aaaa1111', source: 'alpha.ts', sourceHash: '5555aaaa' }],

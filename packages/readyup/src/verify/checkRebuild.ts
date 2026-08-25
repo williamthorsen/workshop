@@ -92,7 +92,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
   }
 
   // The generated banner embeds the compiling readyup's version, so a version move alone makes an
-  // untouched source rebuild to a different bundle. Carry the recorded version to keep that cause
+  // untouched source rebuild to a different bundle. Report the recorded version to keep that cause
   // distinguishable from a hand edit.
   const compiledWith = kit.readyupVersion !== VERSION ? kit.readyupVersion : undefined;
 

@@ -64,7 +64,7 @@ describe(loadRemoteManifest, () => {
     );
   });
 
-  it.each([401, 403, 500])('throws RemoteFetchError carrying the %i status', async (status) => {
+  it.each([401, 403, 500])('throws RemoteFetchError with the %i status', async (status) => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Nope' }));
 
     const error = await captureError(RemoteFetchError, () =>

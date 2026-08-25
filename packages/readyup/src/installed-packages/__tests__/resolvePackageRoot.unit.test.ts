@@ -33,7 +33,7 @@ describe(resolvePackageRoot, () => {
       expect(root).toBe(path.join(REPO_ROOT, 'packages', 'readyup'));
     });
 
-    it('answers undefined for a package that is not installed', () => {
+    it('returns undefined for a package that is not installed', () => {
       expect(resolvePackageRoot('readyup-package-that-does-not-exist', REPO_ROOT)).toBeUndefined();
     });
   });
@@ -67,7 +67,7 @@ describe(resolvePackageRoot, () => {
       );
     });
 
-    it('ignores a node_modules entry that carries no manifest', () => {
+    it('ignores a node_modules entry with no manifest', () => {
       expect(resolvePackageRoot('readyup-fixture-manifestless', nestedDir)).toBeUndefined();
     });
   });

@@ -79,7 +79,7 @@ describe(buildFindingReport, () => {
     expect(outcome).toStrictEqual({ adoptedCount: 0, findings: [] });
   });
 
-  it('suppresses nothing, leaving a site carrying a pragma to the runner', ({ temp }) => {
+  it('suppresses nothing, leaving a site with a pragma to the runner', ({ temp }) => {
     temp.write('src/errors.ts', ['', ...Array.from({ length: 10 }, () => ''), 'x; // rdy-ignore', ''].join('\n'));
 
     const outcome = buildFindingReport({ adoptedCount: 0, findings: [CLONE], shouldReport: () => true });

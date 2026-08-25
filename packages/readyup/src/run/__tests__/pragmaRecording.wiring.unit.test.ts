@@ -179,7 +179,7 @@ function sweepingCheck(options: { path: string; skipReason?: string }): RdyCheck
   };
 }
 
-/** Answers the repo probe with a working tree, and the listing with the given paths. */
+/** Stubs the repo probe with a working tree, and the listing with the given paths. */
 function trackPaths(...paths: string[]): void {
   execFileAsync.mockImplementation((_file, args) => {
     if (args.includes('rev-parse')) return Promise.resolve({ stdout: '.git\n', stderr: '' });

@@ -92,7 +92,7 @@ describe('listCommand wiring', () => {
   });
 
   describe('--from with a manifest present', () => {
-    it('prefers the manifest and carries the fields only it knows', async () => {
+    it('prefers the manifest and reports the fields only it knows', async () => {
       writeKitsDir('kits', ['deploy']);
       writeFileSync(
         path.join(tempDir, 'kits', 'manifest.json'),

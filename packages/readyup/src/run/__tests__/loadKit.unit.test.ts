@@ -46,7 +46,7 @@ describe(loadKit, () => {
   });
 
   describe('local source', () => {
-    it('answers with what the local loader produced', async () => {
+    it('returns what the local loader produced', async () => {
       const loaded = { kit: makeKit(), compileTimeVersion: VERSION };
       mockLoadRdyKit.mockResolvedValue(loaded);
 
@@ -71,7 +71,7 @@ describe(loadKit, () => {
       expect(error.message).toBe("Cannot find package 'chalk'");
     });
 
-    it('passes through an error carrying no module code under --jit', async () => {
+    it('passes through an error with no module code under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('boom'));
 
       const error = await captureError(RdyError, () => loadKit(localEntry(), true));
@@ -79,7 +79,7 @@ describe(loadKit, () => {
       expect(error.message).toBe('boom');
     });
 
-    it('passes through an error carrying an unrelated code under --jit', async () => {
+    it('passes through an error with an unrelated code under --jit', async () => {
       mockLoadRdyKit.mockRejectedValue(Object.assign(new Error('boom'), { code: 'EACCES' }));
 
       const error = await captureError(RdyError, () => loadKit(localEntry(), true));
@@ -103,7 +103,7 @@ describe(loadKit, () => {
       expect(error.message).toBe("Cannot find package 'readyup'");
     });
 
-    it('forwards an install hint the underlying failure carries', async () => {
+    it('forwards an install hint the underlying failure has', async () => {
       mockLoadRdyKit.mockRejectedValue(
         Object.assign(new Error("Cannot resolve 'some-lib' while evaluating deploy.ts."), {
           hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -177,7 +177,7 @@ describe(loadKit, () => {
       expect(error.message).toContain(BITBUCKET_URL);
     });
 
-    it('names the URL a network failure does not carry', async () => {
+    it('names the URL a network failure does not have', async () => {
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
       const error = await captureError(RdyError, () => loadKit(remoteEntry(BITBUCKET_URL), false));

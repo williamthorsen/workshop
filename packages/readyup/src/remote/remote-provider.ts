@@ -14,7 +14,7 @@ const PROVIDER_HOSTS: Record<RemoteProvider, string> = {
  * Builds the `Authorization` header for a provider, or `undefined` when none can be built.
  *
  * Absorbs the scheme difference between the two providers, so no caller spells out `token` against
- * `Bearer`. Answers `undefined` both for an unknown provider and for a known one with no ambient
+ * `Bearer`. Returns `undefined` both for an unknown provider and for a known one with no ambient
  * token, which is the state a caller reports as "no credential was forwarded".
  */
 export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): Record<string, string> | undefined {

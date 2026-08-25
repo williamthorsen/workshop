@@ -25,7 +25,7 @@ The second question is a fast check, not the rule. A skip is correct whenever th
 | `code-quality workflow does not use nmr prepush`  | pass                                    | the skip masks a pass                                  |
 | `.github/labels.yaml exists`                      | pass                                    | the skip is correct; release-kit does not own the file |
 
-The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo carrying that file without the block would have passed `fileExists` and still deserves the skip.
+The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo with that file but no such block would have passed `fileExists` and still deserves the skip.
 
 The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass.
 

@@ -66,7 +66,7 @@ function containsPath(dir: string, path: string): boolean {
 /**
  * Names the directories of the workspaces publishing the package.
  *
- * Discovery answers best effort here: a repo it cannot read reports as one holding no such workspace, so a check that
+ * Discovery is best effort here: a repo it cannot read reports as one holding no such workspace, so a check that
  * worked before the rule existed keeps working rather than erroring out of it. The match is on the declared name
  * alone, because what the rule needs is a repo holding the implementation, not one publishing it to a registry.
  */

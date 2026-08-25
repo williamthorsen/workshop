@@ -29,7 +29,7 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'react')).toBe('^19.0.0');
   });
 
-  it('keeps a value carrying its own colon', () => {
+  it('keeps a value with its own colon', () => {
     const yaml = ['catalog:', '  readyup: workspace:*', ''].join('\n');
 
     expect(findPnpmCatalogVersion(yaml, 'readyup')).toBe('workspace:*');

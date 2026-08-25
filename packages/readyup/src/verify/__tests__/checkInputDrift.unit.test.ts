@@ -49,7 +49,7 @@ describe(checkInputDrift, () => {
   });
 
   describe('a module input', () => {
-    it('reports a changed module with both hashes and the file that carries them', () => {
+    it('reports a changed module with both hashes and the file that has them', () => {
       writeInput('kits/shared.ts', 'export const shared = 2;\n');
 
       expect(checkInputDrift(kitWith([RECORDED_MODULE]), tempDir)).toStrictEqual({

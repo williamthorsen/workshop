@@ -120,7 +120,7 @@ describe('list --recursive', () => {
       expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
     });
 
-    it('carries the descriptions the manifest records, and renders a bare name without one', async () => {
+    it('reports the descriptions the manifest records, and renders a bare name without one', async () => {
       const { stdout } = await list(['--recursive']);
 
       expect(stdout).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');

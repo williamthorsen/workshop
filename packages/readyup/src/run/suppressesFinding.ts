@@ -21,7 +21,7 @@ const PRAGMA_TOKENS = new Set(['rdy-ignore', 'rdy-ignore-next-line']);
  * cannot erase a pragma first.
  */
 export function suppressesFinding(lines: readonly string[], line: number, checkIds: readonly string[]): boolean {
-  return carriesPragma(lines[line - 1], 'line', checkIds) || carriesPragma(lines[line - 2], 'next-line', checkIds);
+  return hasPragma(lines[line - 1], 'line', checkIds) || hasPragma(lines[line - 2], 'next-line', checkIds);
 }
 
 // region | Helpers
@@ -30,7 +30,7 @@ export function suppressesFinding(lines: readonly string[], line: number, checkI
  * Reports whether a line has a pragma covering the named scope and suppressing for `checkIds`. A line past
  * either end of the source has none.
  */
-function carriesPragma(line: string | undefined, scope: 'line' | 'next-line', checkIds: readonly string[]): boolean {
+function hasPragma(line: string | undefined, scope: 'line' | 'next-line', checkIds: readonly string[]): boolean {
   if (line === undefined) return false;
 
   for (const match of line.matchAll(createIgnorePragmaMatcher())) {

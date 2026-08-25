@@ -20,7 +20,7 @@ export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKin
  *
  * `configured` reports whether the readyup config names the package, which is what decides whether
  * `rdy run --packages` would reach the kit. Under a repo-wide sweep the config is the one belonging to
- * the row's own `project`, so the same package answers differently across workspaces. It is absent only
+ * the row's own `project`, so the same package reports differently across workspaces. It is absent only
  * from a payload written before the field existed, never as a way of saying `false`.
  */
 export const ListKitOriginSchema = z

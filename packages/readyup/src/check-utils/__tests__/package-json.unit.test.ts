@@ -146,7 +146,7 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('vue', '3.0.0')).toBe(false);
   });
 
-  it('measures a catalog version carrying a range operator', ({ temp }) => {
+  it('measures a catalog version with a range operator', ({ temp }) => {
     writePackageJson(temp, { devDependencies: { react: 'catalog:' } });
     writeWorkspaceYaml(temp, ['catalog:', '  react: ^19.0.0', ''].join('\n'));
 

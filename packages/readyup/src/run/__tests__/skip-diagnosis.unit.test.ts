@@ -34,7 +34,7 @@ describe(warnOnMaskedSkips, () => {
     ]);
   });
 
-  it('ends the sentence with one period where the reason already carries one', () => {
+  it('ends the sentence with one period where the reason already has one', () => {
     const { warnings } = warn([{ name: 'a', verdict: 'inconclusive', reason: 'check() returned null.' }]);
 
     expect(warnings[0]?.message).toBe(

@@ -30,7 +30,7 @@ describe(resolveFromSource, () => {
     ]);
   });
 
-  it('carries the GitHub ref into both the URL and the label', () => {
+  it('passes the GitHub ref into both the URL and the label', () => {
     const source: FromSource = { type: 'github', org: 'org', repo: 'repo', ref: 'v1' };
 
     expect(resolveFromSource(source, [{ kitName: 'nmr', checklists: [] }], '.js')).toStrictEqual([
@@ -83,7 +83,7 @@ describe(resolveFromSource, () => {
     ]);
   });
 
-  it('carries the Bitbucket ref into both the URL and the label', () => {
+  it('passes the Bitbucket ref into both the URL and the label', () => {
     const source: FromSource = { type: 'bitbucket', workspace: 'myteam', repo: 'repo', ref: 'v2' };
 
     expect(resolveFromSource(source, DEFAULT_SPECS, '.js')).toStrictEqual([
@@ -121,7 +121,7 @@ describe(resolveFromSource, () => {
 
   // The provenance is what names the copy a check ran against, which is the whole point of resolving from an
   // installed package. It reads from the same manifest the resolver reads, so a version bump leaves this alone.
-  it('carries the package and its installed version as the kit provenance', () => {
+  it('reports the package and its installed version as the kit provenance', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
     const [entry] = resolveFromSource(source, DEFAULT_SPECS, '.js');
 

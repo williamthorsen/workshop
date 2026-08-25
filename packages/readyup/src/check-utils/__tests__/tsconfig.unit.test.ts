@@ -56,7 +56,7 @@ describe(readTsconfigChain, () => {
     expect(readTsconfigLanguageLevel('tsconfig.json')?.target).toBe('es2025');
   });
 
-  it('carries top-level fields that are not compilerOptions', ({ temp }) => {
+  it('reports top-level fields that are not compilerOptions', ({ temp }) => {
     temp.writeJson('tsconfig.json', { files: ['vite.config.ts'], include: ['src'] });
 
     expect(readTsconfigChain('tsconfig.json')?.entries[0]?.config).toStrictEqual({

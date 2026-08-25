@@ -36,7 +36,7 @@ describe(resolveCompileRoot, () => {
     rmSync(treeRoot, { recursive: true, force: true });
   });
 
-  it('answers with the nearest ancestor holding a package.json', () => {
+  it('returns the nearest ancestor holding a package.json', () => {
     const root = resolveCompileRoot(path.join(treeRoot, 'outer', 'inner', 'kits', 'kit.ts'));
 
     expect(root).toBe(path.join(treeRoot, 'outer', 'inner'));
@@ -48,19 +48,19 @@ describe(resolveCompileRoot, () => {
     expect(root).toBe(path.join(treeRoot, 'outer'));
   });
 
-  it("answers with the source's own directory when no ancestor holds a package.json", () => {
+  it("returns the source's own directory when no ancestor holds a package.json", () => {
     const kitsDir = path.join(treeRoot, 'unpackaged', 'kits');
 
     expect(resolveCompileRoot(path.join(kitsDir, 'kit.ts'))).toBe(kitsDir);
   });
 
-  it('answers with a real path for a source reached through a symlinked ancestor', () => {
+  it('returns a real path for a source reached through a symlinked ancestor', () => {
     const root = resolveCompileRoot(path.join(treeRoot, 'link', 'inner', 'kits', 'kit.ts'));
 
     expect(root).toBe(path.join(treeRoot, 'outer', 'inner'));
   });
 
-  it('answers for a source that does not exist, leaving the failure to the bundler', () => {
+  it('returns a path for a source that does not exist, leaving the failure to the bundler', () => {
     const kitsDir = path.join(treeRoot, 'unpackaged', 'absent');
 
     expect(resolveCompileRoot(path.join(kitsDir, 'kit.ts'))).toBe(kitsDir);

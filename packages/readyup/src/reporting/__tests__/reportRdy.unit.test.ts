@@ -271,7 +271,7 @@ describe(reportRdy, () => {
   });
 
   describe('failure reasons', () => {
-    it('leaves the failed line carrying only its claim', () => {
+    it('leaves the failed line stating only its claim', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'target', detail: 'lockfile is stale' })], passed: false }),
       ).body;
@@ -392,7 +392,7 @@ describe(reportRdy, () => {
       expect(output.split('\n').at(-1)).toBe(`${PASSED} Total: 1 passed (100ms)`);
     });
 
-    it('carries no bare rule between the tree and the count line', () => {
+    it('renders no bare rule between the tree and the count line', () => {
       const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] })).body;
 
       expect(output).not.toContain('\u{2500}\u{2500}\n');
@@ -408,7 +408,7 @@ describe(reportRdy, () => {
       expect(indexNaming(output, 'Fixes')).toBeLessThan(lines.length - 1);
     });
 
-    it('carries no blank line inside the block', () => {
+    it('renders no blank line inside the block', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', fix: 'Run pnpm install' })], passed: false }),
       ).body;
@@ -473,7 +473,7 @@ describe(reportRdy, () => {
       expect(output.split('\n')[checkLine + 2]).not.toContain('Update config');
     });
 
-    it('omits the recap when no failed check carries a fix', () => {
+    it('omits the recap when no failed check has a fix', () => {
       const output = reportRdy(
         makeReport({ results: [makeFailedResult({ name: 'broken', error: new Error('bad') })], passed: false }),
       ).body;

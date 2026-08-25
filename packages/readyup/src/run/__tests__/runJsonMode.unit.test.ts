@@ -277,7 +277,7 @@ describe(runJsonMode, () => {
       ];
     }
 
-    it('carries every advisory the run raised into the JSON report', async () => {
+    it('passes every advisory the run raised into the JSON report', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
       mockReadManifestTracking.mockReturnValue(tracking);
       mockWarnOnKitStaleness.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
@@ -296,7 +296,7 @@ describe(runJsonMode, () => {
       expect(exitCode).toBe(0);
     });
 
-    it('carries a diagnosed masked pass into the report and onto stderr', async () => {
+    it('puts a diagnosed masked pass into the report and onto stderr', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({
         results: [],
@@ -361,7 +361,7 @@ describe(runJsonMode, () => {
       expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
-    it('carries the entries into the report’s warnings', async () => {
+    it('passes the entries into the report’s warnings', async () => {
       mockWarnOnUnusedPragmas.mockReturnValue([PRAGMA_UNUSED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -380,7 +380,7 @@ describe(runJsonMode, () => {
     const GITHUB_URL = 'https://raw.githubusercontent.com/acme/private/main/.readyup/kits/deploy.js';
     const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
 
-    it('carries the hint into the JSON report’s kit error entry', async () => {
+    it('passes the hint into the JSON report’s kit error entry', async () => {
       mockResolveGitHubToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('boom', 404));
       mockFormatJsonReport.mockReturnValue('{}');

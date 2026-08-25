@@ -102,7 +102,7 @@ describe(listCommand, () => {
       expect(stdout.slice(stdout.indexOf('Available'))).not.toContain('@acme/kits');
     });
 
-    it('carries package provenance into the JSON payload, apart from the kits it lists', async () => {
+    it('passes package provenance into the JSON payload, apart from the kits it lists', async () => {
       mockDiscoverKitPackages.mockReturnValue(['plain-kit']);
       configureOnePackage();
 
@@ -215,7 +215,7 @@ describe(listCommand, () => {
       expect(stdout).toContain('default');
     });
 
-    it('renders a hint the config failure carries, on a line of its own', async () => {
+    it('renders a hint the config failure has, on a line of its own', async () => {
       mockLoadConfig.mockRejectedValue(
         Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
           hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -230,7 +230,7 @@ describe(listCommand, () => {
       ]);
     });
 
-    it('writes no hint line for a config failure that carries none', async () => {
+    it('writes no hint line for a config failure that has none', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
       const { stderrChunks } = await list([]);
@@ -413,7 +413,7 @@ describe(listCommand, () => {
       });
     });
 
-    it('sends the human view to stderr so stdout carries one document', async () => {
+    it('sends the human view to stderr so stdout holds one document', async () => {
       mockEnumerateKits.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
@@ -435,7 +435,7 @@ describe(listCommand, () => {
       expect(stderr).toContain('No kits found.');
     });
 
-    it('carries the manifest fields in manifest mode', async () => {
+    it('reports the manifest fields in manifest mode', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'deploy', description: 'Deploy checks', readyupVersion: '0.21.2' }],

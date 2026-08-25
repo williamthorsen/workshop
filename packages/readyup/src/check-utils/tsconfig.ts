@@ -26,7 +26,7 @@ export interface TsconfigChainEntry {
   /**
    * The `extends` specifier that reached this config; undefined for the entry config. Unlike `path`, it survives a
    * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory it
-   * points at, so one base config answers to two different paths. Where two branches reach one config, it names the
+   * points at, so one base config resolves to two different paths. Where two branches reach one config, it names the
    * branch that reached it first.
    */
   specifier: string | undefined;

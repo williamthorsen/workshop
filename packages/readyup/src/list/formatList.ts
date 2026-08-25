@@ -29,7 +29,7 @@ export type CompiledStyle = LocalConventionStyle | CustomOutDirStyle;
  *
  * Whether an `outDir` is the convention is a fact about the project, so it is settled against
  * `projectDir`; the path a reader is shown has to resolve from where they stand, so it is named against
- * `renderFrom`. They coincide for a listing of the working directory, and part for a sweep rendering
+ * `renderFrom`. They coincide for a listing of the working directory, and diverge for a sweep rendering
  * another project's kits.
  */
 export function resolveCompiledStyle(projectDir: string, outDir: string, renderFrom: string): CompiledStyle {

@@ -98,7 +98,7 @@ describe(runCommand, () => {
     expect(mockRunHumanMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ quiet: true }), false);
   });
 
-  it('carries the thresholds the invocation named through to the human mode', async () => {
+  it('passes the thresholds the invocation named through to the human mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: false, failOn: 'warn', reportOn: 'error' });
 
     expect(mockRunHumanMode).toHaveBeenCalledWith(
@@ -108,7 +108,7 @@ describe(runCommand, () => {
     );
   });
 
-  it('carries the thresholds the invocation named through to the JSON mode', async () => {
+  it('passes the thresholds the invocation named through to the JSON mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: true, failOn: 'warn', reportOn: 'error' });
 
     expect(mockRunJsonMode).toHaveBeenCalledWith(
@@ -124,7 +124,7 @@ describe(runCommand, () => {
     expect(mockRunHumanMode).toHaveBeenCalledWith(expect.anything(), expect.anything(), false);
   });
 
-  it('carries a just-in-time run through to the mode', async () => {
+  it('passes a just-in-time run through to the mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: true }, true);
 
     expect(mockRunJsonMode).toHaveBeenCalledWith(expect.anything(), expect.anything(), true);

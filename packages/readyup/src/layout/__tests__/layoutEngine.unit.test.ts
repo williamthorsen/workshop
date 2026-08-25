@@ -44,7 +44,7 @@ describe('formatCheckLine', () => {
     expect(line).toBe(`${FAILED_ERROR} suite [toolbelt.errors/no-instanceof-error] [7 of 10]`);
   });
 
-  it('carries exactly one separator when both detail and progress are present', () => {
+  it('renders exactly one separator when both detail and progress are present', () => {
     const line = engine.formatCheckLine({
       token: 'failedError',
       name: 'suite',
@@ -146,7 +146,7 @@ describe('formatReasonBlock', () => {
     expect(reason).toBe('   lockfile out of date');
   });
 
-  it('indents every line of a reason that carries its own line breaks', () => {
+  it('indents every line of a reason with its own line breaks', () => {
     const [reason] = engine.formatReasonBlock(['rebuild failed (first line\nsecond line)']);
 
     expect(reason).toBe('   rebuild failed (first line\n   second line)');
@@ -169,7 +169,7 @@ describe('formatHeading', () => {
   });
 
   // Separation belongs to whoever emits the sequence, so two adjacent headings cannot each contribute one.
-  it('carries no blank line of its own', () => {
+  it('renders no blank line of its own', () => {
     expect(engine.formatHeading('deploy', 'kit')).not.toContain('\n');
   });
 
@@ -180,7 +180,7 @@ describe('formatHeading', () => {
     expect(rendered).not.toContain('---');
   });
 
-  it('carries detail behind the separator', () => {
+  it('renders detail behind the separator', () => {
     expect(engine.formatHeading('deploy', 'kit', 'not configured')).toBe(
       '\u{2501}\u{2501} deploy \u{00B7} not configured',
     );
@@ -199,7 +199,7 @@ describe('formatHeading', () => {
 });
 
 describe('formatBreadcrumb', () => {
-  it('parts each segment from the next with a spaced separator', () => {
+  it('separates each segment from the next with a spaced separator', () => {
     const rendered = engine.formatBreadcrumb(
       [
         { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
@@ -249,7 +249,7 @@ describe('formatBreadcrumbLabel', () => {
     { role: 'checklist', text: 'repo' },
   ];
 
-  it('parts the segments as a heading does, carrying none of their glyphs', () => {
+  it('separates the segments as a heading does, with none of their glyphs', () => {
     expect(engine.formatBreadcrumbLabel(segments)).toBe('@acme/release-kit@2.1.0 / npm-auto-publish / repo');
   });
 
@@ -301,7 +301,7 @@ describe('formatCounts', () => {
     expect(engine.formatCounts(makeCounts({ blocked: 3, optional: 4 }))).toBe('3 blocked, 4 skipped');
   });
 
-  it('carries no per-field tokens', () => {
+  it('renders no per-field tokens', () => {
     const counts = makeCounts({ passed: 1, errors: 1, blocked: 1, optional: 1, worstSeverity: 'error' });
 
     for (const { glyph } of Object.values(richFormatter.tokens)) {
@@ -365,7 +365,7 @@ describe('formatSummaryTable', () => {
   });
 
   // The run's writer separates one block from the next, so a table with its own blanks would double the gap.
-  it('carries no blank line of its own', () => {
+  it('renders no blank line of its own', () => {
     expect(engine.formatSummaryTable(input)).not.toContain('');
   });
 
@@ -420,7 +420,7 @@ describe('formatSummaryTable', () => {
     expect(lines[3]?.startsWith(PASSED)).toBe(true);
   });
 
-  it('names a row by its breadcrumb, carrying no role glyphs', () => {
+  it('names a row by its breadcrumb, with no role glyphs', () => {
     const lines = engine.formatSummaryTable({
       rows: [
         makeRow({
@@ -438,7 +438,7 @@ describe('formatSummaryTable', () => {
     expect(lines[2]).toBe(`${PASSED} @acme/release-kit@2.1.0 / default / repo  100ms  1 passed`);
   });
 
-  it('pads to the widest breadcrumb when rows carry different segment counts', () => {
+  it('pads to the widest breadcrumb when rows have different segment counts', () => {
     const lines = engine.formatSummaryTable({
       rows: [
         makeRow({
