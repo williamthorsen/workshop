@@ -8,10 +8,7 @@ interface SemverParts {
 }
 
 /** Minimum chezmoi version whose `status`-column semantics overlay relies on. */
-const MINIMUM: SemverParts = { major: 2, minor: 46, patch: 0 };
-
-/** Minimum chezmoi version as a display string (e.g. `2.46.0`). */
-export const MIN_CHEZMOI_VERSION = formatVersion(MINIMUM);
+const MINIMUM_VERSION: SemverParts = { major: 2, minor: 46, patch: 0 };
 
 /**
  * Verify chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
@@ -28,10 +25,13 @@ export async function assertChezmoiVersion(context: ChezmoiContext): Promise<voi
   if (installed === undefined) {
     throw new Error(`could not determine chezmoi version from: ${stdout.trim()}`);
   }
-  if (compareVersions(installed, MINIMUM) < 0) {
+  if (compareVersions(installed, MINIMUM_VERSION) < 0) {
     throw new Error(`chezmoi ${MIN_CHEZMOI_VERSION} or later is required; found ${formatVersion(installed)}`);
   }
 }
+
+/** Minimum chezmoi version as a display string (e.g. `2.46.0`). */
+export const MIN_CHEZMOI_VERSION = formatVersion(MINIMUM_VERSION);
 
 /** Extract the first `major.minor.patch` triple from chezmoi's version string. */
 export function parseVersion(text: string): SemverParts | undefined {
@@ -42,6 +42,8 @@ export function parseVersion(text: string): SemverParts | undefined {
   return { major: Number(major), minor: Number(minor), patch: Number(patch) };
 }
 
+// region | Helpers
+
 function compareVersions(a: SemverParts, b: SemverParts): number {
   if (a.major !== b.major) return a.major - b.major;
   if (a.minor !== b.minor) return a.minor - b.minor;
@@ -51,3 +53,5 @@ function compareVersions(a: SemverParts, b: SemverParts): number {
 function formatVersion(parts: SemverParts): string {
   return `${parts.major}.${parts.minor}.${parts.patch}`;
 }
+
+// endregion | Helpers

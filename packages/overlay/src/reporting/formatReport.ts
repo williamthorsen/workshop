@@ -30,6 +30,8 @@ const OUTCOME_LABELS: Record<EntryOutcome, string> = {
   conflict: 'conflict',
 };
 
+// region | Helpers
+
 /** Build the counts line, phrased as pending drift under verify and as actions taken otherwise. */
 function summarizeCounts(result: OverlayResult): string {
   if (result.mode === 'verify') {
@@ -57,3 +59,5 @@ function summarizeScripts(result: OverlayResult): string {
   const status = result.scripts.ok ? '' : ' (a script failed)';
   return `${pluralizeWithCount(result.scripts.ran, 'script')} ${verb}${status}.`;
 }
+
+// endregion | Helpers

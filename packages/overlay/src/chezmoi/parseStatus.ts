@@ -29,6 +29,10 @@ export function parseStatus(stdout: string): StatusEntry[] {
   return entries;
 }
 
+// region | Helpers
+
 function isStatusCode(value: string): value is StatusCode {
   return APPLY_CODES.has(value);
 }
+
+// endregion | Helpers

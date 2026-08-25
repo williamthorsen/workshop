@@ -14,15 +14,6 @@ const { runChezmoiCaptured, runChezmoiStreamed } = await import('../runChezmoi.t
 
 const context = { source: '/abs/source', target: '/abs/target' };
 
-/** Signature of the Node-style callback the promisified `execFile` drives. */
-type ExecFileCallback = (error: unknown, result?: { stdout: string; stderr: string }) => void;
-
-/** A minimal stand-in for the spawned child process, registering close/error handlers. */
-interface ChildStub {
-  handlers: Map<string, (value: unknown) => void>;
-  on: (event: string, handler: (value: unknown) => void) => ChildStub;
-}
-
 describe(runChezmoiCaptured, () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -33,7 +24,7 @@ describe(runChezmoiCaptured, () => {
 
     await runChezmoiCaptured(context, ['status']);
 
-    const args = firstExecFileArgs();
+    const args = readFirstExecFileArgs();
     expect(execFileMock.mock.calls[0]?.[0]).toBe('chezmoi');
     expect(args).toContain('--source=/abs/source');
     expect(args).toContain('--destination=/abs/target');
@@ -97,18 +88,12 @@ describe(runChezmoiStreamed, () => {
   });
 });
 
-/** Drive the promisified `execFile` callback with a successful result. */
-function resolveExecFile(stdout: string): void {
-  execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
-    callback(null, { stdout, stderr: '' });
-  });
-}
+// region | Helpers
 
-/** Drive the promisified `execFile` callback with a rejection carrying captured streams. */
-function rejectExecFile(error: Record<string, unknown>): void {
-  execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
-    callback(error);
-  });
+/** A minimal stand-in for the spawned child process, registering close/error handlers. */
+interface ChildStub {
+  handlers: Map<string, (value: unknown) => void>;
+  on: (event: string, handler: (value: unknown) => void) => ChildStub;
 }
 
 /** Create a child stub and arrange for `spawn` to return it and emit `event` with `value` on the next microtask. */
@@ -129,7 +114,7 @@ function arrangeSpawn(event: string, value: unknown): ChildStub {
 }
 
 /** Read the args array passed to the first `execFile` call. */
-function firstExecFileArgs(): string[] {
+function readFirstExecFileArgs(): string[] {
   const call = execFileMock.mock.calls[0];
   const args: unknown = call?.[1];
   if (!Array.isArray(args)) return [];
@@ -143,3 +128,22 @@ function readStdio(options: unknown): unknown {
   }
   return undefined;
 }
+
+/** Signature of the Node-style callback the promisified `execFile` drives. */
+type ExecFileCallback = (error: unknown, result?: { stdout: string; stderr: string }) => void;
+
+/** Drive the promisified `execFile` callback with a rejection carrying captured streams. */
+function rejectExecFile(error: Record<string, unknown>): void {
+  execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
+    callback(error);
+  });
+}
+
+/** Drive the promisified `execFile` callback with a successful result. */
+function resolveExecFile(stdout: string): void {
+  execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
+    callback(null, { stdout, stderr: '' });
+  });
+}
+
+// endregion | Helpers

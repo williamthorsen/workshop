@@ -9,21 +9,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MIN_CHEZMOI_VERSION, parseVersion } from '../chezmoi/version.ts';
 import { overlay } from '../overlay.ts';
 
-/** Detects a chezmoi binary on PATH meeting the minimum version, so these tests skip cleanly when absent. */
-function detectChezmoi(): boolean {
-  try {
-    const output = execFileSync('chezmoi', ['--version'], { encoding: 'utf8' });
-    const installed = parseVersion(output);
-    const minimum = parseVersion(MIN_CHEZMOI_VERSION);
-    if (installed === undefined || minimum === undefined) return false;
-    if (installed.major !== minimum.major) return installed.major > minimum.major;
-    if (installed.minor !== minimum.minor) return installed.minor > minimum.minor;
-    return installed.patch >= minimum.patch;
-  } catch {
-    return false;
-  }
-}
-
 const hasChezmoi = detectChezmoi();
 
 const NEW_CONTENT = 'hello new\n';
@@ -117,3 +102,22 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     await writeFile(path.join(target, '.planted'), 'planted\n');
   }
 });
+
+// region | Helpers
+
+/** Detects a chezmoi binary on PATH meeting the minimum version, so these tests skip cleanly when absent. */
+function detectChezmoi(): boolean {
+  try {
+    const output = execFileSync('chezmoi', ['--version'], { encoding: 'utf8' });
+    const installed = parseVersion(output);
+    const minimum = parseVersion(MIN_CHEZMOI_VERSION);
+    if (installed === undefined || minimum === undefined) return false;
+    if (installed.major !== minimum.major) return installed.major > minimum.major;
+    if (installed.minor !== minimum.minor) return installed.minor > minimum.minor;
+    return installed.patch >= minimum.patch;
+  } catch {
+    return false;
+  }
+}
+
+// endregion | Helpers

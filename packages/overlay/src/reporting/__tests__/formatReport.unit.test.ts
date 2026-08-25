@@ -86,6 +86,8 @@ describe(formatReport, () => {
   });
 });
 
+// region | Helpers
+
 /** Build an `OverlayResult` from a converged-verify baseline, applying the given overrides. */
 function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
   return {
@@ -97,3 +99,5 @@ function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
     ...overrides,
   };
 }
+
+// endregion | Helpers

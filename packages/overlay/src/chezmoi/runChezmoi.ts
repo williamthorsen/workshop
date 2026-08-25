@@ -21,44 +21,6 @@ export interface ChezmoiContext {
 }
 
 /**
- * Build the chezmoi arguments shared by every invocation.
- *
- * Injects `--source`/`--destination`, the throwaway `--persistent-state` and empty `--config` paths, and `--no-tty`,
- * then the caller's own arguments.
- */
-function buildArgs(context: ChezmoiContext, persistentStatePath: string, configPath: string, args: string[]): string[] {
-  return [
-    `--source=${context.source}`,
-    `--destination=${context.target}`,
-    `--persistent-state=${persistentStatePath}`,
-    `--config=${configPath}`,
-    '--no-tty',
-    ...args,
-  ];
-}
-
-/**
- * Run a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
- * list. The sandbox is removed in a `finally`.
- */
-async function withSandbox<T>(
-  context: ChezmoiContext,
-  args: string[],
-  body: (fullArgs: string[]) => Promise<T>,
-): Promise<T> {
-  const sandboxDir = await mkdtemp(path.join(tmpdir(), 'overlay-chezmoi-'));
-  const persistentStatePath = path.join(sandboxDir, 'state.boltdb');
-  const configPath = path.join(sandboxDir, 'chezmoi.toml');
-  try {
-    await writeFile(configPath, '');
-    const fullArgs = buildArgs(context, persistentStatePath, configPath, args);
-    return await body(fullArgs);
-  } finally {
-    await rm(sandboxDir, { recursive: true, force: true });
-  }
-}
-
-/**
  * Run chezmoi and capture its output. Used for read-only commands (`status`, `--version`) where overlay needs the
  * text rather than live streaming.
  *
@@ -90,6 +52,25 @@ export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]
   });
 }
 
+// region | Helpers
+
+/**
+ * Build the chezmoi arguments shared by every invocation.
+ *
+ * Injects `--source`/`--destination`, the throwaway `--persistent-state` and empty `--config` paths, and `--no-tty`,
+ * then the caller's own arguments.
+ */
+function buildArgs(context: ChezmoiContext, persistentStatePath: string, configPath: string, args: string[]): string[] {
+  return [
+    `--source=${context.source}`,
+    `--destination=${context.target}`,
+    `--persistent-state=${persistentStatePath}`,
+    `--config=${configPath}`,
+    '--no-tty',
+    ...args,
+  ];
+}
+
 /** Translate an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as a clear error. */
 function interpretExecFileError(error: unknown): CapturedResult {
   if (isExecFileError(error)) {
@@ -115,3 +96,26 @@ interface ExecFileError {
 function isExecFileError(error: unknown): error is ExecFileError {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
+
+/**
+ * Run a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
+ * list. The sandbox is removed in a `finally`.
+ */
+async function withSandbox<T>(
+  context: ChezmoiContext,
+  args: string[],
+  body: (fullArgs: string[]) => Promise<T>,
+): Promise<T> {
+  const sandboxDir = await mkdtemp(path.join(tmpdir(), 'overlay-chezmoi-'));
+  const persistentStatePath = path.join(sandboxDir, 'state.boltdb');
+  const configPath = path.join(sandboxDir, 'chezmoi.toml');
+  try {
+    await writeFile(configPath, '');
+    const fullArgs = buildArgs(context, persistentStatePath, configPath, args);
+    return await body(fullArgs);
+  } finally {
+    await rm(sandboxDir, { recursive: true, force: true });
+  }
+}
+
+// endregion | Helpers
