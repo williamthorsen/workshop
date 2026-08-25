@@ -122,16 +122,17 @@ describe(assertRenderTargetsAreConsistent, () => {
       ]);
     });
 
-    it('accepts two declarations owning collections that branch apart below a shared key', () => {
-      const siblings: RenderTarget = {
+    it('accepts declarations whose collections branch apart at unequal depths, none holding another', () => {
+      const branching: RenderTarget = {
         ...claude,
         ownedItems: [
-          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
           { ...settingsHooks, collection: ['hooks', 'Stop'] },
+          { ...settingsHooks, collection: ['hooks', 'SessionStart', 'shell'] },
+          { ...settingsHooks, collection: ['agents'] },
         ],
       };
 
-      expect(() => assertRenderTargetsAreConsistent([siblings], kinds)).not.toThrow();
+      expect(() => assertRenderTargetsAreConsistent([branching], kinds)).not.toThrow();
     });
 
     it('reports an item a stampable sentinel could not be written into', async () => {
