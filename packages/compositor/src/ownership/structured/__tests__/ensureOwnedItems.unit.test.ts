@@ -15,6 +15,13 @@ const JSON_SPEC: OwnedItemsSpec = {
   sentinel: { path: ['source'], value: 'compositor' },
 };
 
+// A mark buried in a command string, which the engine can recognize but not write.
+const UNWRITABLE_SPEC: OwnedItemsSpec = {
+  format: 'json',
+  collection: ['hooks'],
+  sentinel: { path: ['commands', '*'], value: '--sentinel compositor', match: 'contains' },
+};
+
 describe(ensureOwnedItems, () => {
   it('if the owned items already read as asked, returns the host untouched, so a re-run is byte-identical', () => {
     const content = 'eventHooks:\n  events:\n    - name: relay\n      source: compositor\n';
@@ -159,6 +166,23 @@ describe(ensureOwnedItems, () => {
         '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n' +
           '    {\n      "command": "relay",\n      "source": "compositor"\n    }\n  ]\n}\n',
       );
+    });
+  });
+
+  describe('under a sentinel the engine cannot write', () => {
+    it('writes an item that already carries the mark', () => {
+      const content = '{\n  "hooks": []\n}\n';
+      const item = { name: 'relay', commands: ['node relay.mjs --sentinel compositor'] };
+
+      expect(contentOf(ensureOwnedItems(content, UNWRITABLE_SPEC, [item]))).toContain('--sentinel compositor');
+    });
+
+    it('refuses an item that does not, rather than writing one it could not find again', () => {
+      const content = '{\n  "hooks": []\n}\n';
+
+      expect(() =>
+        ensureOwnedItems(content, UNWRITABLE_SPEC, [{ name: 'relay', commands: ['node relay.mjs'] }]),
+      ).toThrow(/does not already carry it/);
     });
   });
 });
