@@ -3,7 +3,7 @@ import type { Formatter } from './formatter.ts';
 /**
  * A formatter whose tokens are emoji.
  *
- * Every glyph carries `Emoji_Presentation=Yes`, so it occupies two terminal cells without a U+FE0F
+ * Every glyph has `Emoji_Presentation=Yes`, so it occupies two terminal cells without a U+FE0F
  * variation selector. A glyph lacking that property renders one cell wide in some terminals and two in
  * others, so its declared width would be wrong somewhere.
  */

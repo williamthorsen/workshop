@@ -1,12 +1,11 @@
 import { isRecord } from '../portable/isRecord.ts';
 
 /**
- * Extract all recognized kit fields from an imported module namespace.
+ * Returns every recognized kit field in an imported module namespace, as a plain record.
  *
- * Extracts `checklists` (required), and optionally `defaultSeverity`, `description`, `failOn`,
- * `fixLocation`, `reportOn`, and `suites`. Supports both `export default defineRdyKit({...})`
- * and the named-export convention (`export const checklists = ...`). Returns a plain record
- * suitable for passing to `assertIsRdyKit`.
+ * `checklists` is required; `defaultSeverity`, `description`, `failOn`, `fixLocation`, `reportOn`,
+ * and `suites` are optional. Both `export default defineRdyKit({...})` and the named-export form,
+ * `export const checklists = ...`, are recognized.
  */
 export function resolveKitExports(moduleRecord: Record<string, unknown>): Record<string, unknown> {
   // Unwrap default export when present (e.g., `export default defineRdyKit({...})`)

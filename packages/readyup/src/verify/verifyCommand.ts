@@ -46,7 +46,7 @@ const verifyOptions = {
  * Handles the `verify` subcommand: reads the manifest, hashes each kit's source and compiled
  * output, and reports what no longer matches.
  *
- * Each kit carries three independent verdicts, and a fourth under `--rebuild`. Returns 0 when every
+ * Each kit has three independent verdicts, and a fourth under `--rebuild`. Returns 0 when every
  * verdict is `ok` or `unverified`; 1 when any kit has drifted, gone stale, lost a file, or failed
  * to reproduce. An unreadable manifest is a config failure and is thrown rather than reported as
  * drift, as is a `--rebuild` run with no esbuild to rebuild with.
@@ -165,7 +165,7 @@ function isPassingVerdict({ drift, inputs, rebuild, source }: KitVerdicts): bool
   return targetPasses && sourcePasses && inputsPass && rebuildPasses;
 }
 
-/** Builds a kit's JSON entry, carrying what a verdict compared only where it compared something. */
+/** Builds a kit's JSON entry, stating what a verdict compared only where it compared something. */
 function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitVerdicts): JsonVerifyKitEntry {
   return {
     name,
@@ -191,15 +191,15 @@ function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitV
 }
 
 /**
- * Returns a kit's line, carrying whichever of its verdicts has something to report.
+ * Returns a kit's line, showing whichever of its verdicts has something to report.
  *
- * A failing kit carries each verdict on its own line beneath its name; any other kit carries them
- * inline. A kit that passes every verdict carries none, leaving its token to report the outcome.
+ * A failing kit gets each verdict on its own line beneath its name; any other kit gets them inline.
+ * A kit that passes every verdict shows none, leaving its token to report the outcome.
  */
 function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
   const { drift, inputs, rebuild, source } = verdicts;
   const token = resolveToken(verdicts);
-  // An unverified closure counts as confirmed, so an entry predating it carries the line it always did.
+  // An unverified closure counts as confirmed, so an entry predating it gets the line it always did.
   const hashesConfirmed = drift.kind === 'ok' && source.kind === 'ok' && inputs.kind !== 'stale';
   const clauses = [
     describeDriftStatus(kit, drift),
@@ -290,7 +290,7 @@ function describeInputFailure(failure: InputFailure): string {
  * Returns a clause describing the rebuild verdict, or nothing when there is nothing to add.
  *
  * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
- * restate them. Anywhere else it speaks, because it then carries the line's strongest answer: over
+ * restate them. Anywhere else it speaks, because it then holds the line's strongest answer: over
  * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
  * wrong, and over an unverified one it supplies the answer the absent hash could not.
  */
@@ -315,7 +315,7 @@ function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirme
 /**
  * Returns one clause per cause, naming which versions changed between the compile and the rebuild.
  *
- * When the entry carries the toolchain record and nothing in it changed, the single clause says so and
+ * When the entry has the toolchain record and nothing in it changed, the single clause says so and
  * names what the record cannot see: an edited bundle, a changed input, or a dependency whose content
  * changed without a version change.
  */

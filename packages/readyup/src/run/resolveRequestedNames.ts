@@ -1,13 +1,12 @@
 import type { RdyKit } from '../kits/types.ts';
 
 /**
- * Resolve positional arguments against checklist names and suite names.
+ * Returns the ordered checklist names that positional arguments name, or every checklist name in kit
+ * order where no argument was given.
  *
- * Processes args left-to-right: suite names expand to their constituent checklists in
- * suite-defined order; checklist names pass through directly. Duplicates are removed by
- * first occurrence. Returns the ordered list of checklist names to run.
- *
- * When no names are given, returns all checklist names in kit order.
+ * Arguments resolve left to right: a suite name expands to its constituent checklists in the order
+ * the suite declares, and a checklist name passes through as itself. A repeated name keeps only its
+ * first occurrence.
  */
 export function resolveRequestedNames(requestedNames: string[], kit: RdyKit): string[] {
   if (requestedNames.length === 0) {

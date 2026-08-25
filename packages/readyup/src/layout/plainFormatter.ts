@@ -7,7 +7,7 @@ import type { Formatter } from './formatter.ts';
  * terminal with no emoji font. Each status token is a word rather than a symbol, which is what makes
  * `grep FAIL` find a failure.
  *
- * The role tokens carry no glyph. They name what a thing is rather than reporting an outcome, and an
+ * The role tokens have no glyph. They name what a thing is rather than reporting an outcome, and an
  * uppercase word in the status column would read as a status; position already says which role a name
  * plays, whether it is a heading's segment or a listed row. Declaring zero width still reserves the
  * gutter, so names hold the same column as every status line.

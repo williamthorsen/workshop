@@ -42,7 +42,7 @@ const RdyConfigSchema = z.looseObject({
   packages: z.array(z.string()).optional(),
 });
 
-/** Validate that a raw value has the expected RdyConfig shape. */
+/** Validates that a raw value has the expected RdyConfig shape. */
 function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
   RdyConfigSchema.parse(raw);
 }
@@ -56,10 +56,10 @@ export interface LoadConfigOptions {
 }
 
 /**
- * Load readyup config from the filesystem.
+ * Returns the readyup config read from the filesystem, or the defaults where there is none.
  *
- * Checks `.config/readyup.config.ts` and returns defaults if not found.
- * An explicit override path skips the lookup chain.
+ * `.config/readyup.config.ts` is the file the lookup chain checks, and an explicit override path
+ * skips that chain.
  */
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<ResolvedRdyConfig> {
   const { fromDir = process.cwd(), overridePath } = options;
@@ -108,7 +108,7 @@ function resolveConfigPath(fromDir: string, overridePath: string | undefined): s
 /**
  * Fills every key the config file left out with its default.
  *
- * The guards are redundant at runtime — Zod validated the shape already — but they narrow `raw`, which
+ * The guards are redundant at runtime -- Zod validated the shape already -- but they narrow `raw`, which
  * is `Record<string, unknown> & RdyConfig` after the assertion.
  */
 function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyConfig {

@@ -40,11 +40,11 @@ const PAYLOADS: Payload[] = [
 ];
 
 /**
- * Render every payload as a JSON Schema document.
+ * Returns every payload rendered as a JSON Schema document.
  *
  * Rendered in `input` mode, which leaves objects open. The evolution policy promises that adding an
  * optional field does not bump `schemaVersion`, and a closed schema would break that promise the
- * first time it was exercised: a consumer pinned to v1 would reject every payload carrying the new
+ * first time it was exercised: a consumer pinned to v1 would reject every payload with the new
  * field. No payload uses a transform or a default, so the input and output renderings are otherwise
  * the same document.
  */
@@ -57,7 +57,7 @@ export function buildSchemaDocuments(): SchemaDocument[] {
   });
 }
 
-/** Write every payload schema into `outDir`, creating it if needed, and return the paths written. */
+/** Writes every payload schema into `outDir`, creating it as needed, and returns the paths written. */
 export function writeSchemaFiles(outDir: string): string[] {
   mkdirSync(outDir, { recursive: true });
 

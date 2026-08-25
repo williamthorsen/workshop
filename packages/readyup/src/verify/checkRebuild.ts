@@ -82,7 +82,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
     rebuild = await buildBundle(sourcePath);
   } catch (error: unknown) {
     // A source that no longer compiles is a finding about the kit, not a failure of the invocation,
-    // so the sweep carries on to the kits after it.
+    // so the sweep goes on to the kits after it.
     return { kind: 'failed', message: describeError(error) };
   }
 

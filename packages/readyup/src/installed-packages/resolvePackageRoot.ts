@@ -13,7 +13,7 @@ import { isRecord } from '../portable/isRecord.ts';
  * ESM-only packages do not publish. A package directory is also precisely what `exports` exists to hide,
  * so no specifier can name one.
  *
- * Answers with the real path, so a pnpm store symlink resolves to the directory the package occupies and
+ * Returns the real path, so a pnpm store symlink resolves to the directory the package occupies and
  * a workspace link resolves to its source checkout.
  */
 export function resolvePackageRoot(packageName: string, fromDir: string = process.cwd()): string | undefined {

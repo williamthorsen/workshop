@@ -62,7 +62,7 @@ import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
 /**
- * The blank line parting one block from the next, as it reads in concatenated stdout writes.
+ * The blank line separating one block from the next, as it reads in concatenated stdout writes.
  *
  * The count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
  */
@@ -196,7 +196,7 @@ describe(runHumanMode, () => {
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
   });
 
-  // One blank parts blocks of the same kit, and the summary that tallies them is parted the same way.
+  // One blank separates blocks of the same kit, and the summary that tallies them is separated the same way.
   it('parts one block from the next with a single blank line', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -210,7 +210,7 @@ describe(runHumanMode, () => {
   });
 
   // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one checklist to
-  // report, so its breadcrumb would carry no segment at all.
+  // report, so its breadcrumb would have no segment at all.
   it('heads nothing at all for a lone local kit running one checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
@@ -240,7 +240,7 @@ describe(runHumanMode, () => {
   });
 
   describe('provenance in the block heading', () => {
-    /** Runs one kit carrying the given provenance, returning everything it wrote to stdout. */
+    /** Runs one kit with the given provenance, returning everything it wrote to stdout. */
     async function headingFor(provenance: KitProvenance): Promise<string> {
       const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });

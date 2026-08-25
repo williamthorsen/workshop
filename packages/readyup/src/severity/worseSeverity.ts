@@ -1,6 +1,6 @@
 import type { Severity } from '../kits/types.ts';
 
-/** Return the more severe of two severity values. `error` > `warn` > `recommend` > `null`. */
+/** Returns the more severe of two severity values, ranked `error` > `warn` > `recommend` > `null`. */
 export function worseSeverity(current: Severity | null, candidate: Severity | null): Severity | null {
   if (current === 'error' || candidate === 'error') return 'error';
   if (current === 'warn' || candidate === 'warn') return 'warn';

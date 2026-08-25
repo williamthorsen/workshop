@@ -33,7 +33,7 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 /**
  * Options accepted by the `run` subcommand.
  *
- * A letter earns a short flag only when it carries no dominant conflicting meaning in comparable
+ * A letter takes a short flag only when it has no dominant conflicting meaning in comparable
  * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
  * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: a
  * shift-key slip must not be able to change what runs.
@@ -99,7 +99,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   };
 
   // Parse kit specifiers from positional args. This precedes validation because `--checklists`
-  // is constrained by how many kits were named and whether the one named carries its own filter.
+  // is constrained by how many kits were named and whether the one named has its own filter.
   let kitSpecifiers: KitSpecifier[];
   try {
     kitSpecifiers = parseKitSpecifiers(positionals);
@@ -110,7 +110,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   validateRunFlags(parsed, kitSpecifiers);
 
   // Parse checklists from the flag value. An empty list selects every checklist, so a value that
-  // names none — `,,,` — would invert what an explicit filter asks for.
+  // names none -- `,,,` -- would invert what an explicit filter asks for.
   const checklists = parsed.checklists !== undefined ? parsed.checklists.split(',').filter((s) => s !== '') : undefined;
   if (checklists?.length === 0) {
     throw usageError(CHECKLISTS_HINT);

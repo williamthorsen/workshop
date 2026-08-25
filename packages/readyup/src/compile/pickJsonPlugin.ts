@@ -19,11 +19,11 @@ import { JsonProjectionError } from './JsonProjectionError.ts';
 const PICK_JSON_RE = /\bpickJson\s*\((?<args>[^)]+)\)/g;
 
 /**
- * Create an esbuild plugin that replaces `pickJson(...)` calls with inlined object literals.
+ * Returns an esbuild plugin that replaces `pickJson(...)` calls with inlined object literals.
  *
- * The plugin intercepts TypeScript file loads, scans for `pickJson` calls, resolves
- * the referenced JSON file relative to the source file, extracts the requested paths,
- * and substitutes the call with a static object expression.
+ * The plugin intercepts TypeScript file loads, scans for `pickJson` calls, resolves each referenced
+ * JSON file relative to its source file, extracts the requested paths, and substitutes the call with
+ * a static object expression.
  *
  * Every read goes through `recorder`, which is what puts the module and the JSON file it projected into
  * the compile's input closure. This module imports no filesystem API of its own, so a read it performs
@@ -95,10 +95,10 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 /**
- * Parse the static arguments from a `pickJson(...)` call's argument string.
+ * Returns the static arguments in a `pickJson(...)` call's argument string.
  *
- * Expects a JSON file path string and an array of path specifiers (strings or string arrays).
- * Only static literals are supported; expressions or template literals produce an error.
+ * Expects a JSON file path string and an array of path specifiers, each a string or an array of
+ * strings. Only a static literal is supported; an expression or a template literal is an error.
  */
 function parsePickJsonArgs(argsText: string): { relativePath: string; paths: JsonPathSpec } {
   // Trim and strip potential trailing comma.
@@ -120,7 +120,7 @@ function parsePickJsonArgs(argsText: string): { relativePath: string; paths: Jso
 
   let parsed: unknown;
   try {
-    // JSON.parse requires double quotes — replace single-quote delimiters only (not interior chars).
+    // JSON.parse requires double quotes -- replace single-quote delimiters only (not interior chars).
     // Path keys must be plain identifiers (no embedded quotes or special characters).
     const jsonText = rest.replace(/'([^']*?)'/g, '"$1"');
     parsed = JSON.parse(jsonText);

@@ -30,7 +30,7 @@ vi.mock(import('../../installed-packages/isPackageInstalled.ts'), () => ({
 
 import { initCommand } from '../initCommand.ts';
 
-/** Build a scaffold result with both files having the same outcome. */
+/** Returns a scaffold result whose two files share one outcome. */
 function makeScaffoldResult(outcome: string) {
   return {
     configResult: { filePath: '.config/readyup.config.ts', outcome },
@@ -172,7 +172,7 @@ describe(`${initCommand.name} next steps`, () => {
   });
 });
 
-/** Join everything written to `console.info` into one string. */
+/** Returns everything written to `console.info` joined into one string. */
 function printedSteps(infoSpy: MockInstance): string {
   return infoSpy.mock.calls.map((call) => String(call[0])).join('\n');
 }

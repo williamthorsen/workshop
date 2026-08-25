@@ -5,7 +5,7 @@ import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 
-/** Blank line parting one listed section from the next. A section supplies none of its own. */
+/** Blank line separating one listed section from the next. A section supplies none of its own. */
 const SECTION_SEPARATOR = '\n\n';
 
 /** Detail marking a package the readyup config does not name. */
@@ -55,7 +55,7 @@ interface OwnerViewOptions {
 }
 
 /**
- * Format the owner-mode output showing internal and compiled kit sections.
+ * Returns the owner-mode output, showing the internal and compiled kit sections.
  *
  * Empty sections are omitted. Returns the empty-owner message when both lists are empty.
  *
@@ -98,7 +98,7 @@ export function formatOwnerView({
   }
 
   if (packageKits.length > 0) {
-    // The rows stay every published kit — discovery is not run selection — so the bracketed optional keeps
+    // The rows stay every published kit -- discovery is not run selection -- so the bracketed optional keeps
     // the promise that every kit listed is reachable by the command above it.
     sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<name>]'), packageKits, 'sourcePackage'));
   }
@@ -119,7 +119,7 @@ interface ConsumerViewOptions {
 }
 
 /**
- * Format the consumer-mode output showing compiled kits at a local path.
+ * Returns the consumer-mode output, showing the compiled kits at a local path.
  *
  * Returns the empty-consumer message when the kit list is empty.
  */
@@ -143,7 +143,7 @@ interface PackagesViewOptions {
  *
  * Configured and unconfigured packages interleave in one alphabetical list rather than splitting into
  * sections, so a reader asking what their dependencies publish reads one answer. What separates them is
- * the hint each block carries, which names the command that runs that package's kits.
+ * the hint each block shows, which names the command that runs that package's kits.
  *
  * A sweep with no groups returns the empty-packages message.
  */
@@ -153,7 +153,7 @@ export function formatPackagesView({ groups }: PackagesViewOptions): string {
 
 // -- Recursive view --
 
-/** One kit a recursive listing reports, carrying the description its project's manifest records. */
+/** One kit a recursive listing reports, with the description its project's manifest records. */
 export interface RecursiveKitView {
   name: string;
   description?: string | undefined;
@@ -216,7 +216,7 @@ export function formatRecursivePackagesView({ projects }: RecursivePackagesViewO
 
 // -- Empty messages --
 
-/** Format the "no kits found" message appropriate to the given mode. */
+/** Returns the "no kits found" message that suits the given mode. */
 export function formatEmpty(
   mode: 'owner' | 'consumer' | 'packages' | 'recursive' | 'recursive-packages',
   kitsDir?: string,
@@ -246,7 +246,7 @@ interface ManifestViewOptions {
 /**
  * Returns a heading naming the manifest, then one line per kit.
  *
- * A kit's line carries its version as a parenthetical and its description as inline detail, each present
+ * A kit's line shows its version as a parenthetical and its description as inline detail, each present
  * only when the manifest records it. The `readyup` label distinguishes the runner's version from a
  * version the kit might declare for itself.
  */
@@ -320,7 +320,7 @@ function buildProjectPrefix(dir: string): string {
  * Returns the indented line naming the command that runs the kits beneath it.
  *
  * The label is what separates the line from the kit rows sharing its column: the role glyphs those rows
- * carry are empty in plain style, so without it the command reads as one more kit.
+ * show are empty in plain style, so without it the command reads as one more kit.
  */
 function buildRunLine(command: string, depth = 1): string {
   return `${getLayout().indent(depth)}To run: ${command}`;
@@ -330,7 +330,7 @@ function buildRunLine(command: string, depth = 1): string {
  * Returns the section naming installed packages that publish kits the config does not list.
  *
  * Its line heads the section with what to do about those packages rather than a command to run, so it
- * carries no `To run:` label.
+ * has no `To run:` label.
  */
 function formatAvailableSection(availablePackages: string[]): string {
   const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
@@ -393,7 +393,7 @@ function formatProjectBlock(project: RecursiveProjectView): string {
  * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
  *
  * The directory sits directly above its first package, which is what makes the blank lines within the
- * block read as parting one package from the next rather than the directory from what it heads.
+ * block read as separating one package from the next rather than the directory from what it heads.
  */
 function formatProjectPackagesBlock(project: ProjectPackagesView): string {
   const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
@@ -407,9 +407,9 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
  * Returns a titled section: the title, `hintLine` beneath it, then the kits.
  *
  * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
- * built differently and only the caller knows which it holds. Nothing inside is parted by a blank line:
+ * built differently and only the caller knows which it holds. Nothing inside is separated by a blank line:
  * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
- * the blank parting one section from the next belongs to whoever assembles them.
+ * the blank separating one section from the next belongs to whoever assembles them.
  */
 function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
   const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));

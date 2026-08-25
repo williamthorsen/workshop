@@ -54,7 +54,7 @@ interface PendingDiagnosis {
   result: SkippedResult;
 }
 
-/** What every step of a checklist walk carries with it. */
+/** What every step of a checklist walk holds. */
 interface RunContext {
   defaultSeverity: Severity;
 
@@ -68,7 +68,7 @@ interface RunContext {
    * The checks whose `skip` returned a reason, in the order their skips resolved.
    *
    * Collected unconditionally, because recording a reference executes nothing; only the diagnosis
-   * that reads them is gated on the option. Each carries its result, which is what lets the findings
+   * that reads them is gated on the option. Each holds its result, which is what lets the findings
    * be read back in the report's own order rather than in the order the skips happened to settle.
    */
   pendingDiagnoses: PendingDiagnosis[];
@@ -83,7 +83,7 @@ interface RunContext {
  */
 const AUTHORING_ERROR_SEVERITY: Severity = 'error';
 
-/** Resolve the effective severity for a check. */
+/** Returns the effective severity for a check. */
 function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
   return check.severity ?? defaultSeverity;
 }
@@ -104,7 +104,7 @@ function resolveFix(check: RdyCheck): string | null {
     raw = check.fix;
   } catch (error_: unknown) {
     const error = toError(error_);
-    // Quoted so the kit's message stays distinguishable from the sentence carrying it.
+    // Quoted so the kit's message stays distinguishable from the sentence around it.
     return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
   }
 
@@ -122,7 +122,7 @@ interface CheckContext {
   depth: number;
 }
 
-/** Gather the fields a check contributes to every result it can produce. */
+/** Returns the fields a check contributes to every result it can produce. */
 function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
   return {
     name: check.name,
@@ -133,7 +133,7 @@ function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): Che
   };
 }
 
-/** Build a passed result. */
+/** Returns a passed result. */
 function buildPassedResult(
   fields: CheckContext & { detail: string | null; durationMs: number; progress: Progress | null },
 ): PassedResult {
@@ -153,7 +153,7 @@ function buildFailedResult(
   return { ...fields, fix: resolveFix(check), status: 'failed', ok: false };
 }
 
-/** Build a skipped result. */
+/** Returns a skipped result. */
 function buildSkippedResult(
   fields: CheckContext & { detail: string | null; skipReason: 'n/a' | 'precondition' },
 ): SkippedResult {
@@ -161,7 +161,7 @@ function buildSkippedResult(
 }
 
 /**
- * Build the result for a check that is broken rather than failing.
+ * Returns the result for a check that is broken rather than failing.
  *
  * The declared severity is overridden, because a check that never expressed a verdict says nothing
  * about the urgency of its subject.
@@ -183,15 +183,13 @@ function buildAuthoringErrorResult(
 }
 
 /**
- * Execute a single check and recursively process its dependent checks.
- *
- * Returns the check's own result followed by all descendant results in depth-first order.
+ * Runs a check and its dependents, returning the check's own result followed by every descendant
+ * result, in depth-first order.
  */
 async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promise<RdyResult[]> {
   const context = buildCheckContext(check, run, depth);
   const children = check.checks ?? [];
 
-  // Evaluate skip condition before running the check.
   if (check.skip !== undefined) {
     const start = performance.now();
     try {
@@ -257,10 +255,10 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
 }
 
 /**
- * Collect results from child checks based on the parent's outcome.
+ * Returns the results of a parent's child checks, decided by the parent's own outcome.
  *
- * Passed parents: execute children concurrently, then iterate in declaration order
- * to produce depth-first results. Failed parents: skip all descendants.
+ * A passed parent runs its children concurrently and returns them in depth-first declaration order;
+ * a failed parent skips every descendant.
  */
 async function collectChildResults(
   parentResult: PassedResult | FailedResult,
@@ -278,11 +276,9 @@ async function collectChildResults(
 }
 
 /**
- * Run sibling checks concurrently, then collect results in depth-first declaration order.
+ * Runs sibling checks concurrently and returns their results in depth-first declaration order.
  *
- * All siblings execute concurrently via `Promise.all`, but the returned array
- * preserves declaration order: each sibling's own result is followed by its
- * subtree before the next sibling appears.
+ * Each sibling's own result is followed by its subtree before the next sibling appears.
  */
 async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
   const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, run, depth)));
@@ -290,10 +286,10 @@ async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: numb
 }
 
 /**
- * Recursively skip a check and all its descendants.
+ * Skips a check and every descendant below it.
  *
- * Every skip produced here is a `precondition` skip: an `n/a` skip terminates its own
- * subtree in `executeCheck` and so never reaches this function.
+ * Every skip produced here is a `precondition` skip: an `n/a` skip terminates its own subtree before
+ * reaching this point.
  */
 function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
@@ -306,13 +302,13 @@ function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number):
   return results;
 }
 
-/** Mark a check as skipped because a precondition or ancestor check failed. */
+/** Returns a skipped result for a check whose precondition or ancestor check failed. */
 function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
   const context = buildCheckContext(check, run, depth);
   return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
 }
 
-/** Run preconditions concurrently. Return true if all passed. */
+/** Runs preconditions concurrently, reporting whether every one of them passed. */
 async function runPreconditions(preconditions: RdyCheck[], results: RdyResult[], run: RunContext): Promise<boolean> {
   if (preconditions.length === 0) return true;
 
@@ -325,7 +321,7 @@ async function runPreconditions(preconditions: RdyCheck[], results: RdyResult[],
   return flat.filter((r) => r.depth === 0).every((r) => r.status !== 'failed');
 }
 
-/** Run a flat checklist: all checks concurrently. */
+/** Runs a flat checklist, every check concurrently. */
 async function runFlatChecks(
   checklist: RdyChecklist,
   results: RdyResult[],
@@ -341,7 +337,7 @@ async function runFlatChecks(
   results.push(...checkResults);
 }
 
-/** Run a staged checklist: groups sequentially, checks within each group concurrently. */
+/** Runs a staged checklist: groups sequentially, and the checks within each group concurrently. */
 async function runStagedChecks(
   checklist: RdyStagedChecklist,
   results: RdyResult[],
@@ -390,17 +386,16 @@ function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCh
 }
 
 /**
- * Run all checks in a checklist and produce a report.
+ * Runs every check in a checklist and returns the report.
  *
- * Preconditions run first. If any fails, all subsequent checks are skipped; a precondition
- * skipped `n/a` does not gate the checklist.
- * Flat checklists run all checks concurrently. Staged checklists run groups
- * sequentially, bailing on later groups when an earlier group has a failure
- * at or above the failure threshold.
+ * Preconditions run first, and a failure among them skips every check that follows; a precondition
+ * skipped `n/a` does not gate the checklist. A flat checklist runs all its checks concurrently. A
+ * staged checklist runs its groups sequentially, abandoning later groups once an earlier one has a
+ * failure at or above the failure threshold.
  *
  * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
  * cannot then alter it: no diagnostic check can reach a conclusion that already exists, and none
- * enters the wall clock the report carries.
+ * enters the wall clock the report records.
  */
 export async function runRdy(
   checklist: RdyChecklist | RdyStagedChecklist,

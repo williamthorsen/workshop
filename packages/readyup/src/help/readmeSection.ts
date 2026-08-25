@@ -32,7 +32,7 @@ export function readReadmeSection(heading: string): string {
 
 /**
  * Returns a level-2 section, from its heading through the line before the next level-2 heading, or
- * `undefined` when the markdown carries no such heading.
+ * `undefined` where the markdown has no such heading.
  *
  * Deeper headings are content rather than boundaries, so a `###` subsection comes back with its
  * parent. Headings inside a fenced code block are text, and neither open a section nor close one.

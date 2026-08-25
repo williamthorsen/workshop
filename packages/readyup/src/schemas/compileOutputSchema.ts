@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Version of the `compile` payload.
  *
- * Bumped when a field is removed, renamed, or re-typed — never when an optional field is added.
+ * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
 export const SCHEMA_VERSION = 1;
 
@@ -15,7 +15,7 @@ export const SCHEMA_VERSION = 1;
  */
 export const CompileStatusSchema = z.enum(['compiled', 'failed', 'skipped']).meta({ id: 'CompileStatus' });
 
-/** One kit's compile outcome, carrying the reason only when there is a failure to explain. */
+/** One kit's compile outcome, with the reason only when there is a failure to explain. */
 export const CompileKitEntrySchema = z
   .object({
     name: z.string(),

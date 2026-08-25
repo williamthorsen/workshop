@@ -43,7 +43,7 @@ export interface DeclarationSpan {
   startLine: number;
 }
 
-/** A declaration head found at brace depth 0, carrying the name it introduces where it introduces one. */
+/** A declaration head found at brace depth 0, with the name it introduces where it introduces one. */
 interface Head {
   name?: string | undefined;
   startLine: number;
@@ -65,7 +65,7 @@ interface Head {
  * A statement declaring no name ends the declaration before it and begins none, so an export clause, an import, a
  * destructuring binding, and a control-flow statement each bound the span ahead of them without owning lines of their
  * own. Each is recognized by the keyword it opens with; a statement opening with an identifier, such as a bare call,
- * carries no keyword to recognize it by and is read as part of the declaration before it.
+ * has no keyword to recognize it by and is read as part of the declaration before it.
  *
  * A head is recognized at brace depth 0, and only where a statement could have ended just before it, so a named
  * function or class expression in an initializer, in an argument list, or as an arrow's body reads as the expression

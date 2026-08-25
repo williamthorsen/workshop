@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 
 import { routeCommand } from '../route.ts';
 
-/** A kit with one passing check and one failing check that carries a fix. */
+/** A kit with one passing check and one failing check that has a fix. */
 const MIXED_KIT =
   `export default { checklists: [{ name: 'main', checks: [\n` +
   `  { name: 'clean', check: () => true },\n` +

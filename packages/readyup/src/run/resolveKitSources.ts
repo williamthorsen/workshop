@@ -102,7 +102,7 @@ export function resolveKitSources({
 /**
  * Splits a kit URL into the kit's name and the label naming where it was fetched from.
  *
- * The scheme is dropped from the label because every kit URL carries one and it distinguishes nothing.
+ * The scheme is dropped from the label because every kit URL has one and it distinguishes nothing.
  * A URL that does not parse is reported exactly as given, since a value the runner could not read is one
  * the reader needs to see unaltered.
  */

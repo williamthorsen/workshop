@@ -142,7 +142,7 @@ describe(verifyCommand, () => {
   });
 
   describe('source verdict', () => {
-    /** A manifest naming one kit, with whatever hashes the caller wants to imply. */
+    /** Arranges a manifest naming one kit, with whatever hashes the caller wants to imply. */
     function arrangeSingleKit(): void {
       mockReadManifest.mockReturnValue({
         version: 1,
@@ -220,7 +220,7 @@ describe(verifyCommand, () => {
   });
 
   describe('inputs verdict', () => {
-    /** A manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis alone to speak. */
+    /** Arranges a manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis alone to speak. */
     function arrangeSingleKit(): void {
       mockReadManifest.mockReturnValue({
         version: 1,
@@ -371,7 +371,7 @@ describe(verifyCommand, () => {
   });
 
   describe('rebuild verdict', () => {
-    /** A manifest naming one fully recorded kit whose two hash verdicts both pass. */
+    /** Arranges a manifest naming one fully recorded kit whose two hash verdicts both pass. */
     function arrangeSingleKit(): void {
       mockReadManifest.mockReturnValue({
         version: 1,

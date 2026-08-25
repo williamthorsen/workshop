@@ -15,9 +15,10 @@ export class ManifestNotFoundError extends Error {
 }
 
 /**
- * Read and validate a manifest file from disk.
+ * Returns a manifest file read from disk and validated.
  *
- * Throws `ManifestNotFoundError` for missing files, or a plain `Error` for invalid JSON / schema failures.
+ * Throws `ManifestNotFoundError` for a missing file, or a plain `Error` for invalid JSON or a schema
+ * failure.
  */
 export function readManifest(manifestPath: string): RdyManifest {
   let raw: string;

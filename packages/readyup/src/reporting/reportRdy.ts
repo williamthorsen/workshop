@@ -41,10 +41,7 @@ export interface ReportRdyOptions {
  * A failed check contributes its claim plus a reason block; every other status contributes one line.
  * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
  * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree, and it
- * closes the block: the last line a reader meets before the blank parting one block from the next.
- *
- * Reports whether the tree rendered anything, so a caller placing the block in a sequence can decide
- * whether a report that is nothing but its count line has earned its place there.
+ * closes the block: the last line a reader meets before the blank separating one block from the next.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): RenderedReport {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -154,7 +151,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
     name: result.name,
     depth: result.depth,
     durationMs: result.durationMs,
-    // A failed check's detail is its reason, which the block beneath carries.
+    // A failed check's detail is its reason, which the block beneath renders.
     ...(!isFailed && result.detail !== null && { detail: result.detail }),
     // Only a failure names findings, so only a failure gives the reader a pragma to write.
     ...(isFailed && result.id !== null && { checkId: result.id }),
@@ -169,7 +166,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
 /**
  * Returns a failed result's reasons in reading order: its detail, its error, then its fix.
  *
- * Each is present only when the result carries it, so a result carrying none yields an empty list.
+ * Each is present only when the result has it, so a result with none yields an empty list.
  */
 function collectReasons(result: FailedResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
@@ -179,7 +176,7 @@ function collectReasons(result: FailedResult, includeFix: boolean): string[] {
   return reasons;
 }
 
-/** Returns each failed result's fix paired with the name and severity of the check carrying it. */
+/** Returns each failed result's fix paired with the name and severity of its check. */
 function collectFixes(results: RdyResult[]): AttributedFix[] {
   return results.flatMap((result) =>
     result.status === 'failed' && result.fix !== null

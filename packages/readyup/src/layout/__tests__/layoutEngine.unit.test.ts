@@ -216,7 +216,7 @@ describe('formatBreadcrumb', () => {
     expect(engine.formatBreadcrumb([{ role: 'checklist', text: 'repo' }], 'kit')).toBe('\u{2501}\u{2501} 📋 repo');
   });
 
-  // The spacing is the only segment boundary a glyphless style offers, and segment texts carry slashes
+  // The spacing is the only segment boundary a glyphless style offers, and segment texts contain slashes
   // of their own, so a bare separator would leave nothing to read the breadcrumb by.
   it('keeps the separator spaced where a role has no glyph', () => {
     const plain = createLayoutEngine(plainFormatter);
@@ -364,7 +364,7 @@ describe('formatSummaryTable', () => {
     expect(lines).toHaveLength(6);
   });
 
-  // The run's writer parts one block from the next, so a table carrying its own blanks would double the gap.
+  // The run's writer separates one block from the next, so a table with its own blanks would double the gap.
   it('carries no blank line of its own', () => {
     expect(engine.formatSummaryTable(input)).not.toContain('');
   });

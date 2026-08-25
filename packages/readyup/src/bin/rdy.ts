@@ -15,8 +15,8 @@ try {
   // `readyup`/`readyup/*` imports in compiled kits are routed through this hook to
   // the runner's own readyup installation, sidestepping filesystem walk-up from
   // the kit's location. The hook sits one directory up from this file in both
-  // layouts — `src/readyupResolverHook.ts` under tsx, `dist/esm/readyupResolverHook.js`
-  // in the compiled build — so `resolveHookSpecifier` derives the extension from this
+  // layouts -- `src/readyupResolverHook.ts` under tsx, `dist/esm/readyupResolverHook.js`
+  // in the compiled build -- so `resolveHookSpecifier` derives the extension from this
   // runner's own URL rather than hardcoding one. (nmr-compile rewrites specifiers only
   // in import/export/`import()` positions, never a `module.register()` argument, so the
   // extension cannot be deferred to the build.) Wrapping this call in the runner's error

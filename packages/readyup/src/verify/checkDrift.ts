@@ -12,11 +12,11 @@ export type DriftStatus =
   | { kind: 'unverified' };
 
 /**
- * Determine whether a kit's on-disk compiled file matches the manifest's recorded `targetHash`.
+ * Returns whether a kit's on-disk compiled file matches the manifest's recorded `targetHash`.
  *
- * Returns `unverified` when the manifest entry has no hash (predates the feature or was written
- * with `--skip-manifest`), `missing` when the compiled file doesn't exist, `drift` when the hashes
- * differ, and `ok` when they match.
+ * `unverified` where the manifest entry has no hash, which means it predates the feature or was
+ * written with `--skip-manifest`; `missing` where the compiled file does not exist; `drift` where the
+ * hashes differ; and `ok` where they match.
  */
 export function checkDrift(kit: RdyManifestKit, manifestDir: string): DriftStatus {
   if (kit.targetHash === undefined || kit.path === undefined) {

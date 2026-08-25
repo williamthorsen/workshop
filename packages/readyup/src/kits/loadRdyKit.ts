@@ -11,7 +11,7 @@ import { resolveKitExports } from './resolveKitExports.ts';
 import type { RdyKit } from './types.ts';
 import { validateKit } from './validateKit.ts';
 
-/** The extension a kit's counterpart carries, keyed by the extension that was requested. */
+/** The extension a kit's counterpart takes, keyed by the extension that was requested. */
 const SIBLING_EXTENSIONS: Record<string, string> = { '.js': '.ts', '.ts': '.js' };
 
 /** Result of loading a rdy kit: the validated kit plus the compile-time readyup version, if embedded. */
@@ -61,7 +61,7 @@ export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
 }
 
 /**
- * Compose the error message for a kit path that does not exist.
+ * Returns the error message for a kit path that does not exist.
  *
  * Each branch names the remedy that applies to the state actually found on disk: a source
  * awaiting compilation, a compiled kit requested as source, a project that was never
@@ -93,7 +93,7 @@ function diagnoseMissingKit(resolvedPath: string): string {
   return `Kit "${name}" not found at ${toDisplayPath(resolvedPath)}. ${availability}`;
 }
 
-/** List the kit names beside a missing kit, treating an unreadable directory as holding none. */
+/** Returns the kit names beside a missing kit, treating an unreadable directory as holding none. */
 function listAvailableKits(dir: string, extension: string): string[] {
   try {
     return enumerateKits({ dir, extension });
@@ -102,7 +102,7 @@ function listAvailableKits(dir: string, extension: string): string[] {
   }
 }
 
-/** Narrow `__readyupVersion` from an imported module namespace to a string, or undefined. */
+/** Narrows `__readyupVersion` in an imported module namespace to a string, or undefined. */
 function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string | undefined {
   const value = moduleRecord['__readyupVersion'];
   return typeof value === 'string' ? value : undefined;

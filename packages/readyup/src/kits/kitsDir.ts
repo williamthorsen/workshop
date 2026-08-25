@@ -11,7 +11,7 @@ export const READYUP_DIR = '.readyup';
  */
 export const KITS_DIR = `${READYUP_DIR}/kits`;
 
-/** Resolve the home directory the `global` kit source is rooted at, across platforms. */
+/** Returns the home directory the `global` kit source is rooted at, on any platform. */
 export function resolveHomeDir(): string {
   return process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
 }

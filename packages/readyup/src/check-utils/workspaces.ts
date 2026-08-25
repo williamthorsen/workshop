@@ -120,7 +120,7 @@ function resolveWorkspacePatterns(
     if (patterns !== null) {
       return { patterns, source: 'pnpm-workspace.yaml' };
     }
-    // `packages` key absent — fall through to npm/single detection.
+    // `packages` key absent -- fall through to npm/single detection.
   }
 
   const npmPatterns = extractNpmWorkspacePatterns(rootPackageJson['workspaces']);
@@ -159,7 +159,7 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
 function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePatternSource): string[] {
   if (patterns.length === 0) return [];
 
-  // Check for negation patterns up front — the pnpm reader already rejects these in YAML,
+  // Check for negation patterns up front -- the pnpm reader already rejects these in YAML,
   // but npm `workspaces` entries come through untouched.
   for (const pattern of patterns) {
     if (pattern.startsWith('!')) {

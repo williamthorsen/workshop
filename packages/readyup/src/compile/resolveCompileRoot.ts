@@ -13,8 +13,8 @@ const PACKAGE_MANIFEST = 'package.json';
  * reproducible from any directory, and it keeps a bundle's paths naming the kit's place in the package
  * that ships it.
  *
- * Answers with a real path. esbuild reports the paths it resolved modules to, and a compile resolves
- * the metafile's keys against this directory, so an answer reached through a symlink would record a
+ * The path is real. esbuild reports the paths it resolved modules to, and a compile resolves
+ * the metafile's keys against this directory, so a path reached through a symlink would record a
  * closure whose paths no reader of it can match.
  */
 export function resolveCompileRoot(inputPath: string): string {
@@ -31,7 +31,7 @@ export function resolveCompileRoot(inputPath: string): string {
 /**
  * Returns a directory's real path, or the directory itself where it cannot be read.
  *
- * A source that does not exist has no real directory to answer with, and is left to fail where the
+ * A source that does not exist has no real directory to resolve to, and is left to fail where the
  * bundler reports it rather than as an `ENOENT` raised on the way there.
  */
 function toRealPath(directory: string): string {

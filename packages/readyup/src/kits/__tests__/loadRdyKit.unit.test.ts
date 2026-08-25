@@ -300,7 +300,7 @@ describe(loadRdyKit, () => {
   });
 });
 
-/** Build the `withFileTypes` entries `readdirSync` returns for a set of regular files. */
+/** Returns the `withFileTypes` entries `readdirSync` yields for a set of regular files. */
 function buildDirents(...names: string[]): Array<{ name: string; isFile: () => boolean }> {
   return names.map((name) => ({ name, isFile: () => true }));
 }

@@ -44,7 +44,7 @@ describe(resolvePackageRoot, () => {
 
     beforeAll(() => {
       // Resolve the real path up front: macOS reports `/var/...` for a temp dir that is really `/private/var/...`,
-      // and the walk answers with real paths.
+      // and the walk yields real paths.
       fixtureRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'resolve-package-root-')));
       nestedDir = path.join(fixtureRoot, 'packages', 'nested');
       mkdirSync(nestedDir, { recursive: true });
@@ -53,7 +53,7 @@ describe(resolvePackageRoot, () => {
       mkdirSync(installed, { recursive: true });
       writeFileSync(path.join(installed, 'package.json'), '{"name":"@acme/kitpkg","version":"1.0.0"}\n');
 
-      // A directory that occupies the name but carries no manifest, which is not a package.
+      // A directory that occupies the name but has no manifest, which is not a package.
       mkdirSync(path.join(fixtureRoot, 'node_modules', 'readyup-fixture-manifestless'), { recursive: true });
     });
 

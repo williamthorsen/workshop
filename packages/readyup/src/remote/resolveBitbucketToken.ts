@@ -1,9 +1,9 @@
 /**
- * Resolve a Bitbucket token from ambient sources for authenticating private repo fetches.
+ * Returns a Bitbucket token from ambient sources, for authenticating a private repo fetch, or
+ * `undefined` where none is set.
  *
- * Checks the `BITBUCKET_TOKEN` env var only — there is no widely-deployed Bitbucket CLI
- * with a stable `auth token` equivalent (Atlassian's `acli` is Jira/Confluence-centric).
- * Returns `undefined` when the env var is unset or empty.
+ * The `BITBUCKET_TOKEN` env var is the only source: no Bitbucket CLI is widely deployed with a stable
+ * `auth token` equivalent, Atlassian's `acli` being Jira- and Confluence-centric.
  */
 export function resolveBitbucketToken(): string | undefined {
   const envToken = process.env['BITBUCKET_TOKEN'];

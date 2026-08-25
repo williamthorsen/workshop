@@ -8,7 +8,7 @@ import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts
 import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveWorkspaceRoot } from './resolveWorkspaceRoot.ts';
 
-/** A kit published by an installed package, carrying the provenance its output is labelled with. */
+/** A kit published by an installed package, with the provenance its output is labelled with. */
 export interface PackageKit {
   packageName: string;
   version: string | undefined;

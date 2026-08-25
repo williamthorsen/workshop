@@ -73,10 +73,11 @@ describe('verifyCommand wiring', () => {
 
   describe('source staleness', () => {
     /**
-     * Write a matching source/output pair and a manifest recording both hashes.
+     * Writes a matching source/output pair and a manifest recording both hashes, returning the
+     * source path.
      *
-     * Returns the source path so a test can edit it, which is the whole scenario: a kit whose
-     * TypeScript moved on while the compiled bundle it was built from stayed put.
+     * Editing that source is the whole scenario: a kit whose TypeScript moved on while the compiled
+     * bundle it was built from stayed put.
      */
     function writeCompiledPair(): string {
       const compiled = Buffer.from('export default { checklists: [] };\n');
@@ -264,7 +265,7 @@ describe('verifyCommand wiring', () => {
   });
 
   describe('--json', () => {
-    /** Write a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
+    /** Writes a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
     function writeMixedManifest(): void {
       const clean = Buffer.from('export default { checks: [] };\n');
       writeFileSync(path.join(tempDir, 'clean.js'), clean);

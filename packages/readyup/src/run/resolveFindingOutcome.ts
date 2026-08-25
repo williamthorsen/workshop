@@ -8,7 +8,7 @@ import { suppressesFinding } from './suppressesFinding.ts';
  *
  * The denominator counts every surviving site, reported or not, so the checks of one run share a denominator
  * the reader can compare across them, and a suppressed site leaves both halves of it. `adoptedCount` is the
- * numerator; omitted, the outcome carries no progress at all.
+ * numerator; omitted, the outcome has no progress at all.
  *
  * A ledger, where one is passed, is told which sites the check's pragmas suppressed, and the paths it declared
  * in `scanned`. A sweep read through `readTrackedSources` reports itself, so what arrives here is the reading a
@@ -45,7 +45,7 @@ function describeFinding(finding: OutcomeFinding): string {
 /**
  * Drops the findings a source suppressed with an `rdy-ignore` pragma naming this check or naming no check.
  *
- * Each path is parted into lines once, so a file holding ten findings costs one read and one split between
+ * Each path is split into lines once, so a file holding ten findings costs one read and one split between
  * them. A path holding no readable text suppresses nothing.
  */
 function excludeSuppressed(

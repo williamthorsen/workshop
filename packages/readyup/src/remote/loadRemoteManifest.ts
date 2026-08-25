@@ -18,12 +18,12 @@ export interface LoadRemoteManifestOptions {
 }
 
 /**
- * Fetch, parse, and schema-validate a manifest from a URL.
+ * Fetches a manifest from a URL and returns it parsed and schema-validated.
  *
- * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
- * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
- * Throws `RemoteManifestNotFoundError` for 404 and HTML soft-404 responses, `RemoteFetchError` for
- * other non-2xx responses, and a plain `Error` for malformed JSON and schema-invalid bodies.
+ * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so
+ * `Authorization` and anything else, such as a corporate proxy or telemetry header, arrive already
+ * formatted. Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError`
+ * for any other non-2xx response, and a plain `Error` for malformed JSON or a schema-invalid body.
  */
 export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManifestOptions): Promise<RdyManifest> {
   const response = await fetch(url, { headers });

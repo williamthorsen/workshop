@@ -3,7 +3,7 @@ import path from 'node:path';
 import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 
 // This package keeps a config of its own, against the general rule that packages inherit the root one. The rule
-// targets configs that merely restate the shared config; this one carries package-scoped settings that have no
+// targets configs that merely restate the shared config; this one holds package-scoped settings that have no
 // root-level expression, since a `project` override at the root would apply to every package.
 //
 // Pinning the style keeps rendering deterministic: left to detection, output would follow whether the runner attached
@@ -11,7 +11,7 @@ import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 // plain output passes `--style plain`, which outranks this.
 //
 // Restoring a stubbed environment variable is the runner's job rather than a suite's. `unstubEnvs` clears every stub
-// before each test, so a suite that stubs one carries no hook to undo it.
+// before each test, so a suite that stubs one has no hook to undo it.
 //
 // The aliases let a test import this package's own kits, which reach readyup by package name the way a consumer's kit
 // does, without a prior build standing between the test and the source. Longest specifier first: an alias on `readyup`

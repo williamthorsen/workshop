@@ -87,7 +87,7 @@ export const minimalReportPayload = {
 };
 
 /**
- * A report carrying an advisory this readyup does not know about.
+ * A report with an advisory this readyup does not know about.
  *
  * Stands in for a payload from a later version: the open warning-code set is what keeps a consumer
  * pinned to `report.v1.json` validating it rather than rejecting it.

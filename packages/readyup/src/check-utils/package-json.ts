@@ -10,17 +10,17 @@ const PNPM_WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** Leading range operators and the `v` prefix, stripped before a version is parsed from the start of a specifier. */
 const RANGE_PREFIX = /^[\s^~=<>v]+/;
 
-/** Read and parse the root package.json. Return undefined if it doesn't exist or isn't an object. */
+/** Returns the parsed root package.json, or undefined where it does not exist or is not an object. */
 export function readPackageJson(): Record<string, unknown> | undefined {
   return readJsonFile('package.json');
 }
 
-/** Check whether package.json has a field, optionally with a specific value. */
+/** Reports whether package.json has a field, optionally holding a specific value. */
 export function hasPackageJsonField(field: string, expectedValue?: string): boolean {
   return hasJsonField('package.json', field, expectedValue);
 }
 
-/** Check whether a dev dependency is present in package.json. */
+/** Reports whether package.json declares a dev dependency. */
 export function hasDevDependency(name: string): boolean {
   const pkg = readJsonFile('package.json');
   if (pkg === undefined) return false;
@@ -72,7 +72,7 @@ function extractVersion(specifier: string): string | undefined {
   // `compareVersions` pads a short version against the floor.
   const fromStart = /^\d+(?:\.\d+)*/.exec(specifier.replace(RANGE_PREFIX, ''))?.[0];
   if (fromStart !== undefined) return fromStart;
-  // A specifier carrying its version elsewhere, such as the `npm:` alias protocol, still yields a three-segment match.
+  // A specifier with its version elsewhere, such as the `npm:` alias protocol, still yields a three-segment match.
   return /\d+\.\d+\.\d+/.exec(specifier)?.[0];
 }
 

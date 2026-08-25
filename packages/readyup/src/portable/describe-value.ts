@@ -2,10 +2,9 @@
 const MAX_PREVIEW_LENGTH = 40;
 
 /**
- * Name the runtime type of a value.
+ * Names the runtime type of a value.
  *
- * Distinguishes `null` and arrays from plain objects, which `typeof` alone collapses together. Used
- * in diagnostics that tell an author what they wrote where a specific type was expected.
+ * Distinguishes `null` and arrays from plain objects, which `typeof` alone collapses together.
  */
 export function describeType(value: unknown): string {
   if (value === null) return 'null';
@@ -14,7 +13,7 @@ export function describeType(value: unknown): string {
 }
 
 /**
- * Render a short, readable preview of a value for a diagnostic message.
+ * Returns a short, readable preview of a value for a diagnostic message.
  *
  * Strings keep their quotes, so `"1"` stays distinguishable from `1`. Anything long is truncated:
  * the preview is there to identify what was written, and the author has the source. A value with no
@@ -22,7 +21,7 @@ export function describeType(value: unknown): string {
  * could tell a reader anyway.
  */
 export function previewValue(value: unknown): string {
-  // The types `JSON.stringify` answers with `undefined` or a throw rather than a rendering.
+  // The types for which `JSON.stringify` yields `undefined` or throws rather than rendering.
   if (value === undefined) return 'undefined';
   if (typeof value === 'function') return 'function';
   if (typeof value === 'symbol') return value.toString();
@@ -39,7 +38,7 @@ export function previewValue(value: unknown): string {
 }
 
 /**
- * Name a value by its type and its content, for a diagnostic that has to convey both.
+ * Names a value by its type and its content, for a diagnostic that has to convey both.
  *
  * The two collapse into one when the preview already names the type, so a value of `undefined`
  * reads as `undefined` rather than `undefined undefined`.

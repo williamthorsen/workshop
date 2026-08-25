@@ -25,13 +25,13 @@ const FunctionSchema = z.custom<(...args: never[]) => unknown>((value) => typeof
   error: (issue) => `expected a function, got ${describeType(issue.input)}`,
 });
 
-/** Schema for the name every check and checklist must carry. */
+/** Schema for the name every check and checklist must have. */
 const NameSchema = z.string('expected a non-empty string').min(1, 'expected a non-empty string');
 
 /**
  * Schema for a single check, recursing into its dependent checks through a getter.
  *
- * `looseObject` lets unknown keys through: a kit authored against a later readyup, or carrying an
+ * `looseObject` lets unknown keys through: a kit authored against a later readyup, or with an
  * annotation this version knows nothing about, is not thereby broken.
  *
  * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
@@ -74,7 +74,7 @@ const ChecklistShapeSchema = z.looseObject({
 });
 
 /**
- * A checklist carrying exactly one of `checks` and `groups`.
+ * A checklist with exactly one of `checks` and `groups`.
  *
  * The two clauses test different things, and each has to. `isFlatChecklist` discriminates on key
  * presence, so the exclusivity clause does too: a checklist whose `checks` is present but explicitly
@@ -99,7 +99,7 @@ const RdyKitSchema = z.looseObject({
 });
 
 /**
- * Validate that a raw value conforms to the RdyKit shape, checks included.
+ * Validates that a raw value conforms to the RdyKit shape, checks included.
  *
  * Every check is validated wherever it appears, so a typo'd severity or a non-function `check`
  * fails at load rather than silently changing what the run reports. jiti and esbuild type-check
@@ -115,7 +115,7 @@ export function assertIsRdyKit(raw: unknown, source?: string): asserts raw is Rd
   throw new Error(formatValidationError(result.error, source));
 }
 
-/** Compose a heading plus one sentence per issue from a failed kit parse. */
+/** Returns a heading plus one sentence per issue from a failed kit parse. */
 function formatValidationError(error: ZodError, source: string | undefined): string {
   const heading = source === undefined ? 'Invalid kit:' : `Invalid kit at ${source}:`;
   const lines = error.issues.map((issue) => `  ${formatIssuePath(issue.path)}: ${issue.message}`);
@@ -144,7 +144,7 @@ function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
  *
  * A getter is deferred to the failure that renders it, so validation must not read one. Hiding it
  * behind a copy that has no `fix` at all is what defers it; a data property passes through untouched.
- * The copy carries descriptors rather than values, so no other accessor on the check is invoked by
+ * The copy holds descriptors rather than values, so no other accessor on the check is invoked by
  * building it.
  */
 function hideAccessorFix(value: unknown): unknown {

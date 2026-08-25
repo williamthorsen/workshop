@@ -12,13 +12,13 @@ export type SourceStatus =
   | { kind: 'unverified' };
 
 /**
- * Determine whether a kit's on-disk TypeScript source still matches the `sourceHash` the manifest
+ * Returns whether a kit's on-disk TypeScript source still matches the `sourceHash` the manifest
  * recorded when the kit was compiled.
  *
- * Orthogonal to the target verdict: a kit can be stale at the source and drifted at the target at
- * the same time, and neither verdict implies the other. Returns `unverified` when the entry records
- * no source or no hash (it predates the feature, or was written with `--skip-manifest`), `missing`
- * when the recorded source is gone, `stale` when the hashes differ, and `ok` when they match.
+ * `unverified` where the entry records no source or no hash, which means it predates the feature or
+ * was written with `--skip-manifest`; `missing` where the recorded source is gone; `stale` where the
+ * hashes differ; and `ok` where they match. This is orthogonal to the target verdict: a kit can be
+ * stale at the source and drifted at the target at once, and neither verdict implies the other.
  */
 export function checkSourceDrift(kit: RdyManifestKit, manifestDir: string): SourceStatus {
   if (kit.sourceHash === undefined || kit.source === undefined) {

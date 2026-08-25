@@ -16,7 +16,7 @@ import { pickJsonPlugin } from '../pickJsonPlugin.ts';
 
 type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
 
-/** Minimal `PluginBuild` stub; only `onLoad` is exercised by these tests. */
+/** Returns a minimal `PluginBuild` stub, which exercises `onLoad` alone. */
 function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
   return {
     initialOptions: {},
@@ -30,7 +30,7 @@ function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
   };
 }
 
-/** Capture the onLoad callback registered by the plugin, reading through a real recorder. */
+/** Returns the onLoad callback the plugin registered, read back through a real recorder. */
 function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnLoadCallback {
   let captured: OnLoadCallback | undefined;
   const plugin = pickJsonPlugin(recorder);
@@ -45,7 +45,7 @@ function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnL
   return captured;
 }
 
-/** Invoke the captured onLoad for a source path and return its synchronous result. */
+/** Returns the synchronous result of invoking the captured onLoad for a source path. */
 function runOnLoad(onLoad: OnLoadCallback, path: string): esbuild.OnLoadResult | null | undefined {
   const result = onLoad({ path, namespace: 'file', suffix: '', pluginData: undefined, with: {} });
   if (result instanceof Promise) {

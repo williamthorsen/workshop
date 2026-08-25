@@ -12,7 +12,7 @@ export default defineRdyKit({
           check: () => {
             // Reference `discoverWorkspaces` (a value, not just a type) so esbuild
             // cannot dead-code-eliminate the externalized `readyup` import. We
-            // verify the binding is a function rather than invoking it — calling
+            // verify the binding is a function rather than invoking it -- calling
             // `discoverWorkspaces()` reads from `process.cwd()`, which couples
             // the resolution signal to the subprocess's filesystem state. The
             // sentinel on stdout signals successful module resolution alone.

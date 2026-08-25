@@ -13,7 +13,7 @@ export interface WriteResult {
   error?: string;
 }
 
-/** Strip trailing whitespace from each line and from EOF. */
+/** Returns `content` with trailing whitespace stripped from each line and from the end of the file. */
 function normalizeTrailingWhitespace(content: string): string {
   return content
     .split('\n')
@@ -23,12 +23,12 @@ function normalizeTrailingWhitespace(content: string): string {
 }
 
 /**
- * Write a file with existence and content checks.
+ * Writes a file, reporting what the write did to what was already there.
  *
- * Creates parent directories as needed. Compares content using whitespace-normalized comparison
- * to determine whether an existing file is up to date. In dry-run mode, returns the outcome
- * that would happen without performing writes. Filesystem errors are caught and returned as
- * `{ outcome: 'failed' }` rather than thrown.
+ * Parent directories are created as needed, and an existing file counts as up to date when its
+ * content matches once trailing whitespace is normalized. A dry run reports the outcome a real one
+ * would produce and writes nothing. A filesystem error is returned as `{ outcome: 'failed' }` rather
+ * than thrown.
  */
 export function writeFileWithCheck(
   filePath: string,

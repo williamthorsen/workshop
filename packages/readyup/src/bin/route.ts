@@ -31,18 +31,17 @@ import { hasJsonFlag } from './hasJsonFlag.ts';
 /** Command names a mistyped bare word is matched against, including the implicit `run`. */
 export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
-/** Extensions a kit file can carry, in the order `run` would resolve them. */
+/** Extensions a kit file can take, in the order `run` would resolve them. */
 const KIT_EXTENSIONS = ['.js', '.ts'];
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
 /**
- * Routes CLI arguments to the appropriate subcommand.
+ * Routes CLI arguments to the appropriate subcommand, returning the exit code it produced.
  *
- * Returns a numeric exit code. Every failure that prevents the invocation from completing
- * is rendered here — as prose on stderr, or as the JSON error envelope on stdout when
- * `--json` is in argv — so no command carries its own error-reporting path.
+ * Every failure that prevents the invocation from completing is rendered here -- as prose on stderr, or as the JSON
+ * error envelope on stdout when `--json` is in argv -- so no command needs an error-reporting path of its own.
  */
 export async function routeCommand(args: string[]): Promise<number> {
   const json = hasJsonFlag(args);
@@ -140,7 +139,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
 
   const parsed = parseRunArgs(flags);
 
-  // Skip config when an external source flag is active — external modes don't use config values.
+  // Skip config when an external source flag is active -- external modes don't use config values.
   // `--packages` is not one of them: the config is where the packages it runs are named.
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
@@ -207,7 +206,7 @@ function handleInit(flags: string[]): number {
 }
 
 /**
- * Returns `argv` without a leading `--style` and the value it carries.
+ * Returns `argv` without a leading `--style` and the value beside it.
  *
  * Command selection reads the first argument, so a style named ahead of the command would otherwise be
  * taken for a kit name. `routeCommand` has already read the value, so nothing downstream needs the

@@ -12,7 +12,7 @@ const SRC_ROOT = join(thisFileDir, '..');
 const PACKAGE_JSON_PATH = join(thisFileDir, '..', '..', 'package.json');
 
 /**
- * Files in `src/` that intentionally carry top-level side effects (CLI entry points, etc.).
+ * Files in `src/` that intentionally have top-level side effects, such as CLI entry points.
  * Each entry is a src-relative POSIX path. The corresponding compiled output MUST appear in
  * package.json's `sideEffects` array so bundlers don't tree-shake it.
  */

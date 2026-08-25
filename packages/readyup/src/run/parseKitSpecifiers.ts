@@ -5,16 +5,16 @@ export interface KitSpecifier {
 }
 
 /**
- * Parse positional arguments in `kit[:checklist,...]` format into structured specifiers.
+ * Returns positional arguments in `kit[:checklist,...]` format as structured specifiers.
  *
- * Splits each positional on the first `:` to separate kit name from comma-separated
- * checklist/suite names. Kit names may contain `/` (e.g., `shared/deploy`).
+ * Each positional splits on its first `:`, separating the kit name from the comma-separated
+ * checklist and suite names. A kit name may itself contain `/`, as `shared/deploy` does.
  */
 export function parseKitSpecifiers(positionals: string[]): KitSpecifier[] {
   return positionals.map(parseOneSpecifier);
 }
 
-/** Parse a single `kit[:checklist,...]` string into a `KitSpecifier`. */
+/** Returns a single `kit[:checklist,...]` string as a `KitSpecifier`. */
 function parseOneSpecifier(arg: string): KitSpecifier {
   const colonIndex = arg.indexOf(':');
   if (colonIndex === -1) {

@@ -34,7 +34,7 @@ describe(assertIsRdyKit, () => {
       );
     });
 
-    // `isFlatChecklist` discriminates on key presence, so a checklist carrying either key explicitly
+    // `isFlatChecklist` discriminates on key presence, so a checklist with either key explicitly
     // set to `undefined` is classified by that key whatever its value, and the collection the runner
     // then iterates is not there.
     it.each([

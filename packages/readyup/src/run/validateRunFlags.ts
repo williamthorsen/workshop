@@ -63,7 +63,7 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
 
 // region | Helpers
 
-/** Names the source flags this invocation carries, alphabetically, as the exclusivity error lists them. */
+/** Names the source flags present in this invocation, alphabetically, as the exclusivity error lists them. */
 function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
@@ -78,7 +78,7 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
  *
  * The flag names checklists within one kit, so it needs exactly one kit and no competing per-kit
  * filter. `--file` and `--url` each name their one kit implicitly; a bare invocation names the
- * default kit. Conflicting selections error rather than merging: an invocation carrying both is a
+ * default kit. Conflicting selections error rather than merging: an invocation giving both is a
  * bug in whatever generated it, and no merge rule for "run `deploy:build`, filtered to `test`" is
  * obviously right.
  */

@@ -8,7 +8,7 @@ import type { JsonPathSpec } from './extractJsonPaths.ts';
  * neither type means two different things about its own `path`.
  *
  * A `module` record's hash is over the file's contents. An `inline` record's is over the projection that was
- * substituted into the bundle, which is why it alone carries the specifier that produced it.
+ * substituted into the bundle, which is why it alone records the specifier that produced it.
  */
 export type CompiledInput =
   { hash: string; kind: 'inline'; path: string; paths: JsonPathSpec } | { hash: string; kind: 'module'; path: string };

@@ -12,7 +12,7 @@ import { listCommand } from '../listCommand.ts';
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the
  * filesystem enumerator. The unit tests cover each mode's branches; this locks in the wiring the
- * manifest-less fallback depends on — that `list --from` looks where `run --from` loads.
+ * manifest-less fallback depends on -- that `list --from` looks where `run --from` loads.
  */
 describe('listCommand wiring', () => {
   let tempDir: string;
@@ -30,7 +30,7 @@ describe('listCommand wiring', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  /** Create a kit directory holding compiled kits, with no manifest beside them. */
+  /** Creates a kit directory holding compiled kits, with no manifest beside them. */
   function writeKitsDir(dirName: string, kitNames: string[]): string {
     const dir = path.join(tempDir, dirName);
     mkdirSync(dir, { recursive: true });

@@ -41,10 +41,11 @@ export function findPnpmCatalogVersion(
 }
 
 /**
- * Read the `packages` block-sequence from a `pnpm-workspace.yaml` file.
- * Returns the list of pattern strings, or `null` when the `packages` key is absent.
- * Throws on YAML features outside the supported subset (anchors, flow sequences,
- * tags, negation patterns, etc.) with a pathful, line-pointing error.
+ * Returns the pattern strings in a `pnpm-workspace.yaml` file's `packages` block-sequence, or `null`
+ * when the `packages` key is absent.
+ *
+ * Throws a pathful, line-pointing error on any YAML construct outside the block-sequence subset it
+ * reads, anchors, flow sequences, tags, and negation patterns among them.
  */
 export function readPnpmWorkspacePackages(absolutePath: string): string[] | null {
   const content = readFileSync(absolutePath, 'utf8');
@@ -67,7 +68,7 @@ export function readPnpmWorkspacePackages(absolutePath: string): string[] | null
 
 // region | Helpers
 
-/** Reject whole-file features (multi-document streams, anchors/aliases/tags appearing anywhere). */
+/** Rejects whole-file features (multi-document streams, anchors/aliases/tags appearing anywhere). */
 function rejectGlobalUnsupportedFeatures(absolutePath: string, lines: string[]): void {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
@@ -143,8 +144,8 @@ function collectBlockEntries(lines: string[], keyLineIndex: number): { index: nu
 
 /**
  * Splits a `key: value` mapping line into its parts, or returns undefined when the line is not one or
- * carries a value this reader cannot follow. The key may be quoted, as a scoped package name in a
- * catalog is; the value keeps any `:` it carries, so a `workspace:*` entry survives.
+ * has a value this reader cannot follow. The key may be quoted, as a scoped package name in a
+ * catalog is; the value keeps any `:` it contains, so a `workspace:*` entry survives.
  */
 function parseMappingEntry(text: string): { key: string; value: string } | undefined {
   const match = /^(?:('[^']*')|("[^"]*")|([^:#]+?))\s*:(.*)$/.exec(text.trim());
@@ -158,7 +159,7 @@ function parseMappingEntry(text: string): { key: string; value: string } | undef
   return { key: stripQuotes(rawKey), value: stripQuotes(rawValue) };
 }
 
-/** Return the trimmed value after a `key:` on the same line, or null if there's no inline value. */
+/** Returns the trimmed value after a `key:` on the same line, or null where there is no inline value. */
 function extractInlineValue(line: string): string | null {
   const colonIndex = line.indexOf(':');
   if (colonIndex === -1) return null;
@@ -168,7 +169,7 @@ function extractInlineValue(line: string): string | null {
   return trimmed;
 }
 
-/** Collect block-sequence items below the `packages:` line. */
+/** Returns the block-sequence items below the `packages:` line. */
 function collectSequenceItems(absolutePath: string, lines: string[], packagesLineIndex: number): string[] {
   const items: string[] = [];
   let sequenceIndent: number | null = null;
@@ -216,7 +217,7 @@ function collectSequenceItems(absolutePath: string, lines: string[], packagesLin
   return items;
 }
 
-/** Reject per-item unsupported YAML features before quote-stripping. */
+/** Rejects per-item unsupported YAML features before quote-stripping. */
 function rejectItemLevelUnsupportedFeatures(
   absolutePath: string,
   lineIndex: number,
@@ -259,10 +260,7 @@ function stripQuotes(value: string): string {
   return value;
 }
 
-/**
- * Strip an inline `#` comment, respecting single- and double-quoted scalars so a `#`
- * inside quotes is treated as part of the value.
- */
+/** Strips an inline `#` comment, keeping a `#` inside a single- or double-quoted scalar as part of the value. */
 function stripInlineComment(text: string): string {
   let inSingle = false;
   let inDouble = false;
@@ -284,20 +282,20 @@ function stripInlineComment(text: string): string {
   return text;
 }
 
-/** True if a line is blank or a full-line comment. */
+/** Reports whether a line is blank or a full-line comment. */
 function isBlankOrComment(line: string): boolean {
   const trimmed = line.trim();
   return trimmed === '' || trimmed.startsWith('#');
 }
 
-/** Count leading space characters on a line. */
+/** Returns the number of leading space characters on a line. */
 function countLeadingSpaces(line: string): number {
   let count = 0;
   while (count < line.length && line[count] === ' ') count += 1;
   return count;
 }
 
-/** Throw a pathful, line-pointing error for an unsupported YAML feature. */
+/** Throws a pathful, line-pointing error for an unsupported YAML feature. */
 function throwUnsupported(absolutePath: string, lineIndex: number, line: string, feature: string): never {
   const lineNumber = lineIndex + 1;
   const message =
@@ -308,7 +306,7 @@ function throwUnsupported(absolutePath: string, lineIndex: number, line: string,
   throw new Error(message);
 }
 
-/** Throw a pathful, line-pointing error for a negation pattern. */
+/** Throws a pathful, line-pointing error for a negation pattern. */
 function throwNegationUnsupported(absolutePath: string, lineIndex: number, line: string, pattern: string): never {
   const lineNumber = lineIndex + 1;
   const message =

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { RdyKit } from '../types.ts';
 import { validateKit } from '../validateKit.ts';
 
-/** Build a minimal valid kit for testing. */
+/** Returns a minimal valid kit. */
 function makeKit(overrides?: Partial<RdyKit>): RdyKit {
   return {
     checklists: [

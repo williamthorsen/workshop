@@ -3,7 +3,7 @@
  *
  * The code answers "can I retry this invocation?": 1 means the invocation was well-formed
  * and the repo has problems to fix; 2 means rdy could not complete the invocation at all.
- * `rdy list` and `rdy init` produce only 0 and 2 — neither can find problems to report.
+ * `rdy list` and `rdy init` produce only 0 and 2 -- neither can find problems to report.
  */
 
 /** Ran to completion and found no problems. */
