@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChezmoiContext } from '../runChezmoi.ts';
-import * as runChezmoiModule from '../runChezmoi.ts';
+import type { ChezmoiContext } from '../run-chezmoi.ts';
+import * as runChezmoiModule from '../run-chezmoi.ts';
 import { assertChezmoiVersion, MIN_CHEZMOI_VERSION, parseVersion } from '../version.ts';
 
 const context: ChezmoiContext = { source: '/src', target: '/dst' };

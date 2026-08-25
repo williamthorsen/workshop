@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import * as runChezmoiModule from '../../chezmoi/runChezmoi.ts';
+import * as runChezmoiModule from '../../chezmoi/run-chezmoi.ts';
 
 /** Stubs `chezmoi status` to return the given stdout with a zero exit code. */
 export function mockCapturedStatus(stdout: string): void {

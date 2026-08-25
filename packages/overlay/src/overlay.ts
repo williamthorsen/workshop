@@ -1,7 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import type { ChezmoiContext } from './chezmoi/runChezmoi.ts';
+import type { ChezmoiContext } from './chezmoi/run-chezmoi.ts';
 import { assertChezmoiVersion } from './chezmoi/version.ts';
 import { runCreate } from './modes/create.ts';
 import { runForce } from './modes/force.ts';

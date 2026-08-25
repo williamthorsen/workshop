@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import * as runChezmoiModule from '../../chezmoi/runChezmoi.ts';
+import * as runChezmoiModule from '../../chezmoi/run-chezmoi.ts';
 import { runCreate } from '../create.ts';
 import { mockCapturedStatus, mockStreamedRun } from '../test-utils/chezmoi-mocks.ts';
 

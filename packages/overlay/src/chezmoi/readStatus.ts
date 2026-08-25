@@ -1,5 +1,5 @@
-import type { ChezmoiContext } from './runChezmoi.ts';
-import { runChezmoiCaptured } from './runChezmoi.ts';
+import type { ChezmoiContext } from './run-chezmoi.ts';
+import { runChezmoiCaptured } from './run-chezmoi.ts';
 
 /**
  * Read `chezmoi status`, treating a non-zero exit as a hard error.

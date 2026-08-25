@@ -10,7 +10,7 @@ vi.mock('node:child_process', () => ({
   spawn: spawnMock,
 }));
 
-const { runChezmoiCaptured, runChezmoiStreamed } = await import('../runChezmoi.ts');
+const { runChezmoiCaptured, runChezmoiStreamed } = await import('../run-chezmoi.ts');
 
 const context = { source: '/abs/source', target: '/abs/target' };
 
