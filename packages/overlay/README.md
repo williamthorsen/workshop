@@ -62,7 +62,7 @@ Each mode is computed from the **second (apply-side) column** of `chezmoi status
 
 ### `--verify`
 
-Read-only. Drift is any `A`/`M`/`D` row; overlay exits `1` if any exists, `0` otherwise. Pending `R` scripts are reported as "N script(s) would run" but never make verify fail. A differing file also draws the `--force` fix-it hint, phrased in the conditional because nothing was written.
+Read-only. Drift is any `A`/`M`/`D` row; overlay exits `1` if any exists, `0` otherwise. In the structured result every action tally is `0`, `conflicts` included, and the drift is counted in `pending`. Pending `R` scripts are reported as "N script(s) would run" but never make verify fail. A differing file also draws the `--force` fix-it hint, phrased in the conditional because nothing was written.
 
 `--verify` confirms **file convergence, not script execution.** It cannot know what a `run_` script would do to the target, so it reports the script as pending and moves on.
 

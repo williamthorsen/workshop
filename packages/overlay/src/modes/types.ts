@@ -20,8 +20,9 @@ export interface ScriptsSummary {
 }
 
 /**
- * Mode-relative tallies. Under `verify` they count pending drift; under `create`/`force` they count what was actually
- * done. `conflicts` is always `0` under `force`.
+ * Mode-relative tallies. Under `create`/`force` they count what was actually done, and `conflicts` is always `0`
+ * under `force`. Under `verify` every action tally is `0` and all drift lands in `pending`; a differing file is
+ * visible only as an entry whose outcome is `conflict`.
  */
 export interface OverlayCounts {
   created: number;
