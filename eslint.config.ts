@@ -1,6 +1,14 @@
 import baseConfig, { createConfig, patterns } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
 
+// The broad blocks below match on the base config's `patterns`, the same constants it applies its own blocks to.
+// Sharing the constants is what keeps a block here from overriding a base block it does not fully cover, which
+// would drop this file's additions for the extensions it missed. The breadth is the shared config's position on
+// which extensions a project may hold, and says nothing about which ones this repo contains.
+//
+// The layout guards further down are the opposite case and name `.ts` alone: a guard naming an extension asserts
+// that a file of that kind belongs at the path it guards.
+
 /**
  * Every `no-restricted-syntax` entry that applies to TypeScript repo-wide.
  *
