@@ -7,3 +7,4 @@ export type {
   ScriptsSummary,
 } from './modes/types.ts';
 export { overlay, type OverlayOptions } from './overlay.ts';
+export { describeOutcome } from './reporting/describeOutcome.ts';

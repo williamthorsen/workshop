@@ -62,7 +62,7 @@ Each mode is computed from the **second (apply-side) column** of `chezmoi status
 
 ### `--verify`
 
-Read-only. Drift is any `A`/`M`/`D` row; overlay exits `1` if any exists, `0` otherwise. Pending `R` scripts are reported as "N script(s) would run" but never make verify fail.
+Read-only. Drift is any `A`/`M`/`D` row; overlay exits `1` if any exists, `0` otherwise. In the structured result every action tally is `0`, `conflicts` included, and the drift is counted in `pending`. Pending `R` scripts are reported as "N script(s) would run" but never make verify fail. A differing file also draws the `--force` fix-it hint, phrased in the conditional because nothing was written.
 
 `--verify` confirms **file convergence, not script execution.** It cannot know what a `run_` script would do to the target, so it reports the script as pending and moves on.
 
@@ -106,3 +106,25 @@ const result = await overlay({ source: './scaffold', target: './repo', mode: 'cr
 ```
 
 `overlay(options)` returns a structured `OverlayResult` — never printed text — so other TypeScript code can compose with it.
+
+### Rendering an entry outcome
+
+Each entry's `outcome` is **mode-relative**: under `--verify` an addition is still tagged `created`, meaning "would be created". `describeOutcome` maps an outcome and a mode to a human label, so a consumer composing its own report reuses overlay's wording rather than re-deriving the preview-vs-applied mapping:
+
+```ts
+import { describeOutcome, overlay } from '@williamthorsen/overlay';
+
+const result = await overlay({ source: './scaffold', target: './repo' });
+for (const entry of result.entries) {
+  console.log(`${describeOutcome(entry.outcome, result.mode)} ${entry.path}`);
+}
+```
+
+| Outcome    | `verify`          | `create` / `force` |
+| ---------- | ----------------- | ------------------ |
+| `created`  | `would create`    | `created`          |
+| `deleted`  | `would delete`    | `deleted`          |
+| `forced`   | `would overwrite` | `overwritten`      |
+| `conflict` | `would conflict`  | `conflict`         |
+
+Labels name the entry's resulting state rather than an action overlay took, and every `verify` label carries a `would ` prefix, so a consumer can tell a read-only run from an applied one. `--verify` never produces a `forced` entry (a differing file reads as `conflict`), so that cell exists only for totality. Labels are unpadded; aligning a column is the caller's job.
