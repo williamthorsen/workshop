@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process';
 
 /**
- * Resolve a GitHub token from ambient sources for authenticating private repo fetches.
+ * Returns a GitHub token from ambient sources, for authenticating a private repo fetch, or
+ * `undefined` where neither source produces one.
  *
- * Checks `GITHUB_TOKEN` env var first, then falls back to `gh auth token`.
- * Returns `undefined` when neither source produces a token.
+ * The `GITHUB_TOKEN` env var is read first, then `gh auth token`.
  */
 export function resolveGitHubToken(): string | undefined {
   const envToken = process.env['GITHUB_TOKEN'];

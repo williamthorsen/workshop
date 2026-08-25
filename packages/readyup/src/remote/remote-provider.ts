@@ -36,7 +36,7 @@ export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): 
  *
  * Matching the host rather than the `--from` scheme covers a `--url` aimed at a provider by
  * construction, so the two flags need no separate code path. The comparison is against the parsed
- * host, so a third-party URL carrying a provider's name elsewhere in it does not match.
+ * host, so a third-party URL with a provider's name elsewhere in it does not match.
  */
 export function resolveRemoteProvider(url: string): RemoteProvider | undefined {
   const host = parseHost(url);

@@ -98,12 +98,12 @@ export interface PercentProgress {
 /** Union of progress representations, discriminated by `type`. */
 export type Progress = FractionProgress | PercentProgress;
 
-/** Return true if a progress value uses the percentage representation. */
+/** Reports whether a progress value uses the percentage representation. */
 export function isPercentProgress(progress: Progress): progress is PercentProgress {
   return progress.type === 'percent';
 }
 
-/** Structured outcome from a check, carrying diagnostic data alongside the pass/fail status. */
+/** Structured outcome from a check, with diagnostic data alongside the pass/fail status. */
 export interface CheckOutcome {
   /** Whether the check's claim holds. */
   ok: boolean;
@@ -259,7 +259,7 @@ export interface FailedResult extends RdyResultBase {
 
   /**
    * Remediation message, resolved from the check definition as the failure is built. Only a failure
-   * carries one, because a `fix` may be an accessor and nothing else renders it.
+   * has one, because a `fix` may be an accessor and nothing else renders it.
    */
   fix: string | null;
 }
@@ -322,7 +322,7 @@ export interface RdyReport {
  * `worstSeverity` is the highest-severity failed bucket (`null` when nothing failed).
  *
  * This is the runner's internal tally, shared by the human report and the combined-summary table.
- * The JSON layer nests the six numeric fields under `counts` and carries `worstSeverity` beside
+ * The JSON layer nests the six numeric fields under `counts` and places `worstSeverity` beside
  * them; see `schemas/common.ts`, which is the source of truth for the wire shape.
  */
 export interface SummaryCounts {
@@ -366,7 +366,7 @@ export interface RdyStagedChecklist {
   fixLocation?: FixLocation | undefined;
 }
 
-/** Distinguish a flat checklist from a staged checklist by the presence of `checks`. */
+/** Reports whether a checklist is flat rather than staged, which the presence of `checks` decides. */
 export function isFlatChecklist(checklist: RdyChecklist | RdyStagedChecklist): checklist is RdyChecklist {
   return 'checks' in checklist;
 }

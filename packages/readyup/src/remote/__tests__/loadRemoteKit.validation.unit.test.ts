@@ -7,7 +7,7 @@ vi.stubGlobal('fetch', mockFetch);
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
 
-/** Build a minimal mock Response with the given body and status. */
+/** Returns a minimal mock Response with the given body and status. */
 function mockResponse(
   body: string,
   init?: { status?: number; statusText?: string },

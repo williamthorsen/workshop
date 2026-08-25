@@ -7,7 +7,7 @@ import { isRecord } from '../../portable/isRecord.ts';
 import { listRunnerExports, listRunnerSpecifiers } from '../listRunnerExports.ts';
 
 /**
- * The specifiers this package's `exports` map serves as JavaScript.
+ * Returns the specifiers this package's `exports` map serves as JavaScript.
  *
  * A JSON subpath is excluded: it has no named exports for the table to account for.
  */

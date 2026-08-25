@@ -5,7 +5,7 @@ import { RemoteManifestNotFoundError } from './loadRemoteManifest.ts';
 import type { RemoteProvider } from './remote-provider.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
-/** Statuses a provider answers with when a credential would have made the difference. */
+/** Statuses a provider returns when a credential would have made the difference. */
 const CREDENTIAL_STATUSES = new Set([401, 403, 404]);
 
 /**
@@ -50,7 +50,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
     return build(error.message, { cause: error, hint: resolveHint(context, error.status) });
   }
 
-  // A transport failure carries no status to reason about and no URL of its own, so it is never
+  // A transport failure has no status to reason about and no URL of its own, so it is never
   // hinted and needs the URL supplied.
   const message = describeError(error);
   const detail = message.includes(context.url) ? message : `Failed to reach ${context.url}: ${message}`;

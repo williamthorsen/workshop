@@ -17,13 +17,14 @@ export interface LoadRemoteKitOptions {
 }
 
 /**
- * Fetch a remote `.js` kit bundle, evaluate it, and return a validated RdyKit.
+ * Fetches a remote `.js` kit bundle, evaluates it, and returns the validated RdyKit alongside its
+ * embedded `__readyupVersion`, which is undefined for a kit compiled before that field existed or
+ * fetched from a third-party source that omits it.
  *
- * Sends the supplied headers (if any) with the request; the helper has no auth-scheme knowledge —
- * callers pre-format `Authorization` and any other headers (e.g., proxy/telemetry in corporate environments).
- * Writes the fetched content to a temp file for dynamic import, then cleans up. Returns the kit
- * alongside the embedded `__readyupVersion` (undefined for kits compiled before that field existed
- * or fetched from third-party sources that omit it). Throws `RemoteFetchError` for a non-2xx
+ * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so
+ * `Authorization` and anything else, such as a corporate proxy or telemetry header, arrive already
+ * formatted. The fetched content is written to a temp file for dynamic import and cleaned up
+ * afterwards. Throws `RemoteFetchError` for a non-2xx
  * response, and a plain `Error` for a body that is not an evaluable kit.
  */
 export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {

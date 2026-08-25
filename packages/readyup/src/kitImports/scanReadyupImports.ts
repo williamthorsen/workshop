@@ -12,7 +12,7 @@ export interface ReadyupImport {
  * Lists the `readyup` and `readyup/*` imports a compiled bundle makes.
  *
  * Scans the whole bundle rather than its head: esbuild emits each inlined module's external imports inside that
- * module's section, so a kit's later sections carry imports of their own.
+ * module's section, so a kit's later sections have imports of their own.
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
  * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
@@ -53,7 +53,7 @@ const BRACED_GROUP_PATTERN = /\{([\s\S]*)\}/;
 /**
  * The imported name leading one entry of a braced clause, ahead of any `as` rename.
  *
- * Both spellings the grammar allows for the name: a bare identifier, and the quoted form that carries a module-export
+ * Both spellings the grammar allows for the name: a bare identifier, and the quoted form that holds a module-export
  * name an identifier cannot express.
  */
 const LEADING_NAME_PATTERN = /^\s*(?:"([^"]*)"|'([^']*)'|([A-Za-z_$][\w$]*))/;
