@@ -1,5 +1,14 @@
-import baseConfig, { createConfig } from '@williamthorsen/eslint-config-typescript';
+import baseConfig, { createConfig, patterns } from '@williamthorsen/eslint-config-typescript';
 import { defineConfig } from 'eslint/config';
+
+// The broad blocks below match on the base config's `patterns`, the same constants it applies its own blocks to,
+// save `no-restricted-syntax`, whose narrower scope `RESTRICTED_SYNTAX` states. Sharing the constants is what
+// keeps a block here from overriding a base block it does not fully cover, which would drop this file's additions
+// for the extensions it missed. The breadth is the shared config's position on which extensions a project may
+// hold, and says nothing about which ones this repo contains.
+//
+// The layout guards further down are the opposite case and name `.ts` alone: a guard naming an extension asserts
+// that a file of that kind belongs at the path it guards.
 
 /**
  * Every `no-restricted-syntax` entry that applies to TypeScript repo-wide.
@@ -7,6 +16,10 @@ import { defineConfig } from 'eslint/config';
  * Shared because ESLint substitutes a rule's options across config objects instead of merging them, so an object
  * that sets this rule for a narrower glob discards every entry it does not restate. The three statement bans come
  * from the shared config and would be lost the same way.
+ *
+ * The scope is TypeScript alone, though the base block this overrides also covers `patterns.javaScriptFiles`. The
+ * `describeError` entry answers the `unknown` type TypeScript gives a catch binding, which JavaScript has no
+ * equivalent of, so a `.js` file receives the three statement bans without it.
  */
 const RESTRICTED_SYNTAX = [
   'DebuggerStatement',
@@ -28,22 +41,14 @@ const config = defineConfig([
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
   },
   {
-    // `prefer-simple-condition-first` reorders conditions to save a property read, at the cost of the reading
-    // order the surrounding error messages use. Its own diagnostic concedes it cannot verify the reorder is safe.
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
-    rules: {
-      'unicorn/prefer-simple-condition-first': 'off',
-    },
-  },
-  {
-    files: ['**/*.js', '**/*.cjs', '**/*.mjs', '**/*.ts', '**/*.tsx'],
+    files: patterns.codeFiles,
     rules: {
       'n/no-missing-import': 'off',
       'n/no-unpublished-import': 'off',
     },
   },
   {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    files: patterns.typeScriptFiles,
     languageOptions: {
       parserOptions: {
         // Anchor the project service (enabled by the base config) at the repo root.
@@ -69,7 +74,7 @@ const config = defineConfig([
     },
   },
   defineConfig({
-    files: ['**/*.test.ts', '**/*.test.tsx'],
+    files: patterns.testFiles,
     extends: [await createConfig.vitest()],
   }),
   {
@@ -127,7 +132,7 @@ const config = defineConfig([
   },
   {
     // Config files legitimately mutate and compose configuration objects at module top level.
-    files: ['**/*.config.{cjs,js,mjs,ts}', '**/config/**'],
+    files: [...patterns.codeExtensions.map((extensions) => `**/*.config.${extensions}`), '**/config/**'],
     rules: {
       'unicorn/no-top-level-side-effects': 'off',
     },
@@ -139,7 +144,7 @@ const config = defineConfig([
     },
   },
   {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', '**/*.md/*.ts'],
+    files: patterns.typeScriptFiles,
     rules: {
       'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX],
     },
