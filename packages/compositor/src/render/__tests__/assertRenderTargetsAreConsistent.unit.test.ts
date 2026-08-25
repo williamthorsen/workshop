@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ARTIFACT_ID_PLACEHOLDER } from '../../deployment/contribution-markers.ts';
 import { INLAY_NAME_PLACEHOLDER } from '../../inlays/inlay-markers.ts';
 import type { KindDescriptor } from '../../schemas/descriptor-schemas.ts';
+import type { OwnedItemsDeclaration } from '../../schemas/owned-items-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { RenderTargetViolation } from '../assertRenderTargetsAreConsistent.ts';
 import { assertRenderTargetsAreConsistent, RenderTargetConsistencyError } from '../assertRenderTargetsAreConsistent.ts';
@@ -35,6 +36,14 @@ const inlayStage = {
   reshape: { pattern: String.raw`^(#{1,5})(?=\s)`, replacement: '$1#' },
 } as const;
 
+const settingsHooks: OwnedItemsDeclaration = {
+  format: 'json',
+  collection: ['hooks'],
+  sentinel: { path: ['source'], value: 'codeassembly' },
+  host: 'settings.json',
+  items: [{ command: 'relay --on=stop' }],
+};
+
 const claude: RenderTarget = {
   id: 'claude',
   label: 'Claude',
@@ -47,6 +56,176 @@ const claude: RenderTarget = {
 describe(assertRenderTargetsAreConsistent, () => {
   it('accepts a consistent set of declarations', () => {
     expect(() => assertRenderTargetsAreConsistent([claude], kinds)).not.toThrow();
+  });
+
+  describe('owned-items declarations', () => {
+    it('accepts a target owning items in a host nothing else writes', () => {
+      const owning: RenderTarget = { ...claude, ownedItems: [settingsHooks] };
+
+      expect(() => assertRenderTargetsAreConsistent([owning], kinds)).not.toThrow();
+    });
+
+    it('accepts two declarations owning different collections of one host', () => {
+      const owning: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
+          { ...settingsHooks, collection: ['hooks', 'Stop'] },
+        ],
+      };
+
+      expect(() => assertRenderTargetsAreConsistent([owning], kinds)).not.toThrow();
+    });
+
+    it('reports two declarations contending for one collection of one host', async () => {
+      const contested: RenderTarget = { ...claude, ownedItems: [settingsHooks, settingsHooks] };
+
+      await expect(violationsOf([contested])).resolves.toStrictEqual([
+        { path: 'targets[0].ownedItems', message: 'owns "settings.json at hooks" more than once' },
+      ]);
+    });
+
+    it('reports two declarations disagreeing about their host\u{2019}s format, a file having one', async () => {
+      const mixed: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'SessionStart'] },
+          { ...settingsHooks, collection: ['hooks', 'Stop'], format: 'yaml' },
+        ],
+      };
+
+      await expect(violationsOf([mixed])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[1].format',
+          message: 'is "yaml" where the same host is declared "json", and a file has one',
+        },
+      ]);
+    });
+
+    it.each([
+      ['an outer collection declared first', ['hooks'], ['hooks', 'Stop']],
+      ['an inner collection declared first', ['hooks', 'Stop'], ['hooks']],
+    ])('reports %s nesting inside the other on one host', async (_label, first, second) => {
+      const nested: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: [...first] },
+          { ...settingsHooks, collection: [...second] },
+        ],
+      };
+
+      await expect(violationsOf([nested])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[1].collection',
+          message: `nests with "${first.join('.')}" on the same host, and no key descends through a collection`,
+        },
+      ]);
+    });
+
+    it('accepts declarations whose collections branch apart at unequal depths, none holding another', () => {
+      const branching: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          { ...settingsHooks, collection: ['hooks', 'Stop'] },
+          { ...settingsHooks, collection: ['hooks', 'SessionStart', 'shell'] },
+          { ...settingsHooks, collection: ['agents'] },
+        ],
+      };
+
+      expect(() => assertRenderTargetsAreConsistent([branching], kinds)).not.toThrow();
+    });
+
+    it('reports an item a stampable sentinel could not be written into', async () => {
+      const scalar: RenderTarget = { ...claude, ownedItems: [{ ...settingsHooks, items: ['relay --on=stop'] }] };
+
+      await expect(violationsOf([scalar])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].items[0]',
+          message: 'Cannot mark an item with a sentinel at "source": the item is not a mapping.',
+        },
+      ]);
+    });
+
+    it('reports an item whose sentinel path runs through a value that is not a mapping', async () => {
+      const blocked: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          {
+            ...settingsHooks,
+            sentinel: { path: ['meta', 'writtenBy'], value: 'codeassembly' },
+            items: [{ meta: 'vendor-tool' }],
+          },
+        ],
+      };
+
+      await expect(violationsOf([blocked])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].items[0]',
+          message: 'Cannot mark an item with a sentinel at "meta.writtenBy": "meta" is not a mapping.',
+        },
+      ]);
+    });
+
+    it('reports a host a region deployment already writes whole', async () => {
+      const contested: RenderTarget = {
+        ...claude,
+        deployments: [skillDeployment, ambientDeployment],
+        ownedItems: [{ ...settingsHooks, host: 'CLAUDE.md' }],
+      };
+
+      await expect(violationsOf([contested])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].host',
+          message: 'is also a region host, so two mechanisms would each compute the whole file',
+        },
+      ]);
+    });
+
+    it('reports a host standing where a tree layout needs a directory', async () => {
+      const contested: RenderTarget = { ...claude, ownedItems: [{ ...settingsHooks, host: 'skills' }] };
+
+      await expect(violationsOf([contested])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].host',
+          message: 'collides with the layout root "skills", which needs a directory where this host is a file',
+        },
+      ]);
+    });
+
+    it('reports an item the declaration could never find again, under a sentinel it cannot write', async () => {
+      const unmarkable: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          {
+            ...settingsHooks,
+            sentinel: { path: ['commands', '*'], value: '--sentinel codeassembly', match: 'contains' },
+            items: [{ commands: ['relay --on=stop'] }],
+          },
+        ],
+      };
+
+      await expect(violationsOf([unmarkable])).resolves.toStrictEqual([
+        {
+          path: 'targets[0].ownedItems[0].items[0]',
+          message: 'does not carry the sentinel, which this declaration cannot write, so it could never be found again',
+        },
+      ]);
+    });
+
+    it('accepts an item that already carries a sentinel the declaration cannot write', () => {
+      const marked: RenderTarget = {
+        ...claude,
+        ownedItems: [
+          {
+            ...settingsHooks,
+            sentinel: { path: ['commands', '*'], value: '--sentinel codeassembly', match: 'contains' },
+            items: [{ commands: ['relay --on=stop --sentinel codeassembly'] }],
+          },
+        ],
+      };
+
+      expect(() => assertRenderTargetsAreConsistent([marked], kinds)).not.toThrow();
+    });
   });
 
   it('reports a target that repeats a stage kind', async () => {

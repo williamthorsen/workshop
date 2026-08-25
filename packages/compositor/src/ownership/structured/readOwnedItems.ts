@@ -1,7 +1,7 @@
 import type { FileBlock } from '../../schemas/file-schemas.ts';
+import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import { openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
 import { carriesSentinel } from './sentinel.ts';
 
 /** The engine's items as plain data, or the refusal to read them. */

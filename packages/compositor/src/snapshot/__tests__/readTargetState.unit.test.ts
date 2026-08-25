@@ -2,6 +2,7 @@ import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
+import type { OwnedItemsDeclaration } from '../../schemas/owned-items-schemas.ts';
 import type { KindDeployment, RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { ClaimedFile, HostState } from '../readTargetState.ts';
 import { readTargetState } from '../readTargetState.ts';
@@ -25,6 +26,20 @@ const ambient: KindDeployment = {
   host: 'CLAUDE.md',
   markers: { open: '<!-- codeassembly -->', close: '<!-- /codeassembly -->' },
   contributionMarkers: { open: '<!-- {artifactId} -->', close: '<!-- /{artifactId} -->' },
+};
+
+const settingsHooks: OwnedItemsDeclaration = {
+  format: 'json',
+  collection: ['hooks'],
+  sentinel: { path: ['source'], value: 'codeassembly' },
+  host: 'settings.json',
+  items: [],
+};
+
+const configJson: KindDeployment = {
+  form: 'tree',
+  kindId: 'config',
+  layout: { form: 'file', root: '', extension: '.json' },
 };
 
 const hostContent = [
@@ -198,7 +213,50 @@ describe(readTargetState, () => {
   it('reads a target holding nothing as holding nothing', async () => {
     const state = await readState({ 'unrelated.txt': 'x' }, [skills, rulebooks]);
 
-    expect(state).toMatchObject({ targetId: 'claude', claimed: [], hosts: [] });
+    expect(state).toMatchObject({ targetId: 'claude', claimed: [], hosts: [], ownedHosts: [] });
+  });
+
+  describe('entries hosts', () => {
+    it('reads what a declared host holds now', async () => {
+      const content = '{\n  "hooks": []\n}\n';
+      const state = await readState({ 'settings.json': content }, [], [settingsHooks]);
+
+      expect(state.ownedHosts).toStrictEqual([
+        { path: 'settings.json', state: 'present', content, hash: expect.any(String) },
+      ]);
+    });
+
+    it('reads a host the target does not hold as absent', async () => {
+      const state = await readState({ 'unrelated.txt': 'x' }, [], [settingsHooks]);
+
+      expect(state.ownedHosts).toStrictEqual([{ path: 'settings.json', state: 'absent' }]);
+    });
+
+    it('reads one host once however many declarations own collections in it', async () => {
+      const state = await readState(
+        { 'settings.json': '{}\n' },
+        [],
+        [settingsHooks, { ...settingsHooks, collection: ['hooks', 'Stop'] }],
+      );
+
+      expect(state.ownedHosts.map(({ path }) => path)).toStrictEqual(['settings.json']);
+    });
+
+    it('does not claim a host that falls inside a tree layout root, so it is never offered for removal', async () => {
+      const files = { 'settings.json': '{}\n' };
+
+      await expect(readState(files, [configJson], [settingsHooks])).resolves.toMatchObject({ claimed: [] });
+      await expect(readState(files, [configJson])).resolves.toMatchObject({
+        claimed: [{ path: 'settings.json' }],
+      });
+    });
+
+    it('covers a host in the state digest, so a plan computed from it goes stale when it moves', async () => {
+      const before = await readState({ 'settings.json': '{}\n' }, [], [settingsHooks]);
+      const after = await readState({ 'settings.json': '{ "hooks": [] }\n' }, [], [settingsHooks]);
+
+      expect(after.digest).not.toBe(before.digest);
+    });
   });
 });
 
@@ -218,6 +276,7 @@ function presentHost(hosts: ReadonlyArray<HostState>): Extract<HostState, { stat
 function readState(
   files: Record<string, string>,
   deployments: ReadonlyArray<KindDeployment>,
+  ownedItems?: ReadonlyArray<OwnedItemsDeclaration>,
 ): ReturnType<typeof readTargetState> {
   const { dir: root } = disposeOnTestFinished(createTempTree(files, { prefix: 'compositor-target-' }));
   const target: RenderTarget = {
@@ -226,6 +285,7 @@ function readState(
     root,
     tokenMappings: [],
     deployments: [...deployments],
+    ...(ownedItems !== undefined && { ownedItems: [...ownedItems] }),
     stages: [],
   };
 

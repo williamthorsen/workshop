@@ -1,8 +1,8 @@
+import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 import type { OwnershipOutcome } from '../OwnershipOutcome.ts';
 import { type DocumentAccess, type ItemHandle, openDocument } from './document-access.ts';
 import { locateCollection } from './locateCollection.ts';
-import type { OwnedItemsSpec } from './OwnedItemsSpec.ts';
-import { carriesSentinel, stampSentinel } from './sentinel.ts';
+import { applySentinel, carriesSentinel } from './sentinel.ts';
 
 /**
  * Installs `items` as the engine's contribution to a structured host, leaving everything else in it alone.
@@ -12,8 +12,9 @@ import { carriesSentinel, stampSentinel } from './sentinel.ts';
  * four behaviours at once -- a re-run is a no-op, a drifted item is replaced in place, accidental duplicates collapse,
  * and foreign items keep their relative order.
  *
- * Each item is stamped with the sentinel before it is written, so nothing reaches the host that could not be found
- * again. A collection the host does not carry is created, unless there is nothing to put in it.
+ * Each item carries the sentinel before it is written, so nothing reaches the host that could not be found again.
+ * A sentinel the engine can write is stamped on; one it cannot is required of the item already, and an item
+ * lacking it is refused. A collection the host does not carry is created, unless there is nothing to put in it.
  *
  * Content that needs no change is returned untouched rather than re-serialized, which is what keeps a re-run
  * byte-identical: re-emitting a parsed document reproduces its comments but not necessarily every formatting choice.
@@ -34,7 +35,7 @@ export function ensureOwnedItems(
     return located;
   }
 
-  const desired = items.map((item) => document.toHandle(stampSentinel(item, spec.sentinel)));
+  const desired = items.map((item) => document.toHandle(applySentinel(item, spec.sentinel)));
 
   if ('absent' in located) {
     if (desired.length === 0) {

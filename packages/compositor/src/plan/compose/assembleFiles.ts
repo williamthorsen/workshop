@@ -10,6 +10,7 @@ import type { InlayBinding } from '../../selection/selectArtifacts.ts';
 import type { ClaimedArtifact, TargetState } from '../../snapshot/readTargetState.ts';
 import type { PlannableSnapshot } from './assertSnapshotFits.ts';
 import { blockAtCurrent, describeAmbiguousClaim } from './file-entries.ts';
+import { planOwnedItemsFiles } from './planOwnedItemsFiles.ts';
 import { planRegionFile } from './planRegionFile.ts';
 import { planTreeFiles } from './planTreeFiles.ts';
 import type { ContentVerdict, TargetPlanContext } from './TargetPlanContext.ts';
@@ -47,6 +48,9 @@ export interface FileAssembly {
  * Each target's inlays are filled once, above its deployments, so both planners read filled bodies. What the fill got
  * wrong is dropped here rather than carried: a plan reports a fault as a blocked destination, which the fill already
  * produces for every fault that leaves a body unwritable, and the rest are the validation report's to list.
+ *
+ * A target's owned-items declarations are planned after its deployments and join the same draft, so an entries host
+ * contending with a deployed path collapses into one blocked entry like any other collision.
  */
 export function assembleFiles(input: AssembleFilesInput): FileAssembly {
   const { artifacts, blobs, snapshot } = input;
@@ -86,6 +90,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
       assets: snapshot.assets,
       claimed: new Map(state.claimed.map((claimed) => [claimed.path, claimed])),
       hosts: new Map(state.hosts.map((host) => [host.kindId, host])),
+      ownedHosts: new Map(state.ownedHosts.map((host) => [host.path, host])),
       resolveDeployedName,
     };
 
@@ -98,6 +103,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
         appendTo(verdicts, artifactId, verdict);
       }
     }
+    drafted.push(...planOwnedItemsFiles(context, target.ownedItems ?? []));
 
     const planned = resolveCollisions(context, drafted);
     const removals = planRemovals(context, state, new Set(planned.map(({ path }) => path)), reached);

@@ -21,11 +21,15 @@ describe(buildFiles, () => {
     expect(aggregated.contributors.artifacts.every((contribution) => contribution.marker !== undefined)).toBe(true);
   });
 
+  it('names no contributor on an entries host, nothing artifact-shaped reaching one', () => {
+    expect(findFile('settings.json').contributors).toStrictEqual({ artifacts: [], partials: [] });
+  });
+
   it('owns individual entries within a structured config', () => {
     expect(findFile('settings.json').ownership).toStrictEqual({
       kind: 'entries',
-      sentinel: 'codeassembly',
       format: 'json',
+      collections: [{ path: ['hooks'], sentinel: { path: ['source'], value: 'codeassembly' } }],
     });
   });
 
@@ -70,12 +74,16 @@ function findFile(filePath: string): FileEntry {
   return file;
 }
 
-/** Reads the sentinel `file` declares for the entries it owns, failing the test when it is not entry-owned. */
+/** Reads the sentinel value `file` declares for the entries it owns, failing the test when it is not entry-owned. */
 function readEntriesSentinel(file: FileEntry): string {
   if (file.ownership.kind !== 'entries') {
     throw new Error(`The sample file "${file.path}" does not declare entry ownership.`);
   }
-  return file.ownership.sentinel;
+  const [owned] = file.ownership.collections;
+  if (owned === undefined) {
+    throw new Error(`The sample file "${file.path}" declares entry ownership over no collection.`);
+  }
+  return owned.sentinel.value;
 }
 
 /** Reads the body planned for `file`, failing the test when the store carries none. */

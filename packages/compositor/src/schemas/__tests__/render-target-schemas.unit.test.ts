@@ -38,6 +38,27 @@ describe('RenderTargetSchema', () => {
     expect(RenderTargetSchema.parse(target)).toStrictEqual(target);
   });
 
+  it('accepts a target owning items inside a structured host another tool also writes', () => {
+    const owning = {
+      ...target,
+      ownedItems: [
+        {
+          format: 'json',
+          collection: ['hooks'],
+          sentinel: { path: ['source'], value: 'codeassembly' },
+          host: 'settings.json',
+          items: [{ command: 'relay --on=stop' }],
+        },
+      ],
+    };
+
+    expect(RenderTargetSchema.parse(owning)).toStrictEqual(owning);
+  });
+
+  it('accepts a target declaring no owned items, which is every target that writes no structured host', () => {
+    expect(RenderTargetSchema.parse(target)).not.toHaveProperty('ownedItems');
+  });
+
   it('accepts a target running no stages, which renders every body verbatim', () => {
     const inert = { ...target, stages: [] };
 

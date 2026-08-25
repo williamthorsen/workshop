@@ -1,4 +1,5 @@
 import type { ResolveKind } from '../schemas/catalog-schemas.ts';
+import type { OwnedItemsDeclaration } from '../schemas/owned-items-schemas.ts';
 import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 
 /** Builds the target the flow tests deploy into: skills as a tree, rulebooks aggregated into one region host. */
@@ -85,6 +86,16 @@ export function buildOverlappingTargets(targetRoot: string): ReadonlyArray<Rende
 }
 
 /**
+ * Builds the target the entries tests deploy into, which is the flow target with one owned-items declaration over it.
+ *
+ * The host sits beside the flow target's region host, so one target exercises both ways a destination can be partly
+ * the engine's.
+ */
+export function buildOwningTarget(targetRoot: string): ReadonlyArray<RenderTarget> {
+  return [{ ...buildClaudeTarget(targetRoot), ownedItems: [SETTINGS_HOOKS] }];
+}
+
+/**
  * The kinds the flow tests are written against.
  *
  * Covers what composition has to tell apart: an aggregate producing no output, a kind laid out as a directory per
@@ -146,4 +157,13 @@ export const INLAY_MARKERS: MarkerPair = {
 export const REGION_MARKERS: MarkerPair = {
   open: '<!-- codeassembly -->',
   close: '<!-- /codeassembly -->',
+};
+
+/** The collection the entries tests own inside a structured host another tool also writes. */
+export const SETTINGS_HOOKS: OwnedItemsDeclaration = {
+  format: 'json',
+  collection: ['hooks'],
+  sentinel: { path: ['source'], value: 'codeassembly' },
+  host: 'settings.json',
+  items: [{ command: 'relay --on=stop' }],
 };

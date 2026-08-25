@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 
+import { OwnedItemsSentinelSchema } from './owned-items-schemas.ts';
 import { DiffStatusSchema, HashSchema, IdSchema } from './scalar-schemas.ts';
 
 /**
@@ -17,19 +18,35 @@ export const BlobSchema = z
   })
   .meta({ id: 'Blob' });
 
+/** One collection inside an entries-owned file, and the mark that finds the engine's items within it. */
+export const OwnedCollectionSchema = z
+  .object({
+    path: z.array(z.string()).min(1),
+    sentinel: OwnedItemsSentinelSchema,
+  })
+  .meta({ id: 'OwnedCollection' });
+
 /**
  * How much of a file the engine owns.
  *
  * `full` is a file the engine writes whole. `region` is a fenced block inside a file the engine does not otherwise own,
  * located by its marker pair. `entries` is ownership of individual items within a structured document, interleaved with
  * items other tools write, where no fence can delimit the boundary and a sentinel identifies each owned item.
+ *
+ * The entries form describes what produced the file, as a region's markers describe the span they delimit: `collections`
+ * carries every collection the engine owns items in, because one host may hold several, and each names the sentinel
+ * that tells the engine's items there from another tool's. `format` is the file's, so every collection in it shares one.
  */
 export const FileOwnershipSchema = z
   .discriminatedUnion('kind', [
     z.object({ kind: z.literal('full') }).meta({ id: 'FullOwnership' }),
     z.object({ kind: z.literal('region'), open: z.string(), close: z.string() }).meta({ id: 'RegionOwnership' }),
     z
-      .object({ kind: z.literal('entries'), sentinel: z.string(), format: z.enum(['json', 'yaml']) })
+      .object({
+        kind: z.literal('entries'),
+        format: z.enum(['json', 'yaml']),
+        collections: z.array(OwnedCollectionSchema).min(1),
+      })
       .meta({ id: 'EntriesOwnership' }),
   ])
   .meta({ id: 'FileOwnership' });
@@ -95,3 +112,4 @@ export type FileContributors = z.infer<typeof FileContributorsSchema>;
 export type FileEntry = z.infer<typeof FileEntrySchema>;
 export type FileOwnership = z.infer<typeof FileOwnershipSchema>;
 export type FileSide = z.infer<typeof FileSideSchema>;
+export type OwnedCollection = z.infer<typeof OwnedCollectionSchema>;

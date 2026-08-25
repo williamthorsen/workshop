@@ -14,6 +14,7 @@ import {
   buildCompositionSourceFiles,
   buildInlayingTarget,
   buildOverlappingTargets,
+  buildOwningTarget,
   COMPOSITION_KINDS,
   HOST_PATH,
   REGION_MARKERS,
@@ -34,6 +35,31 @@ describe(assembleFiles, () => {
       ['skills/review/SKILL.md', 'added'],
       ['skills/review/diagram.png', 'added'],
     ]);
+  });
+
+  it('plans an owned-items host beside the files the target\u{2019}s deployments write', async () => {
+    const { assembly } = await assemble({ buildTargets: buildOwningTarget });
+
+    expect(assembly.files.map(({ path, status }) => [path, status])).toStrictEqual([
+      ['CLAUDE.md', 'added'],
+      ['settings.json', 'added'],
+      ['skills/lint/SKILL.md', 'added'],
+      ['skills/review/SKILL.md', 'added'],
+      ['skills/review/diagram.png', 'added'],
+    ]);
+  });
+
+  it('plans an entries host the target already holds as changed, never sweeping it as removed', async () => {
+    const { assembly } = await assemble({
+      targetFiles: { 'settings.json': '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    }\n  ]\n}\n' },
+      buildTargets: buildOwningTarget,
+    });
+
+    expect(fileAt(assembly, 'settings.json')).toMatchObject({
+      status: 'changed',
+      ownership: { kind: 'entries', format: 'json' },
+      contributors: { artifacts: [], partials: [] },
+    });
   });
 
   it('carries an asset byte for byte, no target transforming what an artifact ships alongside', async () => {

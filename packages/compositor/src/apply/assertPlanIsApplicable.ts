@@ -10,14 +10,14 @@ import { UnapplicablePlanError } from './UnapplicablePlanError.ts';
  * Checking up front is the whole point: a refusal met part-way through the walk would leave a destination half
  * applied, some of its files written against a plan the rest of them cannot carry out.
  *
- * Four refusals. A plan carrying only part of its content names bodies no `blobs` table holds. A file whose target the
+ * Three refusals. A plan carrying only part of its content names bodies no `blobs` table holds. A file whose target the
  * plan does not carry has no root to resolve against. A path that is absolute or climbs out of the target names a
  * destination outside the tree the plan describes, and apply writes and deletes, so that one is the refusal whose
- * absence costs a file somebody else owns. And entries ownership -- individual items inside a structured document
- * another tool also writes -- would be written whole here, taking that tool's items with it.
+ * absence costs a file somebody else owns.
  *
- * The engine composes neither an escaping path nor entries ownership, so a plan carrying either came from elsewhere,
- * which is the case apply is built to be safe under: a consumer applies a payload it was handed.
+ * The engine composes no escaping path, so a plan carrying one came from elsewhere, which is the case apply is built
+ * to be safe under: a consumer applies a payload it was handed. Entries ownership is not among the refusals: an
+ * entries host is written whole exactly as a region host is, under the drift guard that protects every destination.
  *
  * Every refusal is collected, so one run reports all of them.
  */
@@ -43,12 +43,6 @@ export function assertPlanIsApplicable(plan: Plan): void {
       refusals.push({
         path: `files[${index}].path`,
         message: `is "${file.path}", which does not name a destination inside the target's root.`,
-      });
-    }
-    if (file.ownership.kind === 'entries') {
-      refusals.push({
-        path: `files[${index}].ownership`,
-        message: 'is entries ownership, which this engine writes no plan for and would clobber whole.',
       });
     }
     if (file.planned !== undefined && plan.blobs[file.planned.hash] === undefined) {
