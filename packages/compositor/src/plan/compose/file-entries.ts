@@ -55,7 +55,7 @@ export function describeAmbiguousClaim(claimed: ClaimedFile): string {
   return `${matched}, so which artifact deployed it is undecidable from shape.`;
 }
 
-/** Registers the body a destination holds now, or nothing where it holds none. */
+/** Registers the body a destination holds now, or undefined where it holds none. */
 export function readCurrentSide(blobs: BlobStore, claimed: ClaimedFile | undefined): FileSide | undefined {
   return claimed === undefined ? undefined : blobs.addEncoded(claimed.hash, claimed.body);
 }

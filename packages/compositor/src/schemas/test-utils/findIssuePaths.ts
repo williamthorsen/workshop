@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 
 /**
- * Collects the path of each validation issue `value` raises against `schema`, or nothing when it validates.
+ * Collects the path of each validation issue `value` raises against `schema`, or undefined when it validates.
  *
  * Asserting on paths pins a rejection to the field that caused it, so a test cannot pass because some unrelated part of
  * the fixture happened to be malformed.

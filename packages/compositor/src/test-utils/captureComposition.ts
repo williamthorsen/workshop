@@ -24,7 +24,7 @@ export interface CaptureCompositionOptions {
   readonly targetFiles?: Record<string, string | Uint8Array>;
   /** The `select` block the sole tier declares, defaulting to everything the source contains of each deployed kind. */
   readonly select?: unknown;
-  /** The `inlays` block the sole tier declares, defaulting to binding nothing. */
+  /** The `inlays` block the sole tier declares, defaulting to an empty block. */
   readonly inlays?: unknown;
   readonly buildTargets?: (targetRoot: string) => ReadonlyArray<RenderTarget>;
   readonly input?: Partial<CaptureSnapshotInput>;

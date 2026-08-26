@@ -25,8 +25,8 @@ export interface SourceArtifact {
  * Enumerates every artifact `source` contains, across every kind in `kinds`.
  *
  * Resolution ranks shadowed candidates across sources, so it needs the whole of what each source contains. A kind whose
- * root is absent from this source contributes nothing, because a source is free to contain only some of the kinds in
- * play; an unreadable root is a failure, so a permission problem cannot pass for an empty one and let a
+ * root is absent from this source contributes no artifact, because a source is free to contain only some of the kinds
+ * in play; an unreadable root is a failure, so a permission problem cannot pass for an empty one and let a
  * lower-precedence source win by default.
  *
  * Results run by kind, in the order `kinds` gives, then by slug.
@@ -53,7 +53,7 @@ async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Arra
 }
 
 /**
- * Reads one artifact at `name` under `rootDir`, or nothing when the entry is not one.
+ * Reads one artifact at `name` under `rootDir`, or undefined when the entry is not one.
  *
  * A `file` kind's entry must be a file with the declared extension. A `directory` kind's must be a directory whose
  * entry file exists and is itself a file, since a directory with the entry file's own name is not an artifact.

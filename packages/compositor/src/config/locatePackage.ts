@@ -54,7 +54,7 @@ function assertPackageName(name: string): void {
   }
 }
 
-/** Finds the installed directory of `name` with its parsed manifest, or nothing when no candidate has one. */
+/** Finds the installed directory of `name` with its parsed manifest, or undefined when no candidate has one. */
 async function findInstalledPackage(
   name: string,
   baseDir: string,

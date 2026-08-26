@@ -95,7 +95,7 @@ interface BlockingFault {
   readonly detail: string;
 }
 
-/** Builds one filled inlay's whole block, or nothing where the inlay has no filler to put in it. */
+/** Builds one filled inlay's whole block, or undefined where the inlay has no filler to put in it. */
 function buildBlock(context: FillContext, inlayName: string, fillers: ReadonlyArray<Filler>): string | undefined {
   if (fillers.length === 0) {
     return undefined;

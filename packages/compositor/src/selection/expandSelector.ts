@@ -3,7 +3,7 @@ import type { Selector } from '../schemas/selection-schemas.ts';
 import type { CatalogIndex } from './buildCatalogIndex.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from './SelectionDiagnostic.ts';
 
-/** Expands `selector` to the artifacts it names, appending a diagnostic and matching nothing when it names none. */
+/** Expands `selector` to the artifacts it names, or to an empty list with a diagnostic when it names none. */
 export function expandSelector(
   selector: Selector,
   kindId: KindId,

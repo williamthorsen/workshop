@@ -132,7 +132,7 @@ function describeDrift(file: FileEntry, held: Hash | undefined): string {
   return `The destination holds ${holds} where the plan recorded ${recorded}, so it moved after the plan was composed.`;
 }
 
-/** Hashes what a destination holds, or reports that it holds nothing. */
+/** Hashes what a destination holds, returning undefined where it holds none. */
 async function hashIfPresent(destination: string): Promise<Hash | undefined> {
   try {
     return hashBytes(await readFile(destination));

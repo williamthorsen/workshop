@@ -6,7 +6,7 @@ import { escapeForRegExp } from '../portable/escapeForRegExp.ts';
 export const SLUG_PLACEHOLDER = '{slug}';
 
 /**
- * Recovers the slug a deployed name was rendered from, or nothing where the template could not have produced it.
+ * Recovers the slug a deployed name was rendered from, or undefined where the template could not have produced it.
  *
  * This is what lets a scan over a destination tell a file the engine deployed from one somebody else put there, the
  * name being the whole of what a previously deployed file records about which artifact it came from.
