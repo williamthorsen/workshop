@@ -1,5 +1,54 @@
 [
   {
+    "version": "0.34.0",
+    "date": "2026-08-26",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Export a Workspace fixture builder and document how to test a kit (#425)",
+            "body": "Adds `readyup/testing`, a new entry point whose `makeWorkspace` builds a `Workspace` fixture from partial overrides and fills fields omitted by the caller.\n\nA \"Testing a kit\" section has been added to the README, covering both shapes that a kit test can take: a real directory tree for a check that calls `discoverWorkspaces` itself and the builder for a function that takes a `Workspace`.",
+            "hash": "8a05cd43b8fc6e4b403b7dcae5e4b2811b787042"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Remove readyup's last sub-barrel and enforce barrel placement (#406)",
+            "body": "Removes `readyup`'s last internal barrel file and adds a repo-wide test disallowing the use of a barrel file other than for a published entry point.",
+            "hash": "c41408799506ac0471265eb77ed9b0aaee7c2427"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Apply the comment standard across the readyup package (#410)",
+            "body": "Rewrites the comments throughout `packages/readyup` to align with repo conventions.",
+            "hash": "fe02090a15bc38b04a6cb2644cb5da8338ceac44"
+          },
+          {
+            "description": "Extend the plain-speech standard to readyup's markdown and test titles (#415)",
+            "body": "Applies the plain-speech standard to `packages/readyup`'s markdown, test titles, and non-test source prose. `carriesPragma` is renamed to `hasPragma` to match naming conventions. The `rdy` binary's missing-build message is corrected to name `nmr build` as the command to run.",
+            "hash": "77d205762b2fd87184490e7056134c288a89a024"
+          },
+          {
+            "description": "Name the value a description returns instead of calling it nothing (#420)",
+            "body": "Replaces the vague use of \"nothing\" in `readyup`'s doc descriptions and test titles with the value the code actually returns: `undefined`, an empty string, an empty list, or a property omitted from the returned object.",
+            "hash": "91cab524dd84fa9af2014d62d6e73fdaef737d2e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.33.0",
     "date": "2026-08-25",
     "sections": [

@@ -1,5 +1,55 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-08-26",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Expose a mode-aware outcome label for rendering OverlayResult previews (#405)",
+            "body": "Fixes an issue where an overlay run gave no sign whether it had previewed or applied. `overlay --verify` described drift in the same words an applied run used, so a read-only run read as though it had written the files, and a differing file came with no route to `--force`. Verify now reports what it would do, and offers the route.\n\nAdds `describeOutcome`, the same wording as a published export, so a consumer composing its own report from an `OverlayResult` draws the preview-versus-applied distinction rather than re-deriving it.",
+            "hash": "90b32f0431fcbed7eae799d5e7bea671b6ed67ad"
+          },
+          {
+            "description": "Rename ScriptsSummary.ran to ranCount (#419)",
+            "body": "Renames the `ran` field of `OverlayResult.scripts` to `ranCount` for clarity.\n\nMigration: Consumers reading `scripts.ran`, whether from `--json` output or from the `overlay()` return value, read `scripts.ranCount` instead.",
+            "breaking": true,
+            "hash": "d6aacd7c4f3ba2285c5f6c8fa8bf6be540f32c9e"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Rename buildEntries to entry-outcomes and cover it and pluralize directly (#409)",
+            "body": "Renames overlay's `buildEntries.ts` to `entry-outcomes.ts` to align with naming conventions. Adds tests for that file and for `pluralize.ts`.",
+            "hash": "7bf93e6a67b8e7305da3205e51fa8f7d80573587"
+          },
+          {
+            "description": "Conform overlay's names and doc descriptions to the repo conventions (#414)",
+            "body": "Renames `runChezmoi.ts` to `run-chezmoi.ts` and `pendingScripts` to `pendingScriptCount` to align with repo naming conventions. Also revises function descriptions to conform to house style.",
+            "hash": "771d30f7fb15f12a6c1f5f61bd8853f8215037c5"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Apply the comment and plain-speech standard across the overlay package (#417)",
+            "body": "Applies the comment and plain-speech standard to `packages/overlay`, including its README, source comments, and user-facing error messages.\n\nAlso corrects an error message in overlay's launcher, naming `nmr build` as the command to run when the build is missing.",
+            "hash": "f58ec172c5e35a2ef561db1aad433e731343760e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.6",
     "date": "2026-08-25",
     "sections": [

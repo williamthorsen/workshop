@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.0 — 2026-08-26
+
+### 🎉 Features
+
+- Plan and apply entries ownership from a target declaration (#404)
+
+  Adds entries ownership to the plan-and-apply flow. A `RenderTarget` declares the collections it owns inside another tool's structured config in a new `ownedItems` list beside `deployments`, composition plans one file per host carrying both sides and a status, and apply writes it under the same drift guard every other destination gets.
+
+  Separately, a sentinel now reaches a value nested inside an array and matches by containment as well as equality, so a host that buries its mark inside a command string is recognized rather than written beside.
+
+  Contract: `PLAN_SCHEMA_VERSION` goes to 6. `FileOwnership`'s entries variant carries the collection paths and structured sentinels that produced the file, in place of the bare sentinel string it carried before.
+
+### 📚 Documentation
+
+- Apply the plain-speech standard across the compositor package (#416)
+
+  Applies the plain-speech standard to documentation, comments, test titles, and diagnostic messages in `packages/compositor`.
+
+- Name the value compositor descriptions and titles call nothing (#424)
+
+  Replaces the vague use of "nothing" in Compositor's doc descriptions and test titles with the value the code actually returns: undefined, an empty string, an empty list, and so on.
+
 ## 0.4.0 — 2026-08-19
 
 ### 🎉 Features

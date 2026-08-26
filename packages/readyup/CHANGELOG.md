@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.34.0 — 2026-08-26
+
+### 🎉 Features
+
+- Export a Workspace fixture builder and document how to test a kit (#425)
+
+  Adds `readyup/testing`, a new entry point whose `makeWorkspace` builds a `Workspace` fixture from partial overrides and fills fields omitted by the caller.
+
+  A "Testing a kit" section has been added to the README, covering both shapes that a kit test can take: a real directory tree for a check that calls `discoverWorkspaces` itself and the builder for a function that takes a `Workspace`.
+
+### ♻️ Refactoring
+
+- Remove readyup's last sub-barrel and enforce barrel placement (#406)
+
+  Removes `readyup`'s last internal barrel file and adds a repo-wide test disallowing the use of a barrel file other than for a published entry point.
+
+### 📚 Documentation
+
+- Apply the comment standard across the readyup package (#410)
+
+  Rewrites the comments throughout `packages/readyup` to align with repo conventions.
+
+- Extend the plain-speech standard to readyup's markdown and test titles (#415)
+
+  Applies the plain-speech standard to `packages/readyup`'s markdown, test titles, and non-test source prose. `carriesPragma` is renamed to `hasPragma` to match naming conventions. The `rdy` binary's missing-build message is corrected to name `nmr build` as the command to run.
+
+- Name the value a description returns instead of calling it nothing (#420)
+
+  Replaces the vague use of "nothing" in `readyup`'s doc descriptions and test titles with the value the code actually returns: `undefined`, an empty string, an empty list, or a property omitted from the returned object.
+
 ## 0.33.0 — 2026-08-25
 
 ### 🎉 Features

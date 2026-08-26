@@ -1,5 +1,38 @@
 [
   {
+    "version": "0.5.0",
+    "date": "2026-08-26",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Plan and apply entries ownership from a target declaration (#404)",
+            "body": "Adds entries ownership to the plan-and-apply flow. A `RenderTarget` declares the collections it owns inside another tool's structured config in a new `ownedItems` list beside `deployments`, composition plans one file per host carrying both sides and a status, and apply writes it under the same drift guard every other destination gets.\n\nSeparately, a sentinel now reaches a value nested inside an array and matches by containment as well as equality, so a host that buries its mark inside a command string is recognized rather than written beside.\n\nContract: `PLAN_SCHEMA_VERSION` goes to 6. `FileOwnership`'s entries variant carries the collection paths and structured sentinels that produced the file, in place of the bare sentinel string it carried before.",
+            "hash": "fbf4d82ec5a437c5579e41c7932793c61fcbd612"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Apply the plain-speech standard across the compositor package (#416)",
+            "body": "Applies the plain-speech standard to documentation, comments, test titles, and diagnostic messages in `packages/compositor`.",
+            "hash": "85f529340ff4de5105a5b0ea2b7b39e74d9e6e5a"
+          },
+          {
+            "description": "Name the value compositor descriptions and titles call nothing (#424)",
+            "body": "Replaces the vague use of \"nothing\" in Compositor's doc descriptions and test titles with the value the code actually returns: undefined, an empty string, an empty list, and so on.",
+            "hash": "741b6729aab548d9d3ba0930f303c7d9816ae62e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-08-19",
     "sections": [

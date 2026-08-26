@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-08-26
+
+### 🎉 Features
+
+- Expose a mode-aware outcome label for rendering OverlayResult previews (#405)
+
+  Fixes an issue where an overlay run gave no sign whether it had previewed or applied. `overlay --verify` described drift in the same words an applied run used, so a read-only run read as though it had written the files, and a differing file came with no route to `--force`. Verify now reports what it would do, and offers the route.
+
+  Adds `describeOutcome`, the same wording as a published export, so a consumer composing its own report from an `OverlayResult` draws the preview-versus-applied distinction rather than re-deriving it.
+
+- 🚨 **Breaking:** Rename ScriptsSummary.ran to ranCount (#419)
+
+  Renames the `ran` field of `OverlayResult.scripts` to `ranCount` for clarity.
+
+  Migration: Consumers reading `scripts.ran`, whether from `--json` output or from the `overlay()` return value, read `scripts.ranCount` instead.
+
+### ♻️ Refactoring
+
+- Rename buildEntries to entry-outcomes and cover it and pluralize directly (#409)
+
+  Renames overlay's `buildEntries.ts` to `entry-outcomes.ts` to align with naming conventions. Adds tests for that file and for `pluralize.ts`.
+
+- Conform overlay's names and doc descriptions to the repo conventions (#414)
+
+  Renames `runChezmoi.ts` to `run-chezmoi.ts` and `pendingScripts` to `pendingScriptCount` to align with repo naming conventions. Also revises function descriptions to conform to house style.
+
+### 📚 Documentation
+
+- Apply the comment and plain-speech standard across the overlay package (#417)
+
+  Applies the comment and plain-speech standard to `packages/overlay`, including its README, source comments, and user-facing error messages.
+
+  Also corrects an error message in overlay's launcher, naming `nmr build` as the command to run when the build is missing.
+
 ## 0.3.6 — 2026-08-25
 
 ### ♻️ Refactoring
