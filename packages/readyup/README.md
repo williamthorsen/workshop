@@ -421,6 +421,54 @@ A typo'd `severity` is the mistake this matters most for: an unrecognized value 
 
 A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error taking the whole kit down.
 
+### Testing a kit
+
+A kit's checks are ordinary functions, and the shape of the test follows what a check reads.
+
+**A check that calls `discoverWorkspaces` itself** is tested against a real directory tree, with `cwd` pointed at it. Nothing is mocked, so the check sees the workspace list discovery actually produces, root included:
+
+```ts
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+
+it('passes when every package README carries the marker', () => {
+  using temp = createTempTree({
+    'package.json': '{"name":"root","private":true}',
+    'pnpm-workspace.yaml': 'packages:\n  - packages/*\n',
+    'packages/alpha/package.json': '{"name":"alpha"}',
+    'packages/alpha/README.md': '<!-- marker -->',
+  });
+  using _cwd = pointCwdAt(temp.dir);
+
+  expect(readmesHaveMarkers()).toBe(true);
+});
+```
+
+`createTempTree` and `pointCwdAt` are the helpers ReadyUp uses for its own suites; any equivalent will do, since what the pattern needs is a real tree and a `cwd` pointed at it.
+
+Mocking `readyup/check-utils` instead is what produces a workspace list discovery cannot return -- most often one with no root entry, which every `!isRoot` filter then passes through untouched, so the filter is never exercised.
+
+**A function that takes a `Workspace` parameter** needs a value rather than a tree. `readyup/testing` exports a builder for one:
+
+```ts
+import { makeWorkspace } from 'readyup/testing';
+
+expect(skipIfNotPublishable(makeWorkspace({ isPackage: false }))).toBe('package.json#private is true');
+```
+
+`makeWorkspace` fills every field the call leaves out, so a field added to `Workspace` in a later release does not break the fixture. Its defaults are:
+
+| Field          | Default                                                                   |
+| -------------- | ------------------------------------------------------------------------- |
+| `dir`          | `'packages/example'`                                                      |
+| `absolutePath` | `/repo` joined to `dir`, in forward slashes: `'/repo/packages/example'`   |
+| `packageJson`  | `{ name }`, the name being `dir`'s last segment, or `'repo'` for the root |
+| `name`         | `packageJson.name`                                                        |
+| `isPackage`    | `packageJson.private !== true`                                            |
+| `isRoot`       | `dir === '.'`                                                             |
+
+The last three are derived by the same code `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` without being told. An explicit override wins over the derivation, which is how a test states a shape discovery would not produce. The result is frozen, as a discovered workspace is, and the manifest passed in is copied before freezing, so a literal shared between fixtures stays writable.
+
 ### Inlining JSON at compile time
 
 A compiled kit is self-contained, so it cannot read a JSON file that sits next to its source. `pickJson` closes that gap by copying selected fields into the bundle while it is being built:
@@ -1339,6 +1387,8 @@ const packages = discoverWorkspaces({ filter: (w) => w.isPackage });
 ```
 
 `isRoot` is independent of `isPackage`: a monorepo may publish its root, and a member may be private. A root `package.json` that is missing or unparseable throws, whatever the repo's shape.
+
+A kit test that needs a `Workspace` value builds one with `makeWorkspace`; see [Testing a kit](#testing-a-kit).
 
 `pnpm-workspace.yaml` is read by a minimal block-sequence parser; configs using YAML anchors, flow sequences, or negation patterns raise a clear error.
 
