@@ -1,6 +1,7 @@
 import * as checkUtilsNamespace from '../check-utils/index.ts';
 import * as rootNamespace from '../index.ts';
 import * as resolverHookNamespace from '../readyupResolverHook.ts';
+import * as testingNamespace from '../testing/index.ts';
 
 /**
  * What the running readyup exports, keyed by the specifier a kit reaches it through.
@@ -15,6 +16,7 @@ const RUNNER_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['readyup', new Set(Object.keys(rootNamespace))],
   ['readyup/check-utils', new Set(Object.keys(checkUtilsNamespace))],
   ['readyup/readyupResolverHook', new Set(Object.keys(resolverHookNamespace))],
+  ['readyup/testing', new Set(Object.keys(testingNamespace))],
 ]);
 
 /** Returns the names a `readyup` specifier exports, or undefined where the runner publishes no such subpath. */
