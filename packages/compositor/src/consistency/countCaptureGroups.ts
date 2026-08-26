@@ -1,5 +1,5 @@
 /**
- * Counts the capture groups `source` declares, or reports nothing when it does not compile.
+ * Counts the capture groups `source` declares, or undefined when it does not compile.
  *
  * Alternating the pattern with an empty branch makes it match the empty string whatever it otherwise requires, so the
  * resulting array's length gives the count without a body to run it against. The source is compiled as written

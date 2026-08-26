@@ -13,14 +13,14 @@ describe(createRequireKnown, () => {
     ]);
   });
 
-  it('if an id resolves, records nothing', () => {
+  it('if an id resolves, records no violation', () => {
     const violations: Array<Violation> = [];
     createRequireKnown(violations)(new Set(['team']), 'team', 'artifacts[0].sourceId', 'sources');
 
     expect(violations).toStrictEqual([]);
   });
 
-  it('if an id is absent, records nothing, so an optional reference needs no guard at its call site', () => {
+  it('if an id is absent, records no violation, so an optional reference needs no guard at its call site', () => {
     const violations: Array<Violation> = [];
     createRequireKnown(violations)(new Set(['team']), undefined, 'artifacts[0].sourceId', 'sources');
 

@@ -64,7 +64,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('reads no edges from an artifact with no frontmatter, and faults nothing', () => {
+  it('reads no edges and no faults from an artifact with no frontmatter', () => {
     expect(readFrontmatterEdges(inputFor('# Lint\n'))).toStrictEqual({ edges: [], diagnostics: [] });
   });
 

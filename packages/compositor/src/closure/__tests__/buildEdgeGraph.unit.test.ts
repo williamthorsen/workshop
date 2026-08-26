@@ -182,7 +182,7 @@ async function buildCatalog(): Promise<Catalog> {
   ]);
 }
 
-/** Contributes `contribution` for one artifact and nothing for every other. */
+/** Contributes `contribution` for one artifact and an empty contribution for every other. */
 function contributeFor(artifactId: string, contribution: EdgeContribution): (read: ArtifactRead) => EdgeContribution {
   return (read: ArtifactRead): EdgeContribution =>
     read.artifactId === artifactId ? contribution : { edges: [], partials: [] };
