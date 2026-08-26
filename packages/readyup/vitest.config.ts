@@ -28,6 +28,7 @@ export default defineVitestConfig({
     resolve: {
       alias: [
         { find: 'readyup/check-utils', replacement: path.resolve(import.meta.dirname, 'src/check-utils/index.ts') },
+        { find: 'readyup/testing', replacement: path.resolve(import.meta.dirname, 'src/testing/index.ts') },
         { find: 'readyup', replacement: path.resolve(import.meta.dirname, 'src/index.ts') },
       ],
     },
