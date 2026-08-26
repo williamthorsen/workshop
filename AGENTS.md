@@ -37,8 +37,6 @@ From the repo root, `pnpm exec rdy run --packages` runs the default kit of every
 
 Lefthook's pre-commit hook formats staged files with Prettier and restages them, so a commit can carry bytes you did not write.
 
-The root suite's `barrel-placement` test flags every `index.ts` under a package's `src/` whose compiled target that package's `exports` map does not name, so a barrel is admitted only where it backs a published entry point.
-
 ## Commit conventions
 
 The scope values this repo uses are `compositor`, `overlay`, `readyup`, and `root`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
