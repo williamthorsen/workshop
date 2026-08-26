@@ -132,7 +132,7 @@ function readStdio(options: unknown): unknown {
 /** Signature of the Node-style callback the promisified `execFile` drives. */
 type ExecFileCallback = (error: unknown, result?: { stdout: string; stderr: string }) => void;
 
-/** Drives the promisified `execFile` callback with a rejection carrying captured streams. */
+/** Drives the promisified `execFile` callback with a rejection that includes captured streams. */
 function rejectExecFile(error: Record<string, unknown>): void {
   execFileMock.mockImplementation((_cmd: string, _args: string[], callback: ExecFileCallback) => {
     callback(error);

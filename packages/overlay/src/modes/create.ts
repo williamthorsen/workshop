@@ -12,7 +12,7 @@ import type { OverlayResult } from './types.ts';
  * and report differing files (`M`) as conflicts that are never written.
  *
  * The `A`/`D` set is applied by *absolute* target path so chezmoi touches only those entries. When that set is empty
- * the targeted apply is skipped entirely — a bare `chezmoi apply` would converge *every* file and clobber the `M`
+ * the targeted apply is skipped entirely: A bare `chezmoi apply` would converge *every* file and clobber the `M`
  * entries the mode exists to protect. Scripts run in a separate `--include=scripts` pass. Exit `2` if the file-apply
  * or scripts pass failed, else `1` if any conflicts exist, else `0`.
  */

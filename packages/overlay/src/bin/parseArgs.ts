@@ -16,7 +16,7 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 } as const;
 
-/** Every option name a token can carry: `node:util.parseArgs` reports a short flag under its long name. */
+/** Every option name a token can resolve to: `node:util.parseArgs` reports a short flag under its long name. */
 const ACCEPTED_NAMES = new Set<string>(Object.keys(OPTIONS));
 
 /**

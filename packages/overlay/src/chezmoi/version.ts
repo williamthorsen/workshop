@@ -19,7 +19,7 @@ const MINIMUM_VERSION: SemverParts = { major: 2, minor: 46, patch: 0 };
 export async function assertChezmoiVersion(context: ChezmoiContext): Promise<void> {
   const { stdout, code } = await runChezmoiCaptured(context, ['--version']);
   if (code !== 0) {
-    throw new Error('chezmoi is not available — install it (e.g. `brew install chezmoi`)');
+    throw new Error('chezmoi is not available; install it (e.g. `brew install chezmoi`)');
   }
   const installed = parseVersion(stdout);
   if (installed === undefined) {
