@@ -68,8 +68,8 @@ describe('fidelity to discovery', () => {
     await runTest();
   });
 
-  // The assertion the builder's honesty rests on: every test above reads only the fields it names, so a builder that
-  // drifted from the producer would still satisfy them.
+  // Every assertion above reads only the fields it names, so a builder drifting from the producer would still satisfy
+  // them. This one compares the whole value.
   itInTree('reports what discovery reports for the same directory and manifest', ({ temp }) => {
     writeRootPackageJson(temp, { name: 'root', private: true });
     writePnpmWorkspaceYaml(temp, 'packages:\n  - packages/*\n');

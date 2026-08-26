@@ -10,13 +10,13 @@ const FIXTURE_ROOT = '/repo';
 /**
  * Builds a `Workspace` fixture, filling every field the caller leaves out.
  *
- * Defaults are derived rather than held as literals: `dir` decides `absolutePath` and the manifest name, and the
- * manifest decides `name`, `isPackage`, and `isRoot` through the same derivation `discoverWorkspaces` uses. A field
- * added to `Workspace` therefore reaches a fixture with the value discovery would give it.
+ * Every default is derived: `dir` decides `absolutePath` and the manifest name, and the manifest decides `name`,
+ * `isPackage`, and `isRoot` through the derivation `discoverWorkspaces` uses. A field added to `Workspace` therefore
+ * reaches a fixture with the value discovery would give it.
  *
  * Overrides apply after the derivation, so a test that needs a shape discovery would not produce can still state it.
- * The result is frozen, as a discovered workspace is, and the manifest is copied before freezing so a literal shared
- * between fixtures is not frozen in the caller's hands.
+ * The result is frozen, as a discovered workspace is, and the manifest is copied before freezing, so a literal the
+ * caller shares between fixtures stays writable.
  */
 export function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   const dir = overrides.dir ?? DEFAULT_DIR;
