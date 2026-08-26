@@ -12,7 +12,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 2, [])).toBe(true);
     });
 
-    it('suppresses nothing on the line below it', () => {
+    it('reports false on the line below it', () => {
       const lines = linesOf('// rdy-ignore\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 2, [])).toBe(false);
@@ -32,7 +32,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 2, [])).toBe(true);
     });
 
-    it('suppresses nothing on the line it sits on', () => {
+    it('reports false on the line it sits on', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore-next-line');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
@@ -60,13 +60,13 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
-    it('suppresses nothing for a check it does not name', () => {
+    it('reports false for a check it does not name', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/other-check');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
     });
 
-    it('suppresses nothing for a check with no id at all', () => {
+    it('reports false for a check with no id at all', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
@@ -93,7 +93,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
-    it('suppresses nothing where the named check belongs to another kit', () => {
+    it('reports false where the named check belongs to another kit', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore other.kit/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
@@ -128,20 +128,20 @@ describe(suppressesFinding, () => {
   });
 
   describe('given a token the grammar does not name', () => {
-    it('suppresses nothing for a word the token only prefixes', () => {
+    it('reports false for a word the token only prefixes', () => {
       const lines = linesOf('const rdy-ignored = 1;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
 
-    it('suppresses nothing for a misspelt next-line suffix', () => {
+    it('reports false for a misspelt next-line suffix', () => {
       const lines = linesOf('// rdy-ignore-nextline\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
       expect(suppressesFinding(lines, 2, [])).toBe(false);
     });
 
-    it('suppresses nothing for a token a longer word ends with', () => {
+    it('reports false for a token a longer word ends with', () => {
       const lines = linesOf('const notrdy-ignore = 1;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
@@ -161,7 +161,7 @@ describe(suppressesFinding, () => {
     expect(suppressesFinding(lines, 2, [])).toBe(true);
   });
 
-  it('suppresses nothing where no line has a pragma', () => {
+  it('reports false where no line has a pragma', () => {
     const lines = linesOf('const a = 1;\nerror instanceof Error;');
 
     expect(suppressesFinding(lines, 2, [])).toBe(false);

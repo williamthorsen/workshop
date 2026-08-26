@@ -47,19 +47,19 @@ describe(listPragmaSites, () => {
   });
 
   describe('given a token the comment rule withholds', () => {
-    it('lists nothing for a token in a string literal', () => {
+    it('lists no site for a token in a string literal', () => {
       expect(listPragmaSites("const token = 'rdy-ignore';\n")).toStrictEqual([]);
     });
 
-    it('lists nothing for a token in a regular expression', () => {
+    it('lists no site for a token in a regular expression', () => {
       expect(listPragmaSites('const pattern = /rdy-ignore/;\n')).toStrictEqual([]);
     });
 
-    it('lists nothing for a token following prose inside a comment', () => {
+    it('lists no site for a token following prose inside a comment', () => {
       expect(listPragmaSites('// The token to write is rdy-ignore\n')).toStrictEqual([]);
     });
 
-    it('lists nothing for a token following commented-out code', () => {
+    it('lists no site for a token following commented-out code', () => {
       expect(listPragmaSites('// const a = 1; rdy-ignore\n')).toStrictEqual([]);
     });
 
@@ -69,11 +69,11 @@ describe(listPragmaSites, () => {
       expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
     });
 
-    it('lists nothing for a token in bare code', () => {
+    it('lists no site for a token in bare code', () => {
       expect(listPragmaSites('const flag = rdy-ignore;\n')).toStrictEqual([]);
     });
 
-    it('lists nothing for a word the token is only the head of', () => {
+    it('lists no site for a word the token is only the head of', () => {
       expect(listPragmaSites('// rdy-ignored\n')).toStrictEqual([]);
     });
   });

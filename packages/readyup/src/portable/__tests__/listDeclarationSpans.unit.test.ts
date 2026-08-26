@@ -281,7 +281,7 @@ describe(listDeclarationSpans, () => {
     ]);
   });
 
-  it('lists nothing for a source holding no declaration', () => {
+  it('lists no span for a source holding no declaration', () => {
     expect(listSpans([''])).toStrictEqual([]);
   });
 });

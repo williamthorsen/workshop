@@ -15,7 +15,7 @@ describe(resolveCompileRoot, () => {
   beforeAll(() => {
     treeRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'compile-root-')));
 
-    // Two cases below assert that a walk reaching the filesystem root finds nothing, which only holds
+    // Two cases below assert that a walk reaching the filesystem root finds no manifest, which only holds
     // where no directory above the fixture has a manifest of its own.
     const ancestorManifest = findAncestorManifest(treeRoot);
     assert.ok(

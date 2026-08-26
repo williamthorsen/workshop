@@ -107,7 +107,7 @@ describe(listOwnImplementationSpans, () => {
       ]);
     });
 
-    it('exempts nothing in a barrel that re-exports the name from another file', ({ temp }) => {
+    it('exempts no span in a barrel that re-exports the name from another file', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/index.ts';
       const own = buildOwnImplementation([{ path, text: "export { describeError } from './describeError.ts';\n" }]);
@@ -115,7 +115,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing in a file that declares the name without exporting it', ({ temp }) => {
+    it('exempts no span in a file that declares the name without exporting it', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/format.ts';
       const own = buildOwnImplementation([{ path, text: 'function describeError(error: unknown) {}\n' }]);
@@ -123,7 +123,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing in a file exporting the name under a different one', ({ temp }) => {
+    it('exempts no span in a file exporting the name under a different one', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/format.ts';
       const text = 'function describeError(error: unknown) {}\nexport { describeError as toMessage };\n';
@@ -132,7 +132,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing in a file that only imports and calls the export', ({ temp }) => {
+    it('exempts no span in a file that only imports and calls the export', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/report.ts';
       const text = "import { describeError } from '@scope/errors';\nconst message = describeError(error);\n";
@@ -141,7 +141,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing for a declaration that appears only in a comment', ({ temp }) => {
+    it('exempts no span for a declaration that appears only in a comment', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/report.ts';
       const own = buildOwnImplementation([{ path, text: '// export function describeError(error: unknown) {}\n' }]);
@@ -149,7 +149,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing in a defining file outside the publishing workspace', ({ temp }) => {
+    it('exempts no span in a defining file outside the publishing workspace', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/app/src/describeError.ts';
       const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
@@ -157,7 +157,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing when no workspace has the declared name', ({ temp }) => {
+    it('exempts no span when no workspace has the declared name', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const sources = [{ path, text: 'export function describeError(error: unknown) {}' }];
@@ -166,14 +166,14 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts nothing for a path the sweep never read', ({ temp }) => {
+    it('exempts no span for a path the sweep never read', ({ temp }) => {
       writeMonorepo(temp);
       const own = buildOwnImplementation([]);
 
       expect(listOwnImplementationSpans('packages/errors/src/describeError.ts', own)).toStrictEqual([]);
     });
 
-    it('exempts nothing when the check names no exports', ({ temp }) => {
+    it('exempts no span when the check names no exports', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const sources = [{ path, text: 'export function describeError(error: unknown) {}' }];
@@ -211,7 +211,7 @@ describe(listOwnImplementationSpans, () => {
     });
   });
 
-  it('exempts nothing in a repo whose workspaces cannot be discovered', () => {
+  it('exempts no span in a repo whose workspaces cannot be discovered', () => {
     const path = 'src/describeError.ts';
     const own = buildOwnImplementation([{ path, text: 'export function describeError(error: unknown) {}' }]);
 

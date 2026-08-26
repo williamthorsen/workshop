@@ -82,7 +82,7 @@ describe('buildBundle bundled dependencies', () => {
     expect(result.esbuildVersion).toBe(installedEsbuildVersion);
   });
 
-  it('records nothing for a kit that bundles no packages', async () => {
+  it('records an empty bundledDependencies for a kit that bundles no packages', async () => {
     writeFileSync(path.join(treeRoot, 'bare-kit.ts'), 'export const kit = {};\n');
 
     const bare = await buildBundle(path.join(treeRoot, 'bare-kit.ts'));

@@ -32,7 +32,7 @@ export function hasDevDependency(name: string): boolean {
  * Checks whether a dev dependency meets a minimum version. Any `workspace:`-prefixed specifier satisfies any floor,
  * including one that names a version: the specifier links to the package the repo builds, and a version it names is a
  * publish range, not the version that resolves. A `catalog:` specifier is resolved through `pnpm-workspace.yaml` and
- * measured against the version it finds there; one that resolves to nothing meets no floor. `exempt` receives the
+ * measured against the version it finds there; one that resolves to no version meets no floor. `exempt` receives the
  * specifier as declared, so a catalogued dependency reaches it as `catalog:`; it adds further exemptions and cannot
  * remove the `workspace:` one.
  */
