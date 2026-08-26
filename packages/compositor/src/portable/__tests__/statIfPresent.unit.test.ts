@@ -19,13 +19,13 @@ describe(statIfPresent, () => {
     expect((await statIfPresent(path.join(tree.dir, 'nested')))?.isDirectory()).toBe(true);
   });
 
-  it('reports nothing for an absent path', async () => {
+  it('reports undefined for an absent path', async () => {
     using tree = createTempTree({});
 
     await expect(statIfPresent(path.join(tree.dir, 'never-created'))).resolves.toBeUndefined();
   });
 
-  it('reports nothing for a path below a regular file, which fails as ENOTDIR rather than ENOENT', async () => {
+  it('reports undefined for a path below a regular file, which fails as ENOTDIR rather than ENOENT', async () => {
     using tree = createTempTree({ 'notes.md': 'notes' });
 
     await expect(statIfPresent(path.join(tree.dir, 'notes.md', 'below'))).resolves.toBeUndefined();
@@ -38,7 +38,7 @@ describe(statIfPresent, () => {
     expect((await statIfPresent(path.join(tree.dir, 'linked')))?.isDirectory()).toBe(true);
   });
 
-  it('reports nothing for a symlink whose target is gone, rather than the link itself', async () => {
+  it('reports undefined for a symlink whose target is gone, rather than the link itself', async () => {
     using tree = createTempTree({});
     await symlink(path.join(tree.dir, 'never-created'), path.join(tree.dir, 'dangling'));
 

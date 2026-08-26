@@ -9,7 +9,7 @@ describe(findDuplicateIds, () => {
     ]);
   });
 
-  it('if every id is unique, reports nothing', () => {
+  it('if every id is unique, reports no duplicate', () => {
     expect(findDuplicateIds([['sources', [{ id: 'team' }, { id: 'library' }]]])).toStrictEqual([]);
   });
 

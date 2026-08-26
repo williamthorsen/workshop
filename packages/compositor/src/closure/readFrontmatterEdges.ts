@@ -136,7 +136,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Parses one frontmatter block, or reports nothing when it is not valid YAML. */
+/** Parses one frontmatter block, returning `undefined` when it is not valid YAML. */
 function parseBlock(block: string): unknown {
   try {
     const parsed: unknown = parseYaml(block);
@@ -148,7 +148,7 @@ function parseBlock(block: string): unknown {
 }
 
 /**
- * Reads `key` from `record`, or reports nothing when the record does not have it itself.
+ * Reads `key` from `record`, or `undefined` when the record does not have it itself.
  *
  * Both records read here are keyed by strings someone else wrote, and a plain object returns `constructor`, `toString`,
  * and every other inherited member with something that is not a declaration.

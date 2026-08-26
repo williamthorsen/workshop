@@ -24,9 +24,9 @@ export interface DeployableArtifact {
  * token rewrites to the name its artifact deploys under, so resolving names during the rewrite would make the two
  * depend on each other.
  *
- * An artifact whose kind a target declares no deployment for resolves to nothing, which is the deployability check a
- * token naming an artifact passes before rendering. That check is per kind: whether one artifact of a deployed kind
- * suppresses its own deployment is a fact the artifact declares, and nothing reads artifact declarations yet.
+ * An artifact whose kind a target declares no deployment for resolves to `undefined`, which is the deployability
+ * check a token naming an artifact passes before rendering. That check is per kind: whether one artifact of a deployed
+ * kind suppresses its own deployment is a fact the artifact declares, and nothing reads artifact declarations yet.
  *
  * A region-routed artifact resolves to the host path, so a token naming one renders the file a reader would open to
  * find it. Its own `deployedName` does not apply there: that field overrides the name a kind's template would produce,

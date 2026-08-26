@@ -6,7 +6,7 @@ import type { Segment } from '../transclusion/expandTransclusions.ts';
 import { compileTokenPattern } from './compileTokenPattern.ts';
 import type { TokenDiagnostic, TokenFailure, TokenRef } from './TokenDiagnostic.ts';
 
-/** Resolves the name an artifact deploys under for one target, or nothing when it does not deploy there. */
+/** Resolves the name an artifact deploys under for one target, or `undefined` when it does not deploy there. */
 export type DeployedNameLookup = (targetId: TargetId, artifactId: ArtifactId) => string | undefined;
 
 /** Everything rendering one artifact's body for one target needs. */

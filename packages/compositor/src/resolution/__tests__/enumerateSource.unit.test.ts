@@ -113,7 +113,7 @@ describe(enumerateSource, () => {
     await expect(collectSlugs(source, [skillKind])).resolves.toStrictEqual(['lint']);
   });
 
-  it('contains nothing for a kind whose root the source does not have', async () => {
+  it('contributes no artifact for a kind whose root the source does not have', async () => {
     const source = buildSource({ 'skills/lint/SKILL.md': 'lint' });
 
     await expect(collectSlugs(source, [rulebookKind, skillKind])).resolves.toStrictEqual(['lint']);

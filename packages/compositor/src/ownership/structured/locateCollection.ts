@@ -1,7 +1,7 @@
 import type { FileBlock } from '../../schemas/file-schemas.ts';
 import type { DocumentAccess, ItemHandle } from './document-access.ts';
 
-/** Where a declared collection stands: the items it holds, nothing at all, or a refusal to read what is there. */
+/** Where a declared collection stands: the items it holds, an absence, or a refusal to read what is there. */
 export type LocatedCollection =
   { readonly items: ReadonlyArray<ItemHandle> } | { readonly absent: true } | { readonly blocked: FileBlock };
 

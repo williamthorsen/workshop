@@ -235,7 +235,7 @@ describe(renderArtifact, () => {
     expect(result).toHaveProperty('failure.diagnostic.code', 'duplicate-name');
   });
 
-  it("renders nothing for a target taking none of the artifact's kind", async () => {
+  it("reports a target taking none of the artifact's kind as not-deployed", async () => {
     using tree = createTempTree({ 'skills/review/SKILL.md': '# Review\n' });
     const takesNoSkills: RenderTarget = { ...claude, deployments: [] };
 

@@ -13,7 +13,7 @@ describe(collectIds, () => {
     expect(collectIds([{ id: 'team' }, { id: 'team' }])).toStrictEqual(new Set(['team']));
   });
 
-  it('collects nothing from an empty table', () => {
+  it('collects an empty set from an empty table', () => {
     expect(collectIds([])).toStrictEqual(new Set());
   });
 });

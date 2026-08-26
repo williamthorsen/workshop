@@ -40,7 +40,7 @@ describe(expandWildcard, () => {
     expect(expandWildcard(entryFor('skill:review'), index, emittingKindIds)).toStrictEqual(['subagent:auditor']);
   });
 
-  it('names nothing when the declaring source contains nothing else that emits', () => {
+  it('names no artifact when the declaring source contains nothing else that emits', () => {
     const alone = buildCatalogFromSpec({
       traversalOnlyKinds: ['collection'],
       sources: ['team'],

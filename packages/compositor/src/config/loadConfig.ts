@@ -73,7 +73,7 @@ function parseTierBody(raw: string, filePath: string): TierBody {
 }
 
 /**
- * Reads one tier from its file, resolving to nothing when that file is absent.
+ * Reads one tier from its file, resolving to `undefined` when that file is absent.
  *
  * `baseDir` is the file's own directory, so a relative path a tier declares resolves against where it was written, not
  * against the process's working directory.

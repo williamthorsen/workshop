@@ -12,7 +12,7 @@ describe(buildTraversalIndex, () => {
     ]);
   });
 
-  it('returns nothing for an artifact no file reaches', () => {
+  it('returns an empty list for an artifact no file reaches', () => {
     const index = buildTraversalIndex(buildPlan());
 
     expect(index.findContributedFiles('collection:core')).toStrictEqual([]);

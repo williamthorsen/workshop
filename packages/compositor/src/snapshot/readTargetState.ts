@@ -121,7 +121,7 @@ export interface ReadTargetStateOptions {
  * A directory is claimed only when it holds its layout's entry file. A directory with an artifact's name and nothing
  * else is somebody else's, and this scan's output is what decides removal.
  *
- * An absent root or host reads as nothing, while anything else rethrows: a permissions fault is not an authoring
+ * An absent root or host reads as an empty state, while anything else rethrows: a permissions fault is not an authoring
  * mistake, and reading one as an absence would offer a whole tree up as removed.
  */
 export async function readTargetState(target: RenderTarget, options: ReadTargetStateOptions): Promise<TargetState> {

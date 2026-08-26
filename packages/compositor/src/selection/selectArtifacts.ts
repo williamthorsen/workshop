@@ -59,8 +59,8 @@ export interface Selection {
  * that both drops and binds one artifact ends bound. An inlay's `drop` unbinds from that inlay alone, leaving the
  * artifact wherever else it is bound and whatever else selected it.
  *
- * A selector matching nothing is a diagnostic rather than a failure, so validation reports every mistake in a config at
- * once.
+ * A selector matching no artifact is a diagnostic rather than a failure, so validation reports every mistake in a
+ * config at once.
  */
 export function selectArtifacts(config: CompositorConfig, catalog: Catalog): Selection {
   const fold: Fold = {

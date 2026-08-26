@@ -189,7 +189,7 @@ function position(context: TargetPlanContext, deployment: RegionKindDeployment):
   return { targetId: context.targetId, path: deployment.host };
 }
 
-/** Registers the body a host holds now, or nothing where it holds none. */
+/** Registers the body a host holds now, or `undefined` where it holds none. */
 function readHostSide(context: TargetPlanContext, hostContent: string | undefined): FileSide | undefined {
   return hostContent === undefined ? undefined : context.blobs.addUtf8(hostContent);
 }

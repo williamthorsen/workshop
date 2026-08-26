@@ -26,7 +26,7 @@ describe(hashValue, () => {
     expect(hashValue({ alpha: 1 })).not.toBe(hashValue({ alpha: '1' }));
   });
 
-  it('digests a bare undefined, which JSON serializes to nothing at all', () => {
+  it('digests a bare undefined, which JSON serializes to undefined', () => {
     expect(hashValue(undefined)).toBe(hashUtf8(''));
   });
 });
