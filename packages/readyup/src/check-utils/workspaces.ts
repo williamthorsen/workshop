@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { deepFreeze } from '../portable/deepFreeze.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
+import { buildWorkspaceFromPackageJson } from './buildWorkspaceFromPackageJson.ts';
 import { readJsonFile } from './json.ts';
 import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
 
@@ -193,20 +193,6 @@ function buildWorkspace(rootDir: string, relDir: string): Workspace | undefined 
   const packageJson = readJsonFile(join(absoluteDir, 'package.json'));
   if (packageJson === undefined) return undefined;
   return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
-}
-
-/** Builds a `Workspace` from a relative dir, absolute path, and a parsed `package.json`. */
-function buildWorkspaceFromPackageJson(
-  relDir: string,
-  absolutePath: string,
-  packageJson: Record<string, unknown>,
-): Workspace {
-  const nameValue = packageJson['name'];
-  const name = typeof nameValue === 'string' ? nameValue : undefined;
-  const isPackage = packageJson['private'] !== true;
-  // One call's mutation would otherwise reach every later call, which shares these objects.
-  deepFreeze(packageJson);
-  return Object.freeze({ dir: relDir, absolutePath, name, isPackage, isRoot: relDir === '.', packageJson });
 }
 
 // endregion | Helpers
