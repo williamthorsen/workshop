@@ -9,7 +9,7 @@ import { run } from '../run.ts';
 const stubResult: OverlayResult = {
   mode: 'create',
   entries: [{ path: '.newfile', outcome: 'created' }],
-  scripts: { ran: 0, ok: true },
+  scripts: { ranCount: 0, ok: true },
   counts: { created: 1, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
   exitCode: 0,
 };

@@ -11,11 +11,11 @@ export interface OverlayEntry {
 }
 
 /**
- * Summary of `run_` script execution. `ran` is the number of pending/run scripts; `ok` is false only if execution
- * failed.
+ * Summary of `run_` script execution. `ranCount` is the number of pending/run scripts; `ok` is false only if
+ * execution failed.
  */
 export interface ScriptsSummary {
-  ran: number;
+  ranCount: number;
   ok: boolean;
 }
 

@@ -84,7 +84,7 @@ A full `chezmoi apply`: overwrite differing files, perform removals, run scripts
 
 ## How script results are surfaced
 
-Under `--create` / `--force`, `run_` script stdout and stderr stream **live to overlay's stderr**, keeping overlay's stdout clean for the text report or `--json`. `OverlayResult.scripts` records `{ ran, ok }`. A script that exits non-zero aborts chezmoi's apply; overlay maps that to exit `2` and surfaces chezmoi's diagnostic. chezmoi provides no per-script structured output, so overlay does not invent any.
+Under `--create` / `--force`, `run_` script stdout and stderr stream **live to overlay's stderr**, keeping overlay's stdout clean for the text report or `--json`. `OverlayResult.scripts` records `{ ranCount, ok }`. A script that exits non-zero aborts chezmoi's apply; overlay maps that to exit `2` and surfaces chezmoi's diagnostic. chezmoi provides no per-script structured output, so overlay does not invent any.
 
 ## Idempotency contract
 

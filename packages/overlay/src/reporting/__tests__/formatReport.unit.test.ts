@@ -81,13 +81,13 @@ describe(formatReport, () => {
   });
 
   it('phrases pending scripts as "would run" under verify', () => {
-    const report = formatReport(buildResult({ mode: 'verify', scripts: { ran: 2, ok: true } }));
+    const report = formatReport(buildResult({ mode: 'verify', scripts: { ranCount: 2, ok: true } }));
 
     expect(report).toContain('2 scripts would run.');
   });
 
   it('phrases executed scripts as "ran" under create', () => {
-    const report = formatReport(buildResult({ mode: 'create', scripts: { ran: 1, ok: true } }));
+    const report = formatReport(buildResult({ mode: 'create', scripts: { ranCount: 1, ok: true } }));
 
     expect(report).toContain('1 script ran.');
   });
@@ -146,7 +146,7 @@ describe(formatReport, () => {
   });
 
   it('notes a script failure in the scripts summary', () => {
-    const report = formatReport(buildResult({ mode: 'force', scripts: { ran: 1, ok: false }, exitCode: 2 }));
+    const report = formatReport(buildResult({ mode: 'force', scripts: { ranCount: 1, ok: false }, exitCode: 2 }));
 
     expect(report).toContain('a script failed');
   });
@@ -172,7 +172,7 @@ function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
   return {
     mode: 'verify',
     entries: [],
-    scripts: { ran: 0, ok: true },
+    scripts: { ranCount: 0, ok: true },
     counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
     exitCode: 0,
     ...overrides,

@@ -13,7 +13,7 @@ import { overlay } from '../overlay.ts';
 const stubResult: OverlayResult = {
   mode: 'verify',
   entries: [],
-  scripts: { ran: 0, ok: true },
+  scripts: { ranCount: 0, ok: true },
   counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
   exitCode: 0,
 };

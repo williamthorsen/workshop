@@ -41,7 +41,7 @@ describe(runVerify, () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.entries).toStrictEqual([]);
-    expect(result.scripts).toStrictEqual({ ran: 2, ok: true });
+    expect(result.scripts).toStrictEqual({ ranCount: 2, ok: true });
   });
 
   it('surfaces pending scripts while still failing on file drift', async () => {
@@ -50,7 +50,7 @@ describe(runVerify, () => {
     const result = await runVerify(context);
 
     expect(result.exitCode).toBe(1);
-    expect(result.scripts.ran).toBe(1);
+    expect(result.scripts.ranCount).toBe(1);
     expect(result.counts.pending).toBe(1);
   });
 });
