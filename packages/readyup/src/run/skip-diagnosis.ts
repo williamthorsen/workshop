@@ -60,7 +60,7 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
 }
 
 /**
- * Diagnoses one skipped check, answering with nothing where its `check` would have failed.
+ * Diagnoses one skipped check, returning undefined where its `check` would have failed.
  *
  * A `check` that throws, one whose findings cannot be read, or one returning a value expressing no
  * verdict leaves the question undecided: reporting any of them as a masked pass would assert something

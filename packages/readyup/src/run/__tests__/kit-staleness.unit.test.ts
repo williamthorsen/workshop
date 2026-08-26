@@ -55,7 +55,7 @@ describe(readManifestTracking, () => {
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
-  it('returns nothing when no manifest exists', () => {
+  it('returns undefined when no manifest exists', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file not found: /abs/.readyup/manifest.json');
     });
@@ -63,7 +63,7 @@ describe(readManifestTracking, () => {
     expect(readManifestTracking(false)).toBeUndefined();
   });
 
-  it('returns nothing when the manifest cannot be parsed', () => {
+  it('returns undefined when the manifest cannot be parsed', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file contains invalid JSON: /abs/.readyup/manifest.json');
     });

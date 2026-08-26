@@ -47,7 +47,7 @@ describe(resolveCheckIds, () => {
     });
   });
 
-  it('resolves nothing for a check declaring no id', () => {
+  it('resolves to undefined for a check declaring no id', () => {
     expect(resolveCheckIds(undefined, packageProvenance('@williamthorsen/toolbelt.errors'))).toBeUndefined();
   });
 });

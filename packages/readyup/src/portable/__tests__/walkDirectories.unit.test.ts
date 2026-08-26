@@ -110,7 +110,7 @@ describe(walkDirectories, () => {
     expect(found).toStrictEqual(['.', 'deep/one/two', 'packages/a']);
   });
 
-  it('returns nothing for a root that does not exist', ({ temp }) => {
+  it('returns an empty list for a root that does not exist', ({ temp }) => {
     const found = walkDirectories({ root: `${temp.dir}/absent`, match: '**/package.json' });
 
     expect(found).toStrictEqual([]);
