@@ -37,7 +37,11 @@
       "import": "./dist/esm/readyupResolverHook.js",
       "types": "./dist/esm/readyupResolverHook.d.ts"
     },
-    "./schemas/*.json": "./schemas/*.json"
+    "./schemas/*.json": "./schemas/*.json",
+    "./testing": {
+      "import": "./dist/esm/testing/index.js",
+      "types": "./dist/esm/testing/index.d.ts"
+    }
   },
   "bin": {
     "rdy": "bin/rdy.js",

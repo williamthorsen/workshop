@@ -13,8 +13,8 @@ import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 // Restoring a stubbed environment variable is the runner's job rather than a suite's. `unstubEnvs` clears every stub
 // before each test, so a suite that stubs one has no hook to undo it.
 //
-// The aliases let a test import this package's own kits, which reach readyup by package name the way a consumer's kit
-// does, without a prior build standing between the test and the source. Longest specifier first: an alias on `readyup`
+// The aliases let a test reach readyup by package name -- as this package's own kits do, the way a consumer's kit
+// does -- without a prior build standing between the test and the source. Longest specifier first: an alias on `readyup`
 // also matches `readyup/check-utils`, and the first match wins.
 //
 // The coverage entry extends the inherited `src`-only glob, which would otherwise leave the kit tree unmeasured. Kits
@@ -28,6 +28,7 @@ export default defineVitestConfig({
     resolve: {
       alias: [
         { find: 'readyup/check-utils', replacement: path.resolve(import.meta.dirname, 'src/check-utils/index.ts') },
+        { find: 'readyup/testing', replacement: path.resolve(import.meta.dirname, 'src/testing/index.ts') },
         { find: 'readyup', replacement: path.resolve(import.meta.dirname, 'src/index.ts') },
       ],
     },

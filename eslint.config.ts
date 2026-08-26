@@ -124,6 +124,7 @@ const config = defineConfig([
       'packages/readyup/src/run/__tests__/qualifiedSuppression.wiring.unit.test.ts',
       'packages/readyup/src/run/__tests__/resolveConfiguredPackages.unit.test.ts',
       'packages/readyup/src/run/__tests__/resolveFindingOutcome.unit.test.ts',
+      'packages/readyup/src/testing/__tests__/makeWorkspace.unit.test.ts',
     ],
     rules: {
       'vitest/consistent-test-it': 'off',

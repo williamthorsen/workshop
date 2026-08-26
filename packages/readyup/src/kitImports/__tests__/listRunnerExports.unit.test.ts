@@ -44,6 +44,10 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('discoverKitPackages');
   });
 
+  it('reports the testing subpath as exporting its fixture builder', () => {
+    expect(listRunnerExports('readyup/testing')).toContain('makeWorkspace');
+  });
+
   it('omits a type-only export, which no bundle can bind', () => {
     expect(listRunnerExports('readyup')).not.toContain('RdyKit');
   });
