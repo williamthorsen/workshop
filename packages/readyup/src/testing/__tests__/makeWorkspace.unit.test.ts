@@ -3,10 +3,15 @@ import { join } from 'node:path';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { discoverWorkspaces } from '../../check-utils/workspaces.ts';
 import { makeWorkspace } from '../makeWorkspace.ts';
+
+const it = test.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-fixture-' })),
+);
 
 describe(makeWorkspace, () => {
   it('fills every field when given no overrides', () => {
@@ -57,12 +62,7 @@ describe(makeWorkspace, () => {
 });
 
 describe('fidelity to discovery', () => {
-  const itInTree = test.extend(
-    'temp',
-    makeFixture(() => createTempTree({}, { prefix: 'rdy-fixture-' })),
-  );
-
-  itInTree.aroundEach(async (runTest, { temp }) => {
+  it.aroundEach(async (runTest, { temp }) => {
     using _cwd = pointCwdAt(temp.dir);
 
     await runTest();
@@ -70,7 +70,7 @@ describe('fidelity to discovery', () => {
 
   // Every assertion above reads only the fields it names, so a builder drifting from the producer would still satisfy
   // them. This one compares the whole value.
-  itInTree('reports what discovery reports for the same directory and manifest', ({ temp }) => {
+  it('reports what discovery reports for the same directory and manifest', ({ temp }) => {
     writeRootPackageJson(temp, { name: 'root', private: true });
     writePnpmWorkspaceYaml(temp, 'packages:\n  - packages/*\n');
     writeWorkspacePackage(temp, 'packages/alpha', { name: 'alpha', version: '1.0.0' });
