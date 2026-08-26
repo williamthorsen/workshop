@@ -175,7 +175,7 @@ describe(readTrackedSources, () => {
     expect(scanned).toStrictEqual([['src/kept.ts'], ['src/kept.ts']]);
   });
 
-  it('reports nothing outside a git working tree', async ({ temp }) => {
+  it('reports nothing to the recorder outside a git working tree', async ({ temp }) => {
     temp.write('src/present.ts', 'present');
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
     const { recorder, scanned } = createRecorder();

@@ -53,7 +53,7 @@ export function resolveKitSources({
     return [{ name, source: { url: urlValue }, checklists: checklists ?? [], provenance: { kind: 'remote', label } }];
   }
 
-  // Assume `jit` is always false when `fromValue` is present; `parseRunArgs` enforces this constraint.
+  // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
   // Fill the default before the `--packages` branch reads it, so a bare invocation is structurally

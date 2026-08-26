@@ -137,7 +137,7 @@ describe(discoverKitProjects, () => {
     await expect(discoverDirs(temp.dir)).resolves.toContain('packages/authored');
   });
 
-  it('reports nothing for a tree holding no kit project', async ({ temp }) => {
+  it('reports no project for a tree holding none', async ({ temp }) => {
     const { projects } = await discover(temp.resolve('packages/plain'));
 
     expect(projects).toStrictEqual([]);

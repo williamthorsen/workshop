@@ -20,11 +20,11 @@ describe(findNearestWord, () => {
     { label: 'the empty string', input: '' },
     { label: 'a long flag', input: '--json' },
     { label: 'a short flag', input: '-h' },
-  ])('matches nothing for $label', ({ input }) => {
+  ])('returns undefined for $label', ({ input }) => {
     expect(findNearestWord(input, COMMANDS)).toBeUndefined();
   });
 
-  it('matches nothing when the candidate list is empty', () => {
+  it('returns undefined when the candidate list is empty', () => {
     expect(findNearestWord('list', [])).toBeUndefined();
   });
 

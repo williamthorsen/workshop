@@ -62,7 +62,7 @@ describe('buildBundle input closure', () => {
     });
   });
 
-  it('records nothing from node_modules', () => {
+  it('records no input from node_modules', () => {
     expect(inputs.filter((input) => input.path.includes('node_modules'))).toStrictEqual([]);
   });
 

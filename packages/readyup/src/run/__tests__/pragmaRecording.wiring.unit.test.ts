@@ -49,7 +49,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     expect(ledger.hasSuppressed(SOURCE_PATH, 2)).toBe(false);
   });
 
-  it('records nothing for a diagnosed check', async ({ temp }) => {
+  it('records no path and no suppression for a diagnosed check', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 

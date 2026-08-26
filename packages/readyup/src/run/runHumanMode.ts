@@ -136,7 +136,7 @@ function createBlockWriter(): BlockWriter {
 }
 
 /**
- * Returns the segment naming where a kit came from, or undefined where there is nothing to name.
+ * Returns the segment naming where a kit came from, or `undefined` where there is nothing to name.
  *
  * A kit the local kits directory holds has no source, and neither does one whose directory resolves to
  * the working directory: naming the directory the reader is standing in tells them nothing. A package

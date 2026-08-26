@@ -143,7 +143,7 @@ function collectBlockEntries(lines: string[], keyLineIndex: number): { index: nu
 }
 
 /**
- * Splits a `key: value` mapping line into its parts, or returns undefined when the line is not one or
+ * Splits a `key: value` mapping line into its parts, or returns `undefined` when the line is not one or
  * has a value this reader cannot follow. The key may be quoted, as a scoped package name in a
  * catalog is; the value keeps any `:` it contains, so a `workspace:*` entry survives.
  */
@@ -159,7 +159,7 @@ function parseMappingEntry(text: string): { key: string; value: string } | undef
   return { key: stripQuotes(rawKey), value: stripQuotes(rawValue) };
 }
 
-/** Returns the trimmed value after a `key:` on the same line, or null where there is no inline value. */
+/** Returns the trimmed value after a `key:` on the same line, or `null` where there is no inline value. */
 function extractInlineValue(line: string): string | null {
   const colonIndex = line.indexOf(':');
   if (colonIndex === -1) return null;

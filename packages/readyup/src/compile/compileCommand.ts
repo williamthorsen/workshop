@@ -483,7 +483,7 @@ interface DriftSkip {
 }
 
 /**
- * Returns a single kit's drift status alongside the manifest entry to preserve, or undefined where
+ * Returns a single kit's drift status alongside the manifest entry to preserve, or `undefined` where
  * the kit should proceed to compile.
  */
 function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {

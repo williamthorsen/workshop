@@ -18,7 +18,7 @@ export interface LoadRemoteKitOptions {
 
 /**
  * Fetches a remote `.js` kit bundle, evaluates it, and returns the validated RdyKit alongside its
- * embedded `__readyupVersion`, which is undefined for a kit compiled before that field existed or
+ * embedded `__readyupVersion`, which is `undefined` for a kit compiled before that field existed or
  * fetched from a third-party source that omits it.
  *
  * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so `Authorization` and

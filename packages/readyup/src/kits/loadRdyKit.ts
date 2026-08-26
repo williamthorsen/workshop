@@ -102,7 +102,7 @@ function listAvailableKits(dir: string, extension: string): string[] {
   }
 }
 
-/** Narrows `__readyupVersion` in an imported module namespace to a string, or undefined. */
+/** Narrows `__readyupVersion` in an imported module namespace to a string, or `undefined`. */
 function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string | undefined {
   const value = moduleRecord['__readyupVersion'];
   return typeof value === 'string' ? value : undefined;

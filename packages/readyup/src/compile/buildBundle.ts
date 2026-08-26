@@ -239,7 +239,7 @@ function hasUnresolvedSpecifier(error: unknown): boolean {
  * Returns the name and version of the package holding `directory`, walking up to the nearest
  * `package.json` that declares both.
  *
- * The walk never leaves `node_modules`: a store path with no identifiable package returns undefined
+ * The walk never leaves `node_modules`: a store path with no identifiable package returns `undefined`
  * rather than climbing on and attributing the file to the host project.
  */
 function identifyPackage(directory: string): { name: string; version: string } | undefined {
@@ -257,7 +257,7 @@ function isDependencyFile(filePath: string): boolean {
   return filePath.split(path.sep).includes(EXCLUDED_DIRECTORY);
 }
 
-/** Returns a package.json's name and version, or undefined when the file does not declare both readably. */
+/** Returns a package.json's name and version, or `undefined` when the file does not declare both readably. */
 function readPackageIdentity(manifestPath: string): { name: string; version: string } | undefined {
   let parsed: unknown;
   try {

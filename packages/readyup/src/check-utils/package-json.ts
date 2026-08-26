@@ -10,7 +10,7 @@ const PNPM_WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** Leading range operators and the `v` prefix, stripped before a version is parsed from the start of a specifier. */
 const RANGE_PREFIX = /^[\s^~=<>v]+/;
 
-/** Returns the parsed root package.json, or undefined where it does not exist or is not an object. */
+/** Returns the parsed root package.json, or `undefined` where it does not exist or is not an object. */
 export function readPackageJson(): Record<string, unknown> | undefined {
   return readJsonFile('package.json');
 }
@@ -32,7 +32,7 @@ export function hasDevDependency(name: string): boolean {
  * Checks whether a dev dependency meets a minimum version. Any `workspace:`-prefixed specifier satisfies any floor,
  * including one that names a version: the specifier links to the package the repo builds, and a version it names is a
  * publish range, not the version that resolves. A `catalog:` specifier is resolved through `pnpm-workspace.yaml` and
- * measured against the version it finds there; one that resolves to nothing meets no floor. `exempt` receives the
+ * measured against the version it finds there; one that resolves to no version meets no floor. `exempt` receives the
  * specifier as declared, so a catalogued dependency reaches it as `catalog:`; it adds further exemptions and cannot
  * remove the `workspace:` one.
  */
@@ -66,7 +66,7 @@ export function hasMinDevDependencyVersion(
 
 // region | Helpers
 
-/** Extracts the version a specifier declares, or undefined when it names none. */
+/** Extracts the version a specifier declares, or `undefined` when it names none. */
 function extractVersion(specifier: string): string | undefined {
   // Parse from the start, so a specifier naming fewer than three segments (`7`, `^6`) is measured rather than skipped;
   // `compareVersions` pads a short version against the floor.
@@ -76,7 +76,7 @@ function extractVersion(specifier: string): string | undefined {
   return /\d+\.\d+\.\d+/.exec(specifier)?.[0];
 }
 
-/** Resolves a `catalog:` specifier to the version its catalog assigns the package, or undefined when nothing does. */
+/** Resolves a `catalog:` specifier to the version its catalog assigns the package, or `undefined` when nothing does. */
 function resolveCatalogSpecifier(specifier: string, name: string): string | undefined {
   const yaml = readFile(PNPM_WORKSPACE_FILE);
   if (yaml === undefined) return undefined;

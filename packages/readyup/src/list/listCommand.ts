@@ -560,7 +560,7 @@ function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListK
   }));
 }
 
-/** Reads a manifest, returning undefined where there is none and reporting any other failure. */
+/** Reads a manifest, returning `undefined` where there is none and reporting any other failure. */
 function readLocalManifestIfPresent(manifestPath: string): RdyManifest | undefined {
   try {
     return readManifest(manifestPath);

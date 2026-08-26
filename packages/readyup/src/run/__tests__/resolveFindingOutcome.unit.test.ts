@@ -141,7 +141,7 @@ describe(resolveFindingOutcome, () => {
       expect(ledger.scannedPaths()).toHaveLength(1);
     });
 
-    it('records nothing examined where the outcome declares no sweep', () => {
+    it('records no examined path where the outcome declares no sweep', () => {
       const ledger = createPragmaLedger();
 
       resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, [], ledger);

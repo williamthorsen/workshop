@@ -14,7 +14,7 @@ export async function isGitRepo(path: string): Promise<boolean> {
   }
 }
 
-/** Reports whether `path` is the top of a git working tree, so a subdirectory yields false. */
+/** Reports whether `path` is the top of a git working tree, so a subdirectory yields `false`. */
 export async function isAtRepoRoot(path: string): Promise<boolean> {
   const resolved = expandHome(path);
   if (!existsSync(resolved)) return false;

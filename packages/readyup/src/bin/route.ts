@@ -228,7 +228,7 @@ function dropLeadingStyleFlag(argv: string[]): string[] {
   return argv.slice(index);
 }
 
-/** Returns true when the flags request help for the current subcommand. */
+/** Returns `true` when the flags request help for the current subcommand. */
 function wantsHelp(flags: string[]): boolean {
   return flags.some((f) => HELP_FLAGS.has(f));
 }

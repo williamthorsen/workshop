@@ -11,7 +11,7 @@ const ES_YEAR_BY_NODE_MAJOR: Readonly<Record<number, EsYear>> = {
 
 /**
  * Maps a Node major version to the ECMAScript year it supports.
- * Returns undefined for majors outside the table, leaving the caller to decide what an unrecognized major means.
+ * Returns `undefined` for majors outside the table, leaving the caller to decide what an unrecognized major means.
  */
 export function esYearForNodeMajor(major: number): EsYear | undefined {
   return ES_YEAR_BY_NODE_MAJOR[major];

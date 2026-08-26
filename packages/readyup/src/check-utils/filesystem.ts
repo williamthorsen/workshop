@@ -15,7 +15,7 @@ export function fileExists(filePath: string): boolean {
 
 /**
  * Reads a file, resolving a relative path against the working directory.
- * Returns undefined if it doesn't exist.
+ * Returns `undefined` if it doesn't exist.
  */
 export function readFile(filePath: string): string | undefined {
   const fullPath = resolve(process.cwd(), filePath);

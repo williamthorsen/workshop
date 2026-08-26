@@ -16,7 +16,7 @@ const SEVERITY_RANK: Record<Severity, number> = {
  *
  * Throws on a value outside the severity enum. Supplying a validated severity is the caller's
  * responsibility, and the throw is what makes that a contract rather than an assumption: an unranked
- * value compares as `undefined <= n`, which is false, so it would silently exclude the check from
+ * value compares as `undefined <= n`, which is `false`, so it would silently exclude the check from
  * both the failure and the reporting thresholds instead of failing loudly.
  */
 export function meetsThreshold(severity: Severity, threshold: Severity): boolean {

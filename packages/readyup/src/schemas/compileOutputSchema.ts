@@ -28,7 +28,7 @@ export const CompileKitEntrySchema = z
  * Top-level shape of `rdy compile --json`.
  *
  * A sweep runs to completion, so every requested kit appears here whatever happened to the ones
- * before it. `passed` is true when every kit compiled, agreeing with exit code 0.
+ * before it. `passed` is `true` when every kit compiled, agreeing with exit code 0.
  */
 export const CompileOutputSchema = z
   .object({

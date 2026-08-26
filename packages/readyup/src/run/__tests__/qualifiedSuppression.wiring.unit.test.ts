@@ -59,7 +59,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['passed', 'passed']);
   });
 
-  it('suppresses nothing by name where the kit has no publishing package to namespace under', async ({ temp }) => {
+  it('suppresses neither where the kit has no publishing package to namespace under', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
     const report = await runRdy(twoChecksOverOneLine());

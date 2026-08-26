@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createPragmaLedger } from '../PragmaLedger.ts';
 
 describe(createPragmaLedger, () => {
-  it('records nothing until a check declares something', () => {
+  it('records no path and no suppression until a check declares something', () => {
     const ledger = createPragmaLedger();
 
     expect(ledger.scannedPaths()).toStrictEqual([]);

@@ -977,7 +977,7 @@ describe(runRdy, () => {
       expect(report.diagnoses).toStrictEqual([{ name: 'masked-check', verdict: 'masked-pass' }]);
     });
 
-    it('reports nothing for a skipped check whose check would have failed', async () => {
+    it('reports no diagnosis for a skipped check whose check would have failed', async () => {
       const checklist: RdyChecklist = {
         name: 'rightly-skipped',
         checks: [{ name: 'would-fail', check: () => false, skip: () => 'not applicable' }],

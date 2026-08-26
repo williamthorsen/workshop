@@ -45,7 +45,7 @@ export function checkInputDrift(kit: RdyManifestKit, manifestDir: string): Input
 
 // region | Helpers
 
-/** Returns what is wrong with one recorded input, or undefined when it still matches. */
+/** Returns what is wrong with one recorded input, or `undefined` when it still matches. */
 function checkInput(input: RdyManifestInput, manifestDir: string): InputFailure | undefined {
   const resolvedPath = path.resolve(manifestDir, input.path);
   if (!existsSync(resolvedPath)) {
