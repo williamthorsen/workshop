@@ -4,7 +4,7 @@ import { stat } from 'node:fs/promises';
 import { reportsMissingPath } from './reportsMissingPath.ts';
 
 /**
- * Reads the stats of `filePath`, or undefined when it is absent.
+ * Reads the stats of `filePath`, or `undefined` when it is absent.
  *
  * Follows symlinks, which `readdir`'s own file types do not: a symlinked directory reports as a link rather than as
  * the directory it points at, and under a linked layout that would hide its contents entirely.

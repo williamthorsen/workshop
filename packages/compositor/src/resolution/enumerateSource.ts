@@ -53,7 +53,7 @@ async function enumerateKind(sourceDir: string, kind: ResolveKind): Promise<Arra
 }
 
 /**
- * Reads one artifact at `name` under `rootDir`, or undefined when the entry is not one.
+ * Reads one artifact at `name` under `rootDir`, or `undefined` when the entry is not one.
  *
  * A `file` kind's entry must be a file with the declared extension. A `directory` kind's must be a directory whose
  * entry file exists and is itself a file, since a directory with the entry file's own name is not an artifact.

@@ -96,7 +96,7 @@ interface RewriteContext {
   readonly pattern: RegExp;
 }
 
-/** Resolves one link target to the absolute path it deploys at, or to undefined when it stays as written. */
+/** Resolves one link target to the absolute path it deploys at, or to `undefined` when it stays as written. */
 function resolveTarget(target: string, context: RewriteContext, partialId: PartialId | undefined): string | undefined {
   if (namesItsOwnDestination(target, context.openers)) {
     return undefined;
