@@ -151,7 +151,7 @@ describe(resolveCatalog, () => {
     }).not.toThrow();
   });
 
-  it('contains nothing when the sources are empty', async () => {
+  it('contains no entry when the sources are empty', async () => {
     const sources = buildSources({ local: {}, library: {} });
 
     await expect(resolveCatalog({ kinds, sources })).resolves.toMatchObject({ entries: [] });

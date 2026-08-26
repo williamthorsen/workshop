@@ -85,7 +85,7 @@ describe(buildDependentsIndex, () => {
     expect(findDependents('skill:lint')).toStrictEqual(['collection:core', 'skill:review']);
   });
 
-  it('returns nothing for an artifact no edge reaches', () => {
+  it('returns no dependent for an artifact no edge reaches', () => {
     const findDependents = buildDependentsIndex(buildPlan());
 
     expect(findDependents('collection:core')).toStrictEqual([]);

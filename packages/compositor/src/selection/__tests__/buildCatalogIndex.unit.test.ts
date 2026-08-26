@@ -38,7 +38,7 @@ describe(buildCatalogIndex, () => {
     expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('local')).toStrictEqual(['skill:review']);
   });
 
-  it('indexes nothing for a kind a source has no entries of', () => {
+  it('omits a source with no entries of a kind from the index', () => {
     expect(buildCatalogIndex(catalog).bySource.get('rulebook')?.get('acme')).toBeUndefined();
   });
 });

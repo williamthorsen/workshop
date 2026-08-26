@@ -110,11 +110,11 @@ describe(planOwnedItemsFiles, () => {
       expect(JSON.parse(bodyOf(files[0]))).toStrictEqual({ hooks: [{ command: 'vendor-tool sync' }] });
     });
 
-    it('plans nothing for a host holding none of the engine’s items', () => {
+    it('plans no file for a host holding none of the engine’s items', () => {
       expect(plan({ [HOST]: '{\n  "hooks": []\n}\n' }, [{ ...hooks, items: [] }]).files).toStrictEqual([]);
     });
 
-    it('plans nothing for a host the target does not hold', () => {
+    it('plans no file for a host the target does not hold', () => {
       expect(plan({}, [{ ...hooks, items: [] }]).files).toStrictEqual([]);
     });
   });

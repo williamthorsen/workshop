@@ -29,7 +29,7 @@ describe(readArtifactAssets, () => {
     expect(assets.map(({ relativePath }) => relativePath)).toStrictEqual(['checklist.md']);
   });
 
-  it('reads an artifact shipping nothing else as shipping nothing', async () => {
+  it('reads an artifact shipping nothing else as shipping no asset', async () => {
     using tree = createTempTree({ 'SKILL.md': '# Review\n' });
 
     await expect(readArtifactAssets(tree.dir, 'SKILL.md')).resolves.toStrictEqual([]);

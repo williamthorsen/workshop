@@ -87,13 +87,13 @@ describe(captureSnapshot, () => {
     });
   });
 
-  it('renders nothing for a kind the target declares no deployment for', async () => {
+  it('renders undefined for a kind the target declares no deployment for', async () => {
     const snapshot = await capture();
 
     expect(renderOf(snapshot, 'subagent:auditor')).toBeUndefined();
   });
 
-  it('renders nothing for a kind that emits no files', async () => {
+  it('renders undefined for a kind that emits no files', async () => {
     const snapshot = await capture();
 
     expect(renderOf(snapshot, 'collection:everything')).toBeUndefined();

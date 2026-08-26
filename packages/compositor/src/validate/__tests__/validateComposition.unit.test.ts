@@ -31,7 +31,7 @@ const MEMBER_RULE = {
 } as const;
 
 describe(validateComposition, () => {
-  it('reports nothing for a composition with nothing wrong in it', async () => {
+  it('reports no diagnostic for a composition with nothing wrong in it', async () => {
     const { config, snapshot } = await captureComposition();
 
     expect(validateComposition(config, snapshot).diagnostics).toStrictEqual([]);

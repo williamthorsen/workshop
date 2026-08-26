@@ -210,7 +210,7 @@ describe(readTargetState, () => {
     expect(after.digest).not.toBe(before.digest);
   });
 
-  it('reads a target holding nothing as holding nothing', async () => {
+  it('reads a target holding nothing as claiming no file and holding no host', async () => {
     const state = await readState({ 'unrelated.txt': 'x' }, [skills, rulebooks]);
 
     expect(state).toMatchObject({ targetId: 'claude', claimed: [], hosts: [], ownedHosts: [] });

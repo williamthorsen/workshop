@@ -13,13 +13,13 @@ describe(readFileIfPresent, () => {
     await expect(readFileIfPresent(path.join(tree.dir, 'notes.md'))).resolves.toBe('notes');
   });
 
-  it('reports nothing for an absent file', async () => {
+  it('reports undefined for an absent file', async () => {
     using tree = createTempTree({});
 
     await expect(readFileIfPresent(path.join(tree.dir, 'never-created.md'))).resolves.toBeUndefined();
   });
 
-  it('reports nothing for a path below a regular file, which fails as ENOTDIR rather than ENOENT', async () => {
+  it('reports undefined for a path below a regular file, which fails as ENOTDIR rather than ENOENT', async () => {
     using tree = createTempTree({ 'notes.md': 'notes' });
 
     await expect(readFileIfPresent(path.join(tree.dir, 'notes.md', 'below'))).resolves.toBeUndefined();

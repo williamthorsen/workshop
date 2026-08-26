@@ -37,21 +37,21 @@ describe(expandSelector, () => {
   it.each([
     ['an artifact no source contains', { artifact: 'absent' }, 'unknown-artifact'],
     ['a source that is not declared', { source: 'nowhere' }, 'unknown-source'],
-  ])('matches nothing and reports %s', (_label, selector, code) => {
+  ])('matches no artifact and reports %s', (_label, selector, code) => {
     const { matched, diagnostics } = expand(selector);
 
     expect(matched).toStrictEqual([]);
     expect(diagnostics.at(0)?.code).toBe(code);
   });
 
-  it('reports a source containing nothing of the kind, having matched nothing to report', () => {
+  it('reports a source containing nothing of the kind, having matched no artifact to report', () => {
     const { matched, diagnostics } = expand({ source: 'acme' }, 'rulebook');
 
     expect(matched).toStrictEqual([]);
     expect(diagnostics.at(0)?.code).toBe('empty-source');
   });
 
-  it('says nothing when the selector matches, so a diagnostic marks a mistake rather than a step', () => {
+  it('appends no diagnostic when the selector matches, so a diagnostic marks a mistake rather than a step', () => {
     expect(expand({ artifact: 'lint' }).diagnostics).toStrictEqual([]);
   });
 

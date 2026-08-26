@@ -22,7 +22,7 @@ describe(findUnmatchedBindings, () => {
     ]);
   });
 
-  it('reports nothing where an artifact declares the inlay', () => {
+  it('reports no binding where an artifact declares the inlay', () => {
     const found = find({
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
       columns: [['claude', [['skill:review', declaring('preferences')]]]],
