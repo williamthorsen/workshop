@@ -5,7 +5,7 @@ const NODE_TOOL_NAMES = new Set(['node', 'nodejs']);
 
 /**
  * Reads the Node version declared in a `.tool-versions` file.
- * Returns undefined when the file is absent or declares no Node version.
+ * Returns `undefined` when the file is absent or declares no Node version.
  */
 export function readToolVersionsNode(filePath = '.tool-versions'): string | undefined {
   const content = readFile(filePath);

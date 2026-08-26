@@ -15,7 +15,7 @@ export interface Workspace {
   readonly absolutePath: string;
   /** `name` from the workspace's `package.json`; `undefined` if absent. */
   readonly name: string | undefined;
-  /** True iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
+  /** `true` iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
   readonly isPackage: boolean;
   /** True for the repo root, which every repo shape reports. Independent of `isPackage`: a root may publish. */
   readonly isRoot: boolean;
@@ -25,7 +25,7 @@ export interface Workspace {
 
 /** Options for `discoverWorkspaces`. */
 export interface DiscoverWorkspacesOptions {
-  /** Optional predicate. Workspaces returning false are omitted. */
+  /** Optional predicate. Workspaces returning `false` are omitted. */
   filter?: (workspace: Workspace) => boolean;
 }
 
@@ -187,7 +187,7 @@ function normalizePattern(pattern: string): string {
   return pattern;
 }
 
-/** Builds a `Workspace` for a relative directory; returns undefined if its `package.json` is missing or malformed. */
+/** Builds a `Workspace` for a relative directory; returns `undefined` if its `package.json` is missing or malformed. */
 function buildWorkspace(rootDir: string, relDir: string): Workspace | undefined {
   const absoluteDir = resolve(rootDir, relDir);
   const packageJson = readJsonFile(join(absoluteDir, 'package.json'));

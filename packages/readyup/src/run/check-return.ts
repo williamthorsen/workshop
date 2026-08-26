@@ -12,7 +12,7 @@ export function describeUninterpretableReturn(raw: unknown): string {
 }
 
 /**
- * Returns true if a check's return value is a structured outcome.
+ * Returns `true` if a check's return value is a structured outcome.
  *
  * `ok` must be a boolean: a truthy value of any other type is an authoring mistake, not a pass, and
  * treating it as one is how a broken check reports success.
@@ -22,7 +22,7 @@ export function isCheckOutcome(raw: unknown): raw is CheckOutcome {
 }
 
 /**
- * Returns true if a check's return value is a set of located findings.
+ * Returns `true` if a check's return value is a set of located findings.
  *
  * Keyed on an array `findings`, as `isCheckOutcome` is on a boolean `ok`: each arm is recognized by the
  * field it is built around rather than by a tag its author would have to remember to write.

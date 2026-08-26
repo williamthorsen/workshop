@@ -282,7 +282,7 @@ function formatCounts(counts: SummaryCounts): string {
   return fields.length > 0 ? fields.join(COUNT_SEPARATOR) : EMPTY_COUNTS;
 }
 
-/** Returns the formatted duration, or undefined for a skipped token or a duration under the floor. */
+/** Returns the formatted duration, or `undefined` for a skipped token or a duration under the floor. */
 function resolveDuration(token: TokenName, durationMs: number | undefined): string | undefined {
   if (durationMs === undefined || SKIPPED_TOKENS.has(token)) return undefined;
   return durationMs >= DURATION_FLOOR_MS ? formatDuration(durationMs) : undefined;

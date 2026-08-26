@@ -133,7 +133,7 @@ export const VerifyKitEntrySchema = z
 /**
  * Top-level shape of `rdy verify --json`.
  *
- * `passed` is true when every one of every kit's verdicts is `ok` or `unverified`, agreeing with
+ * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified`, agreeing with
  * exit code 0. An unreadable manifest produces the error envelope instead of this payload.
  */
 export const VerifyOutputSchema = z

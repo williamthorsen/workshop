@@ -19,7 +19,7 @@ export async function compareLocalRefs(path: string, refA: string, refB: string)
   return { status: 'mismatch', shaA, shaB, ...(aheadBehind && { aheadBehind }) };
 }
 
-/** Returns the name of the first ref that does not exist, or undefined where both exist. */
+/** Returns the name of the first ref that does not exist, or `undefined` where both exist. */
 async function findMissingRef(path: string, refA: string, refB: string): Promise<string | undefined> {
   const [existsA, existsB] = await Promise.all([refExists(path, refA), refExists(path, refB)]);
   if (!existsA) return refA;
@@ -38,7 +38,7 @@ async function refExists(path: string, ref: string): Promise<boolean> {
   }
 }
 
-/** Returns the ahead/behind counts between two refs, or undefined where they cannot be computed. */
+/** Returns the ahead/behind counts between two refs, or `undefined` where they cannot be computed. */
 async function resolveAheadBehind(
   path: string,
   refA: string,

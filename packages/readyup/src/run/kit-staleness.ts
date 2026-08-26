@@ -120,7 +120,7 @@ function hasChangedInput(status: InputsStatus | undefined): boolean {
   return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');
 }
 
-/** Returns a staleness verdict, or undefined when reaching one needed a file that cannot be read. */
+/** Returns a staleness verdict, or `undefined` when reaching one needed a file that cannot be read. */
 function readVerdict<TStatus>(check: () => TStatus): TStatus | undefined {
   try {
     return check();

@@ -5,7 +5,7 @@ import { readFile } from './filesystem.ts';
 import { getJsonValue } from './json-value.ts';
 import { missingFrom } from './missingFrom.ts';
 
-/** Reads and parses a JSON file. Returns undefined if it doesn't exist or isn't an object. */
+/** Reads and parses a JSON file. Returns `undefined` if it doesn't exist or isn't an object. */
 export function readJsonFile(filePath: string): Record<string, unknown> | undefined {
   const content = readFile(filePath);
   if (content === undefined) return undefined;

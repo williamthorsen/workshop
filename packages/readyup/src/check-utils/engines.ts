@@ -32,7 +32,7 @@ export function readEnginesNodeFloor(manifest: Record<string, unknown>): Engines
 }
 
 /**
- * Reports whether a Node version is at or above a floor, and undefined when either argument is not a
+ * Reports whether a Node version is at or above a floor, and `undefined` when either argument is not a
  * dotted numeric version -- the shape `.tool-versions` tokens such as `lts` and `system` do not take.
  * A leading `v` is tolerated on either argument, so `process.version` can be passed as it comes.
  */

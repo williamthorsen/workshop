@@ -24,7 +24,7 @@ export interface TsconfigChainEntry {
   /** Path of the config, cwd-relative. */
   path: string;
   /**
-   * The `extends` specifier that reached this config; undefined for the entry config. Unlike `path`, it survives a
+   * The `extends` specifier that reached this config; `undefined` for the entry config. Unlike `path`, it survives a
    * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory it
    * points at, so one base config resolves to two different paths. Where two branches reach one config, it names the
    * branch that reached it first.
@@ -62,7 +62,7 @@ interface Resolution {
 
 /**
  * Reads a tsconfig's `extends` chain, resolving it as TypeScript does, and reports what each config it reaches
- * declares in its own right. Returns undefined if the entry file is missing or unparseable; unresolvable parents
+ * declares in its own right. Returns `undefined` if the entry file is missing or unparseable; unresolvable parents
  * are reported in `unresolvedExtends` rather than treated as failures.
  */
 export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
@@ -84,7 +84,7 @@ export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
 }
 
 /**
- * Reads a tsconfig's effective `lib` and `target` from its `extends` chain. Returns undefined if the entry file is
+ * Reads a tsconfig's effective `lib` and `target` from its `extends` chain. Returns `undefined` if the entry file is
  * missing or unparseable; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
  */
 export function readTsconfigLanguageLevel(filePath: string): TsconfigLanguageLevel | undefined {
@@ -124,7 +124,7 @@ function readExtends(value: unknown): string[] {
   return [];
 }
 
-/** Reads and JSONC-parses a JSON file. Returns undefined when the file is unreadable or is not an object. */
+/** Reads and JSONC-parses a JSON file. Returns `undefined` when the file is unreadable or is not an object. */
 function readJsonFile(absolutePath: string): Record<string, unknown> | undefined {
   if (!isFile(absolutePath)) return undefined;
   let content: string;
@@ -138,7 +138,7 @@ function readJsonFile(absolutePath: string): Record<string, unknown> | undefined
   return parsed;
 }
 
-/** Normalizes a declared `lib` to lowercased strings. Returns undefined when the value is not an array. */
+/** Normalizes a declared `lib` to lowercased strings. Returns `undefined` when the value is not an array. */
 function readLib(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   return value.filter((entry): entry is string => typeof entry === 'string').map((entry) => entry.toLowerCase());
@@ -161,7 +161,7 @@ function readNearestOption<T>(
   return undefined;
 }
 
-/** Normalizes a declared `target` to lowercase. Returns undefined when the value is not a string. */
+/** Normalizes a declared `target` to lowercase. Returns `undefined` when the value is not a string. */
 function readTarget(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   return value.toLowerCase();

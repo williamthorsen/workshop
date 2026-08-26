@@ -192,7 +192,7 @@ export interface RdyCheck {
   /**
    * Whether the check renders only when it does not pass. It still runs and still counts toward
    * the summary; a failure or a skip reports in full.
-   * Default: false.
+   * Default: `false`.
    */
   quiet?: boolean | undefined;
 
@@ -305,7 +305,7 @@ export interface RdyReport {
   diagnoses?: SkipDiagnosis[] | undefined;
 
   /**
-   * True when no check at or above the failure threshold has `ok: false`.
+   * `true` when no check at or above the failure threshold has `ok: false`.
    * Skipped checks do not affect this.
    */
   passed: boolean;

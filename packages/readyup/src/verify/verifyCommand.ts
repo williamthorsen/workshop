@@ -146,7 +146,7 @@ function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean
 }
 
 /**
- * Returns true when none of a kit's verdicts reports a mismatch or a missing file.
+ * Returns `true` when none of a kit's verdicts reports a mismatch or a missing file.
  *
  * Reads the verdicts themselves rather than the entry serialized from them. Each is a total union,
  * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
@@ -232,17 +232,17 @@ function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenNam
   return 'passed';
 }
 
-/** Returns true when the compiled-output verdict reports a mismatch or a missing file. */
+/** Returns `true` when the compiled-output verdict reports a mismatch or a missing file. */
 function hasTargetFailed(status: DriftStatus): boolean {
   return status.kind === 'missing' || status.kind === 'drift';
 }
 
-/** Returns true when the source verdict reports a mismatch or a missing file. */
+/** Returns `true` when the source verdict reports a mismatch or a missing file. */
 function hasSourceFailed(status: SourceStatus): boolean {
   return status.kind === 'missing' || status.kind === 'stale';
 }
 
-/** Returns a clause describing the compiled-output verdict, or undefined when the verdict is `ok`. */
+/** Returns a clause describing the compiled-output verdict, or `undefined` when the verdict is `ok`. */
 function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string | undefined {
   switch (status.kind) {
     case 'ok':
@@ -256,7 +256,7 @@ function describeDriftStatus(kit: RdyManifestKit, status: DriftStatus): string |
   }
 }
 
-/** Returns a clause describing the source verdict, or undefined when it is `ok` or `unverified`. */
+/** Returns a clause describing the source verdict, or `undefined` when it is `ok` or `unverified`. */
 function describeSourceStatus(kit: RdyManifestKit, status: SourceStatus): string | undefined {
   switch (status.kind) {
     case 'stale':
@@ -287,7 +287,7 @@ function describeInputFailure(failure: InputFailure): string {
 }
 
 /**
- * Returns a clause describing the rebuild verdict, or undefined when there is nothing to add.
+ * Returns a clause describing the rebuild verdict, or `undefined` when there is nothing to add.
  *
  * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
  * restate them. Anywhere else it speaks, because it then holds the line's strongest answer: over

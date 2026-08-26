@@ -131,7 +131,7 @@ export const KitEntrySchema = z.union([KitErrorEntrySchema, KitResultEntrySchema
 /**
  * Top-level shape of `rdy run --json`.
  *
- * `passed` is the run verdict: true when every requested kit produced results and every kit passed
+ * `passed` is the run verdict: `true` when every requested kit produced results and every kit passed
  * under its own effective `failOn`, which makes it agree with exit code 0 in every case. A report is
  * only ever emitted once the run reaches its kits, so `passed: false` means "ran, but incompletely
  * or with failures" and never "could not start": that failure produces the error envelope instead.
