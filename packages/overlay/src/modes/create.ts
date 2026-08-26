@@ -44,7 +44,7 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
   // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
   // scripts against a target whose files never converged.
   if (applyCode !== 0) {
-    return { mode: 'create', entries, scripts: { ran: pendingScriptCount, ok: false }, counts, exitCode: 2 };
+    return { mode: 'create', entries, scripts: { ranCount: pendingScriptCount, ok: false }, counts, exitCode: 2 };
   }
 
   const scriptsCode = pendingScriptCount > 0 ? await runChezmoiStreamed(context, ['apply', '--include=scripts']) : 0;
@@ -53,7 +53,7 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
   return {
     mode: 'create',
     entries,
-    scripts: { ran: pendingScriptCount, ok },
+    scripts: { ranCount: pendingScriptCount, ok },
     counts,
     exitCode: computeExitCode(ok, conflicts),
   };

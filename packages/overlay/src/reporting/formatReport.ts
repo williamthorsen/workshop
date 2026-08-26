@@ -73,7 +73,7 @@ function summarizeCounts(result: OverlayResult): string {
 function summarizeScripts(result: OverlayResult): string {
   const verb = result.mode === 'verify' ? 'would run' : 'ran';
   const status = result.scripts.ok ? '' : ' (a script failed)';
-  return `${pluralizeWithCount(result.scripts.ran, 'script')} ${verb}${status}.`;
+  return `${pluralizeWithCount(result.scripts.ranCount, 'script')} ${verb}${status}.`;
 }
 
 // endregion | Helpers

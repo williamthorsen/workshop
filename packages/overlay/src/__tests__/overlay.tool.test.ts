@@ -63,7 +63,7 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     await expect(readFile(path.join(target, '.difffile'), 'utf8')).resolves.toBe(CANONICAL_CONTENT);
     expect(existsSync(path.join(target, '.sentinel'))).toBe(true);
     expect(existsSync(path.join(target, '.planted'))).toBe(false);
-    expect(result.scripts.ran).toBeGreaterThan(0);
+    expect(result.scripts.ranCount).toBeGreaterThan(0);
     expect(result.exitCode).toBe(0);
   });
 
@@ -74,7 +74,7 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
     const result = await overlay({ source, target, mode: 'verify' });
 
     expect(result.exitCode).toBe(0);
-    expect(result.scripts.ran).toBeGreaterThan(0);
+    expect(result.scripts.ranCount).toBeGreaterThan(0);
   });
 
   it('maps a failing run_ script to exit 2 under create', async () => {

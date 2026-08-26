@@ -24,7 +24,7 @@ export async function runForce(context: ChezmoiContext): Promise<OverlayResult> 
   return {
     mode: 'force',
     entries,
-    scripts: { ran: pendingScriptCount, ok },
+    scripts: { ranCount: pendingScriptCount, ok },
     counts: {
       created: countOutcome(entries, 'created'),
       deleted: countOutcome(entries, 'deleted'),
