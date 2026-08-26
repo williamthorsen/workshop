@@ -69,7 +69,7 @@ describe(resolveCompileRoot, () => {
 
 // region | Helpers
 
-/** Returns the nearest directory at or above `fromDir` holding a `package.json`, or nothing where none does. */
+/** Returns the nearest directory at or above `fromDir` holding a `package.json`, or undefined where none does. */
 function findAncestorManifest(fromDir: string): string | undefined {
   for (let directory = fromDir; ; directory = path.dirname(directory)) {
     if (existsSync(path.join(directory, 'package.json'))) return directory;

@@ -59,7 +59,7 @@ describe(resolveConfiguredPackages, () => {
   });
 
   // A bare `--packages` fills the name in, so no package publishing it is the "requires nothing" case.
-  it('resolves to nothing when no configured package publishes the default kit', ({ temp }) => {
+  it('resolves to an empty list when no configured package publishes the default kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['preflight']);
 
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.js')).toStrictEqual([]);

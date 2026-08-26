@@ -225,7 +225,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns a token's glyph and one trailing space, for placement mid-sentence rather than at a line's head.
    *
-   * A formatter that gives the token no glyph returns nothing, so the sentence closes up with no space.
+   * A formatter that gives the token no glyph returns an empty string, so the sentence closes up with no space.
    */
   function inlineGlyph(name: TokenName): string {
     const { glyph } = formatter.tokens[name];
@@ -282,7 +282,7 @@ function formatCounts(counts: SummaryCounts): string {
   return fields.length > 0 ? fields.join(COUNT_SEPARATOR) : EMPTY_COUNTS;
 }
 
-/** Returns the formatted duration, or nothing for a skipped token or a duration under the floor. */
+/** Returns the formatted duration, or undefined for a skipped token or a duration under the floor. */
 function resolveDuration(token: TokenName, durationMs: number | undefined): string | undefined {
   if (durationMs === undefined || SKIPPED_TOKENS.has(token)) return undefined;
   return durationMs >= DURATION_FLOOR_MS ? formatDuration(durationMs) : undefined;

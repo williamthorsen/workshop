@@ -129,7 +129,7 @@ describe('formatReasonBlock', () => {
     expect(engine.formatReasonBlock(['first', 'second'])).toHaveLength(2);
   });
 
-  it('returns nothing for no reasons', () => {
+  it('returns an empty list for no reasons', () => {
     expect(engine.formatReasonBlock([])).toStrictEqual([]);
   });
 
@@ -511,7 +511,7 @@ describe('token and glyph', () => {
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
   });
 
-  it('returns nothing for a token the formatter gives no glyph, so no orphan space is left behind', () => {
+  it('returns an empty string for a token the formatter gives no glyph, so no orphan space is left behind', () => {
     const glyphless = createLayoutEngine({
       ...richFormatter,
       tokens: { ...richFormatter.tokens, kit: { glyph: '', width: 0 } },

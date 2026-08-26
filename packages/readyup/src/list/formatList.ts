@@ -307,7 +307,7 @@ function buildProjectHint(project: RecursiveProjectView): string {
 }
 
 /**
- * Returns what a dependency command needs to run from the sweep root, which is nothing at the root itself.
+ * Returns what a dependency command needs to run from the sweep root, which is an empty string at the root itself.
  *
  * A workspace's own dependency is reachable from nowhere else: `rdy run` takes no directory, and `--from`
  * names a kit source rather than a working directory.

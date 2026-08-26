@@ -175,7 +175,7 @@ function findBlockCommentEnd(source: string, from: number): number {
   return end === -1 ? source.length : end + 2;
 }
 
-/** Returns the offset past the comment opening at an offset, or nothing where none opens there. */
+/** Returns the offset past the comment opening at an offset, or undefined where none opens there. */
 function findCommentEnd(source: string, from: number): number | undefined {
   if (source[from] !== '/') return undefined;
 
@@ -191,7 +191,7 @@ function findLineEnd(source: string, from: number): number {
   return end === -1 ? source.length : end;
 }
 
-/** Returns the offset past a regular expression's closing delimiter, or nothing where the line ends first. */
+/** Returns the offset past a regular expression's closing delimiter, or undefined where the line ends first. */
 function findRegexEnd(source: string, start: number): number | undefined {
   let index = start + 1;
   let isInClass = false;

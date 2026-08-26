@@ -7,7 +7,7 @@ export interface CheckIds {
 }
 
 /**
- * Returns the strings naming a check, or nothing where the check declares no id.
+ * Returns the strings naming a check, or undefined where the check declares no id.
  *
  * A kit a package publishes namespaces its checks under that package's name with the scope stripped, and
  * accepts the fully-qualified name too. The bare id is not accepted there: the namespace is what keeps two

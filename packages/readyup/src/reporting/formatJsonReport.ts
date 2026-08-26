@@ -160,7 +160,7 @@ function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity
 }
 
 /**
- * Returns the `checks` property for a checklist entry, or nothing when the projection leaves it empty.
+ * Returns a checklist entry's `checks` property, omitted when the projection leaves it empty.
  *
  * The reporting threshold prunes first and the detail projection second, so `summary` shows the same
  * failures `full` would, without the checks that passed around them.
