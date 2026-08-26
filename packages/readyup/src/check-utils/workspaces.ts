@@ -17,7 +17,7 @@ export interface Workspace {
   readonly name: string | undefined;
   /** `true` iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
   readonly isPackage: boolean;
-  /** True for the repo root, which every repo shape reports. Independent of `isPackage`: a root may publish. */
+  /** `true` for the repo root, which every repo shape reports. Independent of `isPackage`: a root may publish. */
   readonly isRoot: boolean;
   /** Parsed `package.json` contents, validated to be a record. */
   readonly packageJson: Readonly<Record<string, unknown>>;
