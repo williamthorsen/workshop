@@ -72,7 +72,7 @@ function createDiagnostic(target: string, context: RewriteContext, partialId: Pa
 }
 
 /**
- * Reports whether `target` names its own destination and so resolves to nothing this pass can improve on.
+ * Reports whether `target` names its own destination, which `resolveTarget` leaves as written.
  *
  * The token test is anchored rather than searched, because a token elsewhere in a target says nothing about where the
  * target starts from; only one at the head replaces the path this pass would otherwise build.
