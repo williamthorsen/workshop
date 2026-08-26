@@ -453,7 +453,9 @@ Mocking `readyup/check-utils` instead is what produces a workspace list discover
 ```ts
 import { makeWorkspace } from 'readyup/testing';
 
-expect(skipIfNotPublishable(makeWorkspace({ isPackage: false }))).toBe('package.json#private is true');
+expect(skipIfNotPublishable(makeWorkspace({ packageJson: { name: 'example', private: true } }))).toBe(
+  'package.json#private is true',
+);
 ```
 
 `makeWorkspace` fills every field the call leaves out, so a field added to `Workspace` in a later release does not break the fixture. Its defaults are:

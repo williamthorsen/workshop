@@ -1,7 +1,7 @@
 import { deepFreeze } from '../portable/deepFreeze.ts';
 import type { Workspace } from './workspaces.ts';
 
-/** Builds a `Workspace` from a relative dir, absolute path, and a parsed `package.json`. */
+/** Builds a `Workspace`, deep-freezing the manifest it is given. */
 export function buildWorkspaceFromPackageJson(
   relDir: string,
   absolutePath: string,
@@ -10,7 +10,7 @@ export function buildWorkspaceFromPackageJson(
   const nameValue = packageJson['name'];
   const name = typeof nameValue === 'string' ? nameValue : undefined;
   const isPackage = packageJson['private'] !== true;
-  // One call's mutation would otherwise reach every later call, which shares these objects.
+  // A `Workspace`'s manifest is frozen, so no holder's write reaches another.
   deepFreeze(packageJson);
   return Object.freeze({ dir: relDir, absolutePath, name, isPackage, isRoot: relDir === '.', packageJson });
 }

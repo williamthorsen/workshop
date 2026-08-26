@@ -10,8 +10,8 @@ const FIXTURE_ROOT = '/repo';
 /**
  * Builds a `Workspace` fixture, filling every field the caller leaves out.
  *
- * Every default is derived: `dir` decides `absolutePath` and the manifest name, and the manifest decides `name`,
- * `isPackage`, and `isRoot` through the derivation `discoverWorkspaces` uses. A field added to `Workspace` therefore
+ * Every default is derived: `dir` decides `absolutePath`, the manifest name, and `isRoot`, and the manifest decides
+ * `name` and `isPackage`, through the derivation `discoverWorkspaces` uses. A field added to `Workspace` therefore
  * reaches a fixture with the value discovery would give it.
  *
  * Overrides apply after the derivation, so a test that needs a shape discovery would not produce can still state it.
