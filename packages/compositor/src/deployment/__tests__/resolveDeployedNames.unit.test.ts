@@ -75,7 +75,7 @@ describe(resolveDeployedNames, () => {
     expect(resolve('claude', 'rulebook:shell')).toBe('x-$&y');
   });
 
-  it('resolves an artifact whose kind the target does not deploy to undefined', () => {
+  it('resolves to undefined for an artifact whose kind the target does not deploy', () => {
     const resolve = resolveDeployedNames([review, shell], [claude]);
 
     expect(resolve('claude', 'rulebook:shell')).toBeUndefined();
