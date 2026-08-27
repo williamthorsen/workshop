@@ -1,10 +1,11 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { expandConfiguredPackages } from '../expandConfiguredPackages.ts';
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   // A tree per test: workspace discovery holds its answer for the life of the process, keyed by directory.
   makeFixture(() => createTempTree({}, { prefix: 'expand-packages-workspaces-' })),

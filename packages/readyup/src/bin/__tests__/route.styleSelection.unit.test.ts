@@ -1,7 +1,7 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, it as baseIt, vi } from 'vitest';
 
 import { plainFormatter } from '../../layout/plainFormatter.ts';
 import { STYLE_ENV_VAR } from '../../layout/resolveStyle.ts';
@@ -33,7 +33,8 @@ const RENDERING_COMMANDS = [
   { name: 'init', args: ['init', '--dry-run'], expected: /^PASS {2}\.config\/readyup\.config\.ts/mu },
 ] as const;
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   { scope: 'file' },
   makeFixture(() => {

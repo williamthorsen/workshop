@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const { existsProbes, readPaths } = vi.hoisted(() => {
   const existsProbes: string[] = [];
@@ -40,7 +40,8 @@ import { readSourceText, readTrackedSources } from '../readTrackedSources.ts';
 import { withSweepRecorder } from '../sweepRecorder.ts';
 import { createRecorder } from '../test-utils/sweep-recording.ts';
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-sources-' })),
 );

@@ -1,6 +1,6 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
@@ -13,7 +13,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { walkDirectories } from '../walkDirectories.ts';
 
-const it = test
+const it = baseIt
   .extend(
     'temp',
     makeFixture(() =>

@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
@@ -25,7 +25,8 @@ const OTHER_PATH = 'src/b.ts';
 /** A source whose first line has a pragma and whose second does not. */
 const SOURCE_TEXT = ['x; // rdy-ignore', 'y;', ''].join('\n');
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-pragma-recording-' })),
 );

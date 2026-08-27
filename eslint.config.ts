@@ -41,6 +41,11 @@ const config = defineConfig([
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
   },
   {
+    // `strict-lint` promotes rule severities and not this report, so the default `warn` would leave a directive
+    // whose rule has stopped reporting in place indefinitely.
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+  },
+  {
     files: patterns.codeFiles,
     rules: {
       'n/no-missing-import': 'off',
@@ -76,61 +81,14 @@ const config = defineConfig([
   defineConfig({
     files: patterns.testFiles,
     extends: [await createConfig.vitest()],
-  }),
-  {
-    // The suites taking their trees as fixtures bind `test.extend(...)` to `it`, and some of them register
-    // `it.aroundAll(...)` or `it.aroundEach(...)`, which @vitest/eslint-plugin 1.6.27 misreads twice:
-    // `consistent-test-it` compares the resolved import name (`test`) rather than the local binding, so every
-    // describe-nested `it(...)` is a false positive; and `require-hook`'s call-chain table lacks both hooks,
-    // so the registration reads as bare top-level code. Both are plugin defects; delete this block when the
-    // upstream fixes land:
-    // https://github.com/vitest-dev/eslint-plugin-vitest/issues/955 (require-hook) and
-    // https://github.com/vitest-dev/eslint-plugin-vitest/issues/956 (consistent-test-it).
-    //
-    // The list grows per migrated suite rather than the preamble collapsing into a shared helper: an imported
-    // `it` traces back to no vitest export, at which point the plugin stops applying every vitest rule to the
-    // file.
-    files: [
-      'packages/readyup/src/bin/__tests__/route.compiledWithReporting.unit.test.ts',
-      'packages/readyup/src/bin/__tests__/route.detailProjection.unit.test.ts',
-      'packages/readyup/src/bin/__tests__/route.exitCodes.tool.test.ts',
-      'packages/readyup/src/bin/__tests__/route.partialResults.unit.test.ts',
-      'packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/discoverKitPackages.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/filesystem.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/hashing.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/json.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/package-json.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/tool-versions.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/tsconfig.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/workspaces.caching.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/workspaces.unit.test.ts',
-      'packages/readyup/src/check-utils/__tests__/workspaces.walk.unit.test.ts',
-      'packages/readyup/src/check-utils/project/__tests__/buildFindingReport.unit.test.ts',
-      'packages/readyup/src/check-utils/project/__tests__/listOwnImplementationSpans.unit.test.ts',
-      'packages/readyup/src/check-utils/project/__tests__/listTrackedFiles.tool.test.ts',
-      'packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts',
-      'packages/readyup/src/installed-packages/__tests__/collectKitPackageGroups.unit.test.ts',
-      'packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.unit.test.ts',
-      'packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.workspaces.unit.test.ts',
-      'packages/readyup/src/list/__tests__/listCommand.packages.unit.test.ts',
-      'packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts',
-      'packages/readyup/src/list/__tests__/listCommand.recursivePackages.unit.test.ts',
-      'packages/readyup/src/portable/__tests__/walkDirectories.unit.test.ts',
-      'packages/readyup/src/projects/__tests__/project-discovery.unit.test.ts',
-      'packages/readyup/src/run/__tests__/pragma-report.unit.test.ts',
-      'packages/readyup/src/run/__tests__/pragmaRecording.wiring.unit.test.ts',
-      'packages/readyup/src/run/__tests__/qualifiedSuppression.wiring.unit.test.ts',
-      'packages/readyup/src/run/__tests__/resolveConfiguredPackages.unit.test.ts',
-      'packages/readyup/src/run/__tests__/resolveFindingOutcome.unit.test.ts',
-      'packages/readyup/src/testing/__tests__/makeWorkspace.unit.test.ts',
-    ],
     rules: {
-      'vitest/consistent-test-it': 'off',
+      // A suite taking its tree as a fixture registers `it.aroundAll(...)` or `it.aroundEach(...)`, which
+      // @vitest/eslint-plugin 1.6.27 reads as bare top-level code: `require-hook`'s call-chain table lacks both
+      // hooks. Drop the option when the upstream fix lands:
+      // https://github.com/vitest-dev/eslint-plugin-vitest/issues/955
       'vitest/require-hook': ['warn', { allowedFunctionCalls: ['it.aroundAll', 'it.aroundEach'] }],
     },
-  },
+  }),
   {
     // Config files legitimately mutate and compose configuration objects at module top level.
     files: [...patterns.codeExtensions.map((extensions) => `**/*.config.${extensions}`), '**/config/**'],
