@@ -1,7 +1,7 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { buildFindingReport, type Finding } from '../buildFindingReport.ts';
 import type { OwnImplementation } from '../listOwnImplementationSpans.ts';
@@ -45,7 +45,8 @@ const OWN_IMPLEMENTATION: OwnImplementation = {
   ],
 };
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-finding-report-' })),
 );

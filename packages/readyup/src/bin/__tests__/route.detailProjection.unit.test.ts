@@ -1,7 +1,7 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { routeCommand } from '../route.ts';
 
@@ -12,7 +12,8 @@ const MIXED_KIT =
   `  { name: 'nope', check: () => false, fix: 'do the thing' },\n` +
   `] }] };\n`;
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   { scope: 'file' },
   makeFixture(() => createTempTree({ '.readyup/kits/default.js': MIXED_KIT }, { prefix: 'readyup-detail-' })),

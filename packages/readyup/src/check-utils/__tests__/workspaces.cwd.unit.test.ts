@@ -1,7 +1,7 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, it as baseIt, vi } from 'vitest';
 
 import { discoverWorkspaces, type Workspace } from '../workspaces.ts';
 
@@ -41,7 +41,8 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-cwd-' })),
 );

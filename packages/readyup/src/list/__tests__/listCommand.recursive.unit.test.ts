@@ -1,7 +1,7 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureError, captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
@@ -17,7 +17,7 @@ import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { listCommand } from '../listCommand.ts';
 
-const it = test
+const it = baseIt
   .extend(
     'temp',
     makeFixture(() =>

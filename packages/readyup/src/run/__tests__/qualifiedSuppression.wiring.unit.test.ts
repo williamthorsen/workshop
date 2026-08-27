@@ -1,7 +1,7 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyChecklist, RdyResult } from '../../kits/types.ts';
@@ -11,7 +11,8 @@ const PACKAGE: KitProvenance = { kind: 'package', packageName: '@williamthorsen/
 
 const SOURCE_PATH = 'src/errors.ts';
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-qualified-suppression-' })),
 );

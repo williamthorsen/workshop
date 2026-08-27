@@ -1,14 +1,15 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { warnOnUnusedPragmas } from '../pragma-report.ts';
 import { createPragmaLedger, type PragmaLedger } from '../PragmaLedger.ts';
 
 const REMEDY = 'Remove the pragma, or run the kit whose check it was written for.';
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-pragma-report-' })),
 );

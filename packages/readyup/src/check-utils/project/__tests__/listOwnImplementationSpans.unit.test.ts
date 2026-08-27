@@ -1,7 +1,7 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { listOwnImplementationSpans, type OwnImplementation } from '../listOwnImplementationSpans.ts';
 import type { ProjectSource } from '../readTrackedSources.ts';
@@ -9,7 +9,8 @@ import type { ProjectSource } from '../readTrackedSources.ts';
 const EXPORT_NAMES = ['describeError'];
 const PACKAGE_NAME = '@scope/errors';
 
-const it = test.extend(
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-own-impl-' })),
 );
