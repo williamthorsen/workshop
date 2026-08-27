@@ -41,6 +41,11 @@ const config = defineConfig([
     ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
   },
   {
+    // `strict-lint` promotes rule severities and not this report, so the default `warn` would leave a directive
+    // whose rule has stopped reporting in place indefinitely.
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+  },
+  {
     files: patterns.codeFiles,
     rules: {
       'n/no-missing-import': 'off',
