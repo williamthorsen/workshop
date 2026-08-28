@@ -6,11 +6,11 @@ allowBuilds:
   lefthook: true
 
 catalog:
-  '@williamthorsen/toolbelt.errors': 0.6.1
-  '@williamthorsen/toolbelt.filesystem': 0.8.0
-  '@williamthorsen/toolbelt.packaging': 0.5.2
-  '@williamthorsen/toolbelt.testing': 0.4.0
-  '@williamthorsen/toolbelt.vitest': 0.6.0
+  '@williamthorsen/toolbelt.errors': 0.6.2
+  '@williamthorsen/toolbelt.filesystem': 0.8.1
+  '@williamthorsen/toolbelt.packaging': 0.5.3
+  '@williamthorsen/toolbelt.testing': 0.5.0
+  '@williamthorsen/toolbelt.vitest': 0.7.0
   esbuild: 0.28.2
   zod: 4.4.3
 
