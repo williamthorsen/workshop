@@ -61,6 +61,7 @@
   "dependencies": {
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.strings": "catalog:",
     "es-module-lexer": "2.3.2",
     "jiti": "2.7.0",
     "jsonc-parser": "3.3.1",

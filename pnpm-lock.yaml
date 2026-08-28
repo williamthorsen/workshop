@@ -15,6 +15,9 @@ catalogs:
     '@williamthorsen/toolbelt.packaging':
       specifier: 0.5.3
       version: 0.5.3
+    '@williamthorsen/toolbelt.strings':
+      specifier: 7.0.0
+      version: 7.0.0
     '@williamthorsen/toolbelt.testing':
       specifier: 0.5.0
       version: 0.5.0
@@ -132,6 +135,9 @@ importers:
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.6.2
+      '@williamthorsen/toolbelt.strings':
+        specifier: 'catalog:'
+        version: 7.0.0
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -145,6 +151,9 @@ importers:
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.5.3
+      '@williamthorsen/toolbelt.strings':
+        specifier: 'catalog:'
+        version: 7.0.0
       es-module-lexer:
         specifier: 2.3.2
         version: 2.3.2
@@ -850,6 +859,10 @@ packages:
     peerDependencies:
       eslint: '>=10'
 
+  '@williamthorsen/toolbelt.arrays@6.0.2':
+    resolution: {integrity: sha512-LejL61NyZyRIMpa9IYPOMQxEE1UtKQy2jhaxQUdxS1f3vmWmtgn/rhYj0ZmyIg/yR2rUo6sduipm6cHFeGgiZA==}
+    engines: {node: '>=24.0.0'}
+
   '@williamthorsen/toolbelt.errors@0.5.0':
     resolution: {integrity: sha512-bDsxxW6zAuDqNHl/ffT3c/IzVzRQREDwGdJ8xQssr7S+vNE8X9SfmNwiL1GyZoXw/njzLEmBXrI4Nb71zNmzbQ==}
     engines: {node: '>=24.0.0'}
@@ -870,12 +883,28 @@ packages:
     resolution: {integrity: sha512-PA237sX4RmZbsO2JErGfN2TRp5L2N8xpYO2x74qBi3U7ZVI+CXgGm81j/d8vnYUXHar2LeccDf2abSzz2WfP1w==}
     engines: {node: '>=24.0.0'}
 
+  '@williamthorsen/toolbelt.guards@4.0.0':
+    resolution: {integrity: sha512-FVajXqyInoZ2JrzDGEAokpOLwlUrjiWdvcyvZ0J1VqE1V/lrSPXP3jG9lf7H30EWTCc529iSeK5wUyNnOTZTng==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.numbers@7.0.2':
+    resolution: {integrity: sha512-WNoI4oLlZFo+OulkUFN+ShXm29vhdBUWajmoiCy4HuXOl+8kphZAOAnxj4OE29+GFd5dFw0SbXi1Hh9KuakWLw==}
+    engines: {node: '>=24.0.0'}
+
   '@williamthorsen/toolbelt.packaging@0.5.2':
     resolution: {integrity: sha512-IMU8WV6iMOqvJMnMJOk5z2CPtBxg5GiOZM81ySDTHTz0oQfUdCM16vwrqWyMGITnRVUs0oZXnHYQbI2JNaTrKA==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.packaging@0.5.3':
     resolution: {integrity: sha512-iaQ96zATWTLQg62/RqiSZhXA7A7uzedLjylhVu6L4tjgkn5GkuptktjumNG++PiBpcSChiEpZ+C0vMOCDaVLww==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.sets@3.0.11':
+    resolution: {integrity: sha512-e/Gy5S7miTF3MkybUjAUj8jK2016qJJn6w+J9DJIzQdQg6pgIG040M4FWi7MSmqq8buUQf9csvD9pokZKNYwFA==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.strings@7.0.0':
+    resolution: {integrity: sha512-5Cyf4TSlbweBI3b6IAtzrOR5OWXWDKkCTzE/y4wgoi9avmDeFNANuB6TOScTUsxX6P/SdmxiMTg4I01WlyL9Bw==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.testing@0.5.0':
@@ -3271,6 +3300,11 @@ snapshots:
       '@williamthorsen/toolbelt.packaging': 0.5.2
       eslint: 10.9.0(jiti@2.7.0)(supports-color@7.2.0)
 
+  '@williamthorsen/toolbelt.arrays@6.0.2':
+    dependencies:
+      '@williamthorsen/toolbelt.guards': 4.0.0
+      '@williamthorsen/toolbelt.numbers': 7.0.2
+
   '@williamthorsen/toolbelt.errors@0.5.0': {}
 
   '@williamthorsen/toolbelt.errors@0.6.1': {}
@@ -3285,6 +3319,10 @@ snapshots:
     dependencies:
       '@williamthorsen/toolbelt.errors': 0.6.2
 
+  '@williamthorsen/toolbelt.guards@4.0.0': {}
+
+  '@williamthorsen/toolbelt.numbers@7.0.2': {}
+
   '@williamthorsen/toolbelt.packaging@0.5.2':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.8.0
@@ -3292,6 +3330,14 @@ snapshots:
   '@williamthorsen/toolbelt.packaging@0.5.3':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.8.1
+
+  '@williamthorsen/toolbelt.sets@3.0.11': {}
+
+  '@williamthorsen/toolbelt.strings@7.0.0':
+    dependencies:
+      '@williamthorsen/toolbelt.arrays': 6.0.2
+      '@williamthorsen/toolbelt.numbers': 7.0.2
+      '@williamthorsen/toolbelt.sets': 3.0.11
 
   '@williamthorsen/toolbelt.testing@0.5.0': {}
 
