@@ -1,5 +1,6 @@
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
+
 import type { OverlayResult } from '../modes/types.ts';
-import { pluralizeWithCount } from '../portable/pluralize.ts';
 import { describeOutcome } from './describeOutcome.ts';
 
 /**

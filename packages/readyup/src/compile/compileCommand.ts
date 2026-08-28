@@ -4,6 +4,7 @@ import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { loadConfig } from '../config/loadConfig.ts';
@@ -16,7 +17,6 @@ import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchem
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import { pluralizeWithCount } from '../portable/pluralize.ts';
 import { type JsonCompileKitEntry, type JsonCompileOutput, SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 import { checkDrift } from '../verify/checkDrift.ts';

@@ -1,5 +1,6 @@
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
+
 import type { Severity, SummaryCounts } from '../kits/types.ts';
-import { pluralizeWithCount } from '../portable/pluralize.ts';
 import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
 
 /** Milliseconds below which a line omits its duration, leaving only timings worth reading. */
