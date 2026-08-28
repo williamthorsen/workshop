@@ -39,6 +39,10 @@ A parent that _fails_ instead renders every descendant as its own 🚫, which is
 
 To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason. A checklist's `preconditions` do not serve here, because a precondition that skips does not gate.
 
+## Declaring a readyup floor
+
+Set `minReadyupVersion` to the version that introduced the behavior a check depends on, never to whichever readyup compiled the kit: a floor at the compiling version ages into a false failure on an older runner that would have served the kit fine.
+
 ## Reading a run
 
 ⚪ means the check does not apply. 🚫 means the check never ran.

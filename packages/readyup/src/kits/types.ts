@@ -381,6 +381,12 @@ export interface RdyKit {
   /** Human-readable summary of what the kit checks. */
   description?: string | undefined;
 
+  /**
+   * Minimum readyup version this kit's checks require.
+   * A runner below it fails the kit rather than running it.
+   */
+  minReadyupVersion?: string | undefined;
+
   /** Named subsets of checklists. */
   suites?: Record<string, string[]> | undefined;
 

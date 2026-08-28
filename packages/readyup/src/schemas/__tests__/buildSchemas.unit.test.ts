@@ -74,6 +74,7 @@ describe('generated JSON Schemas', () => {
             'skip-masks-pass',
             'source-stale',
             'target-drift',
+            'version-skew',
           ],
         },
         { type: 'string' },

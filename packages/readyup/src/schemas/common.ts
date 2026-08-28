@@ -57,6 +57,7 @@ export const WarningCodeSchema = z.enum([
   'skip-masks-pass',
   'source-stale',
   'target-drift',
+  'version-skew',
 ]);
 
 /**

@@ -19,6 +19,7 @@ import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
 import { warnOnMaskedSkips } from './skip-diagnosis.ts';
+import { warnOnVersionSkew } from './version-skew.ts';
 
 interface HumanRunSettings {
   diagnose: boolean;
@@ -59,9 +60,10 @@ export async function runHumanMode(
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
-      const { kit } = await loadKit(entry, isJit);
+      const { kit, compileTimeVersion } = await loadKit(entry, isJit);
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
+      warnOnVersionSkew(entry.name, kit, compileTimeVersion);
 
       const kitResult = await runKit(kit, entry.checklists, settings, {
         entry,
