@@ -7,6 +7,7 @@ import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
+import { MOVE_EDITS_REMEDY, RECOMPILE_REMEDY } from '../reporting/remedies.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import type { InputsStatus } from '../verify/checkInputDrift.ts';
@@ -83,21 +84,21 @@ export function warnOnKitStaleness(
     warnings.push({
       code: 'target-drift',
       message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
-      remedy: 'Move the edits into the source, then run `rdy compile --force`.',
+      remedy: MOVE_EDITS_REMEDY,
     });
   }
   if (readVerdict(() => checkSourceDrift(entry, tracking.manifestDir))?.kind === 'stale') {
     warnings.push({
       code: 'source-stale',
       message: `kit "${kitName}" was compiled from an older source than the one on disk.`,
-      remedy: 'Run `rdy compile` to rebuild it.',
+      remedy: RECOMPILE_REMEDY,
     });
   }
   if (hasChangedInput(readVerdict(() => checkInputDrift(entry, tracking.manifestDir)))) {
     warnings.push({
       code: 'input-stale',
       message: `kit "${kitName}" inlined files that no longer match the ones on disk.`,
-      remedy: 'Run `rdy compile` to rebuild it.',
+      remedy: RECOMPILE_REMEDY,
     });
   }
 

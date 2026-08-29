@@ -506,6 +506,10 @@ describe('token and glyph', () => {
     expect(engine.token('passed')).toBe(`${PASSED} `);
   });
 
+  it('renders fix text behind the fix token', () => {
+    expect(engine.formatFix('Run `rdy compile`.')).toBe(`${engine.token('fix')}Run \`rdy compile\`.`);
+  });
+
   it('returns a glyph and one space for mid-line placement', () => {
     expect(engine.inlineGlyph('kit')).toBe(`${richFormatter.tokens.kit.glyph} `);
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);

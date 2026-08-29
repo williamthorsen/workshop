@@ -380,20 +380,18 @@ describe(verifyCommand, () => {
         actual: 'aaaa9999',
         resolvedPath: '/abs/alpha.js',
       });
-      mockCheckSourceDrift.mockReturnValue({
+      mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
-        expected: '5555aaaa',
-        actual: '6666bbbb',
-        resolvedPath: '/abs/alpha.ts',
+        failures: [{ kind: 'inline', path: 'pkg.json', reason: 'unprojectable', detail: 'Path not found: version' }],
       });
 
       const { stdout } = await verify([]);
 
       expect(stdout).toContain(
         `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)` +
-          `\n   source stale (expected 5555aaaa, got 6666bbbb)` +
+          `\n   input unprojectable: pkg.json (Path not found: version)` +
           `\n   ${FIX} Move the edits into the source, then run \`rdy compile --force\`.` +
-          `\n   ${FIX} Run \`rdy compile\` to rebuild it.`,
+          `\n   ${FIX} Restore the picked fields in pkg.json, or repoint the kit's \`pickJson\` call.`,
       );
     });
 

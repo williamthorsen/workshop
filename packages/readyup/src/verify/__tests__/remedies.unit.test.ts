@@ -37,7 +37,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RE_RECORD]);
     });
 
-    it('names only the source remedy where the rebuild also fails, whose recompile the drift gate refuses', () => {
+    it('names only the move-edits remedy where the rebuild also fails, whose recompile the drift gate refuses', () => {
       const rebuild = { kind: 'mismatch', expected: 'aaa', actual: 'bbb' } as const;
 
       expect(resolveRemedies(KIT, buildVerdicts({ drift: buildDrift(), rebuild }))).toStrictEqual([MOVE_EDITS]);
@@ -152,11 +152,67 @@ describe(resolveRemedies, () => {
     const verdicts = buildVerdicts({
       drift: buildDrift(),
       inputs: buildStaleInputs([
-        { kind: 'module', path: 'checks/shared.ts', reason: 'changed', expected: 'aaa', actual: 'bbb' },
+        { kind: 'inline', path: '../../package.json', reason: 'unprojectable', detail: 'Path not found: version' },
       ]),
     });
 
-    expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, RECOMPILE]);
+    expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
+      MOVE_EDITS,
+      "Restore the picked fields in ../../package.json, or repoint the kit's `pickJson` call.",
+    ]);
+  });
+
+  describe('collapsing remedies a reader cannot act on', () => {
+    it("names one remedy for a source recorded among the kit's own inputs, where both axes report it gone", () => {
+      const verdicts = buildVerdicts({
+        inputs: buildStaleInputs([{ kind: 'module', path: 'kits/deploy.ts', reason: 'missing' }]),
+        source: buildMissingSource(),
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
+        'Restore kits/deploy.ts, or run `rdy compile` to drop the kit from the manifest.',
+      ]);
+    });
+
+    it('drops a bare recompile where the target has drifted, which the drift gate refuses to run', () => {
+      const verdicts = buildVerdicts({
+        drift: buildDrift(),
+        inputs: buildStaleInputs([
+          { kind: 'module', path: 'checks/shared.ts', reason: 'changed', expected: 'aaa', actual: 'bbb' },
+        ]),
+        source: { kind: 'stale', expected: 'eee', actual: 'fff', resolvedPath: '/repo/kits/deploy.ts' },
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS]);
+    });
+
+    it('drops a bare recompile beside the re-record remedy, which recompiles from the same source', () => {
+      const verdicts = buildVerdicts({
+        drift: buildDrift(),
+        rebuild: { kind: 'ok' },
+        source: { kind: 'stale', expected: 'eee', actual: 'fff', resolvedPath: '/repo/kits/deploy.ts' },
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RE_RECORD]);
+    });
+
+    it('keeps the bare recompile for a bundle that is merely gone, which hits no drift gate', () => {
+      const verdicts = buildVerdicts({
+        drift: { kind: 'missing', resolvedPath: '/repo/kits/deploy.js' },
+        source: { kind: 'stale', expected: 'eee', actual: 'fff', resolvedPath: '/repo/kits/deploy.ts' },
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RECOMPILE]);
+    });
+
+    it('keeps a remedy the force recompile does not settle, such as a repointed pickJson call', () => {
+      const verdicts = buildVerdicts({
+        drift: buildDrift(),
+        rebuild: { kind: 'failed', message: 'Unexpected token' },
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, 'Fix the kit source so it compiles.']);
+    });
   });
 });
 

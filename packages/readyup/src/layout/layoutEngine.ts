@@ -101,6 +101,7 @@ export interface LayoutEngine {
   formatCheckLine(input: CheckLineInput): string;
   formatCountLine(counts: SummaryCounts, durationMs: number): string;
   formatCounts(counts: SummaryCounts): string;
+  formatFix(fix: string): string;
   formatHeading(name: string, level: HeadingLevel, detail?: string): string;
   formatHint(hint: string): string;
   formatReasonBlock(reasons: string[], depth?: number): string[];
@@ -146,6 +147,11 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    */
   function formatCountLine(counts: SummaryCounts, durationMs: number): string {
     return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs);
+  }
+
+  /** Returns fix text behind the token marking it, as one line. */
+  function formatFix(fix: string): string {
+    return `${token('fix')}${fix}`;
   }
 
   /**
@@ -252,6 +258,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     formatCheckLine,
     formatCountLine,
     formatCounts,
+    formatFix,
     formatHeading,
     formatHint,
     formatReasonBlock,
