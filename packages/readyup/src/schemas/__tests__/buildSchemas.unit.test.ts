@@ -70,6 +70,7 @@ describe('generated JSON Schemas', () => {
           enum: [
             'diagnosis-inconclusive',
             'input-stale',
+            'manifest-unreadable',
             'pragma-unused',
             'skip-masks-pass',
             'source-stale',

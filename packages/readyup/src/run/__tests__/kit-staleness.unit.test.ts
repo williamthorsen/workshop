@@ -5,13 +5,15 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
+import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
 const mockCheckInputDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../manifest/readManifest.ts'), () => ({
+vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => ({
+  ...(await importOriginal()),
   readManifest: mockReadManifest,
 }));
 
@@ -45,31 +47,62 @@ describe(readManifestTracking, () => {
     mockReadManifest.mockReturnValue(manifest);
 
     expect(readManifestTracking(false)).toStrictEqual({
-      manifest,
-      manifestDir: path.resolve(process.cwd(), '.readyup'),
+      tracking: { manifest, manifestDir: path.resolve(process.cwd(), '.readyup') },
+      warnings: [],
     });
   });
 
   it('skips the read under --jit, which runs from source the manifest does not describe', () => {
-    expect(readManifestTracking(true)).toBeUndefined();
+    expect(readManifestTracking(true)).toStrictEqual({ tracking: undefined, warnings: [] });
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
 
-  it('returns undefined when no manifest exists', () => {
+  it('stays silent when no manifest exists, which is the normal state of a project that never compiled', () => {
     mockReadManifest.mockImplementation(() => {
-      throw new Error('Manifest file not found: /abs/.readyup/manifest.json');
+      throw new ManifestNotFoundError('/abs/.readyup/manifest.json');
     });
 
-    expect(readManifestTracking(false)).toBeUndefined();
+    expect(readManifestTracking(false)).toStrictEqual({ tracking: undefined, warnings: [] });
   });
 
-  it('returns undefined when the manifest cannot be parsed', () => {
+  it('raises manifest-unreadable when the manifest is present and cannot be parsed', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Manifest file contains invalid JSON: /abs/.readyup/manifest.json');
     });
 
-    expect(readManifestTracking(false)).toBeUndefined();
+    const { result, stderr } = read();
+
+    expect(result.tracking).toBeUndefined();
+    expect(result.warnings).toStrictEqual([
+      {
+        code: 'manifest-unreadable',
+        message: expect.stringContaining('could not be read, so no kit was checked against it'),
+        remedy: 'Run `rdy compile` to rewrite it.',
+      },
+    ]);
+    expect(stderr).toContain('could not be read');
   });
+
+  it('names the parse failure in the advisory, so the run says why it stopped checking', () => {
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Invalid manifest schema in /abs/.readyup/manifest.json: targetHash must be a hash');
+    });
+
+    expect(read().result.warnings[0]?.message).toContain('targetHash must be a hash');
+  });
+
+  // region | Helpers
+
+  /** Reads the manifest, returning the result alongside what the call wrote to stderr. */
+  function read() {
+    using io = captureStdio();
+
+    const result = readManifestTracking(false);
+
+    return { result, stderr: io.stderr };
+  }
+
+  // endregion | Helpers
 });
 
 describe(warnOnKitStaleness, () => {

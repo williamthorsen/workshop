@@ -6,8 +6,9 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { computeHash } from '../../../../src/check-utils/hashing.ts';
-import { checkDrift } from '../../../../src/verify/checkDrift.ts';
 import type { RdyResult } from '../../../../src/kits/types.ts';
+import { readManifest } from '../../../../src/manifest/readManifest.ts';
+import { checkDrift } from '../../../../src/verify/checkDrift.ts';
 import { pickResult, runChecklist } from '../../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../../test-utils/loadOwnKit.ts';
 import {
@@ -57,6 +58,22 @@ describe('recorded-hash readers', () => {
     writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.js'), EDITED_BUNDLE);
 
     expect(await readsAsFresh(entry)).toStrictEqual({ kit: false, verify: false });
+  });
+
+  // Below the floor the two readers agree through the schema rather than through the comparison:
+  // `readManifest` rejects the record before `checkDrift` sees it, and `checkDrift` called directly on
+  // a truthful seven-character prefix would return `ok` where the kit reports a malformed record.
+  it('both reject a bundle recorded with a hash shorter than the format admits', async () => {
+    const targetHash = computeHash(SELF_CONTAINED_BUNDLE).slice(0, 7);
+    writeKitManifest(projectRoot, [{ ...writeKit(projectRoot, 'default'), targetHash }]);
+
+    expect(() => readManifest(FIXTURE_MANIFEST_PATH)).toThrow(/lowercase hex digest prefix/);
+
+    const results = await runChecklist(await loadOwnKit('default'), 'freshness');
+    expect(pickResult(results, 'Its bundle')).toMatchObject({
+      status: 'failed',
+      detail: expect.stringContaining(`records ${targetHash}, which is not a hash`),
+    });
   });
 });
 

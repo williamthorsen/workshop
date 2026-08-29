@@ -53,6 +53,7 @@ export const CountsSchema = z
 export const WarningCodeSchema = z.enum([
   'diagnosis-inconclusive',
   'input-stale',
+  'manifest-unreadable',
   'pragma-unused',
   'skip-masks-pass',
   'source-stale',

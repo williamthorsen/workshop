@@ -742,6 +742,14 @@ Three compare the kits it is about to run against `.readyup/manifest.json` and s
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
+A manifest that is present and cannot be read is the one case that speaks for itself, because all three then go unchecked for every kit in the run.
+
+| Code                  | Raised when                                                           |
+| --------------------- | --------------------------------------------------------------------- |
+| `manifest-unreadable` | `.readyup/manifest.json` exists but does not parse against the schema |
+
+An absent manifest stays silent: it is the normal state of a project that never compiled, and says nothing about any kit.
+
 Two more come from [`--diagnose`](#run-options), and are raised only where that flag asked for them.
 
 | Code                     | Raised when                                                        |

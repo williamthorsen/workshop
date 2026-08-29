@@ -48,7 +48,7 @@ export async function runHumanMode(
   }
 
   const isMultiKit = kitEntries.length > 1;
-  const tracking = readManifestTracking(isJit);
+  const { tracking } = readManifestTracking(isJit);
   const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];

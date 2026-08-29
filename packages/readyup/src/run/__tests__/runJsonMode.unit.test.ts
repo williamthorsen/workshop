@@ -70,7 +70,7 @@ import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 describe(runJsonMode, () => {
   beforeEach(() => {
     mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
-    mockReadManifestTracking.mockReturnValue(undefined);
+    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
     mockWarnOnKitStaleness.mockReturnValue([]);
     mockWarnOnUnusedPragmas.mockReturnValue([]);
   });
@@ -279,7 +279,7 @@ describe(runJsonMode, () => {
 
     it('passes every advisory the run raised into the JSON report', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
-      mockReadManifestTracking.mockReturnValue(tracking);
+      mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
       mockWarnOnKitStaleness.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -292,6 +292,26 @@ describe(runJsonMode, () => {
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ warnings: [TARGET_DRIFT, SOURCE_STALE] }),
+      );
+      expect(exitCode).toBe(0);
+    });
+
+    it('passes an advisory raised by the manifest read itself into the report', async () => {
+      const manifestUnreadable = {
+        code: 'manifest-unreadable',
+        message: '.readyup/manifest.json could not be read, so no kit was checked against it: bad JSON',
+        remedy: 'Run `rdy compile` to rewrite it.',
+      };
+      mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [manifestUnreadable] });
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
+
+      const { exitCode } = await runJson(singleKitEntry(['deploy']));
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ warnings: [manifestUnreadable] }),
       );
       expect(exitCode).toBe(0);
     });

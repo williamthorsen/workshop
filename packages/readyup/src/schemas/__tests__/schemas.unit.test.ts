@@ -252,6 +252,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
         | 'diagnosis-inconclusive'
         | 'input-stale'
+        | 'manifest-unreadable'
         | 'pragma-unused'
         | 'skip-masks-pass'
         | 'source-stale'
@@ -261,6 +262,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<
         | 'diagnosis-inconclusive'
         | 'input-stale'
+        | 'manifest-unreadable'
         | 'pragma-unused'
         | 'skip-masks-pass'
         | 'source-stale'
