@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import { hashToRecordedLength } from '../check-utils/hashing.ts';
 import { describeJsonProjectionFailure } from '../compile/JsonProjectionError.ts';
 import { projectJsonFile } from '../compile/projectJsonFile.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { hashFile, hashProjection } from './targetHash.ts';
+import { hashFileToRecordedLength } from './targetHash.ts';
 
 /**
  * One recorded input that no longer matches what the compile read, and why.
@@ -53,14 +54,14 @@ function checkInput(input: RdyManifestInput, manifestDir: string): InputFailure 
   }
 
   if (input.kind === 'module') {
-    const actual = hashFile(resolvedPath);
+    const actual = hashFileToRecordedLength(resolvedPath, input.hash);
     if (actual === input.hash) return undefined;
     return { kind: 'module', path: input.path, reason: 'changed', expected: input.hash, actual };
   }
 
   let actual: string;
   try {
-    actual = hashProjection(projectJsonFile(resolvedPath, input.paths));
+    actual = hashToRecordedLength(projectJsonFile(resolvedPath, input.paths), input.hash);
   } catch (error: unknown) {
     return { kind: 'inline', path: input.path, reason: 'unprojectable', detail: describeJsonProjectionFailure(error) };
   }

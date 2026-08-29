@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { checkSourceDrift } from '../checkSourceDrift.ts';
+import { computeHash } from '../../check-utils/hashing.ts';
 import { hashBytes } from '../targetHash.ts';
 
 describe(checkSourceDrift, () => {
@@ -25,6 +26,29 @@ describe(checkSourceDrift, () => {
     const status = checkSourceDrift({ name: 'demo', source: 'demo.ts', sourceHash: hashBytes(content) }, tempDir);
 
     expect(status.kind).toBe('ok');
+  });
+
+  it.each([12, 64])('returns ok when the manifest records a %i-character sourceHash', (length) => {
+    const content = Buffer.from('export default { checklists: [] };');
+    writeFileSync(path.join(tempDir, 'demo.ts'), content);
+    const recorded = computeHash(content).slice(0, length);
+
+    const status = checkSourceDrift({ name: 'demo', source: 'demo.ts', sourceHash: recorded }, tempDir);
+
+    expect(status).toStrictEqual({ kind: 'ok', sourceHash: recorded });
+  });
+
+  it('reports the actual hash at the recorded length when a longer record has gone stale', () => {
+    writeFileSync(path.join(tempDir, 'demo.ts'), 'export default { checklists: [1] };');
+    const recorded = computeHash('export default { checklists: [] };').slice(0, 64);
+
+    const status = checkSourceDrift({ name: 'demo', source: 'demo.ts', sourceHash: recorded }, tempDir);
+
+    expect(status).toMatchObject({
+      kind: 'stale',
+      expected: recorded,
+      actual: computeHash('export default { checklists: [1] };'),
+    });
   });
 
   it('returns stale with both hashes when the source has changed since compile', () => {

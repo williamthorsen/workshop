@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { hashFile } from './targetHash.ts';
+import { hashFileToRecordedLength } from './targetHash.ts';
 
 /** Outcome of a per-kit source-staleness check. */
 export type SourceStatus =
@@ -31,7 +31,7 @@ export function checkSourceDrift(kit: RdyManifestKit, manifestDir: string): Sour
     return { kind: 'missing', resolvedPath };
   }
 
-  const actual = hashFile(resolvedPath);
+  const actual = hashFileToRecordedLength(resolvedPath, kit.sourceHash);
   if (actual !== kit.sourceHash) {
     return { kind: 'stale', expected: kit.sourceHash, actual, resolvedPath };
   }
