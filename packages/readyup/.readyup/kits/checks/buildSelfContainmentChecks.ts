@@ -11,7 +11,7 @@ import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
  * have to supply, which is what makes a bundle no longer self-contained.
  */
 const ALLOWED_PREFIXES = ['node:', 'readyup/'];
-const ALLOWED_SPECIFIERS = ['readyup'];
+const ALLOWED_SPECIFIERS = new Set(['readyup']);
 
 /**
  * Patterns capturing the module specifier from each import form esbuild emits.
@@ -77,7 +77,7 @@ function describeSelfContainment(bundlePath: string): CheckOutcome {
 
 /** Returns true when a specifier is one esbuild was told to leave external. */
 function isAllowedSpecifier(specifier: string): boolean {
-  return ALLOWED_SPECIFIERS.includes(specifier) || ALLOWED_PREFIXES.some((prefix) => specifier.startsWith(prefix));
+  return ALLOWED_SPECIFIERS.has(specifier) || ALLOWED_PREFIXES.some((prefix) => specifier.startsWith(prefix));
 }
 
 /** Every distinct module specifier the bundle text imports. */

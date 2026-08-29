@@ -2,8 +2,8 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import type { SkipResult } from 'readyup';
+import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import type { JsonPathSpec } from 'readyup/check-utils';
 import { fileExists, isRecord, readJsonFile } from 'readyup/check-utils';
 

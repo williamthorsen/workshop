@@ -1,5 +1,5 @@
-import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import type { CheckOutcome, FractionProgress, RdyCheck } from 'readyup';
+import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import {
   describeJsonProjectionFailure,
   fileExists,
