@@ -83,7 +83,7 @@ export function warnOnKitStaleness(
     warnings.push({
       code: 'target-drift',
       message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
-      remedy: 'Run `rdy compile --force` to rebuild it from source.',
+      remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     });
   }
   if (readVerdict(() => checkSourceDrift(entry, tracking.manifestDir))?.kind === 'stale') {
