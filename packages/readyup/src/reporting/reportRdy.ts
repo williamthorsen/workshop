@@ -172,7 +172,7 @@ function collectReasons(result: FailedResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (includeFix && result.fix !== null) reasons.push(formatFixReason(result.fix));
+  if (includeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
   return reasons;
 }
 
@@ -185,11 +185,6 @@ function collectFixes(results: RdyResult[]): AttributedFix[] {
   );
 }
 
-/** Returns a fix as one reason line, behind the token marking fix text wherever a kit places it. */
-function formatFixReason(fix: string): string {
-  return `${getLayout().token('fix')}${fix}`;
-}
-
 /**
  * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
  *
@@ -199,7 +194,7 @@ function formatFixReason(fix: string): string {
 function renderFixRecap(fixes: AttributedFix[]): string[] {
   return fixes.flatMap((entry) => [
     getLayout().formatCheckLine({ token: resolveWorstToken(entry.severity), name: entry.name }),
-    ...getLayout().formatReasonBlock([formatFixReason(entry.fix)]),
+    ...getLayout().formatReasonBlock([getLayout().formatFix(entry.fix)]),
   ]);
 }
 

@@ -186,34 +186,40 @@ describe('verifyCommand --rebuild', () => {
   it('fails a hand-edited bundle', async () => {
     writeFileSync(path.join(tempDir, 'kit.js'), 'export default { checklists: [] };\n');
 
-    const { exitCode, stdout } = await runVerify();
+    const { exitCode, stderr, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
     expect(readPayload(stdout)).toMatchObject({
       kits: [{ status: 'drift', rebuildStatus: 'mismatch' }],
     });
+    expect(stderr).toContain('Move the edits into the source, then run `rdy compile --force`.');
   });
 
   it('reports a passing rebuild beside a recorded hash that has gone wrong', async () => {
     patchKits(path.join(tempDir, 'manifest.json'), { targetHash: 'deadbeef' });
 
-    const { exitCode, stdout } = await runVerify();
+    const { exitCode, stderr, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
     expect(readPayload(stdout)).toMatchObject({
       kits: [{ status: 'drift', rebuildStatus: 'ok' }],
     });
+    expect(stderr).toContain(
+      'The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.',
+    );
+    expect(stderr).not.toContain('Move the edits into the source');
   });
 
   it('fails a kit whose source no longer compiles', async () => {
     writeFileSync(path.join(tempDir, 'kit.ts'), 'export default { checklists: [ ;\n');
 
-    const { exitCode, stdout } = await runVerify();
+    const { exitCode, stderr, stdout } = await runVerify();
 
     expect(exitCode).toBe(1);
     expect(readPayload(stdout)).toMatchObject({
       kits: [{ rebuildStatus: 'failed' }],
     });
+    expect(stderr).toContain('Fix the kit source so it compiles.');
   });
 
   it('leaves every rebuild field out of the payload without the flag', async () => {
@@ -267,6 +273,9 @@ function restampBundle(tempDir: string, version: string): void {
 /**
  * Runs `verify` over the tempdir's manifest with JSON output on and the rebuild check on unless waived,
  * returning its exit code alongside what it wrote.
+ *
+ * `--json` sends the payload to stdout and every human-readable line to stderr, so a test reading the
+ * remedies reads stderr.
  */
 async function runVerify({ rebuild = true, manifestPath = 'manifest.json' } = {}) {
   using io = captureStdio();
@@ -274,7 +283,7 @@ async function runVerify({ rebuild = true, manifestPath = 'manifest.json' } = {}
   const rebuildFlag = rebuild ? ['--rebuild'] : [];
   const exitCode = await verifyCommand(['--manifest', manifestPath, ...rebuildFlag, '--json']);
 
-  return { exitCode, stdout: io.stdout };
+  return { exitCode, stderr: io.stderr, stdout: io.stdout };
 }
 
 // endregion | Helpers

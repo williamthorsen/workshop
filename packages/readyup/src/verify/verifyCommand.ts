@@ -25,14 +25,9 @@ import type { DependencyChange, RebuildStatus } from './checkRebuild.ts';
 import { checkRebuild } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { checkSourceDrift } from './checkSourceDrift.ts';
-
-/** Every verdict one kit reached, gathered so each pass over a kit reads the same set. */
-interface KitVerdicts {
-  drift: DriftStatus;
-  inputs: InputsStatus;
-  rebuild: RebuildStatus | undefined;
-  source: SourceStatus;
-}
+import { resolveRemedies } from './remedies.ts';
+import type { KitVerdicts } from './verdicts.ts';
+import { hasSourceFailed, hasTargetFailed } from './verdicts.ts';
 
 const verifyOptions = {
   json: { type: 'boolean' },
@@ -193,8 +188,9 @@ function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitV
 /**
  * Returns a kit's line, showing whichever of its verdicts has something to report.
  *
- * A failing kit gets each verdict on its own line beneath its name; any other kit gets them inline.
- * A kit that passes every verdict shows none, leaving its token to report the outcome.
+ * A failing kit gets each verdict on its own line beneath its name, then what to do about them, one
+ * line per distinct remedy; any other kit gets its verdicts inline and no remedy, having nothing to
+ * fix. A kit that passes every verdict shows none, leaving its token to report the outcome.
  */
 function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
   const { drift, inputs, rebuild, source } = verdicts;
@@ -210,7 +206,8 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
 
   if (token === 'failedError') {
     const claim = getLayout().formatCheckLine({ token, name: kit.name });
-    return [claim, ...getLayout().formatReasonBlock(clauses)].join('\n') + '\n';
+    const remedies = resolveRemedies(kit, verdicts).map((remedy) => getLayout().formatFix(remedy));
+    return [claim, ...getLayout().formatReasonBlock([...clauses, ...remedies])].join('\n') + '\n';
   }
 
   const detail = clauses.join('; ');
@@ -230,16 +227,6 @@ function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenNam
   if (anyFailed) return 'failedError';
   if (drift.kind === 'unverified' && rebuild?.kind !== 'ok') return 'skippedOptional';
   return 'passed';
-}
-
-/** Returns `true` when the compiled-output verdict reports a mismatch or a missing file. */
-function hasTargetFailed(status: DriftStatus): boolean {
-  return status.kind === 'missing' || status.kind === 'drift';
-}
-
-/** Returns `true` when the source verdict reports a mismatch or a missing file. */
-function hasSourceFailed(status: SourceStatus): boolean {
-  return status.kind === 'missing' || status.kind === 'stale';
 }
 
 /** Returns a clause describing the compiled-output verdict, or `undefined` when the verdict is `ok`. */

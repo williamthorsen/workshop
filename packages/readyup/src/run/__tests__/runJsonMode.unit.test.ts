@@ -266,7 +266,7 @@ describe(runJsonMode, () => {
     const TARGET_DRIFT = {
       code: 'target-drift',
       message: 'compiled kit "alpha" does not match the hash the manifest recorded for it.',
-      remedy: 'Run `rdy compile --force` to rebuild it from source.',
+      remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     };
 
     /** Builds two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */

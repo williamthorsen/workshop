@@ -127,7 +127,7 @@ describe(warnOnKitStaleness, () => {
         {
           code: 'target-drift',
           message: 'compiled kit "default" does not match the hash the manifest recorded for it.',
-          remedy: 'Run `rdy compile --force` to rebuild it from source.',
+          remedy: 'Move the edits into the source, then run `rdy compile --force`.',
         },
       ]);
     });
@@ -199,7 +199,7 @@ describe(warnOnKitStaleness, () => {
 
       expect(stderr).toBe(
         'Warning: compiled kit "default" does not match the hash the manifest recorded for it. ' +
-          'Run `rdy compile --force` to rebuild it from source.\n',
+          'Move the edits into the source, then run `rdy compile --force`.\n',
       );
     });
 
