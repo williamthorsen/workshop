@@ -1092,6 +1092,8 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 | `sourceHash`          | Hash of that source, read back out of its own `inputs` record                               |
 | `targetHash`          | Hash of the compiled bundle                                                                 |
 
+Every hash the manifest records is a prefix of a SHA-256 hex digest, between 8 and 64 characters. Readers compare the digest at the recorded value's own length rather than at a length of their own, so a manifest written by a readyup recording a longer prefix verifies clean instead of reading as wholly stale. The floor is what keeps a record too short to distinguish anything from passing every check it reaches.
+
 `inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its contents. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
 
 The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.

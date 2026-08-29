@@ -1,7 +1,21 @@
 import { z } from 'zod';
 
+import { isRecordedHash } from '../check-utils/hashing.ts';
+
 /** Schema for a `pickJson` path specifier list, mirroring the function's second argument. */
 const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
+
+/**
+ * Schema for a hash the manifest records, which is a prefix of a SHA-256 hex digest.
+ *
+ * Every reader compares the digest at the recorded value's own length, so how much of it a record
+ * covers is the compile's to choose: a readyup recording a longer prefix does not read as stale to one
+ * that records eight characters. The floor is what keeps a record too short to distinguish anything
+ * from reaching a comparison, where it would pass every axis on every kit.
+ */
+const RecordedHashSchema = z
+  .string()
+  .refine(isRecordedHash, { message: 'must be a lowercase hex digest prefix of 8 to 64 characters' });
 
 /**
  * Schema for one file the compile read to produce a kit's bundle.
@@ -14,8 +28,8 @@ const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
  * Paths are relative to the manifest directory, as `path` and `source` are.
  */
 const ManifestInputSchema = z.discriminatedUnion('kind', [
-  z.object({ hash: z.string(), kind: z.literal('inline'), path: z.string(), paths: JsonPathSpecSchema }),
-  z.object({ hash: z.string(), kind: z.literal('module'), path: z.string(), paths: z.undefined().optional() }),
+  z.object({ hash: RecordedHashSchema, kind: z.literal('inline'), path: z.string(), paths: JsonPathSpecSchema }),
+  z.object({ hash: RecordedHashSchema, kind: z.literal('module'), path: z.string(), paths: z.undefined().optional() }),
 ]);
 
 /**
@@ -28,7 +42,8 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  *
  * `sourceHash` and `targetHash` are the two ends of the compile: the hash of the `.ts` the kit was
  * built from and the hash of the `.js` it produced. Comparing each against the file on disk is what
- * separates a source edited without recompiling from a compiled bundle edited by hand.
+ * separates a source edited without recompiling from a compiled bundle edited by hand. Both are
+ * recorded hashes, compared at their own length rather than at a length the reader fixes.
  *
  * `inputs` records everything else the compile read, which is every module the bundle inlined past the
  * entry and every JSON file `pickJson` projected. It is optional on the same terms `checklists` is: an
@@ -53,8 +68,8 @@ const ManifestKitSchema = z.object({
   path: z.string().optional(),
   readyupVersion: z.string().optional(),
   source: z.string().optional(),
-  sourceHash: z.string().optional(),
-  targetHash: z.string().optional(),
+  sourceHash: RecordedHashSchema.optional(),
+  targetHash: RecordedHashSchema.optional(),
 });
 
 /** Schema for the readyup manifest file. */
