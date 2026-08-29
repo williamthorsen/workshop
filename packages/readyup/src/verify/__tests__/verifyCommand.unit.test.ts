@@ -558,7 +558,7 @@ describe(verifyCommand, () => {
       });
     });
 
-    it('speaks over an unverified target, where it supplies the answer the absent hash could not', async () => {
+    it('speaks over an unverified target, where it supplies the verdict the absent hash could not', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts' }],
@@ -574,7 +574,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('rebuild ok');
     });
 
-    it('keeps the skip token on an unverified target the rebuild did not answer for', async () => {
+    it('keeps the skip token on an unverified target the rebuild reached no verdict on', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js' }],

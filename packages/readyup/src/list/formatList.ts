@@ -278,7 +278,7 @@ function buildKitHint(kits: string[]): string {
  * Returns the command that runs a package's kits, which is also what marks the package as configured.
  *
  * `rdy run --packages` reaches only the packages the config names, and every other package is reachable
- * by the source naming it directly. So one hint answers both what to run and whether a `--packages` run
+ * by the source naming it directly. So one hint covers both what to run and whether a `--packages` run
  * would include it, and every kit listed stays reachable by the command above it.
  */
 function buildPackageHint(group: KitPackageGroup): string {

@@ -61,7 +61,7 @@ Give every check that names located sites an `id`. Without one, a consumer suppr
 
 Expect the site count to move in both directions. Blanking unmasks sites a comment was hiding, because a comment sitting mid-expression blanks to a run of spaces as wide as it was rather than breaking the anchor scan. Write an anchor that tolerates a whitespace run, not one that admits a single space.
 
-One pattern must not read blanked text: one matching a literal's own content, such as an import specifier, which blanking erases. `countPackageUsage` already answers that question against the text it needs; reach for it rather than hand-rolling the sweep.
+One pattern must not read blanked text: one matching a literal's own content, such as an import specifier, which blanking erases. `countPackageUsage` already scans the text it needs for that; reach for it rather than hand-rolling the sweep.
 
 ## Writing `fix`
 

@@ -500,7 +500,7 @@ describe(reportRdy, () => {
     });
 
     // The recap names the check with the token the tree gave it, so a reader scanning fixes sees which
-    // answer errors and which answer recommendations.
+    // carry errors and which carry recommendations.
     it('leads a recapped check with its own severity token', () => {
       const output = reportRdy(
         makeReport({

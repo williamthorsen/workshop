@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 
-// `resolveGitHubToken` shells out to `gh auth token`, so an unmocked run would answer differently
+// `resolveGitHubToken` shells out to `gh auth token`, so an unmocked run would behave differently
 // depending on whether the developer happens to be logged in.
 vi.mock(import('../resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,

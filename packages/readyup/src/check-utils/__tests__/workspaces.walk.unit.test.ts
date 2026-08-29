@@ -56,7 +56,7 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
     expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
 
-  it('propagates a systemic read failure rather than answering with a partial walk', ({ temp }) => {
+  it('propagates a systemic read failure rather than returning a partial walk', ({ temp }) => {
     writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EMFILE');
 

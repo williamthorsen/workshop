@@ -49,7 +49,7 @@ describe(resolveConfiguredPackages, () => {
     ]);
   });
 
-  // Requiring nothing under a name is a package with nothing to answer for, not a failure of the run.
+  // Requiring nothing under a name is a package that asks nothing, not a failure of the run.
   it('skips a configured package that publishes no requested kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
     installPackage(temp, '@beta/kits', ['default']);
@@ -66,7 +66,7 @@ describe(resolveConfiguredPackages, () => {
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.js')).toStrictEqual([]);
   });
 
-  // Answering with an empty pass would be the clean report of nothing checked.
+  // Returning an empty pass would be the clean report of nothing checked.
   it('rejects a named kit no configured package publishes', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
 

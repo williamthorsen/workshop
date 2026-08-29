@@ -58,7 +58,7 @@ describe(expandConfiguredPackages, () => {
     ]);
   });
 
-  // The same precedence a local `--from` source follows, so a package and a directory answer alike.
+  // The same precedence a local `--from` source follows, so a package and a directory resolve alike.
   it('falls back to the kit directory when a package ships no manifest', ({ temp }) => {
     const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
 

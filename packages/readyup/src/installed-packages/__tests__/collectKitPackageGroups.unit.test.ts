@@ -89,7 +89,7 @@ describe(collectKitPackageGroups, () => {
     ]);
   });
 
-  // Listing is read-only, so a dependency nobody can read costs its own group rather than the answer.
+  // Listing is read-only, so a dependency nobody can read costs its own group rather than the whole listing.
   it('warns and omits a configured package that cannot be resolved', ({ temp }) => {
     using io = captureStdio();
 

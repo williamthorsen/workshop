@@ -68,7 +68,7 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
  * Names the kits a package publishes, preferring its manifest and falling back to its kit directory.
  *
  * The same precedence a local `--from` source already follows, so a package source and a directory source
- * answer alike. Only a missing manifest falls back: one that exists but cannot be parsed is a broken
+ * resolve alike. Only a missing manifest falls back: one that exists but cannot be parsed is a broken
  * publication, and quietly reading around it would report a kit list nobody declared. Descriptions live in
  * the manifest, so the fallback names kits without them.
  */

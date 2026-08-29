@@ -14,7 +14,7 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
  * Names the installed direct dependencies that publish kits, sorted.
  *
  * Reads the project's declared dependencies rather than sweeping `node_modules`, which bounds the work to
- * packages the reader already chose to depend on and keeps every answer actionable: a transitive package
+ * packages the reader already chose to depend on and keeps every result actionable: a transitive package
  * is not one they can sensibly add to a list of their own.
  *
  * Best effort throughout: a project manifest that cannot be read or parsed yields `[]`, which a caller

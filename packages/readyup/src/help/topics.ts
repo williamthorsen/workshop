@@ -1,4 +1,4 @@
-/** A conceptual topic `rdy help` offers, and the README section that answers it. */
+/** A conceptual topic `rdy help` offers, and the README section that covers it. */
 export interface HelpTopic {
   /** Level-2 README heading whose section the topic prints. */
   heading: string;

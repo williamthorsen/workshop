@@ -169,7 +169,7 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
 /**
  * Locates the package a `list --from npm:` names, rejecting what `run` rejects for the same source.
  *
- * Listing and running answer about the same kits, so a spelling one accepts and the other refuses would
+ * Listing and running cover the same kits, so a spelling one accepts and the other refuses would
  * send the reader looking for a difference that does not exist.
  */
 function resolveListedPackageRoot(source: NpmSource): string {
@@ -282,7 +282,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
 /**
  * Enumerates every kit-publishing dependency of the working directory, with the kits each publishes.
  *
- * The dependency axis alone: a project's own kits belong to the owner listing, and this view answers what
+ * The dependency axis alone: a project's own kits belong to the owner listing, and this view reports what
  * the project's dependencies offer rather than what it holds. Both the packages the config names and the
  * ones it omits are reported, since the question is what is available rather than what a run would select.
  */
@@ -463,7 +463,7 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
  * Loads the project config, falling back to the defaults and reporting a config it cannot evaluate.
  *
  * Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather than
- * the answer, taking the same warn-and-continue the corrupt-manifest paths take. `run` still fails hard on
+ * the whole listing, taking the same warn-and-continue the corrupt-manifest paths take. `run` still fails hard on
  * the same failure: it would otherwise execute against settings nobody chose.
  */
 async function loadListingConfig(): Promise<ResolvedRdyConfig> {
@@ -537,7 +537,7 @@ function buildInternalEntry(name: string, dir: string, extension: string): JsonL
  * checklist names, the readyup version a kit was built against -- lives in the manifest that is absent.
  *
  * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a
- * path that does not exist would turn a mistyped `--from` into a clean, empty answer.
+ * path that does not exist would turn a mistyped `--from` into a clean, empty listing.
  */
 function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListKitEntry[] {
   if (!existsSync(kitsDir)) {
