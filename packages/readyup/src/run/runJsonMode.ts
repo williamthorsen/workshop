@@ -41,7 +41,8 @@ export async function runJsonMode(
   const { detail, diagnose, failOn, reportOn } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
-  const tracking = readManifestTracking(isJit);
+  const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
+  warnings.push(...manifestWarnings);
   const pragmaLedger = createPragmaLedger();
   let allPassed = true;
   let anyKitFailed = false;

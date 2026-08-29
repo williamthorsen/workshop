@@ -742,6 +742,14 @@ Three compare the kits it is about to run against `.readyup/manifest.json` and s
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit reached through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
+A manifest that is present and cannot be read is the one case that speaks for itself, because all three then go unchecked for every kit in the run.
+
+| Code                  | Raised when                                                           |
+| --------------------- | --------------------------------------------------------------------- |
+| `manifest-unreadable` | `.readyup/manifest.json` exists but does not parse against the schema |
+
+An absent manifest stays silent: it is the normal state of a project that never compiled, and says nothing about any kit.
+
 Two more come from [`--diagnose`](#run-options), and are raised only where that flag asked for them.
 
 | Code                     | Raised when                                                        |
@@ -1092,6 +1100,8 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 | `sourceHash`          | Hash of that source, read back out of its own `inputs` record                               |
 | `targetHash`          | Hash of the compiled bundle                                                                 |
 
+Every hash the manifest records is a prefix of a SHA-256 hex digest, between 8 and 64 characters. Readers compare the digest at the recorded value's own length rather than at a length of their own, so a manifest written by a readyup recording a longer prefix verifies clean instead of reading as wholly stale. The floor is what keeps a record too short to distinguish anything from passing every check it reaches.
+
 `inputs` is the compile's input closure: every module the bundle inlined past the entry, and every JSON file [`pickJson`](#inlining-json-at-compile-time) projected. A module records the hash of its contents. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field the kit did not pick is not staleness.
 
 The closure stops at `node_modules`. A dependency's contents are pinned by the lockfile and read exactly by [`rdy verify --rebuild`](#verifying-by-recompiling), while recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather than to the kit: one `import zod` inlines 79 files.
@@ -1383,10 +1393,12 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 
 ### Hashing
 
-| Function                          | Returns                          |
-| --------------------------------- | -------------------------------- |
-| `computeHash(content)`            | Hash of a string                 |
-| `fileMatchesHash(path, expected)` | File's hash matches the expected |
+| Function                                  | Returns                                        |
+| ----------------------------------------- | ---------------------------------------------- |
+| `computeHash(content)`                    | Hash of a string or byte sequence              |
+| `fileMatchesHash(path, expected)`         | File's hash matches the expected               |
+| `hashToRecordedLength(content, recorded)` | Hash truncated to a recorded hash's own length |
+| `isRecordedHash(value)`                   | Value is a well-formed recorded hash           |
 
 ### Workspaces
 

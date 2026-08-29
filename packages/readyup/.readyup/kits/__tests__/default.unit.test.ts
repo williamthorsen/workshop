@@ -5,6 +5,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { computeHash } from '../../../src/check-utils/hashing.ts';
 import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
@@ -12,6 +13,7 @@ import type { FixtureManifestInput } from '../test-utils/project-fixture.ts';
 import {
   FIXTURE_INLINED_MODULE_PATH,
   FIXTURE_KITS_DIR,
+  SELF_CONTAINED_BUNDLE,
   withInputs,
   writeInlineInput,
   writeKit,
@@ -137,6 +139,27 @@ describe('default kit', () => {
       expect(pickResult(results, 'Its bundle')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining('not the recorded 0badcafe'),
+      });
+    });
+
+    it.each([12, 64])('passes on a bundle recorded with a %i-character hash', async (length) => {
+      const entry = writeKit(projectRoot, 'default');
+      writeKitManifest(projectRoot, [{ ...entry, targetHash: computeHash(SELF_CONTAINED_BUNDLE).slice(0, length) }]);
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
+    });
+
+    it.each(['0badcaf', '0badcafg'])('reports %o as a recorded value that is not a hash', async (targetHash) => {
+      const entry = writeKit(projectRoot, 'default');
+      writeKitManifest(projectRoot, [{ ...entry, targetHash }]);
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Its bundle')).toMatchObject({
+        status: 'failed',
+        detail: expect.stringContaining(`records ${targetHash}, which is not a hash`),
       });
     });
 

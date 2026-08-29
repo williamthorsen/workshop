@@ -15,7 +15,7 @@ export { compareRefToRemote } from './git/compare-ref-to-remote.ts';
 export { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from './git/factories.ts';
 export { isAtRepoRoot, isGitRepo } from './git/repo-predicates.ts';
 export { expandHome, runGit } from './git/run-git.ts';
-export { computeHash, fileMatchesHash } from './hashing.ts';
+export { computeHash, fileMatchesHash, hashToRecordedLength, isRecordedHash } from './hashing.ts';
 export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json.ts';
 export { getJsonValue, hasJsonValue } from './json-value.ts';
 export { missingFrom } from './missingFrom.ts';

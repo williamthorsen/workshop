@@ -75,7 +75,7 @@ describe(runHumanMode, () => {
   beforeEach(() => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
-    mockReadManifestTracking.mockReturnValue(undefined);
+    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
     mockWarnOnKitStaleness.mockReturnValue([]);
     mockWarnOnUnusedPragmas.mockReturnValue([]);
   });
@@ -551,7 +551,7 @@ describe(runHumanMode, () => {
 
     it('advises on each kit against the source that kit resolved to', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
-      mockReadManifestTracking.mockReturnValue(tracking);
+      mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { computeHash } from '../../check-utils/hashing.ts';
 import { checkDrift } from '../checkDrift.ts';
 import { hashBytes } from '../targetHash.ts';
 
@@ -26,6 +27,25 @@ describe(checkDrift, () => {
     const status = checkDrift({ name: 'demo', path: 'demo.js', targetHash: expectedHash }, tempDir);
 
     expect(status.kind).toBe('ok');
+  });
+
+  it.each([12, 64])('returns ok when the manifest records a %i-character targetHash', (length) => {
+    const content = Buffer.from('compiled output');
+    writeFileSync(path.join(tempDir, 'demo.js'), content);
+    const recorded = computeHash(content).slice(0, length);
+
+    const status = checkDrift({ name: 'demo', path: 'demo.js', targetHash: recorded }, tempDir);
+
+    expect(status).toStrictEqual({ kind: 'ok', targetHash: recorded });
+  });
+
+  it('reports the actual hash at the recorded length when a longer record has drifted', () => {
+    writeFileSync(path.join(tempDir, 'demo.js'), 'on-disk content');
+    const recorded = computeHash('other content').slice(0, 64);
+
+    const status = checkDrift({ name: 'demo', path: 'demo.js', targetHash: recorded }, tempDir);
+
+    expect(status).toMatchObject({ kind: 'drift', expected: recorded, actual: computeHash('on-disk content') });
   });
 
   it('returns drift when hashes differ', () => {

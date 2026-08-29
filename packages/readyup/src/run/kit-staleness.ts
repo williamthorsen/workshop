@@ -1,15 +1,24 @@
 import path from 'node:path';
 import process from 'node:process';
 
+import { describeError } from '@williamthorsen/toolbelt.errors';
+
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
+import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
 import type { InputsStatus } from '../verify/checkInputDrift.ts';
 import { checkInputDrift } from '../verify/checkInputDrift.ts';
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
 import type { KitSource } from './ResolvedKitEntry.ts';
+
+/** What reading the manifest yielded: the tracking where one was read, and any advisory the read raised. */
+export interface ManifestRead {
+  tracking: ManifestTracking | undefined;
+  warnings: RaisedWarning[];
+}
 
 /** The manifest an invocation checks its kits against, read once and shared by every kit in the run. */
 export interface ManifestTracking {
@@ -20,19 +29,24 @@ export interface ManifestTracking {
 /**
  * Reads the default manifest for the run's advisories, best effort.
  *
- * Every failure here yields no manifest at all: a missing one is the normal state of a
- * project that never compiled, and an unreadable or unrecognized one says nothing about any kit. A
- * verification tool that refused to run because its own bookkeeping was unreadable would be worse
- * than one that runs and stays quiet. `--jit` runs from source, which the manifest does not
- * describe, so they skip the read entirely.
+ * No failure here stops the run: a verification tool that refused to run because its own bookkeeping
+ * was unreadable would be worse than one that runs and says so. What separates the two outcomes is
+ * whether the manifest is there. An absent one is the normal state of a project that never compiled
+ * and says nothing about any kit, so it is silent. A present one that cannot be read raises
+ * `manifest-unreadable`, because every staleness axis then goes unchecked for every kit in the run,
+ * and a run that checked nothing is indistinguishable from one that found nothing. `--jit` runs from
+ * source, which the manifest does not describe, so they skip the read entirely.
  */
-export function readManifestTracking(isJit: boolean): ManifestTracking | undefined {
-  if (isJit) return undefined;
+export function readManifestTracking(isJit: boolean): ManifestRead {
+  if (isJit) return { tracking: undefined, warnings: [] };
+
   const manifestPath = path.resolve(process.cwd(), DEFAULT_MANIFEST_PATH);
   try {
-    return { manifest: readManifest(manifestPath), manifestDir: path.dirname(manifestPath) };
-  } catch {
-    return undefined;
+    const tracking = { manifest: readManifest(manifestPath), manifestDir: path.dirname(manifestPath) };
+    return { tracking, warnings: [] };
+  } catch (error: unknown) {
+    if (error instanceof ManifestNotFoundError) return { tracking: undefined, warnings: [] };
+    return { tracking: undefined, warnings: [raiseUnreadableManifest(manifestPath, error)] };
   }
 }
 
@@ -118,6 +132,17 @@ function findManifestEntry(kitPath: string, tracking: ManifestTracking): RdyMani
  */
 function hasChangedInput(status: InputsStatus | undefined): boolean {
   return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');
+}
+
+/** Raises the advisory for a manifest that is present and unreadable, and writes its stderr line. */
+function raiseUnreadableManifest(manifestPath: string, error: unknown): RaisedWarning {
+  const warning: RaisedWarning = {
+    code: 'manifest-unreadable',
+    message: `${toDisplayPath(manifestPath)} could not be read, so no kit was checked against it: ${describeError(error)}`,
+    remedy: 'Run `rdy compile` to rewrite it.',
+  };
+  process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
+  return warning;
 }
 
 /** Returns a staleness verdict, or `undefined` when reaching one needed a file that cannot be read. */

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { hashFile } from './targetHash.ts';
+import { hashFileToRecordedLength } from './targetHash.ts';
 
 /** Outcome of a per-kit drift check. */
 export type DriftStatus =
@@ -29,7 +29,7 @@ export function checkDrift(kit: RdyManifestKit, manifestDir: string): DriftStatu
     return { kind: 'missing', resolvedPath };
   }
 
-  const actual = hashFile(resolvedPath);
+  const actual = hashFileToRecordedLength(resolvedPath, kit.targetHash);
   if (actual !== kit.targetHash) {
     return { kind: 'drift', expected: kit.targetHash, actual, resolvedPath };
   }

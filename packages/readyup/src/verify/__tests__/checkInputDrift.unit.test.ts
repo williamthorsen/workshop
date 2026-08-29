@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { computeHash } from '../../check-utils/hashing.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../../manifest/manifestSchema.ts';
 import { checkInputDrift } from '../checkInputDrift.ts';
 import { hashBytes, hashProjection } from '../targetHash.ts';
@@ -66,6 +67,31 @@ describe(checkInputDrift, () => {
       });
     });
 
+    it.each([12, 64])('returns ok when the record holds a %i-character hash', (length) => {
+      writeInput('kits/shared.ts', MODULE_SOURCE);
+      const recorded: RdyManifestInput = { ...RECORDED_MODULE, hash: computeHash(MODULE_SOURCE).slice(0, length) };
+
+      expect(checkInputDrift(kitWith([recorded]), tempDir)).toStrictEqual({ kind: 'ok' });
+    });
+
+    it('reports the actual hash at the recorded length when a longer record has changed', () => {
+      writeInput('kits/shared.ts', 'export const shared = 2;\n');
+      const recorded: RdyManifestInput = { ...RECORDED_MODULE, hash: computeHash(MODULE_SOURCE) };
+
+      expect(checkInputDrift(kitWith([recorded]), tempDir)).toStrictEqual({
+        kind: 'stale',
+        failures: [
+          {
+            kind: 'module',
+            path: 'kits/shared.ts',
+            reason: 'changed',
+            expected: recorded.hash,
+            actual: computeHash('export const shared = 2;\n'),
+          },
+        ],
+      });
+    });
+
     it('reports a module the compile read that is no longer on disk', () => {
       expect(checkInputDrift(kitWith([RECORDED_MODULE]), tempDir)).toStrictEqual({
         kind: 'stale',
@@ -90,6 +116,14 @@ describe(checkInputDrift, () => {
           },
         ],
       });
+    });
+
+    it.each([12, 64])('returns ok when the record holds a %i-character projection hash', (length) => {
+      writeInput('package.json', JSON.stringify(PACKAGE_JSON));
+      const projection = JSON.stringify({ version: PACKAGE_JSON.version });
+      const recorded: RdyManifestInput = { ...RECORDED_PICK, hash: computeHash(projection).slice(0, length) };
+
+      expect(checkInputDrift(kitWith([recorded]), tempDir)).toStrictEqual({ kind: 'ok' });
     });
 
     it('leaves an edit to a field the kit did not pick as ok', () => {
