@@ -16,6 +16,7 @@ import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
 import { warnOnMaskedSkips } from './skip-diagnosis.ts';
+import { warnOnVersionSkew } from './version-skew.ts';
 
 interface JsonRunSettings {
   detail: JsonDetail;
@@ -49,7 +50,10 @@ export async function runJsonMode(
     try {
       const { kit, compileTimeVersion } = await loadKit(entry, isJit);
 
-      warnings.push(...warnOnKitStaleness(entry.name, entry.source, tracking));
+      warnings.push(
+        ...warnOnKitStaleness(entry.name, entry.source, tracking),
+        ...warnOnVersionSkew(entry.name, kit, compileTimeVersion),
+      );
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
       const checklists = selectChecklists(kit, entry.checklists);

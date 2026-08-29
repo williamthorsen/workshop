@@ -9,6 +9,7 @@ import { loadRemoteKit, type LoadRemoteKitOptions } from '../remote/loadRemoteKi
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
+import { assertSatisfiesVersionFloor } from './version-skew.ts';
 
 /**
  * Loads a rdy kit from a path or URL source.
@@ -17,6 +18,27 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  * reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
  */
 export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
+  const loaded = await loadFromSource(entry, isJit);
+
+  // Checked outside the load, whose catch blocks rewrap anything thrown inside them through
+  // `describeError` and would drop the hint naming the upgrade.
+  assertSatisfiesVersionFloor(entry.name, loaded.kit);
+
+  return loaded;
+}
+
+// region | Helpers
+
+/** Detects module-not-found errors that mention a specific package name. */
+function isModuleNotFoundError(error: unknown, packageName: string): boolean {
+  if (!isError(error)) return false;
+  if (!('code' in error)) return false;
+  if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
+  return error.message.includes(packageName);
+}
+
+/** Fetches or reads a kit from its source, reporting every failure as the kit-load error a reader sees. */
+async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
   const { source } = entry;
 
   if ('url' in source) {
@@ -50,16 +72,6 @@ export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<
     }
     throw kitLoadError(describeError(error), { cause: error, hint: extractHint(error) });
   }
-}
-
-// region | Helpers
-
-/** Detects module-not-found errors that mention a specific package name. */
-function isModuleNotFoundError(error: unknown, packageName: string): boolean {
-  if (!isError(error)) return false;
-  if (!('code' in error)) return false;
-  if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
-  return error.message.includes(packageName);
 }
 
 /** Turns unresolvable readyup imports into the kit-load failure a reader sees, named for where the kit came from. */

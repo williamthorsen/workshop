@@ -489,5 +489,35 @@ describe(assertIsRdyKit, () => {
         'reportOn:',
       );
     });
+
+    it.each([
+      ['a range prefix', '>=0.33.0'],
+      ['a caret prefix', '^0.33.0'],
+      ['a prerelease tail', '0.33.0-rc.1'],
+      ['a leading v', 'v0.33.0'],
+      ['a non-numeric segment', '0.x'],
+      ['a fourth segment the comparison would discard', '0.33.0.1'],
+      ['an empty string', ''],
+    ])('throws when minReadyupVersion carries %s', async (_label, value) => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], minReadyupVersion: value }),
+      ).resolves.toContain('minReadyupVersion: expected a dotted numeric version');
+    });
+
+    it('names the type when minReadyupVersion is not a string', async () => {
+      await expect(
+        messageFrom({ checklists: [{ name: 'test', checks: [] }], minReadyupVersion: 33 }),
+      ).resolves.toContain('minReadyupVersion: expected a dotted numeric version, got number');
+    });
+
+    it.each([['0.33.0'], ['1'], ['0.33'], ['10.2.1']])('accepts the dotted numeric floor %s', (value) => {
+      expect(() =>
+        assertIsRdyKit({ checklists: [{ name: 'test', checks: [] }], minReadyupVersion: value }),
+      ).not.toThrow();
+    });
+
+    it('accepts a kit that declares no floor', () => {
+      expect(() => assertIsRdyKit({ checklists: [{ name: 'test', checks: [] }] })).not.toThrow();
+    });
   });
 });

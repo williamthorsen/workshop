@@ -25,6 +25,22 @@ const FunctionSchema = z.custom<(...args: never[]) => unknown>((value) => typeof
   error: (issue) => `expected a function, got ${describeType(issue.input)}`,
 });
 
+/** Matches a dotted numeric version of up to three segments, the only shape the runner's floor comparison orders. */
+const DOTTED_NUMERIC_VERSION = /^\d+(?:\.\d+){0,2}$/;
+
+/**
+ * Schema for the readyup version a kit names as its floor.
+ *
+ * A floor is authored rather than read off an installed package, so it takes no range prefix and no
+ * prerelease tail; rejecting those is what keeps a typo from silently never matching. A fourth
+ * segment is rejected for the mirror reason: the comparison reads three, and would discard it.
+ */
+const MinReadyupVersionSchema = z
+  .string({ error: (issue) => `expected a dotted numeric version, got ${describeType(issue.input)}` })
+  .regex(DOTTED_NUMERIC_VERSION, {
+    error: (issue) => `expected a dotted numeric version, got ${previewValue(issue.input)}`,
+  });
+
 /** Schema for the name every check and checklist must have. */
 const NameSchema = z.string('expected a non-empty string').min(1, 'expected a non-empty string');
 
@@ -94,6 +110,7 @@ const RdyKitSchema = z.looseObject({
   description: z.string().optional(),
   failOn: SeveritySchema.optional(),
   fixLocation: FixLocationSchema.optional(),
+  minReadyupVersion: MinReadyupVersionSchema.optional(),
   reportOn: SeveritySchema.optional(),
   suites: z.record(z.string(), z.array(z.string())).optional(),
 });

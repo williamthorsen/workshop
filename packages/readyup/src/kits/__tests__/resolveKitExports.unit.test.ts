@@ -24,6 +24,22 @@ describe(resolveKitExports, () => {
     expect(result).toStrictEqual({ checklists, fixLocation: 'inline' });
   });
 
+  it('forwards minReadyupVersion when defined', () => {
+    const checklists = [{ name: 'main', checks: [] }];
+
+    const result = resolveKitExports({ checklists, minReadyupVersion: '0.33.0' });
+
+    expect(result).toStrictEqual({ checklists, minReadyupVersion: '0.33.0' });
+  });
+
+  it('omits minReadyupVersion when undefined', () => {
+    const checklists = [{ name: 'main', checks: [] }];
+
+    const result = resolveKitExports({ checklists });
+
+    expect(result).not.toHaveProperty('minReadyupVersion');
+  });
+
   it('omits fixLocation when undefined', () => {
     const checklists = [{ name: 'a', checks: [] }];
     const result = resolveKitExports({ checklists });

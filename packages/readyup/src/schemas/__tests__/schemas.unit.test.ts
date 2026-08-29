@@ -250,10 +250,22 @@ describe('JSON payload schemas', () => {
 
     it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
-        'diagnosis-inconclusive' | 'input-stale' | 'pragma-unused' | 'skip-masks-pass' | 'source-stale' | 'target-drift'
+        | 'diagnosis-inconclusive'
+        | 'input-stale'
+        | 'pragma-unused'
+        | 'skip-masks-pass'
+        | 'source-stale'
+        | 'target-drift'
+        | 'version-skew'
       >();
       expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<
-        'diagnosis-inconclusive' | 'input-stale' | 'pragma-unused' | 'skip-masks-pass' | 'source-stale' | 'target-drift'
+        | 'diagnosis-inconclusive'
+        | 'input-stale'
+        | 'pragma-unused'
+        | 'skip-masks-pass'
+        | 'source-stale'
+        | 'target-drift'
+        | 'version-skew'
       >();
     });
 

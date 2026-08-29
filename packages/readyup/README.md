@@ -182,15 +182,18 @@ See [internal kits](#internal-kits) for what the `internal` keys select, and [pa
 
 ### Kit
 
-| Field             | Type                         | Default     | Meaning                                    |
-| ----------------- | ---------------------------- | ----------- | ------------------------------------------ |
-| `checklists`      | `Array<Checklist \| Staged>` | required    | The checklists this kit runs               |
-| `description`     | `string`                     | --          | Summary, reported by `rdy list --manifest` |
-| `suites`          | `Record<string, string[]>`   | --          | Named subsets of checklists                |
-| `defaultSeverity` | `Severity`                   | `error`     | Severity for checks that declare none      |
-| `failOn`          | `Severity`                   | `error`     | Failure threshold                          |
-| `reportOn`        | `Severity`                   | `recommend` | Reporting threshold                        |
-| `fixLocation`     | `'inline' \| 'end'`          | `end`       | Where fixes render                         |
+| Field               | Type                         | Default     | Meaning                                    |
+| ------------------- | ---------------------------- | ----------- | ------------------------------------------ |
+| `checklists`        | `Array<Checklist \| Staged>` | required    | The checklists this kit runs               |
+| `description`       | `string`                     | --          | Summary, reported by `rdy list --manifest` |
+| `minReadyupVersion` | `string`                     | --          | Readyup version the checks require         |
+| `suites`            | `Record<string, string[]>`   | --          | Named subsets of checklists                |
+| `defaultSeverity`   | `Severity`                   | `error`     | Severity for checks that declare none      |
+| `failOn`            | `Severity`                   | `error`     | Failure threshold                          |
+| `reportOn`          | `Severity`                   | `recommend` | Reporting threshold                        |
+| `fixLocation`       | `'inline' \| 'end'`          | `end`       | Where fixes render                         |
+
+A kit declaring `minReadyupVersion` fails to load on a runner below it. A kit declaring none falls back to an advisory floor, the version its bundle records at compile time, which a lower runner reports as a [`version-skew`](#advisory-warnings) warning rather than a failure.
 
 ### Checklists
 
@@ -748,6 +751,14 @@ Two more come from [`--diagnose`](#run-options), and are raised only where that 
 
 These read the checks rather than the manifest, so none of the silencing conditions above reaches them: they apply wherever the kit came from, `--url`, `--from`, `--packages`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
 
+One compares the readyup that compiled a bundle against the one running it.
+
+| Code           | Raised when                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| `version-skew` | A bundle was compiled by a newer readyup than the one running it |
+
+Only that direction is reported: the recorded version freezes at publish time while runners move on, so a bundle behind the runner is the ordinary state of a published kit. The advisory stands in for a floor the author never declared, so a kit declaring [`minReadyupVersion`](#kit) never raises it -- a runner below that floor has already failed the load. A bundle recording no version is silent, `--jit` runs from TypeScript source included.
+
 One more reads the sources the run's checks examined and reports the pragmas among them that suppressed nothing.
 
 | Code            | Raised when                                                                        |
@@ -1004,7 +1015,7 @@ An error body may also include `hint`, one action that would clear the failure:
 - **`counts`** holds the six tallies at report, kit, and checklist level, nested so count names and verdict names share no namespace.
 - **`worstSeverity`** is derived verdict data, omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear at the top level only when the corresponding flag was passed, and on every kit that ran as the value that governed it. See [thresholds](#thresholds) for how each resolves.
-- **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit that ran whose bundle has a compile-time stamp, including where that stamp matches the report's own `readyupVersion`, and is absent for a bundle compiled before the stamp existed or for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](#verifying-by-recompiling) reports the same value under a narrower rule, appearing only where it disagrees with the running readyup: that field explains a mismatch, this one records what ran.
+- **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit whose bundle records one, including where that version matches the report's own `readyupVersion`, and is absent for a bundle compiled before readyup recorded it and for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](#verifying-by-recompiling) reports the same value under a narrower rule, appearing only where it disagrees with the running readyup: that field explains a mismatch, this one records what ran.
 - **`warnings`** lists any advisory as `{ code, message, remedy? }`, absent when none was raised.
 
 Payloads are slim by construction: an empty field is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks.
