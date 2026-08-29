@@ -4,8 +4,8 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { checkDrift } from '../checkDrift.ts';
 import { computeHash } from '../../check-utils/hashing.ts';
+import { checkDrift } from '../checkDrift.ts';
 import { hashBytes } from '../targetHash.ts';
 
 describe(checkDrift, () => {

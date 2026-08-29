@@ -286,7 +286,7 @@ describe('ManifestSchema', () => {
 
     const result = ManifestSchema.safeParse(input);
 
-    assert(!result.success);
+    assert.ok(!result.success);
     expect(result.error.message).toContain('lowercase hex digest prefix of 8 to 64 characters');
   });
 });
