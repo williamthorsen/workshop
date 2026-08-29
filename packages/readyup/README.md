@@ -1383,10 +1383,12 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 
 ### Hashing
 
-| Function                          | Returns                          |
-| --------------------------------- | -------------------------------- |
-| `computeHash(content)`            | Hash of a string                 |
-| `fileMatchesHash(path, expected)` | File's hash matches the expected |
+| Function                                  | Returns                                        |
+| ----------------------------------------- | ---------------------------------------------- |
+| `computeHash(content)`                    | Hash of a string or byte sequence              |
+| `fileMatchesHash(path, expected)`         | File's hash matches the expected               |
+| `hashToRecordedLength(content, recorded)` | Hash truncated to a recorded hash's own length |
+| `isRecordedHash(value)`                   | Value is a well-formed recorded hash           |
 
 ### Workspaces
 
