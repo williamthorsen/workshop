@@ -7,7 +7,7 @@ import { expandConfiguredPackages } from '../expandConfiguredPackages.ts';
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
-  // A tree per test: workspace discovery holds its answer for the life of the process, keyed by directory.
+  // A tree per test: workspace discovery holds its result for the life of the process, keyed by directory.
   makeFixture(() => createTempTree({}, { prefix: 'expand-packages-workspaces-' })),
 );
 
@@ -50,7 +50,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
     ]);
   });
 
-  // This suite runs in a repo whose own workspaces include `readyup`, so an answer read through the
+  // This suite runs in a repo whose own workspaces include `readyup`, so a result read through the
   // ambient cwd would resolve the name the directory under test does not hold.
   it('reads the workspaces of the directory it is handed, not those of the ambient cwd', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });

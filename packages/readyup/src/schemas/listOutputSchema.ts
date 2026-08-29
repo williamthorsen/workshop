@@ -46,7 +46,7 @@ export const ListKitEntrySchema = z
      * The project a kit was authored in, relative to the sweep root, present only for a repo-wide listing.
      *
      * Orthogonal to `origin` rather than an alternative to it: one names where a kit lives in this tree,
-     * the other which installed package published it, and a kit can answer both.
+     * the other which installed package published it, and a kit can carry both.
      */
     project: z.string().optional(),
     origin: ListKitOriginSchema.optional(),

@@ -37,7 +37,7 @@ export function resolveConfiguredPackages(
  *
  * A configured package not publishing a requested kit is skipped rather than reported: `--packages`
  * asks whether this project satisfies what its configured packages require of it, and a package
- * requiring nothing under that name has nothing to answer for.
+ * requiring nothing under that name asks nothing of it.
  *
  * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
  * order `rdy run a b` runs them in against a single source.

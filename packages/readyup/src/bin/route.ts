@@ -241,7 +241,7 @@ function wantsHelp(flags: string[]): boolean {
  * lives wherever that source resolves rather than on a path worth probing.
  *
  * Everything else is a bare word with no source, which `run` resolves against the conventional kit
- * directory alone. Probing exactly that directory is what makes the answer match what would run.
+ * directory alone. Probing exactly that directory is what makes the result match what would run.
  */
 function namesAKit(word: string, args: string[]): boolean {
   if (word.includes(':') || hasSourceFlag(args)) return true;

@@ -122,7 +122,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
  * Confirms esbuild is installed, raising a config error naming the install command when it is not.
  *
  * Refuses rather than degrading. `--rebuild` asks whether each bundle is reproducible, and a run
- * that answered "no esbuild, so nothing to report" would pass while establishing nothing -- the
+ * that concluded "no esbuild, so nothing to report" would pass while establishing nothing -- the
  * failure mode the flag exists to remove.
  */
 async function requireEsbuild(): Promise<void> {
@@ -155,7 +155,7 @@ function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean
  * `unverified` passes on every recorded-hash axis: a manifest entry with no recorded hash predates
  * the feature or was written with `--skip-manifest`, which says nothing about whether the kit has
  * changed. The rebuild axis has no such case -- only `ok` passes there, and a kit the rebuild could
- * not reach an answer for fails rather than being waived.
+ * not reach a verdict on fails rather than being waived.
  */
 function isPassingVerdict({ drift, inputs, rebuild, source }: KitVerdicts): boolean {
   const targetPasses = drift.kind === 'ok' || drift.kind === 'unverified';
@@ -221,7 +221,7 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
  * Returns the token for the worst of a kit's verdicts.
  *
  * A mismatch or a missing file on any axis yields a failure. The skip token needs an unverified
- * target and no answer from the rebuild: a rebuild that reproduced the bundle has checked the kit
+ * target and no verdict from the rebuild: a rebuild that reproduced the bundle has checked the kit
  * more exactly than the absent hash would have, so the kit passed rather than went unchecked.
  */
 function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenName {
@@ -290,9 +290,9 @@ function describeInputFailure(failure: InputFailure): string {
  * Returns a clause describing the rebuild verdict, or `undefined` when there is nothing to add.
  *
  * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
- * restate them. Anywhere else it speaks, because it then holds the line's strongest answer: over
+ * restate them. Anywhere else it speaks, because it then holds the line's strongest evidence: over
  * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
- * wrong, and over an unverified one it supplies the answer the absent hash could not.
+ * wrong, and over an unverified one it supplies the verdict the absent hash could not.
  */
 function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirmed: boolean): string | undefined {
   if (status === undefined) return undefined;

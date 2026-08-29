@@ -384,7 +384,7 @@ describe(discoverWorkspacesAt, () => {
     const workspaces = discoverWorkspacesAt(temp.resolve('nested'));
 
     expect(workspaces.map((w) => w.name)).toStrictEqual(['nested-root', 'alpha']);
-    // The ambient cwd holds no manifest, so an answer read through it could not be this one.
+    // The ambient cwd holds no manifest, so a result read through it could not be this one.
     expect(() => discoverWorkspaces()).toThrow(/no readable package.json/);
   });
 

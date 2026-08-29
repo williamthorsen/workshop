@@ -30,7 +30,7 @@ export function isJsFamilyPath(path: string): boolean {
  * report naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token following
  * anything else in its comment, or a second token on a line, is withheld rather than guessed at.
  *
- * `blankComments` is the comment oracle, no second tokenizer being needed to answer a question it already answers.
+ * `blankComments` is the comment oracle, no second tokenizer being needed to answer a question it already settles.
  * It preserves its input's length, so an offset found in the raw text reads the blanked text at the same place.
  *
  * Reads JavaScript-family syntax; a source in another language yields arbitrary output, as it does from the

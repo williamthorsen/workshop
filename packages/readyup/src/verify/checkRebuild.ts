@@ -54,7 +54,7 @@ export interface EsbuildComparison {
  * reports drift and a passing rebuild together, which is how the two verdicts distinguish a corrupt
  * bundle from corrupt bookkeeping.
  *
- * Every way the check can fail to reach an answer is reported rather than waved through: `missing`
+ * Every way the check can fail to reach a verdict is reported rather than waved through: `missing`
  * when an input is absent, `failed` when the source no longer compiles. `failed` is distinct from
  * `mismatch` because the remedy differs -- fix the kit, versus recompile it.
  */

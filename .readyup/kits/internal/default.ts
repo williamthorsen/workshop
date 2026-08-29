@@ -7,7 +7,7 @@ import { defineRdyKit } from 'readyup';
  * Checks run concurrently within a checklist.
  *
  * Three fields, three questions: `name` states what must be true, phrased so it reads
- * true on a pass; `detail` answers why this status; `fix` says what to do about it.
+ * true on a pass; `detail` explains why this status; `fix` says what to do about it.
  */
 export default defineRdyKit({
   checklists: [

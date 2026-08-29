@@ -26,11 +26,11 @@ interface KitPackageGroupOptions {
  * and falls back to the project's workspaces, so a configured package that is installed without being declared,
  * or published by a workspace, is one only the config half reports.
  *
- * Configured membership arrives as an argument rather than being read here, which leaves the answer a
+ * Configured membership arrives as an argument rather than being read here, which leaves the result a
  * function of a directory and a list: a caller sweeping a repository already holds each project's config.
  *
  * A package that cannot be expanded warns and is omitted, matching the warn-and-continue listing already
- * takes elsewhere. Listing is read-only, so a broken dependency costs its own group rather than the answer.
+ * takes elsewhere. Listing is read-only, so a broken dependency costs its own group rather than the whole listing.
  */
 export function collectKitPackageGroups({
   configuredPackages,

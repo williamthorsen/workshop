@@ -18,7 +18,7 @@ import { defineConfig } from 'eslint/config';
  * from the shared config and would be lost the same way.
  *
  * The scope is TypeScript alone, though the base block this overrides also covers `patterns.javaScriptFiles`. The
- * `describeError` entry answers the `unknown` type TypeScript gives a catch binding, which JavaScript has no
+ * `describeError` entry covers the `unknown` type TypeScript gives a catch binding, which JavaScript has no
  * equivalent of, so a `.js` file receives the three statement bans without it.
  */
 const RESTRICTED_SYNTAX = [

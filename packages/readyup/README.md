@@ -244,7 +244,7 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 
 Three fields, three questions:
 
-> **`name` states what must be true. `detail` answers why this status. `fix` says what to do about it.**
+> **`name` states what must be true. `detail` explains why this status. `fix` says what to do about it.**
 
 A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: the operator leaves the reader to infer which direction is the violation.
 
@@ -267,7 +267,7 @@ Neither is a `quiet` check, though it looks like one: its name reaches the reade
 
 ### The detail contract
 
-`detail` answers "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and with no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
+`detail` explains "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and with no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
@@ -497,7 +497,7 @@ Both arguments must be literals written in place. They are read out of the sourc
 Two consequences follow from the value being resolved at compile time:
 
 - `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
-- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not move, and neither did the bundle -- but the compile records the projection it inlined, so [`rdy verify`](#verifying) names the file and [`rdy run`](#advisory-warnings) warns on it. [`rdy verify --rebuild`](#verifying-by-recompiling) is the exact answer, reading the file rather than a record of it.
+- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not move, and neither did the bundle -- but the compile records the projection it inlined, so [`rdy verify`](#verifying) names the file and [`rdy run`](#advisory-warnings) warns on it. [`rdy verify --rebuild`](#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
 
 ### TypeScript settings
 
@@ -842,7 +842,7 @@ Kits from configured packages get their own section, each named package-first so
 📦 @acme/release-kit
 ```
 
-`--packages` answers the dependency question on its own, and answers it for both groups at once. `rdy list --packages` reports every installed direct dependency that publishes kits, plus every package the config names, one block apiece with the kits it publishes and the descriptions their manifests record:
+`--packages` covers the dependency question on its own, and covers it for both groups at once. `rdy list --packages` reports every installed direct dependency that publishes kits, plus every package the config names, one block apiece with the kits it publishes and the descriptions their manifests record:
 
 ```
 ━━ 📦 @acme/eslint-config@2.1.0
@@ -1255,7 +1255,7 @@ In CI:
 
 The three verdicts cover what the compile read and recorded as hashes. A bundle is a function of more than that: the bundler's version, the compile options, and the contents of every dependency, none of which the hash verdicts cover, since [the closure stops at `node_modules`](#what-a-manifest-entry-records). A bundle stale in any of them still hashes as `ok`.
 
-`--rebuild` answers the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
+`--rebuild` settles the question exactly. It recompiles each kit in memory and compares the result to the committed bundle byte for byte:
 
 ```
 ── Verifying kits against .readyup/manifest.json
@@ -1341,7 +1341,7 @@ Every path a check utility takes resolves against `cwd` unless it is absolute, i
 | `hasDevDependency(name)`                              | Dev dependency is declared                |
 | `hasMinDevDependencyVersion(name, version, options?)` | Dev dependency meets a minimum            |
 
-`hasMinDevDependencyVersion` compares the floor against the version it reads out of the specifier in `package.json`, so the specifier's protocol can settle the answer before any comparison happens. Any `workspace:`-prefixed specifier satisfies any floor, `workspace:^1.2.3` included: it links to the package the repo builds, and a repo that publishes a package is not a consumer of it. A `catalog:` specifier settles nothing on its own and is resolved through `pnpm-workspace.yaml` in the working directory, and the version found there is what the floor is compared against. `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its own block under `catalogs:`. A specifier the file does not resolve meets no floor, as does one whose catalog entry opens a YAML construct this reader does not follow, such as an alias or a flow mapping. A version reached that way is read the same as a declared one, so a catalog entry of `workspace:*` satisfies any floor in its turn. The version is read from the start of the specifier, past any range operator, so one naming fewer than three segments (`7`, `^6`) is measured rather than skipped; a specifier with its version elsewhere, as the `npm:` alias protocol does, is read for a three-segment version anywhere in it. Pass `options.exempt` to exempt further specifiers; it receives the specifier as written, so a catalogued dependency reaches it as `catalog:` rather than as the version behind it, and it adds to the built-in exemption rather than replacing it.
+`hasMinDevDependencyVersion` compares the floor against the version it reads out of the specifier in `package.json`, so the specifier's protocol can settle the question before any comparison happens. Any `workspace:`-prefixed specifier satisfies any floor, `workspace:^1.2.3` included: it links to the package the repo builds, and a repo that publishes a package is not a consumer of it. A `catalog:` specifier settles nothing on its own and is resolved through `pnpm-workspace.yaml` in the working directory, and the version found there is what the floor is compared against. `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its own block under `catalogs:`. A specifier the file does not resolve meets no floor, as does one whose catalog entry opens a YAML construct this reader does not follow, such as an alias or a flow mapping. A version reached that way is read the same as a declared one, so a catalog entry of `workspace:*` satisfies any floor in its turn. The version is read from the start of the specifier, past any range operator, so one naming fewer than three segments (`7`, `^6`) is measured rather than skipped; a specifier with its version elsewhere, as the `npm:` alias protocol does, is read for a three-segment version anywhere in it. Pass `options.exempt` to exempt further specifiers; it receives the specifier as written, so a catalogued dependency reaches it as `catalog:` rather than as the version behind it, and it adds to the built-in exemption rather than replacing it.
 
 ### Versions and runtime alignment
 
@@ -1355,7 +1355,7 @@ Every path a check utility takes resolves against `cwd` unless it is absolute, i
 | `readTsconfigLanguageLevel(path)`    | Effective `lib` and `target`, resolved through `extends`                                 |
 | `readTsconfigChain(path)`            | Each config the `extends` chain reaches, and what it declares in its own right           |
 
-Each reader reports only what it can see, so a check composing them decides for itself what each unknown means. `readEnginesNodeFloor` recognizes only forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`); a union or wildcard comes back `unparseable` rather than an invented floor. `readTsconfigLanguageLevel` resolves `extends` as TypeScript does, following relative paths and published base configs alike; it also returns `chain` (the configs it read) and `unresolvedExtends` (references it could not follow), so a check can tell an incomplete answer from an undeclared setting. `readTsconfigChain` reports that same walk one layer down: every config it reached, the `extends` specifier that reached each one, and what each declares in its own right, with values left exactly as written. Reach for it to ask which config declared a setting, or to read a field the language-level reader does not cover, such as `files` or `include`. The specifier is a chain entry's stable identity: a package's path shifts with install layout, resolving under `node_modules/.pnpm/` in one project and under a linked workspace directory in another. Where two `extends` branches reach one config, the entry names the branch that reached it first.
+Each reader reports only what it can see, so a check composing them decides for itself what each unknown means. `readEnginesNodeFloor` recognizes only forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`); a union or wildcard comes back `unparseable` rather than an invented floor. `readTsconfigLanguageLevel` resolves `extends` as TypeScript does, following relative paths and published base configs alike; it also returns `chain` (the configs it read) and `unresolvedExtends` (references it could not follow), so a check can tell an incomplete read from an undeclared setting. `readTsconfigChain` reports that same walk one layer down: every config it reached, the `extends` specifier that reached each one, and what each declares in its own right, with values left exactly as written. Reach for it to ask which config declared a setting, or to read a field the language-level reader does not cover, such as `files` or `include`. The specifier is a chain entry's stable identity: a package's path shifts with install layout, resolving under `node_modules/.pnpm/` in one project and under a linked workspace directory in another. Where two `extends` branches reach one config, the entry names the branch that reached it first.
 
 ```ts
 import {
@@ -1440,7 +1440,7 @@ It is best effort: a project manifest it cannot read or parse yields `[]`. An em
 | `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
 | `buildFindingReport(options)`         | A `FindingOutcome` the runner suppresses, renders, and counts  |
 
-These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different answer from one that was swept and holds nothing.
+These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides. Both readers return `undefined` outside a git working tree, which an empty list does not say: a project that cannot be swept is a different result from one that was swept and holds nothing.
 
 `listTrackedFiles` lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git emits paths relative to `cwd` and limited to that subtree, the same scope a relative `readFile` path works in. The sweep therefore follows the project `rdy` was invoked in, never the repository a kit was loaded from.
 

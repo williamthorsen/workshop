@@ -77,7 +77,7 @@ export function describeInvalidStyle({ source, value }: InvalidStyle): string {
 /**
  * Reads the style an invocation asks for by scanning raw argv, before any flag parsing happens.
  *
- * Answering this without `parseArgs` is what lets a flag-parse failure be rendered in the style the caller
+ * Reading it without `parseArgs` is what lets a flag-parse failure be rendered in the style the caller
  * asked for. The scan accepts both `--style plain` and `--style=plain`, stops at the `--` terminator after
  * which arguments are positional, and keeps the last occurrence, matching what `parseArgs` would resolve.
  */

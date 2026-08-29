@@ -55,7 +55,7 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
  *
  * The directory-taking half of `discoverWorkspaces`, for a caller resolving against a project other than the
  * one it is running in. It stays out of `check-utils`'s exports: a kit runs in the project it checks, so the
- * ambient answer is the one a kit author wants.
+ * ambient discovery is the one a kit author wants.
  */
 export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {
   // Resolve before keying the memo, so a relative path and its absolute form share one discovery.
@@ -73,7 +73,7 @@ export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOp
 
 // region | Helpers
 
-/** Applies the optional filter to a workspace list, answering with an array the caller owns either way. */
+/** Applies the optional filter to a workspace list, returning an array the caller owns either way. */
 function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions['filter']): Workspace[] {
   if (filter === undefined) return [...workspaces];
   return workspaces.filter(filter);

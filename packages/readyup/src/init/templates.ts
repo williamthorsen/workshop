@@ -20,7 +20,7 @@ export const rdyKitTemplate = `import { defineRdyKit } from 'readyup';
  * Checks run concurrently within a checklist.
  *
  * Three fields, three questions: \`name\` states what must be true, phrased so it reads
- * true on a pass; \`detail\` answers why this status; \`fix\` says what to do about it.
+ * true on a pass; \`detail\` explains why this status; \`fix\` says what to do about it.
  *
  * The rules that need judgment -- above all, when a check should skip rather than pass --
  * are in the consult-readyup-kits skill.

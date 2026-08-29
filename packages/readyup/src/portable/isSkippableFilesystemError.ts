@@ -1,6 +1,6 @@
 import { isError } from '@williamthorsen/toolbelt.errors';
 
-/** Filesystem errors that cost a read one directory rather than the whole answer. */
+/** Filesystem errors that cost a read one directory rather than the whole walk. */
 const SKIPPABLE_ERROR_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
 
 /** Reports whether a filesystem failure is one a read may treat as an empty directory. */
