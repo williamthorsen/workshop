@@ -5,7 +5,7 @@ import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
 import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import type { KitVerdicts } from './verdicts.ts';
-import { hasSourceFailed, hasTargetFailed } from './verdicts.ts';
+import { hasSourceFailed } from './verdicts.ts';
 
 /** One thing to do about a kit, and the file it speaks for where it speaks for one. */
 interface Remedy {
@@ -29,7 +29,7 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
     resolveDriftRemedy(drift, rebuild),
     resolveSourceRemedy(kit, source),
     ...resolveInputRemedies(inputs),
-    resolveRebuildRemedy(rebuild, drift, source),
+    resolveRebuildRemedy(rebuild, source),
   ].filter((remedy): remedy is Remedy => remedy !== undefined);
 
   return collapseRemedies(raised, drift.kind === 'drift');
@@ -45,11 +45,17 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
  * the more exact account of it: a kit's own source is recorded among its inputs, so deleting it
  * fails both axes on one path and only the source axis knows the file is the kit's entry.
  *
- * A bare recompile is dropped wherever the target has drifted, because `rdy compile` refuses a
- * drifted kit and exits non-zero. The `--force` remedy the drift verdict raised is then the only
- * command that runs, and it recompiles from the same source, so it settles whatever the dropped
- * remedy was raised for. Drift alone gates this: a bundle that is merely gone recompiles normally,
- * and its own remedy is the bare recompile.
+ * A remedy whose whole action is a bare recompile is dropped wherever the target has drifted,
+ * because `rdy compile` refuses a drifted kit and exits non-zero. The `--force` remedy the drift
+ * verdict raised is then the only command that runs, and it recompiles from the same source, so it
+ * settles whatever the dropped remedy was raised for. Drift alone gates this: a bundle that is
+ * merely gone recompiles normally, and its own remedy is the bare recompile.
+ *
+ * A remedy that only offers a recompile as its second branch survives, and is not reworded to name
+ * `--force` instead. It leads with an action the drift does not block, its recompile branch becomes
+ * available once the drift remedy above it is carried out, and `--force` is the wrong command to put
+ * in a reader's hands before then: it overwrites the bundle whose edits the drift remedy is telling
+ * them to move into the source first.
  */
 function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
   const spokenFor = new Set<string>();
@@ -122,17 +128,13 @@ function resolveInputRemedies(status: InputsStatus): Remedy[] {
  *
  * Defers to a source the hash axis reports as gone. The verdict names the file only inside a
  * free-text reason, so the caller's path rule cannot see the collision and the deferral is made
- * here. A drifted target needs no such guard: this verdict's recompile is bare, and the caller drops
- * a bare recompile for every axis at once.
+ * here. A drifted or missing target needs no such guard: this verdict's recompile is bare, so the
+ * caller drops it under drift and deduplicates it against the target's own identical text.
  *
  * `failed` always speaks. It is about the source rather than the bundle, and a kit that no longer
  * compiles has to be fixed before any remedy naming a recompile can be carried out.
  */
-function resolveRebuildRemedy(
-  status: RebuildStatus | undefined,
-  drift: DriftStatus,
-  source: SourceStatus,
-): Remedy | undefined {
+function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceStatus): Remedy | undefined {
   if (status === undefined) return undefined;
 
   switch (status.kind) {
@@ -143,7 +145,7 @@ function resolveRebuildRemedy(
     case 'failed':
       return { text: 'Fix the kit source so it compiles.' };
     case 'missing':
-      return hasTargetFailed(drift) || hasSourceFailed(source) ? undefined : { text: RECOMPILE_REMEDY };
+      return hasSourceFailed(source) ? undefined : { text: RECOMPILE_REMEDY };
   }
 }
 

@@ -205,13 +205,25 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RECOMPILE]);
     });
 
-    it('keeps a remedy the force recompile does not settle, such as a repointed pickJson call', () => {
+    it('keeps a remedy the force recompile does not settle, such as a source that no longer compiles', () => {
       const verdicts = buildVerdicts({
         drift: buildDrift(),
         rebuild: { kind: 'failed', message: 'Unexpected token' },
       });
 
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, 'Fix the kit source so it compiles.']);
+    });
+
+    it('keeps a remedy that only offers a recompile as its second branch, whose first branch drift does not block', () => {
+      const verdicts = buildVerdicts({
+        drift: buildDrift(),
+        inputs: buildStaleInputs([{ kind: 'module', path: 'checks/shared.ts', reason: 'missing' }]),
+      });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
+        MOVE_EDITS,
+        'Restore checks/shared.ts, or run `rdy compile` if the kit no longer reads it.',
+      ]);
     });
   });
 });

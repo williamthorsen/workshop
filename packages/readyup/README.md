@@ -1230,7 +1230,7 @@ rdy verify --rebuild           Also recompile each kit and compare it to the com
 1 of 2 kits failed verification.
 ```
 
-A failing kit closes with what to do about it, behind the token `rdy run` puts on a check's `fix`. The remedies follow every verdict rather than sitting beside the one that produced each, and a remedy several of a kit's verdicts share is named once. A file more than one axis names is remedied once too, by the axis holding the more exact account of it, and a drifted bundle's `--force` remedy stands alone, since `rdy compile` refuses a drifted kit and the force recompile settles whatever a bare one would have.
+A failing kit closes with what to do about it, behind the token `rdy run` puts on a check's `fix`. The remedies follow every verdict rather than sitting beside the one that produced each, and a remedy several of a kit's verdicts share is named once. A file more than one axis names is remedied once too, by the axis holding the more exact account of it, and a remedy whose whole action is a bare `rdy compile` is dropped once the bundle has drifted, since the drift gate refuses that command and the `--force` remedy recompiles from the same source. Remedies the force recompile does not settle still print.
 
 Each kit has three independent verdicts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`; the [recorded inputs](#what-a-manifest-entry-records) are `ok`, `stale`, or `unverified`. `drift` means someone edited the bundle by hand; a stale source means the TypeScript moved on and nobody recompiled; stale inputs mean the same of a module the bundle inlined or a JSON projection it substituted. A kit can be all three at once.
 
