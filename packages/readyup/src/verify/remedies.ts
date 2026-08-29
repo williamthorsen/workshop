@@ -48,11 +48,6 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
  * refuses a drifted kit and exits non-zero. The `--force` remedy the drift verdict raised is then the only command
  * that runs, and it recompiles from the same source, so it settles whatever the dropped remedy was raised for.
  * Drift alone gates this: A bundle that is merely gone recompiles normally, and its own remedy is the bare recompile.
- *
- * A remedy that only offers a recompile as its second branch survives, and is not reworded to name `--force` instead.
- * It leads with an action the drift does not block, its recompile branch becomes available once the drift remedy above
- * it is carried out, and `--force` is the wrong command to put in a reader's hands before then: It overwrites the
- * bundle whose edits the drift remedy is telling them to move into the source first.
  */
 function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
   const spokenFor = new Set<string>();
@@ -92,7 +87,7 @@ function resolveDriftRemedy(status: DriftStatus, rebuild: RebuildStatus | undefi
   }
 }
 
-/** Returns the remedy for one input the compile read that no longer matches what it read. */
+/** Returns the remedy for one recorded input that no longer matches what the compile read. */
 function resolveInputFailureRemedy(failure: InputFailure): Remedy {
   switch (failure.reason) {
     case 'changed':
@@ -110,11 +105,7 @@ function resolveInputFailureRemedy(failure: InputFailure): Remedy {
   }
 }
 
-/**
- * Returns one remedy per failing input, and none where the verdict is `ok` or `unverified`.
- *
- * Ten inputs failing for one reason collapse to one remedy, since the caller deduplicates.
- */
+/** Returns one remedy per failing input, and none where the verdict is `ok` or `unverified`. */
 function resolveInputRemedies(status: InputsStatus): Remedy[] {
   return status.kind === 'stale' ? status.failures.map(resolveInputFailureRemedy) : [];
 }
@@ -123,9 +114,7 @@ function resolveInputRemedies(status: InputsStatus): Remedy[] {
  * Returns the remedy for the rebuild verdict, or `undefined` where there is nothing to add.
  *
  * Defers to a source the hash axis reports as gone. The verdict names the file only inside a free-text reason,
- * so the caller's path rule cannot see the collision and the deferral is made here. A drifted or missing target needs
- * no such guard: this verdict's recompile is bare, so the caller drops it under drift and deduplicates it against
- * the target's own identical text.
+ * so the caller's path rule cannot see the collision and the deferral is made here.
  *
  * `failed` always speaks. It is about the source rather than the bundle, and a kit that no longer compiles has to
  * be fixed before any remedy naming a recompile can be carried out.

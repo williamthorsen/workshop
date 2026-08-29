@@ -206,22 +206,12 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
 
   if (token === 'failedError') {
     const claim = getLayout().formatCheckLine({ token, name: kit.name });
-    const remedies = resolveRemedies(kit, verdicts).map(formatRemedy);
+    const remedies = resolveRemedies(kit, verdicts).map((remedy) => getLayout().formatFix(remedy));
     return [claim, ...getLayout().formatReasonBlock([...clauses, ...remedies])].join('\n') + '\n';
   }
 
   const detail = clauses.join('; ');
   return getLayout().formatCheckLine({ token, name: kit.name, ...(detail !== '' && { detail }) }) + '\n';
-}
-
-/**
- * Returns a remedy as one reason line, behind the token marking fix text.
- *
- * The same token `rdy run` puts on a check's `fix`, so the two commands mark an action to take
- * alike.
- */
-function formatRemedy(remedy: string): string {
-  return `${getLayout().token('fix')}${remedy}`;
 }
 
 /**
