@@ -1224,10 +1224,13 @@ rdy verify --rebuild           Also recompile each kit and compare it to the com
 ── Verifying kits against .readyup/manifest.json
 🔴 deploy
    drift (expected 6f58905a, got eb104f57)
+   💊 Move the edits into the source, then run `rdy compile --force`.
 🟢 smoke
 
 1 of 2 kits failed verification.
 ```
+
+A failing kit closes with what to do about it, behind the token `rdy run` puts on a check's `fix`. The remedies follow every verdict rather than sitting beside the one that produced each, and a remedy several of a kit's verdicts share is named once.
 
 Each kit has three independent verdicts. The compiled output is `ok`, `drift`, `missing`, or `unverified`; the source is `ok`, `stale`, `missing`, or `unverified`; the [recorded inputs](#what-a-manifest-entry-records) are `ok`, `stale`, or `unverified`. `drift` means someone edited the bundle by hand; a stale source means the TypeScript moved on and nobody recompiled; stale inputs mean the same of a module the bundle inlined or a JSON projection it substituted. A kit can be all three at once.
 
@@ -1237,11 +1240,15 @@ The inputs verdict names every input that failed rather than the first, each on 
 🔴 deploy
    input stale: checks/shared.ts (module, expected 6f58905a, got eb104f57)
    input unprojectable: ../../package.json (Path not found in JSON: version)
+   💊 Run `rdy compile` to rebuild it.
+   💊 Restore the picked fields in ../../package.json, or repoint the kit's `pickJson` call.
 ```
+
+A changed input is recompiled away; an unprojectable one is not, because the file is present and it is the kit that names fields no longer there.
 
 Anything other than `ok` or `unverified` on any axis fails the run. `unverified` does not, since an entry with no recorded hash -- or one compiled before readyup recorded the input closure -- says nothing about whether the kit changed.
 
-Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict reports `expected` and `actual`; a stale source reports `sourceExpected` and `sourceActual`; stale inputs report `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has.
+Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict reports `expected` and `actual`; a stale source reports `sourceExpected` and `sourceActual`; stale inputs report `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has. The remedies are human output alone: a consumer reads the verdict and words its own.
 
 In CI:
 
@@ -1262,6 +1269,7 @@ The three verdicts cover what the compile read and recorded as hashes. A bundle 
 
 🔴 deploy
    rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a; esbuild 0.28.1 -> 0.29.0; zod 3.24.1 -> 4.0.0)
+   💊 Run `rdy compile` to rebuild it.
 🟢 smoke
 ```
 
@@ -1273,7 +1281,10 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
 🔴 deploy
    drift (expected 6f58905a, got eb104f57)
    rebuild ok
+   💊 The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.
 ```
+
+The remedy changes with it. A drifted bundle is otherwise sent back through the source, since only a hand edit explains it; here there is nothing to move, and `--force` rewrites the record rather than the kit. Either way the command carries `--force`, because `rdy compile` gates on drift and skips the kit rather than overwriting it.
 
 The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
 
