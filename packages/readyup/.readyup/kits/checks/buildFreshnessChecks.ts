@@ -1,6 +1,13 @@
 import { DEFAULT_MANIFEST_PATH } from 'readyup';
 import type { CheckOutcome, FractionProgress, RdyCheck } from 'readyup';
-import { computeHash, describeJsonProjectionFailure, fileExists, projectJsonFile, readFile } from 'readyup/check-utils';
+import {
+  describeJsonProjectionFailure,
+  fileExists,
+  hashToRecordedLength,
+  isRecordedHash,
+  projectJsonFile,
+  readFile,
+} from 'readyup/check-utils';
 
 import type { ManifestEntry, ManifestInput } from './kit-layout.ts';
 import { readManifestEntries, resolveRecordedPath, skipWithoutBundles } from './kit-layout.ts';
@@ -67,18 +74,15 @@ function buildUnrecordedBundlesCheck(): RdyCheck {
   };
 }
 
-/**
- * Compares a file the manifest names against the hash recorded for it.
- *
- * The recorded value's own length decides how much of the digest to compare, so the kit reads whatever
- * prefix `rdy compile` wrote rather than a length of its own that a later readyup could outgrow.
- */
+/** Compares a file the manifest names against the hash recorded for it. */
 function compareToRecordedHash(recordedPath: string | undefined, expected: string | undefined): CheckOutcome {
   if (recordedPath === undefined || expected === undefined) {
     return { ok: false, detail: 'The manifest records nothing to compare against' };
   }
 
   const filePath = resolveRecordedPath(recordedPath);
+  if (!isRecordedHash(expected)) return { ok: false, detail: `${filePath} records ${expected}, which is not a hash` };
+
   const content = readFile(filePath);
   if (content === undefined) return { ok: false, detail: `${filePath} is missing` };
 
@@ -113,7 +117,7 @@ function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
  * bundle, not over the contents of the file holding it.
  */
 function describeHashDrift(filePath: string, hashed: string, expected: string, verb: string): string | undefined {
-  const actual = computeHash(hashed).slice(0, expected.length);
+  const actual = hashToRecordedLength(hashed, expected);
   if (actual === expected) return undefined;
   return `${filePath} ${verb} ${actual}, not the recorded ${expected}`;
 }
@@ -150,6 +154,8 @@ function describeInputDrift(input: ManifestInput): string | undefined {
   }
 
   const filePath = resolveRecordedPath(recordedPath);
+  if (!isRecordedHash(hash)) return `${filePath} records ${hash}, which is not a hash`;
+
   if (kind === 'module') {
     const content = readFile(filePath);
     if (content === undefined) return `${filePath} is missing`;
