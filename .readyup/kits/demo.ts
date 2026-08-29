@@ -62,7 +62,7 @@ const projectFoundations = {
       ],
     },
   ],
-} as const;
+};
 
 // -- Flat checklist with skip conditions --
 // Demonstrates: N/A suppression. Docker and Renovate sections vanish entirely
@@ -106,7 +106,7 @@ const optionalIntegrations = {
       ],
     },
   ],
-} as const;
+};
 
 // -- Flat checklist with mixed severities --
 // Demonstrates: error, warn, and recommend severity levels. Also shows a
@@ -150,7 +150,7 @@ const codeQuality = {
       fix: 'brew install jq — useful for JSON processing in shell scripts',
     },
   ],
-} as const;
+};
 
 // -- Staged checklist with halt-on-failure --
 // Demonstrates: sequential group execution. If compliance fails, release
@@ -195,7 +195,7 @@ const publishingPipeline = {
     ],
   ],
   fixLocation: 'inline' as const,
-} as const;
+};
 
 export default defineRdyKit({
   checklists: [projectFoundations, optionalIntegrations, codeQuality, publishingPipeline],
