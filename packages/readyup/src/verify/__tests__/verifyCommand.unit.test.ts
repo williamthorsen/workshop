@@ -44,6 +44,7 @@ import { verifyCommand } from '../verifyCommand.ts';
 const OK = richFormatter.tokens.passed.glyph;
 const FAILED = richFormatter.tokens.failedError.glyph;
 const UNVERIFIED = richFormatter.tokens.skippedOptional.glyph;
+const FIX = richFormatter.tokens.fix.glyph;
 
 describe(verifyCommand, () => {
   beforeEach(() => {
@@ -341,6 +342,126 @@ describe(verifyCommand, () => {
       const { stdout } = await verify(['--rebuild']);
 
       expect(stdout).toContain('rebuild ok');
+    });
+  });
+
+  describe('remedies', () => {
+    /** Arranges a manifest naming one kit, leaving each test to drive whichever axes it is about. */
+    function arrangeSingleKit(): void {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts', targetHash: 'aaaa1111' }],
+      });
+    }
+
+    it("closes a failing kit's block with what to do about its verdict", async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({
+        kind: 'drift',
+        expected: 'aaaa1111',
+        actual: 'aaaa9999',
+        resolvedPath: '/abs/alpha.js',
+      });
+
+      const { exitCode, stdout } = await verify([]);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(
+        `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)` +
+          `\n   ${FIX} Move the edits into the source, then run \`rdy compile --force\`.`,
+      );
+    });
+
+    it('states every verdict before the first remedy, so the diagnosis reads whole', async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({
+        kind: 'drift',
+        expected: 'aaaa1111',
+        actual: 'aaaa9999',
+        resolvedPath: '/abs/alpha.js',
+      });
+      mockCheckSourceDrift.mockReturnValue({
+        kind: 'stale',
+        expected: '5555aaaa',
+        actual: '6666bbbb',
+        resolvedPath: '/abs/alpha.ts',
+      });
+
+      const { stdout } = await verify([]);
+
+      expect(stdout).toContain(
+        `${FAILED} alpha\n   drift (expected aaaa1111, got aaaa9999)` +
+          `\n   source stale (expected 5555aaaa, got 6666bbbb)` +
+          `\n   ${FIX} Move the edits into the source, then run \`rdy compile --force\`.` +
+          `\n   ${FIX} Run \`rdy compile\` to rebuild it.`,
+      );
+    });
+
+    it('names a remedy once for a kit that reaches it on two axes', async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+      mockCheckSourceDrift.mockReturnValue({
+        kind: 'stale',
+        expected: '5555aaaa',
+        actual: '6666bbbb',
+        resolvedPath: '/abs/alpha.ts',
+      });
+      mockCheckInputDrift.mockReturnValue({
+        kind: 'stale',
+        failures: [{ kind: 'module', path: 'shared.ts', reason: 'changed', expected: '7777', actual: '8888' }],
+      });
+
+      const { stdout } = await verify([]);
+
+      expect(stdout.match(/Run `rdy compile` to rebuild it\./g)).toHaveLength(1);
+    });
+
+    it('leaves a passing kit its bare line, having nothing for it to fix', async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+
+      const { exitCode, stdout } = await verify([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(`${OK} alpha\n`);
+      expect(stdout).not.toContain(FIX);
+    });
+
+    it('leaves an unverified kit its bare line, having reached no failing verdict', async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+
+      const { exitCode, stdout } = await verify([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).not.toContain(FIX);
+    });
+
+    it('keeps every remedy out of the JSON payload', async () => {
+      arrangeSingleKit();
+      mockCheckDrift.mockReturnValue({
+        kind: 'drift',
+        expected: 'aaaa1111',
+        actual: 'aaaa9999',
+        resolvedPath: '/abs/alpha.js',
+      });
+
+      const { stdout } = await verify(['--json']);
+
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        passed: false,
+        kits: [
+          {
+            name: 'alpha',
+            status: 'drift',
+            expected: 'aaaa1111',
+            actual: 'aaaa9999',
+            sourceStatus: 'unverified',
+            inputsStatus: 'unverified',
+          },
+        ],
+      });
     });
   });
 
