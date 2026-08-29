@@ -48,7 +48,7 @@ describe('recorded-hash readers', () => {
     const entry = { ...writeKit(projectRoot, 'default'), targetHash };
     writeKitManifest(projectRoot, [entry]);
 
-    expect(await readsAsFresh(entry)).toStrictEqual({ kit: true, verify: true });
+    await expect(readsAsFresh(entry)).resolves.toStrictEqual({ kit: true, verify: true });
   });
 
   it.each([12, 64])('both fail an edited bundle recorded with a %i-character hash', async (length) => {
@@ -57,7 +57,7 @@ describe('recorded-hash readers', () => {
     writeKitManifest(projectRoot, [entry]);
     writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.js'), EDITED_BUNDLE);
 
-    expect(await readsAsFresh(entry)).toStrictEqual({ kit: false, verify: false });
+    await expect(readsAsFresh(entry)).resolves.toStrictEqual({ kit: false, verify: false });
   });
 
   // Below the floor the two readers agree through the schema rather than through the comparison:
