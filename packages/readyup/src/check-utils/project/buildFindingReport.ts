@@ -36,11 +36,11 @@ export interface BuildFindingReportOptions<F extends Finding> {
  *
  * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose
  * `package.json` names the package. It owns the lines from its own head to the line before the next head, or to
- * the file's last line where it is the last, because a generic constraint's braces and a return-type
- * annotation's both defeat a scan for the closing brace and a span cut short reports the implementation the rule
- * exists to exempt. A re-exporting barrel declares no implementation and holds no exempted lines, a file
- * declaring the name without exporting it is a hand-roll and is still reported, and a file declaring the export
- * under another name and renaming it on export from a second file is not recognized.
+ * the file's last line where it is the last, because a generic constraint's braces, a return-type annotation's,
+ * and an overload signature each defeat a scan for the closing brace, and a span cut short reports the
+ * implementation the rule exists to exempt. A re-exporting barrel declares no implementation and holds no
+ * exempted lines, a file declaring the name without exporting it is a hand-roll and is still reported, and a
+ * file declaring the export under another name and renaming it on export from a second file is not recognized.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;

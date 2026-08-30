@@ -78,11 +78,9 @@ export function hasMinDevDependencyVersion(
 
 /** Extracts the version a specifier declares, or `undefined` when it names none. */
 function extractVersion(specifier: string): string | undefined {
-  // Parse from the start, so a specifier naming fewer than three segments (`7`, `^6`) is measured rather than skipped;
-  // `compareVersions` pads a short version against the floor.
+  // `compareVersions` pads a short version against the floor, so a partial match needs no filling out here.
   const fromStart = /^\d+(?:\.\d+)*/.exec(specifier.replace(RANGE_PREFIX, ''))?.[0];
   if (fromStart !== undefined) return fromStart;
-  // A specifier with its version elsewhere, such as the `npm:` alias protocol, still yields a three-segment match.
   return /\d+\.\d+\.\d+/.exec(specifier)?.[0];
 }
 
