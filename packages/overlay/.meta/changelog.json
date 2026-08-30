@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.4.1",
+    "date": "2026-08-30",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Source pluralize from toolbelt.strings and delete the local copies (#429)",
+            "body": "Replaces the repo's copies of `pluralize` and `pluralizeWithCount` with the same functions from `@williamthorsen/toolbelt.strings`.",
+            "hash": "00d7724be775b6463f798fe69d8564c3eeb8c813"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-08-26",
     "sections": [

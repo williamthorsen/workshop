@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.1 — 2026-08-30
+
+### ♻️ Refactoring
+
+- Source pluralize from toolbelt.strings and delete the local copies (#429)
+
+  Replaces the repo's copies of `pluralize` and `pluralizeWithCount` with the same functions from `@williamthorsen/toolbelt.strings`.
+
 ## 0.4.0 — 2026-08-26
 
 ### 🎉 Features

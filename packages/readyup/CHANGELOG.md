@@ -2,6 +2,66 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.35.0 — 2026-08-30
+
+### 🎉 Features
+
+- Enforce a kit's minReadyupVersion and warn on version skew (#430)
+
+  Adds `minReadyupVersion` to the ReadyUp kit contract, naming the minimum `readyup` version a kit's checks require. A kit declaring a floor above the running readyup fails to load.
+
+  A kit declaring no floor falls back to an advisory floor, the version its bundle records at compile time, which a lower runner reports as a `version-skew` warning rather than a failure.
+
+- Name the remedy for each failing verdict in rdy verify (#434)
+
+  Adds a remedy to `rdy verify`'s human-readable output, describing how to fix a failing kit.
+
+- Drop linguist-generated and vendored files from the project sweep (#441)
+
+  Excludes generated and vendored files from the files checked by ReadyUp kits. These files are identified by a `linguist-generated` or `linguist-vendored` git attribute.
+
+### 🐛 Bug fixes
+
+- Compare a recorded hash at its own length in rdy verify (#432)
+
+  Fixes an issue where `rdy verify` treated a kit as stale if its manifest contained hashes longer than the eight characters written by `rdy compile`. Every axis now compares the digest at the recorded value's own length. The manifest schema constrains a recorded hash to a lowercase hex digest prefix of 8 to 64 characters.
+
+  Separately, `rdy run` raises a new `manifest-unreadable` advisory when `.readyup/manifest.json` is present but unparseable.
+
+  Two new functions, `hashToRecordedLength` and `isRecordedHash`, have been added to `readyup/check-utils`. `computeHash` now accepts a byte sequence as well as a string.
+
+### ♻️ Refactoring
+
+- Source pluralize from toolbelt.strings and delete the local copies (#429)
+
+  Replaces the repo's copies of `pluralize` and `pluralizeWithCount` with the same functions from `@williamthorsen/toolbelt.strings`.
+
+### 🧪 Tests
+
+- Replace the consistent-test-it file list with per-suite directives (#428)
+
+  Restores `vitest/consistent-test-it` coverage across `readyup`'s test suites and aligns the tests with the rule. The rule is suppressed where the code is incorrectly flagged as faulty. Also sets `reportUnusedDisableDirectives` to `error`.
+
+### ⚙️ Tooling
+
+- Lint and typecheck the kit sources under .readyup (#438)
+
+  Modifies ESLint and TypeScript configs so that kit sources and tests under `.readyup/` are linted and type-checked.
+
+  Also modifies the pre-commit hook to format files using `nmr fmt` (instead of directly calling `prettier`) to align with fleet conventions and benefit from gitignore exclusions.
+
+### 📚 Documentation
+
+- Replace nothing with the value readyup returns, and backtick literals (#426)
+
+  Replaces the vague use of "nothing" in `readyup`'s doc descriptions and test titles with the value the code actually returns, such as the literal scalar or an empty collection.
+
+  Also reformats descriptions to use backticks around literal values.
+
+- Replace the answers metaphor with plainer wording in comments and docs (#433)
+
+  Revises comments, descriptions, test titles, and documentation in `readyup` for clarity.
+
 ## 0.34.0 — 2026-08-26
 
 ### 🎉 Features
