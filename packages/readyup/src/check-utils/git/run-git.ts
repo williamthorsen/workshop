@@ -8,7 +8,8 @@ const execFileAsync = promisify(execFile);
  * Output ceiling for a git command reporting on every tracked path.
  *
  * Such a command returns several times the bytes of the listing it was given, so Node's 1 MiB default would truncate
- * a repository git itself handles, and truncation surfaces as a thrown `ENOBUFS` rather than as a short answer.
+ * a repository git itself handles, and truncation surfaces as a thrown `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` rather
+ * than as a short answer.
  */
 const MAX_OUTPUT_BYTES = 64 * 1_024 * 1_024;
 

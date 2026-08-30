@@ -16,8 +16,11 @@ const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
  *
  * What the declaration means is git's to decide: `git check-attr` applies the pattern syntax, the nested
  * `.gitattributes` files, and the precedence rules, so nothing here parses one. Reading the attribute needs no
- * Linguist install and sees none of Linguist's built-in vendor heuristics, only what the project wrote into its own
- * `.gitattributes`.
+ * Linguist install and sees none of Linguist's built-in vendor heuristics.
+ *
+ * The declaration is whichever one git resolves, which reaches past the repository's tracked `.gitattributes` files
+ * to `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file. A path can therefore be declared
+ * by something the repository does not contain.
  *
  * Memoized per `cwd` for the life of the process, holding the promise rather than the set it settles to, because the
  * runner starts sibling checks together: a cache filled on resolution is too late for every check that started

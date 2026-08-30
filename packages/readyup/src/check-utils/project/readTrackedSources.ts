@@ -46,9 +46,8 @@ export function readSourceText(path: string): string | undefined {
  * did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, so a later filter
  * selecting it probes the filesystem no second time.
  *
- * The declared-foreign set is awaited here rather than consulted inside the loop, which keeps the loop synchronous.
- * That is what lets two sweeps the runner started together share the text cache: each runs to completion without
- * yielding, so the second finds what the first read.
+ * The declared-foreign set is resolved once beside the tracked listing rather than per path, so the loop stays a
+ * plain pass over the listing.
  *
  * The paths returned are reported to the sweep recorder the runner has in scope, which is the evidence the
  * unused-pragma report rests on. A check reading the project this way declares nothing to have its sweep recorded.

@@ -97,6 +97,30 @@ describe(readTrackedSources, () => {
     expect(countReads('src/second.ts')).toBe(1);
   });
 
+  it('reads a file once for two sweeps that run concurrently', async ({ temp }) => {
+    temp.write('src/shared.ts', 'shared');
+    temp.write('src/first.ts', 'first');
+    temp.write('src/second.ts', 'second');
+    trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
+
+    // The cache's check-and-set runs without yielding, so whichever sweep reaches a path first is the only one that
+    // reads it, however the two interleave.
+    const [first, second] = await Promise.all([
+      readTrackedSources((path) => path !== 'src/second.ts'),
+      readTrackedSources((path) => path !== 'src/first.ts'),
+    ]);
+
+    expect(first).toStrictEqual([
+      { path: 'src/first.ts', text: 'first' },
+      { path: 'src/shared.ts', text: 'shared' },
+    ]);
+    expect(second).toStrictEqual([
+      { path: 'src/second.ts', text: 'second' },
+      { path: 'src/shared.ts', text: 'shared' },
+    ]);
+    expect(countReads('src/shared.ts')).toBe(1);
+  });
+
   it('never reads a path the filter rejects', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('src/rejected.ts', 'rejected');
