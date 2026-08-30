@@ -1,4 +1,5 @@
 import { readFile } from '../filesystem.ts';
+import { listForeignPaths } from './listForeignPaths.ts';
 import { listTrackedFiles } from './listTrackedFiles.ts';
 import { recordSweep } from './sweepRecorder.ts';
 
@@ -15,6 +16,8 @@ export interface ProjectSource {
  * Paths no sweep reads, whatever a filter says of them. `node_modules/` is not the reader's own code, and
  * `.readyup/kits/*.js` is readyup's generated artifact, which a sweep would report back to the author of the kit it
  * was compiled from.
+ *
+ * A project declares the rest of that category itself, through the `.gitattributes` entries `listForeignPaths` reads.
  */
 const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/kits\/[^/]+\.js$/];
 
@@ -38,10 +41,13 @@ export function readSourceText(path: string): string | undefined {
 /**
  * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree.
  *
- * The filter decides a path before anything reads it, so a caller never pays for a file it excluded. Text is held per
- * `cwd` for the life of the process, so a file two kits both select costs one read between them, and each pays only
- * for the remainder the other did not ask for. A path that cannot be read as text is omitted and remembered as
- * unreadable, so a later filter selecting it probes the filesystem no second time.
+ * The filter decides a path before anything reads it, so an excluded file is never read. Text is held per `cwd` for
+ * the life of the process, so a file two kits both select is read once, and each kit reads only the files the other
+ * did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, so a later filter
+ * selecting it probes the filesystem no second time.
+ *
+ * The declared-foreign set is resolved once beside the tracked listing rather than per path, so the loop stays a
+ * plain pass over the listing.
  *
  * The paths returned are reported to the sweep recorder the runner has in scope, which is the evidence the
  * unused-pragma report rests on. A check reading the project this way declares nothing to have its sweep recorded.
@@ -49,10 +55,11 @@ export function readSourceText(path: string): string | undefined {
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
   const tracked = await listTrackedFiles();
   if (tracked === undefined) return undefined;
+  const foreign = await listForeignPaths();
 
   const sources: ProjectSource[] = [];
   for (const path of tracked) {
-    if (isExcluded(path)) continue;
+    if (isExcluded(path) || foreign.has(path)) continue;
     if (filter !== undefined && !filter(path)) continue;
 
     const text = readSourceText(path);

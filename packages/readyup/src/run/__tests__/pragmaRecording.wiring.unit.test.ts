@@ -9,9 +9,12 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-vi.mock('node:child_process', () => {
-  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
-  return { execFile: stub };
+// `execFileAsync` answers the promisified form the listing uses; the stub answers the callback form the sweep's
+// attribute lookup calls, declaring nothing so that every tracked path stays in the sweep.
+vi.mock('node:child_process', async () => {
+  const { createExecFileStub } = await import('../../test-utils/createExecFileStub.ts');
+  const stub = createExecFileStub(() => ({}));
+  return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };
 });
 
 import { readTrackedSources } from '../../check-utils/project/readTrackedSources.ts';
