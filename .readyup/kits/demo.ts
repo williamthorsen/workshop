@@ -8,7 +8,7 @@
  *
  *   rdy run demo
  */
-import { defineRdyKit } from 'readyup';
+import { defineRdyChecklist, defineRdyKit, defineRdyStagedChecklist } from 'readyup';
 import {
   commandExists,
   fileContains,
@@ -21,7 +21,7 @@ import {
 // -- Flat checklist with preconditions and nested checks --
 // Demonstrates: precondition gating, nested check hierarchy, fix messages.
 
-const projectFoundations = {
+const projectFoundations = defineRdyChecklist({
   name: 'project-foundations',
   preconditions: [
     {
@@ -62,13 +62,13 @@ const projectFoundations = {
       ],
     },
   ],
-};
+});
 
 // -- Flat checklist with skip conditions --
 // Demonstrates: N/A suppression. Docker and Renovate sections vanish entirely
 // when their config files are absent. Only integrations that are present appear.
 
-const optionalIntegrations = {
+const optionalIntegrations = defineRdyChecklist({
   name: 'optional-integrations',
   checks: [
     {
@@ -106,13 +106,13 @@ const optionalIntegrations = {
       ],
     },
   ],
-};
+});
 
 // -- Flat checklist with mixed severities --
 // Demonstrates: error, warn, and recommend severity levels. Also shows a
 // failed parent with a skipped child (bitbucket-pipelines.yml).
 
-const codeQuality = {
+const codeQuality = defineRdyChecklist({
   name: 'code-quality',
   checks: [
     {
@@ -139,25 +139,25 @@ const codeQuality = {
     },
     {
       name: 'actionlint is installed',
-      severity: 'warn' as const,
+      severity: 'warn',
       check: () => commandExists('actionlint'),
       fix: 'brew install actionlint — catches workflow syntax errors before they hit CI',
     },
     {
       name: 'jq is installed',
-      severity: 'recommend' as const,
+      severity: 'recommend',
       check: () => commandExists('jq'),
       fix: 'brew install jq — useful for JSON processing in shell scripts',
     },
   ],
-};
+});
 
 // -- Staged checklist with halt-on-failure --
 // Demonstrates: sequential group execution. If compliance fails, release
 // automation checks are skipped — no point verifying workflows for an
 // unpublishable package.
 
-const publishingPipeline = {
+const publishingPipeline = defineRdyStagedChecklist({
   name: 'publishing-pipeline',
   groups: [
     // Stage 1: Build infrastructure
@@ -194,8 +194,8 @@ const publishingPipeline = {
       },
     ],
   ],
-  fixLocation: 'inline' as const,
-};
+  fixLocation: 'inline',
+});
 
 export default defineRdyKit({
   checklists: [projectFoundations, optionalIntegrations, codeQuality, publishingPipeline],
