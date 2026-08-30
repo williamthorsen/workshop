@@ -84,7 +84,8 @@ export function blankComments(source: string): string {
  * `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node
  * beginning with `/` blanks as far as its closing tag's slash.
  *
- * Reads JavaScript-family syntax. A source in another language yields arbitrary output rather than an error.
+ * Reads JavaScript-family syntax. A source in another language yields arbitrary output rather than an error, so a
+ * filter selecting `.md` or `.yaml` paths should not reach for it.
  */
 export function blankNonCode(source: string): string {
   return blank(source, true);

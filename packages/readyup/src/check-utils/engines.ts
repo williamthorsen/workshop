@@ -18,7 +18,9 @@ const COMPARABLE_VERSION = /^\d+(?:\.\d+)*$/;
 
 /**
  * Reads the minimum Node version a parsed manifest declares in `engines.node`.
- * Ranges outside the simple floor forms are reported as unparseable rather than guessed at.
+ *
+ * Recognizes only the forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`). A union or a wildcard is
+ * reported as unparseable rather than guessed at.
  */
 export function readEnginesNodeFloor(manifest: Record<string, unknown>): EnginesNodeFloor {
   const engines = manifest['engines'];

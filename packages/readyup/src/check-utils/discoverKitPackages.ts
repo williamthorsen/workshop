@@ -19,6 +19,9 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
  *
  * Best effort throughout: a project manifest that cannot be read or parsed yields `[]`, which a caller
  * cannot distinguish from a project that declares no kit-publishing dependencies.
+ *
+ * `fromDir` defaults to the working directory, which under `rdy run --from <other-repo>` is the project being
+ * checked rather than the repo the kit was loaded from.
  */
 export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
   // A package may be declared in both dependency fields, which npm permits; the set collapses the pair

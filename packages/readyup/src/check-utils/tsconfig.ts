@@ -86,6 +86,10 @@ export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
 /**
  * Reads a tsconfig's effective `lib` and `target` from its `extends` chain. Returns `undefined` if the entry file is
  * missing or unparseable; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
+ *
+ * Resolves `extends` as TypeScript does, following relative paths and published base configs alike. `chain` and
+ * `unresolvedExtends` come back beside the values, so a caller can tell an incomplete read from an undeclared
+ * setting rather than reading both as absent.
  */
 export function readTsconfigLanguageLevel(filePath: string): TsconfigLanguageLevel | undefined {
   const resolved = readTsconfigChain(filePath);

@@ -45,6 +45,12 @@ const workspacesByDir = new Map<string, Workspace[]>();
  * Memoized per directory for the life of the process: repeated calls in one run share a single directory walk
  * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
  * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
+ * Entries are frozen along with their `packageJson`, so a write throws rather than reaching the next caller, and a
+ * discovery that throws is not memoized, so the next call retries it.
+ *
+ * Throws where the root `package.json` is missing or unparseable, whatever the repo's shape. A
+ * `pnpm-workspace.yaml` is read by a minimal block-sequence parser, so a config reaching for anchors, flow
+ * sequences, tags, or negation patterns raises a clear error rather than being read wrongly.
  */
 export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspace[] {
   return discoverWorkspacesAt(process.cwd(), options);
