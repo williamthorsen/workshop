@@ -51,7 +51,7 @@ describe(listForeignPaths, () => {
     await listForeignPaths();
     await listForeignPaths();
 
-    expect(runCheckAttr).toHaveBeenCalledOnce();
+    expect(runCheckAttr).toHaveBeenCalledTimes(1);
   });
 
   it('invokes git once for calls that run concurrently', async () => {
@@ -59,7 +59,7 @@ describe(listForeignPaths, () => {
 
     expect(first).toStrictEqual(new Set(['src/bundle.mjs']));
     expect(second).toStrictEqual(new Set(['src/bundle.mjs']));
-    expect(runCheckAttr).toHaveBeenCalledOnce();
+    expect(runCheckAttr).toHaveBeenCalledTimes(1);
   });
 
   it('does not memoize a rejected lookup', async () => {

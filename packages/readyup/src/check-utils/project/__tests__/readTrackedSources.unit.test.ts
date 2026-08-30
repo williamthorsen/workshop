@@ -23,11 +23,14 @@ vi.mock('node:child_process', async () => {
   const stub = createExecFileStub((input) => ({
     stdout: input
       .split('\0')
-      .filter((path) => path !== '')
-      .flatMap((path) => [
-        `${path}\0linguist-generated\0${foreignPaths.has(path) ? 'true' : 'unspecified'}\0`,
-        `${path}\0linguist-vendored\0unspecified\0`,
-      ])
+      .flatMap((path) =>
+        path === ''
+          ? []
+          : [
+              `${path}\0linguist-generated\0${foreignPaths.has(path) ? 'true' : 'unspecified'}\0`,
+              `${path}\0linguist-vendored\0unspecified\0`,
+            ],
+      )
       .join(''),
   }));
   return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };

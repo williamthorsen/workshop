@@ -10,7 +10,7 @@ const execFileAsync = promisify(execFile);
  * Such a command returns several times the bytes of the listing it was given, so Node's 1 MiB default would truncate
  * a repository git itself handles, and truncation surfaces as a thrown `ENOBUFS` rather than as a short answer.
  */
-const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
+const MAX_OUTPUT_BYTES = 64 * 1_024 * 1_024;
 
 /** Returns a git command's stdout, trimmed, from a run in the given directory. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {
@@ -43,6 +43,9 @@ export async function runGitWithInput(path: string, input: string, ...args: stri
       if (error === null) {
         resolve(stdout);
       } else {
+        // `ExecFileException` is declared through `Omit`, which drops the `Error` ancestry from the type while the
+        // value stays one, so rejecting with git's own error reads to the rule as rejecting with a non-error.
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject(error);
       }
     });
