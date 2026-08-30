@@ -1,4 +1,5 @@
 # Written by `rdy compile`, whose own formatting Prettier would fight over on every build.
+.readyup/kits/*.js
 .readyup/manifest.json
 # Written by compositor's sample generator, and pinned byte for byte by a drift test.
 packages/compositor/samples/

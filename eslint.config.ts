@@ -37,8 +37,18 @@ const RESTRICTED_SYNTAX = [
 const config = defineConfig([
   ...baseConfig,
   {
-    // Completely ignore these files
-    ignores: ['**/*.sh', '**/.claude/**', '**/.readyup/**', '**/coverage/**', '**/dist/**', '**/local/**'],
+    // Nothing here is source this repo authors: a `.sh` file holds no JavaScript to lint, `.claude/` is harness
+    // configuration and the skills CodeAssembly generates into it, the two `.readyup/` entries are what `rdy compile`
+    // writes, and `coverage/`, `dist/`, and `local/` hold generated or machine-local output.
+    ignores: [
+      '**/*.sh',
+      '**/.claude/**',
+      '**/.readyup/**/*.js',
+      '**/.readyup/manifest.json',
+      '**/coverage/**',
+      '**/dist/**',
+      '**/local/**',
+    ],
   },
   {
     // `strict-lint` promotes rule severities and not this report, so the default `warn` would leave a directive

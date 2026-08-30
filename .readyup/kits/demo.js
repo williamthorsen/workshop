@@ -4,7 +4,7 @@ export const __readyupVersion = "0.34.0";
 
 
 // .readyup/kits/demo.ts
-import { defineRdyKit } from "readyup";
+import { defineRdyChecklist, defineRdyKit, defineRdyStagedChecklist } from "readyup";
 import {
   commandExists,
   fileContains,
@@ -13,7 +13,7 @@ import {
   hasDevDependency,
   readJsonValue
 } from "readyup/check-utils";
-var projectFoundations = {
+var projectFoundations = defineRdyChecklist({
   name: "project-foundations",
   preconditions: [
     {
@@ -53,8 +53,8 @@ var projectFoundations = {
       ]
     }
   ]
-};
-var optionalIntegrations = {
+});
+var optionalIntegrations = defineRdyChecklist({
   name: "optional-integrations",
   checks: [
     {
@@ -92,8 +92,8 @@ var optionalIntegrations = {
       ]
     }
   ]
-};
-var codeQuality = {
+});
+var codeQuality = defineRdyChecklist({
   name: "code-quality",
   checks: [
     {
@@ -131,8 +131,8 @@ var codeQuality = {
       fix: "brew install jq \u2014 useful for JSON processing in shell scripts"
     }
   ]
-};
-var publishingPipeline = {
+});
+var publishingPipeline = defineRdyStagedChecklist({
   name: "publishing-pipeline",
   groups: [
     // Stage 1: Build infrastructure
@@ -170,7 +170,7 @@ var publishingPipeline = {
     ]
   ],
   fixLocation: "inline"
-};
+});
 var demo_default = defineRdyKit({
   checklists: [projectFoundations, optionalIntegrations, codeQuality, publishingPipeline]
 });

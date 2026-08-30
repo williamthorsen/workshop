@@ -13,6 +13,8 @@
   },
   "include": [
     ".config/**/*.ts",
+    // Kit sources so that they are typechecked and the ESLint project service can resolve them.
+    ".readyup/kits/**/*.ts",
     "__tests__/",
     "config/",
     // Root-level TS files so that the ESLint project service can resolve them.
