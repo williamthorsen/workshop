@@ -5,19 +5,32 @@ import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
-const { existsProbes, readPaths } = vi.hoisted(() => {
+const { existsProbes, foreignPaths, readPaths } = vi.hoisted(() => {
   const existsProbes: string[] = [];
+  const foreignPaths = new Set<string>();
   const readPaths: string[] = [];
-  return { existsProbes, readPaths };
+  return { existsProbes, foreignPaths, readPaths };
 });
 
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-vi.mock('node:child_process', () => {
-  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
-  return { execFile: stub };
+// `execFileAsync` answers the promisified form every git helper but `runGitWithInput` uses; the stub answers the
+// callback form that one calls, reporting each queried path as declared or not.
+vi.mock('node:child_process', async () => {
+  const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
+  const stub = createExecFileStub((input) => ({
+    stdout: input
+      .split('\0')
+      .filter((path) => path !== '')
+      .flatMap((path) => [
+        `${path}\0linguist-generated\0${foreignPaths.has(path) ? 'true' : 'unspecified'}\0`,
+        `${path}\0linguist-vendored\0unspecified\0`,
+      ])
+      .join(''),
+  }));
+  return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };
 });
 
 // The modules under test bind their `node:fs` functions at import, so a spy on the namespace never reaches them.
@@ -55,6 +68,7 @@ it.aroundEach(async (runTest, { temp }) => {
 describe(readTrackedSources, () => {
   beforeEach(() => {
     existsProbes.length = 0;
+    foreignPaths.clear();
     readPaths.length = 0;
   });
 
@@ -102,6 +116,34 @@ describe(readTrackedSources, () => {
     expect(sources).toStrictEqual([{ path: 'src/kept.ts', text: 'kept' }]);
     expect(countReads('node_modules/dependency/index.js')).toBe(0);
     expect(countReads('.readyup/kits/default.js')).toBe(0);
+  });
+
+  it('never reads a path the project declares generated or vendored, whatever the filter returns for it', async ({
+    temp,
+  }) => {
+    temp.write('src/hand.ts', 'hand-written');
+    temp.write('bundles/skill.mjs', 'bundled');
+    temp.write('vendor/jquery.js', 'vendored');
+    trackPaths('bundles/skill.mjs', 'src/hand.ts', 'vendor/jquery.js');
+    declareForeign('bundles/skill.mjs', 'vendor/jquery.js');
+
+    const sources = await readTrackedSources(() => true);
+
+    expect(sources).toStrictEqual([{ path: 'src/hand.ts', text: 'hand-written' }]);
+    expect(countReads('bundles/skill.mjs')).toBe(0);
+    expect(countReads('vendor/jquery.js')).toBe(0);
+  });
+
+  it('reports a declared path to nobody, that being a file no check examined', async ({ temp }) => {
+    temp.write('src/hand.ts', 'hand-written');
+    temp.write('bundles/skill.mjs', 'bundled');
+    trackPaths('bundles/skill.mjs', 'src/hand.ts');
+    declareForeign('bundles/skill.mjs');
+    const { recorder, scanned } = createRecorder();
+
+    await withSweepRecorder(recorder, () => readTrackedSources());
+
+    expect(scanned).toStrictEqual([['src/hand.ts']]);
   });
 
   it('sweeps a kit source, which only its compiled bundle is excluded from', async ({ temp }) => {
@@ -190,6 +232,7 @@ describe(readTrackedSources, () => {
 describe(readSourceText, () => {
   beforeEach(() => {
     existsProbes.length = 0;
+    foreignPaths.clear();
     readPaths.length = 0;
   });
 
@@ -233,6 +276,11 @@ describe(readSourceText, () => {
 });
 
 // region | Helpers
+
+/** Declares the given paths generated, as a project's own `.gitattributes` would. */
+function declareForeign(...paths: string[]): void {
+  for (const path of paths) foreignPaths.add(path);
+}
 
 /** Counts the filesystem existence probes made for a directory-relative path. */
 function countProbes(relativePath: string): number {

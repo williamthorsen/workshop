@@ -6,33 +6,17 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-const runCheckAttr = vi.hoisted(() => vi.fn<(input: string) => { stdout?: string; error?: Error }>());
-
-// `runGitWithInput` calls `execFile` with a callback rather than through `promisify`, because only the callback form
-// hands back the child whose stdin it writes to. This stub answers that shape; `execFileAsync` answers the other.
-const execFileWithCallback = vi.hoisted(() =>
-  vi.fn(
-    (_file: string, _args: string[], _options: unknown, callback: (error: Error | null, stdout: string) => void) => {
-      const written: string[] = [];
-      queueMicrotask(() => {
-        const { stdout = '', error } = runCheckAttr(written.join(''));
-        callback(error ?? null, stdout);
-      });
-      return {
-        stdin: {
-          end: (chunk: string) => {
-            written.push(chunk);
-          },
-          on: () => undefined,
-        },
-      };
-    },
-  ),
+const runCheckAttr = vi.hoisted(() =>
+  vi.fn<(input: string, args: readonly string[]) => { error?: Error; stdout?: string }>(),
 );
 
-vi.mock('node:child_process', () => ({
-  execFile: Object.assign(execFileWithCallback, { [promisify.custom]: execFileAsync }),
-}));
+// `execFileAsync` answers the promisified form `listTrackedFiles` uses; the stub answers the callback form
+// `runGitWithInput` calls. `runCheckAttr` stands in for git, and is what this suite counts invocations against.
+vi.mock('node:child_process', async () => {
+  const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
+  const stub = createExecFileStub((input, args) => runCheckAttr(input, args));
+  return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };
+});
 
 vi.mock(import('node:fs'), () => ({
   existsSync: () => true,
@@ -52,8 +36,7 @@ describe(listForeignPaths, () => {
   it('writes every tracked path to stdin, NUL-terminated, and asks about both attributes', async () => {
     await listForeignPaths();
 
-    expect(runCheckAttr).toHaveBeenCalledWith('src/bundle.mjs\0src/hand.ts\0');
-    expect(execFileWithCallback.mock.calls[0]?.[1]).toStrictEqual([
+    expect(runCheckAttr).toHaveBeenCalledWith('src/bundle.mjs\0src/hand.ts\0', [
       '-C',
       process.cwd(),
       'check-attr',
@@ -68,7 +51,7 @@ describe(listForeignPaths, () => {
     await listForeignPaths();
     await listForeignPaths();
 
-    expect(execFileWithCallback).toHaveBeenCalledOnce();
+    expect(runCheckAttr).toHaveBeenCalledOnce();
   });
 
   it('invokes git once for calls that run concurrently', async () => {
@@ -76,7 +59,7 @@ describe(listForeignPaths, () => {
 
     expect(first).toStrictEqual(new Set(['src/bundle.mjs']));
     expect(second).toStrictEqual(new Set(['src/bundle.mjs']));
-    expect(execFileWithCallback).toHaveBeenCalledOnce();
+    expect(runCheckAttr).toHaveBeenCalledOnce();
   });
 
   it('does not memoize a rejected lookup', async () => {
@@ -91,14 +74,14 @@ describe(listForeignPaths, () => {
     trackPaths();
 
     await expect(listForeignPaths()).resolves.toStrictEqual(new Set());
-    expect(execFileWithCallback).not.toHaveBeenCalled();
+    expect(runCheckAttr).not.toHaveBeenCalled();
   });
 
   it('returns an empty set outside a git working tree, invoking git for nothing', async () => {
     execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
 
     await expect(listForeignPaths()).resolves.toStrictEqual(new Set());
-    expect(execFileWithCallback).not.toHaveBeenCalled();
+    expect(runCheckAttr).not.toHaveBeenCalled();
   });
 });
 

@@ -3,15 +3,22 @@ import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { expandHome, isRefMissingError, runGit, runGitRaw } from '../run-git.ts';
+import { expandHome, isRefMissingError, runGit, runGitRaw, runGitWithInput } from '../run-git.ts';
 
 const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-vi.mock('node:child_process', () => {
-  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
-  return { execFile: stub };
+const runWithInput = vi.hoisted(() =>
+  vi.fn<(input: string, args: readonly string[]) => { error?: Error; stdout?: string }>(),
+);
+
+// `execFileAsync` answers the promisified form `runGit` and `runGitRaw` use; the stub answers the callback form
+// `runGitWithInput` calls, which is the only one that hands back a child to write stdin to.
+vi.mock('node:child_process', async () => {
+  const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
+  const stub = createExecFileStub((input, args) => runWithInput(input, args));
+  return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };
 });
 
 describe(runGit, () => {
@@ -87,6 +94,41 @@ describe(runGitRaw, () => {
     await runGitRaw('~/projects/repo', 'status');
 
     expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', `${homedir()}/projects/repo`, 'status']);
+  });
+});
+
+describe(runGitWithInput, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    runWithInput.mockReturnValue({ stdout: '' });
+  });
+
+  it('writes the input to stdin and returns stdout unchanged', async () => {
+    runWithInput.mockReturnValue({ stdout: 'a.txt\0set\0' });
+
+    const result = await runGitWithInput('/repo', 'a.txt\0', 'check-attr', '-z', '--stdin', 'linguist-generated');
+
+    expect(result).toBe('a.txt\0set\0');
+    expect(runWithInput).toHaveBeenCalledWith('a.txt\0', [
+      '-C',
+      '/repo',
+      'check-attr',
+      '-z',
+      '--stdin',
+      'linguist-generated',
+    ]);
+  });
+
+  it("rejects with git's own error, which a stdin write failing before it must not displace", async () => {
+    runWithInput.mockReturnValue({ error: Object.assign(new Error('fatal: not a git repository'), { code: 128 }) });
+
+    await expect(runGitWithInput('/repo', 'a.txt\0', 'check-attr', '--stdin')).rejects.toThrow('not a git repository');
+  });
+
+  it('expands ~/ prefix to the home directory', async () => {
+    await runGitWithInput('~/projects/repo', '', 'check-attr', '--stdin');
+
+    expect(runWithInput).toHaveBeenCalledWith('', ['-C', `${homedir()}/projects/repo`, 'check-attr', '--stdin']);
   });
 });
 
