@@ -35,6 +35,16 @@ export function hasDevDependency(name: string): boolean {
  * measured against the version it finds there; one that resolves to no version meets no floor. `exempt` receives the
  * specifier as declared, so a catalogued dependency reaches it as `catalog:`; it adds further exemptions and cannot
  * remove the `workspace:` one.
+ *
+ * A bare `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes
+ * as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its
+ * own block under `catalogs:`. A catalog entry opening a YAML construct this reader does not follow, such as an alias
+ * or a flow mapping, resolves to no version. A version reached through a catalog is read like a declared one, so an
+ * entry of `workspace:*` satisfies any floor in its turn.
+ *
+ * The version is read from the start of the specifier, past any range operator, so one naming fewer than three
+ * segments (`7`, `^6`) is measured rather than skipped. A specifier carrying its version elsewhere, as the `npm:`
+ * alias protocol does, is read for a three-segment version anywhere in it.
  */
 export function hasMinDevDependencyVersion(
   name: string,
@@ -68,11 +78,9 @@ export function hasMinDevDependencyVersion(
 
 /** Extracts the version a specifier declares, or `undefined` when it names none. */
 function extractVersion(specifier: string): string | undefined {
-  // Parse from the start, so a specifier naming fewer than three segments (`7`, `^6`) is measured rather than skipped;
-  // `compareVersions` pads a short version against the floor.
+  // `compareVersions` pads a short version against the floor, so a partial match needs no filling out here.
   const fromStart = /^\d+(?:\.\d+)*/.exec(specifier.replace(RANGE_PREFIX, ''))?.[0];
   if (fromStart !== undefined) return fromStart;
-  // A specifier with its version elsewhere, such as the `npm:` alias protocol, still yields a three-segment match.
   return /\d+\.\d+\.\d+/.exec(specifier)?.[0];
 }
 

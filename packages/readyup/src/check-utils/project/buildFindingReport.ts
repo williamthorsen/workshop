@@ -26,10 +26,22 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * denominator the reader can compare across them, and so a site a pragma suppresses leaves every check's
  * fraction rather than only the fraction of the check that names it.
  *
- * A check naming its own package drops the findings sited in the declarations implementing it. The repo
- * publishing an idiom is where the idiom lives, and a kit reporting it there spends the credibility it needs
- * in every other repo it runs in; a neighbouring declaration in the same file is ordinary code and is still
- * reported.
+ * The runner names each reported finding as `symbol (path:line)`, or as `path:line` where the finding declares
+ * no symbol.
+ *
+ * A check naming its own package drops the findings sited in the declarations implementing it, from the detail
+ * and from both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit
+ * reporting it there spends the credibility it needs in every other repo it runs in; a neighbouring declaration
+ * in the same file is ordinary code and is still reported.
+ *
+ * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose
+ * `package.json` names the package. It owns the lines from its own head to the line before the next head, or to
+ * the file's last line where it is the last, because the closing brace is not a reliable end marker: a generic
+ * constraint and a return-type annotation can each hold braces of their own, and an overload signature has no
+ * body to close. A span cut short reports the implementation the rule exists to exempt. A re-exporting barrel
+ * declares no implementation and holds no exempted lines, a file declaring the name without exporting it is a
+ * hand-roll and is still reported, and a file declaring the export under another name and renaming it on export
+ * from a second file is not recognized.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;

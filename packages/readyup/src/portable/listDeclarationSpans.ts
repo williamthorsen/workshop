@@ -57,10 +57,10 @@ interface Head {
  * finding's line compares against.
  *
  * A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it
- * is the last. Starts rather than ends, because a generic constraint's braces, a return-type annotation's, and an
- * overload signature each defeat a scan for the closing brace, and a span cut short reports code the caller meant to
- * cover. The cost is the other direction: a module-scope statement trailing a declaration with no head between them is
- * read as part of it, which is the bias this takes deliberately.
+ * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: a generic constraint
+ * and a return-type annotation can each hold braces of their own, and an overload signature has no body to close. A
+ * span cut short reports code the caller meant to cover. The cost is the other direction: a module-scope statement
+ * trailing a declaration with no head between them is read as part of it, which is the bias this takes deliberately.
  *
  * A statement declaring no name ends the declaration before it and begins none, so an export clause, an import, a
  * destructuring binding, and a control-flow statement each bound the span ahead of them without owning lines of their

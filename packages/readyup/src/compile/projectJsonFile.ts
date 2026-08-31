@@ -17,6 +17,9 @@ import { JsonProjectionError } from './JsonProjectionError.ts';
  *
  * Returns the serialized form rather than the projected object, so a compile hashes exactly what it
  * substitutes.
+ *
+ * Throws where the file is unreadable, holds invalid JSON, holds something other than an object, or no longer
+ * holds a path the specifier names. `describeJsonProjectionFailure` words any of those four for a report.
  */
 export function projectJsonFile(filePath: string, paths: JsonPathSpec): string {
   let contents: string;
