@@ -11,7 +11,7 @@ import { HashSchema, IdSchema } from './scalar-schemas.ts';
  * `declared` is an edge written in an artifact's own frontmatter. `member` and `enumerated` are the two ways an
  * aggregate reaches its members: named explicitly, or drawn from a source's catalog. `injected` is an edge from a
  * frontmatter list that names artifacts of another kind. `token` is an edge contributed by an invocation token in a
- * body, which is the only origin that can arrive through a transcluded partial.
+ * body, which is the only origin that can be read from a transcluded partial.
  */
 export const EdgeOriginSchema = z
   .enum(['declared', 'enumerated', 'injected', 'member', 'token'])

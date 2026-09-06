@@ -15,7 +15,7 @@ export interface TokenDiagnostic {
  */
 export type TokenFailure = 'undeployed-referent' | 'unmapped-name';
 
-/** Where a token sits: the artifact hosting it, the token as written, and the partial it arrived through. */
+/** Where a token sits: the artifact hosting it, the token as written, and the partial it was read from. */
 export interface TokenRef {
   readonly host: ArtifactId;
   readonly token: string;

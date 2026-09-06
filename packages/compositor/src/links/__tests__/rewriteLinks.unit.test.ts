@@ -104,7 +104,7 @@ describe(rewriteLinks, () => {
       ]);
     });
 
-    it('names the partial it arrived through', () => {
+    it('names the partial it was read from', () => {
       const segments: ReadonlyArray<Segment> = [
         { lines: ['[x](../../../elsewhere/x.md)'], partialId: 'team:_data/shared.md' },
       ];

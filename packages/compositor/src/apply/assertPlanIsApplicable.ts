@@ -13,7 +13,7 @@ import { UnapplicablePlanError } from './UnapplicablePlanError.ts';
  * Three refusals. A plan containing only part of its content names bodies no `blobs` table holds. A file whose target
  * the plan does not contain has no root to resolve against. A path that is absolute or climbs out of the target names a
  * destination outside the tree the plan describes, and apply writes and deletes, so that one is the refusal whose
- * absence costs a file somebody else owns.
+ * absence lets apply write over a file somebody else owns.
  *
  * The engine composes no escaping path, so a plan containing one came from elsewhere, which is the case apply is built
  * to be safe under: a consumer applies a payload it was handed. Entries ownership is not among the refusals: an

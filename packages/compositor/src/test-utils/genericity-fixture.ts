@@ -236,7 +236,7 @@ export const REGION_MARKERS: MarkerPair = {
  * Contributes the closure edges an artifact's own body declares through its referent tokens.
  *
  * The body is read as written rather than expanded first: what makes a genericity claim is the declared pattern, not
- * the attribution of an edge to the partial it arrived through.
+ * the attribution of an edge to the partial it was read from.
  */
 function contributeTokenEdges(read: ArtifactRead): EdgeContribution {
   return { edges: extractTokenEdges([{ lines: read.content.split('\n') }], GENERICITY_TOKEN_KINDS), partials: [] };

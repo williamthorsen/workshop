@@ -30,7 +30,7 @@ export interface ComputeClosureInput {
  * bare seeds needs to invent nothing around them. A seed naming an artifact the catalog does not contain fails the
  * call: a selection is derived from a catalog, so one that names something else was built by hand and built wrong.
  *
- * The document contains only what a reader of it needs, so a kind arrives without the on-disk layout resolution used
+ * The document contains only what a reader of it needs, so a kind is recorded without the on-disk layout resolution used
  * and a source without the directory it resolved to. Neither means anything to a reader of a closure, and a filesystem
  * path has no business travelling inside a payload.
  */

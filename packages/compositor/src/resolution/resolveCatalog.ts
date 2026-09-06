@@ -65,7 +65,7 @@ export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalo
 /**
  * Builds one entry from the candidates containing its artifact, the first being the winner.
  *
- * The candidates arrive in source order because the merge walks the sources in precedence order, so the winner needs no
+ * The candidates are in source order because the merge walks the sources in precedence order, so the winner needs no
  * comparison: it is the one that got there first.
  */
 function buildEntry(

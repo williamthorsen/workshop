@@ -37,7 +37,7 @@ describe(listFilesRecursively, () => {
     await expect(sorted(tree.dir, (name) => name.startsWith('.'))).resolves.toStrictEqual(['notes.md']);
   });
 
-  it('does not descend into a skipped directory, so its contents cost nothing to leave out', async () => {
+  it('does not descend into a skipped directory, so its contents are never read', async () => {
     using tree = createTempTree({ '.git/objects/deadbeef': 'object', 'notes.md': 'notes' });
 
     // The nested file's own name matches no skip rule, so listing it would mean the walk entered `.git` anyway.
