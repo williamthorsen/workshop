@@ -952,6 +952,8 @@ Each payload is specified by a JSON Schema shipped with the package and includes
 
 Each `$id` is the same path under `https://unpkg.com/readyup/`. The schemas are generated from the definitions the exported `Json*` types derive from, so the published contract and the types cannot drift apart.
 
+Each document names its payload under `$defs` and points at it from a root `$ref`, so a document is shaped `{ $schema, $id, $ref, $defs }` and the payload's own `required` and `properties` sit beneath `$defs` rather than at the root. A validator resolves the `$ref` and needs nothing further; code reading the document directly has to follow it.
+
 ### Evolution policy
 
 The five payloads version independently.
