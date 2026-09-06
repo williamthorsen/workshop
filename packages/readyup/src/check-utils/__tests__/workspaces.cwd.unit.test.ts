@@ -3,7 +3,8 @@ import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
-import { discoverWorkspaces, type Workspace } from '../workspaces.ts';
+import type { Workspace } from '../buildWorkspaceFromPackageJson.ts';
+import { discoverWorkspaces } from '../workspaces.ts';
 
 /**
  * The `node:fs` functions a repoint can be armed on: `existsSync` fires on the root manifest read,

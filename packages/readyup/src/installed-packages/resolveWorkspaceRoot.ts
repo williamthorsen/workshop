@@ -1,7 +1,8 @@
 import { realpathSync } from 'node:fs';
 import process from 'node:process';
 
-import { discoverWorkspacesAt, type Workspace } from '../check-utils/workspaces.ts';
+import type { Workspace } from '../check-utils/buildWorkspaceFromPackageJson.ts';
+import { discoverWorkspacesAt } from '../check-utils/workspaces.ts';
 
 /**
  * Locates the root directory of the workspace publishing `packageName`, or `undefined` when no workspace does.
