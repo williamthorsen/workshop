@@ -116,7 +116,7 @@ function hasReadyupFootprint(absolutePath: string): boolean {
 }
 
 /**
- * Reports whether a candidate is a kit project, testing the clauses cheapest first.
+ * Reports whether a candidate is a kit project, testing the clauses in increasing order of work.
  *
  * The manifest is one stat, the compiled kits one directory read, and the sources a recursive walk.
  */
@@ -127,8 +127,8 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
 /**
  * Reads one project's config, falling back to the defaults when it cannot be evaluated.
  *
- * Discovery is read-only, so a config that fails costs that project its settings, not its discovery.
- * A project declaring no config costs one `existsSync` and evaluates no TypeScript, which is what lets
+ * Discovery is read-only, so a config that fails drops that project's settings, not its discovery.
+ * A project declaring no config needs one `existsSync` and evaluates no TypeScript, which is what lets
  * every candidate be resolved before any of them is judged a kit project.
  */
 async function readProjectConfig(absolutePath: string, dir: string): Promise<ResolvedRdyConfig> {

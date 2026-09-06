@@ -37,8 +37,8 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  *
  * `checklists` records the names `rdy compile` found in the kit, so `rdy list` can report them
  * without importing and executing the compiled bundle. It is optional because a manifest written by
- * an older readyup has no such record; readers strip what they do not recognize, so the field's
- * arrival leaves `version` at 1.
+ * an older readyup has no such record; readers strip what they do not recognize, so adding the
+ * field leaves `version` at 1.
  *
  * `sourceHash` and `targetHash` are the two ends of the compile: the hash of the `.ts` the kit was
  * built from and the hash of the `.js` it produced. Comparing each against the file on disk is what

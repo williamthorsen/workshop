@@ -37,7 +37,7 @@ const baseArgs = {
  *
  * The fixture installs the kits by compiling this package's own sources, so the test exercises what
  * ships without waiting on the `prepare` that produces it. The kits' own unit tests cover what each
- * check decides; this locks in the seam that carries them to a consumer -- that the bundles load from
+ * check decides; this locks in the seam that delivers them to a consumer -- that the bundles load from
  * an installed package, and that the manifest beside them is what `list` reports.
  */
 describe('kits readyup publishes', () => {
@@ -70,7 +70,7 @@ describe('kits readyup publishes', () => {
     rmSync(projectRoot, { recursive: true, force: true });
   });
 
-  it('lists both kits with the checklists each one carries', async () => {
+  it('lists both kits with the checklists each one declares', async () => {
     const exitCode = await listCommand(['--from', 'npm:readyup', '--json']);
 
     expect(exitCode).toBe(0);
@@ -127,13 +127,13 @@ describe('kits readyup publishes', () => {
 /** The report entry for a kit that ran, failing the test when the runner reported a load error instead. */
 function pickKitResult(report: JsonReport, kitName: string): JsonKitResultEntry {
   const kit = report.kits.find((candidate) => candidate.name === kitName);
-  assert.ok(kit !== undefined, `Report carries no entry named "${kitName}"`);
+  assert.ok(kit !== undefined, `Report contains no entry named "${kitName}"`);
   assert.ok(!('error' in kit), `Kit "${kitName}" failed to load`);
   return kit;
 }
 
 /**
- * Installs this package's kits into a fixture project as an npm dependency would carry them.
+ * Installs this package's kits into a fixture project as an npm dependency would deliver them.
  *
  * The inner symlink is what lets the bundles resolve the `readyup` specifiers `rdy compile` leaves
  * external. A real consumer gets that from the runner's resolver hook, which `rdy` registers before

@@ -129,7 +129,7 @@ function describeHashDrift(filePath: string, hashed: string, expected: string, v
 /**
  * Reports which of a recorded input's three required fields are absent.
  *
- * Leads with the path where the record carries one, so several incomplete records stay distinguishable
+ * Leads with the path where the record has one, so several incomplete records stay distinguishable
  * in a detail that joins them.
  */
 function describeIncompleteInput(input: ManifestInput): string {

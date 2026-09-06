@@ -31,7 +31,7 @@ export interface BuildFindingReportOptions<F extends Finding> {
  *
  * A check naming its own package drops the findings sited in the declarations implementing it, from the detail
  * and from both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit
- * reporting it there spends the credibility it needs in every other repo it runs in; a neighbouring declaration
+ * reporting it there loses the credibility it needs in every other repo it runs in; a neighbouring declaration
  * in the same file is ordinary code and is still reported.
  *
  * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose

@@ -31,7 +31,7 @@ export function countPackageUsage(sources: readonly ProjectSource[], options: Co
     const readable = blankComments(source.text).matchAll(importPattern).toArray();
     if (readable.length === 0) continue;
 
-    // Blanking the literals is paid for only by a source that names the package, which most do not.
+    // Blanking the literals runs only for a source that names the package, which most do not.
     const code = blankNonCode(source.text);
     const importsPackage = readable.some((match) => isCode(code, match.index));
     if (!importsPackage) continue;

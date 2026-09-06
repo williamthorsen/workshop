@@ -116,7 +116,7 @@ function resolveInputRemedies(status: InputsStatus): Remedy[] {
  * so the caller's path rule cannot see the collision and the deferral is made here.
  *
  * `failed` always speaks. It is about the source rather than the bundle, and a kit that no longer compiles has to
- * be fixed before any remedy naming a recompile can be carried out.
+ * be fixed before any remedy naming a recompile can run.
  */
 function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceStatus): Remedy | undefined {
   if (status === undefined) return undefined;

@@ -32,7 +32,7 @@ describe(assertSatisfiesVersionFloor, () => {
     expect(error.message).toContain('this runner is 0.34.0');
   });
 
-  it('carries a hint naming the upgrade', async () => {
+  it('includes a hint naming the upgrade', async () => {
     const error = await captureError(() => assertSatisfiesVersionFloor('sweep', buildKit('0.35.0')));
 
     expect(error).toHaveProperty('code', 'kit-load');
@@ -67,7 +67,7 @@ describe(warnOnVersionSkew, () => {
     expect(warnOnVersionSkew('kit', buildKit(), stamp)).toStrictEqual([]);
   });
 
-  it('reports nothing for a bundle carrying no stamp', () => {
+  it('reports nothing for a bundle with no stamp', () => {
     expect(warnOnVersionSkew('kit', buildKit(), undefined)).toStrictEqual([]);
   });
 

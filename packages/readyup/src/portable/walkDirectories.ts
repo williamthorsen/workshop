@@ -79,7 +79,7 @@ function sweepDirectory(context: SweepContext, relativeDir: string, depth: numbe
   try {
     entries = readdirSync(absoluteDir, { withFileTypes: true, encoding: 'utf8' });
   } catch (error: unknown) {
-    // A directory that is missing or barred to this process costs the sweep that one directory.
+    // A directory that is missing or barred to this process is skipped, and the sweep continues.
     // Anything else is systemic (EMFILE, EIO), and an incomplete sweep must not pass for a complete one.
     if (isSkippableFilesystemError(error)) return;
     throw error;

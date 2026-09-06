@@ -43,7 +43,7 @@ export function hasDevDependency(name: string): boolean {
  * entry of `workspace:*` satisfies any floor in its turn.
  *
  * The version is read from the start of the specifier, past any range operator, so one naming fewer than three
- * segments (`7`, `^6`) is measured rather than skipped. A specifier carrying its version elsewhere, as the `npm:`
+ * segments (`7`, `^6`) is measured rather than skipped. A specifier that states its version elsewhere, as the `npm:`
  * alias protocol does, is read for a three-segment version anywhere in it.
  */
 export function hasMinDevDependencyVersion(

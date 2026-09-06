@@ -240,7 +240,7 @@ function buildMissingSource(): KitVerdicts['source'] {
   return { kind: 'missing', resolvedPath: '/repo/kits/deploy.ts' };
 }
 
-/** Returns an inputs verdict carrying the given failures. */
+/** Returns an inputs verdict containing the given failures. */
 function buildStaleInputs(
   failures: Extract<KitVerdicts['inputs'], { kind: 'stale' }>['failures'],
 ): KitVerdicts['inputs'] {

@@ -39,7 +39,7 @@ export interface KitResultInput {
  * Input for one kit, discriminated by the presence of `error`.
  *
  * A failed kit is described by the entry it serializes to, because it passes through verbatim.
- * Failures arrive interleaved rather than appended so kits keep the order they were requested in.
+ * Failures are interleaved rather than appended so kits keep the order they were requested in.
  */
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 

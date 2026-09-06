@@ -92,7 +92,7 @@ describe(toRemoteRdyError, () => {
       expect(toRemoteRdyError(new Error('ECONNREFUSED'), context()).hint).toBeUndefined();
     });
 
-    it('stays silent for a malformed body, which arrived over an accepted request', () => {
+    it('stays silent for a malformed body, which was returned by an accepted request', () => {
       const error = toRemoteRdyError(new Error(`Manifest at ${GITHUB_URL} is malformed: bad JSON`), context());
 
       expect(error.hint).toBeUndefined();

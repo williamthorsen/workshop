@@ -1,7 +1,7 @@
 /**
  * Publication readiness for a package that ships its readyup kits to consumers.
  *
- * Strict throughout, because everything it checks is a way for a published package to carry checks that
+ * Strict throughout, because everything it checks is a way for a published package to contain checks that
  * do not run, or that run against something other than what the author wrote. `default` is the advisory
  * counterpart, for a project that authors kits without publishing them.
  *

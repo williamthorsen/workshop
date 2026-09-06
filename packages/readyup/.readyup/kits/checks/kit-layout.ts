@@ -59,7 +59,7 @@ export interface ManifestEntry {
  *
  * Every field may be absent, because the record comes out of raw JSON rather than the manifest schema: a
  * kit reporting on a manifest cannot fail to load over the manifest it is reporting on. Only an inline
- * record carries `paths`, which is the specifier that produced the projection whose hash it holds.
+ * record contains `paths`, which is the specifier that produced the projection whose hash it holds.
  */
 export interface ManifestInput {
   hash: string | undefined;

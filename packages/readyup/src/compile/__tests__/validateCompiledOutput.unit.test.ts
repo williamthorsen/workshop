@@ -80,7 +80,7 @@ describe(validateCompiledOutput, () => {
     expect(existsSync(outputPath)).toBe(false);
   });
 
-  // A check is serialized to JSON here, so `check` arrives as a string rather than a function: the
+  // A check is serialized to JSON here, so `check` is a string rather than a function: the
   // same authoring mistake a hand-edited bundle would have, and one compile must not let through.
   it('rejects a kit whose check is not a function, naming the offending location', async () => {
     const outputPath = writeTempKit(testDir, 'bad-check.mjs', {

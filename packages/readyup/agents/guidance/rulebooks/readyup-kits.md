@@ -67,4 +67,4 @@ One pattern must not read blanked text: one matching a literal's own content, su
 
 Prefer a plain string. Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong.
 
-A getter serves one purpose: reaching a value declared below the kit literal. Keep it pure. A `fix` resolves only where a failure renders it, so an impure getter no longer breaks kit load, but it still buys a subprocess or a registry call for a remediation string.
+A getter serves one purpose: reaching a value declared below the kit literal. Keep it pure. A `fix` resolves only where a failure renders it, so an impure getter no longer breaks kit load, but it still runs a subprocess or a registry call for a remediation string.

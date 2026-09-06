@@ -400,7 +400,7 @@ function collectProjectKits(project: Project): JsonListKitEntry[] {
 /**
  * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
  *
- * A manifest nobody can read costs that project its descriptions, not its listing: the kits themselves
+ * A manifest nobody can read drops that project's descriptions, not its listing: the kits themselves
  * are still on disk.
  */
 function readProjectManifest(manifestPath: string): RdyManifest | undefined {
@@ -467,7 +467,7 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
 /**
  * Loads the project config, falling back to the defaults and reporting a config it cannot evaluate.
  *
- * Listing is read-only, so a config that cannot be evaluated costs the caller its settings rather than
+ * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than
  * the whole listing, taking the same warn-and-continue the corrupt-manifest paths take. `run` still fails hard on
  * the same failure: it would otherwise execute against settings nobody chose.
  */
