@@ -1,5 +1,4 @@
-import type { WriteResult } from '../portable/writeFileWithCheck.ts';
-import { writeFileWithCheck } from '../portable/writeFileWithCheck.ts';
+import { writeFileWithCheck, type WriteResult } from '../portable/writeFileWithCheck.ts';
 import { rdyConfigTemplate, rdyKitTemplate } from './templates.ts';
 
 const CONFIG_PATH = '.config/readyup.config.ts';

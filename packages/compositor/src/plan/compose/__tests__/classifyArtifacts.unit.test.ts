@@ -4,8 +4,7 @@ import type { ArtifactResolution } from '../../../schemas/artifact-resolution-sc
 import type { ClosureArtifact } from '../../../schemas/closure-schemas.ts';
 import type { ArtifactEntry, DependencyEdge } from '../../../schemas/graph-schemas.ts';
 import type { ArtifactId } from '../../../schemas/scalar-schemas.ts';
-import type { ClassifyArtifactsInput } from '../classifyArtifacts.ts';
-import { classifyArtifacts } from '../classifyArtifacts.ts';
+import { classifyArtifacts, type ClassifyArtifactsInput } from '../classifyArtifacts.ts';
 import type { ContentVerdict } from '../TargetPlanContext.ts';
 
 const reviewResolution: ArtifactResolution = {

@@ -18,15 +18,13 @@ import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { type JsonCompileKitEntry, type JsonCompileOutput, SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
-import type { DriftStatus } from '../verify/checkDrift.ts';
-import { checkDrift } from '../verify/checkDrift.ts';
+import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 import { VERSION } from '../version.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
-import type { KitMetadata } from './validateCompiledOutput.ts';
-import { validateCompiledOutput } from './validateCompiledOutput.ts';
+import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
 
 const compileOptions = {
   force: { type: 'boolean' },

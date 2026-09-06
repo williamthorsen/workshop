@@ -31,8 +31,7 @@ import type { ResolveKind } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { MarkerPair, RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { TokenKind } from '../schemas/token-kind-schemas.ts';
-import type { CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
-import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
+import { captureSnapshot, type CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
 import { extractTokenEdges } from '../tokens/extractTokenEdges.ts';
 import { buildConfig } from './buildConfig.ts';
 

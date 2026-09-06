@@ -1,7 +1,6 @@
 import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
-import type { RdyManifest } from '../manifest/manifestSchema.ts';
-import { ManifestSchema } from '../manifest/manifestSchema.ts';
+import { ManifestSchema, type RdyManifest } from '../manifest/manifestSchema.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
 /** Thrown when a remote manifest URL responds with 404 or an HTML soft-404. */

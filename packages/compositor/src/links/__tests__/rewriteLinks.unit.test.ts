@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
 import type { Segment } from '../../transclusion/expandTransclusions.ts';
-import type { LinkRewrite, RewriteLinksInput } from '../rewriteLinks.ts';
-import { rewriteLinks } from '../rewriteLinks.ts';
+import { type LinkRewrite, rewriteLinks, type RewriteLinksInput } from '../rewriteLinks.ts';
 
 const MARKDOWN_LINK = String.raw`\[[^\]]*\]\(([^)]+)\)`;
 

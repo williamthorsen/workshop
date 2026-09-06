@@ -3,8 +3,7 @@ import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import type { BundleResult } from '../compile/buildBundle.ts';
-import { buildBundle } from '../compile/buildBundle.ts';
+import { buildBundle, type BundleResult } from '../compile/buildBundle.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { VERSION } from '../version.ts';
 import { hashBytes } from './targetHash.ts';

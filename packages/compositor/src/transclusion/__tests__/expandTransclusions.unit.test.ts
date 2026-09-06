@@ -2,8 +2,7 @@ import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { DirectiveSyntax } from '../../schemas/render-target-schemas.ts';
-import type { Transclusion } from '../expandTransclusions.ts';
-import { expandTransclusions } from '../expandTransclusions.ts';
+import { expandTransclusions, type Transclusion } from '../expandTransclusions.ts';
 import { joinSegments } from '../joinSegments.ts';
 
 const COMMENT: DirectiveSyntax = { open: '<!--', close: '-->' };

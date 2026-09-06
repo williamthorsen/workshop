@@ -9,10 +9,10 @@ import { computeHash } from '../../../src/check-utils/hashing.ts';
 import type { RdyResult } from '../../../src/kits/types.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
-import type { FixtureManifestInput } from '../test-utils/project-fixture.ts';
 import {
   FIXTURE_INLINED_MODULE_PATH,
   FIXTURE_KITS_DIR,
+  type FixtureManifestInput,
   SELF_CONTAINED_BUNDLE,
   withInputs,
   writeInlineInput,

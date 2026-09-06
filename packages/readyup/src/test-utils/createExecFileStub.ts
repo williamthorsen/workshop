@@ -1,5 +1,4 @@
-import type { Mock } from 'vitest';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 /** The part of a spawned child that a caller writing to stdin touches. */
 interface StubbedChild {

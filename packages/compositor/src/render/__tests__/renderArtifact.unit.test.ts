@@ -1,12 +1,10 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
-import type { DeployableArtifact } from '../../deployment/resolveDeployedNames.ts';
-import { resolveDeployedNames } from '../../deployment/resolveDeployedNames.ts';
+import { type DeployableArtifact, resolveDeployedNames } from '../../deployment/resolveDeployedNames.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
-import type { ArtifactRender } from '../renderArtifact.ts';
-import { renderArtifact } from '../renderArtifact.ts';
+import { type ArtifactRender, renderArtifact } from '../renderArtifact.ts';
 
 const COMMENT = { open: '<!--', close: '-->' } as const;
 const MARKDOWN_LINK = String.raw`\[[^\]]*\]\(([^)]+)\)`;

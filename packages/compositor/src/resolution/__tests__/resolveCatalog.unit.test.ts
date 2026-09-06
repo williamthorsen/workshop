@@ -3,8 +3,13 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import type { CatalogEntry, ResolveKind, SourceSpec } from '../../schemas/catalog-schemas.ts';
-import { CATALOG_SCHEMA_VERSION, CatalogSchema } from '../../schemas/catalog-schemas.ts';
+import {
+  CATALOG_SCHEMA_VERSION,
+  type CatalogEntry,
+  CatalogSchema,
+  type ResolveKind,
+  type SourceSpec,
+} from '../../schemas/catalog-schemas.ts';
 import { assertCatalogIsConsistent } from '../assertCatalogIsConsistent.ts';
 import { resolveCatalog } from '../resolveCatalog.ts';
 import { buildSource } from '../test-utils/buildSource.ts';

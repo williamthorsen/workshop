@@ -1,12 +1,10 @@
 import { computeClosure } from '../closure/computeClosure.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
-import type { BlobStore } from '../portable/createBlobStore.ts';
-import { createBlobStore } from '../portable/createBlobStore.ts';
+import { type BlobStore, createBlobStore } from '../portable/createBlobStore.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { Blob, FileEntry } from '../schemas/file-schemas.ts';
 import type { PartialEntry } from '../schemas/graph-schemas.ts';
-import type { Plan } from '../schemas/plan-schemas.ts';
-import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
+import { type Plan, PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
 import type { Hash, Id, PartialId } from '../schemas/scalar-schemas.ts';
 import type { TargetEntry } from '../schemas/target-schemas.ts';

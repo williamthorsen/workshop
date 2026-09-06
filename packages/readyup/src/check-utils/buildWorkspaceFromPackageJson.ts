@@ -1,5 +1,20 @@
 import { deepFreeze } from '../portable/deepFreeze.ts';
-import type { Workspace } from './workspaces.ts';
+
+/** A repo's root, or one of a monorepo's members. */
+export interface Workspace {
+  /** Workspace directory, relative to the directory discovery was anchored to. `'.'` for the repo root. */
+  readonly dir: string;
+  /** Absolute filesystem path to the workspace directory. */
+  readonly absolutePath: string;
+  /** `name` from the workspace's `package.json`; `undefined` if absent. */
+  readonly name: string | undefined;
+  /** `true` iff `package.json.private !== true`. (Equivalently: "this workspace is a package".) */
+  readonly isPackage: boolean;
+  /** `true` for the repo root, which every repo shape reports. Independent of `isPackage`: a root may publish. */
+  readonly isRoot: boolean;
+  /** Parsed `package.json` contents, validated to be a record. */
+  readonly packageJson: Readonly<Record<string, unknown>>;
+}
 
 /** Builds a `Workspace`, deep-freezing the manifest it is given. */
 export function buildWorkspaceFromPackageJson(

@@ -6,8 +6,7 @@ import { version as installedEsbuildVersion } from 'esbuild';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { readInstalledPackageVersion } from '../../test-utils/readInstalledPackageVersion.ts';
-import type { BundleResult } from '../buildBundle.ts';
-import { buildBundle } from '../buildBundle.ts';
+import { buildBundle, type BundleResult } from '../buildBundle.ts';
 
 const KIT_SOURCE = [
   `import { broken } from 'broken-dep';`,

@@ -47,7 +47,7 @@ describe('generated JSON Schemas', () => {
     const report = documentFor('report.v1.json');
 
     it('requires exactly the fields every report has', () => {
-      expect(valueAt(report, 'required')).toStrictEqual([
+      expect(valueAt(report, '$defs', 'Report', 'required')).toStrictEqual([
         'schemaVersion',
         'readyupVersion',
         'passed',
@@ -107,7 +107,7 @@ describe('generated JSON Schemas', () => {
     });
 
     it('leaves objects open so an added optional field does not invalidate the version', () => {
-      expect(report).not.toHaveProperty('additionalProperties');
+      expect(objectAt(report, '$defs', 'Report')).not.toHaveProperty('additionalProperties');
       expect(objectAt(report, '$defs', 'CheckEntry')).not.toHaveProperty('additionalProperties');
     });
   });

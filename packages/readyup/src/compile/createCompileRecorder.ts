@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashBytes, hashProjection } from '../verify/targetHash.ts';
-import type { CompiledInput } from './CompiledInput.ts';
-import { identifyInput } from './CompiledInput.ts';
+import { type CompiledInput, identifyInput } from './CompiledInput.ts';
 import type { JsonPathSpec } from './extractJsonPaths.ts';
 import { projectJsonFile } from './projectJsonFile.ts';
 

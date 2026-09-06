@@ -6,8 +6,11 @@ import { INLAY_NAME_PLACEHOLDER } from '../../inlays/inlay-markers.ts';
 import type { KindDescriptor } from '../../schemas/descriptor-schemas.ts';
 import type { OwnedItemsDeclaration } from '../../schemas/owned-items-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
-import type { RenderTargetViolation } from '../assertRenderTargetsAreConsistent.ts';
-import { assertRenderTargetsAreConsistent, RenderTargetConsistencyError } from '../assertRenderTargetsAreConsistent.ts';
+import {
+  assertRenderTargetsAreConsistent,
+  RenderTargetConsistencyError,
+  type RenderTargetViolation,
+} from '../assertRenderTargetsAreConsistent.ts';
 
 const kinds: ReadonlyArray<KindDescriptor> = [
   { id: 'rulebook', label: 'Rulebook', emitsFiles: true },

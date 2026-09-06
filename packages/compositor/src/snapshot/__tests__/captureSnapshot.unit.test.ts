@@ -8,8 +8,7 @@ import type { ResolveKind } from '../../schemas/catalog-schemas.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { readManifestVersion } from '../../test-utils/readManifestVersion.ts';
-import type { CaptureSnapshotInput, CompositionSnapshot } from '../captureSnapshot.ts';
-import { captureSnapshot } from '../captureSnapshot.ts';
+import { captureSnapshot, type CaptureSnapshotInput, type CompositionSnapshot } from '../captureSnapshot.ts';
 
 // A PNG signature stands in for a skill asset the engine copies byte for byte.
 const diagramBytes = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

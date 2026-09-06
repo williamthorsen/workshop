@@ -7,12 +7,9 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { version as installedEsbuildVersion } from 'esbuild';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CompileResult } from '../../compile/compileConfig.ts';
-import { compileConfig } from '../../compile/compileConfig.ts';
-import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
-import { ManifestSchema } from '../../manifest/manifestSchema.ts';
-import type { JsonVerifyOutput } from '../../schemas/verifyOutputSchema.ts';
-import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
+import { compileConfig, type CompileResult } from '../../compile/compileConfig.ts';
+import { ManifestSchema, type RdyManifestKit } from '../../manifest/manifestSchema.ts';
+import { type JsonVerifyOutput, VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
 import { readInstalledPackageVersion } from '../../test-utils/readInstalledPackageVersion.ts';
 import { VERSION } from '../../version.ts';
 import { hashFile } from '../targetHash.ts';

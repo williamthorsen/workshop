@@ -3,11 +3,9 @@ import path from 'node:path';
 
 import { buildContributionPatterns } from '../deployment/contribution-markers.ts';
 import { invertDeployedName } from '../deployment/name-templates.ts';
-import type { RegionClassification } from '../ownership/classifyRegion.ts';
-import { classifyRegion } from '../ownership/classifyRegion.ts';
+import { classifyRegion, type RegionClassification } from '../ownership/classifyRegion.ts';
 import { extractRegionContent } from '../ownership/extractRegionContent.ts';
-import type { Contribution } from '../ownership/readContributions.ts';
-import { readContributions } from '../ownership/readContributions.ts';
+import { type Contribution, readContributions } from '../ownership/readContributions.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
 import { encodeBlob } from '../portable/encodeBlob.ts';
 import { expandPath } from '../portable/expandPath.ts';

@@ -1,5 +1,4 @@
-import { buildWorkspaceFromPackageJson } from '../check-utils/buildWorkspaceFromPackageJson.ts';
-import type { Workspace } from '../check-utils/workspaces.ts';
+import { buildWorkspaceFromPackageJson, type Workspace } from '../check-utils/buildWorkspaceFromPackageJson.ts';
 
 /** Directory a fixture reports when the caller names none. */
 const DEFAULT_DIR = 'packages/example';

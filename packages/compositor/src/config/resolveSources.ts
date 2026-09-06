@@ -1,8 +1,6 @@
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
-import type { SourceResolution } from './foldSourceTiers.ts';
-import { foldSourceTiers } from './foldSourceTiers.ts';
-import type { LocateSourcePackagesOptions } from './locateSourcePackages.ts';
-import { locateSourcePackages } from './locateSourcePackages.ts';
+import { foldSourceTiers, type SourceResolution } from './foldSourceTiers.ts';
+import { locateSourcePackages, type LocateSourcePackagesOptions } from './locateSourcePackages.ts';
 
 /**
  * Resolves the sources `config` declares, locating each on disk, in precedence order.

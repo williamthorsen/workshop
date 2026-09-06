@@ -8,8 +8,7 @@ import { toPosix } from '../portable/toPosix.ts';
 import type { PartialEntry } from '../schemas/graph-schemas.ts';
 import type { DirectiveSyntax } from '../schemas/render-target-schemas.ts';
 import type { PartialId, SourceId } from '../schemas/scalar-schemas.ts';
-import type { DirectivePatterns } from './buildDirectivePatterns.ts';
-import { buildDirectivePatterns } from './buildDirectivePatterns.ts';
+import { buildDirectivePatterns, type DirectivePatterns } from './buildDirectivePatterns.ts';
 import { composePartialId } from './composePartialId.ts';
 import type { DirectiveRef, TransclusionDiagnostic, TransclusionFailure } from './TransclusionDiagnostic.ts';
 

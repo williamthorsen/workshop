@@ -4,8 +4,7 @@ import type { ArtifactRender } from '../../render/renderArtifact.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { ArtifactId } from '../../schemas/scalar-schemas.ts';
 import type { InlayBinding } from '../../selection/selectArtifacts.ts';
-import type { InlayFill } from '../fillInlays.ts';
-import { fillInlays } from '../fillInlays.ts';
+import { fillInlays, type InlayFill } from '../fillInlays.ts';
 
 const claude: RenderTarget = {
   id: 'claude',

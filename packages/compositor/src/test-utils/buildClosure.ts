@@ -1,5 +1,4 @@
-import type { Closure } from '../schemas/closure-schemas.ts';
-import { CLOSURE_SCHEMA_VERSION } from '../schemas/closure-schemas.ts';
+import { type Closure, CLOSURE_SCHEMA_VERSION } from '../schemas/closure-schemas.ts';
 
 /**
  * Builds a small closure that satisfies both the schema and every consistency invariant.

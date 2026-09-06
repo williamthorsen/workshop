@@ -15,8 +15,13 @@ import { collectKitPackageGroups } from '../installed-packages/collectKitPackage
 import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
-import type { DirectorySource, GlobalSource, LocalSource, NpmSource } from '../kits/parseFromValue.ts';
-import { parseFromValue } from '../kits/parseFromValue.ts';
+import {
+  type DirectorySource,
+  type GlobalSource,
+  type LocalSource,
+  type NpmSource,
+  parseFromValue,
+} from '../kits/parseFromValue.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { SEGMENT_SEPARATOR } from '../layout/layoutEngine.ts';
@@ -25,14 +30,12 @@ import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts'
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
-import type { Project } from '../projects/project-discovery.ts';
-import { discoverKitProjects, discoverProjects } from '../projects/project-discovery.ts';
+import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { enumerateKits } from './enumerateKits.ts';
-import type { ProjectPackagesView, RecursiveProjectView } from './formatList.ts';
 import {
   formatConsumerView,
   formatManifestView,
@@ -40,6 +43,8 @@ import {
   formatPackagesView,
   formatRecursivePackagesView,
   formatRecursiveView,
+  type ProjectPackagesView,
+  type RecursiveProjectView,
   resolveCompiledStyle,
 } from './formatList.ts';
 

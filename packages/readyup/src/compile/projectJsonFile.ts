@@ -4,8 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { describeType } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
-import type { JsonPathSpec } from './extractJsonPaths.ts';
-import { extractJsonPaths, JsonPathNotFoundError } from './extractJsonPaths.ts';
+import { extractJsonPaths, JsonPathNotFoundError, type JsonPathSpec } from './extractJsonPaths.ts';
 import { JsonProjectionError } from './JsonProjectionError.ts';
 
 /**

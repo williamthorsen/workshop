@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { OutcomeMap } from '../entry-outcomes.ts';
-import { countOutcome, partitionStatus } from '../entry-outcomes.ts';
+import { countOutcome, type OutcomeMap, partitionStatus } from '../entry-outcomes.ts';
 import type { OverlayEntry } from '../types.ts';
 
 const OUTCOMES: OutcomeMap = { A: 'created', D: 'deleted', M: 'conflict' };
