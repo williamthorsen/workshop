@@ -4,8 +4,7 @@ import { StaleSnapshotError } from '../../config/StaleSnapshotError.ts';
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
 import type { TokenKind } from '../../schemas/token-kind-schemas.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
-import type { CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
-import { captureComposition } from '../../test-utils/captureComposition.ts';
+import { captureComposition, type CaptureCompositionOptions } from '../../test-utils/captureComposition.ts';
 import {
   buildClaudeTarget,
   buildInlayingTarget,

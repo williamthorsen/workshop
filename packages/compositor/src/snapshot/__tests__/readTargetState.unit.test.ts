@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { OwnedItemsDeclaration } from '../../schemas/owned-items-schemas.ts';
 import type { KindDeployment, RenderTarget } from '../../schemas/render-target-schemas.ts';
-import type { ClaimedFile, HostState } from '../readTargetState.ts';
-import { readTargetState } from '../readTargetState.ts';
+import { type ClaimedFile, type HostState, readTargetState } from '../readTargetState.ts';
 
 const skills: KindDeployment = {
   form: 'tree',

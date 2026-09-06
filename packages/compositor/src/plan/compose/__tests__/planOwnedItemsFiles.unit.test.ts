@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BlobStore } from '../../../portable/createBlobStore.ts';
-import { createBlobStore } from '../../../portable/createBlobStore.ts';
+import { type BlobStore, createBlobStore } from '../../../portable/createBlobStore.ts';
 import type { FileEntry } from '../../../schemas/file-schemas.ts';
 import type { OwnedItemsDeclaration } from '../../../schemas/owned-items-schemas.ts';
 import { planOwnedItemsFiles } from '../planOwnedItemsFiles.ts';

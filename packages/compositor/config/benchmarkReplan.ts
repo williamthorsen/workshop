@@ -15,8 +15,7 @@ import { parseArgs } from 'node:util';
 
 import { composePlan } from '../src/plan/composePlan.ts';
 import type { ResolveKind } from '../src/schemas/catalog-schemas.ts';
-import type { CompositorConfig } from '../src/schemas/config-schemas.ts';
-import { CompositorConfigSchema } from '../src/schemas/config-schemas.ts';
+import { type CompositorConfig, CompositorConfigSchema } from '../src/schemas/config-schemas.ts';
 import type { RenderTarget } from '../src/schemas/render-target-schemas.ts';
 import { captureSnapshot } from '../src/snapshot/captureSnapshot.ts';
 

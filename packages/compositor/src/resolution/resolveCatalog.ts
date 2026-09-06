@@ -1,7 +1,12 @@
 import { compareStrings } from '../portable/compareStrings.ts';
 import type { ResolutionCandidate } from '../schemas/artifact-resolution-schemas.ts';
-import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
-import { CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
+import {
+  type Catalog,
+  CATALOG_SCHEMA_VERSION,
+  type CatalogEntry,
+  type ResolveKind,
+  type SourceSpec,
+} from '../schemas/catalog-schemas.ts';
 import { assertSourceIsReadable } from './assertSourceIsReadable.ts';
 import { composeArtifactId } from './composeArtifactId.ts';
 import { enumerateSource, type SourceArtifact } from './enumerateSource.ts';

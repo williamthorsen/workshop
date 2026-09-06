@@ -1,5 +1,4 @@
-import type { ZodError } from 'zod';
-import { z } from 'zod';
+import { z, type ZodError } from 'zod';
 
 import { describeType, previewValue } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';

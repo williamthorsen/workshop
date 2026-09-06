@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
-import type { DocumentAccess } from '../document-access.ts';
-import { openDocument } from '../document-access.ts';
+import { type DocumentAccess, openDocument } from '../document-access.ts';
 import { ensureOwnedItems } from '../ensureOwnedItems.ts';
-import type { LocatedCollection } from '../locateCollection.ts';
-import { locateCollection } from '../locateCollection.ts';
+import { locateCollection, type LocatedCollection } from '../locateCollection.ts';
 import { readOwnedItems } from '../readOwnedItems.ts';
 
 const COLLECTION = ['eventHooks', 'events'];

@@ -1,6 +1,5 @@
 import { createBlobStore } from '../portable/createBlobStore.ts';
-import type { Plan } from '../schemas/plan-schemas.ts';
-import { PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
+import { type Plan, PLAN_SCHEMA_VERSION } from '../schemas/plan-schemas.ts';
 import { buildArtifacts } from './representative/buildArtifacts.ts';
 import { buildFiles } from './representative/buildFiles.ts';
 import { buildFingerprint } from './representative/buildFingerprint.ts';

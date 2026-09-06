@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ContributionPatterns } from '../readContributions.ts';
-import { readContributions } from '../readContributions.ts';
+import { type ContributionPatterns, readContributions } from '../readContributions.ts';
 import { renderContribution } from '../renderContribution.ts';
 
 const PATTERNS: ContributionPatterns = {

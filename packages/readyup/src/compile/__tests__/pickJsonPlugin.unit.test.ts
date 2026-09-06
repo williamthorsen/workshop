@@ -10,8 +10,7 @@ vi.mock(import('node:fs'), () => ({
   writeFileSync: vi.fn(),
 }));
 
-import type { CompileRecorder } from '../createCompileRecorder.ts';
-import { createCompileRecorder } from '../createCompileRecorder.ts';
+import { type CompileRecorder, createCompileRecorder } from '../createCompileRecorder.ts';
 import { pickJsonPlugin } from '../pickJsonPlugin.ts';
 
 type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];

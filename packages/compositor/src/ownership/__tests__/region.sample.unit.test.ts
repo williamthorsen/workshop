@@ -7,8 +7,7 @@ import {
   REGION_OPEN,
 } from '../../samples/representative/file-bodies.ts';
 import { injectRegion } from '../injectRegion.ts';
-import type { ContributionPatterns } from '../readContributions.ts';
-import { readContributions } from '../readContributions.ts';
+import { type ContributionPatterns, readContributions } from '../readContributions.ts';
 import type { RegionMarkers } from '../RegionMarkers.ts';
 import { renderContribution } from '../renderContribution.ts';
 

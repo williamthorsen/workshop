@@ -4,8 +4,7 @@ import type { DriftStatus } from './checkDrift.ts';
 import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
 import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
-import type { KitVerdicts } from './verdicts.ts';
-import { hasSourceFailed } from './verdicts.ts';
+import { hasSourceFailed, type KitVerdicts } from './verdicts.ts';
 
 /** One thing to do about a kit, and the file it speaks for where it speaks for one. */
 interface Remedy {

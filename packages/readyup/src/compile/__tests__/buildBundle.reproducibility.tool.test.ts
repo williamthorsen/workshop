@@ -5,8 +5,7 @@ import process from 'node:process';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { BundleResult } from '../buildBundle.ts';
-import { buildBundle } from '../buildBundle.ts';
+import { buildBundle, type BundleResult } from '../buildBundle.ts';
 
 const KIT_SOURCE = [
   `import { pickJson } from '${path.resolve(import.meta.dirname, '../pickJson.ts')}';`,

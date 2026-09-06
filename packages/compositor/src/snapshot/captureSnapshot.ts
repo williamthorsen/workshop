@@ -3,17 +3,13 @@ import path from 'node:path';
 import { buildEdgeGraph } from '../closure/buildEdgeGraph.ts';
 import type { EdgeContributor } from '../closure/EdgeContributor.ts';
 import type { EdgeGraph } from '../closure/EdgeGraph.ts';
-import type { SourceResolution } from '../config/foldSourceTiers.ts';
-import { foldSourceTiers } from '../config/foldSourceTiers.ts';
-import type { PackageLocation } from '../config/locateSourcePackages.ts';
-import { locateSourcePackages } from '../config/locateSourcePackages.ts';
-import type { DeployableArtifact } from '../deployment/resolveDeployedNames.ts';
-import { resolveDeployedNames } from '../deployment/resolveDeployedNames.ts';
+import { foldSourceTiers, type SourceResolution } from '../config/foldSourceTiers.ts';
+import { locateSourcePackages, type PackageLocation } from '../config/locateSourcePackages.ts';
+import { type DeployableArtifact, resolveDeployedNames } from '../deployment/resolveDeployedNames.ts';
 import { getEngineVersion } from '../getEngineVersion.ts';
 import { hashDirectory } from '../portable/hashDirectory.ts';
 import { assertRenderTargetsAreConsistent } from '../render/assertRenderTargetsAreConsistent.ts';
-import type { ArtifactRender } from '../render/renderArtifact.ts';
-import { renderArtifact } from '../render/renderArtifact.ts';
+import { type ArtifactRender, renderArtifact } from '../render/renderArtifact.ts';
 import { resolveCatalog } from '../resolution/resolveCatalog.ts';
 import type { Catalog, CatalogEntry, ResolveKind, SourceSpec } from '../schemas/catalog-schemas.ts';
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
@@ -25,10 +21,8 @@ import type { ArtifactId, TargetId } from '../schemas/scalar-schemas.ts';
 import type { TokenKind } from '../schemas/token-kind-schemas.ts';
 import { assertTokenKindsAreConsistent } from '../tokens/assertTokenKindsAreConsistent.ts';
 import type { DeployedNameLookup } from '../tokens/rewriteTokens.ts';
-import type { ArtifactAsset } from './readArtifactAssets.ts';
-import { readArtifactAssets } from './readArtifactAssets.ts';
-import type { TargetState } from './readTargetState.ts';
-import { readTargetState } from './readTargetState.ts';
+import { type ArtifactAsset, readArtifactAssets } from './readArtifactAssets.ts';
+import { readTargetState, type TargetState } from './readTargetState.ts';
 
 /** Everything capturing a snapshot reads, declarations and config alike. */
 export interface CaptureSnapshotInput {

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DocumentAccess } from '../document-access.ts';
-import { openDocument } from '../document-access.ts';
+import { type DocumentAccess, openDocument } from '../document-access.ts';
 import { locateCollection } from '../locateCollection.ts';
 
 describe(locateCollection, () => {

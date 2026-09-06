@@ -4,8 +4,7 @@ import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { Seed, SeedOrigin } from '../schemas/graph-schemas.ts';
 import type { ArtifactId, Id } from '../schemas/scalar-schemas.ts';
 import type { KindSelection, Selector } from '../schemas/selection-schemas.ts';
-import type { CatalogIndex } from './buildCatalogIndex.ts';
-import { buildCatalogIndex } from './buildCatalogIndex.ts';
+import { buildCatalogIndex, type CatalogIndex } from './buildCatalogIndex.ts';
 import { expandSelector } from './expandSelector.ts';
 import type { ConfigEntryRef, SelectionDiagnostic } from './SelectionDiagnostic.ts';
 

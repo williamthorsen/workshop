@@ -1,7 +1,6 @@
 import { compareStrings } from '../portable/compareStrings.ts';
 import { composeArtifactId } from '../resolution/composeArtifactId.ts';
-import type { Catalog } from '../schemas/catalog-schemas.ts';
-import { CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
+import { type Catalog, CATALOG_SCHEMA_VERSION } from '../schemas/catalog-schemas.ts';
 
 /** One artifact the catalog contains, and the sources with a copy of it, highest precedence first. */
 export interface CatalogEntrySpec {

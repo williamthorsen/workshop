@@ -1,8 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { RdyManifest } from './manifestSchema.ts';
-import { ManifestSchema } from './manifestSchema.ts';
+import { ManifestSchema, type RdyManifest } from './manifestSchema.ts';
 
 /**
  * Validates a manifest and writes it to disk as formatted JSON, creating parent directories as

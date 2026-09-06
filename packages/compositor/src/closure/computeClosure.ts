@@ -1,6 +1,5 @@
 import { compareStrings } from '../portable/compareStrings.ts';
-import type { Closure, ClosureArtifact } from '../schemas/closure-schemas.ts';
-import { CLOSURE_SCHEMA_VERSION } from '../schemas/closure-schemas.ts';
+import { type Closure, CLOSURE_SCHEMA_VERSION, type ClosureArtifact } from '../schemas/closure-schemas.ts';
 import type { TierDescriptor } from '../schemas/descriptor-schemas.ts';
 import type { Seed } from '../schemas/graph-schemas.ts';
 import type { ArtifactId, PartialId } from '../schemas/scalar-schemas.ts';

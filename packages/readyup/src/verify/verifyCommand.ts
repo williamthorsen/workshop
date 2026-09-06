@@ -17,17 +17,12 @@ import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { type JsonVerifyKitEntry, type JsonVerifyOutput, SCHEMA_VERSION } from '../schemas/verifyOutputSchema.ts';
 import { VERSION } from '../version.ts';
-import type { DriftStatus } from './checkDrift.ts';
-import { checkDrift } from './checkDrift.ts';
-import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
-import { checkInputDrift } from './checkInputDrift.ts';
-import type { DependencyChange, RebuildStatus } from './checkRebuild.ts';
-import { checkRebuild } from './checkRebuild.ts';
-import type { SourceStatus } from './checkSourceDrift.ts';
-import { checkSourceDrift } from './checkSourceDrift.ts';
+import { checkDrift, type DriftStatus } from './checkDrift.ts';
+import { checkInputDrift, type InputFailure, type InputsStatus } from './checkInputDrift.ts';
+import { checkRebuild, type DependencyChange, type RebuildStatus } from './checkRebuild.ts';
+import { checkSourceDrift, type SourceStatus } from './checkSourceDrift.ts';
 import { resolveRemedies } from './remedies.ts';
-import type { KitVerdicts } from './verdicts.ts';
-import { hasSourceFailed, hasTargetFailed } from './verdicts.ts';
+import { hasSourceFailed, hasTargetFailed, type KitVerdicts } from './verdicts.ts';
 
 const verifyOptions = {
   json: { type: 'boolean' },

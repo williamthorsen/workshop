@@ -1,7 +1,6 @@
 import path from 'node:path';
 
-import type { Mock } from 'vitest';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 const { readdirSync: readdirSyncActual } = await vi.importActual<typeof import('node:fs')>('node:fs');
 

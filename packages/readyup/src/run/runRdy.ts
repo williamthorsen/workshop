@@ -2,20 +2,20 @@ import { performance } from 'node:perf_hooks';
 
 import { withSweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
-import type {
-  FailedResult,
-  PassedResult,
-  Progress,
-  RdyCheck,
-  RdyChecklist,
-  RdyReport,
-  RdyResult,
-  RdyStagedChecklist,
-  Severity,
-  SkipDiagnosis,
-  SkippedResult,
+import {
+  type FailedResult,
+  isFlatChecklist,
+  type PassedResult,
+  type Progress,
+  type RdyCheck,
+  type RdyChecklist,
+  type RdyReport,
+  type RdyResult,
+  type RdyStagedChecklist,
+  type Severity,
+  type SkipDiagnosis,
+  type SkippedResult,
 } from '../kits/types.ts';
-import { isFlatChecklist } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
 import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';

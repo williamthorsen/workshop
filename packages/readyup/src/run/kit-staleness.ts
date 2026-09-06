@@ -10,8 +10,7 @@ import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import { MOVE_EDITS_REMEDY, RECOMPILE_REMEDY } from '../reporting/remedies.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { checkDrift } from '../verify/checkDrift.ts';
-import type { InputsStatus } from '../verify/checkInputDrift.ts';
-import { checkInputDrift } from '../verify/checkInputDrift.ts';
+import { checkInputDrift, type InputsStatus } from '../verify/checkInputDrift.ts';
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
 import type { KitSource } from './ResolvedKitEntry.ts';
 

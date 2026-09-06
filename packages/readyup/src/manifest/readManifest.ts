@@ -3,8 +3,7 @@ import { readFileSync } from 'node:fs';
 import { isError } from '@williamthorsen/toolbelt.errors';
 import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
-import type { RdyManifest } from './manifestSchema.ts';
-import { ManifestSchema } from './manifestSchema.ts';
+import { ManifestSchema, type RdyManifest } from './manifestSchema.ts';
 
 /** Thrown when the manifest file does not exist on disk. */
 export class ManifestNotFoundError extends Error {

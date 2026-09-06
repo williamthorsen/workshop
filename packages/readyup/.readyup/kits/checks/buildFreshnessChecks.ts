@@ -1,5 +1,4 @@
-import type { CheckOutcome, FractionProgress, RdyCheck } from 'readyup';
-import { DEFAULT_MANIFEST_PATH } from 'readyup';
+import { type CheckOutcome, DEFAULT_MANIFEST_PATH, type FractionProgress, type RdyCheck } from 'readyup';
 import {
   describeJsonProjectionFailure,
   fileExists,
@@ -9,8 +8,13 @@ import {
   readFile,
 } from 'readyup/check-utils';
 
-import type { ManifestEntry, ManifestInput } from './kit-layout.ts';
-import { readManifestEntries, resolveRecordedPath, skipWithoutBundles } from './kit-layout.ts';
+import {
+  type ManifestEntry,
+  type ManifestInput,
+  readManifestEntries,
+  resolveRecordedPath,
+  skipWithoutBundles,
+} from './kit-layout.ts';
 
 /** Detail reported by a check that stands down for an entry compiled before readyup recorded a closure. */
 const NO_INPUTS_REASON = 'The manifest records no inputs for it';

@@ -3,8 +3,7 @@ import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate
 
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';
-import type { CaptureSnapshotInput, CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
-import { captureSnapshot } from '../snapshot/captureSnapshot.ts';
+import { captureSnapshot, type CaptureSnapshotInput, type CompositionSnapshot } from '../snapshot/captureSnapshot.ts';
 import { buildConfig } from './buildConfig.ts';
 import { buildClaudeTarget, buildCompositionSourceFiles, COMPOSITION_KINDS } from './composition-fixture.ts';
 

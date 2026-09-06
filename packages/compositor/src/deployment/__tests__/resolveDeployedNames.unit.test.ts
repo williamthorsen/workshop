@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { RenderTarget } from '../../schemas/render-target-schemas.ts';
-import type { DeployableArtifact } from '../resolveDeployedNames.ts';
-import { resolveDeployedNames } from '../resolveDeployedNames.ts';
+import { type DeployableArtifact, resolveDeployedNames } from '../resolveDeployedNames.ts';
 
 const skillLayout = { form: 'directory', root: 'skills', entryFile: 'SKILL.md' } as const;
 const rulebookLayout = { form: 'file', root: 'rulebooks', extension: '.md' } as const;

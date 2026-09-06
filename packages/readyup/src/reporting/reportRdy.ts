@@ -1,13 +1,13 @@
-import type {
-  FailedResult,
-  FixLocation,
-  Progress,
-  RdyReport,
-  RdyResult,
-  Severity,
-  SummaryCounts,
+import {
+  type FailedResult,
+  type FixLocation,
+  isPercentProgress,
+  type Progress,
+  type RdyReport,
+  type RdyResult,
+  type Severity,
+  type SummaryCounts,
 } from '../kits/types.ts';
-import { isPercentProgress } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import { resolveWorstToken } from '../layout/layoutEngine.ts';
