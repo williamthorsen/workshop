@@ -962,6 +962,7 @@ The five payloads version independently.
 - **Removing, renaming, or re-typing a field does bump it**, publishing a new `vN` beside the old. Widening a closed set counts as re-typing.
 - **A field is `required` only when every payload has it.** Omission is reserved for absent or empty data.
 - **`warnings[].code` is an open set**, exempt from the widening rule. Consumers must tolerate an unknown code, displaying its `message` and `remedy`. `error.code` stays closed.
+- **`schemaVersion` covers the payload's fields, not how the document expresses them.** The generator decides where a keyword sits, so resolve a `$ref` with a validator rather than reading a keyword off a fixed path.
 
 ### Error envelope
 
