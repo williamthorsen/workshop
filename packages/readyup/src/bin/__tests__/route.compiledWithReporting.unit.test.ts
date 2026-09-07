@@ -32,7 +32,7 @@ it.aroundAll(async (runSuite, { temp }) => {
 });
 
 describe('compile-time readyup version in the run report', () => {
-  it('names the readyup a local bundle was built by, with no origin to nest it under', async () => {
+  it('names the readyup by which a local bundle was built, with no origin to nest it under', async () => {
     using io = captureStdio();
 
     await routeCommand(['stamped', '--json']);
@@ -75,7 +75,7 @@ describe('compile-time readyup version in the run report', () => {
 
 // region | Helpers
 
-/** Builds a kit source with the version stamp `rdy compile` embeds in a bundle. */
+/** Builds a kit source with the version stamp that `rdy compile` embeds in a bundle. */
 function buildStampedKit(version: string): string {
   return `export const __readyupVersion = '${version}';\n${KIT_BODY}`;
 }

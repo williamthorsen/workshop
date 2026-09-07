@@ -28,17 +28,17 @@ import { VERSION } from '../version.ts';
 import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { hasJsonFlag } from './hasJsonFlag.ts';
 
-/** Command names a mistyped bare word is matched against, including the implicit `run`. */
+/** Command names against which a mistyped bare word is matched, including the implicit `run`. */
 export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
-/** Extensions a kit file can take, in the order `run` would resolve them. */
+/** Extensions that a kit file can take, in the order `run` would resolve them. */
 const KIT_EXTENSIONS = ['.js', '.ts'];
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
 /**
- * Routes CLI arguments to the appropriate subcommand, returning the exit code it produced.
+ * Routes CLI arguments to the appropriate subcommand, returning the exit code that it produced.
  *
  * Every failure that prevents the invocation from completing is rendered here -- as prose on stderr, or as the JSON
  * error envelope on stdout when `--json` is in argv -- so no command needs an error-reporting path of its own.
@@ -46,7 +46,7 @@ const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 export async function routeCommand(args: string[]): Promise<number> {
   const json = hasJsonFlag(args);
 
-  // Binding the style precedes the try because the catch renders through it: a style named in argv has
+  // Binding the style precedes the try because the catch renders through it: A style named in argv has
   // to govern the usage error that argv itself provokes. A value naming no style still yields one to
   // render with, and becomes the error raised inside.
   const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY);
@@ -140,7 +140,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const parsed = parseRunArgs(flags);
 
   // Skip config when an external source flag is active -- external modes don't use config values.
-  // `--packages` is not one of them: the config is where the packages it runs are named.
+  // `--packages` is not one of them: The config is where the packages that it runs are named.
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
@@ -237,8 +237,8 @@ function wantsHelp(flags: string[]): boolean {
  * Reports whether a bare word is a kit rather than a candidate command typo.
  *
  * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
- * settles the question outright: under them the word is a kit by construction, and the kit it names
- * lives wherever that source resolves rather than on a path worth probing.
+ * settles the question outright: Under them the word is a kit by construction, and the kit that it
+ * names lives wherever that source resolves rather than on a path worth probing.
  *
  * Everything else is a bare word with no source, which `run` resolves against the conventional kit
  * directory alone. Probing exactly that directory is what makes the result match what would run.
