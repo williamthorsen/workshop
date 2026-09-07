@@ -16,8 +16,8 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-// `execFileAsync` answers the promisified form every git helper but `runGitWithInput` uses; the stub answers the
-// callback form that one calls, reporting each queried path as declared or not.
+// `execFileAsync` provides the promisified form used by every git helper but `runGitWithInput`; the stub provides
+// the callback form that one calls, reporting each queried path as declared or not.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
   const stub = createExecFileStub((input) => ({
@@ -121,7 +121,7 @@ describe(readTrackedSources, () => {
     expect(countReads('src/shared.ts')).toBe(1);
   });
 
-  it('never reads a path the filter rejects', async ({ temp }) => {
+  it('never reads a path rejected by the filter', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('src/rejected.ts', 'rejected');
     trackPaths('src/kept.ts', 'src/rejected.ts');
@@ -145,7 +145,7 @@ describe(readTrackedSources, () => {
     expect(countReads('.readyup/kits/default.js')).toBe(0);
   });
 
-  it('never reads a path the project declares generated or vendored, whatever the filter returns for it', async ({
+  it('never reads a path that the project declares generated or vendored, whatever the filter returns for it', async ({
     temp,
   }) => {
     temp.write('src/hand.ts', 'hand-written');
@@ -161,7 +161,7 @@ describe(readTrackedSources, () => {
     expect(countReads('vendor/jquery.js')).toBe(0);
   });
 
-  it('reports a declared path to nobody, that being a file no check examined', async ({ temp }) => {
+  it('reports a declared path to nobody, that being a file examined by no check', async ({ temp }) => {
     temp.write('src/hand.ts', 'hand-written');
     temp.write('bundles/skill.mjs', 'bundled');
     trackPaths('bundles/skill.mjs', 'src/hand.ts');
@@ -200,7 +200,7 @@ describe(readTrackedSources, () => {
     trackPaths('docs', 'src/present.ts');
 
     await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
-    // The read is what tells a directory from a source, so a fixture git never listed would pass this vacuously.
+    // The read tells a directory from a source, so a fixture never listed by git would pass this vacuously.
     expect(countReads('docs')).toBe(1);
   });
 
@@ -211,7 +211,7 @@ describe(readTrackedSources, () => {
     await expect(readTrackedSources()).resolves.toBeUndefined();
   });
 
-  it('reports the paths it returns to the recorder in scope', async ({ temp }) => {
+  it('reports the paths that it returns to the recorder in scope', async ({ temp }) => {
     temp.write('src/kept.ts', 'kept');
     temp.write('src/rejected.ts', 'rejected');
     trackPaths('src/kept.ts', 'src/rejected.ts');
@@ -222,7 +222,7 @@ describe(readTrackedSources, () => {
     expect(scanned).toStrictEqual([['src/kept.ts']]);
   });
 
-  it('reports a path it could not read to nobody, that being a file no check examined', async ({ temp }) => {
+  it('reports a path that it could not read to nobody, that being a file examined by no check', async ({ temp }) => {
     temp.write('src/present.ts', 'present');
     trackPaths('src/deleted.ts', 'src/present.ts');
     const { recorder, scanned } = createRecorder();
@@ -263,7 +263,7 @@ describe(readSourceText, () => {
     readPaths.length = 0;
   });
 
-  it('returns the text a sweep read, reading the file no second time', async ({ temp }) => {
+  it('returns the text that a sweep read, reading the file no second time', async ({ temp }) => {
     temp.write('src/swept.ts', 'swept');
     trackPaths('src/swept.ts');
     await readTrackedSources();
@@ -272,7 +272,7 @@ describe(readSourceText, () => {
     expect(countReads('src/swept.ts')).toBe(1);
   });
 
-  it('reads a path no sweep selected, and reads it once across calls', ({ temp }) => {
+  it('reads a path selected by no sweep, and reads it once across calls', ({ temp }) => {
     temp.write('src/unswept.ts', 'unswept');
 
     expect(readSourceText('src/unswept.ts')).toBe('unswept');
@@ -280,7 +280,7 @@ describe(readSourceText, () => {
     expect(countReads('src/unswept.ts')).toBe(1);
   });
 
-  it('reads a path a sweep excludes, since exclusion governs what a sweep goes looking at', ({ temp }) => {
+  it('reads a path excluded by a sweep, since exclusion governs what a sweep goes looking at', ({ temp }) => {
     temp.write('node_modules/dependency/index.js', 'dependency');
 
     expect(readSourceText('node_modules/dependency/index.js')).toBe('dependency');

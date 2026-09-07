@@ -72,7 +72,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
     expect(readDirectories.length).toBeGreaterThan(walkedForFirstRoot);
   });
 
-  it('returns a full array to a later call after a caller empties the one it returned', ({ temp }) => {
+  it('returns a full array to a later call after a caller empties the one that it returned', ({ temp }) => {
     writeMonorepo(temp);
 
     discoverWorkspaces().length = 0;

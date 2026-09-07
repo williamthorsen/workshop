@@ -38,7 +38,7 @@ describe(describeUnresolvableImports, () => {
     expect(message).toContain('readyup does not export legacyHelper; readyup/legacy is not a subpath it publishes.');
   });
 
-  it('advises recompiling a kit the project owns', () => {
+  it('advises recompiling a kit owned by the project', () => {
     const { hint } = describeUnresolvableImports(MISSING_ONE, { kitName: 'default' });
 
     expect(hint).toBe(`Run 'rdy compile' to rebuild it against readyup ${VERSION}.`);

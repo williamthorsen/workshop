@@ -17,7 +17,7 @@ import { resolveCompileRoot } from './resolveCompileRoot.ts';
  *
  * Dependency contents are pinned by the lockfile and read exactly by `rdy verify --rebuild`, while
  * recording them would size a committed, per-compile-rewritten manifest to the dependency tree rather
- * than to the kit: one `import zod` inlines 79 files.
+ * than to the kit: One `import zod` inlines 79 files.
  */
 const EXCLUDED_DIRECTORY = 'node_modules';
 
@@ -25,14 +25,14 @@ const EXCLUDED_DIRECTORY = 'node_modules';
 export const KIT_COMPILE_TARGET = 'es2025';
 
 /**
- * TypeScript settings kits compile under.
+ * TypeScript settings under which kits compile.
  *
- * Supplying this at all is what stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles
- * from its own sources rather than from whatever configuration the host repo happens to keep above it. The two
- * settings are the ones esbuild derives rather than fixes; stating them keeps a version bump from moving kit
+ * Supplying this at all stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles from its
+ * own sources rather than from whatever configuration the host repo happens to keep above it. The two settings
+ * are the ones that esbuild derives rather than fixes; stating them keeps a version bump from moving kit
  * semantics quietly. Everything else stays at esbuild's default.
  *
- * `target` is left undeclared, which is what keeps class-field semantics independent of
+ * `target` is left undeclared, which keeps class-field semantics independent of
  * `KIT_COMPILE_TARGET`: esbuild derives `useDefineForClassFields` from the TypeScript `target`, so
  * declaring one here would tie the two back together.
  */
@@ -44,10 +44,10 @@ export const KIT_TSCONFIG = {
 export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuild';
 
 /**
- * Why an import a kit resolved under the host repo's configuration no longer resolves.
+ * Why an import that a kit resolved under the host repo's configuration no longer resolves.
  *
  * esbuild responds to an unresolved import by suggesting the path be marked external, which for a kit
- * yields a bundle that fails at run time instead of at compile time. This names the cause its
+ * yields a bundle that fails at run time instead of at compile time. This names the cause that its
  * suggestion cannot: `KIT_TSCONFIG` leaves kits with no `paths` aliases to resolve through.
  */
 const UNRESOLVED_SPECIFIER_HINT =
@@ -57,7 +57,7 @@ const UNRESOLVED_SPECIFIER_HINT =
  * Generated-file header prepended to compiled output.
  *
  * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
- * readyup version a kit was compiled against and the runner's own version at execution time. The
+ * readyup version against which a kit was compiled and the runner's own version at execution time. The
  * constant is part of the bundle, so a kit rebuilt under a different readyup differs from the one on
  * disk even when its source has not moved.
  */
@@ -68,9 +68,9 @@ const GENERATED_HEADER = [
   '',
 ].join('\n');
 
-/** A kit's compiled bundle and the closure of files the compile read to produce it. */
+/** A kit's compiled bundle and the closure of files that the compile read to produce it. */
 export interface BundleResult {
-  /** Every package the bundle inlined, by name, with the version its `package.json` declares. */
+  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
   bundledDependencies: Record<string, string>;
 
   bytes: Buffer;
@@ -91,14 +91,14 @@ export interface BundleResult {
  * them to the runner's own readyup installation.
  *
  * The single place the bundler is configured. `compileConfig` writes what this returns and
- * `checkRebuild` compares against it, so the bundle a verification recompiles is the bundle a
- * compile would have produced -- a property that holds by construction rather than by two option
- * objects being kept in agreement.
+ * `checkRebuild` compares against it, so the bundle recompiled by a verification is the bundle that a
+ * compile would have produced -- a property that holds by construction rather than by keeping two
+ * option objects in agreement.
  *
  * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`. The bundle
  * is determined by the entry point and the plugin. esbuild renders each bundled module's path into the
  * output against the working directory, which `resolveCompileRoot` derives from the kit itself, so the
- * directory the compile was invoked from does not reach the bundle.
+ * directory from which the compile was invoked does not reach the bundle.
  *
  * The one place a compile's input closure is known, which is why it returns the closure alongside the
  * bundle rather than leaving a later reader to reconstruct it.
@@ -157,11 +157,11 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
 // region | Helpers
 
 /**
- * Returns the packages the bundle inlined, by name, from the metafile inputs the closure excludes.
+ * Returns the packages inlined by the bundle, by name, from the metafile inputs that the closure excludes.
  *
  * A tree can hold two versions of one package at once, and a bundle can inline both, so a name's value
  * is every bundled version, sorted and comma-separated. A file whose package cannot be identified
- * contributes nothing: the same derivation runs at compile time and at rebuild time, so an
+ * contributes nothing: The same derivation runs at compile time and at rebuild time, so an
  * unidentifiable package cancels out of the comparison rather than producing a spurious difference.
  */
 function collectBundledDependencies(metafileKeys: string[], workingDir: string): Record<string, string> {
@@ -203,7 +203,7 @@ function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workin
 
   for (const key of metafileKeys) {
     const resolvedPath = path.resolve(workingDir, key);
-    // Excluded before the hash, so a dependency tree is never read from disk: one `import zod` inlines 79 files.
+    // Excluded before the hash, so a dependency tree is never read from disk: One `import zod` inlines 79 files.
     if (isDependencyFile(resolvedPath)) continue;
     const identity = identifyInput('module', resolvedPath);
     if (byIdentity.has(identity)) continue;

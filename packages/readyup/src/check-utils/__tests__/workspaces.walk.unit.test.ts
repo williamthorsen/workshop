@@ -49,7 +49,9 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
     expect(discoverWorkspaces().map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha', 'locked', 'inner']);
   });
 
-  it('drops a directory it cannot read for a benign reason along with its subtree, keeping the rest', ({ temp }) => {
+  it('drops a directory that it cannot read for a benign reason along with its subtree, keeping the rest', ({
+    temp,
+  }) => {
     writeMonorepo(temp);
     failures.set(join(temp.dir, 'packages/locked'), 'EACCES');
 
