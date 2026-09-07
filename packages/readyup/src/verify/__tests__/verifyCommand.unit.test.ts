@@ -282,7 +282,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('input unprojectable: ../../package.json (path not found: version)');
     });
 
-    it('reports an input the compile read that is gone', async () => {
+    it('reports an input read by the compile that is gone', async () => {
       arrangeSingleKit();
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
@@ -322,7 +322,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain(`${OK} alpha\n`);
     });
 
-    it('passes an entry that predates the closure, leaving the line it produces today unchanged', async () => {
+    it('passes an entry that predates the closure, leaving the line that it produces today unchanged', async () => {
       arrangeSingleKit();
 
       const { exitCode, stdout } = await verify([]);
@@ -331,7 +331,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain(`${OK} alpha\n`);
     });
 
-    it('speaks a passing rebuild over a stale input, where it names the manifest as what went wrong', async () => {
+    it('reports a passing rebuild over a stale input, where it names the manifest as what went wrong', async () => {
       arrangeSingleKit();
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
@@ -677,7 +677,7 @@ describe(verifyCommand, () => {
       });
     });
 
-    it('speaks over an unverified target, where it supplies the verdict the absent hash could not', async () => {
+    it('speaks over an unverified target, where it supplies the verdict that the absent hash could not', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts' }],
@@ -693,7 +693,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('rebuild ok');
     });
 
-    it('keeps the skip token on an unverified target the rebuild reached no verdict on', async () => {
+    it('keeps the skip token on an unverified target on which the rebuild reached no verdict', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js' }],
@@ -779,7 +779,7 @@ describe(verifyCommand, () => {
   });
 
   describe('unified vocabulary', () => {
-    /** Every verdict the command can report, so one sweep covers each line it produces. */
+    /** Every verdict that the command can report, so one sweep covers each of its lines. */
     const verdicts = [
       { kind: 'ok', targetHash: 'aaaa1111' },
       { kind: 'drift', expected: 'aaaa1111', actual: 'aaaa9999', resolvedPath: '/abs/alpha.js' },

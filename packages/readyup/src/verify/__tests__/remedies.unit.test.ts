@@ -43,7 +43,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, buildVerdicts({ drift: buildDrift(), rebuild }))).toStrictEqual([MOVE_EDITS]);
     });
 
-    it('recompiles a bundle that is gone, which no drift gate stands in the way of', () => {
+    it('recompiles a bundle that is gone, which no drift gate blocks', () => {
       const drift = { kind: 'missing', resolvedPath: '/repo/kits/deploy.js' } as const;
 
       expect(resolveRemedies(KIT, buildVerdicts({ drift }))).toStrictEqual([RECOMPILE]);
@@ -108,7 +108,7 @@ describe(resolveRemedies, () => {
   });
 
   describe('rebuild verdict', () => {
-    it('recompiles a bundle the rebuild does not reproduce', () => {
+    it('recompiles a bundle that the rebuild does not reproduce', () => {
       const rebuild = { kind: 'mismatch', expected: 'aaa', actual: 'bbb' } as const;
 
       expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual([RECOMPILE]);
@@ -120,7 +120,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual(['Fix the kit source so it compiles.']);
     });
 
-    it('recompiles to fill in a manifest entry the rebuild found nothing recorded in', () => {
+    it('recompiles to fill in a manifest entry in which the rebuild found nothing recorded', () => {
       const rebuild = { kind: 'missing', reason: 'no source recorded in manifest' } as const;
 
       expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual([RECOMPILE]);
@@ -162,7 +162,7 @@ describe(resolveRemedies, () => {
     ]);
   });
 
-  describe('collapsing remedies a reader cannot act on', () => {
+  describe('collapsing remedies on which a reader cannot act', () => {
     it("names one remedy for a source recorded among the kit's own inputs, where both axes report it gone", () => {
       const verdicts = buildVerdicts({
         inputs: buildStaleInputs([{ kind: 'module', path: 'kits/deploy.ts', reason: 'missing' }]),
@@ -205,7 +205,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RECOMPILE]);
     });
 
-    it('keeps a remedy the force recompile does not settle, such as a source that no longer compiles', () => {
+    it('keeps a remedy not settled by the force recompile, such as a source that no longer compiles', () => {
       const verdicts = buildVerdicts({
         drift: buildDrift(),
         rebuild: { kind: 'failed', message: 'Unexpected token' },
@@ -214,7 +214,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, 'Fix the kit source so it compiles.']);
     });
 
-    it('keeps a remedy that only offers a recompile as its second branch, whose first branch drift does not block', () => {
+    it('keeps a remedy that only offers a recompile as its second branch, whose first branch is not blocked by drift', () => {
       const verdicts = buildVerdicts({
         drift: buildDrift(),
         inputs: buildStaleInputs([{ kind: 'module', path: 'checks/shared.ts', reason: 'missing' }]),

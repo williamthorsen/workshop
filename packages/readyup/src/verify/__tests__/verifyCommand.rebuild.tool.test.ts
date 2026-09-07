@@ -34,8 +34,8 @@ export default { checklists: [] };
 const PRIOR_VERSION = '0.19.2';
 
 /**
- * Exercises `--rebuild` against real esbuild, which is what the check is for: the inputs it catches
- * and the recorded hashes miss are the ones a mocked bundler stands in for.
+ * Exercises `--rebuild` against real esbuild, which is what the check is for: The inputs that it
+ * catches and the recorded hashes miss are the ones that a mocked bundler stands in for.
  */
 describe('verifyCommand --rebuild', () => {
   let tempDir: string;
@@ -54,7 +54,7 @@ describe('verifyCommand --rebuild', () => {
     // `runVerify` names the manifest by a relative path, as a real project's invocation does.
     process.chdir(tempDir);
 
-    // Record the manifest from a real compile, so its hashes are the ones the pipeline produces.
+    // Record the manifest from a real compile, so its hashes are the ones produced by the pipeline.
     compiled = await compileConfig(path.join(tempDir, 'kit.ts'), path.join(tempDir, 'kit.js'));
     writeFileSync(
       path.join(tempDir, 'manifest.json'),
@@ -94,7 +94,7 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('passes an untouched tree from a directory other than the one the kit was compiled in', async () => {
+  it('passes an untouched tree from a directory other than the one in which the kit was compiled', async () => {
     process.chdir(originalCwd);
 
     const { exitCode, stdout } = await runVerify({ manifestPath: path.join(tempDir, 'manifest.json') });
@@ -114,8 +114,8 @@ describe('verifyCommand --rebuild', () => {
     expect(exitCode).toBe(1);
     expect(readPayload(stdout)).toMatchObject({
       passed: false,
-      // The `.ts` and the `.js` are both untouched, so the hash verdicts see nothing wrong. Only the
-      // rebuild reads the JSON the bundle inlined, which is the gap the flag exists to close.
+      // The `.ts` and the `.js` are both untouched, so both hash verdicts pass. Only the rebuild
+      // reads the JSON inlined by the bundle, which is the gap that the flag exists to close.
       kits: [{ status: 'ok', sourceStatus: 'ok', rebuildStatus: 'mismatch' }],
     });
   });
@@ -142,7 +142,7 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('reports matching recorded versions on a mismatch the record cannot explain', async () => {
+  it('reports matching recorded versions on a mismatch that the record cannot explain', async () => {
     writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { stdout } = await runVerify();
@@ -231,7 +231,7 @@ describe('verifyCommand --rebuild', () => {
 
 // region | Helpers
 
-/** Applies a patch to every kit the manifest records. */
+/** Applies a patch to every kit recorded in the manifest. */
 function patchKits(manifestPath: string, patch: Partial<RdyManifestKit>): void {
   const stored: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
   const manifest = ManifestSchema.parse(stored);
@@ -240,7 +240,7 @@ function patchKits(manifestPath: string, patch: Partial<RdyManifestKit>): void {
 }
 
 /**
- * Reads the single JSON document the run wrote to stdout.
+ * Reads the single JSON document that the run wrote to stdout.
  *
  * Parsed through the published schema rather than cast, so a payload that does not satisfy the
  * contract fails here rather than reaching an assertion that happens not to look at the bad field.
@@ -254,7 +254,7 @@ function readPayload(stdout: string): JsonVerifyOutput {
  * Rewrites the bundle's version stamp and re-records the manifest against the restamped bundle.
  *
  * The stamp, the recorded `targetHash`, and the recorded `readyupVersion` all name the earlier
- * readyup, which is the state a version bump leaves behind.
+ * readyup, which is the state left behind by a version bump.
  */
 function restampBundle(tempDir: string, version: string): void {
   const bundlePath = path.join(tempDir, 'kit.js');

@@ -19,7 +19,7 @@ const RECORDED_MODULE: RdyManifestInput = {
   path: 'kits/shared.ts',
 };
 
-/** The package fixture as the compile recorded it, projected onto the one field a kit picked. */
+/** The package fixture as the compile recorded it, projected onto the one field that a kit picked. */
 const RECORDED_PICK: RdyManifestInput = {
   hash: hashProjection(JSON.stringify({ version: PACKAGE_JSON.version })),
   kind: 'inline',
@@ -92,7 +92,7 @@ describe(checkInputDrift, () => {
       });
     });
 
-    it('reports a module the compile read that is no longer on disk', () => {
+    it('reports a module read by the compile that is no longer on disk', () => {
       expect(checkInputDrift(kitWith([RECORDED_MODULE]), tempDir)).toStrictEqual({
         kind: 'stale',
         failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
@@ -126,7 +126,7 @@ describe(checkInputDrift, () => {
       expect(checkInputDrift(kitWith([recorded]), tempDir)).toStrictEqual({ kind: 'ok' });
     });
 
-    it('leaves an edit to a field the kit did not pick as ok', () => {
+    it('leaves an edit to a field that the kit did not pick as ok', () => {
       writeInput('package.json', JSON.stringify({ ...PACKAGE_JSON, name: 'renamed' }));
 
       expect(checkInputDrift(kitWith([RECORDED_PICK]), tempDir)).toStrictEqual({ kind: 'ok' });
