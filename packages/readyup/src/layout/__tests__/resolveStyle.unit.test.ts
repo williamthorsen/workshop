@@ -107,7 +107,7 @@ describe('a value naming no style', () => {
     expect(resolution.invalid).toStrictEqual({ source: STYLE_FLAG, value: 'a' });
   });
 
-  it('is absent from a resolution nothing is wrong with', () => {
+  it('is absent from a resolution that nothing is wrong with', () => {
     expect(resolveStyle([STYLE_FLAG, 'plain'], BARE_ENV, TTY).invalid).toBeUndefined();
   });
 

@@ -10,11 +10,11 @@ const engines: Record<Style, LayoutEngine> = {
 };
 
 /**
- * The engine every command renders through, rich until an invocation selects otherwise.
+ * The engine through which every command renders, rich until an invocation selects otherwise.
  *
  * The default is a fixed style rather than a detected one. Detection belongs to the invocation, so
  * anything rendering without one -- a test formatting a report directly, say -- gets one style rather
- * than one that changes with the terminal it happens to run under.
+ * than one that changes with the terminal under which it happens to run.
  */
 let active: LayoutEngine = engines.rich;
 

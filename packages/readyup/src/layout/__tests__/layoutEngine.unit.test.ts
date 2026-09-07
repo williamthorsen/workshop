@@ -56,7 +56,7 @@ describe('formatCheckLine', () => {
     expect(line.match(/\u{00B7}/gu)).toHaveLength(1);
   });
 
-  it('omits the em dash the middle dot replaced', () => {
+  it('omits the em dash replaced by the middle dot', () => {
     const line = engine.formatCheckLine({ token: 'passed', name: 'lockfile', detail: 'up to date' });
 
     expect(line).not.toContain('\u{2014}');
@@ -173,7 +173,7 @@ describe('formatHeading', () => {
     expect(engine.formatHeading('deploy', 'kit')).not.toContain('\n');
   });
 
-  it('retires the heading grammars it replaced', () => {
+  it('retires the heading grammars that it replaced', () => {
     const rendered = [engine.formatHeading('deploy', 'kit'), engine.formatHeading('build', 'section')].join('\n');
 
     expect(rendered).not.toContain('===');
@@ -216,7 +216,7 @@ describe('formatBreadcrumb', () => {
     expect(engine.formatBreadcrumb([{ role: 'checklist', text: 'repo' }], 'kit')).toBe('\u{2501}\u{2501} 📋 repo');
   });
 
-  // The spacing is the only segment boundary a glyphless style offers, and segment texts contain slashes
+  // The spacing is the only segment boundary offered by a glyphless style, and segment texts contain slashes
   // of their own, so a bare separator would leave nothing to read the breadcrumb by.
   it('keeps the separator spaced where a role has no glyph', () => {
     const plain = createLayoutEngine(plainFormatter);
@@ -231,7 +231,7 @@ describe('formatBreadcrumb', () => {
     expect(rendered).toBe('== @acme/release-kit@2.1.0 / npm-auto-publish');
   });
 
-  it('passes detail through to the heading it builds', () => {
+  it('passes detail through to the heading that it builds', () => {
     const rendered = engine.formatBreadcrumb(
       [{ role: 'sourcePackage', text: '@acme/kits@3.1.0' }],
       'kit',
@@ -376,7 +376,7 @@ describe('formatSummaryTable', () => {
     expect(lines[1]).toMatch(/^\u{2500}+$/u);
   });
 
-  it('sizes the rules to the widest line they enclose', () => {
+  it('sizes the rules to the widest line that they enclose', () => {
     const lines = engine.formatSummaryTable(input);
     const widest = Math.max(...[lines[2], lines[3], lines[5]].map((line) => measureWidth(line ?? '')));
 
@@ -515,7 +515,7 @@ describe('token and glyph', () => {
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
   });
 
-  it('returns an empty string for a token the formatter gives no glyph, so no orphan space is left behind', () => {
+  it('returns an empty string for a token given no glyph by the formatter, so no orphan space is left behind', () => {
     const glyphless = createLayoutEngine({
       ...richFormatter,
       tokens: { ...richFormatter.tokens, kit: { glyph: '', width: 0 } },

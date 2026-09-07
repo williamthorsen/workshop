@@ -1,4 +1,4 @@
-/** Styles output can actually be rendered in. */
+/** Styles in which output can actually be rendered. */
 export const STYLES = ['plain', 'rich'] as const;
 
 export type Style = (typeof STYLES)[number];
@@ -17,13 +17,13 @@ export const STYLE_ENV_VAR = 'RDY_STYLE';
 /** The accepted settings widened to strings, so an arbitrary input can be tested for membership. */
 const ACCEPTED_SETTINGS: ReadonlySet<string> = new Set<string>(STYLE_SETTINGS);
 
-/** The source that named a style, and the value it named. */
+/** The source that named a style, and the value that it named. */
 export interface InvalidStyle {
   source: string;
   value: string;
 }
 
-/** A style to render with, alongside any complaint the inputs provoked. */
+/** A style to render with, alongside any complaint provoked by the inputs. */
 export interface StyleResolution {
   style: Style;
   invalid?: InvalidStyle;
@@ -75,9 +75,9 @@ export function describeInvalidStyle({ source, value }: InvalidStyle): string {
 // -- Helpers --
 
 /**
- * Reads the style an invocation asks for by scanning raw argv, before any flag parsing happens.
+ * Reads the style that an invocation asks for by scanning raw argv, before any flag parsing happens.
  *
- * Reading it without `parseArgs` is what lets a flag-parse failure be rendered in the style the caller
+ * Reading it without `parseArgs` lets a flag-parse failure be rendered in the style that the caller
  * asked for. The scan accepts both `--style plain` and `--style=plain`, stops at the `--` terminator after
  * which arguments are positional, and keeps the last occurrence, matching what `parseArgs` would resolve.
  */
@@ -95,10 +95,10 @@ function readStyleFlag(argv: string[]): string | undefined {
 }
 
 /**
- * Returns the style the environment implies: plain wherever the output is not a person's terminal.
+ * Returns the style implied by the environment: plain wherever the output is not a person's terminal.
  *
  * Both signals matter on their own. `CI` catches a runner that allocates a pseudo-terminal, where the
- * terminal check alone would emit emoji into a log nobody can grep; the terminal check catches an
+ * terminal check alone would emit emoji into a log that nobody can grep; the terminal check catches an
  * interactive pipe into `grep`, where `CI` is unset. `CI` is also not universal -- Jenkins does not set
  * it. An explicit `CI=false` is honored as a denial, which is how the wider ecosystem reads it.
  */
@@ -108,7 +108,7 @@ function detectStyle(env: Environment, isTty: boolean): Style {
   return isTty ? 'rich' : 'plain';
 }
 
-/** Reports whether a string names a style the flag accepts. */
+/** Reports whether a string names a style accepted by the flag. */
 function isStyleSetting(value: string): value is StyleSetting {
   return ACCEPTED_SETTINGS.has(value);
 }
