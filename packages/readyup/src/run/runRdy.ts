@@ -92,7 +92,7 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
  * Resolves a check's remediation message, absorbing an accessor that fails to produce one.
  *
  * `fix` may be an accessor, so it is read here and nowhere else: only a failure renders one, and a
- * check that passes, skips, or is blocked must not run work it discards. An accessor that throws
+ * check that passes, skips, or is blocked must not do work it discards. An accessor that throws
  * or yields a non-string is a defect in the kit rather than in the check's subject, so it is reported
  * in the slot the remediation would occupy and leaves the verdict and its severity alone.
  */
