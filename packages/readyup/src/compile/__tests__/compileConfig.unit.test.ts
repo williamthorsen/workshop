@@ -63,8 +63,10 @@ describe(compileConfig, () => {
       platform: 'node',
       target: KIT_COMPILE_TARGET,
       tsconfigRaw: KIT_TSCONFIG,
-      external: ['node:*', 'readyup', 'readyup/*'],
-      plugins: [expect.objectContaining({ name: 'pick-json' })],
+      plugins: [
+        expect.objectContaining({ name: 'pick-json' }),
+        expect.objectContaining({ name: 'externalize-readyup' }),
+      ],
       banner: { js: expect.stringContaining('@generated') },
       metafile: true,
       write: false,

@@ -8,6 +8,7 @@ import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
 import { type CompiledInput, identifyInput } from './CompiledInput.ts';
 import { createCompileRecorder } from './createCompileRecorder.ts';
+import { externalizeReadyupPlugin } from './externalizeReadyupPlugin.ts';
 import { loadEsbuild } from './loadEsbuild.ts';
 import { pickJsonPlugin } from './pickJsonPlugin.ts';
 import { resolveCompileRoot } from './resolveCompileRoot.ts';
@@ -86,9 +87,11 @@ export interface BundleResult {
  * Bundles a TypeScript checklist file into a self-contained ESM bundle and returns it.
  *
  * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are kept
- * external; all other imports are inlined. The externalized `readyup` specifiers are resolved at
- * runtime by the `rdy` runner's module-resolution hook (`readyupResolverHook.ts`), which routes
- * them to the runner's own readyup installation.
+ * external; all other imports are inlined. `platform: 'node'` externalizes the builtins and
+ * `externalizeReadyupPlugin` the rest, both in a form that leaves them side-effect free, so an import
+ * whose only consumer is tree-shaken away is dropped rather than left orphaned in the output. The
+ * externalized `readyup` specifiers are resolved at runtime by the `rdy` runner's module-resolution
+ * hook (`readyupResolverHook.ts`), which routes them to the runner's own readyup installation.
  *
  * The single place the bundler is configured. `compileConfig` writes what this returns and
  * `checkRebuild` compares against it, so the bundle recompiled by a verification is the bundle that a
@@ -128,8 +131,12 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
       platform: 'node',
       target: KIT_COMPILE_TARGET,
       tsconfigRaw: KIT_TSCONFIG,
-      external: ['node:*', 'readyup', 'readyup/*'],
-      plugins: [pickJsonPlugin(recorder)],
+      // No `external` option. `platform: 'node'` already externalizes every `node:`-prefixed specifier,
+      // including ones esbuild does not recognize, and does so knowing builtins are side-effect free.
+      // Naming `node:*` in `external` is what marks builtins side-effectful, which retains their imports
+      // after tree-shaking removes the only consumer. `readyup` is externalized by its plugin for the
+      // same reason.
+      plugins: [pickJsonPlugin(recorder), externalizeReadyupPlugin()],
       banner: { js: GENERATED_HEADER },
       metafile: true,
       write: false,
