@@ -29,7 +29,7 @@ function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
   };
 }
 
-/** Returns the onLoad callback the plugin registered, read back through a real recorder. */
+/** Returns the onLoad callback that the plugin registered, read back through a real recorder. */
 function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnLoadCallback {
   let captured: OnLoadCallback | undefined;
   const plugin = pickJsonPlugin(recorder);
@@ -213,7 +213,7 @@ describe(pickJsonPlugin, () => {
     expect(result?.contents).toContain('"name":"my-pkg"');
   });
 
-  it('records the module it loaded and the JSON file it projected', () => {
+  it('records the module that it loaded and the JSON file that it projected', () => {
     const recorder = createCompileRecorder();
     const onLoad = captureOnLoad(recorder);
     const sourceCode = `const meta = pickJson('./package.json', ['name']);`;

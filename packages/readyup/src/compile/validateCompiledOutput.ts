@@ -17,7 +17,7 @@ export interface KitMetadata {
 }
 
 /**
- * Imports a compiled kit bundle, validates it semantically, and returns the metadata it yields.
+ * Imports a compiled kit bundle, validates it semantically, and returns the metadata that it yields.
  *
  * A validation failure deletes the output file, so no invalid bundle is left on disk.
  */

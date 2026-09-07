@@ -10,15 +10,15 @@ import { JsonProjectionError } from './JsonProjectionError.ts';
 /**
  * Reads a JSON file, projects `paths` out of it, and returns that projection serialized.
  *
- * The one implementation of the projection every reader of a recorded input decides by. Once a
+ * The one implementation of the projection that every reader of a recorded input decides by. Once a
  * projection's serialization is hashed it is a format, so a second implementation of it would drift and
- * the two would disagree about a file neither had changed.
+ * the two would disagree about a file that neither had changed.
  *
  * Returns the serialized form rather than the projected object, so a compile hashes exactly what it
  * substitutes.
  *
  * Throws where the file is unreadable, holds invalid JSON, holds something other than an object, or no longer
- * holds a path the specifier names. `describeJsonProjectionFailure` words any of those four for a report.
+ * holds a path named by the specifier. `describeJsonProjectionFailure` words any of those four for a report.
  */
 export function projectJsonFile(filePath: string, paths: JsonPathSpec): string {
   let contents: string;

@@ -9,7 +9,7 @@ const FILESYSTEM_SPECIFIERS = new Set(['fs', 'fs/promises', 'node:fs', 'node:fs/
 
 const COMPILE_DIR = path.join(import.meta.dirname, '..');
 
-/** A filesystem import found in a module a plugin reaches at run time. */
+/** A filesystem import found in a module that a plugin reaches at run time. */
 interface Offender {
   module: string;
   specifier: string;
@@ -19,7 +19,7 @@ const PLUGIN_MODULES = findPluginModules();
 
 describe('esbuild plugins are isolated from the filesystem', () => {
   // Derived rather than listed, so a plugin added to the build is covered without anyone extending a set here.
-  it('reads every plugin the build registers', () => {
+  it('reads every plugin registered by the build', () => {
     expect(PLUGIN_MODULES).not.toStrictEqual([]);
   });
 
@@ -86,7 +86,7 @@ function findFilesystemImports(entryPath: string): Offender[] {
   return offenders.toSorted((a, b) => a.module.localeCompare(b.module) || a.specifier.localeCompare(b.specifier));
 }
 
-/** Returns the modules `buildBundle` registers as esbuild plugins, named by their file. */
+/** Returns the modules that `buildBundle` registers as esbuild plugins, named by their file. */
 function findPluginModules(): string[] {
   const source = parseModule(path.join(COMPILE_DIR, 'buildBundle.ts'));
   const factoryNames = collectPluginFactoryNames(source);
@@ -124,9 +124,9 @@ function parseModule(modulePath: string): ts.SourceFile {
 }
 
 /**
- * Returns the specifiers a module imports for their values, in source order.
+ * Returns the specifiers that a module imports for their values, in source order.
  *
- * Type-only imports are left out because they are erased: a type reaching a module that reads files says
+ * Type-only imports are left out because they are erased: A type reaching a module that reads files says
  * nothing about what the importer can do at run time.
  */
 function readValueImports(modulePath: string): string[] {

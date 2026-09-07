@@ -6,7 +6,7 @@ import { extractHint } from '../error-handling.ts';
 import { configError } from '../RdyError.ts';
 
 describe(extractHint, () => {
-  it('returns the hint an RdyError has', () => {
+  it('returns the hint that an RdyError has', () => {
     expect(extractHint(configError('boom', { hint: 'Set GITHUB_TOKEN.' }))).toBe('Set GITHUB_TOKEN.');
   });
 

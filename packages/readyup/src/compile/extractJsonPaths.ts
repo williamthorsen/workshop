@@ -5,12 +5,12 @@ import { isRecord } from '../portable/isRecord.ts';
 /**
  * A `pickJson` path specifier list: a top-level key as a string, a nested one as an array of keys.
  *
- * Mirrors `pickJson`'s second argument, and is the form a recorded inline input takes so a later reader
- * can reproduce the projection the compile inlined.
+ * Mirrors `pickJson`'s second argument, and is the form that a recorded inline input takes so a later
+ * reader can reproduce the projection inlined by the compile.
  */
 export type JsonPathSpec = Array<string | Array<string>>;
 
-/** A key path a `pickJson` specifier named that the JSON object does not hold. */
+/** A key path that a `pickJson` specifier named and that the JSON object does not hold. */
 export class JsonPathNotFoundError extends Error {
   /** The key path, dot-joined as `extractJsonPaths` walked it. */
   readonly keyPath: string;

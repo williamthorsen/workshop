@@ -17,7 +17,7 @@ describe(translateParseArgsError, () => {
     expect(message).toBe("Unknown option '--nope'. Run 'rdy list --help' to see available options.");
   });
 
-  it('names the command it was given', async () => {
+  it('names the command that it was given', async () => {
     const message = translateParseArgsError(await parseArgsError(['--nope']), 'run');
 
     expect(message).toBe("Unknown option '--nope'. Run 'rdy run --help' to see available options.");
@@ -29,7 +29,7 @@ describe(translateParseArgsError, () => {
     expect(message).toBe("Unknown option '-z'. Run 'rdy compile --help' to see available options.");
   });
 
-  it('leaves out the positional-escape advice Node offers', async () => {
+  it('leaves out the positional-escape advice that Node offers', async () => {
     const message = translateParseArgsError(await parseArgsError(['--nope']), 'run');
 
     expect(message).not.toContain('positional');
@@ -71,7 +71,7 @@ describe(translateParseArgsError, () => {
   });
 });
 
-/** Returns the error `node:util.parseArgs` raises for `args`, failing the test when it parses them. */
+/** Returns the error that `node:util.parseArgs` raises for `args`, failing the test when it parses them. */
 async function parseArgsError(args: string[]): Promise<Error> {
   return captureError(() => parseArgs({ args, options, strict: true, allowPositionals: true }));
 }

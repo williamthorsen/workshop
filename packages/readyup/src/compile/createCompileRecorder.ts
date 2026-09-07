@@ -7,10 +7,10 @@ import type { JsonPathSpec } from './extractJsonPaths.ts';
 import { projectJsonFile } from './projectJsonFile.ts';
 
 /**
- * The two doors a compile plugin reads files through.
+ * The two doors through which a compile plugin reads files.
  *
- * Both record, so a file a plugin reads out of band cannot escape the compile's input closure. A plugin
- * holds a recorder rather than importing `node:fs`, which is what keeps that property true of the next
+ * Both record, so a file that a plugin reads out of band cannot escape the compile's input closure. A
+ * plugin holds a recorder rather than importing `node:fs`, which keeps that property true of the next
  * plugin as well as this one.
  */
 export interface CompileRecorder {
@@ -23,7 +23,7 @@ export interface CompileRecorder {
   /**
    * Reads a JSON file and records the projection of `paths` over it, returning that projection serialized.
    *
-   * Recording the projection rather than the file is what keeps an edit to a field the kit did not pick
+   * Recording the projection rather than the file keeps an edit to a field that the kit did not pick
    * from reading as staleness.
    */
   readProjection(filePath: string, paths: JsonPathSpec): string;
@@ -56,7 +56,7 @@ export function createCompileRecorder(): CompileRecorder {
 
 // region | Helpers
 
-/** Records an input, leaving a repeat read of the same path and kind with the record it already has. */
+/** Records an input, leaving a repeat read of the same path and kind with the record that it already has. */
 function record(recorded: Map<string, CompiledInput>, input: CompiledInput): void {
   const key = identifyInput(input.kind, input.path);
   if (!recorded.has(key)) recorded.set(key, input);

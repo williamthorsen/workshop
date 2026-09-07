@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';
 
-// A decorator and a class field, so the fixture exercises both settings the kit tsconfig declares.
+// A decorator and a class field, so the fixture exercises both settings declared by the kit tsconfig.
 const KIT_SOURCE = [
   'declare const decorate: (...args: never[]) => void;',
   'export class Kit {',
@@ -22,7 +22,7 @@ const KIT_SOURCE = [
 const FIELD_SOURCE = ['export class Kit {', '  field = 1;', '}', ''].join('\n');
 
 // Declares the opposite of both kit settings -- `experimentalDecorators` directly, and
-// `useDefineForClassFields` through the `target` esbuild derives it from -- plus an alias that
+// `useDefineForClassFields` through the `target` from which esbuild derives it -- plus an alias that
 // resolves, so every assertion below fails if a kit ever reads a host config again.
 const HOST_TSCONFIG = JSON.stringify({
   compilerOptions: { experimentalDecorators: true, paths: { '~/*': ['./src/*'] }, target: 'ES2020' },
@@ -52,7 +52,7 @@ describe(buildBundle, () => {
     const decoratorBundle = (await buildBundle(writeKitTree(KIT_SOURCE))).bytes.toString('utf8');
 
     // esbuild names no setting in its output, so the declared values are read back from the lowering
-    // they produce: a defined field stays in the class body where an assigned one moves into the
+    // that they produce: a defined field stays in the class body where an assigned one moves into the
     // constructor, and a proposal-style decorator reaches for `__decorateElement` where the legacy one
     // reaches for `__decorateClass`.
     expect(fieldBundle).toContain('field = 1');
@@ -90,7 +90,7 @@ function writeKitTree(source: string): string {
 /**
  * Writes the host config into the directory above a kit, where esbuild's search would reach it.
  *
- * The module the config's `paths` entry maps to is written alongside it, so the alias would resolve
+ * The module to which the config's `paths` entry maps is written alongside it, so the alias would resolve
  * and a kit reading the config would compile rather than fail.
  */
 function writeHostTsconfig(entryPath: string): void {

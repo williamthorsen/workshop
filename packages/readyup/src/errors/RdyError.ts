@@ -17,7 +17,7 @@ export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 export interface RdyErrorOptions {
   cause?: unknown;
 
-  /** One action the reader can take to clear the failure, where a diagnosis alone would not suggest it. */
+  /** One action that the reader can take to clear the failure, where a diagnosis alone would not suggest it. */
   hint?: string | undefined;
 }
 
@@ -27,8 +27,8 @@ export interface RdyErrorOptions {
  * Every code maps to the same exit status, because the exit code answers "can I retry this
  * invocation?" while `code` holds the diagnosis.
  *
- * `hint` stays out of `message` so the two travel separately: human output renders the hint on its
- * own line through the selected style, and `--json` reports it as its own envelope field.
+ * `hint` stays out of `message` so the two are reported separately: human output renders the hint on
+ * its own line through the selected style, and `--json` reports it as its own envelope field.
  */
 export class RdyError extends Error {
   readonly code: RdyErrorCode;
@@ -66,7 +66,7 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  * Coerces an unknown thrown value into an `RdyError`.
  *
  * Anything not already classified is `internal`: escaping the command boundary undiagnosed
- * is itself the definition of a defect rather than a known failure mode. A hint the value holds
+ * is itself the definition of a defect rather than a known failure mode. A hint held by the value
  * survives the coercion, so a throw site can attach one without every boundary between it and the
  * output having to forward it.
  */
