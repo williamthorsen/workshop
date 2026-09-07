@@ -15,7 +15,7 @@ const SEVERITY_RANK: Record<Severity, number> = {
  * Reports whether `severity` is as severe as `threshold` or more so.
  *
  * Throws on a value outside the severity enum. Supplying a validated severity is the caller's
- * responsibility, and the throw is what makes that a contract rather than an assumption: an unranked
+ * responsibility, and the throw is what makes that a contract rather than an assumption: An unranked
  * value compares as `undefined <= n`, which is `false`, so it would silently exclude the check from
  * both the failure and the reporting thresholds instead of failing loudly.
  */
@@ -27,7 +27,7 @@ export function meetsThreshold(severity: Severity, threshold: Severity): boolean
 
 // region | Helpers
 
-/** Throws where a severity has no rank, naming the role it was supplied in. */
+/** Throws where a severity has no rank, naming the role in which it was supplied. */
 function assertRankedSeverity(severity: Severity, role: string): void {
   if (!Object.hasOwn(SEVERITY_RANK, severity)) {
     throw new Error(`Unknown ${role} "${severity}". Expected one of: error, warn, recommend.`);

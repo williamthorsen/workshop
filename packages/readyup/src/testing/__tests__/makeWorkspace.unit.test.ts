@@ -53,7 +53,7 @@ describe(makeWorkspace, () => {
     expect(() => Object.assign(workspace.packageJson, { name: 'elsewhere' })).toThrow(TypeError);
   });
 
-  it('copies the manifest it is given, leaving the object the caller passed writable', () => {
+  it('copies the manifest given to it, leaving the object that the caller passed writable', () => {
     const shared: Record<string, unknown> = { name: 'alpha' };
 
     makeWorkspace({ packageJson: shared });
@@ -69,8 +69,8 @@ describe('fidelity to discovery', () => {
     await runTest();
   });
 
-  // Every assertion above reads only the fields it names, so a builder drifting from the producer would still satisfy
-  // them. This one compares the whole value.
+  // Every assertion above reads only the fields that it names, so a builder drifting from the producer would still
+  // satisfy them. This one compares the whole value.
   it('reports what discovery reports for the same directory and manifest', ({ temp }) => {
     writeRootPackageJson(temp, { name: 'root', private: true });
     writePnpmWorkspaceYaml(temp, 'packages:\n  - packages/*\n');

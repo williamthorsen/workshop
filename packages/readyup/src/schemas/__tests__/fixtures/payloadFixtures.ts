@@ -2,15 +2,15 @@
  * Representative payloads for each published JSON contract.
  *
  * Shared by the zod-schema suite and the generated-JSON-Schema suite so both judge the same
- * documents: a payload the zod schema accepts but the published schema rejects is exactly the
- * divergence the generation step could introduce.
+ * documents: A payload accepted by the zod schema but rejected by the published schema is exactly
+ * the divergence that the generation step could introduce.
  */
 
 /**
  * A report exercising every optional field, three levels of nesting, and both kit-entry shapes.
  *
- * The kit's effective `failOn` differs from the requested one, which is the case the split exists
- * for: a kit declaring its own threshold cannot be described by the run-level value.
+ * The kit's effective `failOn` differs from the requested one, which is the case for which the
+ * split exists: A kit declaring its own threshold cannot be described by the run-level value.
  */
 export const reportPayload = {
   schemaVersion: 1,
@@ -72,7 +72,7 @@ export const reportPayload = {
 };
 
 /**
- * The smallest report the schema accepts: every optional field absent.
+ * The smallest report accepted by the schema: every optional field absent.
  *
  * The thresholds are among them, since a bare invocation requests neither.
  */
@@ -87,9 +87,9 @@ export const minimalReportPayload = {
 };
 
 /**
- * A report with an advisory this readyup does not know about.
+ * A report with an advisory that this readyup does not know about.
  *
- * Stands in for a payload from a later version: the open warning-code set is what keeps a consumer
+ * Stands in for a payload from a later version: The open warning-code set is what keeps a consumer
  * pinned to `report.v1.json` validating it rather than rejecting it.
  */
 export const unknownWarningReportPayload = {

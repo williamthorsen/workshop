@@ -30,7 +30,7 @@ export const ProgressSchema = z
 /**
  * One check result in a checklist's detail tree.
  *
- * `ok` is three-valued rather than optional: `null` is the verdict a skipped check has, not a
+ * `ok` is three-valued rather than optional: `null` is the verdict that a skipped check has, not a
  * missing field. Every other optional field is omitted when it holds nothing, so a passed check
  * with no detail serializes to five keys. Nesting is recursive -- `checks` holds the results of
  * checks that ran only because this one passed.
@@ -67,9 +67,9 @@ export const ChecklistEntrySchema = z
   .meta({ id: 'ChecklistEntry' });
 
 /**
- * The installed package a kit was resolved from.
+ * The installed package from which a kit was resolved.
  *
- * Present only for a kit reached through a package source: two packages may each publish a kit of the
+ * Present only for a kit reached through a package source: Two packages may each publish a kit of the
  * same name, so `name` alone does not identify what ran. `version` is what the project has installed,
  * and is omitted when the package declares none readably.
  */
@@ -85,11 +85,11 @@ export const KitOriginSchema = z
  *
  * `failOn` and `reportOn` are the thresholds that actually governed this kit, resolved as
  * `CLI flag > kit field > default`. Both are emitted unconditionally rather than only when they
- * differ from the run level: `passed` is meaningless without the threshold it was decided against,
- * and an absent-means-inherit rule would send a consumer elsewhere in the document to read a
- * six-byte enum.
+ * differ from the run level: `passed` is meaningless without the threshold against which it was
+ * decided, and an absent-means-inherit rule would send a consumer elsewhere in the document to read
+ * a six-byte enum.
  *
- * `compiledWith` is the readyup that built this kit's bundle, read from the stamp the bundle
+ * `compiledWith` is the readyup that built this kit's bundle, read from the stamp that the bundle
  * exports. It is present whenever that stamp is, including when it equals the report's own
  * `readyupVersion`, so its absence means the kit has no stamp: a bundle compiled before the
  * stamp existed, or a `--jit` run that loaded TypeScript source. `rdy verify` reports the same
@@ -114,7 +114,7 @@ export const KitResultEntrySchema = z
 /**
  * A kit that produced no results, with the same error body as the envelope.
  *
- * Deliberately counts-free and verdict-free: a kit that never ran has no `errors: 0` to report and
+ * Deliberately counts-free and verdict-free: A kit that never ran has no `errors: 0` to report and
  * no verdict to give, and emitting either would misstate the run.
  */
 export const KitErrorEntrySchema = z
@@ -134,7 +134,7 @@ export const KitEntrySchema = z.union([KitErrorEntrySchema, KitResultEntrySchema
  * `passed` is the run verdict: `true` when every requested kit produced results and every kit passed
  * under its own effective `failOn`, which makes it agree with exit code 0 in every case. A report is
  * only ever emitted once the run reaches its kits, so `passed: false` means "ran, but incompletely
- * or with failures" and never "could not start": that failure produces the error envelope instead.
+ * or with failures" and never "could not start": That failure produces the error envelope instead.
  *
  * `failOn` and `reportOn` here are what the invocation requested, so each is present only when its
  * flag was given and absence means "not requested" rather than "defaulted". The thresholds that

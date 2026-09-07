@@ -37,7 +37,7 @@ describe('generated JSON Schemas', () => {
     }
   });
 
-  it('declares the draft each document is written against', () => {
+  it('declares the draft against which each document is written', () => {
     for (const document of documents.values()) {
       expect(document).toMatchObject({ $schema: 'https://json-schema.org/draft/2020-12/schema' });
     }
@@ -46,7 +46,7 @@ describe('generated JSON Schemas', () => {
   describe('report document', () => {
     const report = documentFor('report.v1.json');
 
-    it('requires exactly the fields every report has', () => {
+    it('requires exactly the fields that every report has', () => {
       expect(valueAt(report, '$defs', 'Report', 'required')).toStrictEqual([
         'schemaVersion',
         'readyupVersion',
@@ -149,7 +149,7 @@ describe('generated JSON Schemas', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, warnings: 2 })).toBe(false);
     });
 
-    it('accepts a report with a field it has never heard of', () => {
+    it('accepts a report with a field that it has never heard of', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, addedLater: 'ok' })).toBe(true);
     });
   });
