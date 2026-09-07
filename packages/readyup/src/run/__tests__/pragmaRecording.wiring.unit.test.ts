@@ -9,7 +9,7 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-// `execFileAsync` answers the promisified form used by the listing; the stub answers the callback form called by
+// `execFileAsync` provides the promisified form used by the listing; the stub provides the callback form called by
 // the sweep's attribute lookup, declaring nothing so that every tracked path stays in the sweep.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../test-utils/createExecFileStub.ts');

@@ -13,7 +13,7 @@ const runWithInput = vi.hoisted(() =>
   vi.fn<(input: string, args: readonly string[]) => { error?: Error; stdout?: string }>(),
 );
 
-// `execFileAsync` answers the promisified form used by `runGit` and `runGitRaw`; the stub answers the callback
+// `execFileAsync` provides the promisified form used by `runGit` and `runGitRaw`; the stub provides the callback
 // form that `runGitWithInput` calls, which is the only one that returns a child to write stdin to.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');

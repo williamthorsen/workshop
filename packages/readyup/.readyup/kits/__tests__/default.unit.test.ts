@@ -347,7 +347,7 @@ describe('default kit', () => {
     });
   });
 
-  // The kit is meant to be safe to run at any moment, including mid-edit, so nothing it finds blocks.
+  // The kit is meant to be safe to run at any moment, including mid-edit, so nothing it finds has blocking severity.
   it('raises nothing above advisory severity', async () => {
     writeKit(projectRoot, 'default');
     writeKitManifest(projectRoot, [{ name: 'default' }]);

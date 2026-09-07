@@ -10,7 +10,7 @@ const runCheckAttr = vi.hoisted(() =>
   vi.fn<(input: string, args: readonly string[]) => { error?: Error; stdout?: string }>(),
 );
 
-// `execFileAsync` answers the promisified form that `listTrackedFiles` uses; the stub answers the callback form
+// `execFileAsync` provides the promisified form that `listTrackedFiles` uses; the stub provides the callback form
 // that `runGitWithInput` calls. `runCheckAttr` stands in for git, and is what this suite counts invocations against.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
