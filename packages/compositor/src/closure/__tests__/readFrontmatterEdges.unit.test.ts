@@ -43,7 +43,7 @@ describe(readFrontmatterEdges, () => {
     ]);
   });
 
-  it('expands nothing when no wildcard is written, so a rule admitting one does nothing unused', () => {
+  it('expands nothing when no wildcard is written, so a rule admitting one does nothing until an artifact writes it', () => {
     expect(edgesOf(block(['dependencies:', '  skills:', '    - lint']))).toStrictEqual([
       { to: 'skill:lint', via: 'declared' },
     ]);
