@@ -57,7 +57,7 @@ describe(fileMatchesHash, () => {
 });
 
 describe(hashToRecordedLength, () => {
-  it('returns the digest truncated to the length the record uses', () => {
+  it('returns the digest truncated to the length used by the record', () => {
     const digest = createHash('sha256').update('bundle').digest('hex');
 
     expect(hashToRecordedLength('bundle', 'a'.repeat(12))).toBe(digest.slice(0, 12));
@@ -69,13 +69,13 @@ describe(hashToRecordedLength, () => {
     expect(hashToRecordedLength('bundle', digest)).toBe(digest);
   });
 
-  it('returns the eight characters the compile records when the recorded value is that long', () => {
+  it('returns the eight characters that the compile records when the recorded value is that long', () => {
     const digest = createHash('sha256').update('bundle').digest('hex');
 
     expect(hashToRecordedLength('bundle', digest.slice(0, 8))).toBe(digest.slice(0, 8));
   });
 
-  it('hashes bytes and the string they encode to the same value', () => {
+  it('hashes bytes and the string that they encode to the same value', () => {
     const recorded = 'a'.repeat(12);
 
     expect(hashToRecordedLength(Buffer.from('bundle', 'utf8'), recorded)).toBe(

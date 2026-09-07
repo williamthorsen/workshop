@@ -377,7 +377,7 @@ describe(discoverWorkspaces, () => {
 });
 
 describe(discoverWorkspacesAt, () => {
-  it('reads the repo at the directory it is handed rather than the ambient cwd', ({ temp }) => {
+  it('reads the repo at the directory that it is handed rather than the ambient cwd', ({ temp }) => {
     writeWorkspacePackage(temp, 'nested', { name: 'nested-root', private: true, workspaces: ['packages/*'] });
     writeWorkspacePackage(temp, 'nested/packages/alpha', { name: 'alpha' });
 

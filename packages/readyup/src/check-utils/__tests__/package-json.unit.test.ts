@@ -140,7 +140,7 @@ describe(hasMinDevDependencyVersion, () => {
     expect(hasMinDevDependencyVersion('vitest', '3.0.0')).toBe(false);
   });
 
-  it('returns false when a catalog entry opens a construct the reader cannot follow', ({ temp }) => {
+  it('returns false when a catalog entry opens a construct that the reader cannot follow', ({ temp }) => {
     writePackageJson(temp, { devDependencies: { vue: 'catalog:' } });
     writeWorkspaceYaml(temp, ['catalog:', '  vue: {version: 3.5.0}', ''].join('\n'));
 
@@ -203,7 +203,7 @@ describe(hasMinDevDependencyVersion, () => {
     ).toBe(true);
   });
 
-  it('passes the exempt predicate the specifier as declared, not the version a catalog resolves', ({ temp }) => {
+  it('passes the exempt predicate the specifier as declared, not the version resolved by a catalog', ({ temp }) => {
     writePackageJson(temp, { devDependencies: { vitest: 'catalog:' } });
     writeWorkspaceYaml(temp, ['catalog:', '  vitest: 0.34.0', ''].join('\n'));
     const seen: string[] = [];
@@ -257,12 +257,12 @@ describe(hasMinDevDependencyVersion, () => {
 
 // region | Helpers
 
-/** Writes the project manifest the check-utils under test read from the working directory. */
+/** Writes the project manifest that the check-utils under test read from the working directory. */
 function writePackageJson(temp: TempTree, content: Record<string, unknown>): void {
   temp.writeJson('package.json', content);
 }
 
-/** Writes the pnpm workspace manifest a `catalog:` specifier is resolved through. */
+/** Writes the pnpm workspace manifest through which a `catalog:` specifier is resolved. */
 function writeWorkspaceYaml(temp: TempTree, content: string): void {
   temp.write('pnpm-workspace.yaml', content);
 }

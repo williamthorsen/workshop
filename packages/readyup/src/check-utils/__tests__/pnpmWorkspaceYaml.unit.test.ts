@@ -35,7 +35,7 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'readyup')).toBe('workspace:*');
   });
 
-  it('reads the default catalog under the name the shorthand expands to', () => {
+  it('reads the default catalog under the name to which the shorthand expands', () => {
     const yaml = ['catalog:', '  esbuild: 0.28.2', ''].join('\n');
 
     expect(findPnpmCatalogVersion(yaml, 'esbuild', 'default')).toBe('0.28.2');
@@ -115,7 +115,7 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'react17', 'react17')).toBeUndefined();
   });
 
-  it('reports no version for a value opening a construct it cannot follow', () => {
+  it('reports no version for a value opening a construct that it cannot follow', () => {
     const yaml = [
       'catalog:',
       '  aliased: *pinned',
@@ -141,7 +141,7 @@ describe(findPnpmCatalogVersion, () => {
     expect(findPnpmCatalogVersion(yaml, 'vitest')).toBe('>=1.2.3');
   });
 
-  it('reports no version rather than throwing on YAML it cannot read', () => {
+  it('reports no version rather than throwing on YAML that it cannot read', () => {
     const yaml = ['catalog: &shared', '  react: *pinned', '  vue: {version: 3.5.0}', ''].join('\n');
 
     expect(() => findPnpmCatalogVersion(yaml, 'react')).not.toThrow();

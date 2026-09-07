@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { commandExists } from '../filesystem.ts';
 
 // Separated from the rest of `filesystem`, whose helpers only read the filesystem: `commandExists` shells out to
-// `command -v`, so it reaches a program the environment supplies and belongs to the `tool` tier.
+// `command -v`, so it reaches a program supplied by the environment and belongs to the `tool` tier.
 describe(commandExists, () => {
   it('returns true for a command that exists', () => {
     expect(commandExists('node')).toBe(true);
