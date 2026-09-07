@@ -293,7 +293,7 @@ describe(listCommand, () => {
       expect(error.hint).toBeUndefined();
     });
 
-    it('stays silent on a malformed body, which arrived over an accepted request', async () => {
+    it('stays silent on a malformed body, which was returned by an accepted request', async () => {
       mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));

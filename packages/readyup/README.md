@@ -434,7 +434,7 @@ A kit's checks are ordinary functions, and the shape of the test follows what a 
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 
-it('passes when every package README carries the marker', () => {
+it('passes when every package README contains the marker', () => {
   using temp = createTempTree({
     'package.json': '{"name":"root","private":true}',
     'pnpm-workspace.yaml': 'packages:\n  - packages/*\n',
@@ -702,7 +702,7 @@ error instanceof Error ? error.message : String(error);
 | `rdy-ignore`           | The line it sits on |
 | `rdy-ignore-next-line` | The line below it   |
 
-With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should cost a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is suppressed.
+With no argument a pragma covers every check for the line, which is the form to reach for: a kit publishes advice rather than a lint rule, so silencing one reviewed site should require a comment and nothing more. A trailing `-- <reason>` is optional everywhere and changes nothing about what is suppressed.
 
 One or more comma-separated check ids may follow the token, and the pragma then suppresses for those checks alone:
 
@@ -1287,7 +1287,7 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
    💊 The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.
 ```
 
-The remedy changes with it. A drifted bundle is otherwise sent back through the source, since only a hand edit explains it; here there is nothing to move, and `--force` rewrites the record rather than the kit. Either way the command carries `--force`, because `rdy compile` gates on drift and skips the kit rather than overwriting it.
+The remedy changes with it. A drifted bundle is otherwise sent back through the source, since only a hand edit explains it; here there is nothing to move, and `--force` rewrites the record rather than the kit. Either way the command includes `--force`, because `rdy compile` gates on drift and skips the kit rather than overwriting it.
 
 The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits it could not reach would establish less than it appears to.
 
@@ -1464,7 +1464,7 @@ The project declares the rest of what a sweep skips. A tracked file whose `.gita
 
 It also reports the paths it returns to the run, which is the evidence a [pragma that suppressed nothing](#advisory-warnings) is judged against, so a check reading the project this way declares no `scanned` of its own and a sweep it reads in `skip` counts as much as one it reads in `check`. `listTrackedFiles` reports nothing, so a check taking that listing and reading the files itself declares `scanned`.
 
-`blankNonCode` is what a detector scans instead of the raw text. It replaces every comment and every literal's text with spaces, so an idiom written in prose is invisible to an anchor scan while the code around the prose is not; a recommendation pointing at a comment is a false positive, and a false positive is what discredits a kit. Literal delimiters survive and only the text between them blanks, because a literal is an operand -- a scan reading the token before a `[` would otherwise take `'abc'[0]` for an array literal -- and an expression interpolated into a template literal stays visible as the code it is. Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted string or regular expression whose closing delimiter never arrives on its line was neither, so a misjudgment leaves text standing rather than blanking an expression that runs. That direction holds because a `/` is classified against the operand before it, so every construct completing an operand has to present itself as one: a postfix operator -- `++`, `--`, and TypeScript's `!` -- attaches to its operand rather than replacing it, and a member name keeps the `.` or `#` that introduced it, so a property spelled like a keyword is read as the property it is. `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning with `/` blanks as far as its closing tag's slash. It reads JavaScript-family syntax; a source in another language yields arbitrary output rather than an error, so a filter selecting `.md` or `.yaml` paths should not reach for it.
+`blankNonCode` is what a detector scans instead of the raw text. It replaces every comment and every literal's text with spaces, so an idiom written in prose is invisible to an anchor scan while the code around the prose is not; a recommendation pointing at a comment is a false positive, and a false positive is what discredits a kit. Literal delimiters survive and only the text between them blanks, because a literal is an operand -- a scan reading the token before a `[` would otherwise take `'abc'[0]` for an array literal -- and an expression interpolated into a template literal stays visible as the code it is. Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted string or regular expression whose closing delimiter never appears on its line was neither, so a misjudgment leaves text standing rather than blanking an expression that runs. That direction holds because a `/` is classified against the operand before it, so every construct completing an operand has to present itself as one: a postfix operator -- `++`, `--`, and TypeScript's `!` -- attaches to its operand rather than replacing it, and a member name keeps the `.` or `#` that introduced it, so a property spelled like a keyword is read as the property it is. `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node beginning with `/` blanks as far as its closing tag's slash. It reads JavaScript-family syntax; a source in another language yields arbitrary output rather than an error, so a filter selecting `.md` or `.yaml` paths should not reach for it.
 
 `getLineAtOffset` turns an offset into the line `buildFindingReport` renders. The two pair: `blankNonCode` preserves its input's length and every line-break position, so an offset found in the blanked text names the same line in the source a reader opens.
 

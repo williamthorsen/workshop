@@ -26,7 +26,7 @@ export interface FrontmatterEdgesInput {
   readonly content: string;
   readonly kindKeys: KindKeys;
   readonly kindRules: KindEdgeRules;
-  /** Called only when a wildcard token is met, so a rule admitting one costs nothing until an artifact writes it. */
+  /** Called only when a wildcard token is met, so a rule admitting one does nothing until an artifact writes it. */
   readonly expand: () => ReadonlyArray<ArtifactId>;
 }
 

@@ -22,7 +22,7 @@ export interface WalkResult {
  *
  * Aggregates are walked through and kept, unlike the code this ports from, which dropped them once expanded. A kind
  * that emits no files is what keeps one out of the output, and keeping it in the graph is what lets a reader see the
- * route by which a member arrived rather than an unexplained membership.
+ * route by which a member was reached rather than an unexplained membership.
  *
  * Neither fault it can meet stops it. A cycle records a diagnostic and the walk turns back, so everything reachable is
  * still reached and no caller waits on a walk that will not end; one cycle reports once however many seeds reach it. An

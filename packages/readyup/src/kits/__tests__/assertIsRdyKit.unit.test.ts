@@ -498,7 +498,7 @@ describe(assertIsRdyKit, () => {
       ['a non-numeric segment', '0.x'],
       ['a fourth segment the comparison would discard', '0.33.0.1'],
       ['an empty string', ''],
-    ])('throws when minReadyupVersion carries %s', async (_label, value) => {
+    ])('throws when minReadyupVersion has %s', async (_label, value) => {
       await expect(
         messageFrom({ checklists: [{ name: 'test', checks: [] }], minReadyupVersion: value }),
       ).resolves.toContain('minReadyupVersion: expected a dotted numeric version');

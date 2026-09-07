@@ -15,7 +15,7 @@ export interface LinkDiagnostic {
  */
 export type LinkFailure = 'out-of-tree';
 
-/** Where a link sits: the artifact hosting it, the target as written, and the partial it arrived through. */
+/** Where a link sits: the artifact hosting it, the target as written, and the partial it was read from. */
 export interface LinkRef {
   readonly host: ArtifactId;
   readonly target: string;

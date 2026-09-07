@@ -16,8 +16,8 @@ const ALLOWED_SPECIFIERS = new Set(['readyup']);
 /**
  * Patterns capturing the module specifier from each import form esbuild emits.
  *
- * A textual scan rather than a parse: matching generated ESM costs one regular expression where
- * parsing would cost a dependency the kit cannot carry. The two statement forms are anchored to the
+ * A textual scan rather than a parse: matching generated ESM needs one regular expression where
+ * parsing would need a dependency the kit cannot bundle. The two statement forms are anchored to the
  * start of a line, which is where esbuild puts every import it hoists, and which is what keeps the
  * scan off specifier-shaped text in a comment -- esbuild preserves comments inside an expression, so
  * a scan that read anywhere on a line would report a documented example as a real import.
@@ -25,7 +25,7 @@ const ALLOWED_SPECIFIERS = new Set(['readyup']);
 const SPECIFIER_PATTERNS = [
   // An import or re-export statement, whose specifier follows the clause and the `from` keyword
   /^[ \t]*(?:import|export)\b[^;]*?\bfrom\s*["']([^"']+)["']/gm,
-  // A side-effect-only import, which carries no clause before the specifier
+  // A side-effect-only import, which has no clause before the specifier
   /^[ \t]*import\s+["']([^"']+)["']/gm,
   // A dynamic import, which is an expression and so can sit anywhere on a line
   /\bimport\s*\(\s*["']([^"']+)["']/g,

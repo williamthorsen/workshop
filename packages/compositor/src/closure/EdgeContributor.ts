@@ -28,8 +28,8 @@ export interface EdgeContribution {
  * Contributes the edges an artifact's body declares, which no frontmatter key can state.
  *
  * The seam invocation tokens reach the closure through: a token contributes an edge, and the body it sits in may have
- * been assembled from partials, so both the edge and the partial it came from arrive here. It is a function rather than
- * data because a body's edges are found by expanding and matching it, not by looking a key up.
+ * been assembled from partials, so both the edge and the partial it came from are passed here. It is a function
+ * rather than data because a body's edges are found by expanding and matching it, not by looking a key up.
  *
  * Faults are the contributor's own to report to whoever configured it. What comes back is edges, so the closure's
  * diagnostic vocabulary stays the closure's.

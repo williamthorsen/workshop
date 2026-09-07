@@ -20,7 +20,7 @@ export interface LoadRemoteManifestOptions {
  * Fetches a manifest from a URL and returns it parsed and schema-validated.
  *
  * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so
- * `Authorization` and anything else, such as a corporate proxy or telemetry header, arrive already
+ * `Authorization` and anything else, such as a corporate proxy or telemetry header, are passed already
  * formatted. Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError`
  * for any other non-2xx response, and a plain `Error` for malformed JSON or a schema-invalid body.
  */

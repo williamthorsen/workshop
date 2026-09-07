@@ -15,12 +15,12 @@ const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
  * emits paths relative to `cwd` and limited to that subtree, the same scope a relative `readFile` path works in, so
  * the listing follows the project `rdy` was invoked in rather than the repository a kit was loaded from.
  *
- * The listing is the raw one, carrying none of the exclusions `readTrackedSources` applies, and it reports nothing
+ * The listing is the raw one, without the exclusions `readTrackedSources` applies, and it reports nothing
  * to the run's sweep recorder. A check walking this listing and reading the files itself therefore declares
  * `scanned` of its own.
  *
  * Memoized per `cwd` for the life of the process. The promise is held rather than the value it settles to, because
- * the runner starts sibling checks together: a cache filled on resolution arrives too late for every check that
+ * the runner starts sibling checks together: a cache filled on resolution is still empty for every check that
  * started alongside the first, and each would invoke git of its own. A rejected listing is dropped, so a failure is
  * retried rather than remembered.
  */

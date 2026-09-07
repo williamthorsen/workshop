@@ -21,7 +21,7 @@ describe(readArtifactAssets, () => {
     expect(assets.map(({ relativePath }) => relativePath)).toStrictEqual(['assets/diagram.svg', 'checklist.md']);
   });
 
-  it('excludes the entry file however the layout spells its path, the name arriving as a consumer declared it', async () => {
+  it('excludes the entry file however the layout spells its path, the name given as a consumer declared it', async () => {
     using tree = createTempTree({ 'SKILL.md': '# Review\n', 'checklist.md': '# Checklist\n' });
 
     const assets = await readArtifactAssets(tree.dir, './SKILL.md');

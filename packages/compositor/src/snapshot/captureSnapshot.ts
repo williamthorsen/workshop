@@ -237,7 +237,7 @@ async function renderEntry(
  * Renders one target's column, over the artifacts it deploys and emits files for.
  *
  * A kind the target declares no deployment for produces no file there, and a kind declaring `emitsFiles: false` exists
- * to be walked through rather than written out. Neither is rendered at all, which is what bounds the cost of covering
+ * to be walked through rather than written out. Neither is rendered at all, which is what bounds the work of covering
  * the whole catalog.
  */
 async function renderTarget(

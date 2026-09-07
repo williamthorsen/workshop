@@ -26,7 +26,7 @@ export class CatalogConsistencyError extends ConsistencyError {
  * id agrees with the kind and slug it names, and that shadowed candidates descend in source precedence order.
  *
  * A catalog the engine produced satisfies these by construction, so `resolveCatalog` does not call this on its own
- * output. It is for a catalog that arrived as data, which is the case a reader rendering a payload it did not compute
+ * output. It is for a catalog supplied as data, which is the case a reader rendering a payload it did not compute
  * is in.
  *
  * A schema refinement would be invisible to `z.toJSONSchema`, so a generated JSON Schema would accept catalogs this

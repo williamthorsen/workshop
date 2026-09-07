@@ -160,7 +160,7 @@ function findDepartedContributors(
   return departed;
 }
 
-/** Groups the closure's artifacts by kind, keeping the id order they arrive in. */
+/** Groups the closure's artifacts by kind, keeping the id order they are given in. */
 function groupByKind(artifacts: ReadonlyArray<ClosureArtifact>): ReadonlyMap<KindId, ReadonlyArray<ClosureArtifact>> {
   const byKind = new Map<KindId, Array<ClosureArtifact>>();
   for (const artifact of artifacts) {

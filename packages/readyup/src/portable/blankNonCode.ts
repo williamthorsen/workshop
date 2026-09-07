@@ -72,7 +72,7 @@ export function blankComments(source: string): string {
  * operand at all, and an expression interpolated into a template literal is code that runs and stays visible.
  *
  * Where a `/` could open a regular expression or divide, the ambiguity resolves toward division, and a quoted
- * string or regular expression whose closing delimiter never arrives on its line was neither. A misjudgment
+ * string or regular expression whose closing delimiter never appears on its line was neither. A misjudgment
  * therefore leaves text standing rather than blanking an expression that runs.
  *
  * That direction holds only while the token a `/` is classified against is the operand before it, so every

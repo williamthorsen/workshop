@@ -11,7 +11,7 @@ import type { CompositionSnapshot } from './captureSnapshot.ts';
  * render matrix read the winning candidate alone, so all three have to be captured afresh. What an edited config may
  * change against one snapshot is a selection.
  *
- * Re-folding is what makes the check cheap enough to run on every call: the fold is pure arithmetic over locations the
+ * Re-folding is what makes the check fast enough to run on every call: the fold is pure arithmetic over locations the
  * snapshot already contains.
  */
 export function assertSourcesFit(config: CompositorConfig, snapshot: CompositionSnapshot): void {

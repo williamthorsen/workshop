@@ -34,7 +34,7 @@ type Environment = Readonly<Record<string, string | undefined>>;
 /**
  * Resolves the style to render in: the flag, else the environment variable, else detection.
  *
- * Pure by design. The environment and the terminal arrive as arguments rather than being read from
+ * Pure by design. The environment and the terminal are passed as arguments rather than read from
  * `process`, so every branch below is reachable from a plain assertion instead of a stubbed global.
  *
  * Never throws. A value naming no style is reported back rather than raised, because the caller has to

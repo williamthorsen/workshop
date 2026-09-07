@@ -10,7 +10,7 @@ Packages live under `packages/`:
 
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
-- **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` carries the discipline for editing it.
+- **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it.
 
 Key files:
 
@@ -35,7 +35,7 @@ From the repo root, `pnpm exec rdy run --packages` runs the default kit of every
 
 ### Code quality
 
-Lefthook's pre-commit hook formats staged files with Prettier and restages them, so a commit can carry bytes you did not write.
+Lefthook's pre-commit hook formats staged files with Prettier and restages them, so a commit can contain bytes you did not write.
 
 ## Commit conventions
 

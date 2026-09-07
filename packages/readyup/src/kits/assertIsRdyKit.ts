@@ -54,7 +54,7 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
  * preprocess is what leaves an accessor-valued one unread.
  *
  * The annotation breaks an inference cycle: TypeScript cannot infer a type that recurses through
- * `z.preprocess`. Widening it costs nothing, because no caller reads the parsed output.
+ * `z.preprocess`. Widening it changes nothing, because no caller reads the parsed output.
  */
 const CheckSchema: z.ZodType = z.preprocess(
   hideAccessorFix,

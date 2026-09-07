@@ -58,7 +58,7 @@ export function initialize(data: ReadyupResolverHookData): void {
  * Routes `readyup` and `readyup/*` specifiers through the runner's own readyup installation by
  * rewriting `parentURL`, and delegates every other specifier to the default resolver unchanged.
  *
- * A readyup specifier arriving before `initialize()` throws: falling back to the original
+ * A readyup specifier resolved before `initialize()` throws: falling back to the original
  * `parentURL` would defeat the rewrite and surface later as an opaque `ERR_MODULE_NOT_FOUND`.
  */
 export function resolve(

@@ -5,7 +5,7 @@
   "extends": "@williamthorsen/tsconfig/tsconfig.base.json",
   "compilerOptions": {
     // TypeScript resolves `baseUrl`-less `paths` relative to the file that declares them, so the shared
-    // base cannot carry this: it would resolve inside node_modules.
+    // base cannot declare this: it would resolve inside node_modules.
     "paths": {
       "~/*": ["./*"],
     },

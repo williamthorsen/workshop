@@ -39,7 +39,7 @@ describe('EdgeRuleSchema', () => {
     expect(parsed).not.toHaveProperty('wildcard');
   });
 
-  // A token edge is contributed by a body, so no key can declare one and claim it arrived that way.
+  // A token edge is contributed by a body, so no key can declare one and claim it was read that way.
   it('rejects a rule claiming the token origin, which no frontmatter key can produce', () => {
     expect(findIssuePaths(EdgeRuleSchema, { ...kindKeyed, via: 'token' })).toStrictEqual([['via']]);
   });

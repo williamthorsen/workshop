@@ -11,7 +11,7 @@ import { suppressesFinding } from './suppressesFinding.ts';
  * numerator; omitted, the outcome has no progress at all.
  *
  * A ledger, where one is passed, is told which sites the check's pragmas suppressed, and the paths it declared
- * in `scanned`. A sweep read through `readTrackedSources` reports itself, so what arrives here is the reading a
+ * in `scanned`. A sweep read through `readTrackedSources` reports itself, so what is passed here is the reading a
  * check did some other way. A caller wanting the run to hold no record of a check passes none.
  */
 export function resolveFindingOutcome(
@@ -45,7 +45,7 @@ function describeFinding(finding: OutcomeFinding): string {
 /**
  * Drops the findings a source suppressed with an `rdy-ignore` pragma naming this check or naming no check.
  *
- * Each path is split into lines once, so a file holding ten findings costs one read and one split between
+ * Each path is split into lines once, so a file holding ten findings is read once and split once between
  * them. A path holding no readable text suppresses nothing.
  */
 function excludeSuppressed(

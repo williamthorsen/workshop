@@ -406,7 +406,7 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
 /**
  * Returns a titled section: the title, `hintLine` beneath it, then the kits.
  *
- * `hintLine` arrives indented, because a section headed by a command and one headed by an instruction are
+ * `hintLine` is passed in already indented, because a section headed by a command and one headed by an instruction are
  * built differently and only the caller knows which it holds. Nothing inside is separated by a blank line:
  * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
  * the blank separating one section from the next belongs to whoever assembles them.

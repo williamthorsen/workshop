@@ -87,7 +87,7 @@ describe(rewriteTokens, () => {
     expect(result.diagnostics.map(({ code }) => code)).toStrictEqual(['undeployed-referent']);
   });
 
-  it('reports a token that arrived through a partial against that partial', () => {
+  it('reports a token that was read from a partial against that partial', () => {
     const result = rewrite([{ lines: ['Use {tool:Bash}.'], partialId: 'team:_data/shared.md' }]);
 
     expect(result.diagnostics.map(({ at }) => at)).toStrictEqual([

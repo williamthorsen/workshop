@@ -8,11 +8,11 @@ This directory is a CodeAssembly content root, declared by the `codeassembly.con
 
 Ambient delivery fails here on three counts:
 
-- **Relevance rate.** nmr's ambient cheatsheet is paid on every task and repays it, because `nmr` is invoked in nearly every session. Kit authoring is episodic: a consuming repo writes its kit once, extends it a few times a year, and runs `rdy` in CI forever.
+- **Relevance rate.** nmr's ambient cheatsheet loads on every task and is relevant to nearly all of them, because `nmr` is invoked in nearly every session. Kit authoring is episodic: a consuming repo writes its kit once, extends it a few times a year, and runs `rdy` in CI forever.
 - **Compression.** An ambient body has to stay a cheatsheet. The worked-cases table is what makes the skip rule land, and a cheatsheet cannot hold it.
-- **Duplication.** Harnesses list installed skills by name and description, so a skill's description already occupies the ambient slot. Delivering ambient as well would pay twice for one signal.
+- **Duplication.** Harnesses list installed skills by name and description, so a skill's description already occupies the ambient slot. Delivering ambient as well would state one signal twice.
 
-Both modes require the consumer to run `codeassembly sync`, so the choice costs nothing in adoption.
+Both modes require the consumer to run `codeassembly sync`, so the choice changes nothing about adoption.
 
 ## Constraints on the rulebook body
 

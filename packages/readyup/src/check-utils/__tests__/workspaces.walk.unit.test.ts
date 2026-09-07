@@ -67,7 +67,7 @@ describe(`${discoverWorkspaces.name} directory walk`, () => {
 // region | Helpers
 
 /**
- * Writes a monorepo whose `packages/locked` holds a nested workspace, so a failed read of `locked` costs
+ * Writes a monorepo whose `packages/locked` holds a nested workspace, so a failed read of `locked` drops
  * both while `alpha` survives. A directory qualifies as a workspace only when reading it reveals a
  * `package.json`, and that is the read that fails.
  */

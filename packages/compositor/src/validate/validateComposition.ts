@@ -37,7 +37,7 @@ import type { ValidationDiagnostic, ValidationReport } from './ValidationDiagnos
  * something tries to fill something: a report derived from the config and the sites alone would miss a filler the
  * target cannot deploy and one whose body declares an inlay of its own. The render pass reads the snapshot's own column
  * rather than the filled one, so a host a fill blocked still reports whatever its render could not resolve; the fault
- * that blocked it arrives under its own domain.
+ * that blocked it is reported under its own domain.
  */
 export function validateComposition(config: CompositorConfig, snapshot: CompositionSnapshot): ValidationReport {
   assertSourcesFit(config, snapshot);

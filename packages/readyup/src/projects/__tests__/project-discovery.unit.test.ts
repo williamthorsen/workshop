@@ -123,7 +123,7 @@ describe(discoverKitProjects, () => {
     expect(emptied?.manifestPath).toBe(temp.resolve('packages/emptied/.readyup/manifest.json'));
   });
 
-  // Discovery is read-only, so a config nobody can evaluate costs that project its settings, not its place.
+  // Discovery is read-only, so a config nobody can evaluate drops that project's settings, not its place.
   it('reports a project whose config fails to evaluate, reading it with default settings', async ({ temp }) => {
     const { projects, stderr } = await discover(temp.dir);
     const broken = projects.find((project) => project.dir === 'packages/broken');
