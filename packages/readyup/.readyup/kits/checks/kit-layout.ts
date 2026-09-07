@@ -7,7 +7,7 @@ import { fileExists, isRecord, type JsonPathSpec, readJsonFile } from 'readyup/c
 
 // -- Paths --
 
-/** Directory holding the manifest. Every path the manifest records is relative to it. */
+/** Directory holding the manifest. Every path that the manifest records is relative to it. */
 export const MANIFEST_DIR = path.dirname(DEFAULT_MANIFEST_PATH);
 
 /** Directory holding kit sources and the bundles compiled from them. */
@@ -39,10 +39,10 @@ export function listCompiledBundlePaths(): string[] {
 }
 
 /**
- * A manifest kit entry, narrowed to the fields these kits read.
+ * A manifest kit entry, narrowed to the fields read by these kits.
  *
  * `inputs` is absent on an entry compiled before readyup recorded the closure, which is why it is
- * narrowed to `undefined` rather than to an empty list: recording nothing and recording no closure at
+ * narrowed to `undefined` rather than to an empty list: Recording nothing and recording no closure at
  * all are different claims about a kit.
  */
 export interface ManifestEntry {
@@ -55,11 +55,12 @@ export interface ManifestEntry {
 }
 
 /**
- * One file a kit's compile read, narrowed to the fields these kits read.
+ * One file that a kit's compile read, narrowed to the fields read by these kits.
  *
- * Every field may be absent, because the record comes out of raw JSON rather than the manifest schema: a
- * kit reporting on a manifest cannot fail to load over the manifest it is reporting on. Only an inline
- * record contains `paths`, which is the specifier that produced the projection whose hash it holds.
+ * Every field may be absent, because the record comes out of raw JSON rather than the manifest schema:
+ * A kit reporting on a manifest cannot fail to load over the manifest on which it is reporting. Only an
+ * inline record contains `paths`, which is the specifier that produced the projection whose hash it
+ * holds.
  */
 export interface ManifestInput {
   hash: string | undefined;
@@ -69,9 +70,9 @@ export interface ManifestInput {
 }
 
 /**
- * Kit entries the manifest records.
+ * Kit entries that the manifest records.
  *
- * A manifest that is absent, unparseable, or missing its `kits` array reads as recording none: these
+ * A manifest that is absent, unparseable, or missing its `kits` array reads as recording none: These
  * kits report on what the project has, and cannot themselves fail to load over what they are checking.
  */
 export function readManifestEntries(): ManifestEntry[] {
@@ -84,7 +85,7 @@ export function readManifestEntries(): ManifestEntry[] {
   return kits.filter(isRecord).map(toManifestEntry);
 }
 
-/** Path to a file the manifest names, relative to the working directory. */
+/** Path to a file named by the manifest, relative to the working directory. */
 export function resolveRecordedPath(recordedPath: string): string {
   return path.join(MANIFEST_DIR, recordedPath);
 }
@@ -97,7 +98,7 @@ export function skipWithoutBundles(): SkipResult {
 /**
  * Skip reason for a check about a project that defines no kits, or `false` for one that does.
  *
- * A project defining none is outside these kits' subject rather than failing them: a monorepo root
+ * A project defining none is outside these kits' subject rather than failing them: A monorepo root
  * that lists `packages` authors no kits of its own, and no consumer is expected to keep them at its
  * root. The manifest arm admits a project compiling to a non-default `outDir`, whose recorded kits
  * are still worth checking.
@@ -131,12 +132,12 @@ function asString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-/** Narrows a value to the nested-key form a path specifier may take. */
+/** Narrows a value to the nested-key form that a path specifier may take. */
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
-/** Projects a raw manifest kit record onto the fields these kits read. */
+/** Projects a raw manifest kit record onto the fields read by these kits. */
 function toManifestEntry(kit: Record<string, unknown>): ManifestEntry {
   return {
     inputs: toManifestInputs(kit['inputs']),
@@ -148,7 +149,7 @@ function toManifestEntry(kit: Record<string, unknown>): ManifestEntry {
   };
 }
 
-/** Projects a raw recorded input onto the fields these kits read. */
+/** Projects a raw recorded input onto the fields read by these kits. */
 function toManifestInput(input: Record<string, unknown>): ManifestInput {
   const kind = input['kind'];
   return {

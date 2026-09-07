@@ -35,13 +35,13 @@ export default defineRdyKit({
         },
         {
           // The manifest is what `rdy list --from npm:` reads, so a tarball without it publishes kits
-          // no consumer can discover without running them.
+          // that no consumer can discover without running them.
           name: `${DEFAULT_MANIFEST_PATH} exists`,
           check: () => fileExists(DEFAULT_MANIFEST_PATH),
           fix: `Run 'rdy compile' to write ${DEFAULT_MANIFEST_PATH}`,
         },
         {
-          // Advisory: publishing only named kits is legitimate, but a consumer's first invocation is a
+          // Advisory: Publishing only named kits is legitimate, but a consumer's first invocation is a
           // bare one, and it fails with no kit under this name.
           name: `${DEFAULT_BUNDLE_PATH} exists`,
           severity: 'warn',

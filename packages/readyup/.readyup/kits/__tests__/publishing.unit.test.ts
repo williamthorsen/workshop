@@ -22,10 +22,10 @@ import {
 const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { checklists: [] };\n';
 
 /**
- * Covers the `publishing` kit readyup publishes, against fixture projects in a temp directory.
+ * Covers the `publishing` kit that readyup publishes, against fixture projects in a temp directory.
  *
- * Each test builds the package it wants judged -- its `files` allowlist, its manifest, its bundles --
- * and moves there before loading the kit, because every check the kit runs is relative to the
+ * Each test builds the package that it wants judged -- its `files` allowlist, its manifest, its
+ * bundles -- and moves there before loading the kit, because the kit runs every check relative to the
  * working directory.
  */
 describe('publishing kit', () => {
@@ -108,7 +108,7 @@ describe('publishing kit', () => {
       });
     });
 
-    // A tarball without it publishes kits no consumer can discover without running them.
+    // A tarball without it publishes kits that no consumer can discover without running them.
     it('reports a missing manifest', async () => {
       writePackageJson(projectRoot, { files: ['.readyup'] });
       writeKit(projectRoot, 'default');
@@ -137,9 +137,9 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'default.js')).toMatchObject({ status: 'failed', severity: 'warn' });
     });
 
-    // A consumer composes the path from the kit's name and never reads the one the manifest recorded, so a
-    // bundle compiled elsewhere is listable and unloadable.
-    it('reports a kit recorded away from the path a consumer loads it by', async () => {
+    // A consumer composes the path from the kit's name and never reads the one that the manifest
+    // recorded, so a bundle compiled elsewhere is listable and unloadable.
+    it('reports a kit recorded away from the path by which a consumer loads it', async () => {
       const entry = writeKit(projectRoot, 'default');
       writePackageJson(projectRoot, { files: ['.readyup'] });
       writeKitManifest(projectRoot, [{ ...entry, path: path.join('kits', 'nested', 'default.js') }]);
@@ -162,7 +162,7 @@ describe('publishing kit', () => {
       expect(results.map((result) => result.status)).toStrictEqual(['passed']);
     });
 
-    it('reports a bundle reaching for a package the consumer would have to supply', async () => {
+    it('reports a bundle reaching for a package that the consumer would have to supply', async () => {
       writePackageJson(projectRoot, { files: ['.readyup'] });
       writeKitManifest(projectRoot, [writeKit(projectRoot, 'default', { bundle: LEAKY_BUNDLE })]);
 
@@ -181,8 +181,8 @@ describe('publishing kit', () => {
     });
   });
 
-  // Publishing a stale kit ships checks that do not describe the package they travel with, which is the
-  // failure this kit exists to stop -- so it blocks where `default` only advises.
+  // Publishing a stale kit ships checks that do not describe the package with which they travel, which
+  // is the failure that this kit exists to stop -- so it blocks where `default` only advises.
   it('blocks on a kit compiled from a source that has since moved on', async () => {
     writePackageJson(projectRoot, { files: ['.readyup'] });
     const entry = writeKit(projectRoot, 'default');
@@ -193,7 +193,7 @@ describe('publishing kit', () => {
     expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed', severity: 'error' });
   });
 
-  // A module the bundle inlined is as much a part of what a consumer runs as the kit source is, and
+  // A module inlined by the bundle is as much a part of what a consumer runs as the kit source is, and
   // neither recorded hash describes it.
   it('blocks on a kit whose inlined module has since moved on', async () => {
     writePackageJson(projectRoot, { files: ['.readyup'] });
@@ -220,7 +220,7 @@ async function runSelfContainment(): Promise<RdyResult[]> {
   return runChecklist(await loadOwnKit('publishing'), 'self-containment');
 }
 
-/** Lays down a package that would pass, so a test can spoil exactly the one thing it is about. */
+/** Lays down a package that would pass, so a test can spoil exactly the one thing that it is about. */
 function writePublishablePackage(
   projectRoot: string,
   packageJson?: Record<string, unknown>,

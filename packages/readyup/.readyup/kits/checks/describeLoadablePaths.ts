@@ -5,11 +5,11 @@ import type { CheckOutcome } from 'readyup';
 import { KITS_DIR, readManifestEntries, resolveRecordedPath } from './kit-layout.ts';
 
 /**
- * Whether every kit the manifest records sits where a consumer resolves it.
+ * Whether every kit that the manifest records sits where a consumer resolves it.
  *
  * `--from npm:<package>` composes a kit's path from its name alone, as `<package>/.readyup/kits/<name>.js`,
- * and never reads the `path` the manifest recorded. A bundle compiled anywhere else is listable and
- * unloadable: it appears in `rdy list --from npm:`, and running it fails to find the file.
+ * and never reads the `path` that the manifest recorded. A bundle compiled anywhere else is listable
+ * and unloadable: It appears in `rdy list --from npm:`, and running it fails to find the file.
  */
 export function describeLoadablePaths(): CheckOutcome {
   const misplaced = readManifestEntries().flatMap((entry) => {
@@ -24,7 +24,7 @@ export function describeLoadablePaths(): CheckOutcome {
 
 // region | Helpers
 
-/** Path `--from npm:` composes for a kit of the given name. */
+/** Path that `--from npm:` composes for a kit of the given name. */
 function buildLoadPath(kitName: string): string {
   return path.join(KITS_DIR, `${kitName}.js`);
 }

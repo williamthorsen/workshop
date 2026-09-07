@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 import type { RdyKit } from '../../../src/kits/types.ts';
 
-/** Names of the kits this package publishes. */
+/** Names of the kits that this package publishes. */
 export type OwnKitName = 'default' | 'publishing';
 
 /**

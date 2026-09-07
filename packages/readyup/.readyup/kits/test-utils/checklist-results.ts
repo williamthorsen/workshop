@@ -6,8 +6,8 @@ import { runRdy } from '../../../src/run/runRdy.ts';
 /**
  * The result whose claim contains `fragment`.
  *
- * Lets a test name a check by the part of the claim it cares about, rather than repeating a name that
- * contains a path the kit composed.
+ * Lets a test name a check by the part of the claim that it cares about, rather than repeating a name
+ * that contains a path composed by the kit.
  */
 export function pickResult(results: RdyResult[], fragment: string): RdyResult {
   const match = results.find((result) => result.name.includes(fragment));

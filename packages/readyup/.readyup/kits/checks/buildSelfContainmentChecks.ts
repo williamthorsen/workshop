@@ -4,11 +4,11 @@ import { readFile } from 'readyup/check-utils';
 import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
 
 /**
- * Module specifiers a compiled kit may import verbatim.
+ * Module specifiers that a compiled kit may import verbatim.
  *
- * Exactly the `external` list `rdy compile` passes to esbuild (see `src/compile/compileConfig.ts`).
- * Anything else -- a bare package name, a relative path -- names a module the consumer's project would
- * have to supply, which is what makes a bundle no longer self-contained.
+ * Exactly the `external` list passed to esbuild by `rdy compile` (see `src/compile/compileConfig.ts`).
+ * Anything else -- a bare package name, a relative path -- names a module that the consumer's project
+ * would have to supply, which is what makes a bundle no longer self-contained.
  */
 const ALLOWED_PREFIXES = ['node:', 'readyup/'];
 const ALLOWED_SPECIFIERS = new Set(['readyup']);
@@ -16,11 +16,11 @@ const ALLOWED_SPECIFIERS = new Set(['readyup']);
 /**
  * Patterns capturing the module specifier from each import form esbuild emits.
  *
- * A textual scan rather than a parse: matching generated ESM needs one regular expression where
- * parsing would need a dependency the kit cannot bundle. The two statement forms are anchored to the
- * start of a line, which is where esbuild puts every import it hoists, and which is what keeps the
- * scan off specifier-shaped text in a comment -- esbuild preserves comments inside an expression, so
- * a scan that read anywhere on a line would report a documented example as a real import.
+ * A textual scan rather than a parse: Matching generated ESM needs one regular expression where
+ * parsing would need a dependency that the kit cannot bundle. The two statement forms are anchored to
+ * the start of a line, which is where esbuild puts every import that it hoists, and which is what keeps
+ * the scan off specifier-shaped text in a comment -- esbuild preserves comments inside an expression,
+ * so a scan that read anywhere on a line would report a documented example as a real import.
  */
 const SPECIFIER_PATTERNS = [
   // An import or re-export statement, whose specifier follows the clause and the `from` keyword
@@ -56,7 +56,7 @@ export function buildSelfContainmentChecks(): RdyCheck[] {
   }));
 }
 
-/** Specifiers a compiled bundle imports that `rdy compile` would not have left unbundled. */
+/** Specifiers that a compiled bundle imports and that `rdy compile` would not have left unbundled. */
 export function findForeignSpecifiers(bundle: string): string[] {
   return scanImportSpecifiers(bundle)
     .filter((specifier) => !isAllowedSpecifier(specifier))
@@ -75,12 +75,12 @@ function describeSelfContainment(bundlePath: string): CheckOutcome {
   return { ok: false, detail: `It imports ${foreign.join(', ')}` };
 }
 
-/** Returns true when a specifier is one esbuild was told to leave external. */
+/** Returns true when a specifier is one that esbuild was told to leave external. */
 function isAllowedSpecifier(specifier: string): boolean {
   return ALLOWED_SPECIFIERS.has(specifier) || ALLOWED_PREFIXES.some((prefix) => specifier.startsWith(prefix));
 }
 
-/** Every distinct module specifier the bundle text imports. */
+/** Every distinct module specifier imported by the bundle text. */
 function scanImportSpecifiers(bundle: string): string[] {
   const specifiers = new Set<string>();
   for (const pattern of SPECIFIER_PATTERNS) {

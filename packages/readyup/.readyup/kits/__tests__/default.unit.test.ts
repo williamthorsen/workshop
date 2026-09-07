@@ -24,13 +24,16 @@ import {
   writeRdyConfig,
 } from '../test-utils/project-fixture.ts';
 
-/** JSON file a fixture kit projects. It sits above the manifest directory, as the canonical `../package.json` does. */
+/**
+ * JSON file projected by a fixture kit. It sits above the manifest directory, as the canonical
+ * `../package.json` does.
+ */
 const PROJECTED_JSON_PATH = path.join('..', 'package.json');
 
 /**
- * Covers the `default` kit readyup publishes, against fixture projects in a temp directory.
+ * Covers the `default` kit that readyup publishes, against fixture projects in a temp directory.
  *
- * Every check the kit runs is relative to the working directory, so each test builds the project it
+ * The kit runs every check relative to the working directory, so each test builds the project that it
  * wants to be judged and moves there before loading the kit.
  */
 describe('default kit', () => {
@@ -77,7 +80,7 @@ describe('default kit', () => {
       expect(pickResult(results, 'readyup.config.ts')).toMatchObject({ status: 'failed' });
     });
 
-    // A project can be perfectly functional without one; the defaults it would have declared still apply.
+    // A project can be perfectly functional without one; the defaults that it would have declared still apply.
     it('reports a missing config at the lowest severity', async () => {
       mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
 
@@ -177,7 +180,7 @@ describe('default kit', () => {
     });
 
     // Without a recorded hash there is nothing to compare against, so the entry fails on its own terms
-    // and the comparisons beneath it never claim a verdict they cannot support.
+    // and the comparisons beneath it never claim a verdict that they cannot support.
     it('reports an entry recording no hashes and withholds the comparisons', async () => {
       writeKit(projectRoot, 'default');
       writeKitManifest(projectRoot, [{ name: 'default' }]);
@@ -192,7 +195,7 @@ describe('default kit', () => {
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
     });
 
-    it('reports a module it inlined that has since changed', async () => {
+    it('reports an inlined module that has since changed', async () => {
       writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
       inlineHelper(projectRoot, '2');
 
@@ -204,7 +207,7 @@ describe('default kit', () => {
       });
     });
 
-    it('reports a projection it inlined that has since changed', async () => {
+    it('reports an inlined projection that has since changed', async () => {
       writeKitManifest(projectRoot, [
         withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
       ]);
@@ -218,9 +221,9 @@ describe('default kit', () => {
       });
     });
 
-    // The recorded hash is over the projection rather than the file, so a field the kit never picked up
-    // is not something the bundle could have inlined.
-    it('accepts an edit to a field the projection does not pick', async () => {
+    // The recorded hash is over the projection rather than the file, so a field never picked up by the
+    // kit is not something the bundle could have inlined.
+    it('accepts an edit to a field that the projection does not pick', async () => {
       writeKitManifest(projectRoot, [
         withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
       ]);
@@ -284,8 +287,8 @@ describe('default kit', () => {
       });
     });
 
-    // The kit reads raw JSON rather than the manifest schema, so a record no compile would have written
-    // reaches these two guards instead of failing validation.
+    // The kit reads raw JSON rather than the manifest schema, so a record that no compile would have
+    // written reaches these two guards instead of failing validation.
     it('reports an inline record whose path specifier is not one', async () => {
       const entry = writeKit(projectRoot, 'default');
       const input = { hash: '0badcafe', kind: 'inline', path: PROJECTED_JSON_PATH, paths: [42] };
@@ -299,7 +302,7 @@ describe('default kit', () => {
       });
     });
 
-    it('names only the fields an incomplete input record is missing', async () => {
+    it('names only the fields missing from an incomplete input record', async () => {
       const entry = writeKit(projectRoot, 'default');
       const input = { path: path.join('kits', 'demo.ts'), hash: '0badcafe' };
       writeRawKitManifest(projectRoot, [{ ...entry, inputs: [input] }]);
@@ -334,7 +337,7 @@ describe('default kit', () => {
       expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
 
-    it('reports bundles no manifest accounts for', async () => {
+    it('reports bundles that no manifest accounts for', async () => {
       writeKit(projectRoot, 'default');
 
       const results = await runFreshness();
@@ -357,12 +360,12 @@ describe('default kit', () => {
 
 // region | Helpers
 
-/** Writes the module a fixture kit inlines, and returns the record of it. */
+/** Writes the module inlined by a fixture kit, and returns the record of it. */
 function inlineHelper(projectRoot: string, value: string): FixtureManifestInput {
   return writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, `export const helper = ${value};\n`);
 }
 
-/** Writes the JSON file a fixture kit projects, and returns the record of the projection over `version`. */
+/** Writes the JSON file projected by a fixture kit, and returns the record of the projection over `version`. */
 function projectVersion(projectRoot: string, version: string): FixtureManifestInput {
   return writeInlineInput(projectRoot, PROJECTED_JSON_PATH, { name: 'fixture', version }, ['version']);
 }

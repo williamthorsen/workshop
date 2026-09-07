@@ -20,7 +20,7 @@ const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 const KIT_SOURCE_DIR = path.resolve(import.meta.dirname, '..');
 const KIT_NAMES = ['default', 'publishing'];
 
-/** Flags a `--from` invocation leaves at their defaults. */
+/** Flags that a `--from` invocation leaves at their defaults. */
 const baseArgs = {
   filePath: undefined,
   fromValue: undefined,
@@ -32,7 +32,7 @@ const baseArgs = {
 };
 
 /**
- * Reaches the kits readyup publishes the way a consuming project does, through `--from npm:readyup`
+ * Reaches the kits that readyup publishes the way a consuming project does, through `--from npm:readyup`
  * against a real `node_modules` tree.
  *
  * The fixture installs the kits by compiling this package's own sources, so the test exercises what
@@ -70,7 +70,7 @@ describe('kits readyup publishes', () => {
     rmSync(projectRoot, { recursive: true, force: true });
   });
 
-  it('lists both kits with the checklists each one declares', async () => {
+  it('lists both kits with the checklists that each one declares', async () => {
     const exitCode = await listCommand(['--from', 'npm:readyup', '--json']);
 
     expect(exitCode).toBe(0);
@@ -108,9 +108,9 @@ describe('kits readyup publishes', () => {
   });
 
   // The kits read the consuming project's working directory, and this one defines no kits of its own.
-  // Every setup check standing down is what says so: a pass would mean they had judged readyup's own
+  // Every setup check standing down is what says so: A pass would mean they had judged readyup's own
   // kit directory, which travelled in with the package.
-  it('judges the consuming project rather than the package it came from', async () => {
+  it('judges the consuming project rather than the package from which it came', async () => {
     const entries = resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
     const exitCode = await runCommand({ kitEntries: entries, json: true });
@@ -135,8 +135,8 @@ function pickKitResult(report: JsonReport, kitName: string): JsonKitResultEntry 
 /**
  * Installs this package's kits into a fixture project as an npm dependency would deliver them.
  *
- * The inner symlink is what lets the bundles resolve the `readyup` specifiers `rdy compile` leaves
- * external. A real consumer gets that from the runner's resolver hook, which `rdy` registers before
+ * The inner symlink is what lets the bundles resolve the `readyup` specifiers left external by
+ * `rdy compile`. A real consumer gets that from the runner's resolver hook, which `rdy` registers before
  * loading any kit; a test calling the library directly has no runner to register it.
  */
 async function installReadyupKits(projectRoot: string): Promise<void> {
