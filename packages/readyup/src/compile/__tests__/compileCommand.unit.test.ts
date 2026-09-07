@@ -69,24 +69,24 @@ const ICON_COMPILED = richFormatter.tokens.passed.glyph;
 const ICON_DRIFT = richFormatter.tokens.failedWarn.glyph;
 const GLYPH_OUTPUT = richFormatter.tokens.kit.glyph;
 
-/** Directory the batch tests sweep, matching the `srcDir` the config they mock declares. */
+/** Directory swept by the batch tests, matching the `srcDir` that the mocked config declares. */
 const SRC_DIR = '.readyup/kits';
 
-/** The hash a compile records for its entry point, which is where a manifest entry's `sourceHash` comes from. */
+/** The hash recorded by a compile for its entry point, which is where a manifest entry's `sourceHash` comes from. */
 const SOURCE_HASH = '5c0urce1';
 
-/** The esbuild version every mocked compile reports, which is where an entry's `esbuildVersion` comes from. */
+/** The esbuild version reported by every mocked compile, which is where an entry's `esbuildVersion` comes from. */
 const ESBUILD_VERSION = '0.99.0-test';
 
-/** Returns the absolute path of a kit source in the directory a batch compile sweeps. */
+/** Returns the absolute path of a kit source in the directory that a batch compile sweeps. */
 function kitSource(fileName: string): string {
   return path.resolve(process.cwd(), SRC_DIR, fileName);
 }
 
 /**
- * Builds a `compileConfig` result whose closure records `entry` as the module the bundle was built from.
+ * Builds a `compileConfig` result whose closure records `entry` as the module from which the bundle was built.
  *
- * A test that cares which file supplied `sourceHash` says so by naming the entry, because the command
+ * Where a test cares which file supplied `sourceHash`, it says so by naming the entry, because the command
  * reads the hash back out of the closure rather than hashing the source itself.
  */
 function compileResult(
@@ -102,7 +102,7 @@ function compileResult(
   };
 }
 
-/** Returns the `inputs` an entry has when its compile read only the entry point, stated against the manifest. */
+/** Returns the `inputs` that an entry has when its compile read only the entry point, stated against the manifest. */
 function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
   return [{ hash, kind: 'module', path: relativePath }];
 }
@@ -116,7 +116,7 @@ describe(compileCommand, () => {
   beforeEach(() => {
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    // No path these tests name holds a symlink, so a real path is the path itself.
+    // No path named by these tests holds a symlink, so a real path is the path itself.
     mockRealpathSync.mockImplementation((target: string) => target);
   });
 
@@ -440,7 +440,7 @@ describe(compileCommand, () => {
       expect(stdout).toContain('manifest now lists no kits');
     });
 
-    it('gates on the path --manifest names rather than the default', async () => {
+    it('gates on the path named by --manifest rather than the default', async () => {
       arrangeEmptySweep({ srcDirExists: false, manifestExists: false });
 
       await compile(['--manifest', 'custom/manifest.json']);
@@ -572,7 +572,7 @@ describe(compileCommand, () => {
       });
     });
 
-    it('keeps the manifest entry a failed kit already had', async () => {
+    it('keeps the manifest entry that a failed kit already had', async () => {
       arrangeMixedBatch();
       const recordedAlpha = {
         name: 'alpha',
@@ -608,7 +608,7 @@ describe(compileCommand, () => {
   });
 
   describe('manifest checklist names', () => {
-    it('records the checklist names the compiled kit declares', async () => {
+    it('records the checklist names declared by the compiled kit', async () => {
       mockCompileConfig.mockResolvedValue(
         compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'aaaa1111' }),
       );
@@ -782,7 +782,7 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
-    // Keyed by the source rather than queued, so a kit the sweep skips does not hand its result to the next one.
+    // Keyed by the source rather than queued, so a kit skipped by the sweep does not hand its result to the next one.
     mockCompileConfig.mockImplementation((inputPath: string) => {
       const isAlpha = path.basename(inputPath) === 'alpha.ts';
       const result = isAlpha
@@ -960,9 +960,9 @@ describe(compileCommand, () => {
     });
   });
 
-  // esbuild reports the path it resolved a module to, so a symlink above the kit leaves the closure keyed
-  // on a path the command was never handed.
-  it('finds the entry point record under the real path of the source it was given', async () => {
+  // esbuild reports the path to which it resolved a module, so a symlink above the kit leaves the closure
+  // keyed on a path that the command was never handed.
+  it('finds the entry point record under the real path of the source that it was given', async () => {
     const realEntryPath = path.resolve('/real/kits/deploy.ts');
     mockRealpathSync.mockReturnValue(realEntryPath);
     mockCompileConfig.mockResolvedValue(

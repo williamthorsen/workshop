@@ -49,7 +49,7 @@ describe('buildBundle input closure', () => {
     expect(inputs).toContainEqual({ hash: expect.any(String), kind: 'module', path: path.join(treeRoot, 'kit.ts') });
   });
 
-  it('records a relative module the bundle inlined', () => {
+  it('records a relative module inlined by the bundle', () => {
     expect(inputs).toContainEqual({ hash: expect.any(String), kind: 'module', path: path.join(treeRoot, 'helper.ts') });
   });
 
