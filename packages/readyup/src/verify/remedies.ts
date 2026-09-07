@@ -6,7 +6,7 @@ import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { hasSourceFailed, type KitVerdicts } from './verdicts.ts';
 
-/** One thing to do about a kit, and the file it speaks for where it speaks for one. */
+/** One thing to do about a kit, and the file that it speaks for where it speaks for one. */
 interface Remedy {
   path?: string;
   text: string;
@@ -36,15 +36,15 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
 // region | Helpers
 
 /**
- * Returns the remedies a reader can act on, in the order the axes raised them.
+ * Returns the remedies on which a reader can act, in the order the axes raised them.
  *
- * Two rules, each collapsing a pair the axes reach independently and neither able to see. A file more than one axis
- * names is remedied once, by the axis that spoke first, which is the one holding the more exact account of it:
- * A kit's own source is recorded among its inputs, so deleting it fails both axes on one path and only the source
- * axis knows the file is the kit's entry.
+ * Two rules, each collapsing a pair that the axes reach independently and neither can see. A file named by more
+ * than one axis is remedied once, by the axis that spoke first, which is the one holding the more exact account
+ * of it: A kit's own source is recorded among its inputs, so deleting it fails both axes on one path and only the
+ * source axis knows the file is the kit's entry.
  *
  * A remedy whose whole action is a bare recompile is dropped wherever the target has drifted, because `rdy compile`
- * refuses a drifted kit and exits non-zero. The `--force` remedy the drift verdict raised is then the only command
+ * refuses a drifted kit and exits non-zero. The `--force` remedy raised by the drift verdict is then the only command
  * that runs, and it recompiles from the same source, so it settles whatever the dropped remedy was raised for.
  * Drift alone gates this: A bundle that is merely gone recompiles normally, and its own remedy is the bare recompile.
  */
@@ -66,8 +66,8 @@ function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
  * Returns the remedy for the compiled-output verdict, or `undefined` where there is nothing to fix.
  *
  * Both `drift` branches name `--force`, because `rdy compile` gates on drift and skips the kit rather than
- * overwriting it. They differ in whether there are edits to move first, which is the question `--rebuild` answers.
- * A missing bundle does not hit that gate, so a plain recompile regenerates it.
+ * overwriting it. They differ in whether there are edits to move first, which is the question that `--rebuild`
+ * answers. A missing bundle does not hit that gate, so a plain recompile regenerates it.
  */
 function resolveDriftRemedy(status: DriftStatus, rebuild: RebuildStatus | undefined): Remedy | undefined {
   switch (status.kind) {
@@ -112,7 +112,7 @@ function resolveInputRemedies(status: InputsStatus): Remedy[] {
 /**
  * Returns the remedy for the rebuild verdict, or `undefined` where there is nothing to add.
  *
- * Defers to a source the hash axis reports as gone. The verdict names the file only inside a free-text reason,
+ * Defers to a source that the hash axis reports as gone. The verdict names the file only inside a free-text reason,
  * so the caller's path rule cannot see the collision and the deferral is made here.
  *
  * `failed` always speaks. It is about the source rather than the bundle, and a kit that no longer compiles has to
@@ -137,7 +137,7 @@ function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceS
  * Returns the remedy for the source verdict, or `undefined` where there is nothing to fix.
  *
  * A recompile is what drops a vanished kit from the manifest, because the sweep rewrites the whole file from the
- * sources it finds; nobody edits the entry out by hand.
+ * sources that it finds; nobody edits the entry out by hand.
  */
 function resolveSourceRemedy(kit: RdyManifestKit, status: SourceStatus): Remedy | undefined {
   switch (status.kind) {

@@ -113,7 +113,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
  *
  * Refuses rather than degrading. `--rebuild` asks whether each bundle is reproducible, and a run
  * that concluded "no esbuild, so nothing to report" would pass while establishing nothing -- the
- * failure mode the flag exists to remove.
+ * failure mode that the flag exists to remove.
  */
 async function requireEsbuild(): Promise<void> {
   try {
@@ -142,10 +142,10 @@ function finishVerify(kits: JsonVerifyKitEntry[], passed: boolean, json: boolean
  * so every case is accounted for; the wire shape leaves `sourceStatus` optional for consumers that
  * predate it, and a verdict derived from an optional field has an absent case to get wrong.
  *
- * `unverified` passes on every recorded-hash axis: a manifest entry with no recorded hash predates
+ * `unverified` passes on every recorded-hash axis: A manifest entry with no recorded hash predates
  * the feature or was written with `--skip-manifest`, which says nothing about whether the kit has
- * changed. The rebuild axis has no such case -- only `ok` passes there, and a kit the rebuild could
- * not reach a verdict on fails rather than being waived.
+ * changed. The rebuild axis has no such case -- only `ok` passes there, and a kit on which the
+ * rebuild could not reach a verdict fails rather than being waived.
  */
 function isPassingVerdict({ drift, inputs, rebuild, source }: KitVerdicts): boolean {
   const targetPasses = drift.kind === 'ok' || drift.kind === 'unverified';
@@ -190,7 +190,7 @@ function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitV
 function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
   const { drift, inputs, rebuild, source } = verdicts;
   const token = resolveToken(verdicts);
-  // An unverified closure counts as confirmed, so an entry predating it gets the line it always did.
+  // An unverified closure counts as confirmed, so an entry predating it gets the line that it always did.
   const hashesConfirmed = drift.kind === 'ok' && source.kind === 'ok' && inputs.kind !== 'stale';
   const clauses = [
     describeDriftStatus(kit, drift),
@@ -213,7 +213,7 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
  * Returns the token for the worst of a kit's verdicts.
  *
  * A mismatch or a missing file on any axis yields a failure. The skip token needs an unverified
- * target and no verdict from the rebuild: a rebuild that reproduced the bundle has checked the kit
+ * target and no verdict from the rebuild: A rebuild that reproduced the bundle has checked the kit
  * more exactly than the absent hash would have, so the kit passed rather than went unchecked.
  */
 function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenName {
@@ -256,7 +256,7 @@ function describeInputsStatus(status: InputsStatus): string[] {
   return status.kind === 'stale' ? status.failures.map(describeInputFailure) : [];
 }
 
-/** Returns a clause naming one input the compile read and what has happened to it since. */
+/** Returns a clause naming one input read by the compile and what has happened to it since. */
 function describeInputFailure(failure: InputFailure): string {
   switch (failure.reason) {
     case 'changed':
@@ -272,9 +272,9 @@ function describeInputFailure(failure: InputFailure): string {
  * Returns a clause describing the rebuild verdict, or `undefined` when there is nothing to add.
  *
  * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
- * restate them. Anywhere else it speaks, because it then holds the line's strongest evidence: over
+ * restate them. Anywhere else it speaks, because it then holds the line's strongest evidence: Over
  * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
- * wrong, and over an unverified one it supplies the verdict the absent hash could not.
+ * wrong, and over an unverified one it supplies the verdict that the absent hash could not.
  */
 function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirmed: boolean): string | undefined {
   if (status === undefined) return undefined;

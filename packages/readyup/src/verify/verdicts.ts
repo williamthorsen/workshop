@@ -3,7 +3,7 @@ import type { InputsStatus } from './checkInputDrift.ts';
 import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 
-/** Every verdict one kit reached, gathered so each pass over a kit reads the same set. */
+/** Every verdict that one kit reached, gathered so each pass over a kit reads the same set. */
 export interface KitVerdicts {
   drift: DriftStatus;
   inputs: InputsStatus;
