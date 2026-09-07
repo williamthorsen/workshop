@@ -8,6 +8,7 @@ import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import type { LoadedRdyKit } from '../kits/loadRdyKit.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import { validateKit } from '../kits/validateKit.ts';
+import { isHtmlBody } from '../portable/isHtmlBody.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
@@ -38,9 +39,7 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
 
   const body = await response.text();
 
-  // Detect HTML error pages (e.g., GitHub 404 pages that return 200)
-  const trimmedBody = body.trimStart().toLowerCase();
-  if (trimmedBody.startsWith('<html') || trimmedBody.startsWith('<!doctype')) {
+  if (isHtmlBody(body)) {
     throw new Error(`Remote kit URL returned an HTML page instead of JavaScript: ${url}`);
   }
 
