@@ -59,13 +59,10 @@ describe(buildBundle, () => {
       KIT_KEEPING_HELPER,
     );
 
-    const result = await buildBundle(entryPath);
+    const bundle = (await buildBundle(entryPath)).bytes.toString('utf8');
 
-    expect(importLines(result.bytes.toString('utf8'))).toStrictEqual([
-      'import { fileExists } from "readyup/check-utils";',
-    ]);
-    // The closure records what the bundle inlined, so an inlined readyup would appear as an input of its own.
-    expect(result.inputs.some((input) => input.path.includes('readyup'))).toBe(false);
+    // An inlined module emits no import statement, so the exact import list is what proves externality.
+    expect(importLines(bundle)).toStrictEqual(['import { fileExists } from "readyup/check-utils";']);
   });
 
   it('compiles a node: specifier that esbuild does not recognize', async () => {

@@ -88,8 +88,7 @@ export interface BundleResult {
  *
  * Node built-in modules and the `readyup` package (including `readyup/*` subpaths) are kept
  * external; all other imports are inlined. `platform: 'node'` externalizes the builtins and
- * `externalizeReadyupPlugin` the rest, both in a form that leaves them side-effect free, so an import
- * whose only consumer is tree-shaken away is dropped rather than left orphaned in the output. The
+ * `externalizeReadyupPlugin` the rest, both in a form that leaves them side-effect free. The
  * externalized `readyup` specifiers are resolved at runtime by the `rdy` runner's module-resolution
  * hook (`readyupResolverHook.ts`), which routes them to the runner's own readyup installation.
  *
