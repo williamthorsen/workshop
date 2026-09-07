@@ -10,14 +10,14 @@ export interface CountPackageUsageOptions {
 /**
  * Counts calls to a package's exports across a project's sources, counting none in a source that never imports it.
  *
- * The import is what separates adoption from a name collision. A project hand-rolling its own helper of the same
+ * The import separates adoption from a name collision. A project hand-rolling its own helper of the same
  * name calls it as often as an adopter calls the real one, and counting those would report the project as adopted in
- * the same breath as naming the clone it should retire.
+ * the same breath as naming the clone that it should retire.
  *
  * The two patterns read two texts. The call scan reads a source with comments and literals blanked, so a call named
  * in prose is not counted as one made. The import test locates its match in a source with comments alone blanked,
- * because the specifier it matches is itself a string literal that full blanking would erase, and then reads the
- * blanked text at that offset to tell an import the source runs from one it merely quotes.
+ * because the specifier that it matches is itself a string literal that full blanking would erase, and then reads
+ * the blanked text at that offset to tell an import that the source runs from one that it merely quotes.
  */
 export function countPackageUsage(sources: readonly ProjectSource[], options: CountPackageUsageOptions): number {
   const { exportNames, packageName } = options;
@@ -57,7 +57,7 @@ function buildImportPattern(packageName: string): RegExp {
 }
 
 /**
- * Reports whether the offset an import matched at holds code rather than the text of a literal.
+ * Reports whether the offset at which an import matched holds code rather than the text of a literal.
  *
  * A match begins at `from`, `import(`, or `require(`, which survives full blanking where the import runs and
  * blanks where the same words sit inside an outer string. The specifier blanks either way, so this offset is the

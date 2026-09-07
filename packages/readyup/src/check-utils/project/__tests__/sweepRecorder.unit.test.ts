@@ -36,8 +36,8 @@ describe(withSweepRecorder, () => {
   it('keeps concurrent scopes apart', async () => {
     const first = createRecorder();
     const second = createRecorder();
-    // Holds the first scope open until the second has recorded, the interleaving a single shared variable
-    // holding the current recorder would get wrong.
+    // Holds the first scope open until the second has recorded; a single shared variable holding the current
+    // recorder would get that interleaving wrong.
     const { promise: gate, resolve: openGate } = Promise.withResolvers<undefined>();
 
     await Promise.all([
@@ -56,7 +56,7 @@ describe(withSweepRecorder, () => {
     expect(second.scanned).toStrictEqual([['src/second.ts']]);
   });
 
-  it('reports a sweep a scope nested inside another makes to the inner recorder alone', () => {
+  it('reports to the inner recorder alone a sweep that a scope nested inside another makes', () => {
     const outer = createRecorder();
     const inner = createRecorder();
 
@@ -93,7 +93,7 @@ describe(recordSweep, () => {
  * Loads a second copy of the module under test, as a run holds when the runner reads its own source and a
  * compiled kit resolves `readyup/*` to the built installation.
  *
- * The query string is what makes it a second copy: the loader keys modules by URL, so the same file under a
+ * The query string makes it a second copy: the loader keys modules by URL, so the same file under a
  * different URL is instantiated again.
  */
 async function importSecondCopy(): Promise<typeof import('../sweepRecorder.ts')> {

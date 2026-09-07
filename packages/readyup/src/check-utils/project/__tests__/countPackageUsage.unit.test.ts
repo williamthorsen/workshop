@@ -138,7 +138,7 @@ describe(countPackageUsage, () => {
 
 // region | Helpers
 
-/** Builds a source holding the given text, at a path this function never reads. */
+/** Builds a source holding the given text, at a path that this function never reads. */
 function buildSource(text: string): ProjectSource {
   return { path: 'src/source.ts', text };
 }
