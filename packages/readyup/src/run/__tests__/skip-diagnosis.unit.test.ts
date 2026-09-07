@@ -5,7 +5,7 @@ import type { SkipDiagnosis } from '../../kits/types.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { warnOnMaskedSkips } from '../skip-diagnosis.ts';
 
-/** The entry a locally-resolved kit produces: a name, and no package to attribute it to. */
+/** The entry produced by a locally-resolved kit: a name, and no package to attribute it to. */
 const LOCAL_KIT: ResolvedKitEntry = { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] };
 
 describe(warnOnMaskedSkips, () => {
@@ -71,7 +71,7 @@ describe(warnOnMaskedSkips, () => {
   });
 
   describe('kit identity', () => {
-    // Every kit `--packages` resolves has the same name, so the package is the only thing that
+    // Every kit resolved by `--packages` has the same name, so the package is the only thing that
     // tells one run entry's warnings from another's.
     it('names the publishing package beside the kit', () => {
       const { warnings } = warn([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
@@ -98,7 +98,7 @@ describe(warnOnMaskedSkips, () => {
 
 // region | Helpers
 
-/** Builds the entry a kit published by an installed package resolves to. */
+/** Builds the entry to which a kit published by an installed package resolves. */
 function packagedKit(): ResolvedKitEntry {
   return {
     name: 'default',
@@ -108,7 +108,7 @@ function packagedKit(): ResolvedKitEntry {
   };
 }
 
-/** Warns over one checklist's diagnoses, returning the entries alongside everything they wrote. */
+/** Warns over one checklist's diagnoses, returning the entries alongside everything `warnOnMaskedSkips` wrote. */
 function warn(diagnoses: SkipDiagnosis[] | undefined, entry: ResolvedKitEntry = LOCAL_KIT) {
   using io = captureStdio();
 

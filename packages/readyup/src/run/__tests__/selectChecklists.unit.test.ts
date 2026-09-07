@@ -27,7 +27,7 @@ describe(selectChecklists, () => {
     expect(selectChecklists(kit, ['infra'])).toStrictEqual([kit.checklists[1]]);
   });
 
-  it('drops a suite entry naming a checklist the kit does not declare', () => {
+  it('drops a suite entry naming a checklist that the kit does not declare', () => {
     const kit = makeKit({ suites: { ci: ['deploy', 'ghost'] } });
 
     expect(selectChecklists(kit, ['ci']).map((checklist) => checklist.name)).toStrictEqual(['deploy']);
