@@ -414,7 +414,7 @@ describe(formatPackagesView, () => {
     expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <name>');
   });
 
-  // The hint is what tells the reader a `--packages` run would skip this package.
+  // The hint tells the reader that a `--packages` run would skip this package.
   it('hints an unconfigured package with the source that names it directly', () => {
     const result = formatPackagesView({
       groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
@@ -637,7 +637,7 @@ describe(formatRecursivePackagesView, () => {
     expect(result).toContain('To run: cd packages/tooling && rdy run --from npm:@acme/kits <name>');
   });
 
-  it('marks a package the project config omits', () => {
+  it('marks a package omitted by the project config', () => {
     const result = formatRecursivePackagesView({
       projects: [
         buildProjectPackages({

@@ -68,7 +68,7 @@ describe('list --packages', () => {
     });
 
     // Discovery reads the declared dependencies, so only the config half reaches this one.
-    it('reports a configured package no dependency field declares', async () => {
+    it('reports a configured package declared by no dependency field', async () => {
       configurePackages(['hidden-kit']);
 
       const { stdout } = await list(['--packages']);
@@ -77,14 +77,14 @@ describe('list --packages', () => {
       expect(stdout).toContain('\u{1F4D3} audit');
     });
 
-    it('shows the kits of a package the config omits, not only its name', async () => {
+    it('shows the kits of a package omitted by the config, not only its name', async () => {
       const { stdout } = await list(['--packages']);
 
       expect(stdout).toContain('\u{1F4D3} default \u{00B7} Dependency drift');
       expect(stdout).toContain('\u{1F4D3} drift');
     });
 
-    // The hint is what tells the reader whether a `--packages` run would reach the package.
+    // The hint tells the reader whether a `--packages` run would reach the package.
     it('hints a configured package with the run reaching it and an unconfigured one with its source', async () => {
       configurePackages(['@acme/kits']);
 
@@ -139,14 +139,14 @@ describe('list --packages', () => {
       });
     });
 
-    it('reports the description a publisher records, and omits the field where there is none', async () => {
+    it('reports the description that a publisher records, and omits the field where there is none', async () => {
       const payload = await runForPayload();
 
       expect(findKit(payload, 'default')).toMatchObject({ description: 'Dependency drift' });
       expect(findKit(payload, 'drift')).not.toHaveProperty('description');
     });
 
-    // Every candidate the owner listing would name appears here as kit rows instead.
+    // Every candidate that the owner listing would name appears here as kit rows instead.
     it('emits no candidate list, since nothing is left to name separately', async () => {
       const payload = await runForPayload();
 
@@ -224,7 +224,7 @@ async function list(args: string[]) {
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
 
-/** Runs a packages listing under `--json` and returns the payload it emitted. */
+/** Runs a packages listing under `--json` and returns the payload that it emitted. */
 async function runForPayload(): Promise<unknown> {
   const { stdout } = await list(['--packages', '--json']);
   return JSON.parse(stdout);
