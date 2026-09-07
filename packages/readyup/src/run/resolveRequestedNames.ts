@@ -4,7 +4,7 @@ import type { RdyKit } from '../kits/types.ts';
  * Returns the ordered checklist names that positional arguments name, or every checklist name in kit
  * order where no argument was given.
  *
- * Arguments resolve left to right: a suite name expands to its constituent checklists in the order
+ * Arguments resolve left to right: A suite name expands to its constituent checklists in the order
  * declared by the suite, and a checklist name passes through as itself. A repeated name keeps only its
  * first occurrence.
  */

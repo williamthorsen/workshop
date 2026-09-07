@@ -79,7 +79,7 @@ describe('count agreement across views', () => {
     ]);
     expect(table).toContain(expectedFields);
 
-    // JSON payload: the same tally, nested under `counts` with the verdict beside it.
+    // JSON payload: The same tally, nested under `counts` with the verdict beside it.
     const { worstSeverity, ...numericCounts } = expectedCounts;
     const parsed: unknown = JSON.parse(
       formatReport([{ name: 'kit', entries: [{ name: 'deploy', report }] }], { reportOn: 'error' }),

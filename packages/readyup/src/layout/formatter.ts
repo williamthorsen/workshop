@@ -1,7 +1,7 @@
 /**
  * Every token given a glyph by a formatter.
  *
- * Two kinds share the list: a status token reports what became of a check, and a role token names what a
+ * Two kinds share the list: A status token reports what became of a check, and a role token names what a
  * thing is -- a kit, a checklist, the source from which one came. Both resolve through the same vocabulary,
  * so a style declares its glyphs in one place.
  */

@@ -35,7 +35,7 @@ export function resolvePackageRoot(packageName: string, fromDir: string = proces
 /**
  * Reads the version declared by an installed package, or `undefined` when it declares none readably.
  *
- * Best effort by design: the version labels output rather than governing it, so a manifest that cannot
+ * Best effort by design: The version labels output rather than governing it, so a manifest that cannot
  * be read or parsed drops a label and never fails the run.
  */
 export function readPackageVersion(packageRoot: string): string | undefined {

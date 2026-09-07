@@ -27,7 +27,7 @@ interface KitPackageGroupOptions {
  * or published by a workspace, is one that only the config half reports.
  *
  * Configured membership is passed as an argument rather than read here, which leaves the result a
- * function of a directory and a list: a caller sweeping a repository already holds each project's config.
+ * function of a directory and a list: A caller sweeping a repository already holds each project's config.
  *
  * A package that cannot be expanded warns and is omitted, matching the warn-and-continue that listing already
  * takes elsewhere. Listing is read-only, so a broken dependency drops its own group rather than the whole listing.

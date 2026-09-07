@@ -23,7 +23,7 @@ const TABLE_CELL_GAP = '  ';
 /**
  * Label leading every count line.
  *
- * The word tells a count line apart from the check lines above it: both lead with a severity
+ * The word tells a count line apart from the check lines above it: Both lead with a severity
  * token in the same column, so the tally needs to name itself rather than rely on the glyph.
  */
 const TOTAL_LABEL = 'Total:';
@@ -50,7 +50,7 @@ interface CountField {
 /**
  * Count fields in the order every count line presents them.
  *
- * Ordered by outcome rather than alphabetically: the checks that ran, worst news first, then the checks
+ * Ordered by outcome rather than alphabetically: The checks that ran, worst news first, then the checks
  * that did not. The reader scans left to right and meets the failures before anything else, and a fixed
  * order lets them find a field without reading every label.
  */
@@ -63,7 +63,7 @@ const COUNT_FIELDS: readonly CountField[] = [
   { key: 'optional', singular: 'skipped', plural: 'skipped' },
 ];
 
-/** One segment of a breadcrumb heading: the role played by the name, and the name itself. */
+/** One segment of a breadcrumb heading: The role played by the name, and the name itself. */
 export interface BreadcrumbSegment {
   role: TokenName;
   text: string;
@@ -159,7 +159,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * the formatter's separator where there is one.
    *
    * A heading has no blank line of its own. Separation is a property of the sequence in which a heading
-   * sits, which only the code emitting that sequence can see: a heading deciding for itself is how two
+   * sits, which only the code emitting that sequence can see: A heading deciding for itself is how two
    * adjacent ones each contribute a blank and open a gap that neither intended.
    */
   function formatHeading(name: string, level: HeadingLevel, detail?: string): string {

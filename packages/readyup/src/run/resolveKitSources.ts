@@ -79,7 +79,7 @@ export function resolveKitSources({
     return resolveFromSource(source, specs, extension);
   }
 
-  // Default/internal case: resolve from the current repo.
+  // Default/internal case: Resolve from the current repo.
   if (internal) {
     return specs.map((spec) => ({
       name: spec.kitName,

@@ -25,7 +25,7 @@ const it = baseIt.extend(
         'node_modules/broken-manifest/.readyup/kits/drift.js': 'export default {};\n',
         'node_modules/broken-manifest/.readyup/manifest.json': '{ not json',
 
-        // Installed, publishing nothing: an empty kit directory, not an absent one.
+        // Installed, publishing nothing: An empty kit directory, not an absent one.
         'node_modules/kitless/package.json': JSON.stringify({ name: 'kitless', version: '1.0.0' }),
         'node_modules/kitless/.readyup/kits/': '',
 

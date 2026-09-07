@@ -790,7 +790,7 @@ describe(formatEmpty, () => {
 /**
  * Builds a configured package group holding the named kits, each undescribed.
  *
- * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: a group naming no version
+ * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: A group naming no version
  * is built inline.
  */
 function buildGroup({
@@ -847,7 +847,7 @@ function findProjectCommand(output: string, heading: string): string | undefined
 /**
  * Returns the line beneath a section's title, which is where its command sits.
  *
- * Reading that line positionally is the assertion: a command fused into the title would still satisfy a
+ * Reading that line positionally is the assertion: A command fused into the title would still satisfy a
  * `toContain` over the whole output.
  */
 function findSectionCommand(output: string, title: string): string | undefined {

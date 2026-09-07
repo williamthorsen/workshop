@@ -91,7 +91,7 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
 /**
  * Resolves a check's remediation message, absorbing an accessor that fails to produce one.
  *
- * `fix` may be an accessor, so it is read here and nowhere else: only a failure renders one, and a
+ * `fix` may be an accessor, so it is read here and nowhere else: Only a failure renders one, and a
  * check that passes, skips, or is blocked must not do work that it discards. An accessor that throws
  * or yields a non-string is a defect in the kit rather than in the check's subject, so it is reported
  * in the slot that the remediation would occupy and leaves the verdict and its severity alone.
@@ -99,7 +99,7 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
 function resolveFix(check: RdyCheck): string | null {
   let raw: unknown;
   try {
-    // Widened to `unknown`: a kit runs as JavaScript, so an accessor yields whatever its author
+    // Widened to `unknown`: A kit runs as JavaScript, so an accessor yields whatever its author
     // wrote, whatever the declared type promised.
     raw = check.fix;
   } catch (error_: unknown) {
@@ -193,14 +193,14 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
   if (check.skip !== undefined) {
     const start = performance.now();
     try {
-      // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their
+      // Widened to `unknown`: A kit runs as JavaScript, so its functions return whatever their
       // author wrote, whatever the declared type promised. Called optionally because the guard above does not
       // narrow inside the closure, and called on `check` so an accessor-backed `skip` keeps its receiver.
       const skipResult: unknown = await withSweepRecorder(run.pragmaLedger, () => check.skip?.());
       if (typeof skipResult === 'string') {
         const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
         run.pendingDiagnoses.push({ check, result });
-        // An `n/a` skip terminates its subtree: descendants produce no results at all.
+        // An `n/a` skip terminates its subtree: Descendants produce no results at all.
         return [result];
       }
       if (skipResult !== false) {
@@ -238,7 +238,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
         ? buildPassedResult({ ...context, detail, durationMs, progress })
         : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress });
     } else {
-      // Reported as a defect rather than as an ordinary failure: the check never expressed a
+      // Reported as a defect rather than as an ordinary failure: The check never expressed a
       // verdict, so the severity that it declared for its subject says nothing about this outcome.
       const error = new Error(describeUninterpretableReturn(raw));
       result = buildAuthoringErrorResult(check, context, durationMs, error);
@@ -288,7 +288,7 @@ async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: numb
 /**
  * Skips a check and every descendant below it.
  *
- * Every skip produced here is a `precondition` skip: an `n/a` skip terminates its own subtree before
+ * Every skip produced here is a `precondition` skip: An `n/a` skip terminates its own subtree before
  * reaching this point.
  */
 function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number): RdyResult[] {
@@ -394,7 +394,7 @@ function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCh
  * failure at or above the failure threshold.
  *
  * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
- * cannot then alter it: no diagnostic check can reach a conclusion that already exists, and none
+ * cannot then alter it: No diagnostic check can reach a conclusion that already exists, and none
  * is counted in the wall clock that the report records.
  */
 export async function runRdy(

@@ -10,7 +10,7 @@ const LEADING_COMMA = /^[ \t]*,/;
 const PRAGMA_TOKENS = new Set(['rdy-ignore', 'rdy-ignore-next-line']);
 
 /**
- * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: an `rdy-ignore` sits on
+ * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: An `rdy-ignore` sits on
  * that line, or an `rdy-ignore-next-line` on the one above it.
  *
  * A pragma naming no check suppresses whatever the check. One naming checks suppresses only where an id names a

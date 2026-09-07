@@ -28,7 +28,7 @@ export async function diagnoseSkips(checks: RdyCheck[], provenance?: KitProvenan
  * nothing about that skip either way; the two are separate codes because a consumer branching on
  * one must never read the other as a masked pass.
  *
- * Mirrors `warnOnKitStaleness`: the stderr lines are written in both output modes, and the returned
+ * Mirrors `warnOnKitStaleness`: The stderr lines are written in both output modes, and the returned
  * entries are what JSON mode captures into the report for a consumer that owns only stdout. Unlike
  * that family, these are check-derived rather than manifest-derived, so no kit source silences them.
  */
@@ -63,13 +63,13 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
  * Diagnoses one skipped check, returning `undefined` where its `check` would have failed.
  *
  * A `check` that throws, one whose findings cannot be read, or one returning a value expressing no
- * verdict leaves the question undecided: reporting any of them as a masked pass would assert something
+ * verdict leaves the question undecided: Reporting any of them as a masked pass would assert something
  * the run never established. Resolving the return value sits inside the guard for that reason, as it
  * does in the runner.
  *
  * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope opened by
  * the runner around a live one, so a sweep that it reads here is recorded nowhere. A sweep that it read in its
- * live `skip` was recorded then and stands: what this diagnosis adds is nothing, not what the check contributed
+ * live `skip` was recorded then and stands: What this diagnosis adds is nothing, not what the check contributed
  * while running.
  */
 async function diagnoseSkip(
@@ -79,7 +79,7 @@ async function diagnoseSkip(
   let raw: unknown;
   let outcome: unknown;
   try {
-    // Widened to `unknown`: a kit runs as JavaScript, so its functions return whatever their author
+    // Widened to `unknown`: A kit runs as JavaScript, so its functions return whatever their author
     // wrote, whatever the declared type promised.
     raw = await check.check();
     outcome = resolveCheckReturn(raw, check, provenance);

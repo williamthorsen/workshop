@@ -14,7 +14,7 @@ import { validateKit } from './validateKit.ts';
 /** The extension that a kit's counterpart takes, keyed by the extension that was requested. */
 const SIBLING_EXTENSIONS: Record<string, string> = { '.js': '.ts', '.ts': '.js' };
 
-/** Result of loading a rdy kit: the validated kit plus the compile-time readyup version, if embedded. */
+/** Result of loading a rdy kit: The validated kit plus the compile-time readyup version, if embedded. */
 export interface LoadedRdyKit {
   kit: RdyKit;
   compileTimeVersion: string | undefined;
@@ -38,7 +38,7 @@ export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
     throw new Error(diagnoseMissingKit(resolvedPath));
   }
 
-  // Check a bundle's readyup imports before evaluating it. A `.ts` kit is source rather than a bundle: it binds
+  // Check a bundle's readyup imports before evaluating it. A `.ts` kit is source rather than a bundle: It binds
   // readyup through the project's own installation, which resolves or fails on its own terms.
   if (path.extname(resolvedPath) === '.js') {
     await assertKitImportsResolve(readFileSync(resolvedPath, 'utf8'), toDisplayPath(resolvedPath));

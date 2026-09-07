@@ -9,7 +9,7 @@ export interface UnresolvableImportsContext {
   provenance?: KitProvenance | undefined;
 }
 
-/** A composed diagnosis: what went wrong, and the one action that clears it. */
+/** A composed diagnosis: What went wrong, and the one action that clears it. */
 export interface UnresolvableImportsDiagnosis {
   message: string;
   hint: string;
@@ -22,7 +22,7 @@ export interface UnresolvableImportsDiagnosis {
  * several kits that share the name `default` and a message read on its own has to say which one failed.
  *
  * The remedy follows the kit's source, since the action that clears the failure differs by where the bundle is
- * maintained: a kit in the project can be recompiled, a kit inside an installed package cannot.
+ * maintained: A kit in the project can be recompiled, a kit inside an installed package cannot.
  */
 export function describeUnresolvableImports(
   findings: UnresolvableImports,

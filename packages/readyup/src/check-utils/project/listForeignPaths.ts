@@ -23,7 +23,7 @@ const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
  * by something the repository does not contain.
  *
  * Memoized per `cwd` for the life of the process, holding the promise rather than the set to which it settles,
- * because the runner starts sibling checks together: a cache filled on resolution is too late for every check that
+ * because the runner starts sibling checks together: A cache filled on resolution is too late for every check that
  * started alongside the first, and each would invoke git of its own. A rejected lookup is dropped, so a failure is
  * retried rather than remembered.
  */

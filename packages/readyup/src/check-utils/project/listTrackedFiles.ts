@@ -7,10 +7,10 @@ const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
 /**
  * Lists the paths tracked by git under the working directory, or `undefined` where it is not a git working tree.
  *
- * `undefined` and an empty list are distinct results: a project outside a working tree cannot be swept at all,
+ * `undefined` and an empty list are distinct results: A project outside a working tree cannot be swept at all,
  * while one inside an empty tree was swept and holds no tracked file.
  *
- * Lists with `git ls-files -z`. The `-z` makes the list complete: without it git escapes a path holding a
+ * Lists with `git ls-files -z`. The `-z` makes the list complete: Without it git escapes a path holding a
  * non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git
  * emits paths relative to `cwd` and limited to that subtree, the same scope in which a relative `readFile` path
  * works, so the listing follows the project in which `rdy` was invoked rather than the repository from which a kit
@@ -21,7 +21,7 @@ const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
  * `scanned` of its own.
  *
  * Memoized per `cwd` for the life of the process. The promise is held rather than the value to which it settles,
- * because the runner starts sibling checks together: a cache filled on resolution is still empty for every check
+ * because the runner starts sibling checks together: A cache filled on resolution is still empty for every check
  * that started alongside the first, and each would invoke git of its own. A rejected listing is dropped, so a
  * failure is retried rather than remembered.
  */

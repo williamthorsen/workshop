@@ -31,7 +31,7 @@ export interface WalkDirectoriesOptions {
   match: string | string[];
   /**
    * Globs matched against directory paths. A matching directory is neither traversed nor yielded, and
-   * nothing else excludes anything: clearing this sweeps the whole tree, dot-directories included.
+   * nothing else excludes anything: Clearing this sweeps the whole tree, dot-directories included.
    */
   prune?: string[];
   /** Directory levels that the sweep descends below `root`. */

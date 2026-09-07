@@ -9,7 +9,7 @@ import { listRunnerExports, listRunnerSpecifiers } from '../listRunnerExports.ts
 /**
  * Returns the specifiers that this package's `exports` map serves as JavaScript.
  *
- * A JSON subpath is excluded: it has no named exports for the table to account for.
+ * A JSON subpath is excluded: It has no named exports for the table to account for.
  */
 function readPublishedSpecifiers(): string[] {
   const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
@@ -39,7 +39,7 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('runGit');
   });
 
-  // The whole of what lets a kit import it: absent from the table, the import fails validation.
+  // The whole of what lets a kit import it: Absent from the table, the import fails validation.
   it('reports discoverKitPackages as a value export that a kit can bind', () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('discoverKitPackages');
   });

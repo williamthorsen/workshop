@@ -21,7 +21,7 @@ const it = baseIt
     makeFixture(() =>
       createTempTree(
         {
-          // Sweep root: compiled kits and a manifest of its own.
+          // Sweep root: Compiled kits and a manifest of its own.
           'package.json': JSON.stringify({ name: 'root' }),
           '.readyup/kits/demo.js': 'export default {};',
           '.readyup/manifest.json': JSON.stringify({ version: 1, kits: [{ name: 'demo' }] }),
@@ -35,7 +35,7 @@ const it = baseIt
           'packages/broken/.config/readyup.config.ts': 'export default { this is not TypeScript',
           'packages/broken/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [] }),
 
-          // Compiled with --skip-manifest: kits on disk, no manifest beside them.
+          // Compiled with --skip-manifest: Kits on disk, no manifest beside them.
           'packages/compiled-only/package.json': JSON.stringify({ name: 'compiled-only' }),
           'packages/compiled-only/.readyup/kits/thing.js': 'export default {};',
 

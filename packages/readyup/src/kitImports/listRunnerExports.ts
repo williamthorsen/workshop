@@ -8,7 +8,7 @@ import * as testingNamespace from '../testing/index.ts';
  *
  * Read from the runner's own entry points rather than from a maintained list, so the table cannot drift from the
  * package that it describes. Each entry point is a barrel named in the package's `exports` map, and loading every
- * module that it touches is the point: the whole surface is what a kit binds against.
+ * module that it touches is the point: The whole surface is what a kit binds against.
  *
  * Type-only exports are absent, correctly: esbuild erases type imports, so no bundle can bind one.
  */

@@ -251,7 +251,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
     manifestKits = readManifest(manifestPath).kits;
   } catch (error: unknown) {
     // A missing manifest is the normal state of a project that never compiled, and says nothing on its
-    // own: the empty-listing hint belongs to the view, which sees the package sections too. Anything
+    // own: The empty-listing hint belongs to the view, which sees the package sections too. Anything
     // else is a manifest that exists and cannot be read, which the reader should hear about.
     if (!(error instanceof ManifestNotFoundError)) {
       process.stderr.write(`Warning: ${describeError(error)}\n`);
@@ -287,7 +287,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
 /**
  * Enumerates every kit-publishing dependency of the working directory, with the kits that each publishes.
  *
- * The dependency axis alone: a project's own kits belong to the owner listing, and this view reports what
+ * The dependency axis alone: A project's own kits belong to the owner listing, and this view reports what
  * the project's dependencies offer rather than what it holds. Both the packages named by the config and the
  * ones that it omits are reported, since the question is what is available rather than what a run would select.
  */
@@ -306,7 +306,7 @@ async function runPackagesMode(json: boolean): Promise<number> {
 /**
  * Enumerates the kit-publishing dependencies of every project below the working directory.
  *
- * Both axes at once: the locality named by `--recursive` and the provenance named by `--packages`. The sweep
+ * Both axes at once: The locality named by `--recursive` and the provenance named by `--packages`. The sweep
  * is every project rather than every kit project, because a workspace authoring no kits of its own still
  * declares dependencies that publish them, and that workspace is the one that the question is about.
  *
@@ -339,7 +339,7 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
 /**
  * Enumerates the compiled kits of every kit project below the working directory.
  *
- * Compiled kits only: an internal kit is never reachable from another directory, since `--jit` and
+ * Compiled kits only: An internal kit is never reachable from another directory, since `--jit` and
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
  * What is left is exactly the set that a reader can run from where they stand.
  */
@@ -400,7 +400,7 @@ function collectProjectKits(project: Project): JsonListKitEntry[] {
 /**
  * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
  *
- * A manifest that nobody can read drops that project's descriptions, not its listing: the kits themselves
+ * A manifest that nobody can read drops that project's descriptions, not its listing: The kits themselves
  * are still on disk.
  */
 function readProjectManifest(manifestPath: string): RdyManifest | undefined {
@@ -419,7 +419,7 @@ function readProjectManifest(manifestPath: string): RdyManifest | undefined {
  *
  * `run` fails hard on the same configuration, because it would otherwise execute against a package set that
  * nobody chose. Listing is read-only, so it takes the warn-and-continue that the corrupt-manifest path above
- * already takes: a reader asking what exists is better served by the rest of the answer than by none.
+ * already takes: A reader asking what exists is better served by the rest of the answer than by none.
  */
 function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
   return packageNames.flatMap((packageName) => {
@@ -469,7 +469,7 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
  *
  * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than the
  * whole listing, taking the same warn-and-continue that the corrupt-manifest paths take. `run` still fails
- * hard on the same failure: it would otherwise execute against settings that nobody chose.
+ * hard on the same failure: It would otherwise execute against settings that nobody chose.
  */
 async function loadListingConfig(): Promise<ResolvedRdyConfig> {
   try {
@@ -505,7 +505,7 @@ function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListK
  * Returns a kit row built from a manifest entry.
  *
  * Every field but `name` and `kind` comes from the manifest, so a kit compiled by an older readyup
- * simply has fewer of them. `checklists` is read here rather than from the kit itself: listing
+ * simply has fewer of them. `checklists` is read here rather than from the kit itself: Listing
  * kits never imports a compiled bundle, so it never runs kit code.
  *
  * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
@@ -538,7 +538,7 @@ function buildInternalEntry(name: string, dir: string, extension: string): JsonL
  * Enumerates the compiled kits in a directory, for a source that has no manifest beside it.
  *
  * `run --from` resolves a kit by filename alone, so a directory from which it can run is one that `list`
- * must be able to describe. The rows hold only what the filesystem knows: everything else -- description,
+ * must be able to describe. The rows hold only what the filesystem knows: Everything else -- description,
  * checklist names, the readyup version against which a kit was built -- lives in the manifest that is absent.
  *
  * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a

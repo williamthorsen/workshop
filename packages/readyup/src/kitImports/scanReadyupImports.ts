@@ -16,7 +16,7 @@ export interface ReadyupImport {
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
  * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
- * nothing is claimed about what it binds. A specifier naming a JSON module is dropped: it has no named exports to
+ * nothing is claimed about what it binds. A specifier naming a JSON module is dropped: It has no named exports to
  * verify, and a runner subpath serving one has no namespace to check against.
  *
  * Throws the lexer's `ParseError` for source it cannot read, which is source Node would not import either.
@@ -53,7 +53,7 @@ const BRACED_GROUP_PATTERN = /\{([\s\S]*)\}/;
 /**
  * The imported name leading one entry of a braced clause, ahead of any `as` rename.
  *
- * Both spellings allowed by the grammar for the name: a bare identifier, and the quoted form that holds a
+ * Both spellings allowed by the grammar for the name: A bare identifier, and the quoted form that holds a
  * module-export name that an identifier cannot express.
  */
 const LEADING_NAME_PATTERN = /^\s*(?:"([^"]*)"|'([^']*)'|([A-Za-z_$][\w$]*))/;

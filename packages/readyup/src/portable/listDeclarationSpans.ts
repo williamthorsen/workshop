@@ -57,9 +57,9 @@ interface Head {
  * holding a finding's line compares against.
  *
  * A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it
- * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: a generic constraint
+ * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: A generic constraint
  * and a return-type annotation can each hold braces of their own, and an overload signature has no body to close. A
- * span cut short reports code that the caller meant to cover. The error runs the other way instead: a module-scope
+ * span cut short reports code that the caller meant to cover. The error runs the other way instead: A module-scope
  * statement trailing a declaration with no head between them is read as part of it, which is the bias that this
  * takes deliberately.
  *
@@ -198,7 +198,7 @@ function listHeads(code: string): Head[] {
 /**
  * Reports whether a head following the given characters begins a statement rather than continuing an expression.
  *
- * The last character decides, except that an arrow's `>` closes no operand: it introduces the arrow function's body,
+ * The last character decides, except that an arrow's `>` closes no operand: It introduces the arrow function's body,
  * and a `function` or `class` there is that body rather than a declaration of its own.
  */
 function startsStatement(previousChars: string): boolean {

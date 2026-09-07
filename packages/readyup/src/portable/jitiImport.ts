@@ -56,7 +56,7 @@ interface UnresolvedModuleReport {
 /**
  * Returns the diagnosis and remediation for a specifier that jiti could not resolve.
  *
- * The install command is offered only for a specifier that names a package: installing a relative
+ * The install command is offered only for a specifier that names a package: Installing a relative
  * import or a builtin is not the remedy, and a specifier not named by jiti cannot be installed at all.
  */
 function describeUnresolvedModule(

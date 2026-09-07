@@ -1,4 +1,4 @@
-// Punctuation that a `/` may follow and still open a regular expression. `)` and `]` are left out on purpose: both
+// Punctuation that a `/` may follow and still open a regular expression. `)` and `]` are left out on purpose: Both
 // end an expression that division takes as its left operand, and division after them is far commoner than a
 // regular expression is. `+` and `-` are the binary operators alone, because `scanCode` reads `++` and `--`
 // whole and a postfix one therefore never reaches this set.
@@ -41,7 +41,7 @@ const EXPRESSION_KEYWORDS = new Set([
 const WORD_CHAR = /[\w$]/;
 
 /**
- * One pass over a source: the characters that it emits, the text that it reads, and whether a literal's text blanks.
+ * One pass over a source: The characters that it emits, the text that it reads, and whether a literal's text blanks.
  */
 interface Scan {
   blanksLiterals: boolean;
@@ -239,7 +239,7 @@ function isDoubledSign(char: string, next: string | undefined): boolean {
  *
  * The assertion is postfix, so the operand before it decides whether a following `/` divides, and leaving
  * `previousToken` alone is what puts that decision back where it belongs. `startsRegex` is the test because a
- * token permitting a regular expression after it completed no operand: a `!` after one of those negates, and a
+ * token permitting a regular expression after it completed no operand: A `!` after one of those negates, and a
  * `!` after anything else attaches to the operand that it follows.
  */
 function isNonNullAssertion(char: string, previousToken: string): boolean {

@@ -69,7 +69,7 @@ export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
 /**
  * Returns the failure to raise for a projection that did not complete, worded as `pickJson` reports it.
  *
- * Names the path as the kit wrote it, which the projection cannot: by the time it reads the file, only
+ * Names the path as the kit wrote it, which the projection cannot: By the time it reads the file, only
  * the resolved path survives.
  */
 function describeProjectionFailure(error: unknown, relativePath: string, jsonFilePath: string): unknown {

@@ -9,7 +9,7 @@ const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
  * Schema for a hash recorded by the manifest, which is a prefix of a SHA-256 hex digest.
  *
  * Every reader compares the digest at the recorded value's own length, so how much of it a record
- * covers is the compile's to choose: a readyup recording a longer prefix does not read as stale to one
+ * covers is the compile's to choose: A readyup recording a longer prefix does not read as stale to one
  * that records eight characters. The floor keeps a record too short to distinguish anything from
  * reaching a comparison, where it would pass every axis on every kit.
  */
@@ -47,7 +47,7 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  *
  * `inputs` records everything else the compile read, which is every module inlined by the bundle past
  * the entry and every JSON file projected by `pickJson`. It is optional on the same terms that
- * `checklists` is: an entry written before the closure was recorded has none.
+ * `checklists` is: An entry written before the closure was recorded has none.
  *
  * `esbuildVersion` and `bundledDependencies` record the toolchain half of the compile: the esbuild
  * that produced the bundle, and each package that the bundle inlined with the version declared by its

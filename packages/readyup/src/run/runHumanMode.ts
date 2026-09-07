@@ -123,7 +123,7 @@ type BlockWriter = (text: string) => void;
  * Returns a writer that separates each block of a run from the one before with a single blank line.
  *
  * Separation lives here rather than in the headings because only a sequence can see what precedes it, and
- * the run's first block needs no blank at all. One width serves every boundary, a kit's included: the
+ * the run's first block needs no blank at all. One width serves every boundary, a kit's included: The
  * heading below a gap names the kit that it opens, so a wider gap would restate in whitespace what the next
  * line already states in words.
  */
@@ -141,7 +141,7 @@ function createBlockWriter(): BlockWriter {
  * Returns the segment naming where a kit came from, or `undefined` where there is nothing to name.
  *
  * A kit held by the local kits directory has no source, and neither does one whose directory resolves to
- * the working directory: naming the directory in which the reader is standing tells them nothing. A package
+ * the working directory: Naming the directory in which the reader is standing tells them nothing. A package
  * states its version because the whole point of running a kit from an installed package is that it
  * matches the version in place, which the reader can only confirm if it is stated.
  */

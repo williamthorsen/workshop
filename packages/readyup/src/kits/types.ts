@@ -72,8 +72,8 @@ export type Severity = 'error' | 'warn' | 'recommend';
 /**
  * Return value from a skip function.
  *
- * - `false`: the check is applicable; run it.
- * - `string`: the check is not applicable; skip it with this reason as detail.
+ * - `false`: The check is applicable; run it.
+ * - `string`: The check is not applicable; skip it with this reason as detail.
  */
 export type SkipResult = false | string;
 
@@ -109,7 +109,7 @@ export interface CheckOutcome {
   ok: boolean;
 
   /**
-   * Why this status: the evidence on a pass, what went wrong on a failure. Not what the check
+   * Why this status: The evidence on a pass, what went wrong on a failure. Not what the check
    * asserts, which the name already states, and not how to fix it, which belongs in `fix`.
    */
   detail?: string | undefined;
@@ -139,7 +139,7 @@ export interface OutcomeFinding {
 /**
  * A check's located sites, from which the runner derives the verdict, the detail, and the fraction.
  *
- * The sites suppressed by a pragma drop there rather than here: the runner is the only layer holding both the
+ * The sites suppressed by a pragma drop there rather than here: The runner is the only layer holding both the
  * check and the kit's provenance, which is what a pragma naming a check is matched against.
  */
 export interface FindingOutcome {
@@ -175,7 +175,7 @@ export interface RdyCheck {
   /**
    * Stable identifier written by a pragma to suppress this check's findings and no other check's.
    *
-   * Bare here: the runner namespaces it under the publishing package where the kit has one. A check
+   * Bare here: The runner namespaces it under the publishing package where the kit has one. A check
    * naming no located site needs none, and one declaring none is named by no pragma.
    */
   id?: string | undefined;
@@ -185,7 +185,7 @@ export interface RdyCheck {
 
   /**
    * Severity of this check. Determines failure and reporting behavior.
-   * Default: kit's `defaultSeverity`, falling back to 'error'.
+   * Default: Kit's `defaultSeverity`, falling back to 'error'.
    */
   severity?: Severity | undefined;
 
@@ -275,9 +275,9 @@ export interface SkippedResult extends RdyResultBase {
 /**
  * The outcome of running a single check, discriminated by `status`.
  *
- * - `passed`: check ran and the condition was met.
- * - `failed`: check ran and the condition was not met.
- * - `skipped`: check did not run (`skipReason` explains why).
+ * - `passed`: Check ran and the condition was met.
+ * - `failed`: Check ran and the condition was not met.
+ * - `skipped`: Check did not run (`skipReason` explains why).
  */
 export type RdyResult = PassedResult | FailedResult | SkippedResult;
 
@@ -300,7 +300,7 @@ export interface RdyReport {
   /**
    * Findings from diagnosing the checks that skipped `n/a`, absent when diagnosis did not run.
    *
-   * Absent and empty say different things: nothing was asked, versus asked and nothing found.
+   * Absent and empty say different things: Nothing was asked, versus asked and nothing found.
    */
   diagnoses?: SkipDiagnosis[] | undefined;
 
@@ -344,11 +344,11 @@ export interface RdyChecklist {
   /**
    * Gating checks. If any precondition fails, all downstream checks are skipped.
    *
-   * Only a failure gates. A precondition skipped `n/a` does not: the checklist runs in full. To make a whole checklist
+   * Only a failure gates. A precondition skipped `n/a` does not: The checklist runs in full. To make a whole checklist
    * inapplicable, nest its checks under a single parent check whose `skip` returns `n/a`, terminating that subtree.
    *
    * Reporting of precondition results and skipped dependent checks follows the same reporting-threshold rule as all
-   * other results: a result appears in output only when its severity is at or above the reporting threshold. Each
+   * other results: A result appears in output only when its severity is at or above the reporting threshold. Each
    * dependent check's own severity determines whether its skipped entry is shown.
    */
   preconditions?: RdyCheck[] | undefined;

@@ -295,7 +295,7 @@ function buildPackageLabel(group: KitPackageGroup): string {
 /**
  * Returns the command that runs a project's kits from where the reader stands.
  *
- * A project on a custom `outDir` is reachable only by file: every other resolution path hardcodes the
+ * A project on a custom `outDir` is reachable only by file: Every other resolution path hardcodes the
  * convention directory.
  */
 function buildProjectHint(project: RecursiveProjectView): string {
@@ -320,7 +320,7 @@ function buildProjectPrefix(dir: string): string {
 /**
  * Returns the indented line naming the command that runs the kits beneath it.
  *
- * The label separates the line from the kit rows sharing its column: the role glyphs shown by those rows
+ * The label separates the line from the kit rows sharing its column: The role glyphs shown by those rows
  * are empty in plain style, so without it the command reads as one more kit.
  */
 function buildRunLine(command: string, depth = 1): string {
@@ -409,7 +409,7 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
  *
  * `hintLine` is passed in already indented, because a section headed by a command and one headed by an instruction are
  * built differently and only the caller knows which it holds. Nothing inside is separated by a blank line:
- * the hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
+ * The hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
  * the blank separating one section from the next belongs to whoever assembles them.
  */
 function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {

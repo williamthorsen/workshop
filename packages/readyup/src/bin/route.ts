@@ -123,7 +123,7 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
 
   // A bare word that names a kit is always run as that kit; only one that names none can be a
   // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
-  // never reaches it: naming the subcommand says the word is a kit.
+  // never reaches it: Naming the subcommand says the word is a kit.
   const typoMatch = findNearestWord(command, COMMAND_NAMES);
   if (typoMatch !== undefined && !namesAKit(command, args)) {
     throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);

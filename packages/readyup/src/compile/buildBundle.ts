@@ -238,7 +238,7 @@ function hasUnresolvedSpecifier(error: unknown): boolean {
  * Returns the name and version of the package holding `directory`, walking up to the nearest
  * `package.json` that declares both.
  *
- * The walk never leaves `node_modules`: a store path with no identifiable package returns `undefined`
+ * The walk never leaves `node_modules`: A store path with no identifiable package returns `undefined`
  * rather than climbing on and attributing the file to the host project.
  */
 function identifyPackage(directory: string): { name: string; version: string } | undefined {

@@ -284,7 +284,7 @@ describe(runRdy, () => {
         },
       );
 
-      // Gating and run failure are separate questions: the gate asks whether the checks are worth
+      // Gating and run failure are separate questions: The gate asks whether the checks are worth
       // running at all, and the threshold asks whether what happened is worth failing over.
       it('gates on a precondition whose failure is below the failure threshold, and still passes', async () => {
         const checklist: RdyChecklist = {

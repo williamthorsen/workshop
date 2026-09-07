@@ -35,7 +35,7 @@ const DOTTED_NUMERIC_VERSION = /^\d+(?:\.\d+){0,2}$/;
  *
  * A floor is authored rather than read off an installed package, so it takes no range prefix and no
  * prerelease tail; rejecting those is what keeps a typo from silently never matching. A fourth
- * segment is rejected for the mirror reason: the comparison reads three, and would discard it.
+ * segment is rejected for the mirror reason: The comparison reads three, and would discard it.
  */
 const MinReadyupVersionSchema = z
   .string({ error: (issue) => `expected a dotted numeric version, got ${describeType(issue.input)}` })
@@ -49,7 +49,7 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
 /**
  * Schema for a single check, recursing into its dependent checks through a getter.
  *
- * `looseObject` lets unknown keys through: a kit authored against a later readyup, or with an
+ * `looseObject` lets unknown keys through: A kit authored against a later readyup, or with an
  * annotation about which this version knows nothing, is not thereby broken.
  *
  * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
@@ -79,7 +79,7 @@ const CheckSchema: z.ZodType = z.preprocess(
  * Fields common to flat and staged checklists.
  *
  * Both `checks` and `groups` are optional here and narrowed by the refinements below. Modelling the
- * two forms as one object rather than a union is what keeps validation errors precise: a union
+ * two forms as one object rather than a union is what keeps validation errors precise: A union
  * failure reports that neither branch matched, burying the offending check under an
  * `invalid_union` issue whose path stops at the checklist.
  */
@@ -95,7 +95,7 @@ const ChecklistShapeSchema = z.looseObject({
  * A checklist with exactly one of `checks` and `groups`.
  *
  * The two clauses test different things, and each has to. `isFlatChecklist` discriminates on key
- * presence, so the exclusivity clause does too: a checklist whose `checks` is present but explicitly
+ * presence, so the exclusivity clause does too: A checklist whose `checks` is present but explicitly
  * `undefined`, beside a populated `groups`, would otherwise validate, classify as flat, and hand the
  * runner an array that is not there. The requirement clause tests the value instead, so a key set to
  * `undefined` cannot satisfy the collection that it names.

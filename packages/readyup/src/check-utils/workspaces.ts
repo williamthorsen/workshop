@@ -26,7 +26,7 @@ const workspacesByDir = new Map<string, Workspace[]>();
  * The repo root is reported in every shape, once, flagged `isRoot`, so a caller wanting the members alone
  * filters `!isRoot` rather than reconstructing the distinction from `dir`.
  *
- * Memoized per directory for the life of the process: repeated calls in one run share a single directory walk and
+ * Memoized per directory for the life of the process: Repeated calls in one run share a single directory walk and
  * the frozen `Workspace` objects that it built, and none of them observes a filesystem change made since the first.
  * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
  * Entries are frozen along with their `packageJson`, so a write throws rather than reaching the next caller, and a
@@ -44,7 +44,7 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
  * Discovers the workspaces of the repo rooted at `dir`, which a relative path names against `cwd`.
  *
  * The directory-taking half of `discoverWorkspaces`, for a caller resolving against a project other than the
- * one in which it is running. It stays out of `check-utils`'s exports: a kit runs in the project that it checks,
+ * one in which it is running. It stays out of `check-utils`'s exports: A kit runs in the project that it checks,
  * so the ambient discovery is the one that a kit author wants.
  */
 export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {

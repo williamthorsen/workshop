@@ -3,7 +3,7 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND, EXIT_TOOL_FAILURE } from '../bin/exitCode
 /**
  * Reduces a run's outcomes to one exit code, worst first.
  *
- * A kit that never ran outranks failed checks: part of the invocation was not completed, so
+ * A kit that never ran outranks failed checks: Part of the invocation was not completed, so
  * reporting "ran, found problems" would be false.
  */
 export function resolveRunExitCode(anyKitFailed: boolean, allPassed: boolean): number {

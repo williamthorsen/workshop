@@ -52,7 +52,7 @@ describe(buildBundle, () => {
     const decoratorBundle = (await buildBundle(writeKitTree(KIT_SOURCE))).bytes.toString('utf8');
 
     // esbuild names no setting in its output, so the declared values are read back from the lowering
-    // that they produce: a defined field stays in the class body where an assigned one moves into the
+    // that they produce: A defined field stays in the class body where an assigned one moves into the
     // constructor, and a proposal-style decorator reaches for `__decorateElement` where the legacy one
     // reaches for `__decorateClass`.
     expect(fieldBundle).toContain('field = 1');

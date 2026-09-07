@@ -31,7 +31,7 @@ describe('published tarball', () => {
 
 /**
  * Returns the package-root-relative paths `pnpm pack` would publish. Scripts are skipped so `prepare` does not
- * regenerate schemas, compile the package, and recompile every kit: nothing asserted here reads that output, and
+ * regenerate schemas, compile the package, and recompile every kit: Nothing asserted here reads that output, and
  * producing it would rewrite the working tree as a side effect of a question about `files`. `pnpm pack` rejects a
  * bare `--ignore-scripts`, hence the `--config` form.
  */

@@ -28,7 +28,7 @@ interface JsonRunSettings {
 /**
  * Runs all kit entries in JSON mode, producing a single JSON report.
  *
- * Each iteration is its own error boundary: once the run has dispatched, anything the loop body
+ * Each iteration is its own error boundary: Once the run has dispatched, anything the loop body
  * throws is attributable to that kit alone, so it becomes an entry in the report rather than
  * discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
  * -- a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
@@ -83,7 +83,7 @@ export async function runJsonMode(
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
-      // An entry built here has no `compiledWith`: a kit that produced no results has nothing
+      // An entry built here has no `compiledWith`: A kit that produced no results has nothing
       // for a compile-time version to explain.
       const { code, hint, message } = toRdyError(error);
       kitInputs.push({

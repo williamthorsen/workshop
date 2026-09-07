@@ -36,7 +36,7 @@ export function readSourceText(path: string): string | undefined {
 
 /**
  * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree. `undefined`
- * and an empty list are distinct results: a project that cannot be swept is not one that was swept and holds nothing,
+ * and an empty list are distinct results: A project that cannot be swept is not one that was swept and holds nothing,
  * which is why a check reaching for this skips on `undefined` rather than reporting a pass.
  *
  * The filter decides a path before anything reads it, so an excluded file is never read. Text is held per `cwd` for
@@ -51,7 +51,7 @@ export function readSourceText(path: string): string | undefined {
  * the author of the kit from which it was compiled; that pattern names the default `compile.outDir`, so a project
  * compiling its kits elsewhere excludes that directory in its own filter. Beyond those, a tracked file that the
  * project declares `linguist-generated` or `linguist-vendored` is dropped, so committed bundler output and vendored
- * third-party code stay out of every kit's sweep at once: a finding inside one is advice that nobody can take, and
+ * third-party code stay out of every kit's sweep at once: A finding inside one is advice that nobody can take, and
  * the file would count toward the adoption fraction against which the finding is reported.
  *
  * Both attributes take a bare form and a `=true` form, and an explicit `=false` keeps the file in the sweep. The

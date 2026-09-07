@@ -7,7 +7,7 @@ import { expandConfiguredPackages } from '../expandConfiguredPackages.ts';
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
-  // A tree per test: workspace discovery holds its result for the life of the process, keyed by directory.
+  // A tree per test: Workspace discovery holds its result for the life of the process, keyed by directory.
   makeFixture(() => createTempTree({}, { prefix: 'expand-packages-workspaces-' })),
 );
 

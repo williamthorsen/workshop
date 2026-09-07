@@ -25,7 +25,7 @@ export async function assertKitImportsResolve(bundle: string, sourceName?: strin
     }
     for (const name of entry.names) {
       if (exported.has(name)) continue;
-      // Collect by specifier: one specifier is imported from many times across a bundle's module sections.
+      // Collect by specifier: One specifier is imported from many times across a bundle's module sections.
       const collected = missingBySpecifier.get(entry.specifier) ?? new Set<string>();
       collected.add(name);
       missingBySpecifier.set(entry.specifier, collected);

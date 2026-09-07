@@ -27,7 +27,7 @@ const it = baseIt.extend(
           kits: [{ name: 'drift', description: 'Dependency drift' }, { name: 'preflight' }],
         }),
 
-        // Installed and configured, but declared by nothing: only resolution reaches it.
+        // Installed and configured, but declared by nothing: Only resolution reaches it.
         'node_modules/hidden-kit/package.json': JSON.stringify({ name: 'hidden-kit', version: '3.0.0' }),
         'node_modules/hidden-kit/.readyup/kits/audit.js': 'export default {};\n',
 

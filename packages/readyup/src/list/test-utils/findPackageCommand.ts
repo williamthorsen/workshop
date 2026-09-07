@@ -1,7 +1,7 @@
 /**
  * Returns the line beneath a package's heading in a rendered listing, which is where its command sits.
  *
- * Reading that line positionally is the assertion: a command fused into the heading would still satisfy a
+ * Reading that line positionally is the assertion: A command fused into the heading would still satisfy a
  * `toContain` over the whole output. The heading rule anchors the search, since an unconfigured package's
  * heading has a trailing detail and a kit line could otherwise hold the same text.
  */

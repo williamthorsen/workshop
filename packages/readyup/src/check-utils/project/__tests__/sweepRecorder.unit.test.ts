@@ -78,7 +78,7 @@ describe(recordSweep, () => {
     const copy = await importSecondCopy();
     const { recorder, scanned } = createRecorder();
 
-    // Asserted first: reading the global on every call means one copy would satisfy the recording assertion too.
+    // Asserted first: Reading the global on every call means one copy would satisfy the recording assertion too.
     expect(copy.recordSweep).not.toBe(recordSweep);
 
     withSweepRecorder(recorder, () => copy.recordSweep(['src/a.ts']));
