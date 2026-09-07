@@ -2,19 +2,19 @@ import { blankComments } from '../portable/blankNonCode.ts';
 import { getLineAtOffset } from '../portable/getLineAtOffset.ts';
 import { createIgnorePragmaMatcher } from './pragma-token.ts';
 
-/** One pragma a source holds, and the line it covers. */
+/** One pragma in a source, and the line that it covers. */
 export interface PragmaSite {
-  /** The 1-based line the token sits on. */
+  /** The 1-based line on which the token sits. */
   readonly line: number;
 
-  /** The 1-based line the pragma suppresses a finding on. */
+  /** The 1-based line on which the pragma suppresses a finding. */
   readonly coveredLine: number;
 
   /** The token as written, which is what a report names it by. */
   readonly token: string;
 }
 
-/** Characters a comment may hold between its opening delimiter and a pragma anchored to it. */
+/** Characters that a comment may hold between its opening delimiter and a pragma anchored to it. */
 const ANCHOR_GAP = /[ \t\r\n*]/;
 
 /** Reports whether a path names a source whose pragmas this module recognizes. */
@@ -23,15 +23,16 @@ export function isJsFamilyPath(path: string): boolean {
 }
 
 /**
- * Returns the pragmas a source anchors to a comment's opening delimiter.
+ * Returns the pragmas that a source anchors to a comment's opening delimiter.
  *
  * A token qualifies where it sits inside a comment and nothing but whitespace and `*` separates it from the `//` or
- * `/*` that opened one. That is stricter than suppression, which matches the token in raw text wherever it appears: a
+ * `/*` that opened one. That is stricter than suppression, which matches the token in raw text wherever it appears: A
  * report naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token following
  * anything else in its comment, or a second token on a line, is withheld rather than guessed at.
  *
- * `blankComments` is the comment oracle, no second tokenizer being needed to answer a question it already settles.
- * It preserves its input's length, so an offset found in the raw text reads the blanked text at the same place.
+ * `blankComments` is the comment oracle, no second tokenizer being needed to answer a question that it already
+ * settles. It preserves its input's length, so an offset found in the raw text reads the blanked text at the same
+ * place.
  *
  * Reads JavaScript-family syntax; a source in another language yields arbitrary output, as it does from the
  * blanking itself.
@@ -54,7 +55,7 @@ export function listPragmaSites(text: string): readonly PragmaSite[] {
 
 /** Reports whether a token at an offset sits in a comment, separated from its opening delimiter by nothing else. */
 function isCommentAnchored(text: string, blanked: string, offset: number): boolean {
-  // A comment blanks whole, its delimiters included, so a blank at the token's own offset is what places it in one.
+  // A comment blanks whole, its delimiters included, so a blank at the token's own offset places it in one.
   if (blanked[offset] !== ' ') return false;
 
   let index = offset;

@@ -5,7 +5,7 @@ import type { RdyKit } from '../kits/types.ts';
  * order where no argument was given.
  *
  * Arguments resolve left to right: a suite name expands to its constituent checklists in the order
- * the suite declares, and a checklist name passes through as itself. A repeated name keeps only its
+ * declared by the suite, and a checklist name passes through as itself. A repeated name keeps only its
  * first occurrence.
  */
 export function resolveRequestedNames(requestedNames: string[], kit: RdyKit): string[] {

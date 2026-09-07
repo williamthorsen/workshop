@@ -32,13 +32,13 @@ export interface RunRdyOptions {
   /** Whether to ask each skipped check what its `check` would have concluded. */
   diagnose?: boolean;
 
-  /** Where the kit came from, which is what namespaces its checks' ids. */
+  /** Where the kit came from, which namespaces its checks' ids. */
   provenance?: KitProvenance | undefined;
 
   /**
    * The invocation's record of what its checks examined and suppressed, which the unused-pragma report reads.
    *
-   * One ledger spans every kit of an invocation, so a file two kits both examined is reported once. A run
+   * One ledger spans every kit of an invocation, so a file examined by two kits is reported once. A run
    * passing none records nothing and reports nothing.
    *
    * It is in scope around each check's `skip` and `check` alike, so a sweep read through `readTrackedSources`
@@ -68,8 +68,8 @@ interface RunContext {
    * The checks whose `skip` returned a reason, in the order their skips resolved.
    *
    * Collected unconditionally, because recording a reference executes nothing; only the diagnosis
-   * that reads them is gated on the option. Each holds its result, which is what lets the findings
-   * be read back in the report's own order rather than in the order the skips happened to settle.
+   * that reads them is gated on the option. Each holds its result, so the findings can be read back
+   * in the report's own order rather than in the order the skips happened to settle.
    */
   pendingDiagnoses: PendingDiagnosis[];
 }
@@ -77,8 +77,8 @@ interface RunContext {
 /**
  * Severity assigned to a check that is broken rather than failing.
  *
- * A `check` or `skip` function that throws, or that returns a value the runner cannot interpret, is
- * a defect in the check itself and not a soft finding, so it overrides whatever severity the check
+ * A `check` or `skip` function that throws, or that returns a value that the runner cannot interpret,
+ * is a defect in the check itself and not a soft finding, so it overrides whatever severity the check
  * declares.
  */
 const AUTHORING_ERROR_SEVERITY: Severity = 'error';
@@ -92,9 +92,9 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
  * Resolves a check's remediation message, absorbing an accessor that fails to produce one.
  *
  * `fix` may be an accessor, so it is read here and nowhere else: only a failure renders one, and a
- * check that passes, skips, or is blocked must not do work it discards. An accessor that throws
+ * check that passes, skips, or is blocked must not do work that it discards. An accessor that throws
  * or yields a non-string is a defect in the kit rather than in the check's subject, so it is reported
- * in the slot the remediation would occupy and leaves the verdict and its severity alone.
+ * in the slot that the remediation would occupy and leaves the verdict and its severity alone.
  */
 function resolveFix(check: RdyCheck): string | null {
   let raw: unknown;
@@ -113,7 +113,7 @@ function resolveFix(check: RdyCheck): string | null {
   return `Unresolvable fix: the accessor returned ${describeValue(raw)}`;
 }
 
-/** The fields a check contributes to every result it can produce. */
+/** The fields contributed by a check to every result that it can produce. */
 interface CheckContext {
   name: string;
   id: string | null;
@@ -122,7 +122,7 @@ interface CheckContext {
   depth: number;
 }
 
-/** Returns the fields a check contributes to every result it can produce. */
+/** Returns the fields contributed by a check to every result that it can produce. */
 function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
   return {
     name: check.name,
@@ -239,7 +239,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
         : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress });
     } else {
       // Reported as a defect rather than as an ordinary failure: the check never expressed a
-      // verdict, so the severity it declared for its subject says nothing about this outcome.
+      // verdict, so the severity that it declared for its subject says nothing about this outcome.
       const error = new Error(describeUninterpretableReturn(raw));
       result = buildAuthoringErrorResult(check, context, durationMs, error);
     }
@@ -377,8 +377,8 @@ async function runStagedChecks(
  * Orders the checks awaiting diagnosis by where their results sit in the report.
  *
  * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
- * the order back off `results`, which is declaration-ordered by construction, is what keeps the
- * advisories in the order the reader met the skipped lines, run after run.
+ * the order back off `results`, which is declaration-ordered by construction, keeps the advisories
+ * in the order the reader met the skipped lines, run after run.
  */
 function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCheck[] {
   const checkByResult = new Map<RdyResult, RdyCheck>(pending.map(({ check, result }) => [result, check]));
@@ -395,7 +395,7 @@ function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCh
  *
  * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
  * cannot then alter it: no diagnostic check can reach a conclusion that already exists, and none
- * enters the wall clock the report records.
+ * is counted in the wall clock that the report records.
  */
 export async function runRdy(
   checklist: RdyChecklist | RdyStagedChecklist,

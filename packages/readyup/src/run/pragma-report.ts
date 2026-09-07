@@ -8,21 +8,21 @@ import type { PragmaLedger } from './PragmaLedger.ts';
 
 /** One pragma that suppressed nothing, named the way the warning about it prints. */
 interface UnusedPragma extends PragmaSite {
-  /** The path relative to `cwd`, the form findings print in. */
+  /** The path relative to `cwd`, the form in which findings print. */
   displayPath: string;
 }
 
 /**
  * Emits an advisory stderr warning for each pragma that suppressed nothing, and returns the entries.
  *
- * The evidence is what the run's checks read: a pragma is reported only where some check examined the file
- * holding it, by sweeping it or by declaring it, and no check suppressed a finding on the line it covers. A file
- * no check examined yields no entry, because the run holds no evidence either way about the pragmas in it.
+ * The evidence is what the run's checks read: A pragma is reported only where some check examined the file
+ * holding it, by sweeping it or by declaring it, and no check suppressed a finding on the line that it covers. A
+ * file examined by no check yields no entry, because the run holds no evidence either way about the pragmas in it.
  *
  * Each examined file is read and scanned once however many checks examined it, and only a JS-family source is
- * scanned at all, recognition resting on syntax the blanking reads.
+ * scanned at all, recognition resting on syntax read by the blanking.
  *
- * Mirrors `warnOnMaskedSkips`: the stderr lines are written in both output modes, and the returned entries are
+ * Mirrors `warnOnMaskedSkips`: The stderr lines are written in both output modes, and the returned entries are
  * what JSON mode captures into the report for a consumer that owns only stdout.
  */
 export function warnOnUnusedPragmas(ledger: PragmaLedger): RaisedWarning[] {
@@ -37,7 +37,7 @@ export function warnOnUnusedPragmas(ledger: PragmaLedger): RaisedWarning[] {
 
 // region | Helpers
 
-/** Orders two pragmas by the path printed for them, then by the line they sit on. */
+/** Orders two pragmas by the path printed for them, then by the line on which they sit. */
 function byPathThenLine(a: UnusedPragma, b: UnusedPragma): number {
   if (a.displayPath !== b.displayPath) return a.displayPath < b.displayPath ? -1 : 1;
   return a.line - b.line;
@@ -50,7 +50,7 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   for (const scannedPath of ledger.scannedPaths()) {
     if (!isJsFamilyPath(scannedPath)) continue;
 
-    // Read by the path a sweep read it under, so the sweep's cached text is what the scan reads.
+    // Read by the path under which a sweep read it, so the scan reads the sweep's cached text.
     const displayPath = path.relative(process.cwd(), scannedPath);
     const text = readSourceText(displayPath);
     if (text === undefined) continue;
@@ -63,7 +63,7 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   return unused;
 }
 
-/** Composes the warning one unused pragma raises. */
+/** Composes the warning raised by one unused pragma. */
 function toWarning(pragma: UnusedPragma): RaisedWarning {
   return {
     code: 'pragma-unused',

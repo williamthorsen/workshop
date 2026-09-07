@@ -23,8 +23,8 @@ export async function diagnoseSkips(checks: RdyCheck[], provenance?: KitProvenan
 /**
  * Emits an advisory stderr warning for each diagnosed skip, and returns the entries.
  *
- * `skip-masks-pass` says the skip suppressed a pass, which is the condition `--diagnose` exists to
- * expose. `diagnosis-inconclusive` says the check reached no verdict, so the run established
+ * `skip-masks-pass` says the skip suppressed a pass, which is the condition that `--diagnose` exists
+ * to expose. `diagnosis-inconclusive` says the check reached no verdict, so the run established
  * nothing about that skip either way; the two are separate codes because a consumer branching on
  * one must never read the other as a masked pass.
  *
@@ -49,7 +49,7 @@ export function warnOnMaskedSkips(
 // region | Helpers
 
 /**
- * Names the check a warning is about, down to the checklist that holds it.
+ * Names the check that a warning is about, down to the checklist that holds it.
  *
  * A masked pass is a property of one check where the staleness advisories are properties of a kit,
  * and one run may have many of both, so the check's name alone would not say which line to look at.
@@ -67,9 +67,10 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
  * the run never established. Resolving the return value sits inside the guard for that reason, as it
  * does in the runner.
  *
- * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope the runner
- * opens around a live one, so a sweep it reads here reports to nobody. A sweep it read in its live `skip` was
- * recorded then and stands: what this diagnosis adds is nothing, not what the check contributed while running.
+ * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope opened by
+ * the runner around a live one, so a sweep that it reads here is recorded nowhere. A sweep that it read in its
+ * live `skip` was recorded then and stands: what this diagnosis adds is nothing, not what the check contributed
+ * while running.
  */
 async function diagnoseSkip(
   check: RdyCheck,
@@ -93,7 +94,7 @@ async function diagnoseSkip(
   return { name: check.name, verdict: 'inconclusive', reason: describeUninterpretableReturn(raw) };
 }
 
-/** Composes the warning one diagnosis raises. */
+/** Composes the warning raised by one diagnosis. */
 function toWarning(entry: ResolvedKitEntry, checklistName: string, diagnosis: SkipDiagnosis): RaisedWarning {
   const subject = describeCheck(entry, checklistName, diagnosis.name);
 

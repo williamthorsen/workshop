@@ -10,7 +10,7 @@ const LEADING_COMMA = /^[ \t]*,/;
 const PRAGMA_TOKENS = new Set(['rdy-ignore', 'rdy-ignore-next-line']);
 
 /**
- * Reports whether a source suppresses a finding on a line for a check `checkIds` names: an `rdy-ignore` sits on
+ * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: an `rdy-ignore` sits on
  * that line, or an `rdy-ignore-next-line` on the one above it.
  *
  * A pragma naming no check suppresses whatever the check. One naming checks suppresses only where an id names a
@@ -44,11 +44,11 @@ function hasPragma(line: string | undefined, scope: 'line' | 'next-line', checkI
 }
 
 /**
- * Returns the check ids a pragma names, read from the text following its token.
+ * Returns the check ids named by a pragma, read from the text following its token.
  *
  * The list is comma-separated and ends at the first candidate that is not an id: a `--` opening a reason, the
  * delimiter closing a block comment, either pragma token, or the line's end. Excluding the pragma tokens by name
- * is what keeps a line with both of them two unqualified pragmas rather than one naming a check called
+ * keeps a line with both of them two unqualified pragmas rather than one naming a check called
  * `rdy-ignore-next-line`.
  */
 function readCheckIds(tail: string): readonly string[] {

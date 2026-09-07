@@ -14,13 +14,13 @@ import { checkInputDrift, type InputsStatus } from '../verify/checkInputDrift.ts
 import { checkSourceDrift } from '../verify/checkSourceDrift.ts';
 import type { KitSource } from './ResolvedKitEntry.ts';
 
-/** What reading the manifest yielded: the tracking where one was read, and any advisory the read raised. */
+/** What reading the manifest yielded: the tracking where one was read, and any advisory raised by the read. */
 export interface ManifestRead {
   tracking: ManifestTracking | undefined;
   warnings: RaisedWarning[];
 }
 
-/** The manifest an invocation checks its kits against, read once and shared by every kit in the run. */
+/** The manifest against which an invocation checks its kits, read once and shared by every kit in the run. */
 export interface ManifestTracking {
   manifest: RdyManifest;
   manifestDir: string;
@@ -29,7 +29,7 @@ export interface ManifestTracking {
 /**
  * Reads the default manifest for the run's advisories, best effort.
  *
- * No failure here stops the run: a verification tool that refused to run because its own bookkeeping
+ * No failure here stops the run: A verification tool that refused to run because its own bookkeeping
  * was unreadable would be worse than one that runs and says so. What separates the two outcomes is
  * whether the manifest is there. An absent one is the normal state of a project that never compiled
  * and says nothing about any kit, so it is silent. A present one that cannot be read raises
@@ -53,15 +53,15 @@ export function readManifestTracking(isJit: boolean): ManifestRead {
 /**
  * Emits advisory stderr warnings when the manifest disagrees with the kit that is about to run.
  *
- * `target-drift` says the compiled bundle is not the one the manifest recorded, so someone edited
- * it by hand. `source-stale` says the TypeScript it was built from has moved on, so the run is
- * about to execute checks that no longer match their source. `input-stale` says the same of a file
- * the compile read and inlined, which is the staleness neither hash can see. All three can hold at
- * once.
+ * `target-drift` says the compiled bundle is not the one recorded by the manifest, so someone
+ * edited it by hand. `source-stale` says the TypeScript from which it was built has changed, so the
+ * run is about to execute checks that no longer match their source. `input-stale` says the same of
+ * a file read and inlined by the compile, which is the staleness that neither hash can see. All
+ * three can hold at once.
  *
  * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code.
  * Every axis speaks only where it compared a recorded hash against a file and the two differed. A
- * kit no entry describes, an entry recording no hash or no closure, a remote or just-in-time
+ * kit described by no entry, an entry recording no hash or no closure, a remote or just-in-time
  * source, and a file that is gone or cannot be read are all silent, because none of them is
  * evidence that anything changed.
  *
@@ -126,9 +126,10 @@ function findManifestEntry(kitPath: string, tracking: ManifestTracking): RdyMani
 /**
  * Reports whether a closure verdict names an input whose content moved since the compile read it.
  *
- * An input that is gone, or that no longer yields the projection a kit picked, says nothing about
- * whether the kit is stale -- a published kit legitimately ships without the sources it was built
- * from -- so only a hash the check compared and found different raises the advisory.
+ * An input that is gone, or that no longer yields the projection picked by a kit, says nothing
+ * about whether the kit is stale -- a published kit legitimately ships without the sources from
+ * which it was built -- so only a hash that the check compared and found different raises the
+ * advisory.
  */
 function hasChangedInput(status: InputsStatus | undefined): boolean {
   return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');

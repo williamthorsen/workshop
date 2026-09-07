@@ -3,9 +3,9 @@
  * following line.
  *
  * Both sides are bounded against a word character or a hyphen, so `rdy-ignored` and `rdy-ignore-nextline` are words
- * of their own rather than pragmas, while a token a block comment closes against without a space is a pragma.
+ * of their own rather than pragmas, while a token against which a block comment closes without a space is a pragma.
  *
- * A fresh matcher per scan, because a global regular expression has a `lastIndex` its readers all share: one
+ * A fresh matcher per scan, because a global regular expression has a `lastIndex` shared by all its readers: One
  * `test` or `exec` anywhere would leave it set, and every later `matchAll` would skip the text before that offset
  * and report that a pragma suppressing a finding is not there.
  */

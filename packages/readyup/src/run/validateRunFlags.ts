@@ -74,7 +74,7 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
 }
 
 /**
- * Rejects `--checklists` when the selection it expresses is ambiguous.
+ * Rejects `--checklists` when the selection that it expresses is ambiguous.
  *
  * The flag names checklists within one kit, so it needs exactly one kit and no competing per-kit
  * filter. `--file` and `--url` each name their one kit implicitly; a bare invocation names the
@@ -100,7 +100,7 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
  * Rejects an output flag that contradicts the report being emitted.
  *
  * Erroring beats ignoring: a caller that passed either flag meant to change the output, and dropping it
- * silently would leave them reading a report they did not ask for.
+ * silently would leave them reading a report that they did not ask for.
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
   // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.

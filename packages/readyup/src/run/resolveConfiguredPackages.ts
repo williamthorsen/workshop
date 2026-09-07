@@ -6,7 +6,7 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 /**
  * Resolves the requested kits, drawn from what the configured packages publish, into run entries.
  *
- * An empty `packages` list is a usage error: the flag names a config key the config does not have, so
+ * An empty `packages` list is a usage error: The flag names a config key that the config does not have, so
  * the invocation asks for something that cannot be answered. Configured packages that publish no
  * requested kit are a different case and run nothing, which is the honest answer to "does this project
  * satisfy what these packages require of it" when they require nothing.
@@ -40,7 +40,7 @@ export function resolveConfiguredPackages(
  * requiring nothing under that name asks nothing of it.
  *
  * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
- * order `rdy run a b` runs them in against a single source.
+ * order in which `rdy run a b` runs them against a single source.
  */
 function selectRequestedKits(published: PackageKit[], requestedNames: string[]): PackageKit[] {
   return requestedNames.flatMap((kitName) => {

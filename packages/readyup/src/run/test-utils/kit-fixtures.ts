@@ -12,7 +12,7 @@ export function makeKit(overrides?: Partial<RdyKit>): RdyKit {
   };
 }
 
-/** Builds the one-entry list a run of the local `default` kit resolves to. */
+/** Builds the one-entry list to which a run of the local `default` kit resolves. */
 export function singleKitEntry(checklists: string[] = []): ResolvedKitEntry[] {
   return [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists }];
 }
