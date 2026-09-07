@@ -11,7 +11,7 @@ import { resolveFromSource } from '../resolveFromSource.ts';
 /** Repo root, which is where the workspace link for `readyup` lives. */
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../../..');
 
-/** The kit an invocation naming none has already been filled with by the time this resolver runs. */
+/** The kit with which an invocation naming none has already been filled by the time this resolver runs. */
 const DEFAULT_SPECS: KitSpecifier[] = [{ kitName: 'default', checklists: [] }];
 
 describe(resolveFromSource, () => {
@@ -119,8 +119,9 @@ describe(resolveFromSource, () => {
     });
   });
 
-  // The provenance is what names the copy a check ran against, which is the whole point of resolving from an
-  // installed package. It reads from the same manifest the resolver reads, so a version bump leaves this alone.
+  // The provenance names the copy against which a check ran, which is the whole point of resolving from an
+  // installed package. It reads from the same manifest that the resolver reads, so a version bump leaves this
+  // alone.
   it('reports the package and its installed version as the kit provenance', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
     const [entry] = resolveFromSource(source, DEFAULT_SPECS, '.js');
@@ -163,7 +164,7 @@ describe(resolveFromSource, () => {
 
   // -- dir: source --
 
-  it('resolves a directory source to the kits it holds directly', () => {
+  it('resolves a directory source to the kits that it holds directly', () => {
     const resolved = path.resolve(process.cwd(), 'custom/kits');
 
     expect(resolveFromSource({ type: 'directory', path: 'custom/kits' }, DEFAULT_SPECS, '.js')).toStrictEqual([
@@ -226,7 +227,7 @@ describe(resolveFromSource, () => {
 
   // -- extension --
 
-  it('applies the extension it is given to every kit path', () => {
+  it('applies the extension that it is given to every kit path', () => {
     expect(resolveFromSource({ type: 'local', path: '/path/to/repo' }, DEFAULT_SPECS, '.ts')).toStrictEqual([
       {
         name: 'default',

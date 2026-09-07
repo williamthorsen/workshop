@@ -30,8 +30,8 @@ vi.mock(import('../../reporting/formatJsonReport.ts'), () => ({
   formatJsonReport: mockFormatJsonReport,
 }));
 
-// The two human-mode renderers below are mocked only to give the case asserting that no human output
-// appears something to watch.
+// One case asserts that no human output appears; the two human-mode renderers below are mocked only to
+// give it something to watch.
 vi.mock(import('../../reporting/reportRdy.ts'), async () => {
   const actual = await vi.importActual<typeof import('../../reporting/reportRdy.ts')>('../../reporting/reportRdy.ts');
   return {
@@ -52,14 +52,14 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, its
-// errors being what the kit-load cases assert.
+// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
+// kit-load cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
-// Mocked so no case reads the sources the ledger names; what the report itself writes is covered by its own tests.
+// Mocked so no case reads the sources named by the ledger; what the report itself writes is covered by its own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
@@ -165,7 +165,7 @@ describe(runJsonMode, () => {
           reportOn: 'recommend',
         },
       ],
-      // The run named no threshold, so the run-level options have none: the resolved values reach the
+      // The run named no threshold, so the run-level options have none: The resolved values reach the
       // serializer on the kit that they governed.
       { detail: 'full' },
     );
@@ -184,7 +184,7 @@ describe(runJsonMode, () => {
     );
   });
 
-  it('echoes a threshold the invocation requested, which overrides what the kit declares', async () => {
+  it('echoes a threshold requested by the invocation, which overrides what the kit declares', async () => {
     const kit = makeKit({ failOn: 'warn' });
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -277,7 +277,7 @@ describe(runJsonMode, () => {
       ];
     }
 
-    it('passes every advisory the run raised into the JSON report', async () => {
+    it('passes every advisory raised by the run into the JSON report', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
       mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
       mockWarnOnKitStaleness.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
@@ -417,7 +417,7 @@ describe(runJsonMode, () => {
 
 // region | Helpers
 
-/** The settings a test names, over the defaults the dispatch would have resolved. */
+/** The settings named by a test, over the defaults that the dispatch would have resolved. */
 interface JsonRunOptions {
   detail?: JsonDetail;
   diagnose?: boolean;
@@ -427,7 +427,7 @@ interface JsonRunOptions {
 }
 
 /**
- * Runs the mode over the given entries, filling in every setting the test did not name, and returns its
+ * Runs the mode over the given entries, filling in every setting that the test did not name, and returns its
  * exit code alongside everything it wrote.
  */
 async function runJson(
