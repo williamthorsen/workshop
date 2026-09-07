@@ -121,7 +121,7 @@ export interface CheckOutcome {
   progress?: Progress | undefined;
 }
 
-/** One located site a check names, and whether the check reports it or only counts it. */
+/** One located site named by a check, and whether the check reports it or only counts it. */
 export interface OutcomeFinding {
   path: string;
   line: number;
@@ -130,7 +130,7 @@ export interface OutcomeFinding {
   /**
    * Whether the check reports this site, rather than only counting it toward the fraction.
    *
-   * An unreported site reaches the runner all the same, because a site a pragma suppresses has to leave
+   * An unreported site reaches the runner all the same, because a site suppressed by a pragma has to leave
    * every check's denominator rather than only the denominator of the check naming it.
    */
   reported: boolean;
@@ -139,26 +139,26 @@ export interface OutcomeFinding {
 /**
  * A check's located sites, from which the runner derives the verdict, the detail, and the fraction.
  *
- * The sites a pragma suppresses drop there rather than here: the runner is the only layer holding both the
+ * The sites suppressed by a pragma drop there rather than here: the runner is the only layer holding both the
  * check and the kit's provenance, which is what a pragma naming a check is matched against.
  */
 export interface FindingOutcome {
   findings: readonly OutcomeFinding[];
 
-  /** Sites already settled, the numerator of the fraction the runner renders. Omitted, it renders none. */
+  /** Sites already settled, the numerator of the fraction that the runner renders. Omitted, it renders none. */
   adoptedCount?: number | undefined;
 
   /**
-   * The paths this check examined and read no other way, whether or not any of them yielded a finding.
+   * The paths that this check examined and read no other way, whether or not any of them yielded a finding.
    *
    * A sweep read through `readTrackedSources` is recorded on its own, so this is the escape hatch for a check
    * reading files another way: shelling out to a tool, or reaching for `fs` directly. The run reports an
-   * unused pragma only in a file some check examined, by either route.
+   * unused pragma only in a file examined by some check, by either route.
    */
   scanned?: readonly string[] | undefined;
 }
 
-/** The value a check function may return (or resolve to). */
+/** The value that a check function may return (or resolve to). */
 export type CheckReturnValue = boolean | CheckOutcome | FindingOutcome;
 
 // -- Check definition --
@@ -173,7 +173,7 @@ export interface RdyCheck {
   name: string;
 
   /**
-   * Stable identifier a pragma writes to suppress this check's findings and no other check's.
+   * Stable identifier written by a pragma to suppress this check's findings and no other check's.
    *
    * Bare here: the runner namespaces it under the publishing package where the kit has one. A check
    * naming no located site needs none, and one declaring none is named by no pragma.
@@ -382,7 +382,7 @@ export interface RdyKit {
   description?: string | undefined;
 
   /**
-   * Minimum readyup version this kit's checks require.
+   * Minimum readyup version required by this kit's checks.
    * A runner below it fails the kit rather than running it.
    */
   minReadyupVersion?: string | undefined;

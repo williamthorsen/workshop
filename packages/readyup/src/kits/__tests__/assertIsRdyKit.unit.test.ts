@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assertIsRdyKit } from '../assertIsRdyKit.ts';
 
-/** Runs the assertion and returns the message it threw, failing the test when it accepted the value. */
+/** Runs the assertion and returns the message that it threw, failing the test when it accepted the value. */
 async function messageFrom(raw: unknown, source?: string): Promise<string> {
   return (await captureError(() => assertIsRdyKit(raw, source))).message;
 }
@@ -35,8 +35,8 @@ describe(assertIsRdyKit, () => {
     });
 
     // `isFlatChecklist` discriminates on key presence, so a checklist with either key explicitly
-    // set to `undefined` is classified by that key whatever its value, and the collection the runner
-    // then iterates is not there.
+    // set to `undefined` is classified by that key whatever its value, and the collection that the
+    // runner then iterates is not there.
     it.each([
       ['checks is undefined beside a populated groups', { name: 'bad', checks: undefined, groups: [[]] }],
       ['groups is undefined beside a populated checks', { name: 'bad', checks: [], groups: undefined }],
@@ -46,7 +46,7 @@ describe(assertIsRdyKit, () => {
       );
     });
 
-    it('throws when the only collection a checklist declares is undefined', async () => {
+    it('throws when the only collection declared by a checklist is undefined', async () => {
       await expect(messageFrom({ checklists: [{ name: 'bad', checks: undefined }] })).resolves.toContain(
         "checklists[0]: Checklist must have either 'checks' or 'groups'",
       );
@@ -496,7 +496,7 @@ describe(assertIsRdyKit, () => {
       ['a prerelease tail', '0.33.0-rc.1'],
       ['a leading v', 'v0.33.0'],
       ['a non-numeric segment', '0.x'],
-      ['a fourth segment the comparison would discard', '0.33.0.1'],
+      ['a fourth segment that the comparison would discard', '0.33.0.1'],
       ['an empty string', ''],
     ])('throws when minReadyupVersion has %s', async (_label, value) => {
       await expect(

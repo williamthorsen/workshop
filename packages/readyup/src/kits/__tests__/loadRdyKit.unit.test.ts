@@ -268,7 +268,7 @@ describe(loadRdyKit, () => {
     expect(compileTimeVersion).toBeUndefined();
   });
 
-  it('refuses a compiled kit binding a symbol the runner does not export', async () => {
+  it('refuses a compiled kit binding a symbol not exported by the runner', async () => {
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('import { retiredHelper } from "readyup/check-utils";');
 
@@ -278,7 +278,7 @@ describe(loadRdyKit, () => {
     expect(mockJitiImport).not.toHaveBeenCalled();
   });
 
-  it('loads a compiled kit binding only symbols the runner exports', async () => {
+  it('loads a compiled kit binding only symbols exported by the runner', async () => {
     const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('import { defineRdyKit } from "readyup";');
@@ -300,7 +300,7 @@ describe(loadRdyKit, () => {
   });
 });
 
-/** Returns the `withFileTypes` entries `readdirSync` yields for a set of regular files. */
+/** Returns the `withFileTypes` entries that `readdirSync` yields for a set of regular files. */
 function buildDirents(...names: string[]): Array<{ name: string; isFile: () => boolean }> {
   return names.map((name) => ({ name, isFile: () => true }));
 }

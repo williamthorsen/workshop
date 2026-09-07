@@ -16,7 +16,7 @@ export interface UnresolvableImportsDiagnosis {
 }
 
 /**
- * Composes the failure a kit's unresolvable readyup imports produce.
+ * Composes the failure produced by a kit's unresolvable readyup imports.
  *
  * The message names the kit, and the publishing package where the kit has one, because a `--packages` run loads
  * several kits that share the name `default` and a message read on its own has to say which one failed.
