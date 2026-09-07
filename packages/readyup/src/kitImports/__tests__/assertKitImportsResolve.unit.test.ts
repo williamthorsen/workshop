@@ -7,18 +7,18 @@ import { describe, expect, it } from 'vitest';
 import { assertKitImportsResolve } from '../assertKitImportsResolve.ts';
 import { UnresolvableKitImportsError } from '../UnresolvableKitImportsError.ts';
 
-/** The compiled kits this package ships, which must stay runnable against the readyup that builds them. */
+/** The compiled kits shipped by this package, which must stay runnable against the readyup that builds them. */
 const COMPILED_KIT_PATHS = ['default.js', 'publishing.js'].map((name) =>
   path.resolve(import.meta.dirname, '../../../.readyup/kits', name),
 );
 
-/** Runs the assertion and returns the findings it threw, failing the test when it did not throw. */
+/** Runs the assertion and returns the findings that it threw, failing the test when it did not throw. */
 async function captureFindings(bundle: string) {
   return (await captureError(UnresolvableKitImportsError, () => assertKitImportsResolve(bundle))).findings;
 }
 
 describe(assertKitImportsResolve, () => {
-  it('resolves for a bundle importing only symbols the runner exports', async () => {
+  it('resolves for a bundle importing only symbols exported by the runner', async () => {
     const bundle = 'import { defineRdyKit } from "readyup";\nimport { fileExists } from "readyup/check-utils";\n';
 
     await expect(assertKitImportsResolve(bundle)).resolves.toBeUndefined();
@@ -28,7 +28,7 @@ describe(assertKitImportsResolve, () => {
     await expect(assertKitImportsResolve('import path from "node:path";\n')).resolves.toBeUndefined();
   });
 
-  it('reports a symbol the runner does not export', async () => {
+  it('reports a symbol that the runner does not export', async () => {
     const findings = await captureFindings('import { fileExists } from "readyup";');
 
     expect(findings).toStrictEqual({
@@ -37,7 +37,7 @@ describe(assertKitImportsResolve, () => {
     });
   });
 
-  it('reports a subpath the runner does not publish', async () => {
+  it('reports a subpath that the runner does not publish', async () => {
     const findings = await captureFindings('import { anything } from "readyup/legacy";');
 
     expect(findings).toStrictEqual({ unknownSubpaths: ['readyup/legacy'], missing: [] });

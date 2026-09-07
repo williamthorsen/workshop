@@ -15,8 +15,8 @@ const buildOutput = path.join(packageDir, 'dist/esm/bin/rdy.js');
  * Drives the real CLI, which is the only tier that shows where a spawned rdy looks for its README.
  *
  * A resolver reading the working directory would satisfy every in-process test, since those run with
- * the package as the working directory. Running from a directory that holds no README is what tells
- * the two apart.
+ * the package as the working directory. Running from a directory that holds no README tells the two
+ * apart.
  */
 describe('rdy help, spawned', () => {
   it('prints the same section from inside the package and from an unrelated directory', () => {

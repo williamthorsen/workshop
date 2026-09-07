@@ -20,7 +20,7 @@ const it = baseIt.extend(
           kits: [{ name: 'drift', description: 'Dependency drift' }, { name: 'preflight' }],
         }),
 
-        // Kits on disk under a manifest nobody can parse.
+        // Kits on disk under a manifest that nobody can parse.
         'node_modules/broken-manifest/package.json': JSON.stringify({ name: 'broken-manifest', version: '1.0.0' }),
         'node_modules/broken-manifest/.readyup/kits/drift.js': 'export default {};\n',
         'node_modules/broken-manifest/.readyup/manifest.json': '{ not json',
@@ -39,7 +39,7 @@ const it = baseIt.extend(
 );
 
 describe(expandConfiguredPackages, () => {
-  it('expands a scoped package into the kits its manifest declares', ({ temp }) => {
+  it('expands a scoped package into the kits declared by its manifest', ({ temp }) => {
     expect(expandConfiguredPackages(['@acme/kits'], '.js', temp.dir)).toStrictEqual([
       {
         packageName: '@acme/kits',
@@ -58,7 +58,7 @@ describe(expandConfiguredPackages, () => {
     ]);
   });
 
-  // The same precedence a local `--from` source follows, so a package and a directory resolve alike.
+  // The same precedence that a local `--from` source follows, so a package and a directory resolve alike.
   it('falls back to the kit directory when a package ships no manifest', ({ temp }) => {
     const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
 
@@ -93,7 +93,7 @@ describe(expandConfiguredPackages, () => {
     expect(() => expandConfiguredPackages(['kitless'], '.js', temp.dir)).toThrow(/Package "kitless" publishes no kits/);
   });
 
-  // Falling back here would report a kit list the publisher never declared.
+  // Falling back here would report a kit list that the publisher never declared.
   it('surfaces a malformed manifest instead of reading around it', ({ temp }) => {
     expect(() => expandConfiguredPackages(['broken-manifest'], '.js', temp.dir)).toThrow(/invalid JSON/);
   });

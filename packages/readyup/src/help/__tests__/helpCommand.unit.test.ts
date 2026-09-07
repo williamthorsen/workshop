@@ -109,7 +109,7 @@ describe('rdy help', () => {
     expect(stderr).toContain("Did you mean 'rdy help'?");
   });
 
-  it('offers help for every command the router matches a typo against', () => {
+  it('offers help for every command against which the router matches a typo', () => {
     expect(Object.keys(COMMAND_HELP).toSorted()).toStrictEqual(COMMAND_NAMES.toSorted());
   });
 });
