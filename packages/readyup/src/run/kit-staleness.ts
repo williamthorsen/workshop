@@ -82,7 +82,7 @@ export function warnOnKitStaleness(
   if (readVerdict(() => checkDrift(entry, tracking.manifestDir))?.kind === 'drift') {
     warnings.push({
       code: 'target-drift',
-      message: `compiled kit "${kitName}" does not match the hash the manifest recorded for it.`,
+      message: `compiled kit "${kitName}" does not match the hash that the manifest recorded for it.`,
       remedy: MOVE_EDITS_REMEDY,
     });
   }

@@ -35,7 +35,7 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['deploy:'])).toThrow(
       expect.objectContaining({
         code: 'usage',
-        message: expect.stringContaining('checklist list after ":" must not be empty'),
+        message: expect.stringContaining('Checklist list after ":" must not be empty'),
       }),
     );
   });

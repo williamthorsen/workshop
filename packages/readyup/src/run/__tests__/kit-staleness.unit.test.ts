@@ -126,7 +126,7 @@ describe(warnOnKitStaleness, () => {
       expect(warn('default', { path: KIT_PATH }, defaultTracking()).warnings).toStrictEqual([
         {
           code: 'target-drift',
-          message: 'compiled kit "default" does not match the hash the manifest recorded for it.',
+          message: 'compiled kit "default" does not match the hash that the manifest recorded for it.',
           remedy: 'Move the edits into the source, then run `rdy compile --force`.',
         },
       ]);
@@ -198,7 +198,7 @@ describe(warnOnKitStaleness, () => {
       const { stderr } = warn('default', { path: KIT_PATH }, defaultTracking());
 
       expect(stderr).toBe(
-        'Warning: compiled kit "default" does not match the hash the manifest recorded for it. ' +
+        'Warning: compiled kit "default" does not match the hash that the manifest recorded for it. ' +
           'Move the edits into the source, then run `rdy compile --force`.\n',
       );
     });

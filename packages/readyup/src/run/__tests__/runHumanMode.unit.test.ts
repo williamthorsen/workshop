@@ -519,7 +519,7 @@ describe(runHumanMode, () => {
   describe('staleness advisories', () => {
     const TARGET_DRIFT = {
       code: 'target-drift',
-      message: 'compiled kit "alpha" does not match the hash the manifest recorded for it.',
+      message: 'compiled kit "alpha" does not match the hash that the manifest recorded for it.',
       remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     };
 

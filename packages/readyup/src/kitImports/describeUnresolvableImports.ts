@@ -30,7 +30,7 @@ export function describeUnresolvableImports(
 ): UnresolvableImportsDiagnosis {
   const clauses = [
     ...findings.missing.map(({ specifier, names }) => `${specifier} does not export ${names.join(', ')}`),
-    ...findings.unknownSubpaths.map((subpath) => `${subpath} is not a subpath it publishes`),
+    ...findings.unknownSubpaths.map((subpath) => `${subpath} is not a subpath that it publishes`),
   ];
 
   return {

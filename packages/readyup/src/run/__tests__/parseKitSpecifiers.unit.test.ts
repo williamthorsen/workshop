@@ -31,11 +31,11 @@ describe(parseKitSpecifiers, () => {
   });
 
   it('throws for an empty kit name before the colon', () => {
-    expect(() => parseKitSpecifiers([':check1'])).toThrow('kit name must not be empty');
+    expect(() => parseKitSpecifiers([':check1'])).toThrow('Kit name must not be empty');
   });
 
   it('throws for a trailing colon with no checklists', () => {
-    expect(() => parseKitSpecifiers(['deploy:'])).toThrow('checklist list after ":" must not be empty');
+    expect(() => parseKitSpecifiers(['deploy:'])).toThrow('Checklist list after ":" must not be empty');
   });
 
   it('parses a single checklist after the colon', () => {
