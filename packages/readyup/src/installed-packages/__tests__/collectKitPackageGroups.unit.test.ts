@@ -27,7 +27,7 @@ const it = baseIt.extend(
           kits: [{ name: 'drift', description: 'Dependency drift' }, { name: 'preflight' }],
         }),
 
-        // Installed and configured, but declared by nothing: only resolution reaches it.
+        // Installed and configured, but declared by nothing: Only resolution reaches it.
         'node_modules/hidden-kit/package.json': JSON.stringify({ name: 'hidden-kit', version: '3.0.0' }),
         'node_modules/hidden-kit/.readyup/kits/audit.js': 'export default {};\n',
 
@@ -50,7 +50,7 @@ describe(collectKitPackageGroups, () => {
     expect(groups.map((group) => group.packageName)).toStrictEqual(['@acme/kits', 'hidden-kit', 'plain-kit']);
   });
 
-  // Only resolution reaches it, so discovery alone would drop a package the config points at.
+  // Only resolution reaches it, so discovery alone would drop a package that the config points at.
   it('reports a configured package that no dependency field declares', ({ temp }) => {
     const group = collect(['hidden-kit'], temp.dir).find((one) => one.packageName === 'hidden-kit');
 
@@ -59,14 +59,14 @@ describe(collectKitPackageGroups, () => {
     expect(group?.kits.map((kit) => kit.kitName)).toStrictEqual(['audit']);
   });
 
-  it('reports a discovered package the config omits, with the kits it publishes', ({ temp }) => {
+  it('reports a discovered package omitted by the config, with the kits that it publishes', ({ temp }) => {
     const group = collect([], temp.dir).find((one) => one.packageName === '@acme/kits');
 
     expect(group?.configured).toBe(false);
     expect(group?.kits.map((kit) => kit.kitName)).toStrictEqual(['drift', 'preflight']);
   });
 
-  it('reports the description a publisher records for its kit', ({ temp }) => {
+  it('reports the description that a publisher records for its kit', ({ temp }) => {
     const group = collect([], temp.dir).find((one) => one.packageName === '@acme/kits');
 
     expect(group?.kits.map((kit) => kit.description)).toStrictEqual(['Dependency drift', undefined]);
@@ -89,7 +89,7 @@ describe(collectKitPackageGroups, () => {
     ]);
   });
 
-  // Listing is read-only, so a dependency nobody can read drops its own group rather than the whole listing.
+  // Listing is read-only, so a dependency that nobody can read drops its own group rather than the whole listing.
   it('warns and omits a configured package that cannot be resolved', ({ temp }) => {
     using io = captureStdio();
 
@@ -111,7 +111,7 @@ describe(collectKitPackageGroups, () => {
 
 // region | Helpers
 
-/** Collects the groups, discarding the warnings an unreadable dependency would print. */
+/** Collects the groups, discarding the warnings that an unreadable dependency would print. */
 function collect(configuredPackages: string[], fromDir: string): KitPackageGroup[] {
   using _io = captureStdio();
 

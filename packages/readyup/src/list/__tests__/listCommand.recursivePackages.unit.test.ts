@@ -84,7 +84,7 @@ describe('list --recursive --packages', () => {
       ]);
     });
 
-    // The gate `--recursive` applies belongs to the authoring axis; this axis asks what a workspace depends on.
+    // The gate applied by `--recursive` belongs to the authoring axis; this axis asks what a workspace depends on.
     it('reports a workspace with no readyup footprint of its own', async () => {
       const { stdout } = await list();
 
@@ -105,7 +105,7 @@ describe('list --recursive --packages', () => {
       expect(stdout).not.toContain('packages/bare');
     });
 
-    // Configured membership is a fact about one project's config, so the same package reports differently.
+    // Configured membership is a fact about one project's config, so the same package is reported differently.
     it('marks a package against the config of the project reporting it', async () => {
       configureProjects({ '.': ['@acme/kits'], 'packages/app': ['plain-kit'] });
 
@@ -117,7 +117,7 @@ describe('list --recursive --packages', () => {
 
     it('reports the empty-sweep message when no project depends on a publisher', async ({ temp }) => {
       using _cwd = pointCwdAt(temp.resolve('packages/bare'));
-      // Keyed on the directory the sweep reports, which is `.` for whichever project the sweep starts in.
+      // Keyed on the directory reported by the sweep, which is `.` for whichever project the sweep starts in.
       configureProjects({});
 
       const { exitCode, stdout } = await list();
@@ -141,7 +141,7 @@ describe('list --recursive --packages', () => {
     });
 
     // Rows key on project as well as package, so neither collapses into the other.
-    it('emits one row per project for a package two of them depend on', async () => {
+    it('emits one row per project for a package that two of them depend on', async () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
       const smoke = parsed.kits.filter((kit) => kit.name === 'smoke');
 
@@ -178,7 +178,7 @@ async function list(args: string[] = []) {
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }
 
-/** Runs the listing under `--json` and returns the payload it emitted. */
+/** Runs the listing under `--json` and returns the payload that it emitted. */
 async function runForPayload(): Promise<unknown> {
   const { stdout } = await list(['--json']);
   return JSON.parse(stdout);

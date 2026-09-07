@@ -10,9 +10,9 @@ import { hashFileToRecordedLength } from './targetHash.ts';
 /**
  * One recorded input that no longer matches what the compile read, and why.
  *
- * `changed` and `missing` describe either kind of input. `unprojectable` is inline-only: the file is
- * present and the fields the kit pinned to are not, which says something different about the kit than a
- * hash that moved and so is reported apart from one.
+ * `changed` and `missing` describe either kind of input. `unprojectable` is inline-only: The file is
+ * present and the fields that the kit pinned to are not, which says something different about the kit
+ * than a hash that moved and so is reported apart from one.
  *
  * `path` is the input as the manifest records it, relative to the manifest directory.
  */
@@ -27,8 +27,9 @@ export type InputsStatus = { kind: 'ok' } | { kind: 'stale'; failures: InputFail
 /**
  * Determines whether everything a kit's compile read still matches what the manifest recorded for it.
  *
- * The axis the two hash verdicts leave uncovered: a bundle is a function of every module it inlined and
- * every JSON projection `pickJson` substituted, none of which `sourceHash` or `targetHash` describes.
+ * The axis left uncovered by the two hash verdicts: A bundle is a function of every module that it
+ * inlined and every JSON projection that `pickJson` substituted, none of which `sourceHash` or
+ * `targetHash` describes.
  *
  * Reports every input that failed rather than the first, so one pass names everything to fix. Returns
  * `unverified` when the entry records no `inputs`, which means it predates the closure and says nothing

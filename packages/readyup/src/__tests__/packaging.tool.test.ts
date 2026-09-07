@@ -8,7 +8,7 @@ const packageDir = path.resolve(import.meta.dirname, '../..');
 /**
  * Guards what the published tarball includes.
  *
- * This is the only check that exercises `files`: every other check here resolves readyup's guidance through a
+ * This is the only check that exercises `files`: Every other check here resolves readyup's guidance through a
  * `workspace:*` self-link to the live source tree, so a dropped `agents` entry breaks registry installs alone.
  */
 describe('published tarball', () => {
@@ -31,7 +31,7 @@ describe('published tarball', () => {
 
 /**
  * Returns the package-root-relative paths `pnpm pack` would publish. Scripts are skipped so `prepare` does not
- * regenerate schemas, compile the package, and recompile every kit: nothing asserted here reads that output, and
+ * regenerate schemas, compile the package, and recompile every kit: Nothing asserted here reads that output, and
  * producing it would rewrite the working tree as a side effect of a question about `files`. `pnpm pack` rejects a
  * bare `--ignore-scripts`, hence the `--config` form.
  */
@@ -49,7 +49,7 @@ function listPackedPaths(): Array<string> {
   return parsed.files.map((file) => file.path);
 }
 
-/** Narrows `pnpm pack --json` output to the one field this test reads. */
+/** Narrows `pnpm pack --json` output to the one field that this test reads. */
 function isPackReport(value: unknown): value is { files: Array<{ path: string }> } {
   return (
     typeof value === 'object' &&

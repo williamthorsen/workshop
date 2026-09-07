@@ -6,10 +6,10 @@ import { describe, expect, it as baseIt } from 'vitest';
 import { VERSION } from '../../version.ts';
 import { routeCommand } from '../route.ts';
 
-/** A floor no released readyup meets, so the kit declaring it always fails. */
+/** A floor met by no released readyup, so the kit declaring it always fails. */
 const UNREACHABLE_FLOOR = '99.0.0';
 
-/** A floor every readyup meets, so the kit declaring it always runs. */
+/** A floor met by every readyup, so the kit declaring it always runs. */
 const MET_FLOOR = '0.0.1';
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.

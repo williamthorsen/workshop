@@ -4,15 +4,15 @@ import type { PragmaLedger } from './PragmaLedger.ts';
 import { suppressesFinding } from './suppressesFinding.ts';
 
 /**
- * Returns a check's verdict, reason, and fraction, the findings a pragma suppressed for it having been dropped.
+ * Returns a check's verdict, reason, and fraction, after dropping the findings suppressed for it by a pragma.
  *
  * The denominator counts every surviving site, reported or not, so the checks of one run share a denominator
- * the reader can compare across them, and a suppressed site leaves both halves of it. `adoptedCount` is the
- * numerator; omitted, the outcome has no progress at all.
+ * that the reader can compare across them, and a suppressed site leaves both halves of it. `adoptedCount` is
+ * the numerator; where it is omitted, the outcome has no progress at all.
  *
- * A ledger, where one is passed, is told which sites the check's pragmas suppressed, and the paths it declared
- * in `scanned`. A sweep read through `readTrackedSources` reports itself, so what is passed here is the reading a
- * check did some other way. A caller wanting the run to hold no record of a check passes none.
+ * A ledger, where one is passed, is told which sites the check's pragmas suppressed, and the paths that it
+ * declared in `scanned`. A sweep read through `readTrackedSources` reports itself, so what is passed here is the
+ * reading that a check did some other way. A caller passes none where the run should hold no record of a check.
  */
 export function resolveFindingOutcome(
   outcome: FindingOutcome,
@@ -36,14 +36,14 @@ export function resolveFindingOutcome(
 
 // region | Helpers
 
-/** Names one finding by where it is, and by the symbol it declares where it declares one. */
+/** Names one finding by where it is, and by the symbol that it declares where it declares one. */
 function describeFinding(finding: OutcomeFinding): string {
   const location = `${finding.path}:${finding.line}`;
   return finding.symbol === undefined ? location : `${finding.symbol} (${location})`;
 }
 
 /**
- * Drops the findings a source suppressed with an `rdy-ignore` pragma naming this check or naming no check.
+ * Drops the findings that a source suppressed with an `rdy-ignore` pragma naming this check or naming no check.
  *
  * Each path is split into lines once, so a file holding ten findings is read once and split once between
  * them. A path holding no readable text suppresses nothing.

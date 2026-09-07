@@ -4,7 +4,10 @@ import { hasJsonField, readJsonFile } from './json.ts';
 import { findPnpmCatalogVersion } from './pnpmWorkspaceYaml.ts';
 import { compareVersions } from './semver.ts';
 
-/** The pnpm workspace manifest, read from the working directory like the `package.json` it resolves specifiers for. */
+/**
+ * The pnpm workspace manifest, read from the working directory like the `package.json` for which it resolves
+ * specifiers.
+ */
 const PNPM_WORKSPACE_FILE = 'pnpm-workspace.yaml';
 
 /** Leading range operators and the `v` prefix, stripped before a version is parsed from the start of a specifier. */
@@ -30,17 +33,17 @@ export function hasDevDependency(name: string): boolean {
 
 /**
  * Checks whether a dev dependency meets a minimum version. Any `workspace:`-prefixed specifier satisfies any floor,
- * including one that names a version: the specifier links to the package the repo builds, and a version it names is a
- * publish range, not the version that resolves. A `catalog:` specifier is resolved through `pnpm-workspace.yaml` and
- * measured against the version it finds there; one that resolves to no version meets no floor. `exempt` receives the
- * specifier as declared, so a catalogued dependency reaches it as `catalog:`; it adds further exemptions and cannot
- * remove the `workspace:` one.
+ * including one that names a version: The specifier links to the package built by the repo, and a version that it
+ * names is a publish range, not the version that resolves. A `catalog:` specifier is resolved through
+ * `pnpm-workspace.yaml` and measured against the version found there; one that resolves to no version meets no
+ * floor. `exempt` receives the specifier as declared, so a catalogued dependency is passed to it as `catalog:`; it
+ * adds further exemptions and cannot remove the `workspace:` one.
  *
  * A bare `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes
  * as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its
- * own block under `catalogs:`. A catalog entry opening a YAML construct this reader does not follow, such as an alias
- * or a flow mapping, resolves to no version. A version reached through a catalog is read like a declared one, so an
- * entry of `workspace:*` satisfies any floor in its turn.
+ * own block under `catalogs:`. A catalog entry opening a YAML construct that this reader does not follow, such as
+ * an alias or a flow mapping, resolves to no version. A version reached through a catalog is read like a declared
+ * one, so an entry of `workspace:*` satisfies any floor in its turn.
  *
  * The version is read from the start of the specifier, past any range operator, so one naming fewer than three
  * segments (`7`, `^6`) is measured rather than skipped. A specifier that states its version elsewhere, as the `npm:`
@@ -76,7 +79,7 @@ export function hasMinDevDependencyVersion(
 
 // region | Helpers
 
-/** Extracts the version a specifier declares, or `undefined` when it names none. */
+/** Extracts the version declared by a specifier, or `undefined` when it names none. */
 function extractVersion(specifier: string): string | undefined {
   // `compareVersions` pads a short version against the floor, so a partial match needs no filling out here.
   const fromStart = /^\d+(?:\.\d+)*/.exec(specifier.replace(RANGE_PREFIX, ''))?.[0];
@@ -84,7 +87,10 @@ function extractVersion(specifier: string): string | undefined {
   return /\d+\.\d+\.\d+/.exec(specifier)?.[0];
 }
 
-/** Resolves a `catalog:` specifier to the version its catalog assigns the package, or `undefined` when nothing does. */
+/**
+ * Resolves a `catalog:` specifier to the version that its catalog assigns the package, or `undefined` when nothing
+ * does.
+ */
 function resolveCatalogSpecifier(specifier: string, name: string): string | undefined {
   const yaml = readFile(PNPM_WORKSPACE_FILE);
   if (yaml === undefined) return undefined;

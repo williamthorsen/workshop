@@ -13,7 +13,7 @@ describe(createIgnorePragmaMatcher, () => {
   });
 
   it('opens each scan at the start of the text however an earlier matcher was used', () => {
-    // `matchAll` copies its regular expression's `lastIndex`, so a matcher one reader advanced would silently
+    // `matchAll` copies its regular expression's `lastIndex`, so a matcher advanced by one reader would silently
     // report that a pragma before that offset is not there.
     const used = createIgnorePragmaMatcher();
     used.test('a rdy-ignore b');

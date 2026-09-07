@@ -5,13 +5,13 @@ import type { JsonPathSpec } from '../../../src/compile/extractJsonPaths.ts';
 import { projectJsonFile } from '../../../src/compile/projectJsonFile.ts';
 import { hashFile, hashProjection } from '../../../src/verify/targetHash.ts';
 
-/** Path a fixture kit's inlined module is recorded at, relative to the manifest's own directory. */
+/** Path at which a fixture kit's inlined module is recorded, relative to the manifest's own directory. */
 export const FIXTURE_INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
 
-/** Kit directory a fixture project holds, relative to its root. */
+/** Kit directory that a fixture project holds, relative to its root. */
 export const FIXTURE_KITS_DIR = path.join('.readyup', 'kits');
 
-/** Manifest path a fixture project holds, relative to its root. */
+/** Manifest path that a fixture project holds, relative to its root. */
 export const FIXTURE_MANIFEST_PATH = path.join('.readyup', 'manifest.json');
 
 /** A manifest kit entry, as `rdy compile` records one. */
@@ -39,16 +39,16 @@ export const SELF_CONTAINED_BUNDLE = [
   '',
 ].join('\n');
 
-/** Adds recorded inputs to a fixture entry, beside the entry module `writeKit` already records. */
+/** Adds recorded inputs to a fixture entry, beside the entry module that `writeKit` already records. */
 export function withInputs(entry: FixtureManifestEntry, ...inputs: FixtureManifestInput[]): FixtureManifestEntry {
   return { ...entry, inputs: [...entry.inputs, ...inputs] };
 }
 
 /**
- * Writes a JSON file a compile would have projected, and returns the record of that projection.
+ * Writes a JSON file that a compile would have projected, and returns the record of that projection.
  *
- * The projection and its hash come from the same helpers `rdy compile` records through, so a test says a
- * projection has moved by editing a picked field rather than by writing a hash of its own.
+ * The projection and its hash come from the same helpers through which `rdy compile` records, so a test
+ * says a projection has moved by editing a picked field rather than by writing a hash of its own.
  */
 export function writeInlineInput(
   projectRoot: string,
@@ -63,8 +63,8 @@ export function writeInlineInput(
 /**
  * Writes a kit source and the bundle compiled from it, and returns the entry recording both.
  *
- * The hashes come from the same helper `rdy compile` uses, so a fixture written this way is fresh by
- * construction and a test asking about drift says so by editing the entry it gets back.
+ * The hashes come from the same helper used by `rdy compile`, so a fixture written this way is fresh by
+ * construction and a test asking about drift says so by editing the entry that it gets back.
  */
 export function writeKit(projectRoot: string, name: string, options: WriteKitOptions = {}): FixtureManifestEntry {
   const { bundle = SELF_CONTAINED_BUNDLE, source = DEFAULT_SOURCE } = options;
@@ -95,7 +95,7 @@ export function writeKitManifest(projectRoot: string, entries: Array<Partial<Fix
   writeRawKitManifest(projectRoot, entries);
 }
 
-/** Writes a module a compile would have inlined, and returns the record of it. */
+/** Writes a module that a compile would have inlined, and returns the record of it. */
 export function writeModuleInput(projectRoot: string, recordedPath: string, contents: string): FixtureManifestInput {
   const filePath = writeInputFile(projectRoot, recordedPath, contents);
   return { hash: hashFile(filePath), kind: 'module', path: recordedPath };
@@ -107,10 +107,11 @@ export function writePackageJson(projectRoot: string, packageJson: Record<string
 }
 
 /**
- * Writes the manifest recording the given kits exactly as given, records no schema would produce included.
+ * Writes the manifest recording the given kits exactly as given, records that no schema would produce
+ * included.
  *
- * The door for a manifest a hand edit or a foreign tool wrote, which is what the kits' defensive narrowing
- * exists for and what a schema-typed entry cannot express.
+ * The door for a manifest written by a hand edit or a foreign tool, which is what the kits' defensive
+ * narrowing exists for and what a schema-typed entry cannot express.
  */
 export function writeRawKitManifest(projectRoot: string, kits: Array<Record<string, unknown>>): void {
   const manifestPath = path.join(projectRoot, FIXTURE_MANIFEST_PATH);
@@ -118,7 +119,7 @@ export function writeRawKitManifest(projectRoot: string, kits: Array<Record<stri
   writeFileSync(manifestPath, JSON.stringify({ version: 1, kits }));
 }
 
-/** Writes a readyup config at the one path `loadConfig` looks in. */
+/** Writes a readyup config at the one path that `loadConfig` looks in. */
 export function writeRdyConfig(projectRoot: string): void {
   const configPath = path.join(projectRoot, '.config', 'readyup.config.ts');
   mkdirSync(path.dirname(configPath), { recursive: true });
@@ -127,7 +128,7 @@ export function writeRdyConfig(projectRoot: string): void {
 
 // region | Helpers
 
-/** Kit source a fixture writes when a test does not care what the source says. */
+/** Kit source written by a fixture when a test does not care what the source says. */
 const DEFAULT_SOURCE = [
   `import { defineRdyKit } from 'readyup';`,
   '',
@@ -135,7 +136,7 @@ const DEFAULT_SOURCE = [
   '',
 ].join('\n');
 
-/** Writes a file at a path the manifest would record, relative to the manifest's own directory. */
+/** Writes a file at a path that the manifest would record, relative to the manifest's own directory. */
 function writeInputFile(projectRoot: string, recordedPath: string, contents: string): string {
   const filePath = path.join(projectRoot, path.dirname(FIXTURE_MANIFEST_PATH), recordedPath);
   mkdirSync(path.dirname(filePath), { recursive: true });
@@ -143,7 +144,7 @@ function writeInputFile(projectRoot: string, recordedPath: string, contents: str
   return filePath;
 }
 
-/** Overrides for the two files `writeKit` lays down. */
+/** Overrides for the two files laid down by `writeKit`. */
 interface WriteKitOptions {
   bundle?: string | undefined;
   source?: string | undefined;

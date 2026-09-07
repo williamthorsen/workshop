@@ -49,7 +49,7 @@ function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
 
 /** Options for `loadConfig`. */
 export interface LoadConfigOptions {
-  /** Directory the config is read for. Both the lookup chain and `overridePath` resolve against it. */
+  /** Directory for which the config is read. Both the lookup chain and `overridePath` resolve against it. */
   fromDir?: string;
   /** A config file to load in place of the lookup chain. */
   overridePath?: string;
@@ -58,7 +58,7 @@ export interface LoadConfigOptions {
 /**
  * Returns the readyup config read from the filesystem, or the defaults where there is none.
  *
- * `.config/readyup.config.ts` is the file the lookup chain checks, and an explicit override path
+ * `.config/readyup.config.ts` is the file checked by the lookup chain, and an explicit override path
  * skips that chain.
  */
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<ResolvedRdyConfig> {
@@ -87,7 +87,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Resol
  * Locates the config file, or `undefined` when no lookup path holds one.
  *
  * An override path skips the lookup chain, and a file missing at that path is an error rather than a
- * fall-through to defaults: naming a config that is not there is a mistake, not a request for defaults.
+ * fall-through to defaults: Naming a config that is not there is a mistake, not a request for defaults.
  */
 function resolveConfigPath(fromDir: string, overridePath: string | undefined): string | undefined {
   if (overridePath !== undefined) {
@@ -106,7 +106,7 @@ function resolveConfigPath(fromDir: string, overridePath: string | undefined): s
 }
 
 /**
- * Fills every key the config file left out with its default.
+ * Fills every key that the config file left out with its default.
  *
  * The guards are redundant at runtime -- Zod validated the shape already -- but they narrow `raw`, which
  * is `Record<string, unknown> & RdyConfig` after the assertion.

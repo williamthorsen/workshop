@@ -15,7 +15,7 @@ export interface DiscoverWorkspacesOptions {
 
 type WorkspacePatternSource = 'pnpm-workspace.yaml' | 'package.json';
 
-/** Discovered workspaces by the directory they were resolved against, held for the life of the process. */
+/** Discovered workspaces by the directory against which they were resolved, held for the life of the process. */
 const workspacesByDir = new Map<string, Workspace[]>();
 
 /**
@@ -26,8 +26,8 @@ const workspacesByDir = new Map<string, Workspace[]>();
  * The repo root is reported in every shape, once, flagged `isRoot`, so a caller wanting the members alone
  * filters `!isRoot` rather than reconstructing the distinction from `dir`.
  *
- * Memoized per directory for the life of the process: repeated calls in one run share a single directory walk
- * and the frozen `Workspace` objects it built, and none of them observes a filesystem change made since the first.
+ * Memoized per directory for the life of the process: Repeated calls in one run share a single directory walk and
+ * the frozen `Workspace` objects that it built, and none of them observes a filesystem change made since the first.
  * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
  * Entries are frozen along with their `packageJson`, so a write throws rather than reaching the next caller, and a
  * discovery that throws is not memoized, so the next call retries it.
@@ -44,8 +44,8 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
  * Discovers the workspaces of the repo rooted at `dir`, which a relative path names against `cwd`.
  *
  * The directory-taking half of `discoverWorkspaces`, for a caller resolving against a project other than the
- * one it is running in. It stays out of `check-utils`'s exports: a kit runs in the project it checks, so the
- * ambient discovery is the one a kit author wants.
+ * one in which it is running. It stays out of `check-utils`'s exports: A kit runs in the project that it checks,
+ * so the ambient discovery is the one that a kit author wants.
  */
 export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {
   // Resolve before keying the memo, so a relative path and its absolute form share one discovery.
@@ -63,7 +63,7 @@ export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOp
 
 // region | Helpers
 
-/** Applies the optional filter to a workspace list, returning an array the caller owns either way. */
+/** Applies the optional filter to a workspace list, returning an array that the caller owns either way. */
 function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions['filter']): Workspace[] {
   if (filter === undefined) return [...workspaces];
   return workspaces.filter(filter);
@@ -140,10 +140,10 @@ function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
 }
 
 /**
- * Expands each pattern into the workspace directories it names, as relative forward-slash paths,
+ * Expands each pattern into the workspace directories that it names, as relative forward-slash paths,
  * sorted and deduplicated.
  *
- * Each pattern is rewritten to name the `package.json` inside the directories it matches, so
+ * Each pattern is rewritten to name the `package.json` inside the directories that it matches, so
  * `walkDirectories` yields those directories.
  */
 function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePatternSource): string[] {
@@ -164,7 +164,7 @@ function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePa
   const match = patterns.map((pattern) => `${normalizePattern(pattern)}/package.json`);
 
   // A pattern of `**` translates to a glob matching the root's own manifest; `buildWorkspaces` reports the
-  // root in its own right, so dropping it here is what leaves exactly one entry for it.
+  // root in its own right, so dropping it here leaves exactly one entry for it.
   return walkDirectories({ root: rootDir, match }).filter((relDir) => relDir !== '.');
 }
 

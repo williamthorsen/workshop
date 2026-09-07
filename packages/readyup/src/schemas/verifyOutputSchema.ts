@@ -7,11 +7,11 @@ import { z } from 'zod';
  */
 export const SCHEMA_VERSION = 1;
 
-/** Outcome of hashing one compiled kit against the hash the manifest recorded for it. */
+/** Outcome of hashing one compiled kit against the hash that the manifest recorded for it. */
 export const DriftStatusSchema = z.enum(['drift', 'missing', 'ok', 'unverified']).meta({ id: 'DriftStatus' });
 
 /**
- * Outcome of hashing one kit's TypeScript source against the hash the manifest recorded for it.
+ * Outcome of hashing one kit's TypeScript source against the hash that the manifest recorded for it.
  *
  * A separate vocabulary from `DriftStatus` rather than a widening of it. The two verdicts answer
  * different questions -- has the bundle been edited, and has the source moved on since it was
@@ -23,7 +23,7 @@ export const SourceStatusSchema = z.enum(['missing', 'ok', 'stale', 'unverified'
 /**
  * Outcome of reading one kit's recorded input closure back off disk.
  *
- * A vocabulary of its own rather than a widening of any above, for the reason `SourceStatus`
+ * A vocabulary of its own rather than a widening of any above, for the reason that `SourceStatus`
  * records. One axis covers every kind of input, with `inputFailures` naming which inputs failed
  * and why, so a consumer branches on the cause rather than on a status per kind of input.
  */
@@ -33,10 +33,10 @@ export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ i
  * One recorded input that no longer matches what the compile read.
  *
  * `path` is the file as the manifest records it, relative to the manifest directory, and `kind`
- * separates a module the bundle inlined from a JSON projection `pickJson` substituted.
+ * separates a module inlined by the bundle from a JSON projection substituted by `pickJson`.
  *
  * Discriminated on `reason` so each cause states exactly what it compared, as `ManifestInputSchema`
- * discriminates the record this reads back: `changed` has the hash pair, `missing` has
+ * discriminates the record that this reads back: `changed` has the hash pair, `missing` has
  * neither, and `unprojectable` has a diagnosis instead and is inline-only, since only a
  * projection can fail to be reproduced. A consumer generating types from this narrows by `reason`
  * rather than by hand over three fields that are independently optional.
@@ -58,18 +58,18 @@ export const InputFailureSchema = z
 /**
  * Outcome of recompiling one kit and comparing the result to the bundle on disk.
  *
- * A fourth vocabulary rather than a widening of any enum above, for the reason `SourceStatus`
- * already records: the verdicts answer different questions, and widening a closed enum breaks a
+ * A fourth vocabulary rather than a widening of any enum above, for the reason that `SourceStatus`
+ * already records: The verdicts answer different questions, and widening a closed enum breaks a
  * consumer that switches exhaustively over it.
  *
  * It has no `unverified`. The other axes admit one because a manifest with no recorded hash says
- * nothing about whether the kit changed; here there is no bookkeeping to be absent, only inputs the
- * check needs, and a kit exempted from an exactness check would make a passing run mean less than
- * it says. `missing` covers every such absence and fails.
+ * nothing about whether the kit changed; here there is no bookkeeping to be absent, only inputs
+ * needed by the check, and a kit exempted from an exactness check would make a passing run mean
+ * less than it says. `missing` covers every such absence and fails.
  */
 export const RebuildStatusSchema = z.enum(['failed', 'mismatch', 'missing', 'ok']).meta({ id: 'RebuildStatus' });
 
-/** The esbuild version a mismatched bundle was compiled with against the one the rebuild ran. */
+/** The esbuild version with which a mismatched bundle was compiled, against the one that the rebuild ran. */
 export const RebuildEsbuildSchema = z
   .object({ recorded: z.string(), rebuilt: z.string() })
   .meta({ id: 'RebuildEsbuild' });
@@ -77,9 +77,9 @@ export const RebuildEsbuildSchema = z
 /**
  * One bundled package whose recorded version the rebuild does not reproduce.
  *
- * `recorded` is the version the compile bundled and `rebuilt` the one the rebuild bundled; a side is
- * absent where the package was not bundled then or now. A side with several comma-separated
- * versions is a package the bundle inlined at more than one version at once.
+ * `recorded` is the version bundled by the compile and `rebuilt` the one bundled by the rebuild; a
+ * side is absent where the package was not bundled then or now. A side with several comma-separated
+ * versions is a package inlined by the bundle at more than one version at once.
  */
 export const RebuildDependencyChangeSchema = z
   .object({ name: z.string(), recorded: z.string().optional(), rebuilt: z.string().optional() })
@@ -97,13 +97,13 @@ export const RebuildDependencyChangeSchema = z
  * consumer pinned to this schema still validates a payload from a readyup that predates either.
  *
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
- * payload it always did. `rebuildExpected` is the hash of the recompiled bundle and `rebuildActual`
- * the hash of the bundle on disk, both present only on `mismatch`; `rebuildError` holds the
- * compile failure on `failed`. `rebuildCompiledWith` names the readyup a mismatched bundle was
- * built by, present only when it differs from the running one, which is what separates a mismatch
- * caused by a readyup upgrade from one caused by an edited bundle.
+ * payload that it always did. `rebuildExpected` is the hash of the recompiled bundle and
+ * `rebuildActual` the hash of the bundle on disk, both present only on `mismatch`; `rebuildError`
+ * holds the compile failure on `failed`. `rebuildCompiledWith` names the readyup by which a
+ * mismatched bundle was built, present only when it differs from the running one, which is what
+ * separates a mismatch caused by a readyup upgrade from one caused by an edited bundle.
  *
- * `rebuildEsbuild` and `rebuildDependencyChanges` extend the same idea to the toolchain record: both
+ * `rebuildEsbuild` and `rebuildDependencyChanges` extend the same idea to the toolchain record: Both
  * appear only on `mismatch`, and only for a kit whose manifest entry records an `esbuildVersion`.
  * `rebuildEsbuild` is present whenever that record exists, matching or not, so a consumer reads the
  * comparison rather than reconstructing it from the manifest; `rebuildDependencyChanges` is present

@@ -1,6 +1,6 @@
 import { TOPICS } from './topics.ts';
 
-/** The topic list help output prints, rendered from the table so the two cannot diverge. */
+/** The topic list that help output prints, rendered from the table so the two cannot diverge. */
 const TOPIC_LINES = Object.entries(TOPICS)
   .map(([topic, { summary }]) => `  ${topic.padEnd(30)}${summary}`)
   .join('\n');
@@ -8,7 +8,7 @@ const TOPIC_LINES = Object.entries(TOPICS)
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the README explains it, and the skill holds the authoring judgment neither states. The
+ * Help lists the surface; the README explains it, and the skill holds the authoring judgment that neither states. The
  * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
  * for a global install, where no such path exists.
  */
@@ -57,7 +57,7 @@ Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit the config's "packages" list publishes (default: "default")
+  --packages [<name>]                Run a kit published by the config's "packages" list (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --checklists, -c <name,...>        Filter checklists within the selected kit
@@ -110,11 +110,11 @@ List available kits without running them.
 
 Modes:
   rdy list                                  List internal and compiled kits (owner view)
-  rdy list --packages                       List the kits this project's dependencies publish
+  rdy list --packages                       List the kits published by this project's dependencies
   rdy list --recursive                      List compiled kits in every project below this directory
   rdy list --recursive --packages           List each project's kit-publishing dependencies
   rdy list --from <path>                    List compiled kits at a local path (consumer view)
-  rdy list --from npm:package               List the kits an installed package publishes
+  rdy list --from npm:package               List the kits published by an installed package
   rdy list --from global                    List compiled kits in the global directory
   rdy list --from dir:<path>                List kits in an arbitrary directory
   rdy list --from github:org/repo[@ref]     List kits in a remote GitHub repository
@@ -123,9 +123,9 @@ Modes:
 Options:
   --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
                              global, dir:path, or local path)
-  --manifest <path>          List the kits a manifest file declares
+  --manifest <path>          List the kits declared by a manifest file
   --packages                 List every installed dependency that publishes kits, with the kits
-                             each publishes and the command that runs them; combines with
+                             that each publishes and the command that runs them; combines with
                              --recursive, not with --from or --manifest
   --recursive                List compiled kits in every project below the working directory,
                              grouped by project; with --packages, lists each project's
@@ -160,9 +160,9 @@ Kit source (mutually exclusive):
                                      npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit from every package the config's "packages"
-                                     list names that publishes it, skipping those that do
-                                     not; without a name, the kit named "default"
+  --packages [<name>]                Run a kit from every package that the config's "packages"
+                                     list names, skipping those that do not publish it;
+                                     without a name, the kit named "default"
 
 Mode flags (incompatible with --from, --file, --url, --packages):
   --jit                              Run from TypeScript source instead of compiled JS

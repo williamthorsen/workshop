@@ -9,20 +9,20 @@ export interface UnresolvableImportsContext {
   provenance?: KitProvenance | undefined;
 }
 
-/** A composed diagnosis: what went wrong, and the one action that clears it. */
+/** A composed diagnosis: What went wrong, and the one action that clears it. */
 export interface UnresolvableImportsDiagnosis {
   message: string;
   hint: string;
 }
 
 /**
- * Composes the failure a kit's unresolvable readyup imports produce.
+ * Composes the failure produced by a kit's unresolvable readyup imports.
  *
  * The message names the kit, and the publishing package where the kit has one, because a `--packages` run loads
  * several kits that share the name `default` and a message read on its own has to say which one failed.
  *
  * The remedy follows the kit's source, since the action that clears the failure differs by where the bundle is
- * maintained: a kit in the project can be recompiled, a kit inside an installed package cannot.
+ * maintained: A kit in the project can be recompiled, a kit inside an installed package cannot.
  */
 export function describeUnresolvableImports(
   findings: UnresolvableImports,
@@ -30,7 +30,7 @@ export function describeUnresolvableImports(
 ): UnresolvableImportsDiagnosis {
   const clauses = [
     ...findings.missing.map(({ specifier, names }) => `${specifier} does not export ${names.join(', ')}`),
-    ...findings.unknownSubpaths.map((subpath) => `${subpath} is not a subpath it publishes`),
+    ...findings.unknownSubpaths.map((subpath) => `${subpath} is not a subpath that it publishes`),
   ];
 
   return {

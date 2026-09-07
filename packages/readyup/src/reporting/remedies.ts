@@ -7,5 +7,5 @@
 /** The remedy for a bundle whose recorded hash no longer describes it, which only `--force` recompiles. */
 export const MOVE_EDITS_REMEDY = 'Move the edits into the source, then run `rdy compile --force`.';
 
-/** The remedy every axis reaches where a plain recompile settles what it found. */
+/** The remedy for every axis where a plain recompile settles what it found. */
 export const RECOMPILE_REMEDY = 'Run `rdy compile` to rebuild it.';

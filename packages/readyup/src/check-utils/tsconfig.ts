@@ -7,11 +7,13 @@ import { parse as parseJsonc } from 'jsonc-parser';
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { isRecord } from '../portable/isRecord.ts';
 
-/** A tsconfig's `extends` chain, resolved to the configs it reaches. */
+/** A tsconfig's `extends` chain, resolved to the configs that it reaches. */
 export interface TsconfigChain {
   /** Configs visited, entry config first, then parents in resolution order. */
   entries: TsconfigChainEntry[];
-  /** `extends` references resolution could not follow: specifiers that do not resolve, configs that do not parse. */
+  /**
+   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse.
+   */
   unresolvedExtends: UnresolvedExtends[];
 }
 
@@ -25,7 +27,7 @@ export interface TsconfigChainEntry {
   path: string;
   /**
    * The `extends` specifier that reached this config; `undefined` for the entry config. Unlike `path`, it survives a
-   * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory it
+   * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory that it
    * points at, so one base config resolves to two different paths. Where two branches reach one config, it names the
    * branch that reached it first.
    */
@@ -40,11 +42,13 @@ export interface TsconfigLanguageLevel {
   lib: string[] | undefined;
   /** Effective `target`, lowercased; `undefined` if no config in the chain declares it. */
   target: string | undefined;
-  /** `extends` references resolution could not follow: specifiers that do not resolve, configs that do not parse. */
+  /**
+   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse.
+   */
   unresolvedExtends: string[];
 }
 
-/** An `extends` reference resolution could not follow, and the config that declared it. */
+/** An `extends` reference that resolution could not follow, and the config that declared it. */
 export interface UnresolvedExtends {
   /** Path of the config declaring the reference, cwd-relative. */
   from: string;
@@ -61,7 +65,7 @@ interface Resolution {
 }
 
 /**
- * Reads a tsconfig's `extends` chain, resolving it as TypeScript does, and reports what each config it reaches
+ * Reads a tsconfig's `extends` chain, resolving it as TypeScript does, and reports what each config that it reaches
  * declares in its own right. Returns `undefined` if the entry file is missing or unparseable; unresolvable parents
  * are reported in `unresolvedExtends` rather than treated as failures.
  */
@@ -149,9 +153,9 @@ function readLib(value: unknown): string[] | undefined {
 }
 
 /**
- * Reads a compiler option from the nearest entry declaring it in a form `read` accepts. Entry order is resolution
- * order, so the first such entry is the declaration that overrides the rest, and a value `read` rejects leaves the
- * option to a config further along.
+ * Reads a compiler option from the nearest entry declaring it in a form that `read` accepts. Entry order is
+ * resolution order, so the first such entry is the declaration that overrides the rest, and a value rejected by
+ * `read` leaves the option to a config further along.
  */
 function readNearestOption<T>(
   entries: TsconfigChainEntry[],
@@ -181,10 +185,10 @@ function resolveExtendsPath(specifier: string, configDir: string): string | unde
 }
 
 /**
- * Resolves a bare package name to the config the package declares, as TypeScript does: the `"."` entry of a
+ * Resolves a bare package name to the config declared by the package, as TypeScript does: the `"."` entry of a
  * non-null `exports` map, else the manifest's `tsconfig` field, else `tsconfig.json` in the package root.
  *
- * Reaching the last two takes readyup's own walk, because `exports` exists to hide the directory they address.
+ * Reaching the last two takes readyup's own walk, because `exports` exists to hide the directory that they address.
  */
 function resolvePackageDefaultConfig(packageName: string, configDir: string): string | undefined {
   const packageRoot = resolvePackageRoot(packageName, configDir);
@@ -222,10 +226,10 @@ function resolvePathSpecifier(specifier: string, baseDir: string): string | unde
 
 /**
  * Resolves a package specifier through Node's resolver anchored at the extending config, so `exports`
- * governs what is reachable and a pnpm symlink resolves to the directory the package occupies.
+ * governs what is reachable and a pnpm symlink resolves to the directory occupied by the package.
  *
- * Resolution runs under the `require` condition, which is the condition TypeScript resolves `extends`
- * under, so a specifier this reaches is a specifier `tsc` reaches.
+ * Resolution runs under the `require` condition, which is the condition under which TypeScript resolves
+ * `extends`, so a specifier that this reaches is a specifier that `tsc` reaches.
  */
 function resolveThroughNodeResolver(specifier: string, configDir: string): string | undefined {
   let resolved: string;
@@ -269,7 +273,7 @@ function visitConfig(
   }
 }
 
-/** Resolves one `extends` specifier and records the parent config it reaches. */
+/** Resolves one `extends` specifier and records the parent config that it reaches. */
 function visitParent(specifier: string, configPath: string, resolution: Resolution): void {
   const from = toCwdRelative(resolution.cwd, configPath);
   const parentPath = resolveExtendsPath(specifier, dirname(configPath));

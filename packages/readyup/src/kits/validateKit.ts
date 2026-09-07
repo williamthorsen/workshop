@@ -4,7 +4,7 @@ import type { RdyKit } from './types.ts';
  * Checks the semantic invariants of a structurally valid kit, throwing a descriptive message on a
  * violation.
  *
- * Two rules hold: no suite name collides with a checklist name, and every entry in a suite names an
+ * Two rules hold: No suite name collides with a checklist name, and every entry in a suite names an
  * existing checklist.
  */
 export function validateKit(kit: RdyKit): void {

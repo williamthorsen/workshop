@@ -1,20 +1,20 @@
 import { buildWorkspaceFromPackageJson, type Workspace } from '../check-utils/buildWorkspaceFromPackageJson.ts';
 
-/** Directory a fixture reports when the caller names none. */
+/** Directory reported by a fixture when the caller names none. */
 const DEFAULT_DIR = 'packages/example';
 
-/** Root the default `absolutePath` is composed against. */
+/** Root against which the default `absolutePath` is composed. */
 const FIXTURE_ROOT = '/repo';
 
 /**
- * Builds a `Workspace` fixture, filling every field the caller leaves out.
+ * Builds a `Workspace` fixture, filling every field left out by the caller.
  *
  * Every default is derived: `dir` decides `absolutePath`, the manifest name, and `isRoot`, and the manifest decides
- * `name` and `isPackage`, through the derivation `discoverWorkspaces` uses. A field added to `Workspace` therefore
- * reaches a fixture with the value discovery would give it.
+ * `name` and `isPackage`, through the derivation that `discoverWorkspaces` uses. A field added to `Workspace`
+ * therefore reaches a fixture with the value that discovery would give it.
  *
- * Overrides apply after the derivation, so a test that needs a shape discovery would not produce can still state it.
- * The result is frozen, as a discovered workspace is, and the manifest is copied before freezing, so a literal the
+ * Overrides apply after the derivation, so a test can still state a shape that discovery would not produce. The
+ * result is frozen, as a discovered workspace is, and the manifest is copied before freezing, so a literal that the
  * caller shares between fixtures stays writable.
  */
 export function makeWorkspace(overrides: Partial<Workspace> = {}): Workspace {

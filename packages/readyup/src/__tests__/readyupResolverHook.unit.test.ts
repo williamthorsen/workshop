@@ -5,7 +5,7 @@ import { initialize, resolve } from '../readyupResolverHook.ts';
 const READYUP_PARENT_URL = 'file:///runner/node_modules/readyup/dist/esm/bin/rdy.js';
 const KIT_PARENT_URL = 'file:///tmp/rdy-XYZ/kit.js';
 
-/** Returns the minimal `context` object Node passes to a resolve hook. */
+/** Returns the minimal `context` object that Node passes to a resolve hook. */
 function buildContext(overrides: Partial<{ parentURL: string; conditions: string[] }> = {}) {
   return {
     conditions: overrides.conditions ?? ['node', 'import'],

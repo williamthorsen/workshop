@@ -40,8 +40,9 @@ export interface ReportRdyOptions {
  *
  * A failed check contributes its claim plus a reason block; every other status contributes one line.
  * `fixLocation` places each fix either in the recap or in its check's reason block. The count line
- * tallies every result in `report`, including those `reportOn` and `quiet` omit from the tree, and it
- * closes the block: the last line a reader meets before the blank separating one block from the next.
+ * tallies every result in `report`, including those omitted from the tree by `reportOn` and `quiet`,
+ * and it closes the block: the last line that a reader meets before the blank separating one block
+ * from the next.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): RenderedReport {
   const fixLocation = options?.fixLocation ?? 'end';
@@ -78,7 +79,7 @@ export function emptyCounts(): SummaryCounts {
 /**
  * Returns the tally of `results` by severity and skip reason.
  *
- * Expects a run's complete results: a pre-filtered list yields counts that describe only the subset.
+ * Expects a run's complete results: A pre-filtered list yields counts that describe only the subset.
  */
 export function countResults(results: RdyResult[]): SummaryCounts {
   const counts = emptyCounts();
@@ -114,8 +115,8 @@ export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void 
  * Returns the results surviving `reportOn`, then those surviving quiet, each pass keeping ancestors.
  *
  * A pass drops out when the invocation asked to be quiet or when the check declared itself quiet. The
- * two are one predicate at two scopes, which is what makes a kit whose every check is quiet render
- * exactly what `--quiet` renders.
+ * two are one predicate at two scopes, so a kit whose every check is quiet renders exactly what
+ * `--quiet` renders.
  */
 function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
   const reported = selectVisibleResults(results, reportOn);
@@ -123,7 +124,7 @@ function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: 
 }
 
 /**
- * Returns the results `isVisible` accepts, plus the ancestors of each, in their original order.
+ * Returns the results accepted by `isVisible`, plus the ancestors of each, in their original order.
  *
  * Requires depth-first order, where a result's descendants are the run of deeper results following it.
  * The returned list preserves that order, so it is valid input to a further pass.
@@ -204,7 +205,7 @@ function resolveResultToken(result: RdyResult): TokenName {
   if (result.status === 'skipped') {
     return result.skipReason === 'precondition' ? 'blockedPrecondition' : 'skippedOptional';
   }
-  // A failed check's severity picks its token by the same rule a tail line's worst severity does.
+  // A failed check's severity picks its token by the same rule that a tail line's worst severity does.
   return resolveWorstToken(result.severity);
 }
 

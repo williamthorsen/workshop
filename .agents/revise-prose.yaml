@@ -1,0 +1,934 @@
+units:
+  plain-speech:
+    version: '1'
+    swept-at: 2026-09-07
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.readyup
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/src
+      - packages/readyup/vitest.config.ts
+  williamthorsen-writing-preferences:
+    version: '2'
+    swept-at: 2026-09-07
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.readyup
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/src
+      - packages/readyup/vitest.config.ts
+rejections:
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/__tests__/publishing.unit.test.ts
+    phrase: consumer runs as the kit source is
+    ground: 'not the construction: a fused head under a comparative, which admits no relativizer'
+    unit-version: '2'
+    hash: 4458bb1957889bc7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/__tests__/publishing.unit.test.ts
+    phrase: manifest records default
+    ground: "not the construction: a detail string whose verb is the clause's own"
+    unit-version: '2'
+    hash: f8f5ecc85aad4ee2
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/checks/__tests__/findForeignSpecifiers.unit.test.ts
+    phrase: wherever it sits
+    ground: 'outside the rule: a free relative adjunct whose gap fills no argument position'
+    unit-version: '2'
+    hash: 34bb4481a473fcbc
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
+    phrase: floor the two readers
+    ground: 'not the construction: `Below the floor` is a fronted adjunct, and `the two readers agree` is the main clause'
+    unit-version: '2'
+    hash: 307157121ca9b3e1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
+    phrase: fail an edited bundle recorded
+    ground: "not the construction: `fail` is the sentence's own verb and `recorded` a participle"
+    unit-version: '2'
+    hash: e48b24daad49c3ef
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
+    phrase: pass an unchanged bundle recorded
+    ground: "not the construction: `pass` is the sentence's own verb and `recorded` a participle"
+    unit-version: '2'
+    hash: f3b6f5b00f7cad19
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/.readyup/kits/checks/kit-layout.ts
+    phrase: raw entry's recorded
+    ground: 'not the construction: a possessive plus a participial modifier'
+    unit-version: '2'
+    hash: 05e1a1880bd6d3d9
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: whenever the subject is not yours
+    ground: 'not the construction: an adverbial clause, not a relative clause'
+    unit-version: '2'
+    hash: 8a08c77db0404b67
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: collapse a group of skips
+    ground: 'not the construction: `structures` is the subject of the interrogative clause and `collapse` its own verb'
+    unit-version: '2'
+    hash: f75f18d9daf83675
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
+    phrase: find it unchanged
+    ground: "not the construction: `the rest` is the clause's own subject and `it unchanged` is the object plus predicative complement of `find`"
+    unit-version: '2'
+    hash: e6a8e385b7c3f76d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
+    phrase: make it produce
+    ground: 'not the construction: `that` is an overt subject relativizer on `arguments`, and `it produce` is the object plus bare infinitive of causative `make`'
+    unit-version: '2'
+    hash: f1ed8b7709f8c027
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/json.unit.test.ts
+    phrase: file contains malformed
+    ground: "not the construction: `contains` is the when-clause's own verb, and there is no relative clause"
+    unit-version: '2'
+    hash: 74aae1172560df23
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/tsconfig.unit.test.ts
+    phrase: reader reports normalized
+    ground: "not the construction: `reports` is the where-clause's own verb, and there is no relative clause"
+    unit-version: '2'
+    hash: 5a7ea71b13072ce5
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/workspaces.caching.unit.test.ts
+    phrase: alongside the «codespan» factory
+    ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
+    unit-version: '2'
+    hash: a24d370122b26101
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts
+    phrase: alongside the «codespan» factory
+    ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
+    unit-version: '2'
+    hash: a24d370122b26101
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts
+    phrase: bind their «codespan» functions
+    ground: "not the construction: `bind` is the main clause's own verb"
+    unit-version: '2'
+    hash: ebe4dfb747d4ad84
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/__tests__/workspaces.walk.unit.test.ts
+    phrase: alongside the «codespan» factory
+    ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
+    unit-version: '2'
+    hash: a24d370122b26101
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/discoverKitPackages.ts
+    phrase: least one compiled
+    ground: 'not the construction: `compiled` is a participial modifier on `kit`, and there is no embedded clause'
+    unit-version: '2'
+    hash: 84b74255397319e0
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/git/__tests__/factories.unit.test.ts
+    phrase: repository it counted
+    ground: 'not the construction: an embedded interrogative complement of `say`, not a relative clause, so no relativizer restores'
+    unit-version: '2'
+    hash: ac87cdaeecc53450
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/package-json.ts
+    phrase: naming fewer than three segments
+    ground: 'not the construction: `naming` is a participial modifier, and there is no embedded subject'
+    unit-version: '2'
+    hash: dc813720dc60468d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
+    phrase: sweep goes looking
+    ground: 'outside the rule: a fused head, which is its own relative pronoun and admits no relativizer'
+    unit-version: '2'
+    hash: e23f6e7078b0ad15
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
+    phrase: bind their «codespan» functions
+    ground: "not the construction: `bind` is the main clause's own verb"
+    unit-version: '2'
+    hash: ebe4dfb747d4ad84
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
+    phrase: given paths generated
+    ground: "not the construction: `paths` is the main verb's object and `generated` its predicative complement"
+    unit-version: '2'
+    hash: f8a31a428af4c413
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/listForeignPaths.ts
+    phrase: declaration means is git's
+    ground: fused relative subject clause, not a relative clause on a lexical head
+    unit-version: '2'
+    hash: eae277612aebd832
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
+    phrase: different one exports
+    ground: "`exports` is the sentence's own main verb; not the construction"
+    unit-version: '2'
+    hash: 0b3ee4cf0b4f0b2e
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
+    phrase: hold the declared package's
+    ground: the clause already carries the relativizer `that`; not the construction
+    unit-version: '2'
+    hash: 2e51c318cda16be4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
+    phrase: repo it would silence
+    ground: '`in any repo` is a fronted adjunct and `it would silence` is the main clause; not the construction'
+    unit-version: '2'
+    hash: a63c38b4e2b605c4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
+    phrase: wherever the root manifest declares
+    ground: adjunct free relative; the gap fills no argument position
+    unit-version: '2'
+    hash: bac7b5a82c30c1ae
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/readTrackedSources.ts
+    phrase: project this way declares
+    ground: '`this way` is an adjunct and `declares` is the main verb; not the construction'
+    unit-version: '2'
+    hash: 4990345f38737679
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/readTrackedSources.ts
+    phrase: sweep reads do not apply
+    ground: '`what a sweep reads` is a fused relative; not the construction'
+    unit-version: '2'
+    hash: a14114db988dbabd
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/readTrackedSources.ts
+    phrase: alongside the tracked ones
+    ground: a prepositional phrase, not a relative clause
+    unit-version: '2'
+    hash: cfd134dc10f14dd4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/readTrackedSources.ts
+    phrase: sweep goes looking
+    ground: '`what a sweep goes looking at` is a fused relative; not the construction'
+    unit-version: '2'
+    hash: e23f6e7078b0ad15
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/project/sweepRecorder.ts
+    phrase: pass its ledger straight
+    ground: 'not the construction: `pass` is the complement of `lets`, with no head noun and no gap'
+    unit-version: '2'
+    hash: 55096df346897cb2
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/tool-versions.ts
+    phrase: not anything precedes
+    ground: a `whether or not` complement clause, not a relative clause
+    unit-version: '2'
+    hash: 02acd25d2ba0e8eb
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/check-utils/tsconfig.ts
+    phrase: last two takes readyup's
+    ground: '`Reaching the last two` is the gerund subject and `takes` the main verb; not the construction'
+    unit-version: '2'
+    hash: 11e7fd2ced3378da
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
+    phrase: directory the verification runs
+    ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
+    unit-version: '2'
+    hash: 3d228796b1d274a5
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
+    phrase: directory the compile runs
+    ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
+    unit-version: '2'
+    hash: 86da037d6ad99aec
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/fixtures/discoverWorkspaces-subprocess-wrapper.mjs
+    phrase: success the fixture's «codespan» writes
+    ground: "not the construction: `On success` is a prepositional adjunct and `writes` is the main clause's own verb"
+    unit-version: '2'
+    hash: ebbbce2a74ab426e
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
+    phrase: assigned one moves
+    ground: "not the construction: `moves` is the clause's own main verb, with `an assigned one` as its subject"
+    unit-version: '2'
+    hash: 002e5141906ce35c
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
+    phrase: not a tsconfig.json sits
+    ground: 'not the construction: a `whether or not` correlative, with no head noun and no relative clause'
+    unit-version: '2'
+    hash: 680f9a2b1d7d34e4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
+    phrase: legacy one reaches
+    ground: "not the construction: `reaches` is the clause's own main verb, with `the legacy one` as its subject"
+    unit-version: '2'
+    hash: 972982d7b5111ec1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/buildBundle.ts
+    phrase: configuration the host repo happens
+    ground: 'outside the rule: a fused head, where `whatever` is the relative determiner and admits no relativizer'
+    unit-version: '2'
+    hash: 1993e573397ca20d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/compileCommand.ts
+    phrase: failed one does
+    ground: 'not the construction: a comparative clause whose subject is `a failed one`'
+    unit-version: '2'
+    hash: a02eabcdb98360cb
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/compile/createCompileRecorder.ts
+    phrase: order the reads happened
+    ground: 'outside the rule: an adjunct relative like `the way it works`, whose gap fills no argument position'
+    unit-version: '2'
+    hash: 05ce444bea37ff06
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
+    phrase: lookup tables inherit
+    ground: the relativizer `which` is already present
+    unit-version: '2'
+    hash: 1a143e169b08bef4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/help/helpText.ts
+    phrase: List the kits published
+    ground: a help-table row; the span is a verb phrase, not a relative clause
+    unit-version: '2'
+    hash: 19632985bb70f79b
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/help/helpText.ts
+    phrase: List the kits published
+    ground: a help-table row; the span is a verb phrase, not a relative clause
+    unit-version: '2'
+    hash: 19632985bb70f79b
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/help/helpText.ts
+    phrase: Compile a single file Options
+    ground: a column-aligned help-table row read across the wrap; no relative clause
+    unit-version: '2'
+    hash: 81c8c5e5c48197f1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/help/helpText.ts
+    phrase: Compile a single file Options
+    ground: a help-table row read across the wrap into the next block's heading
+    unit-version: '2'
+    hash: 81c8c5e5c48197f1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/index.ts
+    phrase: generate the published JSON Schemas
+    ground: the relativizer `that` is already present
+    unit-version: '2'
+    hash: 97fe2969e595b481
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/init/initCommand.ts
+    phrase: next steps printed
+    ground: the head is a passive participle, not a reduced object relative
+    unit-version: '2'
+    hash: d0b906d1c5cdd56d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/installed-packages/resolveWorkspaceRoot.ts
+    phrase: cases no workspace can match
+    ground: a prepositional phrase followed by the sentence's own main clause
+    unit-version: '2'
+    hash: 5c8cafbd5ffb00a2
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kitImports/__tests__/listRunnerExports.unit.test.ts
+    phrase: named exports for the table to account
+    ground: an infinitival purpose clause; no relativizer slot exists
+    unit-version: '2'
+    hash: 8ce25289f286da9c
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kitImports/scanReadyupImports.ts
+    phrase: later sections have imports
+    ground: "not the construction: `have` is the clause's own verb and `imports` its object, so there is no relative clause"
+    unit-version: '2'
+    hash: 9d1f2244283c187c
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kits/__tests__/assertIsRdyKit.unit.test.ts
+    phrase: runner needs resolved
+    ground: 'not the construction: the relative clause already carries the overt relativizer `which`'
+    unit-version: '2'
+    hash: 821e708bd08ad1bf
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kits/assertIsRdyKit.ts
+    phrase: wherever it appears
+    ground: 'outside the rule: `wherever it appears` is an adjunct whose gap fills no argument position'
+    unit-version: '2'
+    hash: 91cb54c90fc6b5b0
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kits/parseFromValue.ts
+    phrase: yield a package named
+    ground: 'not the construction: `named` is a past participle modifying `a package`, not an embedded subject and verb'
+    unit-version: '2'
+    hash: 886ec60f12c6de3a
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kits/types.ts
+    phrase: pass it stands
+    ground: 'not the construction: `On a pass` is an adjunct prepositional phrase and `it stands` the main clause'
+    unit-version: '2'
+    hash: 553f5bcfe854a0cf
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/kits/types.ts
+    phrase: not any of them yielded
+    ground: 'not the construction: `whether or not` heads an interrogative complement, not a relative clause'
+    unit-version: '2'
+    hash: 69b53d26d424a28d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/__tests__/layoutEngine.unit.test.ts
+    phrase: skip labels unchanged
+    ground: 'not the construction: `unchanged` is an object complement of `leaves`'
+    unit-version: '2'
+    hash: 6387cef0015fa3ce
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/__tests__/richFormatter.unit.test.ts
+    phrase: occupy two cells unaided
+    ground: 'not the construction: a causative complement of `makes`'
+    unit-version: '2'
+    hash: 9a38e2902d331695
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/engine.ts
+    phrase: invocation selects otherwise
+    ground: 'not the construction: an adverbial `until` clause whose subject takes its own verb'
+    unit-version: '2'
+    hash: 29df37ff4f170532
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: row's counts begin
+    ground: "not the construction: `begin` is the clause's own verb"
+    unit-version: '2'
+    hash: 017c8089f0e90dfd
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: order every count line presents
+    ground: 'outside the rule: an adjunct relative on `order`, patterning with `the way it works`, whose gap fills no argument position'
+    unit-version: '2'
+    hash: 1a6c32c5a1e62dbb
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: non-zero counts joined
+    ground: "not the construction: `joined` is a passive participle, which is the rule's own preferred repair form"
+    unit-version: '2'
+    hash: 550f7ad6e06593ab
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: token no glyph returns
+    ground: 'not the construction: a subject relative that already carries its relativizer'
+    unit-version: '2'
+    hash: e8aafeb7afe1bbe9
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: reader scans left
+    ground: "not the construction: `scans` is the sentence's own verb"
+    unit-version: '2'
+    hash: fb3e224783b7b762
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/plainFormatter.ts
+    phrase: role tokens have
+    ground: 'not the construction: `role tokens` is a compound noun and `have` is its own verb'
+    unit-version: '2'
+    hash: a256e96d5f7b01ee
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/plainFormatter.ts
+    phrase: role a name plays
+    ground: 'not the construction: an embedded question under `says`, not a relative clause'
+    unit-version: '2'
+    hash: af9d6144d9840039
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/resolveStyle.ts
+    phrase: wherever the output is not a person's
+    ground: 'not the construction: a `wherever` adverbial clause, not a relative clause'
+    unit-version: '2'
+    hash: e8121d823c07988a
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/layout/resolveStyle.ts
+    phrase: accepted settings widened
+    ground: 'not the construction: the head is a past participle modifying `settings`'
+    unit-version: '2'
+    hash: f95c6946d3da23c1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: order they are given
+    ground: 'outside the rule: an adjunct relative on the «the way it works» pattern, whose gap fills no argument position'
+    unit-version: '2'
+    hash: 08cf0a56b473f0e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: configured one unmarked
+    ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
+    unit-version: '2'
+    hash: 1a5b19b70b8a4c1a
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: compiled kits found
+    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: compiled kits found
+    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: compiled kits found
+    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: compiled kits found
+    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: kit projects found
+    ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
+    unit-version: '2'
+    hash: 8f5d7cf964d169fa
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
+    phrase: section heads what
+    ground: "not the construction: «heads» is the sentence's own verb and «what to do» is a fused relative"
+    unit-version: '2'
+    hash: e4f2cb047b358060
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/listCommand.packages.unit.test.ts
+    phrase: configured one unmarked
+    ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
+    unit-version: '2'
+    hash: 1a5b19b70b8a4c1a
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts
+    phrase: kit projects found
+    ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
+    unit-version: '2'
+    hash: 8f5d7cf964d169fa
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/listCommand.recursivePackages.unit.test.ts
+    phrase: project the sweep starts
+    ground: a free relative headed by `whichever`, which admits no relativizer; outside the rule as the fused head is
+    unit-version: '2'
+    hash: e76200de5ce0a1b5
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/listCommand.unit.test.ts
+    phrase: compiled kits found
+    ground: 'not the construction: a reduced passive inside a string literal asserted against program output'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/__tests__/listCommand.wiring.unit.test.ts
+    phrase: cover each mode's branches
+    ground: "not the construction: `cover` is the clause's own verb, not a head noun"
+    unit-version: '2'
+    hash: daa91611b388e2bc
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/formatList.ts
+    phrase: compiled kits found
+    ground: 'not the construction: «found» is a participle modifying «kits»'
+    unit-version: '2'
+    hash: 36a268753834b1e7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/formatList.ts
+    phrase: kit projects found
+    ground: 'not the construction: «found» is a participle modifying «projects»'
+    unit-version: '2'
+    hash: 8f5d7cf964d169fa
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/list/listCommand.ts
+    phrase: cover the same kits
+    ground: "not the construction: `cover` is the clause's own verb, not a head noun"
+    unit-version: '2'
+    hash: dfe8cb7cf645e1c3
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/__tests__/buildInstallCommand.unit.test.ts
+    phrase: exactly the given paths
+    ground: 'not the construction: the span is a prepositional phrase with no relative clause in it'
+    unit-version: '2'
+    hash: 8c6adeed172b3246
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/blankNonCode.ts
+    phrase: postfix one ends
+    ground: 'not the construction: `A postfix one` is the subject and `ends` is its own verb'
+    unit-version: '2'
+    hash: 5d83938a0ce83d74
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/blankNonCode.ts
+    phrase: unterminated one has
+    ground: 'not the construction: `one` is the subject head and `has` is its own verb'
+    unit-version: '2'
+    hash: ef42e39d0f502303
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/buildInstallCommand.ts
+    phrase: directory an explicit «codespan» outranks
+    ground: 'not the construction: a fronted prepositional phrase before the main clause, with no gap'
+    unit-version: '2'
+    hash: 64628adfba0b72e4
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/buildInstallCommand.ts
+    phrase: manager wins over any further
+    ground: 'not the construction: `naming a manager` is a participle and `wins` is the main verb'
+    unit-version: '2'
+    hash: ff31954d6268539d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/portable/listDeclarationSpans.ts
+    phrase: last two non-blank characters
+    ground: 'not the construction: `read` is a passive participle with no embedded subject'
+    unit-version: '2'
+    hash: fcfab99909f3e040
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/projects/project-discovery.ts
+    phrase: manager the repo uses
+    ground: 'not the construction: an embedded interrogative complement of "indifferent to", which admits no relativizer'
+    unit-version: '2'
+    hash: 268680d94b306075
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/projects/project-discovery.ts
+    phrase: not one sits
+    ground: 'not the construction: "whether or not" plus a main-clause subject, with no head noun and no gap'
+    unit-version: '2'
+    hash: 731f0e6bbae9369c
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/projects/project-discovery.ts
+    phrase: least one compiled
+    ground: 'not the construction: "compiled" is a participial modifier of "kit", not an embedded verb'
+    unit-version: '2'
+    hash: 84b74255397319e0
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/remote/__tests__/remote-provider.unit.test.ts
+    phrase: developer happens to be logged
+    ground: 'not the construction: an embedded interrogative under "whether", with no head noun and no gap'
+    unit-version: '2'
+    hash: c9de928199978b24
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/remote/loadRemoteKit.ts
+    phrase: supplied headers are sent
+    ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
+    unit-version: '2'
+    hash: c566e225dcf69d02
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/remote/loadRemoteManifest.ts
+    phrase: supplied headers are sent
+    ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
+    unit-version: '2'
+    hash: c566e225dcf69d02
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
+    phrase: kit its own declared
+    ground: not the construction; a ditransitive with two objects, no relative clause
+    unit-version: '2'
+    hash: 3dab408e2eb608a6
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
+    phrase: run-level options have
+    ground: not the construction; "have" is the clause's own verb, not an embedded relative
+    unit-version: '2'
+    hash: 40e9b09381085aa1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
+    phrase: authoring-error tests exercise
+    ground: 'not the construction: "tests" is the sentence''s subject and "exercise" its own main verb'
+    unit-version: '2'
+    hash: 5637c357eaffc515
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
+    phrase: order the skips resolved
+    ground: 'outside the rule: an adjunct relative on "the order", whose gap fills no argument position'
+    unit-version: '2'
+    hash: b75db2dde53de8dc
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/pragma-report.ts
+    phrase: run's checks read
+    ground: 'outside the rule: a fused relative headed by `what`, which is its own relative pronoun and admits no relativizer'
+    unit-version: '2'
+    hash: d721c37f2c98f8bd
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/resolveConfiguredPackages.ts
+    phrase: configured packages require
+    ground: fused relative headed by `what`, which is its own relative pronoun and admits no relativizer
+    unit-version: '2'
+    hash: 6d5cd0f6e2778a67
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/resolveFindingOutcome.ts
+    phrase: check's pragmas suppressed
+    ground: interrogative content clause after `is told`, not a relative clause; there is no relativizer position
+    unit-version: '2'
+    hash: 9ee1cbabbb340980
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/resolveFromSource.ts
+    phrase: syntax stays reserved
+    ground: "not the construction: `stays` is the main clause's own verb, and there is no relative clause"
+    unit-version: '2'
+    hash: 62a9af5d1c8dee39
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runHumanMode.ts
+    phrase: kit's checklists need
+    ground: "not the construction: `what` is a fused head and `need` is its clause's own verb"
+    unit-version: '2'
+    hash: 2100ac8b7bb1b836
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runJsonMode.ts
+    phrase: body throws is attributable
+    ground: 'outside the rule: `anything` is a fused head rather than a lexical noun'
+    unit-version: '2'
+    hash: b7df58f87ed7158a
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: order the reader met
+    ground: 'outside the rule: an adjunct relative, since `met` already has its object'
+    unit-version: '2'
+    hash: 22cf75a530018d73
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: order the skips happened
+    ground: 'outside the rule: an adjunct relative with no argument gap'
+    unit-version: '2'
+    hash: 4a4f5247ce8a43f2
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: wherever the check makes
+    ground: 'outside the rule: `wherever` heads a free relative adverbial, and the object `it` is present'
+    unit-version: '2'
+    hash: e39dffa10a3e23f7
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: order their skips resolved
+    ground: 'outside the rule: an adjunct relative, since `resolved` is intransitive here and the gap fills no argument position'
+    unit-version: '2'
+    hash: e4cfb6aeaa8c3efe
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/suppressesFinding.ts
+    phrase: naming a check called
+    ground: 'not the construction: `called` is a passive participle, not a relative clause with an embedded subject'
+    unit-version: '2'
+    hash: d2ca010b613a2e93
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/run/version-skew.ts
+    phrase: floor the running readyup does not meet
+    ground: 'not the construction: the relative clause already carries an overt relativizer, `whose`'
+    unit-version: '2'
+    hash: f5ee5a4511ac6814
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/schemas/common.ts
+    phrase: mistyped one fails
+    ground: 'not the construction: `one` is the subject of `fails`, not a relative head'
+    unit-version: '2'
+    hash: 30a59325a36e07f2
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/schemas/common.ts
+    phrase: unknown one leaves
+    ground: 'not the construction: `one` is the subject of `leaves`, not a relative head'
+    unit-version: '2'
+    hash: e349a11ef0f35065
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/schemas/reportSchema.ts
+    phrase: tree a report includes
+    ground: 'outside the rule: an embedded interrogative whose fronted wh-phrase fills the gap, so no relativizer can restore'
+    unit-version: '2'
+    hash: 7056e308eda1b38c
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/schemas/verifyOutputSchema.ts
+    phrase: least one bundled
+    ground: "not the construction: `at least one` quantifies the subject `package's version`"
+    unit-version: '2'
+    hash: 5f2da29ce2de2fd1
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/schemas/verifyOutputSchema.ts
+    phrase: version the rebuild does not reproduce
+    ground: 'not the construction: the relative clause already carries the overt relativizer `whose`'
+    unit-version: '2'
+    hash: d4370202a8ceeb5d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/__tests__/checkRebuild.unit.test.ts
+    phrase: version the rebuild does not reproduce
+    ground: 'not the construction: the relative clause carries the overt relativizer `whose`, which fronts the object of `reproduce`'
+    unit-version: '2'
+    hash: d4370202a8ceeb5d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/__tests__/verifyCommand.rebuild.tool.test.ts
+    phrase: version the rebuild does not reproduce
+    ground: 'not the construction: the overt relativizer `whose` fronts the object of `reproduce`'
+    unit-version: '2'
+    hash: d4370202a8ceeb5d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/__tests__/verifyCommand.wiring.unit.test.ts
+    phrase: hash verdicts are arranged
+    ground: "not the construction: `are arranged` is the main clause's own verb, and the passive hides no actor the reader needs"
+    unit-version: '2'
+    hash: 0250ad54428b5912
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/checkRebuild.ts
+    phrase: version the rebuild does not reproduce
+    ground: 'not the construction: the relative clause carries the overt relativizer `whose`, with the object pied-piped as `whose recorded version`'
+    unit-version: '2'
+    hash: d4370202a8ceeb5d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/checkRebuild.ts
+    phrase: version the rebuild does not reproduce
+    ground: 'not the construction: same pied-piped `whose` relative as line 26'
+    unit-version: '2'
+    hash: d4370202a8ceeb5d
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/remedies.ts
+    phrase: order the axes raised
+    ground: 'outside the rule: an adjunct relative whose gap fills no argument position, since `them` already fills the object slot'
+    unit-version: '2'
+    hash: a17d601e31b55285
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/remedies.ts
+    phrase: wherever the target has drifted
+    ground: 'not the construction: `wherever` heads an adverbial clause, not a relative clause on a lexical head noun'
+    unit-version: '2'
+    hash: ef5410ecb8c1b443
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/verifyCommand.ts
+    phrase: verdict it says
+    ground: 'not the construction: `it` is the subject of the main clause after a fronted prepositional phrase, so `verdict` heads no relative clause'
+    unit-version: '2'
+    hash: 32e39929bb17e2da
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/src/verify/verifyCommand.ts
+    phrase: one it supplies
+    ground: 'not the construction: same fronted prepositional phrase followed by a main clause; the real site in this sentence was repaired separately'
+    unit-version: '2'
+    hash: 9b18c5070b00b405
+  - rule: reduced-object-relative
+    unit: williamthorsen-writing-preferences
+    file: packages/readyup/vitest.config.ts
+    phrase: one holds package-scoped
+    ground: 'not the construction: `this one` is the subject of its own main clause, and its modifier already carries `that`'
+    unit-version: '2'
+    hash: aec18091b0e5f013

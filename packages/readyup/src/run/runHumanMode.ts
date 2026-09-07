@@ -76,7 +76,7 @@ export async function runHumanMode(
       if (kitResult.hasDroppedBlock) anyBlockDropped = true;
       if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
-      // A kit that never ran is still headed, so stdout lists every kit the invocation asked for.
+      // A kit that never ran is still headed, so stdout lists every kit that the invocation asked for.
       if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'));
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
@@ -95,7 +95,7 @@ export async function runHumanMode(
   // dropped block justifies the table even where a single row is all it has to show.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
-  // Written after the summary table, the last block a reported pragma's file may have been named in.
+  // Written after the summary table, the last block in which a reported pragma's file may have been named.
   warnOnUnusedPragmas(pragmaLedger);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
@@ -104,7 +104,7 @@ export async function runHumanMode(
 // region | Helpers
 
 /**
- * Returns the segments heading every block a kit produces: where the kit came from, then the kit itself.
+ * Returns the segments heading every block produced by a kit: where the kit came from, then the kit itself.
  *
  * A kit with no source to name and no sibling kit in the run has nothing to be told apart from, so it
  * heads its blocks with nothing, and a plain local run stays as quiet as it has always been.
@@ -123,8 +123,8 @@ type BlockWriter = (text: string) => void;
  * Returns a writer that separates each block of a run from the one before with a single blank line.
  *
  * Separation lives here rather than in the headings because only a sequence can see what precedes it, and
- * the run's first block needs no blank at all. One width serves every boundary, a kit's included: the
- * heading below a gap names the kit it opens, so a wider gap would restate in whitespace what the next
+ * the run's first block needs no blank at all. One width serves every boundary, a kit's included: The
+ * heading below a gap names the kit that it opens, so a wider gap would restate in whitespace what the next
  * line already states in words.
  */
 function createBlockWriter(): BlockWriter {
@@ -140,8 +140,8 @@ function createBlockWriter(): BlockWriter {
 /**
  * Returns the segment naming where a kit came from, or `undefined` where there is nothing to name.
  *
- * A kit the local kits directory holds has no source, and neither does one whose directory resolves to
- * the working directory: naming the directory the reader is standing in tells them nothing. A package
+ * A kit held by the local kits directory has no source, and neither does one whose directory resolves to
+ * the working directory: Naming the directory in which the reader is standing tells them nothing. A package
  * states its version because the whole point of running a kit from an installed package is that it
  * matches the version in place, which the reader can only confirm if it is stated.
  */
@@ -161,7 +161,7 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
 
-/** What a kit's checklists need from the run they belong to. */
+/** What a kit's checklists need from the run to which they belong. */
 interface KitBlockContext {
   entry: ResolvedKitEntry;
   isMultiKit: boolean;
@@ -170,7 +170,7 @@ interface KitBlockContext {
   writeBlock: BlockWriter;
 }
 
-/** A kit's verdict alongside the rows its checklists contribute to the run's summary table. */
+/** A kit's verdict alongside the rows that its checklists contribute to the run's summary table. */
 interface KitRunResult {
   hasDroppedBlock: boolean;
   passed: boolean;
@@ -187,7 +187,7 @@ async function runKit(
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistSegment = checklists.length > 1;
-  // A block may go unwritten only where the summary table will show the row it leaves behind. A run of
+  // A block may go unwritten only where the summary table will show the row that it leaves behind. A run of
   // one checklist tabulates nothing, so its block stands however little it has to say.
   const willTabulate = isMultiKit || checklists.length > 1;
   const rows: SummaryRow[] = [];
@@ -220,7 +220,7 @@ async function runKit(
       hasDroppedBlock = true;
     }
 
-    // Written after the block, so the reader has just seen the skipped line the warning is about.
+    // Written after the block, so the reader has just seen the skipped line that the warning is about.
     warnOnMaskedSkips(entry, checklist.name, report.diagnoses);
 
     if (!report.passed) {
@@ -233,7 +233,7 @@ async function runKit(
   return { hasDroppedBlock, passed: allPassed, rows };
 }
 
-/** Builds a summary row from a report, named by the breadcrumb heading the block the report renders into. */
+/** Builds a summary row from a report, named by the breadcrumb heading of the block into which the report renders. */
 function toSummaryRow(segments: BreadcrumbSegment[], report: RdyReport): SummaryRow {
   return { counts: countResults(report.results), durationMs: report.durationMs, segments };
 }

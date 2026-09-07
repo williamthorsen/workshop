@@ -20,7 +20,7 @@ interface ChecklistEntry {
 }
 
 /**
- * Input for a kit that ran, with the reports its checklists produced and the thresholds that
+ * Input for a kit that ran, with the reports produced by its checklists and the thresholds that
  * governed them.
  *
  * The thresholds travel with the kit rather than with the run, because a kit may declare its own and
@@ -38,17 +38,17 @@ export interface KitResultInput {
 /**
  * Input for one kit, discriminated by the presence of `error`.
  *
- * A failed kit is described by the entry it serializes to, because it passes through verbatim.
- * Failures are interleaved rather than appended so kits keep the order they were requested in.
+ * A failed kit is described by the entry to which it serializes, because it passes through verbatim.
+ * Failures are interleaved rather than appended so kits keep the order in which they were requested.
  */
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 
 /**
- * The run settings the report echoes back, plus anything else it must include alongside results.
+ * The run settings echoed back by the report, plus anything else it must include alongside results.
  *
  * `failOn` and `reportOn` are what the invocation requested, so each is absent when its flag was not
- * given: a default echoed as though it had been asked for is what made a kit's own threshold
- * impossible to recover from the payload. `detail` has no per-kit form, so it is always resolved.
+ * given: A default echoed as though it had been asked for made a kit's own threshold impossible to
+ * recover from the payload. `detail` has no per-kit form, so it is always resolved.
  */
 export interface FormatJsonReportOptions {
   failOn?: Severity;
@@ -58,7 +58,7 @@ export interface FormatJsonReportOptions {
 }
 
 /**
- * A kit that ran, paired with the unrounded figures the report aggregates from it.
+ * A kit that ran, paired with the unrounded figures that the report aggregates from it.
  *
  * The entry's own `durationMs` is already rounded for the wire; totals are summed from the raw value
  * so a run of many short kits does not accumulate one rounding error per kit.
@@ -113,7 +113,7 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
   return JSON.stringify(report);
 }
 
-/** Returns one kit's entry alongside the raw figures the report aggregates from it. */
+/** Returns one kit's entry alongside the raw figures that the report aggregates from it. */
 function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit {
   const counts = emptyCounts();
   let durationMs = 0;
@@ -151,7 +151,7 @@ function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit 
  * Splits the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
  * beside them.
  *
- * `worstSeverity` is derived verdict data rather than a count, so it sits outside the object it
+ * `worstSeverity` is derived verdict data rather than a count, so it sits outside the object that it
  * summarizes; a run that failed nothing has no worst severity and omits the field.
  */
 function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity?: Severity } {
@@ -163,7 +163,7 @@ function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity
  * Returns a checklist entry's `checks` property, omitted when the projection leaves it empty.
  *
  * The reporting threshold prunes first and the detail projection second, so `summary` shows the same
- * failures `full` would, without the checks that passed around them.
+ * failures that `full` would, without the checks that passed around them.
  */
 function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
   const visibleResults = selectVisibleResults(results, reportOn);
@@ -197,7 +197,7 @@ function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
 
 /**
  * Reconstructs a tree of check entries from a flat depth-first results slice, alongside the index of
- * the first result it did not consume.
+ * the first result that it did not consume.
  *
  * Results at `expectedDepth` become siblings and deeper ones recurse as their children. Depths must be
  * contiguous and monotonically increasing; a gap, such as depth 0 followed by depth 2, silently
@@ -232,7 +232,7 @@ function buildCheckEntries(
 /**
  * Returns a single JSON check entry, omitting every field that holds nothing.
  *
- * A field is present only when it holds information the consumer could act on: no `null` placeholders,
+ * A field is present only when it holds information on which the consumer could act: no `null` placeholders,
  * no empty `checks` array, and no `fix` on a check that has nothing to remediate. Durations are whole
  * milliseconds, since sub-millisecond precision on a check that took 3ms describes only the scheduler.
  */

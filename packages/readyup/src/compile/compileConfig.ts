@@ -8,7 +8,7 @@ import { deriveJsPath } from './deriveJsPath.ts';
 
 /** Result of a successful compilation. */
 export interface CompileResult {
-  /** Every package the bundle inlined, by name, with the version its `package.json` declares. */
+  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
   bundledDependencies: Record<string, string>;
 
   changed: boolean;
@@ -16,7 +16,7 @@ export interface CompileResult {
   /** The esbuild that produced the bundle. */
   esbuildVersion: string;
 
-  /** Every file the compile read outside `node_modules`, with absolute paths. */
+  /** Every file read by the compile outside `node_modules`, with absolute paths. */
   inputs: CompiledInput[];
 
   outputPath: string;

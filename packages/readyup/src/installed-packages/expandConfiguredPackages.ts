@@ -8,7 +8,7 @@ import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts
 import { readPackageVersion, resolvePackageRoot } from './resolvePackageRoot.ts';
 import { resolveWorkspaceRoot } from './resolveWorkspaceRoot.ts';
 
-/** A kit published by an installed package, with the provenance its output is labelled with. */
+/** A kit published by an installed package, with the provenance that its output is labelled with. */
 export interface PackageKit {
   packageName: string;
   version: string | undefined;
@@ -17,14 +17,14 @@ export interface PackageKit {
   path: string;
 }
 
-/** One kit a package publishes, as its manifest or its kit directory names it. */
+/** One kit published by a package, as its manifest or its kit directory names it. */
 interface PublishedKit {
   name: string;
   description: string | undefined;
 }
 
 /**
- * Expands configured package names into every kit those packages publish, in configured order.
+ * Expands configured package names into every kit that those packages publish, in configured order.
  *
  * A package that is absent or publishes no kits fails the invocation rather than being skipped.
  * The list is hand-maintained, so a name in it states an intent, and skipping would hide exactly the drift
@@ -36,13 +36,13 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 
 // region | Helpers
 
-/** Expands one configured package into the kits it publishes. */
+/** Expands one configured package into the kits that it publishes. */
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
   // Search `node_modules` first, so a package that is both installed and a workspace resolves to the installed copy.
   const root = resolvePackageRoot(packageName, fromDir) ?? resolveWorkspaceRoot(packageName, fromDir);
   if (root === undefined) {
     // Only a configured package name can be unresolved here: A discovered name has already been located
-    // through `resolvePackageRoot`, so the config is what the reader must correct.
+    // through `resolvePackageRoot`, so the reader must correct the config.
     throw configError(
       `Configured package "${packageName}" was not found; it must be a direct dependency of this project or one of its workspaces.`,
     );
@@ -65,11 +65,11 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
 }
 
 /**
- * Names the kits a package publishes, preferring its manifest and falling back to its kit directory.
+ * Names the kits that a package publishes, preferring its manifest and falling back to its kit directory.
  *
- * The same precedence a local `--from` source already follows, so a package source and a directory source
- * resolve alike. Only a missing manifest falls back: one that exists but cannot be parsed is a broken
- * publication, and quietly reading around it would report a kit list nobody declared. Descriptions live in
+ * The same precedence that a local `--from` source already follows, so a package source and a directory source
+ * resolve alike. Only a missing manifest falls back: One that exists but cannot be parsed is a broken
+ * publication, and quietly reading around it would report a kit list that nobody declared. Descriptions live in
  * the manifest, so the fallback names kits without them.
  */
 function listPublishedKits(root: string, kitsDir: string, extension: string): PublishedKit[] {

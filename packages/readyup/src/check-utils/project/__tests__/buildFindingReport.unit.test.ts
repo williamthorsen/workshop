@@ -89,7 +89,7 @@ describe(buildFindingReport, () => {
   });
 
   describe('given a check that names its own package', () => {
-    it('drops every finding sited in the implementation it names', ({ temp }) => {
+    it('drops every finding sited in the implementation that it names', ({ temp }) => {
       writeMonorepo(temp);
 
       const outcome = buildFindingReport({
@@ -151,7 +151,9 @@ describe(buildFindingReport, () => {
 
 // region | Helpers
 
-/** Writes a monorepo with two member packages, of which `packages/errors` publishes the package the fixtures name. */
+/**
+ * Writes a monorepo with two member packages, of which `packages/errors` publishes the package named by the fixtures.
+ */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true });
   temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));

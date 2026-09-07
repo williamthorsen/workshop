@@ -23,7 +23,7 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-describe('a pragma reaching the check ids the runner resolved', () => {
+describe('a pragma reaching the check ids resolved by the runner', () => {
   it('suppresses the named check and leaves its sibling standing on the same line', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
@@ -44,7 +44,7 @@ describe('a pragma reaching the check ids the runner resolved', () => {
     expect(verdicts(report.results)[0]?.status).toBe('passed');
   });
 
-  it('suppresses neither where the pragma names a check the run does not hold', async ({ temp }) => {
+  it('suppresses neither where the pragma names a check that the run does not hold', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore other.kit/no-instanceof-error\n');
 
     const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });

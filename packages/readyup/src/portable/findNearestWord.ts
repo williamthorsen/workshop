@@ -1,8 +1,8 @@
-/** Edits (insertions, deletions, or substitutions) a word may be from a candidate and still match it. */
+/** Edits (insertions, deletions, or substitutions) that a word may be from a candidate and still match it. */
 const MAX_TYPO_DISTANCE = 2;
 
 /**
- * Finds the candidate a bare word most likely misspells, or `undefined` when none is close enough.
+ * Finds the candidate that a bare word most likely misspells, or `undefined` when none is close enough.
  *
  * A word qualifies by abbreviating a candidate or by sitting within a couple of edits of one, so a
  * transposed or wrong letter is caught alongside a truncation. Ties go to the nearest candidate and then

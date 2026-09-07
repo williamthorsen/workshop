@@ -10,7 +10,7 @@ const EXPORT_CLAUSE = /\bexport\s*\{([^}]*)\}\s*(from\b)?/g;
 const CLAUSE_ITEM = /^(?:type\s+)?([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/;
 
 /**
- * The package a check is about, the exports whose definition marks a file as its implementation, and the swept
+ * The package that a check is about, the exports whose definition marks a file as its implementation, and the swept
  * sources.
  */
 export interface OwnImplementation {
@@ -20,19 +20,21 @@ export interface OwnImplementation {
 }
 
 /**
- * Lists the line ranges of a path that hold the declared package's own implementation: each top-level declaration the
- * file exports under one of the package's recommended names, in a file inside the workspace publishing the package.
+ * Lists the line ranges of a path that hold the declared package's own implementation: each top-level declaration
+ * exported by the file under one of the package's recommended names, in a file inside the workspace publishing the
+ * package.
  *
  * Every narrowing is required. A repo publishing the package is where the idiom is supposed to live, but the workspace
  * is the whole repository wherever the root manifest declares the name, as a single-package project's always does, so a
  * workspace-wide rule would turn the check off there, and in any repo it would silence a second file hand-rolling the
  * idiom instead of importing the local implementation. The argument extends one step further, to the declaration: the
- * reasoning reaches a wrapper of the idiom its own kit detects, which cannot adopt itself, while its neighbours in the
- * same file are ordinary code.
+ * reasoning reaches a wrapper of the idiom that its own kit detects, which cannot adopt itself, while its neighbours
+ * in the same file are ordinary code.
  *
  * The declaration is read from the file's text, so a detector reporting sites that declare nothing is exempted on the
- * same terms as one reporting a declaration. A file the sweep never read cannot be shown to declare anything, and a
- * repo whose workspaces cannot be discovered holds no publishing workspace to be inside; either yields no lines.
+ * same terms as one reporting a declaration. A file never read by the sweep cannot be shown to declare anything,
+ * and a repo whose workspaces cannot be discovered holds no publishing workspace to be inside; either yields no
+ * lines.
  */
 export function listOwnImplementationSpans(
   path: string,
@@ -66,7 +68,7 @@ function containsPath(dir: string, path: string): boolean {
 /**
  * Names the directories of the workspaces publishing the package.
  *
- * Discovery is best effort here: a repo it cannot read reports as one holding no such workspace, so a check that
+ * Discovery is best effort here: A repo that it cannot read reports as one holding no such workspace, so a check that
  * worked before the rule existed keeps working rather than erroring out of it. The match is on the declared name
  * alone, because what the rule needs is a repo holding the implementation, not one publishing it to a registry.
  */
@@ -81,13 +83,13 @@ function findPublishingWorkspaceDirs(packageName: string): string[] {
 }
 
 /**
- * Names the local bindings that blanked source exports under one of the given names.
+ * Names the local bindings that the blanked source exports under one of the given names.
  *
- * Two forms count: a declaration the `export` keyword introduces, contributing the name it declares, and an export
- * clause naming the binding, contributing the local name whether the binding was exported bare or renamed on the way
- * out. The export is what separates the package's implementation from a second file in it declaring a private helper
- * of the same name, which is a hand-roll the check exists to report. A clause exporting the name under a different one
- * exports something else, and matches neither pattern.
+ * Two forms count: a declaration introduced by the `export` keyword, contributing the name that it declares, and an
+ * export clause naming the binding, contributing the local name whether the binding was exported bare or renamed on
+ * the way out. The export separates the package's implementation from a second file in it declaring a
+ * private helper of the same name, which is a hand-roll that the check exists to report. A clause exporting the name
+ * under a different one exports something else, and matches neither pattern.
  *
  * A clause with `from` declares nothing local, so a re-exporting barrel names no binding here and exempts no
  * lines.

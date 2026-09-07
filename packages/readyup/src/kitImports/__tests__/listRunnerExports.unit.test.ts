@@ -7,9 +7,9 @@ import { isRecord } from '../../portable/isRecord.ts';
 import { listRunnerExports, listRunnerSpecifiers } from '../listRunnerExports.ts';
 
 /**
- * Returns the specifiers this package's `exports` map serves as JavaScript.
+ * Returns the specifiers that this package's `exports` map serves as JavaScript.
  *
- * A JSON subpath is excluded: it has no named exports for the table to account for.
+ * A JSON subpath is excluded: It has no named exports for the table to account for.
  */
 function readPublishedSpecifiers(): string[] {
   const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
@@ -23,7 +23,7 @@ function readPublishedSpecifiers(): string[] {
 }
 
 describe(listRunnerSpecifiers, () => {
-  it('accounts for every JavaScript subpath the package publishes', () => {
+  it('accounts for every JavaScript subpath published by the package', () => {
     expect(listRunnerSpecifiers().toSorted()).toStrictEqual(readPublishedSpecifiers());
   });
 });
@@ -39,8 +39,8 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('runGit');
   });
 
-  // The whole of what lets a kit import it: absent from the table, the import fails validation.
-  it('reports discoverKitPackages as a value export a kit can bind', () => {
+  // The whole of what lets a kit import it: Absent from the table, the import fails validation.
+  it('reports discoverKitPackages as a value export that a kit can bind', () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('discoverKitPackages');
   });
 
@@ -52,7 +52,7 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup')).not.toContain('RdyKit');
   });
 
-  it('returns undefined for a subpath the package does not publish', () => {
+  it('returns undefined for a subpath that the package does not publish', () => {
     expect(listRunnerExports('readyup/legacy')).toBeUndefined();
   });
 });

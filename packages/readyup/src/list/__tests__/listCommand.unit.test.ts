@@ -62,7 +62,7 @@ describe(listCommand, () => {
   });
 
   describe('owner mode, package sections', () => {
-    /** Configures one package and the kit it publishes. */
+    /** Configures one package and the kit that it publishes. */
     function configureOnePackage(): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
@@ -90,7 +90,7 @@ describe(listCommand, () => {
       expect(stdout).not.toContain('No kits found');
     });
 
-    it('names installed packages that publish kits the config omits', async () => {
+    it('names installed packages that publish kits omitted by the config', async () => {
       mockDiscoverKitPackages.mockReturnValue(['@acme/kits', 'plain-kit']);
       configureOnePackage();
 
@@ -102,7 +102,7 @@ describe(listCommand, () => {
       expect(stdout.slice(stdout.indexOf('Available'))).not.toContain('@acme/kits');
     });
 
-    it('passes package provenance into the JSON payload, apart from the kits it lists', async () => {
+    it('passes package provenance into the JSON payload, apart from the kits that it lists', async () => {
       mockDiscoverKitPackages.mockReturnValue(['plain-kit']);
       configureOnePackage();
 
@@ -116,7 +116,7 @@ describe(listCommand, () => {
     });
 
     // A package reaches the owner listing's rows only by being configured, so the marker is always true
-    // here; emitting it regardless is what spares a consumer from knowing which invocation wrote the payload.
+    // here; emitting it regardless spares a consumer from knowing which invocation wrote the payload.
     it('marks every package row as configured', async () => {
       configureOnePackage();
 
@@ -215,7 +215,7 @@ describe(listCommand, () => {
       expect(stdout).toContain('default');
     });
 
-    it('renders a hint the config failure has, on a line of its own', async () => {
+    it('renders a hint that the config failure has, on a line of its own', async () => {
       mockLoadConfig.mockRejectedValue(
         Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
           hint: 'Install it with: pnpm add --save-dev some-lib',

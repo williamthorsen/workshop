@@ -49,7 +49,7 @@ describe(resolveConfiguredPackages, () => {
     ]);
   });
 
-  // Requiring nothing under a name is a package that asks nothing, not a failure of the run.
+  // A package publishing nothing under a name asks nothing, so it is not a failure of the run.
   it('skips a configured package that publishes no requested kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
     installPackage(temp, '@beta/kits', ['default']);
@@ -59,7 +59,7 @@ describe(resolveConfiguredPackages, () => {
     expect(entries.map(describeEntry)).toStrictEqual(['@acme/kits:preflight']);
   });
 
-  // A bare `--packages` fills the name in, so no package publishing it is the "requires nothing" case.
+  // A bare `--packages` fills the name in, so a name that no package publishes is the "requires nothing" case.
   it('resolves to an empty list when no configured package publishes the default kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['preflight']);
 
@@ -67,7 +67,7 @@ describe(resolveConfiguredPackages, () => {
   });
 
   // Returning an empty pass would be the clean report of nothing checked.
-  it('rejects a named kit no configured package publishes', async ({ temp }) => {
+  it('rejects a named kit published by no configured package', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
 
     const error = await captureError(RdyError, () => {
@@ -91,7 +91,7 @@ describe(resolveConfiguredPackages, () => {
     expect(error.message).toMatch(/requires a "packages" list/);
   });
 
-  it('applies the extension it is given to every kit path', ({ temp }) => {
+  it('applies the extension that it is given to every kit path', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default']);
 
     expect(resolveConfiguredPackages(['@acme/kits'], ['default'], '.ts')).toStrictEqual([
@@ -107,7 +107,10 @@ describe(resolveConfiguredPackages, () => {
 
 // region | Helpers
 
-/** Names a run entry as the package it came from and the kit it runs, which is what an order assertion reads. */
+/**
+ * Names a run entry as the package from which it came and the kit that it runs, which is what an order
+ * assertion reads.
+ */
 function describeEntry(entry: ResolvedKitEntry): string {
   const packageName = entry.provenance?.kind === 'package' ? entry.provenance.packageName : entry.provenance?.kind;
   return `${packageName}:${entry.name}`;
@@ -116,7 +119,7 @@ function describeEntry(entry: ResolvedKitEntry): string {
 /**
  * Installs a package declaring the named kits in its manifest.
  *
- * The kit files themselves are left unwritten: this resolver names where a kit would be read from and
+ * The kit files themselves are left unwritten: This resolver names where a kit would be read from and
  * never opens it, so a fixture that wrote them would prove nothing the manifest does not already say.
  */
 function installPackage(temp: TempTree, name: string, kits: string[], version?: string): void {

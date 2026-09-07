@@ -21,7 +21,7 @@ describe(assertSatisfiesVersionFloor, () => {
     expect(() => assertSatisfiesVersionFloor('kit', buildKit())).not.toThrow();
   });
 
-  it.each([['0.33.0'], ['0.34.0'], ['0.1'], ['0']])('passes a floor of %s the runner meets', (floor) => {
+  it.each([['0.33.0'], ['0.34.0'], ['0.1'], ['0']])('passes a floor of %s that the runner meets', (floor) => {
     expect(() => assertSatisfiesVersionFloor('kit', buildKit(floor))).not.toThrow();
   });
 

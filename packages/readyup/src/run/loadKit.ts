@@ -14,8 +14,8 @@ import { assertSatisfiesVersionFloor } from './version-skew.ts';
 /**
  * Loads a rdy kit from a path or URL source.
  *
- * Takes the whole entry rather than its source alone: a kit whose readyup imports the runner cannot satisfy is
- * reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
+ * Takes the whole entry rather than its source alone: A kit with readyup imports that the runner cannot satisfy
+ * is reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
  */
 export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
   const loaded = await loadFromSource(entry, isJit);
@@ -37,7 +37,7 @@ function isModuleNotFoundError(error: unknown, packageName: string): boolean {
   return error.message.includes(packageName);
 }
 
-/** Fetches or reads a kit from its source, reporting every failure as the kit-load error a reader sees. */
+/** Fetches or reads a kit from its source, reporting every failure as the kit-load error that a reader sees. */
 async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
   const { source } = entry;
 
@@ -49,8 +49,8 @@ async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<
     try {
       return await loadRemoteKit(options);
     } catch (error: unknown) {
-      // Catch ahead of the remote wrapper: a kit that fetched cleanly and binds symbols the runner lacks is a
-      // diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
+      // Catch ahead of the remote wrapper: A kit that fetched cleanly and binds symbols that the runner lacks
+      // is a diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
       if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
       throw toRemoteRdyError(error, {
         code: 'kit-load',
@@ -74,7 +74,7 @@ async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<
   }
 }
 
-/** Turns unresolvable readyup imports into the kit-load failure a reader sees, named for where the kit came from. */
+/** Turns unresolvable readyup imports into the kit-load failure seen by a reader, named for where the kit came from. */
 function toUnresolvableImportsError(error: UnresolvableKitImportsError, entry: ResolvedKitEntry): RdyError {
   const { hint, message } = describeUnresolvableImports(error.findings, {
     kitName: entry.name,

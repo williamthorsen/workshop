@@ -3,7 +3,7 @@ import { scanReadyupImports } from './scanReadyupImports.ts';
 import { type MissingImports, UnresolvableKitImportsError } from './UnresolvableKitImportsError.ts';
 
 /**
- * Verifies that every readyup symbol a compiled bundle imports is one the running readyup exports.
+ * Verifies that every readyup symbol imported by a compiled bundle is one that the running readyup exports.
  *
  * Runs before the bundle is evaluated, which is what lets a missing symbol be named. Evaluated first, it would
  * become an `undefined` binding under jiti's CJS transpilation, or a raw link error under a native import.
@@ -25,7 +25,7 @@ export async function assertKitImportsResolve(bundle: string, sourceName?: strin
     }
     for (const name of entry.names) {
       if (exported.has(name)) continue;
-      // Collect by specifier: one specifier is imported from many times across a bundle's module sections.
+      // Collect by specifier: One specifier is imported from many times across a bundle's module sections.
       const collected = missingBySpecifier.get(entry.specifier) ?? new Set<string>();
       collected.add(name);
       missingBySpecifier.set(entry.specifier, collected);

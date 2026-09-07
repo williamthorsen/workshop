@@ -10,7 +10,7 @@ vi.mock(import('node:fs'), () => ({
 import { JsonProjectionError } from '../JsonProjectionError.ts';
 import { projectJsonFile } from '../projectJsonFile.ts';
 
-/** Runs the projection over a file with the given contents and returns the `JsonProjectionError` it raised. */
+/** Runs the projection over a file with the given contents and returns the `JsonProjectionError` that it raised. */
 async function captureProjectionError(
   fileContents: string | Error,
   paths: string[] = ['name'],
@@ -68,7 +68,7 @@ describe(projectJsonFile, () => {
   });
 
   // The detail names the root as JSON sees it, so an array and a null are distinguishable from an object.
-  it('reports a non-object root as not-an-object, naming the type it found', async () => {
+  it('reports a non-object root as not-an-object, naming the type that it found', async () => {
     const error = await captureProjectionError('[1,2,3]');
 
     expect(error.reason).toBe('not-an-object');
@@ -82,7 +82,7 @@ describe(projectJsonFile, () => {
     expect(error.detail).toBe('null');
   });
 
-  it('reports a picked path the file does not have as path-not-found, naming the path', async () => {
+  it('reports a picked path that the file does not have as path-not-found, naming the path', async () => {
     const error = await captureProjectionError(JSON.stringify({ name: 'my-pkg' }), ['version']);
 
     expect(error.reason).toBe('path-not-found');

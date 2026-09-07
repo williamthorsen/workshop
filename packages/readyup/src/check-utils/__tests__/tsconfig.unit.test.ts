@@ -72,7 +72,7 @@ describe(readTsconfigChain, () => {
 
     const entries = readTsconfigChain('tsconfig.json')?.entries;
 
-    // Only `path` reflects the `.json` the resolver appended; the specifier stays as the config wrote it.
+    // Only `path` reflects the `.json` appended by the resolver; the specifier stays as the config wrote it.
     expect(entries?.map((entry) => [entry.path, entry.specifier])).toStrictEqual([
       ['tsconfig.json', undefined],
       ['base.json', './base'],
@@ -88,7 +88,7 @@ describe(readTsconfigChain, () => {
 
     const parent = readTsconfigChain('tsconfig.json')?.entries[1];
 
-    // A symlinked package resolves to the directory it occupies, so only the specifier names the package.
+    // A symlinked package resolves to the directory that it occupies, so only the specifier names the package.
     expect(parent?.path).toBe('store/@scoped/base/tsconfig.base.json');
     expect(parent?.specifier).toBe('@scoped/base/tsconfig.base.json');
   });
@@ -106,7 +106,7 @@ describe(readTsconfigChain, () => {
     ]);
   });
 
-  it('orders entries so a nearer declaration precedes the one it overrides', ({ temp }) => {
+  it('orders entries so a nearer declaration precedes the one that it overrides', ({ temp }) => {
     temp.writeJson('first.json', { compilerOptions: { target: 'ES2021' } });
     temp.writeJson('second.json', { compilerOptions: { target: 'ES2024' } });
     temp.writeJson('tsconfig.json', { extends: ['./first.json', './second.json'] });
@@ -213,7 +213,7 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('lets a package config override the root config it extends', ({ temp }) => {
+  it('lets a package config override the root config that it extends', ({ temp }) => {
     temp.writeJson('tsconfig.json', { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } });
     temp.writeJson('packages/alpha/tsconfig.json', {
       extends: '../../tsconfig.json',
@@ -391,7 +391,7 @@ describe(readTsconfigLanguageLevel, () => {
       'package.json': { name: 'null-base', exports: null, main: './index.js' },
       'tsconfig.json': { compilerOptions: { target: 'ES2016' } },
     });
-    // A resolvable `main` stands in the way, so reaching the root config is what proves the map is read past.
+    // A resolvable `main` stands in the way, so reaching the root config proves that the map is read past.
     temp.write('node_modules/null-base/index.js', 'module.exports = {};\n');
     temp.writeJson('tsconfig.json', { extends: 'null-base' });
 
@@ -480,7 +480,7 @@ describe(readTsconfigLanguageLevel, () => {
     });
   });
 
-  it('names the directory a symlinked package occupies rather than the link', ({ temp }) => {
+  it('names the directory occupied by a symlinked package rather than the link', ({ temp }) => {
     linkPackage(temp, '@scoped/base', {
       'package.json': { name: '@scoped/base', exports: { './tsconfig.base.json': './tsconfig.base.json' } },
       'tsconfig.base.json': { compilerOptions: { lib: ['ES2025'], target: 'ES2025' } },

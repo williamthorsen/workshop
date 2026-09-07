@@ -28,7 +28,7 @@ interface JsonRunSettings {
 /**
  * Runs all kit entries in JSON mode, producing a single JSON report.
  *
- * Each iteration is its own error boundary: once the run has dispatched, anything the loop body
+ * Each iteration is its own error boundary: Once the run has dispatched, anything the loop body
  * throws is attributable to that kit alone, so it becomes an entry in the report rather than
  * discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
  * -- a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
@@ -83,7 +83,7 @@ export async function runJsonMode(
         reportOn: thresholds.reportOn,
       });
     } catch (error: unknown) {
-      // An entry built here has no `compiledWith`: a kit that produced no results has nothing
+      // An entry built here has no `compiledWith`: A kit that produced no results has nothing
       // for a compile-time version to explain.
       const { code, hint, message } = toRdyError(error);
       kitInputs.push({
@@ -98,8 +98,8 @@ export async function runJsonMode(
   warnings.push(...warnOnUnusedPragmas(pragmaLedger));
 
   // The top-level thresholds say what the invocation asked for, so an absent flag stays absent
-  // rather than being reported as a default nobody requested. What governed each kit, including a
-  // threshold the kit declared for itself, travels on that kit's entry.
+  // rather than being reported as a default that nobody requested. What governed each kit, including
+  // a threshold declared by the kit for itself, appears on that kit's entry.
   const output = formatJsonReport(kitInputs, {
     detail,
     ...(failOn !== undefined && { failOn }),
@@ -114,11 +114,11 @@ export async function runJsonMode(
 // region | Helpers
 
 /**
- * Returns the `origin` field for a kit's JSON entry, empty for a kit no package published.
+ * Returns the `origin` field for a kit's JSON entry, empty for a kit published by no package.
  *
  * The wire shape names the publishing package and nothing else, so every other provenance contributes no
- * field at all -- which is the shape a consumer has always seen for a kit resolved from anywhere but a
- * package. A version the package did not declare readably is omitted.
+ * field at all -- which is the shape that a consumer has always seen for a kit resolved from anywhere but
+ * a package. A version that the package did not declare readably is omitted.
  */
 function toJsonOriginField(provenance: KitProvenance | undefined): { origin?: JsonKitOrigin } {
   if (provenance?.kind !== 'package') return {};

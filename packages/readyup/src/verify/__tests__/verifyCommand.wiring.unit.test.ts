@@ -77,7 +77,7 @@ describe('verifyCommand wiring', () => {
      * source path.
      *
      * Editing that source is the whole scenario: a kit whose TypeScript moved on while the compiled
-     * bundle it was built from stayed put.
+     * bundle from which it was built stayed put.
      */
     function writeCompiledPair(): string {
       const compiled = Buffer.from('export default { checklists: [] };\n');
@@ -196,7 +196,7 @@ describe('verifyCommand wiring', () => {
       );
     }
 
-    it('returns 0 when every file the compile read still matches', async () => {
+    it('returns 0 when every file read by the compile still matches', async () => {
       writeRecordedClosure();
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
@@ -205,7 +205,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('returns 1 when a module the bundle inlined was edited without a recompile', async () => {
+    it('returns 1 when a module inlined by the bundle was edited without a recompile', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
 
@@ -215,7 +215,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   input stale: shared.ts (module`);
     });
 
-    it('returns 1 when the version the kit pinned to has moved', async () => {
+    it('returns 1 when the version to which the kit pinned has moved', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, version: '4.0.0' }));
 
@@ -225,7 +225,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   input stale: package.json (inline`);
     });
 
-    it('returns 0 when a field the kit did not pick was edited', async () => {
+    it('returns 0 when a field not picked by the kit was edited', async () => {
       writeRecordedClosure();
       writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, name: 'renamed' }));
 
@@ -284,7 +284,7 @@ describe('verifyCommand wiring', () => {
       );
     }
 
-    it('reports every kit status with the hashes only a drift verdict compared', async () => {
+    it('reports every kit status with the hashes compared only by a drift verdict', async () => {
       writeMixedManifest();
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);

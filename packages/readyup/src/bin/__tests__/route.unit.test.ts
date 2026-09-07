@@ -368,7 +368,7 @@ describe(routeCommand, () => {
     expect(stderr).toContain('bad config');
   });
 
-  it('writes a hint on a line of its own, under the style the invocation selected', async () => {
+  it('writes a hint on a line of its own, under the style selected by the invocation', async () => {
     mockParseRunArgs.mockImplementation(() => {
       throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
     });
@@ -773,7 +773,7 @@ describe(routeCommand, () => {
       expect(stderr).toContain(`Did you mean 'rdy ${expected}'?`);
     });
 
-    it('does not suggest for a word no command is close to', async () => {
+    it('does not suggest for a word that no command is close to', async () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 

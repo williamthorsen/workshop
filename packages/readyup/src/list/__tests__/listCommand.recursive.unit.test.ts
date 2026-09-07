@@ -120,7 +120,7 @@ describe('list --recursive', () => {
       expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
     });
 
-    it('reports the descriptions the manifest records, and renders a bare name without one', async () => {
+    it('reports the descriptions recorded by the manifest, and renders a bare name without one', async () => {
       const { stdout } = await list(['--recursive']);
 
       expect(stdout).toContain('\u{1F4D3} default \u{00B7} Authoring hygiene for a project that defines readyup kits');
@@ -154,7 +154,7 @@ describe('list --recursive', () => {
   });
 
   describe('JSON payload', () => {
-    it('names the project each kit came from, and validates at schema version 1', async () => {
+    it('names the project from which each kit came, and validates at schema version 1', async () => {
       const payload = await runForPayload();
       const parsed = ListOutputSchema.parse(payload);
 
@@ -220,7 +220,7 @@ describe('list --recursive', () => {
     });
   });
 
-  describe('a project the filesystem will not fully give up', () => {
+  describe('a project that the filesystem will not fully give up', () => {
     it('lists the kits beside a manifest that cannot be parsed, and warns', async () => {
       const { stdout, stderr } = await list(['--recursive']);
 
@@ -294,7 +294,7 @@ describe('list --recursive', () => {
     return { exitCode, stdout: io.stdout, stderr: io.stderr };
   }
 
-  /** Runs a recursive listing under `--json` and returns the payload it emitted. */
+  /** Runs a recursive listing under `--json` and returns the payload that it emitted. */
   async function runForPayload(): Promise<unknown> {
     const { stdout } = await list(['--recursive', '--json']);
     return JSON.parse(stdout);

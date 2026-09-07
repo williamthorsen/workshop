@@ -102,7 +102,7 @@ function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, 
  *
  * The not-installed message names the direct-dependency requirement because pnpm's layout links only
  * direct dependencies into a project's `node_modules`. A transitive dependency is genuinely unreachable
- * here, and a bare "not installed" would contradict the lockfile the reader is looking at.
+ * here, and a bare "not installed" would contradict the lockfile that the reader is looking at.
  */
 function resolveInstalledPackageRoot(source: NpmSource): string {
   if (source.versionSpec !== undefined) {

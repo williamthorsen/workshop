@@ -118,7 +118,7 @@ describe('loadRemoteKit validation', () => {
     expect(compileTimeVersion).toBeUndefined();
   });
 
-  it('names the symbol a remote kit binds that the runner does not export', async () => {
+  it('names the symbol that a remote kit binds and the runner does not export', async () => {
     const jsBody = `
       import { retiredHelper } from 'readyup/check-utils';
       export const checklists = [
@@ -134,7 +134,7 @@ describe('loadRemoteKit validation', () => {
     expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
   });
 
-  it('accepts a remote kit binding only symbols the runner exports', async () => {
+  it('accepts a remote kit binding only symbols exported by the runner', async () => {
     const jsBody = `
       import { fileExists } from 'readyup/check-utils';
       export const checklists = [

@@ -7,7 +7,7 @@ const BINDING_KEYWORDS = new Set(['const', 'let', 'var']);
 const HEAD_PATTERN =
   /(?:(?:abstract|async|declare|default|export)\s+)*(?:function[\s*]+|(?:class|const|enum|interface|let|type|var)\s+)([A-Za-z_$][\w$]*)/y;
 // Keywords taking an operand after them, so a head following one continues an expression rather than beginning a
-// statement. Reading one leaves the window it inherited, because it completes no operand of its own. The head
+// statement. Reading one leaves the window that it inherited, because it completes no operand of its own. The head
 // modifiers are here for `async`, the one among them that is also legal in expression position. Membership is read
 // through `expectsOperand`, which first rules out a property spelled like one of these.
 const OPERAND_EXPECTING_KEYWORDS = new Set([
@@ -28,50 +28,51 @@ const OPERAND_EXPECTING_KEYWORDS = new Set([
   'void',
   'yield',
 ]);
-// Characters a statement can end with. A head following one begins a statement of its own; a head following anything
-// else continues an expression, which is what `function` or `class` after `(`, `=`, or `,` introduces. `>` is admitted
-// because it closes a generic argument list, which a statement can end on.
+// Characters with which a statement can end. A head following one begins a statement of its own; a head following
+// anything else continues an expression, which is what `function` or `class` after `(`, `=`, or `,` introduces.
+// `>` is admitted because it closes a generic argument list, which a statement can end on.
 const STATEMENT_END = /[\w$)\]>;}'"`]/;
 // Keywords opening a statement that declares no name.
 const STATEMENT_KEYWORDS = new Set(['do', 'export', 'for', 'if', 'import', 'switch', 'throw', 'try', 'while']);
 const WORD_CHAR = /[\w$]/;
 
-/** A top-level declaration and the 1-based line range it owns. */
+/** A top-level declaration and the 1-based line range that it owns. */
 export interface DeclarationSpan {
   endLine: number;
   name: string;
   startLine: number;
 }
 
-/** A declaration head found at brace depth 0, with the name it introduces where it introduces one. */
+/** A declaration head found at brace depth 0, with the name that it introduces where it introduces one. */
 interface Head {
   name?: string | undefined;
   startLine: number;
 }
 
 /**
- * Lists the top-level named declarations of blanked source as the line ranges they own, in the order they appear.
+ * Lists the top-level named declarations of blanked source as the line ranges that they own, in the order they appear.
  *
  * Takes what `blankNonCode` produced, so a declaration written in a comment or quoted in a string is invisible here
- * while the code around it is not. The lines are the ones `getLineAtOffset` resolves, which is what a caller holding a
- * finding's line compares against.
+ * while the code around it is not. The lines are the ones that `getLineAtOffset` resolves, which is what a caller
+ * holding a finding's line compares against.
  *
  * A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it
- * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: a generic constraint
+ * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: A generic constraint
  * and a return-type annotation can each hold braces of their own, and an overload signature has no body to close. A
- * span cut short reports code the caller meant to cover. The error runs the other way instead: a module-scope statement
- * trailing a declaration with no head between them is read as part of it, which is the bias this takes deliberately.
+ * span cut short reports code that the caller meant to cover. The error runs the other way instead: A module-scope
+ * statement trailing a declaration with no head between them is read as part of it, which is the bias that this
+ * takes deliberately.
  *
  * A statement declaring no name ends the declaration before it and begins none, so an export clause, an import, a
  * destructuring binding, and a control-flow statement each bound the span ahead of them without owning lines of their
- * own. Each is recognized by the keyword it opens with; a statement opening with an identifier, such as a bare call,
- * has no keyword to recognize it by and is read as part of the declaration before it.
+ * own. Each is recognized by the keyword with which it opens; a statement opening with an identifier, such as a bare
+ * call, has no keyword to recognize it by and is read as part of the declaration before it.
  *
  * A head is recognized at brace depth 0, and only where a statement could have ended just before it, so a named
  * function or class expression in an initializer, in an argument list, or as an arrow's body reads as the expression
- * it is rather than as a declaration of its own. A keyword still expecting an operand ends no statement, which is what
- * keeps `async`, `new`, and `typeof` from reopening that gap for the expression after them. A declaration nested in a
- * `namespace` or a module block sits below depth 0 and yields no span.
+ * that it is rather than as a declaration of its own. A keyword still expecting an operand ends no statement, which is
+ * what keeps `async`, `new`, and `typeof` from reopening that gap for the expression after them. A declaration nested
+ * in a `namespace` or a module block sits below depth 0 and yields no span.
  *
  * @internal
  */
@@ -94,11 +95,11 @@ export function listDeclarationSpans(code: string): DeclarationSpan[] {
 // region | Helpers
 
 /**
- * Reports whether a word leaves an operand still expected after it, so the window it inherited stands.
+ * Reports whether a word leaves an operand still expected after it, so the window that it inherited stands.
  *
- * A member name spelled like one of the keywords is the property it names: `mod.default` completes an operand, and
- * withholding the boundary there loses the statement end that semicolon-free source depends on. The introducing `.`
- * or `#` is what tells the two apart, and an optional chain leaves the same `.`.
+ * A member name spelled like one of the keywords is the property that it names: `mod.default` completes an operand,
+ * and withholding the boundary there loses the statement end that semicolon-free source depends on. The introducing
+ * `.` or `#` is what tells the two apart, and an optional chain leaves the same `.`.
  */
 function expectsOperand(previousChars: string, word: string): boolean {
   const lastChar = previousChars.at(-1) ?? '';
@@ -139,7 +140,7 @@ function isUnnamedHead(code: string, word: string, wordEnd: number): boolean {
   return STATEMENT_KEYWORDS.has(word);
 }
 
-/** Appends a character to the two-character window the head test reads. */
+/** Appends a character to the two-character window read by the head test. */
 function keepLastTwo(previousChars: string, char: string): string {
   return `${previousChars}${char}`.slice(-2);
 }
@@ -147,8 +148,8 @@ function keepLastTwo(previousChars: string, char: string): string {
 /**
  * Lists the heads of blanked source in the order they appear, counting braces to keep to the top level.
  *
- * Braces alone are counted, because a literal's text is already blanked and every brace a template interpolation
- * contributes is balanced by its own closing one.
+ * Braces alone are counted, because a literal's text is already blanked and every brace that a template
+ * interpolation contributes is balanced by its own closing one.
  */
 function listHeads(code: string): Head[] {
   const heads: Head[] = [];
@@ -197,7 +198,7 @@ function listHeads(code: string): Head[] {
 /**
  * Reports whether a head following the given characters begins a statement rather than continuing an expression.
  *
- * The last character decides, except that an arrow's `>` closes no operand: it introduces the arrow function's body,
+ * The last character decides, except that an arrow's `>` closes no operand: It introduces the arrow function's body,
  * and a `function` or `class` there is that body rather than a declaration of its own.
  */
 function startsStatement(previousChars: string): boolean {

@@ -79,7 +79,7 @@ export function resolveKitSources({
     return resolveFromSource(source, specs, extension);
   }
 
-  // Default/internal case: resolve from the current repo.
+  // Default/internal case: Resolve from the current repo.
   if (internal) {
     return specs.map((spec) => ({
       name: spec.kitName,
@@ -103,8 +103,8 @@ export function resolveKitSources({
  * Splits a kit URL into the kit's name and the label naming where it was fetched from.
  *
  * The scheme is dropped from the label because every kit URL has one and it distinguishes nothing.
- * A URL that does not parse is reported exactly as given, since a value the runner could not read is one
- * the reader needs to see unaltered.
+ * A URL that does not parse is reported exactly as given, since a value that the runner could not read
+ * must reach the reader unaltered.
  */
 function describeUrlSource(urlValue: string): { label: string; name: string } {
   if (!URL.canParse(urlValue)) return { label: urlValue, name: urlValue };

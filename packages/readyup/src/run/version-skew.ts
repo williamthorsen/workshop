@@ -9,8 +9,8 @@ import { VERSION } from '../version.ts';
 /**
  * Fails a kit whose declared floor the running readyup does not meet.
  *
- * Checks the running readyup, not the version the bundle records, so a floor holds for a `--jit` run from source,
- * which records none.
+ * Checks the running readyup, not the version recorded by the bundle, so a floor holds for a `--jit` run from
+ * source, which records none.
  */
 export function assertSatisfiesVersionFloor(kitName: string, kit: RdyKit): void {
   const floor = kit.minReadyupVersion;
@@ -25,8 +25,8 @@ export function assertSatisfiesVersionFloor(kitName: string, kit: RdyKit): void 
 /**
  * Warns that a bundle was compiled by a readyup newer than the one running it.
  *
- * Stands in for a floor the author never declared, so a kit declaring one raises nothing here. The stderr line is
- * written in both output modes; the returned entries are what JSON mode adds to the report.
+ * Stands in for a floor that the author never declared, so a kit declaring one raises nothing here. The stderr
+ * line is written in both output modes; the returned entries are what JSON mode adds to the report.
  */
 export function warnOnVersionSkew(
   kitName: string,

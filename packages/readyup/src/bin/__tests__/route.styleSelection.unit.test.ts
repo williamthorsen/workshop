@@ -20,10 +20,10 @@ const RICH_PASS = richFormatter.tokens.passed.glyph;
 /**
  * Every command that renders output, with arguments that make it produce some against the fixture.
  *
- * `expected` matches a line the command emits in plain style. `list` matches a bare column, since every
- * row it renders leads with a noun token, whose plain rendering is the reserved space alone. `compile`
- * accepts either status: the first invocation against the fixture builds the bundle and the rest find it
- * unchanged, and both outcomes render through the vocabulary under test.
+ * `expected` matches a line that the command emits in plain style. `list` matches a bare column, since
+ * every row that it renders leads with a noun token, whose plain rendering is the reserved space alone.
+ * `compile` accepts either status: The first invocation against the fixture builds the bundle and the
+ * rest find it unchanged, and both outcomes render through the vocabulary under test.
  */
 const RENDERING_COMMANDS = [
   { name: 'run', args: ['run', 'passing'], expected: /^PASS {2}ok$/mu },
@@ -142,8 +142,8 @@ describe('an unrecognized style', () => {
 });
 
 describe('detection', () => {
-  // The suite pins RDY_STYLE so rendering never depends on the environment it runs in. These tests
-  // deliberately unpin it: they are the only coverage of the wiring that reads CI and the terminal.
+  // The suite pins RDY_STYLE so rendering never depends on the environment in which it runs. These
+  // tests deliberately unpin it: They are the only coverage of the wiring that reads CI and the terminal.
   it('chooses plain under CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', 'true');

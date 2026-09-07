@@ -11,11 +11,11 @@ export const SCHEMA_VERSION = 1;
 export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKind' });
 
 /**
- * The installed package a listed kit was published by.
+ * The installed package by which a listed kit was published.
  *
  * Present only for a kit reached through a package source. Such a kit keeps `kind: 'compiled'`, because
  * that is what it is -- a compiled bundle -- and only its provenance is new. Recording provenance here
- * rather than as a third `kind` also keeps the payload additive: widening a closed set would bump
+ * rather than as a third `kind` also keeps the payload additive: Widening a closed set would bump
  * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
  *
  * `configured` reports whether the readyup config names the package, which is what decides whether
@@ -36,16 +36,16 @@ export const ListKitOriginSchema = z
  *
  * Every field but `name` and `kind` comes from the manifest, so a kit enumerated from the filesystem
  * without one has only those two plus `path`. `checklists` is read from the manifest rather than
- * from the kit itself: listing kits never executes kit code.
+ * from the kit itself: Listing kits never executes kit code.
  */
 export const ListKitEntrySchema = z
   .object({
     name: z.string(),
     kind: KitKindSchema,
     /**
-     * The project a kit was authored in, relative to the sweep root, present only for a repo-wide listing.
+     * The project in which a kit was authored, relative to the sweep root, present only for a repo-wide listing.
      *
-     * Orthogonal to `origin` rather than an alternative to it: one names where a kit lives in this tree,
+     * Orthogonal to `origin` rather than an alternative to it: One names where a kit lives in this tree,
      * the other which installed package published it, and a kit can have both.
      */
     project: z.string().optional(),
@@ -69,9 +69,10 @@ export const ListKitEntrySchema = z
  * hold a `default` kit, and two workspaces may each depend on the same publisher. Every such row is
  * meaningful, and a consumer indexing on less than the full key silently drops one of them.
  *
- * Every row is a kit some invocation would execute, which is the invariant a consumer iterating `kits`
- * relies on. A kit an unconfigured package publishes satisfies it: `rdy run --packages` will not reach it,
- * but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the two apart.
+ * Every row is a kit that some invocation would execute, which is the invariant on which a consumer
+ * iterating `kits` relies. A kit published by an unconfigured package satisfies it: `rdy run --packages`
+ * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the
+ * two apart.
  *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits. It accompanies the owner listing, which names them without

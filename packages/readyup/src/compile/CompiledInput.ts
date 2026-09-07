@@ -1,7 +1,7 @@
 import type { JsonPathSpec } from './extractJsonPaths.ts';
 
 /**
- * One file a compile read, as recorded while the compile ran.
+ * One file read by a compile, as recorded while the compile ran.
  *
  * `path` is absolute; `rdy compile` relativizes it against the manifest directory on the way out, as it
  * already does for a kit's `path` and `source`. Kept distinct from the manifest's own record so that
@@ -16,7 +16,7 @@ export type CompiledInput =
 /**
  * Returns a recorded input's identity, which is its path and its kind together.
  *
- * A JSON file a kit both imports and projects is two inputs, not one, because the two record different
+ * A JSON file that a kit both imports and projects is two inputs, not one, because the two record different
  * content from it.
  */
 export function identifyInput(kind: CompiledInput['kind'], filePath: string): string {

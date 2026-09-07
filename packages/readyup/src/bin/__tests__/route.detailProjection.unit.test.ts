@@ -26,7 +26,7 @@ it.aroundAll(async (runSuite, { temp }) => {
 });
 
 describe('--detail projection', () => {
-  it('defaults to the full tree, echoing the projection it used', async () => {
+  it('defaults to the full tree, echoing the projection that it used', async () => {
     using io = captureStdio();
 
     await routeCommand(['--json']);

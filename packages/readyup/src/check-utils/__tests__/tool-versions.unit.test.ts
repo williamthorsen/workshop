@@ -79,7 +79,7 @@ describe(readToolVersionsNode, () => {
 
 // region | Helpers
 
-/** Writes the given lines to `.tool-versions`, the default path the check reads. */
+/** Writes the given lines to `.tool-versions`, the default path read by the check. */
 function writeToolVersions(temp: TempTree, lines: string[]): void {
   temp.write('.tool-versions', lines.join('\n'));
 }

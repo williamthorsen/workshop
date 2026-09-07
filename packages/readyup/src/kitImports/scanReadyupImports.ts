@@ -1,6 +1,6 @@
 import { init, parse } from 'es-module-lexer';
 
-/** A `readyup` or `readyup/*` import a bundle makes, with the names it binds. */
+/** A `readyup` or `readyup/*` import made by a bundle, with the names that it binds. */
 export interface ReadyupImport {
   specifier: string;
 
@@ -9,14 +9,14 @@ export interface ReadyupImport {
 }
 
 /**
- * Lists the `readyup` and `readyup/*` imports a compiled bundle makes.
+ * Lists the `readyup` and `readyup/*` imports made by a compiled bundle.
  *
  * Scans the whole bundle rather than its head: esbuild emits each inlined module's external imports inside that
  * module's section, so a kit's later sections have imports of their own.
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
  * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
- * nothing is claimed about what it binds. A specifier naming a JSON module is dropped: it has no named exports to
+ * nothing is claimed about what it binds. A specifier naming a JSON module is dropped: It has no named exports to
  * verify, and a runner subpath serving one has no namespace to check against.
  *
  * Throws the lexer's `ParseError` for source it cannot read, which is source Node would not import either.
@@ -53,8 +53,8 @@ const BRACED_GROUP_PATTERN = /\{([\s\S]*)\}/;
 /**
  * The imported name leading one entry of a braced clause, ahead of any `as` rename.
  *
- * Both spellings the grammar allows for the name: a bare identifier, and the quoted form that holds a module-export
- * name an identifier cannot express.
+ * Both spellings allowed by the grammar for the name: A bare identifier, and the quoted form that holds a
+ * module-export name that an identifier cannot express.
  */
 const LEADING_NAME_PATTERN = /^\s*(?:"([^"]*)"|'([^']*)'|([A-Za-z_$][\w$]*))/;
 
@@ -64,15 +64,15 @@ function isReadyupSpecifier(specifier: string): boolean {
 }
 
 /**
- * Reads the names a single import or re-export statement binds from its braced clause.
+ * Reads the names that a single import or re-export statement binds from its braced clause.
  *
- * The statement is one the lexer already identified, so a regular expression is reading trusted input rather than
- * deciding whether the text is an import at all. Comments are removed before the clause is split, since either
+ * The statement is one that the lexer already identified, so a regular expression is reading trusted input rather
+ * than deciding whether the text is an import at all. Comments are removed before the clause is split, since either
  * spelling may sit between a brace and a comma and would otherwise hide the name behind it.
  *
- * Every entry the grammar allows is read: a bare identifier, `name as local`, and `"name" as local`. What yields no
- * name is an entry holding none, which a trailing comma produces. A default binding sits outside the braces and is
- * skipped: jiti's CJS interop supplies a module object for it, so a runner exporting no `default` breaks nothing.
+ * Every entry allowed by the grammar is read: a bare identifier, `name as local`, and `"name" as local`. What yields
+ * no name is an entry holding none, which a trailing comma produces. A default binding sits outside the braces and
+ * is skipped: jiti's CJS interop supplies a module object for it, so a runner exporting no `default` breaks nothing.
  */
 function readBoundNames(statement: string): string[] {
   const clause = CLAUSE_PATTERN.exec(statement)?.[1];

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { isPackageInstalled } from '../isPackageInstalled.ts';
 
 describe(isPackageInstalled, () => {
-  it('reports a package the project depends on as installed', () => {
+  it('reports a package on which the project depends as installed', () => {
     expect(isPackageInstalled('zod')).toBe(true);
   });
 

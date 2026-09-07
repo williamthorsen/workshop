@@ -1,9 +1,9 @@
 /**
- * Every token a formatter gives a glyph.
+ * Every token given a glyph by a formatter.
  *
- * Two kinds share the list: a status token reports what became of a check, and a role token names what a
- * thing is -- a kit, a checklist, the source one came from. Both resolve through the same vocabulary, so a
- * style declares its glyphs in one place.
+ * Two kinds share the list: A status token reports what became of a check, and a role token names what a
+ * thing is -- a kit, a checklist, the source from which one came. Both resolve through the same vocabulary,
+ * so a style declares its glyphs in one place.
  */
 export const TOKEN_NAMES = [
   'blockedPrecondition',
@@ -23,7 +23,7 @@ export const TOKEN_NAMES = [
 
 export type TokenName = (typeof TOKEN_NAMES)[number];
 
-/** A glyph together with the number of terminal cells it occupies. */
+/** A glyph together with the number of terminal cells that it occupies. */
 export interface LayoutToken {
   glyph: string;
   width: number;

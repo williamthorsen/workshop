@@ -1,28 +1,29 @@
 import { isGitRepo } from '../git/repo-predicates.ts';
 import { runGitRaw } from '../git/run-git.ts';
 
-/** Tracked-path listings by the `cwd` they were resolved against, held for the life of the process. */
+/** Tracked-path listings by the `cwd` against which they were resolved, held for the life of the process. */
 const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
 
 /**
- * Lists the paths git tracks under the working directory, or `undefined` where it is not a git working tree.
+ * Lists the paths tracked by git under the working directory, or `undefined` where it is not a git working tree.
  *
- * `undefined` and an empty list are distinct results: a project outside a working tree cannot be swept at all,
+ * `undefined` and an empty list are distinct results: A project outside a working tree cannot be swept at all,
  * while one inside an empty tree was swept and holds no tracked file.
  *
- * Lists with `git ls-files -z`. The `-z` is what makes the list complete: without it git escapes a path holding a
+ * Lists with `git ls-files -z`. The `-z` makes the list complete: Without it git escapes a path holding a
  * non-ASCII byte and wraps it in quotes, and that file drops out of the sweep unreported. Below the repo root git
- * emits paths relative to `cwd` and limited to that subtree, the same scope a relative `readFile` path works in, so
- * the listing follows the project `rdy` was invoked in rather than the repository a kit was loaded from.
+ * emits paths relative to `cwd` and limited to that subtree, the same scope in which a relative `readFile` path
+ * works, so the listing follows the project in which `rdy` was invoked rather than the repository from which a kit
+ * was loaded.
  *
- * The listing is the raw one, without the exclusions `readTrackedSources` applies, and it reports nothing
+ * The listing is the raw one, without the exclusions applied by `readTrackedSources`, and it reports nothing
  * to the run's sweep recorder. A check walking this listing and reading the files itself therefore declares
  * `scanned` of its own.
  *
- * Memoized per `cwd` for the life of the process. The promise is held rather than the value it settles to, because
- * the runner starts sibling checks together: a cache filled on resolution is still empty for every check that
- * started alongside the first, and each would invoke git of its own. A rejected listing is dropped, so a failure is
- * retried rather than remembered.
+ * Memoized per `cwd` for the life of the process. The promise is held rather than the value to which it settles,
+ * because the runner starts sibling checks together: A cache filled on resolution is still empty for every check
+ * that started alongside the first, and each would invoke git of its own. A rejected listing is dropped, so a
+ * failure is retried rather than remembered.
  */
 export function listTrackedFiles(): Promise<readonly string[] | undefined> {
   const cwd = process.cwd();

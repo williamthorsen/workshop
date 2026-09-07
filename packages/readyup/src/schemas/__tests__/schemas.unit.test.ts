@@ -137,7 +137,7 @@ describe('JSON payload schemas', () => {
   });
 
   describe('thresholds', () => {
-    it('reports the kit-declared threshold that governed a kit, not the one the run requested', () => {
+    it('reports the kit-declared threshold that governed a kit, not the one requested by the run', () => {
       const parsed = ReportSchema.parse(reportPayload);
       const kit = parsed.kits[0];
       assert.ok(kit !== undefined && !('error' in kit), 'expected a kit that ran');
@@ -148,11 +148,11 @@ describe('JSON payload schemas', () => {
   });
 
   describe('warning codes', () => {
-    it('accepts an advisory code this version does not know', () => {
+    it('accepts an advisory code that this version does not know', () => {
       expect(() => ReportSchema.parse(unknownWarningReportPayload)).not.toThrow();
     });
 
-    it('rejects an error code this version does not know, which selects a consumer branch', () => {
+    it('rejects an error code that this version does not know, which selects a consumer branch', () => {
       const kits = [{ name: 'release', error: { code: 'kit-retired', message: 'boom' } }];
 
       expect(() => ReportSchema.parse({ ...minimalReportPayload, kits })).toThrow(ZodError);
@@ -209,7 +209,7 @@ describe('JSON payload schemas', () => {
       expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
     });
 
-    it('rejects an input failure that names no cause the vocabulary knows', () => {
+    it('rejects an input failure that names no cause known to the vocabulary', () => {
       const inputFailures = [{ kind: 'module', path: 'kits/shared.ts', reason: 'drifted' }];
       const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'stale', inputFailures }];
 
@@ -248,7 +248,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonErrorCode>().toEqualTypeOf<RdyErrorCode>();
     });
 
-    it('binds a producer to the vocabulary this version declares while the wire stays open', () => {
+    it('binds a producer to the vocabulary declared by this version while the wire stays open', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
         | 'diagnosis-inconclusive'
         | 'input-stale'

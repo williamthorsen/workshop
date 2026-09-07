@@ -46,14 +46,14 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, its
-// errors being what the rendering cases assert.
+// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
+// rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
-// Mocked so no case reads the sources the ledger names; what the report itself writes is covered by its own tests.
+// Mocked so no case reads the sources named by the ledger; what the report itself writes is covered by its own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
@@ -64,7 +64,7 @@ import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 /**
  * The blank line separating one block from the next, as it reads in concatenated stdout writes.
  *
- * The count includes the newline terminating the block above, so the gap a reader sees is one blank fewer.
+ * The count includes the newline terminating the block above, so the gap that a reader sees is one blank fewer.
  */
 const BLOCK_GAP = '\n'.repeat(2);
 
@@ -253,7 +253,7 @@ describe(runHumanMode, () => {
       return stdout;
     }
 
-    it('names a remote kit by the source it was fetched from', async () => {
+    it('names a remote kit by the source from which it was fetched', async () => {
       await expect(headingFor({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
         '\u{1F310} github:org/repo@main / \u{1F4D3} deploy',
       );
@@ -265,8 +265,8 @@ describe(runHumanMode, () => {
       );
     });
 
-    // The label is what `path.dirname` yields for a bare filename, and the only form the producer emits that
-    // normalizes to the working directory.
+    // The label is what `path.dirname` yields for a bare filename, and the only form emitted by the producer
+    // that normalizes to the working directory.
     it('names no directory for a kit resolved from the working directory', async () => {
       const allOutput = await headingFor({ kind: 'directory', label: '.' });
 
@@ -288,8 +288,8 @@ describe(runHumanMode, () => {
     });
   });
 
-  // The heading below a gap names the kit it opens, so a kit boundary takes the same one blank line every
-  // other boundary takes. The run's first block opens with none.
+  // The heading below a gap names the kit that it opens, so a kit boundary takes the same one blank line as
+  // every other boundary. The run's first block opens with none.
   it('separates one kit from the next with the same single blank line, opening with none', async () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
@@ -519,7 +519,7 @@ describe(runHumanMode, () => {
   describe('staleness advisories', () => {
     const TARGET_DRIFT = {
       code: 'target-drift',
-      message: 'compiled kit "alpha" does not match the hash the manifest recorded for it.',
+      message: 'compiled kit "alpha" does not match the hash that the manifest recorded for it.',
       remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     };
 
@@ -549,7 +549,7 @@ describe(runHumanMode, () => {
       expect(mockReadManifestTracking).toHaveBeenCalledWith(true);
     });
 
-    it('advises on each kit against the source that kit resolved to', async () => {
+    it('advises on each kit against the source to which that kit resolved', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
       mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
@@ -594,7 +594,7 @@ describe(runHumanMode, () => {
       expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
-    it('reports after the summary table, the last block a pragma’s file may be named in', async () => {
+    it('reports after the summary table, the last block in which a pragma’s file may be named', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
@@ -667,7 +667,7 @@ function makePassedResult(name: string, severity: Severity): PassedResult {
   };
 }
 
-/** The settings a test names, over the defaults the dispatch would have resolved. */
+/** The settings named by a test, over the defaults that the dispatch would have resolved. */
 interface HumanRunOptions {
   diagnose?: boolean;
   failOn?: Severity;
@@ -677,7 +677,7 @@ interface HumanRunOptions {
 }
 
 /**
- * Runs the mode over the given entries, filling in every setting the test did not name, and returns its
+ * Runs the mode over the given entries, filling in every setting that the test did not name, and returns its
  * exit code alongside everything it wrote.
  */
 async function runHuman(

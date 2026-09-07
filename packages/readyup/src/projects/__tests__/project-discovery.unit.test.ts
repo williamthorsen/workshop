@@ -21,7 +21,7 @@ const it = baseIt
     makeFixture(() =>
       createTempTree(
         {
-          // Sweep root: compiled kits and a manifest of its own.
+          // Sweep root: Compiled kits and a manifest of its own.
           'package.json': JSON.stringify({ name: 'root' }),
           '.readyup/kits/demo.js': 'export default {};',
           '.readyup/manifest.json': JSON.stringify({ version: 1, kits: [{ name: 'demo' }] }),
@@ -35,11 +35,11 @@ const it = baseIt
           'packages/broken/.config/readyup.config.ts': 'export default { this is not TypeScript',
           'packages/broken/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [] }),
 
-          // Compiled with --skip-manifest: kits on disk, no manifest beside them.
+          // Compiled with --skip-manifest: Kits on disk, no manifest beside them.
           'packages/compiled-only/package.json': JSON.stringify({ name: 'compiled-only' }),
           'packages/compiled-only/.readyup/kits/thing.js': 'export default {};',
 
-          // Authored but never compiled, under a source directory the config repoints.
+          // Authored but never compiled, under a source directory repointed by the config.
           'packages/custom/package.json': JSON.stringify({ name: 'custom' }),
           'packages/custom/.config/readyup.config.ts': "export default { compile: { srcDir: 'src/kits' } };",
           'packages/custom/src/kits/lint.ts': 'export default {};',
@@ -52,7 +52,7 @@ const it = baseIt
           'packages/plain/package.json': JSON.stringify({ name: 'plain' }),
           'packages/plain/src/index.ts': 'export {};',
 
-          // Compiled to an output directory the config repoints.
+          // Compiled to an output directory repointed by the config.
           'packages/tooling/package.json': JSON.stringify({ name: 'tooling' }),
           'packages/tooling/.config/readyup.config.ts':
             "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
@@ -123,7 +123,7 @@ describe(discoverKitProjects, () => {
     expect(emptied?.manifestPath).toBe(temp.resolve('packages/emptied/.readyup/manifest.json'));
   });
 
-  // Discovery is read-only, so a config nobody can evaluate drops that project's settings, not its place.
+  // Discovery is read-only, so a config that nobody can evaluate drops that project's settings, not its place.
   it('reports a project whose config fails to evaluate, reading it with default settings', async ({ temp }) => {
     const { projects, stderr } = await discover(temp.dir);
     const broken = projects.find((project) => project.dir === 'packages/broken');
@@ -195,7 +195,7 @@ describe(discoverProjects, () => {
     ]);
   });
 
-  // The dependency axis asks what a workspace depends on, which one authoring no kits still answers.
+  // The dependency axis asks what a workspace depends on, and a workspace authoring no kits still answers it.
   it('reports a workspace with neither a readyup directory nor a readyup config', async ({ temp }) => {
     await expect(discoverAllDirs(temp.dir)).resolves.toContain('packages/plain');
   });
@@ -242,13 +242,13 @@ async function discoverAll(root: string) {
   return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr };
 }
 
-/** Returns the root-relative directories the whole-tree sweep reports for the fixture tree. */
+/** Returns the root-relative directories that the whole-tree sweep reports for the fixture tree. */
 async function discoverAllDirs(root: string): Promise<string[]> {
   const { dirs } = await discoverAll(root);
   return dirs;
 }
 
-/** Returns the root-relative directories discovery reports for the fixture tree. */
+/** Returns the root-relative directories that discovery reports for the fixture tree. */
 async function discoverDirs(root: string): Promise<string[]> {
   const { dirs } = await discover(root);
   return dirs;

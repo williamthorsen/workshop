@@ -8,11 +8,11 @@ import { toDisplayPath } from './toDisplayPath.ts';
 const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
 
 /**
- * Imports a TypeScript file through jiti, returning the plain object it exports.
+ * Imports a TypeScript file through jiti, returning the plain object that it exports.
  *
  * A `MODULE_NOT_FOUND` or `ERR_MODULE_NOT_FOUND` failure is rethrown naming the file being evaluated
  * and `moduleErrorDetail`, with the install command on a `hint` property beside the message. The hint
- * rides on the error rather than a typed failure, because the same failure is classified under two
+ * is set on the error rather than a typed failure, because the same failure is classified under two
  * different codes. An imported value that is not a plain object raises an error naming `exportNoun`.
  */
 export async function jitiImport(
@@ -47,17 +47,17 @@ export async function jitiImport(
   return imported;
 }
 
-/** What a reader is told about a specifier jiti could not resolve. */
+/** What a reader is told about a specifier that jiti could not resolve. */
 interface UnresolvedModuleReport {
   hint: string | undefined;
   message: string;
 }
 
 /**
- * Returns the diagnosis and remediation for a specifier jiti could not resolve.
+ * Returns the diagnosis and remediation for a specifier that jiti could not resolve.
  *
- * The install command is offered only for a specifier that names a package: installing a relative
- * import or a builtin is not the remedy, and a specifier jiti did not name cannot be installed at all.
+ * The install command is offered only for a specifier that names a package: Installing a relative
+ * import or a builtin is not the remedy, and a specifier not named by jiti cannot be installed at all.
  */
 function describeUnresolvedModule(
   error: Error,

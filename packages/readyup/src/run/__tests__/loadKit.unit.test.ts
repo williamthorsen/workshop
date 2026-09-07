@@ -103,7 +103,7 @@ describe(loadKit, () => {
       expect(error.message).toBe("Cannot find package 'readyup'");
     });
 
-    it('forwards an install hint the underlying failure has', async () => {
+    it('forwards an install hint that the underlying failure has', async () => {
       mockLoadRdyKit.mockRejectedValue(
         Object.assign(new Error("Cannot resolve 'some-lib' while evaluating deploy.ts."), {
           hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -169,7 +169,7 @@ describe(loadKit, () => {
       expect(mockLoadRemoteKit).toHaveBeenCalledWith({ url: THIRD_PARTY_URL });
     });
 
-    it('keeps the URL a fetch failure already names', async () => {
+    it('keeps the URL that a fetch failure already names', async () => {
       mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${BITBUCKET_URL}: 404 Not Found`));
 
       const error = await captureError(RdyError, () => loadKit(remoteEntry(BITBUCKET_URL), false));
@@ -177,7 +177,7 @@ describe(loadKit, () => {
       expect(error.message).toContain(BITBUCKET_URL);
     });
 
-    it('names the URL a network failure does not have', async () => {
+    it('names the URL that a network failure does not have', async () => {
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
       const error = await captureError(RdyError, () => loadKit(remoteEntry(BITBUCKET_URL), false));
@@ -195,7 +195,7 @@ describe(loadKit, () => {
   });
 
   describe('unresolvable readyup imports', () => {
-    it('names every symbol the runner does not export', async () => {
+    it('names every symbol that the runner does not export', async () => {
       mockLoadRdyKit.mockRejectedValue(missingSymbolError());
 
       const error = await captureError(RdyError, () => loadKit(localEntry(), false));
@@ -206,7 +206,7 @@ describe(loadKit, () => {
       );
     });
 
-    it('advises recompiling a kit the project owns', async () => {
+    it('advises recompiling a kit owned by the project', async () => {
       mockLoadRdyKit.mockRejectedValue(missingSymbolError());
 
       const error = await captureError(RdyError, () => loadKit(localEntry(), false));
@@ -308,7 +308,7 @@ function makeKit(): RdyKit {
   return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] };
 }
 
-/** Returns the failure a loader raises for a kit binding a symbol this runner does not export. */
+/** Returns the failure raised by a loader for a kit binding a symbol that this runner does not export. */
 function missingSymbolError(): UnresolvableKitImportsError {
   return new UnresolvableKitImportsError({
     unknownSubpaths: [],
@@ -316,7 +316,7 @@ function missingSymbolError(): UnresolvableKitImportsError {
   });
 }
 
-/** Returns the failure Node raises for an import that resolves to no installed package. */
+/** Returns the failure raised by Node for an import that resolves to no installed package. */
 function moduleNotFoundError(packageName: string): Error {
   return Object.assign(new Error(`Cannot find package '${packageName}'`), { code: 'MODULE_NOT_FOUND' });
 }

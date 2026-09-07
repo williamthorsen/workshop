@@ -44,7 +44,7 @@ export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions)
     throw new Error(`Remote kit URL returned an HTML page instead of JavaScript: ${url}`);
   }
 
-  // Check the fetched source before it is written and imported: a native import would fail a missing named export
+  // Check the fetched source before it is written and imported: A native import would fail a missing named export
   // as an opaque link error naming neither the kit nor the symbol.
   await assertKitImportsResolve(body, url);
 

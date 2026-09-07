@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { findForeignSpecifiers } from '../buildSelfContainmentChecks.ts';
 
 describe(findForeignSpecifiers, () => {
-  it('accepts the specifiers rdy compile leaves external', () => {
+  it('accepts the specifiers left external by rdy compile', () => {
     const bundle = [
       'import path from "node:path";',
       'import { defineRdyKit } from "readyup";',
@@ -14,7 +14,7 @@ describe(findForeignSpecifiers, () => {
     expect(findForeignSpecifiers(bundle)).toStrictEqual([]);
   });
 
-  it('names a package the consumer would have to supply', () => {
+  it('names a package that the consumer would have to supply', () => {
     const bundle = 'import picomatch from "picomatch";\n';
 
     expect(findForeignSpecifiers(bundle)).toStrictEqual(['picomatch']);
@@ -47,7 +47,7 @@ describe(findForeignSpecifiers, () => {
   });
 
   // esbuild preserves comments inside an expression, so documented examples reach the bundle. A scan
-  // that read them would report a package no one imports.
+  // that read them would report a package that no one imports.
   it('ignores a specifier-shaped example in a comment', () => {
     const bundle = [
       'const patterns = [',

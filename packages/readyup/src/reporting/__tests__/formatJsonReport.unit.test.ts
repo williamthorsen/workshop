@@ -68,7 +68,7 @@ function singleKit(checklistName: string, report: RdyReport, kitName = 'deploy')
   return [{ name: kitName, entries: [{ name: checklistName, report }] }];
 }
 
-/** The tally a run with nothing to report produces, spelled out for whole-payload assertions. */
+/** The tally produced by a run with nothing to report, spelled out for whole-payload assertions. */
 const NO_COUNTS = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0 };
 
 describe(formatJsonReport, () => {
@@ -80,7 +80,7 @@ describe(formatJsonReport, () => {
     }).not.toThrow();
   });
 
-  it('emits a payload its own published schema accepts', () => {
+  it('emits a payload accepted by its own published schema', () => {
     const report = makeReport({
       results: [
         makePassedResult({ name: 'a' }),
@@ -244,7 +244,7 @@ describe(formatJsonReport, () => {
       });
     });
 
-    it('prunes each kit detail tree with that kit own reporting threshold', () => {
+    it('prunes each kit detail tree with that kit\u{2019}s own reporting threshold', () => {
       const parsed: unknown = JSON.parse(formatReport(mixedThresholdKits()));
 
       // The warn-severity failure clears `recommend` but not `error`, so it survives in the kit that
@@ -833,7 +833,7 @@ describe(formatJsonReport, () => {
       expect(output).not.toContain('checks');
     });
 
-    it('produces a payload the schema accepts in both projections', () => {
+    it('produces a payload that the schema accepts in both projections', () => {
       for (const detail of ['full', 'summary'] as const) {
         const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail }));
         expect(() => ReportSchema.parse(parsed)).not.toThrow();

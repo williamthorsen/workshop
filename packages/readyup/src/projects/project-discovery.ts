@@ -14,7 +14,7 @@ import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemErr
 import { walkDirectories } from '../portable/walkDirectories.ts';
 
 /**
- * Glob naming the candidates a sweep considers: every directory holding a package manifest.
+ * Glob naming the candidates considered by a sweep: every directory holding a package manifest.
  *
  * Topology comes from the filesystem, so discovery is indifferent to which package manager the repo uses.
  */
@@ -42,8 +42,8 @@ export interface DiscoverProjectsOptions {
  * A candidate counts as a kit project when it has TypeScript kit sources in its `compile.srcDir`, or
  * compiled kits in its `compile.outDir`, or a manifest. The three are alternatives because they name
  * three states of the same project: authored but never compiled, compiled, and compiled but since
- * emptied. A manifest counts on existence alone, however many kits it currently lists, which is what
- * keeps a project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
+ * emptied. A manifest counts on existence alone, however many kits it currently lists, which keeps a
+ * project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
  */
 export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
   const projects = await discoverProjects(options);
@@ -59,8 +59,8 @@ export async function discoverKitProjects(options: DiscoverProjectsOptions = {})
  * Returns every project in the tree below `root`, each resolved under its own config, root-first.
  *
  * A project is any directory holding a package manifest, whatever its relationship to readyup. That is
- * the set the dependency axis asks about: a workspace authoring no kits of its own still declares
- * dependencies that publish them, and a readyup footprint is not a condition it has to meet to have any.
+ * the set that the dependency axis asks about: A workspace authoring no kits of its own still declares
+ * dependencies that publish them, and it does not need a readyup footprint to have any.
  */
 export async function discoverProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
   const { root = process.cwd() } = options;
@@ -105,7 +105,7 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
 /**
  * Reports whether a directory has any readyup footprint at all.
  *
- * A project with neither falls back to the default config, which points inside `.readyup/`: declaring a
+ * A project with neither falls back to the default config, which points inside `.readyup/`: Declaring a
  * source directory anywhere else takes a config file to say so. Testing this before the directory reads
  * below keeps the sweep from walking a source tree in every workspace of a repo whose kits live in one
  * of them.
@@ -128,8 +128,8 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
  * Reads one project's config, falling back to the defaults when it cannot be evaluated.
  *
  * Discovery is read-only, so a config that fails drops that project's settings, not its discovery.
- * A project declaring no config needs one `existsSync` and evaluates no TypeScript, which is what lets
- * every candidate be resolved before any of them is judged a kit project.
+ * A project declaring no config needs one `existsSync` and evaluates no TypeScript, which lets every
+ * candidate be resolved before any of them is judged a kit project.
  */
 async function readProjectConfig(absolutePath: string, dir: string): Promise<ResolvedRdyConfig> {
   try {
@@ -141,7 +141,7 @@ async function readProjectConfig(absolutePath: string, dir: string): Promise<Res
   }
 }
 
-/** Returns `false` for a directory the sweep cannot read, rethrowing a failure it cannot skip past. */
+/** Returns `false` for a directory that the sweep cannot read, rethrowing a failure that it cannot skip past. */
 function skipUnreadableDir(dir: string, error: unknown): false {
   if (!isSkippableFilesystemError(error)) throw error;
   process.stderr.write(`Warning: Cannot read ${dir}. Reading the project without it.\n`);

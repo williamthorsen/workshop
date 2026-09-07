@@ -12,9 +12,9 @@ import { resolveKitSources } from '../resolveKitSources.ts';
 import { runCommand } from '../runCommand.ts';
 
 /**
- * Joins `--packages` to the kits an installed package publishes, against a real fixture project.
+ * Joins `--packages` to the kits published by an installed package, against a real fixture project.
  * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
- * that a configured package becomes a run entry with the provenance the report and the headings render,
+ * that a configured package becomes a run entry with the provenance rendered by the report and the headings,
  * and that the kit name selects which of its kits run.
  */
 describe('--packages run path wiring', () => {
@@ -149,7 +149,7 @@ describe('--packages run path wiring', () => {
     expect(stdout).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} default');
   });
 
-  // The defect #238 reports: every package kit here runs one checklist, so the run tallied nothing at all.
+  // The defect reported by #238: Every package kit here runs one checklist, so the run tallied nothing at all.
   it('ends a multi-package run with a table covering every checklist that ran', async () => {
     installPackage('plain-kit', ['default'], { version: '1.0.0' });
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
@@ -170,7 +170,7 @@ describe('--packages run path wiring', () => {
   });
 
   // A row is an index into the blocks above it, so it repeats its heading rather than naming its own scheme.
-  it('names each row by the breadcrumb heading its block has', async () => {
+  it('names each row by the breadcrumb heading that its block has', async () => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
     installPackage('plain-kit', ['default'], { version: '1.0.0' });
     const entries = resolveKitSources({
@@ -218,7 +218,7 @@ describe('--packages run path wiring', () => {
 
 // region | Helpers
 
-/** Flags a `--packages` invocation leaves at their defaults. */
+/** Flags left at their defaults by a `--packages` invocation. */
 const baseArgs = {
   filePath: undefined,
   fromValue: undefined,
@@ -229,7 +229,10 @@ const baseArgs = {
   internal: false,
 };
 
-/** Names a run entry as the package it came from and the kit it runs, which is what an order assertion reads. */
+/**
+ * Names a run entry as the package from which it came and the kit that it runs, which is what an order
+ * assertion reads.
+ */
 function describeEntry(entry: ResolvedKitEntry): string {
   const origin = entry.provenance?.kind === 'package' ? entry.provenance.packageName : entry.provenance?.kind;
   return `${origin}:${entry.name}`;

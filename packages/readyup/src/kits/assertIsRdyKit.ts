@@ -24,15 +24,18 @@ const FunctionSchema = z.custom<(...args: never[]) => unknown>((value) => typeof
   error: (issue) => `expected a function, got ${describeType(issue.input)}`,
 });
 
-/** Matches a dotted numeric version of up to three segments, the only shape the runner's floor comparison orders. */
+/**
+ * Matches a dotted numeric version of up to three segments, the only shape that the runner's floor
+ * comparison orders.
+ */
 const DOTTED_NUMERIC_VERSION = /^\d+(?:\.\d+){0,2}$/;
 
 /**
- * Schema for the readyup version a kit names as its floor.
+ * Schema for the readyup version that a kit names as its floor.
  *
  * A floor is authored rather than read off an installed package, so it takes no range prefix and no
  * prerelease tail; rejecting those is what keeps a typo from silently never matching. A fourth
- * segment is rejected for the mirror reason: the comparison reads three, and would discard it.
+ * segment is rejected for the mirror reason: The comparison reads three, and would discard it.
  */
 const MinReadyupVersionSchema = z
   .string({ error: (issue) => `expected a dotted numeric version, got ${describeType(issue.input)}` })
@@ -46,8 +49,8 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
 /**
  * Schema for a single check, recursing into its dependent checks through a getter.
  *
- * `looseObject` lets unknown keys through: a kit authored against a later readyup, or with an
- * annotation this version knows nothing about, is not thereby broken.
+ * `looseObject` lets unknown keys through: A kit authored against a later readyup, or with an
+ * annotation about which this version knows nothing, is not thereby broken.
  *
  * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
  * `fix` from the shape would stop it being type-checked without stopping it being invoked. The
@@ -76,7 +79,7 @@ const CheckSchema: z.ZodType = z.preprocess(
  * Fields common to flat and staged checklists.
  *
  * Both `checks` and `groups` are optional here and narrowed by the refinements below. Modelling the
- * two forms as one object rather than a union is what keeps validation errors precise: a union
+ * two forms as one object rather than a union is what keeps validation errors precise: A union
  * failure reports that neither branch matched, burying the offending check under an
  * `invalid_union` issue whose path stops at the checklist.
  */
@@ -92,10 +95,10 @@ const ChecklistShapeSchema = z.looseObject({
  * A checklist with exactly one of `checks` and `groups`.
  *
  * The two clauses test different things, and each has to. `isFlatChecklist` discriminates on key
- * presence, so the exclusivity clause does too: a checklist whose `checks` is present but explicitly
+ * presence, so the exclusivity clause does too: A checklist whose `checks` is present but explicitly
  * `undefined`, beside a populated `groups`, would otherwise validate, classify as flat, and hand the
  * runner an array that is not there. The requirement clause tests the value instead, so a key set to
- * `undefined` cannot satisfy the collection it names.
+ * `undefined` cannot satisfy the collection that it names.
  */
 const ChecklistSchema = ChecklistShapeSchema.refine(
   (val) => val.checks !== undefined || val.groups !== undefined,
@@ -122,7 +125,7 @@ const RdyKitSchema = z.looseObject({
  * nothing, so `defineRdyKit`'s type-level guard protects only authors editing in an IDE.
  *
  * Throws an Error whose message names one issue per line, each located by a dot path into the kit.
- * `source` labels the kit the issues belong to, which matters when the caller loaded it on the
+ * `source` labels the kit to which the issues belong, which matters when the caller loaded it on the
  * author's behalf and the author never named it.
  */
 export function assertIsRdyKit(raw: unknown, source?: string): asserts raw is RdyKit {
@@ -139,7 +142,7 @@ function formatValidationError(error: ZodError, source: string | undefined): str
 }
 
 /**
- * Renders an issue path in the notation an author would use to reach the value.
+ * Renders an issue path in the notation that an author would use to reach the value.
  *
  * Array indices become brackets and keys become dotted segments, so `checklists[0].checks[1].check`
  * reads as the expression that selects the offending field.

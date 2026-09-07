@@ -13,7 +13,7 @@ const HEADING_SIGIL_WIDTH = 2;
  * Text separating one breadcrumb segment from the next.
  *
  * Spaced on both sides because a segment's own text contains slashes -- a scoped package name, a relative
- * path -- and under a style whose roles have no glyph, that spacing is the only boundary a reader gets.
+ * path -- and under a style whose roles have no glyph, that spacing is the only boundary that a reader gets.
  */
 export const SEGMENT_SEPARATOR = ' / ';
 
@@ -23,7 +23,7 @@ const TABLE_CELL_GAP = '  ';
 /**
  * Label leading every count line.
  *
- * The word is what tells a count line apart from the check lines above it: both lead with a severity
+ * The word tells a count line apart from the check lines above it: Both lead with a severity
  * token in the same column, so the tally needs to name itself rather than rely on the glyph.
  */
 const TOTAL_LABEL = 'Total:';
@@ -34,13 +34,13 @@ const SUMMARY_HEADING = 'Summary';
 /** Text separating one count from the next. */
 const COUNT_SEPARATOR = ', ';
 
-/** Statement a count line makes when there is nothing at all to report. */
+/** Statement made by a count line when there is nothing at all to report. */
 const EMPTY_COUNTS = '0 passed';
 
 /** Tokens naming a check that did not run. */
 const SKIPPED_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>(['blockedPrecondition', 'skippedOptional']);
 
-/** One tallied field of a count line, with the labels its count selects between. */
+/** One tallied field of a count line, with the labels that its count selects between. */
 interface CountField {
   key: keyof Omit<SummaryCounts, 'worstSeverity'>;
   plural: string;
@@ -50,9 +50,9 @@ interface CountField {
 /**
  * Count fields in the order every count line presents them.
  *
- * Ordered by outcome rather than alphabetically: the checks that ran, worst news first, then the checks
+ * Ordered by outcome rather than alphabetically: The checks that ran, worst news first, then the checks
  * that did not. The reader scans left to right and meets the failures before anything else, and a fixed
- * order is what lets them find a field without reading every label.
+ * order lets them find a field without reading every label.
  */
 const COUNT_FIELDS: readonly CountField[] = [
   { key: 'errors', singular: 'error', plural: 'errors' },
@@ -63,7 +63,7 @@ const COUNT_FIELDS: readonly CountField[] = [
   { key: 'optional', singular: 'skipped', plural: 'skipped' },
 ];
 
-/** One segment of a breadcrumb heading: the role the name plays, and the name itself. */
+/** One segment of a breadcrumb heading: The role played by the name, and the name itself. */
 export interface BreadcrumbSegment {
   role: TokenName;
   text: string;
@@ -87,7 +87,7 @@ export interface SummaryRow {
   segments: BreadcrumbSegment[];
 }
 
-/** The combined summary table's rows alongside the totals its final line reports. */
+/** The combined summary table's rows alongside the totals reported by its final line. */
 export interface SummaryTableInput {
   rows: SummaryRow[];
   totalDurationMs: number;
@@ -116,7 +116,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns `segments` as one heading, each behind its role's glyph and separated by the segment separator.
    *
-   * A role the formatter gives no glyph closes up, with no space where the glyph would sit.
+   * A role given no glyph by the formatter closes up, with no space where the glyph would sit.
    */
   function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel, detail?: string): string {
     const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);
@@ -124,7 +124,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns one line, `token name <separator> detail [id] [progress] (duration)`, dropping the segments it lacks.
+   * Returns one line, `token name <separator> detail [id] [progress] (duration)`, dropping the segments that it lacks.
    *
    * The separator is the formatter's, so the shape holds across styles while the punctuation varies.
    */
@@ -158,9 +158,9 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * Returns `name` behind a two-character rule whose weight comes from `level`, with `detail` behind
    * the formatter's separator where there is one.
    *
-   * A heading has no blank line of its own. Separation is a property of the sequence a heading sits
-   * in, which only the code emitting that sequence can see: a heading deciding for itself is how two
-   * adjacent ones each contribute a blank and open a gap neither intended.
+   * A heading has no blank line of its own. Separation is a property of the sequence in which a heading
+   * sits, which only the code emitting that sequence can see: A heading deciding for itself is how two
+   * adjacent ones each contribute a blank and open a gap that neither intended.
    */
   function formatHeading(name: string, level: HeadingLevel, detail?: string): string {
     const suffix = detail === undefined ? '' : ` ${formatter.detailSeparator} ${detail}`;
@@ -193,8 +193,8 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * Returns the summary table's lines: a heading, a rule, one line per row, a closing rule, and a total.
    *
    * Names are padded and durations right-aligned, so every row's counts begin at the same column. Both
-   * rules span the widest line they enclose, the total included. A row names itself by its breadcrumb
-   * without the role glyphs the matching heading adds, because padding counts characters while the
+   * rules span the widest line that they enclose, the total included. A row names itself by its breadcrumb
+   * without the role glyphs added by the matching heading, because padding counts characters while the
    * terminal lays out display width, and a glyph makes the two disagree.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
@@ -269,7 +269,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   };
 }
 
-/** Returns `segments` separated as a heading separates them, without the role glyphs a heading adds. */
+/** Returns `segments` separated as a heading separates them, without the role glyphs added by a heading. */
 function formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
   return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }

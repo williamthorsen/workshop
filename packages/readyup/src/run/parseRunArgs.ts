@@ -35,7 +35,7 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
  *
  * A letter takes a short flag only when it has no dominant conflicting meaning in comparable
  * tools and means one thing across every `rdy` subcommand. The second clause is why `-f` is
- * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: a
+ * `--file` here and nothing anywhere else. Pairs differing only by case are barred outright: A
  * shift-key slip must not be able to change what runs.
  */
 const runOptions = {

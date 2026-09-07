@@ -3,26 +3,28 @@ import { listForeignPaths } from './listForeignPaths.ts';
 import { listTrackedFiles } from './listTrackedFiles.ts';
 import { recordSweep } from './sweepRecorder.ts';
 
-/** Selects the tracked paths a sweep reads. */
+/** Selects the tracked paths that a sweep reads. */
 export type PathFilter = (path: string) => boolean;
 
-/** A tracked file and the text it holds. */
+/** A tracked file and the text that it holds. */
 export interface ProjectSource {
   readonly path: string;
   readonly text: string;
 }
 
-/** Paths no sweep reads, whatever a filter says of them; `readTrackedSources` states why each is dropped. */
+/** Paths read by no sweep, whatever a filter says of them; `readTrackedSources` states why each is dropped. */
 const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/kits\/[^/]+\.js$/];
 
-/** File text by path, by the `cwd` it was read under. A stored `undefined` marks a path that could not be read. */
+/**
+ * File text by path, by the `cwd` under which it was read. A stored `undefined` marks a path that could not be read.
+ */
 const textsByCwd = new Map<string, Map<string, string | undefined>>();
 
 /**
  * Reads one path's text, from the cache where a sweep already read it, and `undefined` where the path holds none.
  *
- * The exclusions governing what a sweep reads do not apply here. This reports on a path its caller already holds,
- * such as the one a finding names, rather than deciding what a sweep goes looking at.
+ * The exclusions governing what a sweep reads do not apply here. This reports on a path that its caller already
+ * holds, such as the one named by a finding, rather than deciding what a sweep goes looking at.
  */
 export function readSourceText(path: string): string | undefined {
   const texts = resolveTextCache(process.cwd());
@@ -34,22 +36,23 @@ export function readSourceText(path: string): string | undefined {
 
 /**
  * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree. `undefined`
- * and an empty list are distinct results: a project that cannot be swept is not one that was swept and holds nothing,
+ * and an empty list are distinct results: A project that cannot be swept is not one that was swept and holds nothing,
  * which is why a check reaching for this skips on `undefined` rather than reporting a pass.
  *
  * The filter decides a path before anything reads it, so an excluded file is never read. Text is held per `cwd` for
- * the life of the process, so a file two kits both select is read once, and each kit reads only the files the other
- * did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, so a later filter
- * selecting it probes the filesystem no second time. That cache lives here rather than in a kit because a compiled
- * kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of a run.
+ * the life of the process, so a file that two kits both select is read once, and each kit reads only the files that
+ * the other did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, so a later
+ * filter selecting it probes the filesystem no second time. That cache lives here rather than in a kit because a
+ * compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of
+ * a run.
  *
  * Two path sets are dropped whatever the filter returns for them. `node_modules/` and `.readyup/kits/*.js` are
  * excluded outright, the latter being readyup's own generated artifact, which a sweep would otherwise report back to
- * the author of the kit it was compiled from; that pattern names the default `compile.outDir`, so a project
- * compiling its kits elsewhere excludes that directory in its own filter. Beyond those, a tracked file the project
- * declares `linguist-generated` or `linguist-vendored` is dropped, so committed bundler output and vendored
- * third-party code stay out of every kit's sweep at once: a finding inside one is advice nobody can take, and the
- * file would count toward the adoption fraction the finding is reported against.
+ * the author of the kit from which it was compiled; that pattern names the default `compile.outDir`, so a project
+ * compiling its kits elsewhere excludes that directory in its own filter. Beyond those, a tracked file that the
+ * project declares `linguist-generated` or `linguist-vendored` is dropped, so committed bundler output and vendored
+ * third-party code stay out of every kit's sweep at once: A finding inside one is advice that nobody can take, and
+ * the file would count toward the adoption fraction against which the finding is reported.
  *
  * Both attributes take a bare form and a `=true` form, and an explicit `=false` keeps the file in the sweep. The
  * declaration is read through `git check-attr`, so the pattern syntax, the nested `.gitattributes` files, and the
@@ -57,14 +60,14 @@ export function readSourceText(path: string): string | undefined {
  * apply. Git resolves `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file alongside the
  * tracked ones, so a file missing from a sweep may have been declared outside the repository altogether, and
  * `check-attr` reads the working tree, so an uncommitted declaration takes effect as it does for git itself. The
- * exclusion belongs to this reader alone; `listTrackedFiles` stays the raw listing it is.
+ * exclusion belongs to this reader alone; `listTrackedFiles` stays the raw listing that it is.
  *
  * The declared-foreign set is resolved once beside the tracked listing rather than per path, so the loop stays a
  * plain pass over the listing.
  *
- * The paths returned are reported to the sweep recorder the runner has in scope, which is the evidence the
- * unused-pragma report rests on. A check reading the project this way declares nothing to have its sweep recorded,
- * and a sweep it reads in `skip` counts as much as one it reads in `check`.
+ * The paths returned are reported to the sweep recorder that the runner has in scope, which is the evidence on
+ * which the unused-pragma report rests. A check reading the project this way declares nothing to have its sweep
+ * recorded, and a sweep that it reads in `skip` counts as much as one that it reads in `check`.
  */
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
   const tracked = await listTrackedFiles();
@@ -88,7 +91,7 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
 
 // region | Helpers
 
-/** Reports whether a path is one no sweep reads. */
+/** Reports whether a path is one read by no sweep. */
 function isExcluded(path: string): boolean {
   return EXCLUDED_PATH_PATTERNS.some((pattern) => pattern.test(path));
 }

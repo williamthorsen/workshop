@@ -10,7 +10,7 @@ const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
 const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
 const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.glyph;
 
-/** What a test row varies: the counts it reports, flattened, alongside its name and duration. */
+/** What a test row varies: the counts that it reports, flattened, alongside its name and duration. */
 type RowOverrides = Partial<SummaryCounts> & { durationMs?: number; name?: string };
 
 function makeRow({ durationMs = 100, name = 'test-checklist', ...counts }: RowOverrides = {}): SummaryRow {

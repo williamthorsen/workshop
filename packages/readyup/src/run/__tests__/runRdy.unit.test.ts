@@ -9,8 +9,8 @@ import { runRdy } from '../runRdy.ts';
 /*
  * A kit runs as JavaScript, so its functions return whatever their author wrote and its fields hold
  * whatever they were assigned; neither jiti nor esbuild type-checks any of it. The authoring-error
- * tests exercise exactly the values the declared types forbid, so the wrappers below restate them as
- * the types those declarations promise.
+ * tests exercise exactly the values forbidden by the declared types, so the wrappers below restate
+ * them as the types that those declarations promise.
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
@@ -24,7 +24,7 @@ function skipReturning(value: unknown): NonNullable<RdyCheck['skip']> {
   return () => value as SkipResult;
 }
 
-/** Wraps a value as the string a `fix` accessor promises. */
+/** Wraps a value as the string promised by a `fix` accessor. */
 function asFix(value: unknown): string {
   return value as string;
 }
@@ -284,7 +284,7 @@ describe(runRdy, () => {
         },
       );
 
-      // Gating and run failure are separate questions: the gate asks whether the checks are worth
+      // Gating and run failure are separate questions: The gate asks whether the checks are worth
       // running at all, and the threshold asks whether what happened is worth failing over.
       it('gates on a precondition whose failure is below the failure threshold, and still passes', async () => {
         const checklist: RdyChecklist = {

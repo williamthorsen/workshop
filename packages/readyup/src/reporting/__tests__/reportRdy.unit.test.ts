@@ -384,7 +384,7 @@ describe(reportRdy, () => {
       expect(output.split('\n').at(-1)).toContain('2 passed');
     });
 
-    // The label is what tells the tally from the check lines above it, which lead with a token in the
+    // The label distinguishes the tally from the check lines above it, which lead with a token in the
     // same column.
     it('labels the count line so it does not read as a check', () => {
       const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] })).body;
@@ -494,12 +494,12 @@ describe(reportRdy, () => {
       ).body;
 
       // The tree's own `   🔴 child` satisfies a substring match, so the recapped line is pinned by its
-      // exact form: the recap flattens nesting rather than mirroring the tree's indent.
+      // exact form: The recap flattens nesting rather than mirroring the tree's indent.
       expect(output.split('\n')).toContain(`${FAILED_ERROR} child`);
       expect(output.split('\n')).toContain(`   ${FIX} fix child`);
     });
 
-    // The recap names the check with the token the tree gave it, so a reader scanning fixes sees which
+    // The recap names the check with the token that the tree gave it, so a reader scanning fixes sees which
     // have errors and which have recommendations.
     it('leads a recapped check with its own severity token', () => {
       const output = reportRdy(
@@ -512,7 +512,7 @@ describe(reportRdy, () => {
       expect(output).toContain(`${FAILED_RECOMMEND} drifted`);
     });
 
-    it('renders the shape an inline fix renders, less the reason', () => {
+    it('renders the shape that an inline fix renders, less the reason', () => {
       const results = [makeFailedResult({ name: 'broken', detail: 'two files drifted', fix: 'Run pnpm install' })];
       const recapped = reportRdy(makeReport({ results, passed: false })).body.split('\n');
       const inline = reportRdy(makeReport({ results, passed: false }), { fixLocation: 'inline' }).body.split('\n');
@@ -618,7 +618,7 @@ describe(reportRdy, () => {
       ]);
     });
 
-    it('renders every result it is given, applying no suppression of its own', () => {
+    it('renders every result that it is given, applying no suppression of its own', () => {
       // The renderer displays and counts whatever it is given, applying no suppression of its own.
       const output = reportRdy(
         makeReport({

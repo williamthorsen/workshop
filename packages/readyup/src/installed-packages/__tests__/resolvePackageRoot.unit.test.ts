@@ -9,7 +9,7 @@ import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../../..');
 
 describe(resolvePackageRoot, () => {
-  describe('against the repo it runs in', () => {
+  describe('against the repo in which it runs', () => {
     it('resolves an unscoped dependency to a directory holding its manifest', () => {
       const root = resolvePackageRoot('zod', REPO_ROOT);
 

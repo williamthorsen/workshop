@@ -1,4 +1,4 @@
-// Punctuation a `/` may follow and still open a regular expression. `)` and `]` are left out on purpose: both
+// Punctuation that a `/` may follow and still open a regular expression. `)` and `]` are left out on purpose: Both
 // end an expression that division takes as its left operand, and division after them is far commoner than a
 // regular expression is. `+` and `-` are the binary operators alone, because `scanCode` reads `++` and `--`
 // whole and a postfix one therefore never reaches this set.
@@ -22,7 +22,7 @@ const REGEX_PRECEDERS = new Set([
   '|',
   '~',
 ]);
-// Keywords a `/` may follow and still open a regular expression, each one taking an expression after it.
+// Keywords that a `/` may follow and still open a regular expression, each one taking an expression after it.
 const EXPRESSION_KEYWORDS = new Set([
   'await',
   'case',
@@ -40,7 +40,9 @@ const EXPRESSION_KEYWORDS = new Set([
 ]);
 const WORD_CHAR = /[\w$]/;
 
-/** One pass over a source: the characters it emits, the text it reads, and whether a literal's text blanks. */
+/**
+ * One pass over a source: The characters that it emits, the text that it reads, and whether a literal's text blanks.
+ */
 interface Scan {
   blanksLiterals: boolean;
   out: string[];
@@ -65,7 +67,7 @@ export function blankComments(source: string): string {
  * A detector's anchor scan reads the result, so an idiom written in prose is invisible to it while the code
  * around the prose is not. The output matches the input in length and in every newline position, which is what
  * lets a caller take an offset from one text and read the other at it: `getLineAtOffset` resolves an offset
- * found here against the source a reader will open.
+ * found here against the source that a reader will open.
  *
  * Delimiters survive and only the text between them blanks, because a literal is an operand. A caller reading
  * the token before a `[` would otherwise take `'abc'[0]` for an array literal. A comment blanks whole, being no
@@ -75,11 +77,11 @@ export function blankComments(source: string): string {
  * string or regular expression whose closing delimiter never appears on its line was neither. A misjudgment
  * therefore leaves text standing rather than blanking an expression that runs.
  *
- * That direction holds only while the token a `/` is classified against is the operand before it, so every
- * construct completing an operand has to present itself as one. A postfix operator attaches to its operand
- * rather than replacing it, which is `++`, `--`, and TypeScript's `!`; a member name keeps the `.` or `#` that
- * introduced it, so a property spelled like a keyword is read as the property it is. A construct added to the
- * language that completes an operand needs the same treatment, or it reopens this hole.
+ * That direction holds only while the token against which a `/` is classified is the operand before it, so
+ * every construct completing an operand has to present itself as one. A postfix operator attaches to its
+ * operand rather than replacing it, which is `++`, `--`, and TypeScript's `!`; a member name keeps the `.` or
+ * `#` that introduced it, so a property spelled like a keyword is read as the property that it is. A construct
+ * added to the language that completes an operand needs the same treatment, or it reopens this hole.
  *
  * `>` is classified the other way, because `=>` obliges it to open a regular expression, so a JSX text node
  * beginning with `/` blanks as far as its closing tag's slash.
@@ -186,7 +188,7 @@ function findCommentEnd(source: string, from: number): number | undefined {
   return undefined;
 }
 
-/** Returns the offset of the line break ending the line an offset sits on, or the source's end. */
+/** Returns the offset of the line break ending the line on which an offset sits, or the source's end. */
 function findLineEnd(source: string, from: number): number {
   const end = source.indexOf('\n', from);
   return end === -1 ? source.length : end;
@@ -226,7 +228,7 @@ function findWordEnd(source: string, from: number): number {
  *
  * A postfix one ends an expression that division takes as its left operand. Read as a single `+` or `-`, it would
  * put the `/` after it in regular-expression position, blanking everything up to the line's next `/` -- running
- * code, which is the one direction this module does not blank in.
+ * code, which is the one direction in which this module does not blank.
  */
 function isDoubledSign(char: string, next: string | undefined): boolean {
   return (char === '+' || char === '-') && next === char;
@@ -237,19 +239,19 @@ function isDoubledSign(char: string, next: string | undefined): boolean {
  *
  * The assertion is postfix, so the operand before it decides whether a following `/` divides, and leaving
  * `previousToken` alone is what puts that decision back where it belongs. `startsRegex` is the test because a
- * token permitting a regular expression after it completed no operand: a `!` after one of those negates, and a
- * `!` after anything else attaches to the operand it follows.
+ * token permitting a regular expression after it completed no operand: A `!` after one of those negates, and a
+ * `!` after anything else attaches to the operand that it follows.
  */
 function isNonNullAssertion(char: string, previousToken: string): boolean {
   return char === '!' && previousToken !== '' && !startsRegex(previousToken);
 }
 
 /**
- * Returns the token a word forms, keeping the punctuation that introduced it where the word is a member name.
+ * Returns the token that a word forms, keeping the punctuation that introduced it where the word is a member name.
  *
  * A property or private-field name completes an operand, so a `/` after it divides. Every member of
  * `EXPRESSION_KEYWORDS` is also a legal member name -- `ops.delete`, `bytes.in`, `this.#delete` -- so a name
- * stored bare would be looked up as the keyword it spells and open a regular expression instead.
+ * stored bare would be looked up as the keyword that it spells and open a regular expression instead.
  */
 function readWordToken(word: string, previousToken: string): string {
   const isMemberName = previousToken === '.' || previousToken === '#';
@@ -257,7 +259,7 @@ function readWordToken(word: string, previousToken: string): string {
 }
 
 /**
- * Scans code from an offset, blanking every comment and literal it meets, and returns where it stopped.
+ * Scans code from an offset, blanking every comment and literal that it meets, and returns where it stopped.
  *
  * Stops at the `}` closing an interpolation when scanning one, and at the source's end otherwise. Braces opened
  * inside the interpolation are counted, so an object literal or a block in there closes itself rather than the
@@ -265,8 +267,8 @@ function readWordToken(word: string, previousToken: string): string {
  */
 function scanCode(scan: Scan, from: number, isInterpolation: boolean): number {
   const { source } = scan;
-  // The token a `/` is classified against: the operand before it where one is complete, so a member name takes its
-  // introducing `.` or `#`, a postfix `++` or `--` is one token, and a postfix `!` leaves this untouched.
+  // The token against which a `/` is classified: the operand before it where one is complete, so a member name
+  // takes its introducing `.` or `#`, a postfix `++` or `--` is one token, and a postfix `!` leaves this untouched.
   let previousToken = '';
   let braceDepth = 0;
   let index = from;

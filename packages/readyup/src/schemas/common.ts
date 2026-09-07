@@ -34,7 +34,7 @@ const CountSchema = z.int().min(0);
  *
  * `errors`/`warnings`/`recommendations` bucket failures by severity; `blocked` (precondition-skipped)
  * and `optional` (n/a-skipped) bucket skips by reason. Counts nest under their own object so they
- * share no namespace with the verdict and provenance fields beside them: a count added later cannot
+ * share no namespace with the verdict and provenance fields beside them: A count added later cannot
  * collide with a top-level field, which is what makes the additive-evolution policy sound rather
  * than merely conventional.
  */
@@ -49,7 +49,7 @@ export const CountsSchema = z
   })
   .meta({ id: 'Counts' });
 
-/** The advisory vocabulary this version raises. `RaisedWarning` binds producers to it. */
+/** The advisory vocabulary raised by this version. `RaisedWarning` binds producers to it. */
 export const WarningCodeSchema = z.enum([
   'diagnosis-inconclusive',
   'input-stale',
@@ -67,9 +67,9 @@ export const WarningCodeSchema = z.enum([
  * Open where `ErrorCodeSchema` is closed, because the two vocabularies do different jobs. An error
  * code selects a consumer's branch, so an unknown one leaves the consumer with nothing to dispatch
  * on and justifies its version bump. A warning labels an advisory whose `message` and `remedy` a
- * consumer can display verbatim, so a code it has never heard of must still validate: closing this
- * set would make the first new advisory a breaking change. The union keeps the known values visible
- * in the generated schema's `anyOf` rather than trading them for a bare `string`.
+ * consumer can display verbatim, so a code that it has never heard of must still validate: Closing
+ * this set would make the first new advisory a breaking change. The union keeps the known values
+ * visible in the generated schema's `anyOf` rather than trading them for a bare `string`.
  */
 const WarningCodeWireSchema = WarningCodeSchema.or(z.string()).meta({ id: 'WarningCode' });
 
@@ -105,7 +105,7 @@ export type JsonWarning = z.infer<typeof WarningSchema>;
  * A warning as this version raises it, narrower than `JsonWarning` on `code`.
  *
  * The wire type accepts any string so a consumer tolerates an advisory from a later readyup. A
- * producer may only emit a code this version declares, so a mistyped one fails to compile rather
+ * producer may only emit a code declared by this version, so a mistyped one fails to compile rather
  * than entering the published vocabulary.
  */
 export type RaisedWarning = JsonWarning & { code: z.infer<typeof WarningCodeSchema> };

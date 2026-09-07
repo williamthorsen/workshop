@@ -25,9 +25,9 @@ const PICK_JSON_RE = /\bpickJson\s*\((?<args>[^)]+)\)/g;
  * JSON file relative to its source file, extracts the requested paths, and substitutes the call with
  * a static object expression.
  *
- * Every read goes through `recorder`, which is what puts the module and the JSON file it projected into
- * the compile's input closure. This module imports no filesystem API of its own, so a read it performs
- * cannot escape that closure.
+ * Every read goes through `recorder`, which puts the module and the JSON file that it projected into
+ * the compile's input closure. This module imports no filesystem API of its own, so a read that it
+ * performs cannot escape that closure.
  */
 export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
   return {
@@ -69,7 +69,7 @@ export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
 /**
  * Returns the failure to raise for a projection that did not complete, worded as `pickJson` reports it.
  *
- * Names the path as the kit wrote it, which the projection cannot: by the time it reads the file, only
+ * Names the path as the kit wrote it, which the projection cannot: By the time it reads the file, only
  * the resolved path survives.
  */
 function describeProjectionFailure(error: unknown, relativePath: string, jsonFilePath: string): unknown {
@@ -89,7 +89,7 @@ function describeProjectionFailure(error: unknown, relativePath: string, jsonFil
   }
 }
 
-/** Narrows a parsed JSON value to the nested-path form a path specifier may take. */
+/** Narrows a parsed JSON value to the nested-path form that a path specifier may take. */
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }

@@ -52,7 +52,7 @@ describe(extractSection, () => {
     expect(extractSection(MARKDOWN, 'Second')).not.toContain('```');
   });
 
-  it('returns undefined for a heading the document does not have', () => {
+  it('returns undefined for a heading that the document does not have', () => {
     expect(extractSection(MARKDOWN, 'Fourth')).toBeUndefined();
   });
 

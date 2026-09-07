@@ -4,7 +4,7 @@ import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import { resolveCheckIds } from '../resolveCheckIds.ts';
 
 describe(resolveCheckIds, () => {
-  describe('given a kit a package publishes', () => {
+  describe('given a kit published by a package', () => {
     it('namespaces a scoped package under its name with the scope stripped', () => {
       const ids = resolveCheckIds('no-instanceof-error', packageProvenance('@williamthorsen/toolbelt.errors'));
 
@@ -54,7 +54,7 @@ describe(resolveCheckIds, () => {
 
 // region | Helpers
 
-/** Returns the provenance of a kit the named package publishes. */
+/** Returns the provenance of a kit published by the named package. */
 function packageProvenance(packageName: string): KitProvenance {
   return { kind: 'package', packageName, version: '1.0.0' };
 }

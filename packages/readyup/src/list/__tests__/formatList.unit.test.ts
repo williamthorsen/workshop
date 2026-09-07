@@ -414,7 +414,7 @@ describe(formatPackagesView, () => {
     expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <name>');
   });
 
-  // The hint is what tells the reader a `--packages` run would skip this package.
+  // The hint tells the reader that a `--packages` run would skip this package.
   it('hints an unconfigured package with the source that names it directly', () => {
     const result = formatPackagesView({
       groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
@@ -637,7 +637,7 @@ describe(formatRecursivePackagesView, () => {
     expect(result).toContain('To run: cd packages/tooling && rdy run --from npm:@acme/kits <name>');
   });
 
-  it('marks a package the project config omits', () => {
+  it('marks a package omitted by the project config', () => {
     const result = formatRecursivePackagesView({
       projects: [
         buildProjectPackages({
@@ -790,7 +790,7 @@ describe(formatEmpty, () => {
 /**
  * Builds a configured package group holding the named kits, each undescribed.
  *
- * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: a group naming no version
+ * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: A group naming no version
  * is built inline.
  */
 function buildGroup({
@@ -847,7 +847,7 @@ function findProjectCommand(output: string, heading: string): string | undefined
 /**
  * Returns the line beneath a section's title, which is where its command sits.
  *
- * Reading that line positionally is the assertion: a command fused into the title would still satisfy a
+ * Reading that line positionally is the assertion: A command fused into the title would still satisfy a
  * `toContain` over the whole output.
  */
 function findSectionCommand(output: string, title: string): string | undefined {

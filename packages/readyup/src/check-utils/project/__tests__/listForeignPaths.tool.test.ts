@@ -24,7 +24,7 @@ describe(listForeignPaths, () => {
     vi.stubEnv('GIT_ATTR_NOSYSTEM', '1');
   });
 
-  it('names a path each spelling of the declaration reaches, and no path left undeclared', async ({ temp }) => {
+  it('names a path reached by each spelling of the declaration, and no path left undeclared', async ({ temp }) => {
     temp.write(
       '.gitattributes',
       'bundles/*.mjs linguist-generated=true\nsrc/set.ts linguist-generated\nsrc/off.ts linguist-generated=false\nsrc/unset.ts -linguist-generated\nvendor/*.js linguist-vendored=true\n',
@@ -43,7 +43,7 @@ describe(listForeignPaths, () => {
     );
   });
 
-  it('applies a declaration a nested .gitattributes makes, which git resolves against its own directory', async ({
+  it('applies a declaration made by a nested .gitattributes, which git resolves against its own directory', async ({
     temp,
   }) => {
     temp.write('packages/agents/.gitattributes', '*.mjs linguist-generated=true\n');
@@ -81,7 +81,7 @@ describe(listForeignPaths, () => {
 /** Initializes a git repository over the temporary directory and stages everything in it. */
 function initRepository(temp: TempTree): void {
   execFileSync('git', ['-C', temp.dir, 'init', '--quiet']);
-  // Repository config outranks the global one, so this is what keeps a developer's `core.attributesFile` out.
+  // Repository config outranks the global one, so this keeps a developer's `core.attributesFile` out.
   execFileSync('git', ['-C', temp.dir, 'config', 'core.attributesFile', '/dev/null']);
   execFileSync('git', ['-C', temp.dir, 'add', '--all']);
 }

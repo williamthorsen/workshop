@@ -14,15 +14,15 @@ describe(getLineAtOffset, () => {
     expect(getLineAtOffset(SOURCE, SOURCE.indexOf('third'))).toBe(3);
   });
 
-  it('attributes a newline to the line it ends', () => {
+  it('attributes a newline to the line that it ends', () => {
     expect(getLineAtOffset(SOURCE, SOURCE.indexOf('\n'))).toBe(1);
   });
 
-  it('attributes the offset just past a newline to the line it begins', () => {
+  it('attributes the offset just past a newline to the line that it begins', () => {
     expect(getLineAtOffset(SOURCE, SOURCE.indexOf('\n') + 1)).toBe(2);
   });
 
-  it('resolves an offset taken from a blanked text against the source it came from', () => {
+  it('resolves an offset taken from a blanked text against the source from which it came', () => {
     const source = `const a = 1;\n/* filler\n   filler */\nconst bounded = Math.max(0, n);\n`;
     const blanked = blankNonCode(source);
 

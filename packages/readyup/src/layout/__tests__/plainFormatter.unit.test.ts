@@ -31,7 +31,7 @@ describe('plainFormatter', () => {
   });
 
   describe.each(entries)('$name', ({ glyph, width }) => {
-    it('declares the width it occupies', () => {
+    it('declares the width that it occupies', () => {
       expect(width).toBe(glyph.length);
     });
   });
@@ -46,7 +46,7 @@ describe('rendered output', () => {
     expect(renderEverything()).toMatch(PRINTABLE_ASCII);
   });
 
-  it('spells each status as a word a log search can find', () => {
+  it('spells each status as a word that a log search can find', () => {
     expect(engine.formatCheckLine({ token: 'failedError', name: 'migrations' })).toBe('FAIL  migrations');
   });
 
@@ -147,7 +147,7 @@ function measureIndent(line: string): number {
   return line.length - line.trimStart().length;
 }
 
-/** Returns every line the engine can produce, so a whole-vocabulary assertion has something to run against. */
+/** Returns every line that the engine can produce, so a whole-vocabulary assertion has something to run against. */
 function renderEverything(): string {
   const counts = makeCounts({ passed: 2, errors: 1, warnings: 1, recommendations: 1, blocked: 1, optional: 1 });
 

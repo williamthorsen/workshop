@@ -18,7 +18,7 @@ export interface SchemaDocument {
   document: Record<string, unknown>;
 }
 
-/** A payload paired with the version it publishes under. */
+/** A payload paired with the version under which it publishes. */
 interface Payload {
   name: string;
   version: number;
@@ -44,7 +44,7 @@ const PAYLOADS: Payload[] = [
  *
  * Rendered in `input` mode, which leaves objects open. The evolution policy promises that adding an
  * optional field does not bump `schemaVersion`, and a closed schema would break that promise the
- * first time it was exercised: a consumer pinned to v1 would reject every payload with the new
+ * first time it was exercised: A consumer pinned to v1 would reject every payload with the new
  * field. No payload uses a transform or a default, so the input and output renderings are otherwise
  * the same document.
  */

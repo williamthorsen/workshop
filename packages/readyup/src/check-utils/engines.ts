@@ -3,7 +3,7 @@ import { compareVersions } from './semver.ts';
 
 /** Outcome of reading a manifest's `engines.node`. */
 export type EnginesNodeFloor =
-  /** A simple floor form was recognized; `floor` is the version it names. */
+  /** A simple floor form was recognized; `floor` is the version that it names. */
   | { kind: 'found'; floor: string; raw: string }
   /** No `engines.node` string is declared. */
   | { kind: 'absent' }
@@ -13,11 +13,11 @@ export type EnginesNodeFloor =
 /** Matches the simple floor forms: `>=x[.y[.z]]`, `^x[.y[.z]]`, and a bare `x[.y[.z]]`. */
 const SIMPLE_FLOOR = /^(?:>=|\^)?\s*(\d+(?:\.\d+){0,2})$/;
 
-/** Matches a dotted numeric version, the only shape `compareVersions` can order. */
+/** Matches a dotted numeric version, the only shape that `compareVersions` can order. */
 const COMPARABLE_VERSION = /^\d+(?:\.\d+)*$/;
 
 /**
- * Reads the minimum Node version a parsed manifest declares in `engines.node`.
+ * Reads the minimum Node version declared by a parsed manifest in `engines.node`.
  *
  * Recognizes only the forms from which a single floor follows (`>=24`, `^22.1`, `24.1.0`). A union or a wildcard is
  * reported as unparseable rather than guessed at.
@@ -35,7 +35,7 @@ export function readEnginesNodeFloor(manifest: Record<string, unknown>): Engines
 
 /**
  * Reports whether a Node version is at or above a floor, and `undefined` when either argument is not a
- * dotted numeric version -- the shape `.tool-versions` tokens such as `lts` and `system` do not take.
+ * dotted numeric version -- the shape that `.tool-versions` tokens such as `lts` and `system` do not take.
  * A leading `v` is tolerated on either argument, so `process.version` can be passed as it comes.
  */
 export function satisfiesNodeFloor(version: string, floor: string): boolean | undefined {

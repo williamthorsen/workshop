@@ -52,7 +52,7 @@ describe(listOwnImplementationSpans, () => {
       ]);
     });
 
-    it('exempts the local binding a file renames to a recommended export', ({ temp }) => {
+    it('exempts the local binding that a file renames to a recommended export', ({ temp }) => {
       writeMonorepo(temp);
       const path = 'packages/errors/src/describeError.ts';
       const text = 'function toMessage(error: unknown) {}\nexport { toMessage as describeError };\n';
@@ -167,7 +167,7 @@ describe(listOwnImplementationSpans, () => {
       expect(listOwnImplementationSpans(path, own)).toStrictEqual([]);
     });
 
-    it('exempts no span for a path the sweep never read', ({ temp }) => {
+    it('exempts no span for a path never read by the sweep', ({ temp }) => {
       writeMonorepo(temp);
       const own = buildOwnImplementation([]);
 
@@ -222,7 +222,7 @@ describe(listOwnImplementationSpans, () => {
 
 // region | Helpers
 
-/** Builds the declaration a check hands the rule, over the sources the case supplies. */
+/** Builds the declaration that a check hands the rule, over the sources supplied by the case. */
 function buildOwnImplementation(sources: readonly ProjectSource[]): OwnImplementation {
   return { exportNames: EXPORT_NAMES, packageName: PACKAGE_NAME, sources };
 }

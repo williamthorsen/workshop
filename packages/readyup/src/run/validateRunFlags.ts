@@ -30,7 +30,7 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
   }
 
   // A positional names the kit to select in every configured package, so it narrows the run. Checklist
-  // selection cannot: it names checklists within one kit, and `--packages` may reach several packages'
+  // selection cannot: It names checklists within one kit, and `--packages` may reach several packages'
   // copies of the name. Both spellings of that selection are rejected for the same reason.
   if (parsed.packages && parsed.checklists !== undefined) {
     throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
@@ -74,11 +74,11 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
 }
 
 /**
- * Rejects `--checklists` when the selection it expresses is ambiguous.
+ * Rejects `--checklists` when the selection that it expresses is ambiguous.
  *
  * The flag names checklists within one kit, so it needs exactly one kit and no competing per-kit
  * filter. `--file` and `--url` each name their one kit implicitly; a bare invocation names the
- * default kit. Conflicting selections error rather than merging: an invocation giving both is a
+ * default kit. Conflicting selections error rather than merging: An invocation giving both is a
  * bug in whatever generated it, and no merge rule for "run `deploy:build`, filtered to `test`" is
  * obviously right.
  */
@@ -99,8 +99,8 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
 /**
  * Rejects an output flag that contradicts the report being emitted.
  *
- * Erroring beats ignoring: a caller that passed either flag meant to change the output, and dropping it
- * silently would leave them reading a report they did not ask for.
+ * Erroring beats ignoring: A caller that passed either flag meant to change the output, and dropping it
+ * silently would leave them reading a report that they did not ask for.
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
   // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.

@@ -33,7 +33,7 @@ export interface DependencyChange {
   rebuilt?: string;
 }
 
-/** The esbuild recorded at compile time against the one the rebuild ran. */
+/** The esbuild recorded at compile time against the one that the rebuild ran. */
 export interface EsbuildComparison {
   recorded: string;
   rebuilt: string;
@@ -42,9 +42,9 @@ export interface EsbuildComparison {
 /**
  * Determines whether recompiling a kit's source reproduces the compiled bundle on disk.
  *
- * Answers exactly the question the hash verdicts approximate. The recorded hashes cover what the
- * compile read outside `node_modules`, but a bundle is also a function of every dependency module it
- * inlines, the esbuild version, and the compile options. Recompiling reads all of them, and a
+ * Answers exactly the question approximated by the hash verdicts. The recorded hashes cover what the
+ * compile read outside `node_modules`, but a bundle is also a function of every dependency module
+ * that it inlines, the esbuild version, and the compile options. Recompiling reads all of them, and a
  * mismatch compares the entry's recorded `esbuildVersion` and `bundledDependencies` against the
  * rebuild's own record to name which versions changed.
  *

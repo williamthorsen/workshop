@@ -154,7 +154,7 @@ describe(compareLocalRefs, () => {
   });
 });
 
-/** Builds the error shape git produces for a ref that does not resolve. */
+/** Builds the error shape produced by git for a ref that does not resolve. */
 function makeRefMissingError(ref: string): Error {
   return Object.assign(new Error(`unknown revision: ${ref}`), {
     code: 128,

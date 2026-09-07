@@ -18,7 +18,7 @@ const KIT_SOURCE = [
 
 /**
  * Compiles one kit from directories that are neither its own nor each other's, which is the property
- * `rdy verify --rebuild` rests on: it recompiles in whatever directory the verification runs in.
+ * on which `rdy verify --rebuild` rests: It recompiles in whatever directory the verification runs in.
  */
 describe('buildBundle reproducibility', () => {
   let treeRoot: string;
@@ -72,8 +72,8 @@ describe('buildBundle reproducibility', () => {
   });
 
   it("names each bundled module against the kit's package root", () => {
-    // The bundle is identical under any anchor derived from the kit, so this is what pins the anchor to
-    // the one every committed bundle was compiled under.
+    // The bundle is identical under any anchor derived from the kit, so this assertion pins the anchor
+    // to the one under which every committed bundle was compiled.
     expect(fromRepo.bytes.toString('utf8')).toContain('// kits/kit.ts');
   });
 });

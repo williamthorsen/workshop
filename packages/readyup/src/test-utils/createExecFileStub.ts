@@ -15,7 +15,7 @@ type ExecFileStub = Mock<
   ) => StubbedChild
 >;
 
-/** What a stubbed run reports back: the stdout it succeeds with, or the error it fails with. */
+/** What a stubbed run reports back: the stdout with which it succeeds, or the error with which it fails. */
 export interface StubbedRun {
   readonly error?: Error;
   readonly stdout?: string;
@@ -25,9 +25,9 @@ export interface StubbedRun {
  * Builds a stand-in for `execFile`'s callback form, which is what `runGitWithInput` calls and what `promisify` does
  * not cover.
  *
- * `respond` is handed everything the caller wrote to the child's stdin, along with the arguments the command ran
- * with, and names what the run reports back. A suite asserts against its own `respond` rather than against the stub,
- * which `vi.mock` hoisting keeps out of the suite's reach.
+ * `respond` is handed everything the caller wrote to the child's stdin, along with the arguments with which the
+ * command ran, and names what the run reports back. A suite asserts against its own `respond` rather than against
+ * the stub, which `vi.mock` hoisting keeps out of the suite's reach.
  */
 export function createExecFileStub(respond: (input: string, args: readonly string[]) => StubbedRun): ExecFileStub {
   return vi.fn(

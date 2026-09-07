@@ -13,10 +13,10 @@ const TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-scaffold');
 const KIT_PATH = '.readyup/kits/default.ts';
 
 /**
- * Covers the kit `rdy init` writes by running it, rather than comparing it to the template it came from.
+ * Covers the kit that `rdy init` writes by running it, rather than comparing it to the template from which it came.
  *
- * The template is a string, so no typecheck or lint reaches it. Loading it through the same path
- * `rdy run --jit` takes is what proves a scaffolded project works before its author has written anything.
+ * The template is a string, so no typecheck or lint reaches it. Loading it through the same path that
+ * `rdy run --jit` takes proves that a scaffolded project works before its author has written anything.
  */
 describe('scaffolded kit', () => {
   let originalCwd: string;
@@ -32,7 +32,7 @@ describe('scaffolded kit', () => {
     rmSync(TEST_DIR, { recursive: true, force: true });
   });
 
-  it('passes with NODE_ENV set, reporting the value it found', async () => {
+  it('passes with NODE_ENV set, reporting the value that it found', async () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', 'production');
@@ -62,7 +62,7 @@ describe('scaffolded kit', () => {
   });
 });
 
-/** Loads the scaffolded kit from source and runs the one checklist it declares. */
+/** Loads the scaffolded kit from source and runs the one checklist that it declares. */
 async function runScaffoldedKit(): Promise<RdyResult[]> {
   const { kit } = await loadRdyKit(KIT_PATH);
   const [checklist] = kit.checklists;

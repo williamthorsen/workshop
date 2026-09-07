@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { listRunnerExports } from '../listRunnerExports.ts';
 import { scanReadyupImports } from '../scanReadyupImports.ts';
 
-/** A compiled kit this package ships, standing in for the shape esbuild actually emits. */
+/** A compiled kit shipped by this package, standing in for the shape that esbuild actually emits. */
 const COMPILED_KIT_PATH = path.resolve(import.meta.dirname, '../../../.readyup/kits/publishing.js');
 
 describe(scanReadyupImports, () => {
@@ -94,13 +94,13 @@ describe(scanReadyupImports, () => {
     expect(found[0]?.names).toStrictEqual(['fileExists']);
   });
 
-  it('yields no name for the empty entry a trailing comma leaves', async () => {
+  it('yields no name for the empty entry that a trailing comma leaves', async () => {
     const found = await scanReadyupImports('import { fileExists, } from "readyup/check-utils";');
 
     expect(found[0]?.names).toStrictEqual(['fileExists']);
   });
 
-  it('reports the names a re-export imports', async () => {
+  it('reports the names that a re-export imports', async () => {
     const bundle = 'export { fileExists } from "readyup/check-utils";';
 
     const found = await scanReadyupImports(bundle);
@@ -144,11 +144,11 @@ describe(scanReadyupImports, () => {
     expect(found).toStrictEqual([]);
   });
 
-  it('throws for source it cannot parse', async () => {
+  it('throws for source that it cannot parse', async () => {
     await expect(scanReadyupImports('import { from "readyup";', 'broken.js')).rejects.toBeInstanceOf(Error);
   });
 
-  it('binds only names the runner exports, across a real compiled kit', async () => {
+  it('binds only names exported by the runner, across a real compiled kit', async () => {
     const bundle = readFileSync(COMPILED_KIT_PATH, 'utf8');
 
     const found = await scanReadyupImports(bundle, COMPILED_KIT_PATH);

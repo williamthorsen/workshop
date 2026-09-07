@@ -44,7 +44,7 @@ const compileHints: Record<string, string> = {
   '--output': '--output requires a path argument',
 };
 
-/** Runs the `compile` subcommand, returning the exit code its parse, bundle, and report produced. */
+/** Runs the `compile` subcommand, returning the exit code produced by its parse, bundle, and report. */
 export async function compileCommand(args: string[]): Promise<number> {
   let parsed;
   try {
@@ -156,7 +156,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 /**
  * Emits the compile payload under `--json` and reduces the run's per-kit statuses to an exit code.
  *
- * A kit left alone because it drifted counts against the run just as a failed one does: both mean
+ * A kit left alone because it drifted counts against the run just as a failed one does: Both mean
  * the compiled output on disk is not what the source says it should be.
  */
 function finishCompile(kits: JsonCompileKitEntry[], json: boolean): number {
@@ -191,7 +191,7 @@ interface CompileBatchArgs {
 /**
  * Compiles every matching `.ts` file in the config-driven source directory.
  *
- * The sweep runs to completion: a kit that fails to compile is reported and the next one is tried,
+ * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
  * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
  * the sweep -- an unreadable config, an unwritable manifest -- still throw, because they say nothing
  * about any individual kit.
@@ -280,7 +280,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     } catch (error: unknown) {
       // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
       // goes on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
-      // survive, and it still describes the tree: an esbuild failure leaves the previous output and
+      // survive, and it still describes the tree: An esbuild failure leaves the previous output and
       // its hash intact, and a validation failure deletes the output for `verify` to report missing.
       const existingKit = existingKitsByName.get(kitName);
       if (existingKit !== undefined) kitEntries.push(existingKit);
@@ -329,8 +329,8 @@ interface FinishEmptySweepArgs {
  * Reports a sweep that found no kits, and settles what becomes of the manifest.
  *
  * An existing manifest may still list kits that have since been deleted, so it is emptied rather than
- * left stale. A project holding neither kits nor a manifest is not one this sweep describes, and gets
- * none seeded for it.
+ * left stale. A project holding neither kits nor a manifest is not one that this sweep describes, and
+ * gets none seeded for it.
  */
 function finishEmptySweep(args: FinishEmptySweepArgs): number {
   const { srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
@@ -352,7 +352,7 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
   return finishCompile([], json);
 }
 
-/** The fields a compile supplies to a manifest kit entry, with paths stated against the manifest. */
+/** The fields that a compile supplies to a manifest kit entry, with paths stated against the manifest. */
 interface KitCompileFields {
   bundledDependencies: Record<string, string>;
   esbuildVersion: string;
@@ -363,22 +363,22 @@ interface KitCompileFields {
   targetHash: string;
 }
 
-/** The manifest fields a compile's input closure supplies. */
+/** The manifest fields supplied by a compile's input closure. */
 interface ClosureFields {
   inputs: RdyManifestInput[];
   sourceHash: string;
 }
 
 /**
- * Returns the manifest fields a compile's closure supplies, with paths stated against the manifest.
+ * Returns the manifest fields supplied by a compile's closure, with paths stated against the manifest.
  *
  * `sourceHash` is the entry's own record rather than a second reading of the file, so the two cannot
  * disagree. A closure holding no record of the entry is a defect in rdy rather than an occasion to hash
- * the file again: deriving is the point, and hashing separately would restore exactly the disagreement
- * deriving prevents.
+ * the file again: Deriving is the point, and hashing separately would restore exactly the disagreement
+ * that deriving prevents.
  *
- * The entry is matched by its real path, because esbuild reports the path it resolved a module to, which
- * differs from the path a compile was handed wherever a directory above it is a symlink.
+ * The entry is matched by its real path, because esbuild reports the path to which it resolved a module,
+ * which differs from the path handed to a compile wherever a directory above it is a symlink.
  */
 function deriveClosureFields(inputs: CompiledInput[], entryPath: string, manifestDir: string): ClosureFields {
   const realEntryPath = realpathSync(entryPath);
@@ -492,7 +492,7 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   return { status, existingKit };
 }
 
-/** Returns a line naming the output a rebuilt kit produced, or reporting an unchanged one as skipped. */
+/** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */
 function formatResultLine(srcName: string, outName: string, changed: boolean): string {
   if (!changed) {
     return getLayout().formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
@@ -527,13 +527,13 @@ function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean): 
 }
 
 /**
- * Returns the directory a compile heading names its paths against.
+ * Returns the directory against which a compile heading names its paths.
  *
  * The nearest enclosing workspace root wins, then the nearest repository root, then the working
  * directory. `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths
  * against that one would head every workspace's output identically and leave the reader unable to tell
  * whose kits a line reports. A repository with no workspace file still gets a stable anchor, and a
- * directory under neither falls back to the behaviour it has always had.
+ * directory under neither falls back to the behaviour that it has always had.
  */
 function resolveWorkspaceAnchor(srcDir: string): string {
   const markers = ['pnpm-workspace.yaml', '.git'];

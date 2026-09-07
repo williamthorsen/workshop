@@ -23,7 +23,7 @@ function parseOneSpecifier(arg: string): KitSpecifier {
 
   const kitName = arg.slice(0, colonIndex);
   if (kitName === '') {
-    throw new Error(`Invalid kit specifier "${arg}": kit name must not be empty`);
+    throw new Error(`Invalid kit specifier "${arg}": Kit name must not be empty`);
   }
 
   const checklists = arg
@@ -31,7 +31,7 @@ function parseOneSpecifier(arg: string): KitSpecifier {
     .split(',')
     .filter((s) => s !== '');
   if (checklists.length === 0) {
-    throw new Error(`Invalid kit specifier "${arg}": checklist list after ":" must not be empty`);
+    throw new Error(`Invalid kit specifier "${arg}": Checklist list after ":" must not be empty`);
   }
 
   return { kitName, checklists };

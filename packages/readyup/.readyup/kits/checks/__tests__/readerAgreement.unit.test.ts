@@ -22,11 +22,12 @@ import {
 const EDITED_BUNDLE = `${SELF_CONTAINED_BUNDLE}// edited by hand\n`;
 
 /**
- * Asserts that `rdy verify` and the `freshness` kit reach one verdict on a manifest neither wrote.
+ * Asserts that `rdy verify` and the `freshness` kit reach one verdict on a manifest that neither wrote.
  *
  * The two read the same record through different code, and a recorded hash of a length other than the
- * eight characters `rdy compile` writes is where they can disagree. Each case asserts they agree rather
- * than asserting two literal verdicts, so a change to either reader's wording leaves the test meaningful.
+ * eight characters written by `rdy compile` is where they can disagree. Each case asserts they agree
+ * rather than asserting two literal verdicts, so a change to either reader's wording leaves the test
+ * meaningful.
  */
 describe('recorded-hash readers', () => {
   let projectRoot: string;

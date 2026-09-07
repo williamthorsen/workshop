@@ -81,7 +81,7 @@ describe(validateCompiledOutput, () => {
   });
 
   // A check is serialized to JSON here, so `check` is a string rather than a function: the
-  // same authoring mistake a hand-edited bundle would have, and one compile must not let through.
+  // same authoring mistake that a hand-edited bundle would have, and one compile must not let through.
   it('rejects a kit whose check is not a function, naming the offending location', async () => {
     const outputPath = writeTempKit(testDir, 'bad-check.mjs', {
       checklists: [{ name: 'test', checks: [{ name: 'a', check: 'nope' }] }],
@@ -112,7 +112,7 @@ describe(validateCompiledOutput, () => {
   });
 
   // Written as source rather than through `writeTempKit`, because JSON expresses neither a getter
-  // nor the `check` function the kit needs to validate.
+  // nor the `check` function that the kit needs to validate.
   it('accepts a kit whose fix accessor throws, leaving the compiled output in place', async () => {
     const filePath = join(testDir, 'throwing-fix.mjs');
     mkdirSync(testDir, { recursive: true });

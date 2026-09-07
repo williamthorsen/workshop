@@ -96,19 +96,22 @@ describe(walkDirectories, () => {
     expect(found).toStrictEqual(['.', 'packages/a', 'packages/b']);
   });
 
-  it('reaches a directory the depth cap admits', ({ temp }) => {
+  it('reaches a directory admitted by the depth cap', ({ temp }) => {
     const found = walkDirectories({ root: temp.dir, match: '**/package.json', maxDepth: 3 });
 
     expect(found).toContain('deep/one/two');
   });
 
-  it.for(['EACCES', 'ENOENT', 'EPERM'])('skips a directory it cannot read for a benign %s', (code, { reads, temp }) => {
-    reads.failReadOf('packages/b', code);
+  it.for(['EACCES', 'ENOENT', 'EPERM'])(
+    'skips a directory that it cannot read for a benign %s',
+    (code, { reads, temp }) => {
+      reads.failReadOf('packages/b', code);
 
-    const found = walkDirectories({ root: temp.dir, match: '**/package.json' });
+      const found = walkDirectories({ root: temp.dir, match: '**/package.json' });
 
-    expect(found).toStrictEqual(['.', 'deep/one/two', 'packages/a']);
-  });
+      expect(found).toStrictEqual(['.', 'deep/one/two', 'packages/a']);
+    },
+  );
 
   it('returns an empty list for a root that does not exist', ({ temp }) => {
     const found = walkDirectories({ root: `${temp.dir}/absent`, match: '**/package.json' });

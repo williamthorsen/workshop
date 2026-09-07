@@ -9,7 +9,7 @@ import { discoverWorkspacesAt } from '../check-utils/workspaces.ts';
  *
  * The fallback behind `resolvePackageRoot`, for a project whose own workspaces publish kits: A monorepo
  * declares no dependency on them at its root, so nothing links them into `node_modules` and the upward walk
- * does not find them. A workspace matches by the `name` its manifest declares, `private: true` included,
+ * does not find them. A workspace matches by the `name` that its manifest declares, `private: true` included,
  * because `private` prevents publication to a registry and does not affect discovery inside the repo.
  *
  * Returns the real path, so the result matches what `resolvePackageRoot` returns for a workspace that is
@@ -28,7 +28,7 @@ export function resolveWorkspaceRoot(packageName: string, fromDir: string = proc
 /**
  * Discovers the workspaces of the project at `fromDir`, returning an empty list where discovery fails.
  *
- * Discovery throws for a project with no root manifest and for workspace globs readyup cannot expand. In
+ * Discovery throws for a project with no root manifest and for workspace globs that readyup cannot expand. In
  * both cases no workspace can match the requested name, and propagating the error would replace the
  * caller's actionable "configured package was not found" with a diagnostic about the repository's layout.
  */

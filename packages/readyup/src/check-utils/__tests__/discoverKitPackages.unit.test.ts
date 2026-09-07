@@ -45,7 +45,7 @@ describe(discoverKitPackages, () => {
     expect(discoverKitPackages(temp.dir)).not.toContain('kitless');
   });
 
-  // Suggesting a package the reader never chose to depend on is not something they can act on.
+  // Suggesting a package that the reader never chose to depend on is not something they can act on.
   it('omits an installed package that is not a declared dependency', ({ temp }) => {
     expect(discoverKitPackages(temp.dir)).not.toContain('undeclared-kit');
   });

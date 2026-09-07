@@ -61,7 +61,7 @@ const listOptions = {
   style: { type: 'string' },
 } as const;
 
-/** Runs the `list` subcommand, returning the exit code its enumeration of manifest and filesystem kits produced. */
+/** Runs the `list` subcommand, returning the exit code produced by its enumeration of manifest and filesystem kits. */
 export async function listCommand(args: string[]): Promise<number> {
   let parsed;
   try {
@@ -130,7 +130,7 @@ export async function listCommand(args: string[]): Promise<number> {
   return runOwnerMode(json);
 }
 
-/** Displays the kits a manifest file declares. */
+/** Displays the kits declared by a manifest file. */
 function runManifestMode(manifestArg: string, json: boolean): number {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
   const manifest = readManifestOrThrow(manifestPath);
@@ -172,9 +172,9 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
 }
 
 /**
- * Locates the package a `list --from npm:` names, rejecting what `run` rejects for the same source.
+ * Locates the package named by a `list --from npm:`, rejecting what `run` rejects for the same source.
  *
- * Listing and running cover the same kits, so a spelling one accepts and the other refuses would
+ * Listing and running cover the same kits, so a spelling that one accepts and the other refuses would
  * send the reader looking for a difference that does not exist.
  */
 function resolveListedPackageRoot(source: NpmSource): string {
@@ -192,7 +192,7 @@ function resolveListedPackageRoot(source: NpmSource): string {
   return root;
 }
 
-/** Displays the kits a directory holds, preferring its manifest and falling back to the files on disk. */
+/** Displays the kits that a directory holds, preferring its manifest and falling back to the files on disk. */
 function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: string, json: boolean): number {
   const manifest = readLocalManifestIfPresent(manifestPath);
   const entries =
@@ -208,7 +208,7 @@ function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: stri
   return finishList(entries, json);
 }
 
-/** Fetches and displays the kits at a remote manifest URL, authenticating where the host is one readyup knows. */
+/** Fetches and displays the kits at a remote manifest URL, authenticating where the host is one that readyup knows. */
 async function runRemoteFromMode({ url, json }: { url: string; json: boolean }): Promise<number> {
   const provider = resolveRemoteProvider(url);
   const headers = resolveRemoteAuthHeaders(provider);
@@ -230,7 +230,7 @@ async function runRemoteFromMode({ url, json }: { url: string; json: boolean }):
   );
 }
 
-/** Enumerates the kits the project config names. */
+/** Enumerates the kits named by the project config. */
 async function runOwnerMode(json: boolean): Promise<number> {
   const cwd = process.cwd();
   const config = await loadListingConfig();
@@ -251,7 +251,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
     manifestKits = readManifest(manifestPath).kits;
   } catch (error: unknown) {
     // A missing manifest is the normal state of a project that never compiled, and says nothing on its
-    // own: the empty-listing hint belongs to the view, which sees the package sections too. Anything
+    // own: The empty-listing hint belongs to the view, which sees the package sections too. Anything
     // else is a manifest that exists and cannot be read, which the reader should hear about.
     if (!(error instanceof ManifestNotFoundError)) {
       process.stderr.write(`Warning: ${describeError(error)}\n`);
@@ -285,11 +285,11 @@ async function runOwnerMode(json: boolean): Promise<number> {
 }
 
 /**
- * Enumerates every kit-publishing dependency of the working directory, with the kits each publishes.
+ * Enumerates every kit-publishing dependency of the working directory, with the kits that each publishes.
  *
- * The dependency axis alone: a project's own kits belong to the owner listing, and this view reports what
- * the project's dependencies offer rather than what it holds. Both the packages the config names and the
- * ones it omits are reported, since the question is what is available rather than what a run would select.
+ * The dependency axis alone: A project's own kits belong to the owner listing, and this view reports what
+ * the project's dependencies offer rather than what it holds. Both the packages named by the config and the
+ * ones that it omits are reported, since the question is what is available rather than what a run would select.
  */
 async function runPackagesMode(json: boolean): Promise<number> {
   const config = await loadListingConfig();
@@ -306,11 +306,11 @@ async function runPackagesMode(json: boolean): Promise<number> {
 /**
  * Enumerates the kit-publishing dependencies of every project below the working directory.
  *
- * Both axes at once: the locality `--recursive` names and the provenance `--packages` names. The sweep is
- * every project rather than every kit project, because a workspace authoring no kits of its own still
- * declares dependencies that publish them, and that workspace is the one the question is about.
+ * Both axes at once: The locality named by `--recursive` and the provenance named by `--packages`. The sweep
+ * is every project rather than every kit project, because a workspace authoring no kits of its own still
+ * declares dependencies that publish them, and that workspace is the one that the question is about.
  *
- * Each project's dependencies are read under its own config, so a package one workspace configures and
+ * Each project's dependencies are read under its own config, so a package that one workspace configures and
  * another does not is reported as configured where it is.
  */
 async function runRecursivePackagesMode(json: boolean): Promise<number> {
@@ -339,9 +339,9 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
 /**
  * Enumerates the compiled kits of every kit project below the working directory.
  *
- * Compiled kits only: an internal kit is never reachable from another directory, since `--jit` and
+ * Compiled kits only: An internal kit is never reachable from another directory, since `--jit` and
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
- * What is left is exactly the set a reader can run from where they stand.
+ * What is left is exactly the set that a reader can run from where they stand.
  */
 async function runRecursiveMode(json: boolean): Promise<number> {
   const root = process.cwd();
@@ -400,7 +400,7 @@ function collectProjectKits(project: Project): JsonListKitEntry[] {
 /**
  * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
  *
- * A manifest nobody can read drops that project's descriptions, not its listing: the kits themselves
+ * A manifest that nobody can read drops that project's descriptions, not its listing: The kits themselves
  * are still on disk.
  */
 function readProjectManifest(manifestPath: string): RdyManifest | undefined {
@@ -415,11 +415,11 @@ function readProjectManifest(manifestPath: string): RdyManifest | undefined {
 }
 
 /**
- * Collects the kits the configured packages publish, tolerating one that cannot be expanded.
+ * Collects the kits published by the configured packages, tolerating one that cannot be expanded.
  *
- * `run` fails hard on the same configuration, because it would otherwise execute against a package set
- * nobody chose. Listing is read-only, so it takes the warn-and-continue the corrupt-manifest path above
- * already takes: a reader asking what exists is better served by the rest of the answer than by none.
+ * `run` fails hard on the same configuration, because it would otherwise execute against a package set that
+ * nobody chose. Listing is read-only, so it takes the warn-and-continue that the corrupt-manifest path above
+ * already takes: A reader asking what exists is better served by the rest of the answer than by none.
  */
 function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
   return packageNames.flatMap((packageName) => {
@@ -433,7 +433,7 @@ function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
 }
 
 /**
- * Labels a package kit, its package first, so a kit reads the same here as in the heading a run gives it.
+ * Labels a package kit, its package first, so a kit reads the same here as in the heading that a run gives it.
  *
  * The row's own token supplies the package glyph, so the label holds only what follows it.
  */
@@ -443,7 +443,7 @@ function describePackageKit(kit: PackageKit): string {
 }
 
 /**
- * Builds the row for a kit an installed package publishes, recording whether the config names it.
+ * Builds the row for a kit published by an installed package, recording whether the config names it.
  *
  * `project` names the directory whose dependencies were read. Pass `undefined` for a listing that reads
  * one project, and the sweep-relative directory for a repo-wide one, where two workspaces depending on
@@ -465,11 +465,11 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
 }
 
 /**
- * Loads the project config, falling back to the defaults and reporting a config it cannot evaluate.
+ * Loads the project config, falling back to the defaults and reporting a config that it cannot evaluate.
  *
- * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than
- * the whole listing, taking the same warn-and-continue the corrupt-manifest paths take. `run` still fails hard on
- * the same failure: it would otherwise execute against settings nobody chose.
+ * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than the
+ * whole listing, taking the same warn-and-continue that the corrupt-manifest paths take. `run` still fails
+ * hard on the same failure: It would otherwise execute against settings that nobody chose.
  */
 async function loadListingConfig(): Promise<ResolvedRdyConfig> {
   try {
@@ -496,7 +496,7 @@ function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: 
   return EXIT_OK;
 }
 
-/** Returns the rows a manifest declares, rebasing each recorded path onto the current directory. */
+/** Returns the rows declared by a manifest, rebasing each recorded path onto the current directory. */
 function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListKitEntry[] {
   return manifest.kits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath)));
 }
@@ -505,14 +505,14 @@ function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListK
  * Returns a kit row built from a manifest entry.
  *
  * Every field but `name` and `kind` comes from the manifest, so a kit compiled by an older readyup
- * simply has fewer of them. `checklists` is read here rather than from the kit itself: listing
+ * simply has fewer of them. `checklists` is read here rather than from the kit itself: Listing
  * kits never imports a compiled bundle, so it never runs kit code.
  *
  * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
  * straight to `rdy run --file`. Pass `undefined` for a manifest that is not on this machine.
  *
- * `project` names the directory a repo-wide sweep found the kit in. Pass `undefined` for a listing that
- * reads one project.
+ * `project` names the directory in which a repo-wide sweep found the kit. Pass `undefined` for a listing
+ * that reads one project.
  */
 function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined, project?: string): JsonListKitEntry {
   const entry: JsonListKitEntry = { name: kit.name, kind: 'compiled' };
@@ -537,9 +537,9 @@ function buildInternalEntry(name: string, dir: string, extension: string): JsonL
 /**
  * Enumerates the compiled kits in a directory, for a source that has no manifest beside it.
  *
- * `run --from` resolves a kit by filename alone, so a directory it can run from is one `list` must
- * be able to describe. The rows hold only what the filesystem knows: everything else -- description,
- * checklist names, the readyup version a kit was built against -- lives in the manifest that is absent.
+ * `run --from` resolves a kit by filename alone, so a directory from which it can run is one that `list`
+ * must be able to describe. The rows hold only what the filesystem knows: Everything else -- description,
+ * checklist names, the readyup version against which a kit was built -- lives in the manifest that is absent.
  *
  * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a
  * path that does not exist would turn a mistyped `--from` into a clean, empty listing.
@@ -598,7 +598,7 @@ function resolveFromManifestPath(source: LocalFromSource): string {
   return path.join(path.resolve(source.path), '.readyup/manifest.json');
 }
 
-/** Returns the directory a local `--from` source keeps its compiled kits in, matching `run --from`. */
+/** Returns the directory in which a local `--from` source keeps its compiled kits, matching `run --from`. */
 function resolveFromKitsDir(source: LocalFromSource): string {
   if (source.type === 'global') {
     return path.join(resolveHomeDir(), KITS_DIR);

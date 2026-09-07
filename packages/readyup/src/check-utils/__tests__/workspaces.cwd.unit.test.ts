@@ -7,7 +7,7 @@ import type { Workspace } from '../buildWorkspaceFromPackageJson.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 
 /**
- * The `node:fs` functions a repoint can be armed on: `existsSync` fires on the root manifest read,
+ * The `node:fs` functions on which a repoint can be armed: `existsSync` fires on the root manifest read,
  * discovery's first filesystem call after it snapshots the cwd, and `readdirSync` on the directory walk.
  */
 type FsTrigger = 'existsSync' | 'readdirSync';
@@ -54,10 +54,10 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-// Every ordinary discovery assertion passes whether or not a helper reads through the `cwd` it was handed, because
+// Every ordinary discovery assertion passes whether or not a helper reads through the `cwd` handed to it, because
 // the snapshot and the ambient cwd are the same directory. Moving the ambient one mid-discovery separates them.
 describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
-  it('reads the pattern list at the directory it snapshotted', ({ temp }) => {
+  it('reads the pattern list at the directory that it snapshotted', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
     temp.writeJson('packages/alpha/package.json', { name: 'alpha' });
     const decoyDir = writeDecoyRoot(temp);
@@ -67,7 +67,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
     expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
 
-  it('reads the single-workspace manifest at the directory it snapshotted', ({ temp }) => {
+  it('reads the single-workspace manifest at the directory that it snapshotted', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true });
     const decoyDir = writeDecoyRoot(temp);
 
@@ -76,7 +76,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
     expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root']);
   });
 
-  it('reads each workspace manifest at the directory it snapshotted', ({ temp }) => {
+  it('reads each workspace manifest at the directory that it snapshotted', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true });
     temp.write('pnpm-workspace.yaml', ['packages:', '  - packages/*', ''].join('\n'));
     temp.writeJson('packages/alpha/package.json', { name: 'alpha' });

@@ -1,10 +1,10 @@
 import { resolveBitbucketToken } from './resolveBitbucketToken.ts';
 import { resolveGitHubToken } from './resolveGitHubToken.ts';
 
-/** A remote host readyup knows how to authenticate against. */
+/** A remote host against which readyup knows how to authenticate. */
 export type RemoteProvider = 'bitbucket' | 'github';
 
-/** Host each provider serves kit content from. */
+/** Host from which each provider serves kit content. */
 const PROVIDER_HOSTS: Record<RemoteProvider, string> = {
   bitbucket: 'api.bitbucket.org',
   github: 'raw.githubusercontent.com',
@@ -15,7 +15,7 @@ const PROVIDER_HOSTS: Record<RemoteProvider, string> = {
  *
  * Absorbs the scheme difference between the two providers, so no caller spells out `token` against
  * `Bearer`. Returns `undefined` both for an unknown provider and for a known one with no ambient
- * token, which is the state a caller reports as "no credential was forwarded".
+ * token, which is the state that a caller reports as "no credential was forwarded".
  */
 export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): Record<string, string> | undefined {
   if (provider === 'github') {
@@ -32,7 +32,7 @@ export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): 
 }
 
 /**
- * Names the provider serving a URL, or `undefined` for a host readyup does not authenticate.
+ * Names the provider serving a URL, or `undefined` for a host that readyup does not authenticate.
  *
  * Matching the host rather than the `--from` scheme covers a `--url` aimed at a provider by
  * construction, so the two flags need no separate code path. The comparison is against the parsed
