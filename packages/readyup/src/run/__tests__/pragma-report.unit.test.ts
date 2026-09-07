@@ -39,7 +39,7 @@ describe(warnOnUnusedPragmas, () => {
     );
   });
 
-  it('stays silent about a pragma whose covered line a check suppressed', ({ temp }) => {
+  it('stays silent about a pragma whose covered line was suppressed by a check', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
     const ledger = scanning(['src/a.ts']);
     ledger.recordSuppressed('src/a.ts', 1);
@@ -47,13 +47,13 @@ describe(warnOnUnusedPragmas, () => {
     expect(warn(ledger).warnings).toStrictEqual([]);
   });
 
-  it('stays silent about a pragma in a file no check examined', ({ temp }) => {
+  it('stays silent about a pragma in a file examined by no check', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
 
     expect(warn(createPragmaLedger()).warnings).toStrictEqual([]);
   });
 
-  it('raises one warning for a file two checks both examined', ({ temp }) => {
+  it('raises one warning for a file that two checks both examined', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
     const ledger = createPragmaLedger();
     ledger.recordScanned(['src/a.ts']);
@@ -70,7 +70,7 @@ describe(warnOnUnusedPragmas, () => {
     expect(warn(ledger).warnings).toStrictEqual([]);
   });
 
-  it('reads and prints an examined path a check declared in absolute form', ({ temp }) => {
+  it('reads and prints an examined path that a check declared in absolute form', ({ temp }) => {
     temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
 
     const { warnings } = warn(scanning([temp.resolve('src/a.ts')]));
@@ -103,7 +103,7 @@ describe(warnOnUnusedPragmas, () => {
     ]);
   });
 
-  it('stays silent about a token the comment rule does not recognize as a site', ({ temp }) => {
+  it('stays silent about a token that the comment rule does not recognize as a site', ({ temp }) => {
     temp.write('src/a.ts', ["const token = 'rdy-ignore';", ''].join('\n'));
 
     expect(warn(scanning(['src/a.ts'])).warnings).toStrictEqual([]);

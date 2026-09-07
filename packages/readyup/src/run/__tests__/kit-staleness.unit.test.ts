@@ -31,7 +31,7 @@ vi.mock(import('../../verify/checkSourceDrift.ts'), () => ({
 
 import { type ManifestTracking, readManifestTracking, warnOnKitStaleness } from '../kit-staleness.ts';
 
-/** The compiled path of the kit these tests advise on, as `resolveKitSources` would produce it. */
+/** The compiled path of the kit on which these tests advise, as `resolveKitSources` would produce it. */
 const KIT_PATH = '.readyup/kits/default.js';
 
 /** The same file as the manifest records it: relative to `.readyup`, where the manifest lives. */
@@ -52,7 +52,7 @@ describe(readManifestTracking, () => {
     });
   });
 
-  it('skips the read under --jit, which runs from source the manifest does not describe', () => {
+  it('skips the read under --jit, which runs from source that the manifest does not describe', () => {
     expect(readManifestTracking(true)).toStrictEqual({ tracking: undefined, warnings: [] });
     expect(mockReadManifest).not.toHaveBeenCalled();
   });
@@ -144,7 +144,7 @@ describe(warnOnKitStaleness, () => {
       ]);
     });
 
-    it('advises recompiling when a file the compile inlined has changed', () => {
+    it('advises recompiling when a file inlined by the compile has changed', () => {
       arrangeInputStale();
 
       expect(warn('default', { path: KIT_PATH }, defaultTracking()).warnings).toStrictEqual([
@@ -203,7 +203,7 @@ describe(warnOnKitStaleness, () => {
       );
     });
 
-    it('names the kit it was called for, not the entry it matched', () => {
+    it('names the kit for which it was called, not the entry that it matched', () => {
       arrangeTargetDrift();
 
       const { warnings } = warn('alpha', { path: KIT_PATH }, defaultTracking());
@@ -283,7 +283,7 @@ describe(warnOnKitStaleness, () => {
       expect(stderr).toBe('');
     });
 
-    it('stays silent for an input the compile read that is gone, as it is for a deleted source', () => {
+    it('stays silent when an input read by the compile is gone, as it is for a deleted source', () => {
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
         failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
@@ -292,7 +292,7 @@ describe(warnOnKitStaleness, () => {
       expect(warn('default', { path: KIT_PATH }, defaultTracking()).warnings).toStrictEqual([]);
     });
 
-    it('stays silent for a projection it can no longer reproduce', () => {
+    it('stays silent for a projection that it can no longer reproduce', () => {
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
         failures: [
@@ -322,14 +322,14 @@ describe(warnOnKitStaleness, () => {
       expect(warn('default', { path: KIT_PATH }, defaultTracking()).warnings).toStrictEqual([]);
     });
 
-    it('stays silent when a file the manifest names is gone', () => {
+    it('stays silent when a file named by the manifest is gone', () => {
       mockCheckDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.js' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.ts' });
 
       expect(warn('default', { path: KIT_PATH }, defaultTracking()).warnings).toStrictEqual([]);
     });
 
-    it('stays silent when no file it would compare can be read', () => {
+    it('stays silent when no file that it would compare can be read', () => {
       mockCheckDrift.mockImplementation(() => {
         throw new Error('EACCES: permission denied, open /abs/default.js');
       });
@@ -346,7 +346,7 @@ describe(warnOnKitStaleness, () => {
 
   // region | Helpers
 
-  /** Reports a file the compile inlined as edited without a recompile. */
+  /** Reports a file inlined by the compile as edited without a recompile. */
   function arrangeInputStale(): void {
     mockCheckInputDrift.mockReturnValue({
       kind: 'stale',

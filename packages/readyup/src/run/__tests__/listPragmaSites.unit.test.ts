@@ -4,13 +4,13 @@ import { isJsFamilyPath, listPragmaSites } from '../listPragmaSites.ts';
 
 describe(listPragmaSites, () => {
   describe('given a token anchored to a comment', () => {
-    it('lists a line comment trailing the code it covers', () => {
+    it('lists a line comment trailing the code that it covers', () => {
       const sites = listPragmaSites('error instanceof Error; // rdy-ignore\n');
 
       expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
     });
 
-    it('lists a line comment on the line above the one it covers', () => {
+    it('lists a line comment on the line above the one that it covers', () => {
       const sites = listPragmaSites(['// rdy-ignore-next-line', 'error instanceof Error;', ''].join('\n'));
 
       expect(sites).toStrictEqual([{ coveredLine: 2, line: 1, token: 'rdy-ignore-next-line' }]);
@@ -30,7 +30,7 @@ describe(listPragmaSites, () => {
       expect(sites).toStrictEqual([{ coveredLine: 3, line: 2, token: 'rdy-ignore-next-line' }]);
     });
 
-    it('lists a token the comment holds with no space after the delimiter', () => {
+    it('lists a token that the comment holds with no space after the delimiter', () => {
       const sites = listPragmaSites('x; //rdy-ignore\n');
 
       expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
@@ -46,7 +46,7 @@ describe(listPragmaSites, () => {
     });
   });
 
-  describe('given a token the comment rule withholds', () => {
+  describe('given a token withheld by the comment rule', () => {
     it('lists no site for a token in a string literal', () => {
       expect(listPragmaSites("const token = 'rdy-ignore';\n")).toStrictEqual([]);
     });
@@ -73,12 +73,12 @@ describe(listPragmaSites, () => {
       expect(listPragmaSites('const flag = rdy-ignore;\n')).toStrictEqual([]);
     });
 
-    it('lists no site for a word the token is only the head of', () => {
+    it('lists no site for a word of which the token is only the head', () => {
       expect(listPragmaSites('// rdy-ignored\n')).toStrictEqual([]);
     });
   });
 
-  it('lists the tokens a source holds beside a reason', () => {
+  it('lists the tokens that a source holds beside a reason', () => {
     const sites = listPragmaSites('x; // rdy-ignore toolbelt.errors/no-instanceof-error -- reviewed\n');
 
     expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);

@@ -33,7 +33,7 @@ describe(resolveFindingOutcome, () => {
     expect(outcome.detail).toBe('describeError (src/errors.ts:12), src/report.ts:44');
   });
 
-  it('passes where the check reports none of the sites it counts', () => {
+  it('passes where the check reports none of the sites that it counts', () => {
     const outcome = resolveFindingOutcome({ adoptedCount: 3, findings: [COUNTED] }, []);
 
     expect(outcome).toStrictEqual({ ok: true, progress: { count: 4, passedCount: 3, type: 'fraction' } });
@@ -92,7 +92,7 @@ describe(resolveFindingOutcome, () => {
   });
 
   describe('given a pragma naming a check', () => {
-    it('drops the finding for the check it names', ({ temp }) => {
+    it('drops the finding for the check that it names', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, NAMED);
@@ -100,7 +100,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.ok).toBe(true);
     });
 
-    it('leaves the finding standing for a check it does not name', ({ temp }) => {
+    it('leaves the finding standing for a check that it does not name', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, ['toolbelt.errors/other-check']);
@@ -108,7 +108,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.detail).toBe('describeError (src/errors.ts:12)');
     });
 
-    it('leaves the unnamed check a denominator the named check sheds', ({ temp }) => {
+    it('leaves the unnamed check a denominator shed by the named check', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
       const findings = [CLONE, COUNTED];
 
@@ -126,7 +126,7 @@ describe(resolveFindingOutcome, () => {
   });
 
   describe('given a ledger', () => {
-    it('records the paths the outcome declares as examined', ({ temp }) => {
+    it('records the paths that the outcome declares as examined', ({ temp }) => {
       const ledger = createPragmaLedger();
 
       resolveFindingOutcome({ adoptedCount: 0, findings: [], scanned: ['src/quiet.ts'] }, [], ledger);
@@ -150,7 +150,7 @@ describe(resolveFindingOutcome, () => {
       expect(ledger.scannedPaths()).toStrictEqual([]);
     });
 
-    it('records the site of every finding a pragma suppressed', ({ temp }) => {
+    it('records the site of every finding suppressed by a pragma', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore');
       const ledger = createPragmaLedger();
 

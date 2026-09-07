@@ -38,7 +38,7 @@ describe(createPragmaLedger, () => {
     expect(ledger.hasSuppressed(path.resolve(process.cwd(), 'src/a.ts'), 3)).toBe(true);
   });
 
-  it('holds a suppression to the line it was recorded on', () => {
+  it('holds a suppression to the line on which it was recorded', () => {
     const ledger = createPragmaLedger();
 
     ledger.recordSuppressed('src/a.ts', 3);

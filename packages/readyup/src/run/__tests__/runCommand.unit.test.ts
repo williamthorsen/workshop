@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockRunHumanMode = vi.hoisted(() => vi.fn());
 const mockRunJsonMode = vi.hoisted(() => vi.fn());
 
-// Both modes are mocked: what the dispatch owns is the choice between them and the settings it hands over.
+// Both modes are mocked: The dispatch owns the choice between them and the settings that it hands over.
 vi.mock(import('../runHumanMode.ts'), () => ({
   runHumanMode: mockRunHumanMode,
 }));
@@ -40,7 +40,7 @@ describe(runCommand, () => {
     expect(mockRunJsonMode).not.toHaveBeenCalled();
   });
 
-  it('hands the mode the entries it was given', async () => {
+  it('hands the mode the entries that it was given', async () => {
     const kitEntries = singleKitEntry(['deploy']);
 
     await runCommand({ kitEntries, json: false });
@@ -54,7 +54,7 @@ describe(runCommand, () => {
     expect(mockRunJsonMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ detail: 'full' }), false);
   });
 
-  it('passes the detail the invocation requested through', async () => {
+  it('passes through the detail that the invocation requested', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: true, detail: 'summary' });
 
     expect(mockRunJsonMode).toHaveBeenCalledWith(
@@ -74,7 +74,7 @@ describe(runCommand, () => {
     );
   });
 
-  it('passes the diagnose the invocation requested through to either mode', async () => {
+  it('passes the diagnose that the invocation requested through to either mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: false, diagnose: true });
     await runCommand({ kitEntries: singleKitEntry(), json: true, diagnose: true });
 
@@ -92,13 +92,13 @@ describe(runCommand, () => {
     expect(mockRunHumanMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ quiet: false }), false);
   });
 
-  it('passes the quiet the invocation requested through', async () => {
+  it('passes through the quiet that the invocation requested', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: false, quiet: true });
 
     expect(mockRunHumanMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ quiet: true }), false);
   });
 
-  it('passes the thresholds the invocation named through to the human mode', async () => {
+  it('passes the thresholds that the invocation named through to the human mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: false, failOn: 'warn', reportOn: 'error' });
 
     expect(mockRunHumanMode).toHaveBeenCalledWith(
@@ -108,7 +108,7 @@ describe(runCommand, () => {
     );
   });
 
-  it('passes the thresholds the invocation named through to the JSON mode', async () => {
+  it('passes the thresholds that the invocation named through to the JSON mode', async () => {
     await runCommand({ kitEntries: singleKitEntry(), json: true, failOn: 'warn', reportOn: 'error' });
 
     expect(mockRunJsonMode).toHaveBeenCalledWith(
@@ -130,7 +130,7 @@ describe(runCommand, () => {
     expect(mockRunJsonMode).toHaveBeenCalledWith(expect.anything(), expect.anything(), true);
   });
 
-  it('returns the exit code the mode resolved', async () => {
+  it('returns the exit code resolved by the mode', async () => {
     mockRunHumanMode.mockResolvedValue(2);
 
     const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false });

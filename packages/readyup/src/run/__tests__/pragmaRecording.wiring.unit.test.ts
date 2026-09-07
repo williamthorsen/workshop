@@ -9,8 +9,8 @@ const execFileAsync = vi.hoisted(() =>
   vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
 );
 
-// `execFileAsync` answers the promisified form the listing uses; the stub answers the callback form the sweep's
-// attribute lookup calls, declaring nothing so that every tracked path stays in the sweep.
+// `execFileAsync` answers the promisified form used by the listing; the stub answers the callback form called by
+// the sweep's attribute lookup, declaring nothing so that every tracked path stays in the sweep.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../test-utils/createExecFileStub.ts');
   const stub = createExecFileStub(() => ({}));
@@ -80,7 +80,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
 
-  it('records a sweep a check reads in its skip, which is where a memoizing kit reads one', async ({ temp }) => {
+  it('records a sweep that a check reads in its skip, which is where a memoizing kit reads one', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
@@ -89,7 +89,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
 
-  it('records a sweep a check read in its skip before that skip turned the check off', async ({ temp }) => {
+  it('records a sweep that a check read in its skip before that skip turned the check off', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
@@ -111,7 +111,7 @@ describe('a run recording what its checks examined and suppressed', () => {
       { diagnose: true, pragmaLedger: ledger },
     );
 
-    // The diagnosis is what ran the skipped check's sweep, so without it the absent path proves nothing.
+    // The diagnosis ran the skipped check's sweep, so without it the absent path proves nothing.
     expect(report.diagnoses).toStrictEqual([
       { name: `No source at ${OTHER_PATH} hand-rolls the idiom`, verdict: 'masked-pass' },
     ]);
@@ -121,7 +121,7 @@ describe('a run recording what its checks examined and suppressed', () => {
 
 // region | Helpers
 
-/** Wraps checks as the one adoption checklist a test runs. */
+/** Wraps checks as the one adoption checklist that a test runs. */
 function adoptionChecklist(...checks: RdyCheck[]): RdyChecklist {
   return { name: 'adoption', checks };
 }
