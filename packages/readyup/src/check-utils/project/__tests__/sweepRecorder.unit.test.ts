@@ -93,7 +93,7 @@ describe(recordSweep, () => {
  * Loads a second copy of the module under test, as a run holds when the runner reads its own source and a
  * compiled kit resolves `readyup/*` to the built installation.
  *
- * The query string makes it a second copy: the loader keys modules by URL, so the same file under a
+ * The query string makes it a second copy: The loader keys modules by URL, so the same file under a
  * different URL is instantiated again.
  */
 async function importSecondCopy(): Promise<typeof import('../sweepRecorder.ts')> {

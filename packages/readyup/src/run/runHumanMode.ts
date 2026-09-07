@@ -233,7 +233,7 @@ async function runKit(
   return { hasDroppedBlock, passed: allPassed, rows };
 }
 
-/** Builds a summary row from a report, named by the breadcrumb heading the block into which the report renders. */
+/** Builds a summary row from a report, named by the breadcrumb heading of the block into which the report renders. */
 function toSummaryRow(segments: BreadcrumbSegment[], report: RdyReport): SummaryRow {
   return { counts: countResults(report.results), durationMs: report.durationMs, segments };
 }

@@ -6,7 +6,7 @@ const NAMED = ['toolbelt.errors/no-instanceof-error'];
 
 describe(suppressesFinding, () => {
   describe('given an `rdy-ignore`', () => {
-    it('suppresses a finding on the line that it sits on', () => {
+    it('suppresses a finding on the same line', () => {
       const lines = linesOf('const a = 1;\nerror instanceof Error; // rdy-ignore\nconst b = 2;');
 
       expect(suppressesFinding(lines, 2, [])).toBe(true);
@@ -32,7 +32,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 2, [])).toBe(true);
     });
 
-    it('reports false on the line that it sits on', () => {
+    it('reports false on the same line', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore-next-line');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);

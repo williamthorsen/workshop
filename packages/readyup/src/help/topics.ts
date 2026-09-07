@@ -12,7 +12,7 @@ export interface HelpTopic {
  *
  * A topic resolves to a whole section rather than a set of headings assembled here, so the section
  * boundaries stay the README's own and a topic cannot drift from the document that it prints. This
- * table is the sole declaration site: the list rendered by help comes from it, so the topics offered
+ * table is the sole declaration site: The list rendered by help comes from it, so the topics offered
  * and the topics accepted are the same set by construction.
  */
 export const TOPICS: Readonly<Record<string, HelpTopic>> = {

@@ -36,7 +36,7 @@ export interface BuildFindingReportOptions<F extends Finding> {
  *
  * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose
  * `package.json` names the package. It owns the lines from its own head to the line before the next head, or to
- * the file's last line where it is the last, because the closing brace is not a reliable end marker: a generic
+ * the file's last line where it is the last, because the closing brace is not a reliable end marker: A generic
  * constraint and a return-type annotation can each hold braces of their own, and an overload signature has no
  * body to close. A span cut short reports the implementation that the rule exists to exempt. A re-exporting barrel
  * declares no implementation and holds no exempted lines, a file declaring the name without exporting it is a

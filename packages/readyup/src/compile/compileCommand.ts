@@ -377,7 +377,7 @@ interface ClosureFields {
  * the file again: Deriving is the point, and hashing separately would restore exactly the disagreement
  * that deriving prevents.
  *
- * The entry is matched by its real path, because esbuild reports the path that it resolved a module to,
+ * The entry is matched by its real path, because esbuild reports the path to which it resolved a module,
  * which differs from the path handed to a compile wherever a directory above it is a symlink.
  */
 function deriveClosureFields(inputs: CompiledInput[], entryPath: string, manifestDir: string): ClosureFields {
