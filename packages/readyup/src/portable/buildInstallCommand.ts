@@ -67,7 +67,7 @@ function findInstallCommand(): string | undefined {
   return undefined;
 }
 
-/** Returns the package-manager name in a `package.json`, dropping the version Corepack pins. */
+/** Returns the package-manager name in a `package.json`, dropping the version pinned by Corepack. */
 function readDeclaredManager(packageJsonPath: string): string | undefined {
   if (!existsSync(packageJsonPath)) return undefined;
 

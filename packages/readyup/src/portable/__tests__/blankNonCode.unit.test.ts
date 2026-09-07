@@ -39,7 +39,7 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(`const a = 1; ${blank(comment)}\nconst b = 2;\n`);
   });
 
-  it('blanks an idiom written in a block comment, across the lines it spans', () => {
+  it('blanks an idiom written in a block comment, across the lines that it spans', () => {
     const source = `/* ${CLAMP}\n   and more ${CLAMP} */\nconst b = 2;\n`;
 
     expect(blankNonCode(source)).toBe(`${blank(`/* ${CLAMP}`)}\n${blank(`   and more ${CLAMP} */`)}\nconst b = 2;\n`);
@@ -200,7 +200,7 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(source);
   });
 
-  // An apostrophe in prose opens no string, so it cannot swallow the code after it.
+  // An apostrophe in prose opens no string, so it cannot blank the code after it.
   it('leaves an unclosed quote standing rather than blanking past its line', () => {
     const source = `const node = <p>don't</p>;\nconst bounded = ${CLAMP};\n`;
 
@@ -260,7 +260,7 @@ describe(blankComments, () => {
     expect(blankComments(source)).toBe(source);
   });
 
-  // The literal is read rather than skipped, or the `//` inside it would open a comment and swallow the line.
+  // The literal is read rather than skipped, or the `//` inside it would open a comment and blank the line.
   it('opens no comment on a slash pair inside a string', () => {
     const source = `const url = 'https://example.test';\nconst a = 1;\n`;
 

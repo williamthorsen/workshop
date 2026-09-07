@@ -8,7 +8,7 @@ import { isSkippableFilesystemError } from './isSkippableFilesystemError.ts';
 /** Globs pruned when the caller names none: dependency trees and dot-directories. */
 const DEFAULT_PRUNE_GLOBS = ['**/node_modules', '**/.*'];
 
-/** Directory levels below the root the sweep descends when the caller sets no cap. */
+/** Directory levels that the sweep descends below the root when the caller sets no cap. */
 const DEFAULT_MAX_DEPTH = 10;
 
 /**
@@ -21,10 +21,10 @@ const MATCHER_OPTIONS = { dot: true };
 
 /** Options for `walkDirectories`. */
 export interface WalkDirectoriesOptions {
-  /** Directory the sweep descends from. Every returned path is relative to it. */
+  /** Directory from which the sweep descends. Every returned path is relative to it. */
   root: string;
   /**
-   * Globs matched against each entry the sweep meets, file and directory alike, as a path relative to
+   * Globs matched against each entry that the sweep meets, file and directory alike, as a path relative to
    * `root`. A matching entry contributes the directory holding it, so a recursive glob ending in
    * `/package.json` names the directories that hold one. A list matches what any one of its globs matches.
    */
@@ -34,7 +34,7 @@ export interface WalkDirectoriesOptions {
    * nothing else excludes anything: clearing this sweeps the whole tree, dot-directories included.
    */
   prune?: string[];
-  /** Directory levels below `root` the sweep descends. */
+  /** Directory levels that the sweep descends below `root`. */
   maxDepth?: number;
 }
 

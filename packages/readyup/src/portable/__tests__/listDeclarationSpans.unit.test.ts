@@ -25,7 +25,7 @@ describe(listDeclarationSpans, () => {
     ['interface', 'export interface describeError {}'],
     ['type alias', 'export type describeError = (error: unknown) => string;'],
     ['enum', 'export enum describeError {}'],
-  ] as const)('names the declaration a top-level %s introduces', ([, text]) => {
+  ] as const)('names the declaration introduced by a top-level %s', ([, text]) => {
     expect(listSpans([text])).toStrictEqual([{ endLine: 1, name: 'describeError', startLine: 1 }]);
   });
 
@@ -172,7 +172,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 3, name: 'Guard', startLine: 1 }]);
   });
 
-  it('reads a named function expression an arrow returns as part of the declaration holding it', () => {
+  it('reads a named function expression returned by an arrow as part of the declaration holding it', () => {
     const spans = listSpans([
       'export const wrap = () =>',
       '  function inner(value: string) {',
@@ -196,7 +196,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 6, name: 'debounced', startLine: 1 }]);
   });
 
-  it('reads an async function expression an arrow returns as part of the declaration holding it', () => {
+  it('reads an async function expression returned by an arrow as part of the declaration holding it', () => {
     const spans = listSpans([
       'export const wrap = () =>',
       '  async function inner(id: string) {',
@@ -207,7 +207,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 4, name: 'wrap', startLine: 1 }]);
   });
 
-  it('reads a function expression a new operator applies as part of the declaration holding it', () => {
+  it('reads a function expression applied by a new operator as part of the declaration holding it', () => {
     const spans = listSpans(['export const made = new function Inner() {', '  this.a = 1;', '};']);
 
     expect(spans).toStrictEqual([{ endLine: 3, name: 'made', startLine: 1 }]);
@@ -288,7 +288,7 @@ describe(listDeclarationSpans, () => {
 
 // region | Helpers
 
-/** Blanks the lines a case supplies and lists the spans they hold, as a caller of the primitive does. */
+/** Blanks the lines supplied by a case and lists the spans that they hold, as a caller of the primitive does. */
 function listSpans(lines: readonly string[]): DeclarationSpan[] {
   return listDeclarationSpans(blankNonCode(lines.join('\n')));
 }

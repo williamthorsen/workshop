@@ -26,8 +26,8 @@ function normalizeTrailingWhitespace(content: string): string {
  * Writes a file, reporting what the write did to what was already there.
  *
  * Parent directories are created as needed, and an existing file counts as up to date when its
- * content matches once trailing whitespace is normalized. A dry run reports the outcome a real one
- * would produce and writes nothing. A filesystem error is returned as `{ outcome: 'failed' }` rather
+ * content matches once trailing whitespace is normalized. A dry run reports the outcome that a real
+ * one would produce and writes nothing. A filesystem error is returned as `{ outcome: 'failed' }` rather
  * than thrown.
  */
 export function writeFileWithCheck(
