@@ -102,7 +102,7 @@ describe(toRemoteRdyError, () => {
 
 // region | Helpers
 
-/** Builds an unauthenticated GitHub listing context, which each test narrows to the case it covers. */
+/** Builds an unauthenticated GitHub listing context, which each test narrows to the case that it covers. */
 function context(overrides: Partial<RemoteFailureContext> = {}): RemoteFailureContext {
   return { code: 'config', provider: 'github', tokenForwarded: false, url: GITHUB_URL, ...overrides };
 }

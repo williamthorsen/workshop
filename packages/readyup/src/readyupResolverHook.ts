@@ -10,7 +10,7 @@
  * `npx readyup` and `rdy run --from ...` work without requiring readyup as a
  * project dependency.
  *
- * The hook is intentionally narrow: only `readyup` and `readyup/<subpath>` are
+ * The hook is intentionally narrow: Only `readyup` and `readyup/<subpath>` are
  * intercepted. All other specifiers pass through unchanged. If a third bare
  * specifier ever needs interception, design that case explicitly rather than
  * generalizing this hook.
@@ -47,7 +47,7 @@ function isReadyupSpecifier(specifier: string): boolean {
 }
 
 /**
- * Initializes the hook with the data `module.register()` supplies, which happens exactly once.
+ * Initializes the hook with the data supplied by `module.register()`, which happens exactly once.
  */
 export function initialize(data: ReadyupResolverHookData): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- `module.register()` supplies this once.
@@ -58,7 +58,7 @@ export function initialize(data: ReadyupResolverHookData): void {
  * Routes `readyup` and `readyup/*` specifiers through the runner's own readyup installation by
  * rewriting `parentURL`, and delegates every other specifier to the default resolver unchanged.
  *
- * A readyup specifier resolved before `initialize()` throws: falling back to the original
+ * A readyup specifier resolved before `initialize()` throws: Falling back to the original
  * `parentURL` would defeat the rewrite and surface later as an opaque `ERR_MODULE_NOT_FOUND`.
  */
 export function resolve(

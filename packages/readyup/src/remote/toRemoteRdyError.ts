@@ -5,11 +5,11 @@ import { RemoteManifestNotFoundError } from './loadRemoteManifest.ts';
 import type { RemoteProvider } from './remote-provider.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
-/** Statuses a provider returns when a credential would have made the difference. */
+/** Statuses returned by a provider when a credential would have made the difference. */
 const CREDENTIAL_STATUSES = new Set([401, 403, 404]);
 
 /**
- * Remediation a provider's credential failure calls for.
+ * Remediation that a provider's credential failure calls for.
  *
  * Phrased conditionally because 404 is genuinely ambiguous: GitHub returns it for a private
  * repository fetched anonymously as well as for one that does not exist, so the hint must not assert
@@ -21,7 +21,7 @@ const CREDENTIAL_HINTS: Record<RemoteProvider, string> = {
 };
 
 export interface RemoteFailureContext {
-  /** How the calling command classifies a remote fetch it could not complete. */
+  /** How the calling command classifies a remote fetch that it could not complete. */
   code: 'config' | 'kit-load';
 
   provider: RemoteProvider | undefined;
@@ -42,7 +42,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
   const build = context.code === 'config' ? configError : kitLoadError;
 
   if (error instanceof RemoteManifestNotFoundError) {
-    // GitHub serves a private repository's manifest as absent, so this is the same failure a 404 is.
+    // GitHub serves a private repository's manifest as absent, so this is the same failure as a 404.
     return build(`No manifest found at ${context.url}.`, { cause: error, hint: resolveHint(context, 404) });
   }
 
@@ -50,8 +50,8 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
     return build(error.message, { cause: error, hint: resolveHint(context, error.status) });
   }
 
-  // A transport failure has no status to reason about and no URL of its own, so it is never
-  // hinted and needs the URL supplied.
+  // A transport failure has no status to reason about and no URL of its own, so it never
+  // gets a hint and needs the URL supplied.
   const message = describeError(error);
   const detail = message.includes(context.url) ? message : `Failed to reach ${context.url}: ${message}`;
   return build(detail, { cause: error });
@@ -59,7 +59,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
 
 // region | Helpers
 
-/** Names the credential the reader is missing, or `undefined` when a credential is not what failed. */
+/** Names the credential that the reader is missing, or `undefined` when a credential is not what failed. */
 function resolveHint(context: RemoteFailureContext, status: number): string | undefined {
   if (context.provider === undefined || context.tokenForwarded) return undefined;
   return CREDENTIAL_STATUSES.has(status) ? CREDENTIAL_HINTS[context.provider] : undefined;
