@@ -3,9 +3,9 @@ import { createHash } from 'node:crypto';
 import { readFile } from './filesystem.ts';
 
 /**
- * The form of a hash the manifest records: a prefix of a SHA-256 hex digest.
+ * The form of a hash recorded by the manifest: a prefix of a SHA-256 hex digest.
  *
- * The floor is the length `rdy compile` writes. A shorter record compares too few characters to
+ * The floor is the length that `rdy compile` writes. A shorter record compares too few characters to
  * distinguish anything, and one of zero length would match every file on every axis at once.
  */
 const RECORDED_HASH_PATTERN = /^[0-9a-f]{8,64}$/;

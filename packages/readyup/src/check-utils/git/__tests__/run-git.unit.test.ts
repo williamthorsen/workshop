@@ -13,8 +13,8 @@ const runWithInput = vi.hoisted(() =>
   vi.fn<(input: string, args: readonly string[]) => { error?: Error; stdout?: string }>(),
 );
 
-// `execFileAsync` answers the promisified form `runGit` and `runGitRaw` use; the stub answers the callback form
-// `runGitWithInput` calls, which is the only one that hands back a child to write stdin to.
+// `execFileAsync` answers the promisified form used by `runGit` and `runGitRaw`; the stub answers the callback
+// form that `runGitWithInput` calls, which is the only one that returns a child to write stdin to.
 vi.mock('node:child_process', async () => {
   const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
   const stub = createExecFileStub((input, args) => runWithInput(input, args));
@@ -79,7 +79,7 @@ describe(runGitRaw, () => {
     vi.clearAllMocks();
   });
 
-  it('returns stdout unchanged, keeping the whitespace a trim would take', async () => {
+  it('returns stdout unchanged, keeping the whitespace that a trim would take', async () => {
     execFileAsync.mockResolvedValue({ stdout: ' leading-space.txt\0normal.txt\0', stderr: '' });
 
     const result = await runGitRaw('/repo', 'ls-files', '-z');

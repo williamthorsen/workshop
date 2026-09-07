@@ -7,21 +7,21 @@ import { KITS_DIR } from '../kits/kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { isRecord } from '../portable/isRecord.ts';
 
-/** Manifest fields a kit-publishing dependency can be declared in. */
+/** Manifest fields in which a kit-publishing dependency can be declared. */
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies'];
 
 /**
  * Names the installed direct dependencies that publish kits, sorted.
  *
  * Reads the project's declared dependencies rather than sweeping `node_modules`, which bounds the work to
- * packages the reader already chose to depend on and keeps every result actionable: a transitive package
- * is not one they can sensibly add to a list of their own.
+ * packages that the reader already chose to depend on and keeps every result actionable: a transitive
+ * package is not one that they can sensibly add to a list of their own.
  *
- * Best effort throughout: a project manifest that cannot be read or parsed yields `[]`, which a caller
+ * Best effort throughout: A project manifest that cannot be read or parsed yields `[]`, which a caller
  * cannot distinguish from a project that declares no kit-publishing dependencies.
  *
  * `fromDir` defaults to the working directory, which under `rdy run --from <other-repo>` is the project being
- * checked rather than the repo the kit was loaded from.
+ * checked rather than the repo from which the kit was loaded.
  */
 export function discoverKitPackages(fromDir: string = process.cwd()): string[] {
   // A package may be declared in both dependency fields, which npm permits; the set collapses the pair
@@ -44,7 +44,7 @@ function publishesKits(packageName: string, fromDir: string): boolean {
   }
 }
 
-/** Names every dependency the project's manifest declares, across both dependency fields. */
+/** Names every dependency declared by the project's manifest, across both dependency fields. */
 function readDeclaredDependencies(fromDir: string): string[] {
   let parsed: unknown;
   try {

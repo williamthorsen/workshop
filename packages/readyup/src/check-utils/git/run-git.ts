@@ -7,9 +7,9 @@ const execFileAsync = promisify(execFile);
 /**
  * Output ceiling for a git command reporting on every tracked path.
  *
- * Such a command returns several times the bytes of the listing it was given, so Node's 1 MiB default would truncate
- * a repository git itself handles, and truncation surfaces as a thrown `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` rather
- * than as a short answer.
+ * Such a command returns several times the bytes of the listing that it was given, so Node's 1 MiB default would
+ * truncate a repository handled by git itself, and truncation surfaces as a thrown
+ * `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` rather than as a short answer.
  */
 const MAX_OUTPUT_BYTES = 64 * 1_024 * 1_024;
 
@@ -21,7 +21,7 @@ export async function runGit(path: string, ...args: string[]): Promise<string> {
 /**
  * Runs a git command in the given directory and returns its stdout unaltered.
  *
- * Trimming strips a leading space or tab from the first path of a listing, and the file it names then
+ * Trimming strips a leading space or tab from the first path of a listing, and the file that it names then
  * reads as missing, so output containing paths needs this variant.
  */
 export async function runGitRaw(path: string, ...args: string[]): Promise<string> {
@@ -34,7 +34,7 @@ export async function runGitRaw(path: string, ...args: string[]): Promise<string
  * Runs a git command in the given directory with `input` on its stdin, and returns its stdout unaltered.
  *
  * Separate from `runGitRaw` because `promisify(execFile)` resolves to the captured output and exposes no handle on
- * the child, so nothing can write to it. Output is left untrimmed for the reason `runGitRaw` states.
+ * the child, so nothing can write to it. Output is left untrimmed for the reason stated by `runGitRaw`.
  */
 export async function runGitWithInput(path: string, input: string, ...args: string[]): Promise<string> {
   const resolved = expandHome(path);
@@ -45,7 +45,7 @@ export async function runGitWithInput(path: string, input: string, ...args: stri
         resolve(stdout);
       } else {
         // `ExecFileException` is declared through `Omit`, which drops the `Error` ancestry from the type while the
-        // value stays one, so rejecting with git's own error reads to the rule as rejecting with a non-error.
+        // value stays one, so the rule reads rejecting with git's own error as rejecting with a non-error.
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject(error);
       }
@@ -66,7 +66,7 @@ export async function runGitWithInput(path: string, input: string, ...args: stri
  * Reports whether an error from a git command means the ref was missing.
  *
  * Exit code 128 is ambiguous: git uses it for a missing ref, an invalid path, and "not a git repo"
- * alike, so stderr is what separates a missing ref from an infrastructure failure.
+ * alike, so stderr separates a missing ref from an infrastructure failure.
  */
 export function isRefMissingError(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;

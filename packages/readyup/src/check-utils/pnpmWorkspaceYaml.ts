@@ -13,13 +13,13 @@ const UNSUPPORTED_SCALAR_LEADERS = new Map([
   ['>', 'block scalar (| or >)'],
 ]);
 
-/** The catalog a bare `catalog:` specifier names, which pnpm documents the shorthand as expanding to. */
+/** The catalog named by a bare `catalog:` specifier, which pnpm documents the shorthand as expanding to. */
 const DEFAULT_CATALOG_NAME = 'default';
 
 /**
- * Reads the version a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
+ * Reads the version that a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
  * `catalogName` names the catalog to read, defaulting to the one `catalog:` expands to.
- * Returns `undefined` when no catalog resolves the package, an entry this reader cannot follow included.
+ * Returns `undefined` when no catalog resolves the package, an entry that this reader cannot follow included.
  */
 export function findPnpmCatalogVersion(
   yaml: string,
@@ -44,7 +44,7 @@ export function findPnpmCatalogVersion(
  * Returns the pattern strings in a `pnpm-workspace.yaml` file's `packages` block-sequence, or `null`
  * when the `packages` key is absent.
  *
- * Throws a pathful, line-pointing error on any YAML construct outside the block-sequence subset it
+ * Throws a pathful, line-pointing error on any YAML construct outside the block-sequence subset that it
  * reads, anchors, flow sequences, tags, and negation patterns among them.
  */
 export function readPnpmWorkspacePackages(absolutePath: string): string[] | null {
@@ -144,14 +144,14 @@ function collectBlockEntries(lines: string[], keyLineIndex: number): { index: nu
 
 /**
  * Splits a `key: value` mapping line into its parts, or returns `undefined` when the line is not one or
- * has a value this reader cannot follow. The key may be quoted, as a scoped package name in a
- * catalog is; the value keeps any `:` it contains, so a `workspace:*` entry survives.
+ * has a value that this reader cannot follow. The key may be quoted, as a scoped package name in a
+ * catalog is; the value keeps any `:` that it contains, so a `workspace:*` entry survives.
  */
 function parseMappingEntry(text: string): { key: string; value: string } | undefined {
   const match = /^(?:('[^']*')|("[^"]*")|([^:#]+?))\s*:(.*)$/.exec(text.trim());
   if (match === null) return undefined;
 
-  // An indicator opens a construct rather than a scalar, and only on a plain value: a quoted one is text.
+  // An indicator opens a construct rather than a scalar, and only on a plain value: A quoted one is text.
   const rawValue = stripInlineComment(match[4] ?? '').trim();
   if (UNSUPPORTED_SCALAR_LEADERS.has(rawValue.charAt(0))) return undefined;
 
