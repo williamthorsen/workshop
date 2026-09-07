@@ -11,8 +11,8 @@ import { listCommand } from '../listCommand.ts';
 
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the
- * filesystem enumerator. The unit tests cover each mode's branches; this locks in the wiring the
- * manifest-less fallback depends on -- that `list --from` looks where `run --from` loads.
+ * filesystem enumerator. The unit tests cover each mode's branches; this locks in the wiring on which
+ * the manifest-less fallback depends -- that `list --from` looks where `run --from` loads.
  */
 describe('listCommand wiring', () => {
   let tempDir: string;
@@ -63,7 +63,7 @@ describe('listCommand wiring', () => {
       });
     });
 
-    it('resolves a local repo path to the same directory run --from would load from', async () => {
+    it('resolves a local repo path to the same directory that run --from would load from', async () => {
       writeKitsDir(path.join('repo', '.readyup', 'kits'), ['deploy']);
 
       const { stdout } = await list(['--from', 'repo', '--json']);
@@ -92,7 +92,7 @@ describe('listCommand wiring', () => {
   });
 
   describe('--from with a manifest present', () => {
-    it('prefers the manifest and reports the fields only it knows', async () => {
+    it('prefers the manifest and reports the fields that only it knows', async () => {
       writeKitsDir('kits', ['deploy']);
       writeFileSync(
         path.join(tempDir, 'kits', 'manifest.json'),
