@@ -14,7 +14,7 @@ export type TestKitInput =
 /**
  * Returns a report serialized the way the CLI would for an invocation with the given flags.
  *
- * An override stands in for its CLI flag: it reaches the top level only when supplied, and resolves
+ * An override stands in for its CLI flag: It reaches the top level only when supplied, and resolves
  * against the default to give each kit the threshold that governs it. A kit input that names its own
  * thresholds keeps them, which is how a test expresses a kit that declared one for itself.
  */
