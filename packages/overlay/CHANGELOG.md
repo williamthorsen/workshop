@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.2 — 2026-09-08
+
+### 📦 Dependencies
+
+- Upgrade all dependencies and clear the resulting lint and test failures (#447)
+
+  - Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.
+  - Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.
+  - Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.
+
+  Migration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.
+
 ## 0.4.1 — 2026-08-30
 
 ### ♻️ Refactoring

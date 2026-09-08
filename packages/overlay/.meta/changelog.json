@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.4.2",
+    "date": "2026-09-08",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade all dependencies and clear the resulting lint and test failures (#447)",
+            "body": "- Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.\n- Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.\n- Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.\n\nMigration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
+            "hash": "321550f3899dd500837a631c5aa78d475352043e"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.1",
     "date": "2026-08-30",
     "sections": [

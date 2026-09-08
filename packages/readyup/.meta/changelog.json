@@ -1,5 +1,65 @@
 [
   {
+    "version": "0.35.1",
+    "date": "2026-09-08",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Eliminate orphaned imports of externalized specifiers from kit bundles (#452)",
+            "body": "- Stops `rdy compile` from keeping an import of an externalized specifier after tree-shaking removes its last consumer, so a compiled kit no longer carries a dead import of a `node:` builtin or of `readyup` in named, default, or namespace form.",
+            "hash": "d683586e0739024bbe6dcde8c337ae7d3c87e90e"
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Extract isHtmlBody helper from remote-fetch soft-404 detection (#453)",
+            "body": "- Adds `isHtmlBody` under readyup's `portable/` directory, internal to the package, and calls it from `loadRemoteKit` and `loadRemoteManifest` in place of the two-line check that each inlined.",
+            "hash": "d3e7a18b755d8c96161a9fa07e0a7d384c1c09f3"
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade all dependencies and clear the resulting lint and test failures (#447)",
+            "body": "- Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.\n- Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.\n- Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.\n\nMigration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
+            "hash": "321550f3899dd500837a631c5aa78d475352043e"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Document the check-utils contract on its exported symbols (#442)",
+            "body": "Adds behavior facts to the doc comments of `readyup`'s exported check utilities, and of `projectJsonFile` and `blankNonCode`: how `hasMinDevDependencyVersion` resolves a `catalog:` specifier, which `.gitattributes` declarations keep a file out of `readTrackedSources`'s sweep, and what `discoverWorkspaces` throws on. Several of these facts move onto the exported symbol from a private helper or a function body.\n\nAlso corrects the documented rule for where a declaration ends.",
+            "hash": "c783b78f49eeeabd70afe420ec3c90fb9dc43e15"
+          },
+          {
+            "description": "Replace transaction, arrival, and bearing metaphors with plainer wording (#448)",
+            "body": "- Rewrites comments, docs, and test names across `compositor`, `readyup`, and the repo root, including ReadyUp's kits and published agent guidance to align with plain-speech doctrine and writing conventions.",
+            "hash": "1a6c31e5fcac78ee5aca803feab37ffa56c46ddd"
+          },
+          {
+            "description": "Apply the writing standard to readyup's prose (#450)",
+            "body": "- Rewrites comments, doc descriptions, and test names across `packages/readyup`, including its `.readyup` kit sources and its `agents/` content root, to align with plain-speech doctrine and writing conventions.\n- Rewords six `rdy` message strings, including the kit-staleness warning and `parseKitSpecifiers` errors.",
+            "hash": "26edf94a11dd8b1869197132f79aafe9194eeb1a"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.35.0",
     "date": "2026-08-30",
     "sections": [

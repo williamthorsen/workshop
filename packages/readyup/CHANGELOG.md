@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.35.1 — 2026-09-08
+
+### 🐛 Bug fixes
+
+- Eliminate orphaned imports of externalized specifiers from kit bundles (#452)
+
+  - Stops `rdy compile` from keeping an import of an externalized specifier after tree-shaking removes its last consumer, so a compiled kit no longer carries a dead import of a `node:` builtin or of `readyup` in named, default, or namespace form.
+
+### 🏗️ Internal features
+
+- Extract isHtmlBody helper from remote-fetch soft-404 detection (#453)
+
+  - Adds `isHtmlBody` under readyup's `portable/` directory, internal to the package, and calls it from `loadRemoteKit` and `loadRemoteManifest` in place of the two-line check that each inlined.
+
+### 📦 Dependencies
+
+- Upgrade all dependencies and clear the resulting lint and test failures (#447)
+
+  - Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.
+  - Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.
+  - Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.
+
+  Migration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.
+
+### 📚 Documentation
+
+- Document the check-utils contract on its exported symbols (#442)
+
+  Adds behavior facts to the doc comments of `readyup`'s exported check utilities, and of `projectJsonFile` and `blankNonCode`: how `hasMinDevDependencyVersion` resolves a `catalog:` specifier, which `.gitattributes` declarations keep a file out of `readTrackedSources`'s sweep, and what `discoverWorkspaces` throws on. Several of these facts move onto the exported symbol from a private helper or a function body.
+
+  Also corrects the documented rule for where a declaration ends.
+
+- Replace transaction, arrival, and bearing metaphors with plainer wording (#448)
+
+  - Rewrites comments, docs, and test names across `compositor`, `readyup`, and the repo root, including ReadyUp's kits and published agent guidance to align with plain-speech doctrine and writing conventions.
+
+- Apply the writing standard to readyup's prose (#450)
+
+  - Rewrites comments, doc descriptions, and test names across `packages/readyup`, including its `.readyup` kit sources and its `agents/` content root, to align with plain-speech doctrine and writing conventions.
+  - Rewords six `rdy` message strings, including the kit-staleness warning and `parseKitSpecifiers` errors.
+
 ## 0.35.0 — 2026-08-30
 
 ### 🎉 Features
