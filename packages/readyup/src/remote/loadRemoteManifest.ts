@@ -1,6 +1,7 @@
 import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { ManifestSchema, type RdyManifest } from '../manifest/manifestSchema.ts';
+import { isHtmlBody } from '../portable/isHtmlBody.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
 /** Thrown when a remote manifest URL responds with 404 or an HTML soft-404. */
@@ -40,9 +41,7 @@ export async function loadRemoteManifest({ url, headers = {} }: LoadRemoteManife
 
   const body = await response.text();
 
-  // Detect HTML error pages (e.g., GitHub 404 pages that return 200)
-  const trimmedBody = body.trimStart().toLowerCase();
-  if (trimmedBody.startsWith('<html') || trimmedBody.startsWith('<!doctype')) {
+  if (isHtmlBody(body)) {
     throw new RemoteManifestNotFoundError(url);
   }
 
