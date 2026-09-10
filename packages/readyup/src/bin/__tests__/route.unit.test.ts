@@ -379,12 +379,12 @@ describe(routeCommand, () => {
     expect(stderrChunks).toStrictEqual(['Error: nothing found\n', 'Hint: Set GITHUB_TOKEN.\n']);
   });
 
-  it('renders the hint through the rich style by default', async () => {
+  it('renders the hint through the rich style', async () => {
     mockParseRunArgs.mockImplementation(() => {
       throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
     });
 
-    const { stderr } = await route(['run', '--bad']);
+    const { stderr } = await route(['--style', 'rich', 'run', '--bad']);
 
     expect(stderr).toContain('💡 Hint: Set GITHUB_TOKEN.\n');
   });
@@ -869,9 +869,14 @@ function parsedRunArgs(overrides?: Record<string, unknown>) {
   };
 }
 
-/** Runs the CLI over the given arguments, returning its exit code alongside everything it wrote. */
+/**
+ * Runs the CLI over the given arguments, returning its exit code alongside everything it wrote.
+ *
+ * The terminal is pinned absent so style detection resolves to plain wherever the suite runs. A test asserting
+ * rich output names `--style rich`.
+ */
 async function route(args: string[]) {
-  using io = captureStdio();
+  using io = captureStdio({ isTty: false });
 
   const exitCode = await routeCommand(args);
 
