@@ -142,8 +142,8 @@ describe('an unrecognized style', () => {
 });
 
 describe('detection', () => {
-  // The suite pins RDY_STYLE so rendering never depends on the environment in which it runs. These
-  // tests deliberately unpin it: They are the only coverage of the wiring that reads CI and the terminal.
+  // The only coverage of the wiring that reads CI and the terminal. Each test clears RDY_STYLE, which the
+  // developer's own environment may carry and which would otherwise outrank detection.
   it('chooses plain under CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', 'true');
