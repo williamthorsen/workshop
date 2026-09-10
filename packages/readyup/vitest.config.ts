@@ -1,6 +1,6 @@
 import { defineVitestConfig } from '@williamthorsen/nmr/vitest';
 
-import { shared } from '../../vitest.shared.ts';
+import { sharedOptions } from '../../vitest.shared.ts';
 
 // This package keeps a config of its own, against the general rule that packages inherit the root one. A config
 // here replaces the root one rather than extending it, so it declares the shared layer alongside its own
@@ -11,7 +11,7 @@ import { shared } from '../../vitest.shared.ts';
 // covers the checks and the helpers alike, since `test-utils/` sits inside the tree that it serves; the inherited
 // exclude drops the `__tests__/` directories that the same glob would otherwise sweep in. The text reporter shows no
 // `test-utils` group; those files are in the coverage data regardless.
-export default defineVitestConfig(shared, {
+export default defineVitestConfig(sharedOptions, {
   root: {
     test: {
       coverage: {
