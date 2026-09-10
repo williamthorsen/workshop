@@ -17,9 +17,9 @@ Key files:
 - `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest and what validate readyup's agent content root, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
 - `.config/readyup.config.ts`: Readyup compile settings, plus the `packages` list whose kits audit this repo.
 - `.readyup/kits/`: Kit files (TypeScript sources compiled to self-contained ESM bundles).
-- `packages/readyup/vitest.config.ts`: Retained per-package config; pins `RDY_STYLE=rich` so rendering assertions never depend on TTY detection.
+- `packages/readyup/vitest.config.ts`: Retained per-package config, holding the kit tree's coverage include. A package config replaces the root one rather than extending it, so this one passes `vitest.shared.ts` alongside its own setting, and anything a root-collected run needs belongs in that layer instead.
 - `pnpm-workspace.yaml`: Its `catalog` block is the single declaration site for every version shared across manifests, so a package it names is declared as `catalog:` rather than a literal version. Nothing enforces this yet; node-monorepo-tools#654 tracks the check.
-- `vitest.config.ts` and `vitest.root.config.ts`: Vitest projects for packages and for root-level tests respectively; the root variant excludes every workspace package.
+- `vitest.config.ts`, `vitest.root.config.ts`, and `vitest.shared.ts`: Vitest projects for packages and for root-level tests respectively, and the layer that every config in the repo passes to the factory; the root variant excludes every workspace package. `nmr test:watch` resolves `vitest.config.ts` and collects the whole tree through it, loading no package config.
 
 ## Commands
 
