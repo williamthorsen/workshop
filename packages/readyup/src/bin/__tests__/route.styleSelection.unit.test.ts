@@ -1,5 +1,5 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
@@ -7,7 +7,7 @@ import { plainFormatter } from '../../layout/plainFormatter.ts';
 import { STYLE_ENV_VAR } from '../../layout/resolveStyle.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
-import { routeCommand } from '../route.ts';
+import { routeCli } from '../test-utils/routeCli.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -213,16 +213,10 @@ describe('alongside --json', () => {
 // region | Helpers
 
 /**
- * Routes a command with the terminal attached or not, returning its exit code and everything it wrote.
- *
- * `init` reports through the console rather than the streams directly, so both channels are captured.
+ * Routes a command with `console` captured, which `init` reports through rather than writing to the streams.
  */
 async function route(args: string[], options: { isTty?: boolean } = {}) {
-  using io = captureStdio({ includeConsole: true, isTty: options.isTty ?? false });
-
-  const exitCode = await routeCommand(args);
-
-  return { exitCode, stdout: io.stdout, stderr: io.stderr };
+  return routeCli(args, { ...options, includeConsole: true });
 }
 
 // endregion | Helpers

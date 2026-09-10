@@ -1,7 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRunCommand = vi.hoisted(() => vi.fn());
@@ -48,6 +47,7 @@ import packageJson from '../../../package.json' with { type: 'json' };
 import { usageError } from '../../errors/RdyError.ts';
 import { DOCS_POINTER } from '../../help/helpText.ts';
 import { routeCommand } from '../route.ts';
+import { routeCli } from '../test-utils/routeCli.ts';
 
 /** Scratch project root for the tests that need a kit file on disk. */
 const TYPO_TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-route');
@@ -76,41 +76,41 @@ describe(routeCommand, () => {
   });
 
   it('shows help and returns 0 when no arguments are given', async () => {
-    const { exitCode, stdout } = await route([]);
+    const { exitCode, stdout } = await routeCli([]);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy');
   });
 
   it('shows help and returns 0 for --help', async () => {
-    const { exitCode, stdout } = await route(['--help']);
+    const { exitCode, stdout } = await routeCli(['--help']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy');
   });
 
   it('shows help and returns 0 for -h', async () => {
-    const { exitCode } = await route(['-h']);
+    const { exitCode } = await routeCli(['-h']);
 
     expect(exitCode).toBe(0);
   });
 
   it('prints version and returns 0 for --version', async () => {
-    const { exitCode, stdout } = await route(['--version']);
+    const { exitCode, stdout } = await routeCli(['--version']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toBe('1.2.3\n');
   });
 
   it('prints version and returns 0 for -V', async () => {
-    const { exitCode, stdout } = await route(['-V']);
+    const { exitCode, stdout } = await routeCli(['-V']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toBe('1.2.3\n');
   });
 
   it('includes run options in top-level help', async () => {
-    const { stdout } = await route(['--help']);
+    const { stdout } = await routeCli(['--help']);
 
     expect(stdout).toContain('--from');
     expect(stdout).toContain('--file, -f');
@@ -127,7 +127,7 @@ describe(routeCommand, () => {
     { label: 'run', args: ['run', '--help'] },
     { label: 'init', args: ['init', '--help'] },
   ])('names no retired short flag in $label help', async ({ args }) => {
-    const { stdout } = await route(args);
+    const { stdout } = await routeCli(args);
 
     for (const short of ['-J', '-F', '-R', '-i', '-u', '-j']) {
       expect(stdout).not.toContain(`, ${short}`);
@@ -135,13 +135,13 @@ describe(routeCommand, () => {
   });
 
   it('marks run as the default command in top-level help', async () => {
-    const { stdout } = await route(['--help']);
+    const { stdout } = await routeCli(['--help']);
 
     expect(stdout).toContain('(default)');
   });
 
   it('points at per-command help from top-level help', async () => {
-    const { stdout } = await route(['--help']);
+    const { stdout } = await routeCli(['--help']);
 
     expect(stdout).toContain("Run 'rdy <command> --help' for command-specific options.");
   });
@@ -154,7 +154,7 @@ describe(routeCommand, () => {
     { label: 'list', args: ['list', '--help'] },
     { label: 'verify', args: ['verify', '--help'] },
   ])('points at the documentation from $label help', async ({ args }) => {
-    const { stdout } = await route(args);
+    const { stdout } = await routeCli(args);
 
     expect(stdout).toContain(DOCS_POINTER);
   });
@@ -172,7 +172,7 @@ describe(routeCommand, () => {
     { label: 'exit codes', text: 'Exit codes:' },
     { label: 'schema evolution', text: 'schemaVersion' },
   ])('leaves $label to the documentation rather than top-level help', async ({ text }) => {
-    const { stdout } = await route(['--help']);
+    const { stdout } = await routeCli(['--help']);
 
     expect(stdout).not.toContain(text);
   });
@@ -182,7 +182,7 @@ describe(routeCommand, () => {
     { label: 'run', args: ['run', '--help'] },
     { label: 'list', args: ['list', '--help'] },
   ])('shows examples in $label help', async ({ args }) => {
-    const { stdout } = await route(args);
+    const { stdout } = await routeCli(args);
 
     expect(stdout).toContain('Examples:');
   });
@@ -191,33 +191,33 @@ describe(routeCommand, () => {
     { label: 'top-level', args: ['--help'] },
     { label: 'run', args: ['run', '--help'] },
   ])('lists --diagnose in $label help', async ({ args }) => {
-    const { stdout } = await route(args);
+    const { stdout } = await routeCli(args);
 
     expect(stdout).toContain('--diagnose');
   });
 
   it('explains how to escape a positional starting with a dash in run help', async () => {
-    const { stdout } = await route(['run', '--help']);
+    const { stdout } = await routeCli(['run', '--help']);
 
     expect(stdout).toContain('rdy run -- "--odd-kit-name"');
   });
 
   it('shows run help and returns 0 for run --help', async () => {
-    const { exitCode, stdout } = await route(['run', '--help']);
+    const { exitCode, stdout } = await routeCli(['run', '--help']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy run');
   });
 
   it('shows init help and returns 0 for init --help', async () => {
-    const { exitCode, stdout } = await route(['init', '--help']);
+    const { exitCode, stdout } = await routeCli(['init', '--help']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy init');
   });
 
   it('shows init help and returns 0 for init -h', async () => {
-    const { exitCode } = await route(['init', '-h']);
+    const { exitCode } = await routeCli(['init', '-h']);
 
     expect(exitCode).toBe(0);
   });
@@ -235,7 +235,7 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['run', 'deploy']);
+    const { exitCode } = await routeCli(['run', 'deploy']);
 
     expect(mockParseRunArgs).toHaveBeenCalledWith(['deploy']);
     expect(mockRunCommand).toHaveBeenCalledWith(
@@ -261,7 +261,7 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['run', '--jit']);
+    const { exitCode } = await routeCli(['run', '--jit']);
 
     expect(mockRunCommand).toHaveBeenCalledWith(expect.anything(), true);
     expect(exitCode).toBe(0);
@@ -280,7 +280,7 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['run', '--json']);
+    const { exitCode } = await routeCli(['run', '--json']);
 
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -305,14 +305,14 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['run', '--diagnose']);
+    const { exitCode } = await routeCli(['run', '--diagnose']);
 
     expect(mockRunCommand).toHaveBeenCalledWith(expect.objectContaining({ diagnose: true }), false);
     expect(exitCode).toBe(0);
   });
 
   it('includes --json in run help text', async () => {
-    const { stdout } = await route(['run', '--help']);
+    const { stdout } = await routeCli(['run', '--help']);
 
     expect(stdout).toContain('--json');
   });
@@ -322,7 +322,7 @@ describe(routeCommand, () => {
       throw new Error("unknown flag '--bad'");
     });
 
-    const { exitCode, stderr } = await route(['run', '--bad']);
+    const { exitCode, stderr } = await routeCli(['run', '--bad']);
 
     expect(exitCode).toBe(2);
     expect(stderr).toContain("unknown flag '--bad'");
@@ -343,7 +343,7 @@ describe(routeCommand, () => {
       throw new Error('resolution failed');
     });
 
-    const { exitCode, stderr } = await route(['run', '--file', 'path.ts']);
+    const { exitCode, stderr } = await routeCli(['run', '--file', 'path.ts']);
 
     expect(exitCode).toBe(2);
     expect(stderr).toContain('resolution failed');
@@ -362,7 +362,7 @@ describe(routeCommand, () => {
     });
     mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
-    const { exitCode, stderr } = await route(['run']);
+    const { exitCode, stderr } = await routeCli(['run']);
 
     expect(exitCode).toBe(2);
     expect(stderr).toContain('bad config');
@@ -373,7 +373,7 @@ describe(routeCommand, () => {
       throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
     });
 
-    const { exitCode, stderrChunks } = await route(['--style', 'plain', 'run', '--bad']);
+    const { exitCode, stderrChunks } = await routeCli(['--style', 'plain', 'run', '--bad']);
 
     expect(exitCode).toBe(2);
     expect(stderrChunks).toStrictEqual(['Error: nothing found\n', 'Hint: Set GITHUB_TOKEN.\n']);
@@ -384,7 +384,7 @@ describe(routeCommand, () => {
       throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
     });
 
-    const { stderr } = await route(['--style', 'rich', 'run', '--bad']);
+    const { stderr } = await routeCli(['--style', 'rich', 'run', '--bad']);
 
     expect(stderr).toContain('💡 Hint: Set GITHUB_TOKEN.\n');
   });
@@ -397,7 +397,7 @@ describe(routeCommand, () => {
       }),
     );
 
-    const { exitCode, stdout } = await route(['run', '--json']);
+    const { exitCode, stdout } = await routeCli(['run', '--json']);
 
     expect(exitCode).toBe(2);
     expect(JSON.parse(stdout)).toStrictEqual({
@@ -415,7 +415,7 @@ describe(routeCommand, () => {
       throw usageError('nothing found');
     });
 
-    const { stderrChunks } = await route(['run', '--bad']);
+    const { stderrChunks } = await routeCli(['run', '--bad']);
 
     expect(stderrChunks).toHaveLength(1);
   });
@@ -436,7 +436,7 @@ describe(routeCommand, () => {
     mockResolveKitSources.mockReturnValue([{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }]);
     mockRunCommand.mockResolvedValue(0);
 
-    await route(['run', '--file', 'kit.ts']);
+    await routeCli(['run', '--file', 'kit.ts']);
 
     expect(mockLoadConfig).not.toHaveBeenCalled();
   });
@@ -457,7 +457,7 @@ describe(routeCommand, () => {
     ]);
     mockRunCommand.mockResolvedValue(0);
 
-    await route(['run', '--from', 'github:org/repo', 'deploy']);
+    await routeCli(['run', '--from', 'github:org/repo', 'deploy']);
 
     expect(mockLoadConfig).not.toHaveBeenCalled();
   });
@@ -478,7 +478,7 @@ describe(routeCommand, () => {
     ]);
     mockRunCommand.mockResolvedValue(0);
 
-    await route(['run', '--url', 'https://example.com/kit.js']);
+    await routeCli(['run', '--url', 'https://example.com/kit.js']);
 
     expect(mockLoadConfig).not.toHaveBeenCalled();
   });
@@ -496,7 +496,7 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    await route(['run']);
+    await routeCli(['run']);
 
     expect(mockLoadConfig).toHaveBeenCalled();
   });
@@ -514,13 +514,13 @@ describe(routeCommand, () => {
     });
     mockRunCommand.mockResolvedValue(0);
 
-    await route(['run', '--internal']);
+    await routeCli(['run', '--internal']);
 
     expect(mockLoadConfig).toHaveBeenCalled();
   });
 
   it('shows compile help and returns 0 for compile --help', async () => {
-    const { exitCode, stdout } = await route(['compile', '--help']);
+    const { exitCode, stdout } = await routeCli(['compile', '--help']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy compile');
@@ -528,7 +528,7 @@ describe(routeCommand, () => {
   });
 
   it('shows compile help and returns 0 for compile -h', async () => {
-    const { exitCode } = await route(['compile', '-h']);
+    const { exitCode } = await routeCli(['compile', '-h']);
 
     expect(exitCode).toBe(0);
   });
@@ -536,7 +536,7 @@ describe(routeCommand, () => {
   it('delegates to compileCommand for compile subcommand', async () => {
     mockCompileCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['compile', 'input.ts']);
+    const { exitCode } = await routeCli(['compile', 'input.ts']);
 
     expect(mockCompileCommand).toHaveBeenCalledWith(['input.ts']);
     expect(exitCode).toBe(0);
@@ -545,14 +545,14 @@ describe(routeCommand, () => {
   it('passes --output flag through to compileCommand', async () => {
     mockCompileCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['compile', 'input.ts', '--output', 'out.js']);
+    const { exitCode } = await routeCli(['compile', 'input.ts', '--output', 'out.js']);
 
     expect(mockCompileCommand).toHaveBeenCalledWith(['input.ts', '--output', 'out.js']);
     expect(exitCode).toBe(0);
   });
 
   it('lists compile in top-level help', async () => {
-    const { stdout } = await route([]);
+    const { stdout } = await routeCli([]);
 
     expect(stdout).toContain('compile');
   });
@@ -560,7 +560,7 @@ describe(routeCommand, () => {
   it('delegates to initCommand for init subcommand', async () => {
     mockInitCommand.mockReturnValue(0);
 
-    const { exitCode } = await route(['init']);
+    const { exitCode } = await routeCli(['init']);
 
     expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: false, force: false });
     expect(exitCode).toBe(0);
@@ -569,7 +569,7 @@ describe(routeCommand, () => {
   it('passes --dry-run and --force flags to initCommand', async () => {
     mockInitCommand.mockReturnValue(0);
 
-    const { exitCode } = await route(['init', '--dry-run', '--force']);
+    const { exitCode } = await routeCli(['init', '--dry-run', '--force']);
 
     expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: true });
     expect(exitCode).toBe(0);
@@ -578,35 +578,35 @@ describe(routeCommand, () => {
   it('passes the -n short flag to initCommand', async () => {
     mockInitCommand.mockReturnValue(0);
 
-    const { exitCode } = await route(['init', '-n']);
+    const { exitCode } = await routeCli(['init', '-n']);
 
     expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: false });
     expect(exitCode).toBe(0);
   });
 
   it('rejects the retired init -f short flag', async () => {
-    const { exitCode } = await route(['init', '-f']);
+    const { exitCode } = await routeCli(['init', '-f']);
 
     expect(exitCode).toBe(2);
     expect(mockInitCommand).not.toHaveBeenCalled();
   });
 
   it('returns 2 for unknown init flags', async () => {
-    const { exitCode, stderr } = await route(['init', '--unknown']);
+    const { exitCode, stderr } = await routeCli(['init', '--unknown']);
 
     expect(exitCode).toBe(2);
     expect(stderr).toContain("Unknown option '--unknown'");
   });
 
   it('shows list help and returns 0 for list --help', async () => {
-    const { exitCode, stdout } = await route(['list', '--help']);
+    const { exitCode, stdout } = await routeCli(['list', '--help']);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Usage: rdy list');
   });
 
   it('shows list help and returns 0 for list -h', async () => {
-    const { exitCode } = await route(['list', '-h']);
+    const { exitCode } = await routeCli(['list', '-h']);
 
     expect(exitCode).toBe(0);
   });
@@ -614,7 +614,7 @@ describe(routeCommand, () => {
   it('delegates to listCommand for list subcommand', async () => {
     mockListCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['list']);
+    const { exitCode } = await routeCli(['list']);
 
     expect(mockListCommand).toHaveBeenCalledWith([]);
     expect(exitCode).toBe(0);
@@ -623,14 +623,14 @@ describe(routeCommand, () => {
   it('passes --from flag through to listCommand', async () => {
     mockListCommand.mockResolvedValue(0);
 
-    const { exitCode } = await route(['list', '--from', '.']);
+    const { exitCode } = await routeCli(['list', '--from', '.']);
 
     expect(mockListCommand).toHaveBeenCalledWith(['--from', '.']);
     expect(exitCode).toBe(0);
   });
 
   it('lists list in top-level help', async () => {
-    const { stdout } = await route([]);
+    const { stdout } = await routeCli([]);
 
     expect(stdout).toContain('list');
   });
@@ -641,7 +641,7 @@ describe(routeCommand, () => {
         throw usageError("Unknown option '--bogus'");
       });
 
-      const { exitCode, stdout, stderr } = await route(['--json', '--bogus']);
+      const { exitCode, stdout, stderr } = await routeCli(['--json', '--bogus']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toStrictEqual({
@@ -656,7 +656,7 @@ describe(routeCommand, () => {
         throw usageError('nothing found', { hint: 'Set GITHUB_TOKEN.' });
       });
 
-      const { exitCode, stdout } = await route(['--json', '--bogus']);
+      const { exitCode, stdout } = await routeCli(['--json', '--bogus']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toStrictEqual({
@@ -669,7 +669,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ json: true }));
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
-      const { exitCode, stdout } = await route(['run', '--json']);
+      const { exitCode, stdout } = await routeCli(['run', '--json']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'config', message: 'bad config' } });
@@ -680,14 +680,14 @@ describe(routeCommand, () => {
         throw new Error('something unexpected');
       });
 
-      const { exitCode, stdout } = await route(['--json']);
+      const { exitCode, stdout } = await routeCli(['--json']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'internal', message: 'something unexpected' } });
     });
 
     it('emits an unknown-command error as an envelope rather than prose under --json', async () => {
-      const { exitCode, stdout, stderr } = await route(['compil', '--json']);
+      const { exitCode, stdout, stderr } = await routeCli(['compil', '--json']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toMatchObject({ error: { code: 'usage' } });
@@ -695,7 +695,7 @@ describe(routeCommand, () => {
     });
 
     it('diverts help text to stderr under --json so stdout stays free of prose', async () => {
-      const { exitCode, stdout, stderr } = await route(['--help', '--json']);
+      const { exitCode, stdout, stderr } = await routeCli(['--help', '--json']);
 
       expect(exitCode).toBe(0);
       expect(stdout).toBe('');
@@ -707,7 +707,7 @@ describe(routeCommand, () => {
         throw usageError('nope');
       });
 
-      const { exitCode, stdout, stderr } = await route(['run', '--', '--json']);
+      const { exitCode, stdout, stderr } = await routeCli(['run', '--', '--json']);
 
       expect(exitCode).toBe(2);
       expect(stdout).toBe('');
@@ -729,7 +729,7 @@ describe(routeCommand, () => {
       });
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(['--file', 'foo.ts']);
+      const { exitCode } = await routeCli(['--file', 'foo.ts']);
 
       expect(mockParseRunArgs).toHaveBeenCalledWith(['--file', 'foo.ts']);
       expect(exitCode).toBe(0);
@@ -748,7 +748,7 @@ describe(routeCommand, () => {
       });
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(['onboarding']);
+      const { exitCode } = await routeCli(['onboarding']);
 
       expect(mockParseRunArgs).toHaveBeenCalledWith(['onboarding']);
       expect(exitCode).toBe(0);
@@ -767,7 +767,7 @@ describe(routeCommand, () => {
       ['runn', 'run'],
       ['verfy', 'verify'],
     ])('suggests "%s" -> "%s"', async (input, expected) => {
-      const { exitCode, stderr } = await route([input]);
+      const { exitCode, stderr } = await routeCli([input]);
 
       expect(exitCode).toBe(2);
       expect(stderr).toContain(`Did you mean 'rdy ${expected}'?`);
@@ -777,7 +777,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode, stderr } = await route(['onboarding']);
+      const { exitCode, stderr } = await routeCli(['onboarding']);
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
@@ -790,7 +790,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(['lst']);
+      const { exitCode } = await routeCli(['lst']);
 
       expect(exitCode).toBe(0);
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
@@ -806,7 +806,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: args[0], checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(args);
+      const { exitCode } = await routeCli(args);
 
       expect(exitCode).toBe(0);
       expect(mockParseRunArgs).toHaveBeenCalledWith(args);
@@ -816,14 +816,14 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lis', checklists: ['t'] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(['lis:t']);
+      const { exitCode } = await routeCli(['lis:t']);
 
       expect(exitCode).toBe(0);
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lis:t']);
     });
 
     it('still suggests a command when a source flag follows the -- terminator', async () => {
-      const { exitCode, stderr } = await route(['lst', '--', '--from']);
+      const { exitCode, stderr } = await routeCli(['lst', '--', '--from']);
 
       expect(exitCode).toBe(2);
       expect(stderr).toContain("Did you mean 'rdy list'?");
@@ -833,7 +833,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
-      const { exitCode } = await route(['run', 'lst']);
+      const { exitCode } = await routeCli(['run', 'lst']);
 
       expect(exitCode).toBe(0);
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
@@ -845,7 +845,7 @@ describe(routeCommand, () => {
 
       // 'run' is handled before typo detection, so this verifies
       // the explicit subcommand path
-      const { exitCode } = await route(['run']);
+      const { exitCode } = await routeCli(['run']);
 
       expect(exitCode).toBe(0);
     });
@@ -867,20 +867,6 @@ function parsedRunArgs(overrides?: Record<string, unknown>) {
     json: false,
     ...overrides,
   };
-}
-
-/**
- * Runs the CLI over the given arguments, returning its exit code alongside everything it wrote.
- *
- * The terminal is pinned absent so style detection resolves to plain wherever the suite runs. A test asserting
- * rich output names `--style rich`.
- */
-async function route(args: string[]) {
-  using io = captureStdio({ isTty: false });
-
-  const exitCode = await routeCommand(args);
-
-  return { exitCode, stdout: io.stdout, stderr: io.stderr, stderrChunks: io.stderrChunks };
 }
 
 // endregion | Helpers
