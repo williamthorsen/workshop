@@ -1,9 +1,9 @@
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
-import { routeCommand } from '../route.ts';
+import { routeCli } from '../test-utils/routeCli.ts';
 
 /** A kit whose single check passes. */
 const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
@@ -32,12 +32,10 @@ it.aroundAll(async (runSuite, { temp }) => {
 describe('partial results when a kit fails after dispatch', () => {
   describe('JSON mode', () => {
     it('keeps results from the kits on either side of a failed kit', async () => {
-      using io = captureStdio();
-
-      const exitCode = await routeCommand(['passing', 'absent', 'failing', '--json']);
+      const { exitCode, stdout } = await routeCli(['passing', 'absent', 'failing', '--json']);
 
       expect(exitCode).toBe(2);
-      expect(JSON.parse(io.stdout)).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         kits: [
           { name: 'passing', passed: true, counts: { passed: 1, errors: 0 } },
           { name: 'absent', error: { code: 'kit-load', message: expect.any(String) } },
@@ -47,76 +45,62 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('aggregates top-level counts over only the kits that ran', async () => {
-      using io = captureStdio();
+      const { stdout } = await routeCli(['passing', 'absent', '--json']);
 
-      await routeCommand(['passing', 'absent', '--json']);
-
-      expect(JSON.parse(io.stdout)).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         counts: { passed: 1, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0 },
       });
-      expect(JSON.parse(io.stdout)).not.toHaveProperty('worstSeverity');
+      expect(JSON.parse(stdout)).not.toHaveProperty('worstSeverity');
     });
 
     it('reports the run as failed when a kit never ran, even though what ran passed', async () => {
-      using io = captureStdio();
+      const { stdout } = await routeCli(['passing', 'absent', '--json']);
 
-      await routeCommand(['passing', 'absent', '--json']);
-
-      expect(JSON.parse(io.stdout)).toMatchObject({ passed: false });
+      expect(JSON.parse(stdout)).toMatchObject({ passed: false });
     });
 
     it('emits a report rather than an envelope when the only kit fails', async () => {
-      using io = captureStdio();
-
-      const exitCode = await routeCommand(['absent', '--json']);
+      const { exitCode, stdout } = await routeCli(['absent', '--json']);
 
       expect(exitCode).toBe(2);
-      expect(JSON.parse(io.stdout)).toMatchObject({
+      expect(JSON.parse(stdout)).toMatchObject({
         kits: [{ name: 'absent', error: { code: 'kit-load', message: expect.any(String) } }],
       });
     });
 
     it('exits 2 rather than 1 when a kit fails alongside failing checks', async () => {
-      using _io = captureStdio();
+      const { exitCode } = await routeCli(['failing', 'absent', '--json']);
 
-      await expect(routeCommand(['failing', 'absent', '--json'])).resolves.toBe(2);
+      expect(exitCode).toBe(2);
     });
   });
 
   describe('human mode', () => {
     it('reports the failure on stderr and continues to the next kit', async () => {
-      using io = captureStdio();
-
-      const exitCode = await routeCommand(['absent', 'passing']);
+      const { exitCode, stderr, stdout } = await routeCli(['absent', 'passing']);
 
       expect(exitCode).toBe(2);
-      expect(io.stderr).toContain('Error [absent]:');
-      expect(io.stdout).toContain('ok');
+      expect(stderr).toContain('Error [absent]:');
+      expect(stdout).toContain('ok');
     });
 
     it('heads every requested kit on stdout, including one that never ran', async () => {
-      using io = captureStdio();
+      const { stdout } = await routeCli(['passing', 'absent', '--style', 'rich']);
 
-      await routeCommand(['passing', 'absent']);
-
-      expect(io.stdout).toContain('\u{2501}\u{2501} \u{1F4D3} passing');
-      expect(io.stdout).toContain('\u{2501}\u{2501} \u{1F4D3} absent');
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4D3} passing');
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F4D3} absent');
     });
 
     it('keeps the failure off stdout, where a failed check would appear', async () => {
-      using io = captureStdio();
+      const { stdout } = await routeCli(['passing', 'absent']);
 
-      await routeCommand(['passing', 'absent']);
-
-      expect(io.stdout).not.toContain('Error [absent]:');
+      expect(stdout).not.toContain('Error [absent]:');
     });
 
     it('drops the kit label when a lone kit leaves nothing to disambiguate', async () => {
-      using io = captureStdio();
+      const { stderr } = await routeCli(['absent']);
 
-      await routeCommand(['absent']);
-
-      expect(io.stderr).toMatch(/^Error: /);
+      expect(stderr).toMatch(/^Error: /);
     });
   });
 });
