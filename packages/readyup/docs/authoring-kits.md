@@ -212,7 +212,7 @@ The third row is the failure mode to watch for: `skip` and `check` ran the ident
 
 The doctrine above ships as agent guidance too, in a CodeAssembly content root under `agents/` in the installed package. A repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync` gets it as the `consult-readyup-kits` skill, in every harness that repo targets.
 
-The skill holds the judgment a kit author needs while writing; these doc files stay the reference for everything mechanical.
+The skill holds the judgment that a kit author needs while writing; these doc files stay the reference for everything mechanical.
 
 ## Staged checklists
 

@@ -80,12 +80,12 @@ With `NODE_ENV` unset:
 
 `rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits stay the vetted artifact: they are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
 
-## Running a kit someone else publishes
+## Running a kit published by someone else
 
 ```bash
-rdy run --from npm:@acme/eslint-config   # a kit an installed package publishes
-rdy run --from github:acme/ops           # a kit a repository publishes
-rdy run --packages                       # every package the config lists, in one run
+rdy run --from npm:@acme/eslint-config   # a kit published by an installed package
+rdy run --from github:acme/ops           # a kit published by a repository
+rdy run --packages                       # every package listed by the config, in one run
 ```
 
 [Kit sources](docs/running-checks.md#kit-sources) covers each form, and [package-hosted kits](docs/publishing-kits.md#package-hosted-kits) covers the config list.

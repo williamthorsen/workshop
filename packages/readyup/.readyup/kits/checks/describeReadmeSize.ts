@@ -4,7 +4,7 @@ import process from 'node:process';
 import type { CheckOutcome } from 'readyup';
 import { readFile } from 'readyup/check-utils';
 
-/** Code points the npm registry keeps of a published package's `readme` field, dropping the rest. */
+/** Code points that the npm registry keeps of a published package's `readme` field, dropping the rest. */
 export const README_CODE_POINT_LIMIT = 65_536;
 
 /**
@@ -12,7 +12,7 @@ export const README_CODE_POINT_LIMIT = 65_536;
  *
  * The registry truncates the field silently and mid-sentence, so a README over the limit publishes a
  * page that stops inside whatever section reaches the boundary and drops every section after it. Code
- * points are the unit the registry counts in, which is neither bytes nor UTF-16 units.
+ * points are the unit in which the registry counts, which is neither bytes nor UTF-16 units.
  *
  * A package with no README passes: There is nothing for npm to truncate. The measure is the file as
  * committed, so a release that inserts notes into the README lands closer to the limit than this says.

@@ -8,13 +8,13 @@ const docsDir = 'docs';
 
 /** One relative link, resolved against the file that holds it. */
 interface DocLink {
-  /** Anchor the link names, or `undefined` where it names a file alone. */
+  /** Anchor named by the link, or `undefined` where the link names a file alone. */
   anchor: string | undefined;
 
   /** File holding the link, relative to the package root. */
   source: string;
 
-  /** File the link names, relative to the package root. */
+  /** File named by the link, relative to the package root. */
   target: string;
 
   /** The link as written, which is how the failure report names it. */
@@ -95,7 +95,7 @@ function listDocFiles(): string[] {
     .toSorted();
 }
 
-/** Relative links one file holds, absolute URLs and anything inside code excluded. */
+/** Relative links held by one file, absolute URLs and anything inside code excluded. */
 function listLinks(source: string): DocLink[] {
   return listProseLines(source)
     .flatMap((line) =>

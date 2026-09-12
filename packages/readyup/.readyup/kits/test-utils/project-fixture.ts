@@ -119,7 +119,7 @@ export function writeRawKitManifest(projectRoot: string, kits: Array<Record<stri
   writeFileSync(manifestPath, JSON.stringify({ version: 1, kits }));
 }
 
-/** Writes a README at the package root, under whichever of the names npm recognizes a test is about. */
+/** Writes a README at the package root, under a name that npm recognizes. */
 export function writeReadme(projectRoot: string, content: string, name = 'README.md'): void {
   writeFileSync(path.join(projectRoot, name), content);
 }
