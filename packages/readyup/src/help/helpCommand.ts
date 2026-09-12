@@ -6,7 +6,7 @@ import { usageError } from '../errors/RdyError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
-import { readReadmeSection } from './readmeSection.ts';
+import { readDoc } from './readDoc.ts';
 import { TOPICS } from './topics.ts';
 
 /** Flags that request help, whether given as the command itself or among a subcommand's flags. */
@@ -41,7 +41,7 @@ export function helpCommand(flags: string[], json: boolean): number {
   if (commandHelp !== undefined) return writeHelp(commandHelp, json);
 
   const topic = Object.hasOwn(TOPICS, subject) ? TOPICS[subject] : undefined;
-  if (topic !== undefined) return writeHelp(readReadmeSection(topic.heading), json);
+  if (topic !== undefined) return writeHelp(readDoc(topic.file), json);
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
 }
