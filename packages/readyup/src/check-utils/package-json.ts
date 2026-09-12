@@ -33,11 +33,12 @@ export function hasDevDependency(name: string): boolean {
 
 /**
  * Checks whether a dev dependency meets a minimum version. Any `workspace:`-prefixed specifier satisfies any floor,
- * including one that names a version: The specifier links to the package built by the repo, and a version that it
- * names is a publish range, not the version that resolves. A `catalog:` specifier is resolved through
- * `pnpm-workspace.yaml` and measured against the version found there; one that resolves to no version meets no
- * floor. `exempt` receives the specifier as declared, so a catalogued dependency is passed to it as `catalog:`; it
- * adds further exemptions and cannot remove the `workspace:` one.
+ * including one that names a version: The specifier links to the package built by the repo, and a repo that
+ * publishes a package is not a consumer of it. A version that such a specifier names is a publish range, not the
+ * version that resolves. A `catalog:` specifier is resolved through `pnpm-workspace.yaml` and measured against the
+ * version found there; one that resolves to no version meets no floor. `exempt` receives the specifier as declared,
+ * so a catalogued dependency is passed to it as `catalog:`; it adds further exemptions and cannot remove the
+ * `workspace:` one.
  *
  * A bare `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes
  * as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its

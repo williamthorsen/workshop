@@ -29,10 +29,16 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * The runner names each reported finding as `symbol (path:line)`, or as `path:line` where the finding declares
  * no symbol.
  *
+ * The runner honors the `rdy-ignore` pragma, being the layer that holds both the check and the provenance against
+ * which a pragma naming that check is matched. A kit passes nothing for the pragma and recognizes nothing, so every
+ * kit reporting through here speaks the one dialect of it that readyup defines.
+ *
  * A check naming its own package drops the findings sited in the declarations implementing it, from the detail
  * and from both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit
- * reporting it there loses the credibility that it needs in every other repo in which it runs; a neighbouring
- * declaration in the same file is ordinary code and is still reported.
+ * reporting it there loses the credibility that it needs in every other repo in which it runs. The exemption is
+ * scoped to the declaration because a single-package project's workspace is the whole repository, where a
+ * workspace-wide exemption would turn the check off; a neighbouring declaration in the same file is ordinary code
+ * and is still reported.
  *
  * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose
  * `package.json` names the package. It owns the lines from its own head to the line before the next head, or to
