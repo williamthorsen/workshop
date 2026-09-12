@@ -14,14 +14,14 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 
 Repo-level settings live in `.config/readyup.config.ts`.
 
-| Key               | Default         | Meaning                                                       |
-| ----------------- | --------------- | ------------------------------------------------------------- |
-| `compile.srcDir`  | `.readyup/kits` | Directory `rdy compile` reads sources from                    |
-| `compile.outDir`  | `.readyup/kits` | Directory it writes bundles to                                |
-| `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                  |
-| `internal.dir`    | `.`             | Directory holding internal sources, relative to the kits root |
-| `internal.infix`  | none            | Filename segment marking a file as internal                   |
-| `packages`        | none            | Packages `rdy run --packages` runs a published kit from       |
+| Key               | Default         | Meaning                                                          |
+| ----------------- | --------------- | ---------------------------------------------------------------- |
+| `compile.srcDir`  | `.readyup/kits` | Directory from which `rdy compile` reads sources                 |
+| `compile.outDir`  | `.readyup/kits` | Directory to which it writes bundles                             |
+| `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                     |
+| `internal.dir`    | `.`             | Directory containing internal sources, relative to the kits root |
+| `internal.infix`  | none            | Filename segment marking a file as internal                      |
+| `packages`        | none            | Packages from which `rdy run --packages` runs a published kit    |
 
 See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages`.
 
@@ -29,16 +29,16 @@ See [internal kits](publishing-kits.md#internal-kits) for what the `internal` ke
 
 | Field               | Type                         | Default     | Meaning                                    |
 | ------------------- | ---------------------------- | ----------- | ------------------------------------------ |
-| `checklists`        | `Array<Checklist \| Staged>` | required    | The checklists this kit runs               |
+| `checklists`        | `Array<Checklist \| Staged>` | required    | The checklists that this kit runs          |
 | `description`       | `string`                     | --          | Summary, reported by `rdy list --manifest` |
-| `minReadyupVersion` | `string`                     | --          | Readyup version the checks require         |
+| `minReadyupVersion` | `string`                     | --          | Readyup version required by the checks     |
 | `suites`            | `Record<string, string[]>`   | --          | Named subsets of checklists                |
 | `defaultSeverity`   | `Severity`                   | `error`     | Severity for checks that declare none      |
 | `failOn`            | `Severity`                   | `error`     | Failure threshold                          |
 | `reportOn`          | `Severity`                   | `recommend` | Reporting threshold                        |
 | `fixLocation`       | `'inline' \| 'end'`          | `end`       | Where fixes render                         |
 
-A kit declaring `minReadyupVersion` fails to load on a runner below it. A kit declaring none falls back to an advisory floor, the version its bundle records at compile time, which a lower runner reports as a [`version-skew`](running-checks.md#advisory-warnings) warning rather than a failure.
+A kit declaring `minReadyupVersion` fails to load on a runner below it. A kit declaring none falls back to an advisory floor, the version recorded in its bundle at compile time; a runner below that floor reports a [`version-skew`](running-checks.md#advisory-warnings) warning rather than a failure.
 
 ## Checklists
 
@@ -75,15 +75,15 @@ A check returns a boolean or a `CheckOutcome`:
 
 A check naming located sites returns a `FindingOutcome` instead, and the runner derives all three from it:
 
-| Field          | Type               | Meaning                                                                    |
-| -------------- | ------------------ | -------------------------------------------------------------------------- |
-| `findings`     | `OutcomeFinding[]` | Every located site, as `{ path, line, symbol?, reported }`                 |
-| `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none    |
-| `scanned`      | `string[]`         | Paths this check examined and read no other way; omitted, it declares none |
+| Field          | Type               | Meaning                                                                         |
+| -------------- | ------------------ | ------------------------------------------------------------------------------- |
+| `findings`     | `OutcomeFinding[]` | Every located site, as `{ path, line, symbol?, reported }`                      |
+| `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none         |
+| `scanned`      | `string[]`         | Paths that this check examined and read no other way; omitted, it declares none |
 
-`reported` marks the sites this check names; the rest count toward the fraction and do nothing else. The runner drops the sites a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, reads `ok` off whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
+`reported` marks the sites named by this check; the rest count toward the fraction and have no other effect. The runner drops the sites that a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, derives `ok` from whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
 
-`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded on its own, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` where the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or reaching for `fs` directly -- because nothing else can see what those read.
+`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded automatically, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` when the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or using `fs` directly -- because nothing else can detect what those read.
 
 ## Naming checks
 
@@ -91,7 +91,7 @@ Three fields, three questions:
 
 > **`name` states what must be true. `detail` explains why this status. `fix` says what to do about it.**
 
-A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: the operator leaves the reader to infer which direction is the violation.
+A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: The operator leaves the reader to infer which direction is the violation.
 
 State the claim in the third person indicative and capitalize it like a sentence, so a column of names reads as a column of assertions rather than labels.
 
@@ -104,15 +104,15 @@ State the claim in the third person indicative and capitalize it like a sentence
 | `Docker`                     | `Docker is configured`                     | a bare noun asserts nothing to be true or false          |
 | `extends recommended preset` | `renovate.json extends config:recommended` | a verb with no subject leaves the claim half-stated      |
 
-Rewriting a name often exposes an ambiguous predicate: an author writing "newer than 24" frequently discovers they meant a floor of 24.
+Rewriting a name often exposes an ambiguous predicate: An author writing "newer than 24" frequently discovers they meant a floor of 24.
 
 A check that exists only to gate the checks nested beneath it is no exception. It still reports a status of its own, so it still needs a claim.
 
-Neither is a `quiet` check, though it looks like one: its name reaches the reader only on a failure, where the claim reads false. That is the rule working rather than breaking. The name states what must be true, and the line appears precisely when it is not.
+Neither is a `quiet` check, though it looks like one: Its name renders only on a failure, when the claim reads false. That is the rule working rather than breaking. The name states what must be true, and the line appears precisely when it is not.
 
 ## The detail contract
 
-`detail` explains "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and with no terminal period -- the register `name` and `fix` already use. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
+`detail` explains "why this status" -- not "what this check asserts", which the name already says. On a pass it reports the evidence; on a skip, why the check did not apply; on a failure, what went wrong. Write it as a complete sentence, capitalized and with no terminal period -- the register already used by `name` and `fix`. A sentence whose subject is a code identifier keeps that identifier's own case, as in `package.json is missing or unreadable`.
 
 | Status  | Where `detail` renders                                  |
 | ------- | ------------------------------------------------------- |
@@ -183,12 +183,12 @@ A failing descendant turns the tail line red while every ancestor stays green. `
 
 ## When a check skips
 
-`skip` exists to prevent a wrong failure, not to suppress a right pass. A skip reports that the check does not apply to this repo, so the first question is whether the thing being checked is yours to assert about; only then ask what `check` would have returned.
+`skip` exists to prevent a wrong failure, not to suppress a right pass. A skip reports that the check does not apply to this repo, so the first question is whether the thing being checked is the kit's to assert about; only then ask what `check` would have returned.
 
 - If `check` would have failed, and failing would misjudge a conformant repo, the skip is correct.
 - If `check` would have passed, delete the skip and let the check pass.
 
-The second question is a fast check, not the rule. A skip is correct whenever the subject is not yours to assert about, whatever `check` would have returned. Five checks from published kits separate the two cases:
+The second question is a fast check, not the rule. A skip is correct whenever the subject is not the kit's to assert about, whatever `check` would have returned. Five checks from published kits separate the two cases:
 
 | Check                                             | In the skipped state, `check` would     | Verdict                                                |
 | ------------------------------------------------- | --------------------------------------- | ------------------------------------------------------ |
@@ -198,21 +198,21 @@ The second question is a fast check, not the rule. A skip is correct whenever th
 | `code-quality workflow does not use nmr prepush`  | pass                                    | the skip masks a pass                                  |
 | `.github/labels.yaml exists`                      | pass                                    | the skip is correct; release-kit does not own the file |
 
-The last row is the one the fast check alone gets wrong. `.github/labels.yaml` is a filename several label-sync tools write, and release-kit generates it only from a `repoLabels` block, so a repo with that file but no such block would have passed `fileExists` and still deserves the skip.
+The last row is the one that the fast check alone gets wrong. `.github/labels.yaml` is a filename written by several label-sync tools, and release-kit generates it only from a `repoLabels` block, so a repo with that file but no such block would have passed `fileExists` and still deserves the skip.
 
-The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass. [`rdy run --diagnose`](running-checks.md#run-options) decides that mechanical half, reporting every check its own `skip` turned off that would have passed. It decides nothing about applicability.
+The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass. [`rdy run --diagnose`](running-checks.md#run-options) decides that mechanical half, reporting every check that its own `skip` turned off and that would have passed. It decides nothing about applicability.
 
-**Only a skipping parent collapses a group.** A parent whose `skip` fires reports alone: its descendants are not run, not reported, and not counted. A parent that _fails_ instead renders every descendant as its own 🚫, which is one blocked line per descendant where one skipped line was wanted. `quiet` helps with neither, suppressing passes only.
+**Only a skipping parent collapses a group.** A parent whose `skip` fires reports alone: Its descendants are not run, not reported, and not counted. A parent that _fails_ instead renders every descendant as its own 🚫, which is one blocked line per descendant when one skipped line was wanted. `quiet` helps with neither, suppressing passes only.
 
-**⚪ and 🚫 read differently.** ⚪ means the check does not apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. A blocked subtree does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing the blocked check names.
+**⚪ and 🚫 read differently.** ⚪ means the check does not apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. In a blocked subtree, the runner does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing named by the blocked check.
 
-**Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
+**Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and which can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
 
 ## Agent guidance
 
-The doctrine above ships as agent guidance too, in a CodeAssembly content root under `agents/` in the installed package. A repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync` gets it as the `consult-readyup-kits` skill, in every harness that repo targets.
+The doctrine above is also published as agent guidance, in a CodeAssembly content root under `agents/` in the installed package. A repo that names `readyup` under `packages` in its `.agents/codeassembly.yaml` and runs `codeassembly sync` gets it as the `consult-readyup-kits` skill, in every harness targeted by that repo.
 
-The skill holds the judgment that a kit author needs while writing; these doc files stay the reference for everything mechanical.
+The skill contains the judgment that a kit author needs while writing; these doc files stay the reference for everything mechanical.
 
 ## Staged checklists
 
@@ -227,7 +227,7 @@ export default defineRdyStagedChecklist({
 });
 ```
 
-A failure at or above the [failure threshold](concepts.md#thresholds) stops the groups after it; a below-threshold failure is reported and the next group still runs. Only top-level results gate: a failing _nested_ check does not halt the next group.
+A failure at or above the [failure threshold](concepts.md#thresholds) stops the groups after it; a below-threshold failure is reported and the next group still runs. Only top-level results gate: A failing _nested_ check does not halt the next group.
 
 This is the one gate that consults the threshold. A failed check blocks its own descendants, and a failed precondition gates its checklist, whatever the severity.
 
@@ -236,11 +236,11 @@ This is the one gate that consults the threshold. A failed check blocks its own 
 A checklist's `preconditions` gate the checks that follow. If any precondition fails, every check is skipped and each records `precondition` as its reason.
 
 - **A failed precondition gates regardless of severity.** Severity decides whether the run fails; the gate decides whether the checks are worth running. Unlike a staged checklist's groups, the gate does not consult the [failure threshold](concepts.md#thresholds).
-- **A precondition skipped `n/a` does not gate.** To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason. [When a check skips](#when-a-check-skips) covers why that structure and not a failing parent.
+- **A precondition skipped `n/a` does not gate.** To make a whole checklist inapplicable, nest its checks under one parent check whose `skip` returns a reason. [When a check skips](#when-a-check-skips) explains why to use that structure rather than a failing parent.
 
 ## Suites
 
-`suites` names reusable subsets of checklists. A suite name is accepted anywhere a checklist name is, and expands in the order the suite declares.
+`suites` names reusable subsets of checklists. A suite name is accepted anywhere a checklist name is, and expands in the order declared by the suite.
 
 ```ts
 export default defineRdyKit({
@@ -255,7 +255,7 @@ rdy deploy:fast
 
 ## Validation
 
-Neither `rdy compile` nor `rdy run --jit` type-checks the kit it loads, so both validate structure at load time, identically -- `rdy compile` refuses to publish a kit that `rdy run` would reject.
+Neither `rdy compile` nor `rdy run --jit` type-checks the kit that it loads, so both validate structure at load time, identically -- `rdy compile` refuses to publish a kit that `rdy run` would reject.
 
 Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function, and a `fix` written as a data property must be a string. Unknown keys are allowed, so a kit written for a later ReadyUp still loads.
 
@@ -265,15 +265,15 @@ Invalid kit at .readyup/kits/default.js:
   checklists[0].checks[2].check: expected a function, got string
 ```
 
-A typo'd `severity` is the mistake this matters most for: an unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
+A typo'd `severity` is the mistake for which this matters most: An unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
-A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error taking the whole kit down.
+A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading.
 
 ## Testing a kit
 
 A kit's checks are ordinary functions, and the shape of the test follows what a check reads.
 
-**A check that calls `discoverWorkspaces` itself** is tested against a real directory tree, with `cwd` pointed at it. Nothing is mocked, so the check sees the workspace list discovery actually produces, root included:
+**A check that calls `discoverWorkspaces` itself** is tested against a real directory tree, with `cwd` pointed at it. Nothing is mocked, so the check sees the workspace list actually produced by discovery, root included:
 
 ```ts
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
@@ -292,9 +292,9 @@ it('passes when every package README contains the marker', () => {
 });
 ```
 
-`createTempTree` and `pointCwdAt` are the helpers ReadyUp uses for its own suites; any equivalent will do, since what the pattern needs is a real tree and a `cwd` pointed at it.
+`createTempTree` and `pointCwdAt` are the helpers used by ReadyUp for its own suites; any equivalent will do, since the pattern needs a real tree and a `cwd` pointed at it.
 
-Mocking `readyup/check-utils` instead is what produces a workspace list discovery cannot return -- most often one with no root entry, which every `!isRoot` filter then passes through untouched, so the filter is never exercised.
+Mocking `readyup/check-utils` instead produces a workspace list that discovery cannot return -- most often one with no root entry, which every `!isRoot` filter then passes through untouched, so the filter is never exercised.
 
 **A function that takes a `Workspace` parameter** needs a value rather than a tree. `readyup/testing` exports a builder for one:
 
@@ -306,7 +306,7 @@ expect(skipIfNotPublishable(makeWorkspace({ packageJson: { name: 'example', priv
 );
 ```
 
-`makeWorkspace` fills every field the call leaves out, so a field added to `Workspace` in a later release does not break the fixture. Its defaults are:
+`makeWorkspace` fills every field left out by the call, so a field added to `Workspace` in a later release does not break the fixture. Its defaults are:
 
 | Field          | Default                                                                   |
 | -------------- | ------------------------------------------------------------------------- |
@@ -317,11 +317,11 @@ expect(skipIfNotPublishable(makeWorkspace({ packageJson: { name: 'example', priv
 | `isPackage`    | `packageJson.private !== true`                                            |
 | `isRoot`       | `dir === '.'`                                                             |
 
-The last three are derived by the same code `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` without being told. An explicit override wins over the derivation, which is how a test states a shape discovery would not produce. The result is frozen, as a discovered workspace is, and the manifest passed in is copied before freezing, so a literal shared between fixtures stays writable.
+The last three are derived by the same code that `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` although the call does not set it. An explicit override takes precedence over the derivation, which is how a test states a shape that discovery would not produce. The result is frozen, as a discovered workspace is, and the manifest passed in is copied before freezing, so a literal shared between fixtures stays writable.
 
 ## Inlining JSON at compile time
 
-A compiled kit is self-contained, so it cannot read a JSON file that sits next to its source. `pickJson` closes that gap by copying selected fields into the bundle while it is being built:
+A compiled kit is self-contained, so it cannot read a JSON file that is next to its source. `pickJson` works around that limit by copying selected fields into the bundle while it is being built:
 
 ```ts
 import { pickJson } from 'readyup';
@@ -329,24 +329,24 @@ import { pickJson } from 'readyup';
 const pkg = pickJson('../../package.json', ['name', 'version', ['engines', 'node']]);
 ```
 
-`rdy compile` replaces the call with the literal it resolves to. Nothing of `pickJson` survives, not even the import:
+`rdy compile` replaces the call with the literal to which it resolves. Nothing of `pickJson` survives, not even the import:
 
 ```js
 var pkg = { "name": "my-app", "version": "3.1.0", "engines": { "node": ">=24" } };
 ```
 
-The path resolves relative to the source file. Each entry in the second argument names a field to keep: a string for a top-level key, an array of strings for a nested one, whose nesting the result preserves. Naming a path the file does not have fails the compile rather than inlining `undefined`.
+The path resolves relative to the source file. Each entry in the second argument names a field to keep: a string for a top-level key, an array of strings for a nested one, whose nesting the result preserves. Naming a path that the file does not have fails the compile rather than inlining `undefined`.
 
 Both arguments must be literals written in place. They are read out of the source text before it is parsed, so a variable, a template literal, or a concatenation is a compile error -- and a call inside a comment or a string is still processed, since that reader cannot tell the difference.
 
 Two consequences follow from the value being resolved at compile time:
 
-- `pickJson` throws if it is ever reached at runtime. A kit that hits it was not compiled.
-- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not move, and neither did the bundle -- but the compile records the projection it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
+- `pickJson` throws if it is ever reached at runtime. A kit that calls it was not compiled.
+- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not change, and neither did the bundle -- but the compile records the projection that it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
 
 ## TypeScript settings
 
-Kits compile with no `tsconfig.json`. Whatever config sits above a kit is ignored, so the same source compiles to the same bundle in any repository and a published bundle is the one its author built.
+Kits compile with no `tsconfig.json`. Whatever config is above a kit is ignored, so the same source compiles to the same bundle in any repository and a published bundle is the one that its author built.
 
 Kits are bundled by esbuild, and its defaults apply, with two settings declared:
 
@@ -355,4 +355,4 @@ Kits are bundled by esbuild, and its defaults apply, with two settings declared:
 | `experimentalDecorators`  | `false` |
 | `useDefineForClassFields` | `true`  |
 
-One consequence reaches every kit: `paths` aliases do not resolve. Import by relative path or package specifier. A kit that reaches for an alias fails to compile and is told why, rather than compiling into something that breaks when it runs.
+One consequence applies to every kit: `paths` aliases do not resolve. Import by relative path or package specifier. A kit that uses an alias fails to compile with an error that says why, rather than compiling into something that breaks when it runs.
