@@ -12,7 +12,7 @@ Run pre-deployment verification checks from checklists authored in TypeScript, l
 pnpm add --save-dev readyup
 ```
 
-Node 24 or later is required, for the runner and for the kits it compiles.
+Node 24 or later is required, for the runner and for the kits that it compiles.
 
 ## Quick start
 
@@ -22,7 +22,7 @@ rdy init
 
 This creates two files:
 
-**`.config/readyup.config.ts`** -- repo-level settings:
+**`.config/readyup.config.ts`**: Repo-level settings
 
 ```ts
 import { defineRdyConfig } from 'readyup';
@@ -35,7 +35,7 @@ export default defineRdyConfig({
 });
 ```
 
-**`.readyup/kits/default.ts`** -- starter kit:
+**`.readyup/kits/default.ts`**: Starter kit
 
 ```ts
 import { defineRdyKit } from 'readyup';
@@ -78,7 +78,7 @@ With `NODE_ENV` unset:
 🔴 Total: 1 error (0ms)
 ```
 
-`rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits stay the vetted artifact: they are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
+`rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits stay the vetted artifact: They are what `rdy verify` hashes and what a consumer running `rdy run --from` gets.
 
 ## Running a kit published by someone else
 
@@ -97,7 +97,7 @@ rdy run              # fails on a failed check
 rdy verify --rebuild # fails on a bundle that no longer reproduces from its source
 ```
 
-[Exit codes](docs/running-checks.md#exit-codes) gives what each exit status means, and [verifying by recompiling](docs/publishing-kits.md#verifying-by-recompiling) gives what `--rebuild` compares.
+[Exit codes](docs/running-checks.md#exit-codes) explains what each exit status means, and [verifying by recompiling](docs/publishing-kits.md#verifying-by-recompiling) explains what `--rebuild` compares.
 
 ## Documentation
 
@@ -114,7 +114,7 @@ rdy verify --rebuild # fails on a bundle that no longer reproduces from its sour
 
 `readyup/check-utils` is the stable, versioned surface for kit-author imports. It follows semver: no breaking changes within a major version.
 
-Compiled kits embed nothing of ReadyUp itself -- the runner satisfies `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: when upgrading across a major, recompile with `rdy compile`.
+Compiled kits embed nothing of ReadyUp itself -- the runner resolves `readyup` and `readyup/*` imports at runtime via its module-resolution hook. Kits are therefore version-coupled to the runner across breaking boundaries: When upgrading across a major, recompile with `rdy compile`.
 
 ## License
 
