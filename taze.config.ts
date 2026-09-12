@@ -14,5 +14,8 @@ export default defineConfig({
     '@types/node': 'minor',
     // Hold typescript at v6 until v7 supports type-aware linting.
     typescript: 'minor',
+    // Hold vitest at v5 until v6 matures.
+    '@vitest/coverage-v8': 'minor',
+    vitest: 'minor',
   },
 });
