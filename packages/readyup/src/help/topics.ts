@@ -20,5 +20,6 @@ export const TOPICS: Readonly<Record<string, HelpTopic>> = {
   concepts: { file: 'concepts.md', summary: 'Kits, severities, statuses, and thresholds' },
   json: { file: 'json-output.md', summary: 'The JSON report and its schemas' },
   publishing: { file: 'publishing-kits.md', summary: 'Compiling, packaging, and verifying kits' },
+  running: { file: 'running-checks.md', summary: 'Selecting what runs, reading the output, and suppressing a finding' },
   utils: { file: 'check-utils.md', summary: 'Helpers that a kit imports from readyup' },
 };
