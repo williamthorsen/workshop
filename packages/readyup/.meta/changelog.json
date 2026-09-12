@@ -1,5 +1,45 @@
 [
   {
+    "version": "0.36.0",
+    "date": "2026-09-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Check README file length against npm cap and split readyup's README (#455)",
+            "body": "- Adds a check to the `publishing` kit that fails a package whose README exceeds npm's 64K-code-point limit.\n- Makes `rdy help <topic>` print a whole doc file instead of a section of the README, and adds a `running` topic covering how to select what runs, read the output, and suppress a finding.\n- Moves readyup's reference documentation out of `README.md` into linked files under `docs/` that ship with the package.\n\nMigration: Where `rdy run --from npm:readyup publishing` now reports a README over the limit, move its reference sections into separate files and link them from the README.",
+            "migration": "Where `rdy run --from npm:readyup publishing` now reports a README over the limit, move its reference sections into separate files and link them from the README.",
+            "hash": "42a8dc728a222606b333d60e9baf7540f457040d"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Share Vitest settings between the root and package configs (#454)",
+            "body": "- Moves readyup's source aliases and `unstubEnvs` into a new `vitest.shared.ts` that all three Vitest configs pass to the config factory, so a root-collected run such as `nmr test:watch` resolves `readyup` to `packages/readyup/src/` rather than to the compiled `dist/`.\n- Removes `RDY_STYLE=rich` from `packages/readyup/vitest.config.ts` and instead passes `--style rich` in the two route tests that assert rich output, so that the config does not determine how the suite renders.",
+            "hash": "43ed35206f37ecd2c5a62021dc2b8ba36056d780"
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Cut check-utils doc prose that its exported doc comments already state (#456)",
+            "body": "- Cuts `packages/readyup/docs/check-utils.md` by deleting the paragraphs that restate doc comments on exports of `readyup/check-utils`, and states in its introduction that those comments contain each utility's edge cases.\n- Adds to the doc comments of `buildFindingReport`, `countPackageUsage`, and `hasMinDevDependencyVersion` the facts that were stated only in the doc file or on an unexported symbol, so that the published declarations include them.\n- Updates the `readyup-kits` rulebook, published as the `consult-readyup-kits` skill, to name the declaration files as the source of each utility's edge cases.",
+            "hash": "b6cb86c3300c52ec1a08c7ff838a86d13adf4f60"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.35.1",
     "date": "2026-09-08",
     "sections": [
@@ -32,6 +72,7 @@
           {
             "description": "Upgrade all dependencies and clear the resulting lint and test failures (#447)",
             "body": "- Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.\n- Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.\n- Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.\n\nMigration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
+            "migration": "Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
             "hash": "321550f3899dd500837a631c5aa78d475352043e"
           }
         ]
@@ -207,6 +248,7 @@
             "description": "Report the repo root in every discoverWorkspaces() result (#402)",
             "body": "Reports the repo root in every `discoverWorkspaces()` result, flagged by a new `isRoot` field on each `Workspace`, so a kit selects what it needs by filtering one uniform list rather than by the repo's shape. `isRoot` is independent of `isPackage`: A monorepo may publish its root, and a member may be private.\n\nMigration: The returned array now includes the monorepo root, so a caller must filter on `!isRoot` to get only the members. A repo whose root `package.json` is missing or unparseable now throws.",
             "breaking": true,
+            "migration": "The returned array now includes the monorepo root, so a caller must filter on `!isRoot` to get only the members. A repo whose root `package.json` is missing or unparseable now throws.",
             "hash": "4c1bbc1db4537ed0506295651b0b6f33fbc51910"
           }
         ]
@@ -290,6 +332,7 @@
             "description": "Let a pragma name the check whose finding it declines (#381)",
             "body": "Now supports check IDs in `rdy-ignore` comments, so that a comment can suppress a single check on a line instead of every check.\n\nMigration: `buildFindingReport` now returns a `FindingOutcome` instead of a `CheckOutcome`. The runner turns that value into the verdict, the detail, and the fraction. A kit that returns it unchanged needs no edit.",
             "breaking": true,
+            "migration": "`buildFindingReport` now returns a `FindingOutcome` instead of a `CheckOutcome`. The runner turns that value into the verdict, the detail, and the fraction. A kit that returns it unchanged needs no edit.",
             "hash": "899e53ae163d8cb41c5a6fb82be7dc446ad77cb9"
           },
           {

@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.36.0 — 2026-09-12
+
+### 🎉 Features
+
+- Check README file length against npm cap and split readyup's README (#455)
+
+  - Adds a check to the `publishing` kit that fails a package whose README exceeds npm's 64K-code-point limit.
+  - Makes `rdy help <topic>` print a whole doc file instead of a section of the README, and adds a `running` topic covering how to select what runs, read the output, and suppress a finding.
+  - Moves readyup's reference documentation out of `README.md` into linked files under `docs/` that ship with the package.
+
+  Migration: Where `rdy run --from npm:readyup publishing` now reports a README over the limit, move its reference sections into separate files and link them from the README.
+
+### 🧪 Tests
+
+- Share Vitest settings between the root and package configs (#454)
+
+  - Moves readyup's source aliases and `unstubEnvs` into a new `vitest.shared.ts` that all three Vitest configs pass to the config factory, so a root-collected run such as `nmr test:watch` resolves `readyup` to `packages/readyup/src/` rather than to the compiled `dist/`.
+  - Removes `RDY_STYLE=rich` from `packages/readyup/vitest.config.ts` and instead passes `--style rich` in the two route tests that assert rich output, so that the config does not determine how the suite renders.
+
+### 📚 Documentation
+
+- Cut check-utils doc prose that its exported doc comments already state (#456)
+
+  - Cuts `packages/readyup/docs/check-utils.md` by deleting the paragraphs that restate doc comments on exports of `readyup/check-utils`, and states in its introduction that those comments contain each utility's edge cases.
+  - Adds to the doc comments of `buildFindingReport`, `countPackageUsage`, and `hasMinDevDependencyVersion` the facts that were stated only in the doc file or on an unexported symbol, so that the published declarations include them.
+  - Updates the `readyup-kits` rulebook, published as the `consult-readyup-kits` skill, to name the declaration files as the source of each utility's edge cases.
+
 ## 0.35.1 — 2026-09-08
 
 ### 🐛 Bug fixes
