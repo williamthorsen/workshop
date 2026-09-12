@@ -14,8 +14,9 @@ export const README_CODE_POINT_LIMIT = 65_536;
  * page that stops inside whatever section reaches the boundary and drops every section after it. Code
  * points are the unit in which the registry counts, which is neither bytes nor UTF-16 units.
  *
- * A package with no README passes: There is nothing for npm to truncate. The measure is the file as
- * committed, so a release that inserts notes into the README lands closer to the limit than this says.
+ * A package with no README passes: There is nothing for npm to truncate. A package root that cannot be
+ * read produces no verdict, so the read is left to throw. The measure is the file as committed, so a
+ * release that inserts notes into the README lands closer to the limit than this says.
  */
 export function describeReadmeSize(): CheckOutcome {
   const file = findReadme();
@@ -40,15 +41,10 @@ export function describeReadmeSize(): CheckOutcome {
  * in where none does. A lone `README.txt` is therefore no README to npm, and none to this check either.
  */
 function findReadme(): string | undefined {
-  let candidates: string[];
-  try {
-    candidates = readdirSync(process.cwd(), { withFileTypes: true })
-      .filter((entry) => entry.isFile() && /^readme(\..*)?$/i.test(entry.name))
-      .map((entry) => entry.name)
-      .toSorted();
-  } catch {
-    return undefined;
-  }
+  const candidates = readdirSync(process.cwd(), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^readme(\..*)?$/i.test(entry.name))
+    .map((entry) => entry.name)
+    .toSorted();
 
   const markdown = candidates.find((name) => /\.m?a?r?k?d?o?w?n?$/i.test(name));
   return markdown ?? candidates.find((name) => /^readme$/i.test(name));
