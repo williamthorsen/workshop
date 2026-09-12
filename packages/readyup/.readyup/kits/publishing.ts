@@ -2,8 +2,9 @@
  * Publication readiness for a package that ships its readyup kits to consumers.
  *
  * Strict throughout, because everything it checks is a way for a published package to contain checks that
- * do not run, or that run against something other than what the author wrote. `default` is the advisory
- * counterpart, for a project that authors kits without publishing them.
+ * do not run, that run against something other than what the author wrote, or to publish a README that
+ * the registry truncates without reporting anything. `default` is the advisory counterpart, for a project
+ * that authors kits without publishing them.
  *
  *   rdy run --from npm:readyup publishing
  */
@@ -16,6 +17,7 @@ import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
 import { buildSelfContainmentChecks } from './checks/buildSelfContainmentChecks.ts';
 import { describeFilesCoverage } from './checks/describeFilesCoverage.ts';
 import { describeLoadablePaths } from './checks/describeLoadablePaths.ts';
+import { describeReadmeSize, README_CODE_POINT_LIMIT } from './checks/describeReadmeSize.ts';
 import { KITS_DIR, MANIFEST_DIR } from './checks/kit-layout.ts';
 
 /** Bundle a bare `rdy run --from npm:<package>` resolves to. */
@@ -52,6 +54,11 @@ export default defineRdyKit({
           name: `Every recorded kit sits in ${KITS_DIR} under its own name`,
           check: describeLoadablePaths,
           fix: `Compile kits straight into ${KITS_DIR}; a consumer composes the path from the kit's name`,
+        },
+        {
+          name: `README is within npm's ${README_CODE_POINT_LIMIT.toLocaleString('en-US')}-code-point limit`,
+          check: describeReadmeSize,
+          fix: 'Move reference sections into linked files under docs/, leaving the README under the limit',
         },
       ],
     },

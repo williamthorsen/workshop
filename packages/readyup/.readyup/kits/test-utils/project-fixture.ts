@@ -119,6 +119,11 @@ export function writeRawKitManifest(projectRoot: string, kits: Array<Record<stri
   writeFileSync(manifestPath, JSON.stringify({ version: 1, kits }));
 }
 
+/** Writes a README at the package root, under whichever of the names npm recognizes a test is about. */
+export function writeReadme(projectRoot: string, content: string, name = 'README.md'): void {
+  writeFileSync(path.join(projectRoot, name), content);
+}
+
 /** Writes a readyup config at the one path that `loadConfig` looks in. */
 export function writeRdyConfig(projectRoot: string): void {
   const configPath = path.join(projectRoot, '.config', 'readyup.config.ts');
