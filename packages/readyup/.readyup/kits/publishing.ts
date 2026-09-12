@@ -2,8 +2,8 @@
  * Publication readiness for a package that ships its readyup kits to consumers.
  *
  * Strict throughout, because everything it checks is a way for a published package to contain checks that
- * do not run, that run against something other than what the author wrote, or to publish a README that
- * the registry truncates without reporting anything. `default` is the advisory counterpart, for a project
+ * do not run, that run against something other than what the author wrote, or to ship a README that the
+ * registry truncates without reporting anything. `default` is the advisory counterpart, for a project
  * that authors kits without publishing them.
  *
  *   rdy run --from npm:readyup publishing

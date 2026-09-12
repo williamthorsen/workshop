@@ -10,13 +10,14 @@ export const README_CODE_POINT_LIMIT = 65_536;
 /**
  * Whether the README that npm would publish fits inside the registry's `readme` field.
  *
- * The registry truncates the field silently and mid-sentence, so a README over the limit publishes a
- * page that stops inside whatever section reaches the boundary and drops every section after it. Code
- * points are the unit in which the registry counts, which is neither bytes nor UTF-16 units.
+ * The registry truncates the field silently and mid-sentence, so npmjs.com serves a README over the
+ * limit as a page that stops inside whatever section reaches the boundary, and shows no section after
+ * it. Code points are the unit in which the registry counts, which is neither bytes nor UTF-16 units.
  *
- * A package with no README passes: There is nothing for npm to truncate. A package root that cannot be
- * read produces no verdict, so the read is left to throw. The measure is the file as committed, so a
- * release that inserts notes into the README lands closer to the limit than this says.
+ * A package with no README passes: There is nothing for npm to truncate. The check has no verdict for
+ * a package root that it cannot read, so the read goes uncaught. The measure is the file as committed,
+ * and release-kit inserts the version's notes at publish time, so the published field sits closer to
+ * the limit than this reports.
  */
 export function describeReadmeSize(): CheckOutcome {
   const file = findReadme();
