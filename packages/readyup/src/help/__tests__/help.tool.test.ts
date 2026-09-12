@@ -13,9 +13,6 @@ const packageDir = path.resolve(import.meta.dirname, '../../..');
 const sourceCli = path.join(packageDir, 'src/bin/rdy.ts');
 const publishedCli = path.join(packageDir, 'bin/rdy.js');
 const buildOutput = path.join(packageDir, 'dist/esm/bin/rdy.js');
-const conceptsTopic = TOPICS['concepts'];
-assert.ok(conceptsTopic !== undefined, 'TOPICS declares no "concepts" topic');
-const conceptsDoc = readFileSync(path.join(packageDir, 'docs', conceptsTopic.file), 'utf8');
 
 /**
  * Drives the real CLI, which is the only tier that shows where a spawned rdy looks for its doc files.
@@ -35,7 +32,7 @@ describe('rdy help, spawned', () => {
   it('prints a whole doc file', () => {
     const stdout = runHelp(sourceCli, 'concepts', tmpdir());
 
-    expect(stdout.trimEnd()).toBe(conceptsDoc.trimEnd());
+    expect(stdout.trimEnd()).toBe(readTopicDoc('concepts').trimEnd());
   });
 
   // The published entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it
@@ -44,11 +41,19 @@ describe('rdy help, spawned', () => {
   it.skipIf(!existsSync(buildOutput))('resolves the doc files from the published entry point', () => {
     const stdout = runHelp(publishedCli, 'concepts', tmpdir());
 
-    expect(stdout.trimEnd()).toBe(conceptsDoc.trimEnd());
+    expect(stdout.trimEnd()).toBe(readTopicDoc('concepts').trimEnd());
   });
 });
 
 // region | Helpers
+
+/** Reads the doc file that a topic prints, out of the package rather than through readyup's own reader. */
+function readTopicDoc(topic: string): string {
+  const declared = TOPICS[topic];
+  assert.ok(declared !== undefined, `TOPICS declares no "${topic}" topic`);
+
+  return readFileSync(path.join(packageDir, 'docs', declared.file), 'utf8');
+}
 
 /** Runs `rdy help <topic>` through one entry point and returns what it wrote to stdout. */
 function runHelp(entryPath: string, topic: string, cwd: string): string {
