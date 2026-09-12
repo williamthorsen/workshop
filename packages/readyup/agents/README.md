@@ -18,7 +18,7 @@ Both modes require the consumer to run `codeassembly sync`, so the choice change
 
 A rulebook may link only into `skills/` and `scripts/`. Every other relative Markdown target is rejected, a path into `node_modules/` included: It resolves under `guidance/rulebooks/` and reports as a rulebook that should have been invoked rather than linked. Name a path outside those trees in a code span instead of a link.
 
-Anchor-only links are checked against the body in which they appear, so a fragment naming a heading in `packages/readyup/README.md` fails the run. Check `](#` before moving a section between the two.
+Anchor-only links are checked against the body in which they appear, so a fragment naming a heading in `packages/readyup/README.md` or in a file under `packages/readyup/docs/` fails the run. Check `](#` before moving a section between the rulebook and either.
 
 ## Publishing
 

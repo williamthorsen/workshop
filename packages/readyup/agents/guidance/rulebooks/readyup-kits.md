@@ -6,7 +6,7 @@ delivery: skill
 
 # Authoring ReadyUp kits
 
-Judgment that the kit schema cannot enforce. `node_modules/readyup/README.md` is the reference for everything mechanical: field signatures, statuses, thresholds, preconditions, and the check utilities.
+Judgment that the kit schema cannot enforce. `node_modules/readyup/docs/` is the reference for everything mechanical: `authoring-kits.md` for field signatures and preconditions, `concepts.md` for statuses and thresholds, and `check-utils.md` for the check utilities.
 
 ## When a check skips
 
