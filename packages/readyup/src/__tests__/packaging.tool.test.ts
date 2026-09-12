@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { TOPICS } from '../help/topics.ts';
+
 const packageDir = path.resolve(import.meta.dirname, '../..');
 
 /**
@@ -22,8 +24,12 @@ describe('published tarball', () => {
     expect(packedPaths).toContain('agents/guidance/rulebooks/readyup-kits.md');
   });
 
-  it('includes the README that `rdy help <topic>` reads its sections from', () => {
-    expect(packedPaths).toContain('README.md');
+  // npm ships `README.md` whatever `files` says, but nothing ships `docs/` unless the manifest names it,
+  // and every topic reads one file from there.
+  it('includes the doc file that each `rdy help` topic reads', () => {
+    const topicFiles = Object.values(TOPICS).map(({ file }) => `docs/${file}`);
+
+    expect(topicFiles.filter((file) => !packedPaths.includes(file))).toStrictEqual([]);
   });
 });
 

@@ -8,11 +8,11 @@ const TOPIC_LINES = Object.entries(TOPICS)
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the README explains it, and the skill holds the authoring judgment that neither states. The
+ * Help lists the surface; the doc files explain it, and the skill holds the authoring judgment that neither states. The
  * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
  * for a global install, where no such path exists.
  */
-export const DOCS_POINTER = `Full documentation: node_modules/readyup/README.md
+export const DOCS_POINTER = `Full documentation: node_modules/readyup/docs/
    Online: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
 Authoring kits: the consult-readyup-kits skill`;
 
@@ -82,7 +82,7 @@ Examples:
   rdy deploy:build,test                            Run two checklists from the deploy kit
   rdy run --jit deploy                             Run the deploy kit from its TypeScript source
   rdy init                                         Scaffold a starter config and kit
-  rdy help concepts                                Read the concepts section of the README
+  rdy help concepts                                Read the concepts documentation
   rdy compile                                      Compile every kit source into a bundle
   rdy list --from github:williamthorsen/workshop   List kits published by a repository
 

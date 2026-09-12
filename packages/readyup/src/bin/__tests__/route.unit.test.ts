@@ -163,8 +163,8 @@ describe(routeCommand, () => {
     expect(DOCS_POINTER).toContain(packageJson.homepage);
   });
 
-  it('points at the installed README and the authoring skill', () => {
-    expect(DOCS_POINTER).toContain('node_modules/readyup/README.md');
+  it('points at the installed docs directory and the authoring skill', () => {
+    expect(DOCS_POINTER).toContain('node_modules/readyup/docs/');
     expect(DOCS_POINTER).toContain('consult-readyup-kits');
   });
 

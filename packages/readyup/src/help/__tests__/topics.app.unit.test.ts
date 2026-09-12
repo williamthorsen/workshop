@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { HELP } from '../helpText.ts';
-import { readReadmeSection } from '../readmeSection.ts';
+import { readDoc } from '../readDoc.ts';
 import { TOPICS } from '../topics.ts';
 
 describe('help topics', () => {
-  it.each(Object.entries(TOPICS).map(([topic, { heading }]) => ({ heading, topic })))(
-    'resolves $topic to its section of the shipped README',
-    ({ heading }) => {
-      const section = readReadmeSection(heading);
-      const body = section.slice(`## ${heading}\n`.length).trim();
-
-      expect(section.startsWith(`## ${heading}\n`)).toBe(true);
-      expect(body).not.toBe('');
+  it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ file, topic })))(
+    'resolves $topic to the shipped $file',
+    ({ file }) => {
+      expect(readDoc(file).trim()).not.toBe('');
     },
   );
 

@@ -6,6 +6,7 @@ import process from 'node:process';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { RdyResult } from '../../../src/kits/types.ts';
+import { README_CODE_POINT_LIMIT } from '../checks/describeReadmeSize.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
 import {
@@ -16,6 +17,7 @@ import {
   writeKitManifest,
   writeModuleInput,
   writePackageJson,
+  writeReadme,
 } from '../test-utils/project-fixture.ts';
 
 /** Bundle reaching for a package that only the publishing project has installed. */
@@ -49,7 +51,7 @@ describe('publishing kit', () => {
 
       const results = await runPackaging();
 
-      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'passed', 'passed']);
+      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'passed', 'passed', 'passed']);
     });
 
     // Nothing is held back, so nothing has to be listed.
@@ -149,6 +151,93 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'under its own name')).toMatchObject({
         status: 'failed',
         detail: `The manifest records default at ${path.join('.readyup', 'kits', 'nested', 'default.js')}`,
+      });
+    });
+
+    describe('README size', () => {
+      it('passes a README of exactly the limit', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT));
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'passed',
+          detail: 'README.md is 65,536 code points',
+        });
+      });
+
+      it('reports a README one code point over the limit', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1));
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'failed',
+          severity: 'error',
+          detail: 'README.md is 65,537 code points',
+        });
+      });
+
+      // The registry counts code points, so a README that is over the limit in bytes is not over it here.
+      it('passes a multi-byte README that is under the limit in code points', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, '\u{1F600}'.repeat(README_CODE_POINT_LIMIT - 1));
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({ status: 'passed' });
+      });
+
+      // npm reads a Markdown README in preference to a bare one, so the check has to measure the same file.
+      it('measures the Markdown README rather than a bare README', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README');
+        writeReadme(projectRoot, 'short');
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'passed',
+          detail: 'README.md is 5 code points',
+        });
+      });
+
+      it('finds a README whatever the case of its name', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, 'short', 'readme.md');
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'passed',
+          detail: 'readme.md is 5 code points',
+        });
+      });
+
+      // npm reads no README out of it, so there is nothing for the registry to truncate.
+      it('ignores a lone README.txt', async () => {
+        writePublishablePackage(projectRoot);
+        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README.txt');
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'passed',
+          detail: 'The package has no README',
+        });
+      });
+
+      it('passes a package with no README', async () => {
+        writePublishablePackage(projectRoot);
+
+        const results = await runPackaging();
+
+        expect(pickResult(results, 'code-point limit')).toMatchObject({
+          status: 'passed',
+          detail: 'The package has no README',
+        });
       });
     });
   });

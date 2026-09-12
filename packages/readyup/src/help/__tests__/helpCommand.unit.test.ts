@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { COMMAND_NAMES, routeCommand } from '../../bin/route.ts';
 import { COMMAND_HELP } from '../helpText.ts';
+import { readDoc } from '../readDoc.ts';
 import { TOPICS } from '../topics.ts';
 
 describe('rdy help', () => {
@@ -29,23 +30,15 @@ describe('rdy help', () => {
     },
   );
 
-  it.each(Object.entries(TOPICS).map(([topic, { heading }]) => ({ heading, topic })))(
-    'prints the README section for topic $topic',
-    async ({ heading, topic }) => {
+  it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ file, topic })))(
+    'prints $file for topic $topic',
+    async ({ file, topic }) => {
       const { exitCode, stdout } = await route(['help', topic]);
 
       expect(exitCode).toBe(0);
-      expect(stdout.startsWith(`## ${heading}\n`)).toBe(true);
+      expect(stdout.trimEnd()).toBe(readDoc(file).trimEnd());
     },
   );
-
-  it('includes the subsections of a topic that has them', async () => {
-    const { stdout } = await route(['help', 'concepts']);
-
-    expect(stdout).toContain('### Severities');
-    expect(stdout).toContain('### Thresholds');
-    expect(stdout).not.toContain('## Authoring kits');
-  });
 
   it('suggests the nearest subject for a near-miss', async () => {
     const { exitCode, stderr } = await route(['help', 'authorng']);
@@ -99,7 +92,7 @@ describe('rdy help', () => {
 
     expect(exitCode).toBe(0);
     expect(stdout).toBe('');
-    expect(stderr).toContain('## Concepts');
+    expect(stderr).toContain('# Concepts');
   });
 
   it('matches a mistyped command against help as well as the rest', async () => {

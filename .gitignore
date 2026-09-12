@@ -61,6 +61,7 @@ coverage/
 .vitest-result.json
 
 # Generated files
+packages/*/docs/*.v*.md
 packages/readyup/schemas/
 
 # TypeScript
