@@ -8,7 +8,8 @@ export interface CountPackageUsageOptions {
 }
 
 /**
- * Counts calls to a package's exports across a project's sources, counting none in a source that never imports it.
+ * Counts calls to a package's exports across a project's sources, counting none in a source that never imports it,
+ * from its root or any of its subpaths.
  *
  * The import separates adoption from a name collision. A project hand-rolling its own helper of the same
  * name calls it as often as an adopter calls the real one, and counting those would report the project as adopted in
