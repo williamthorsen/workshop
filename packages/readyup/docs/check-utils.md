@@ -43,7 +43,7 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 | `hasJsonValue(obj, ...keys)`           | Key path is present                       |
 | `isRecord(value)`                      | Type guard for `Record<string, unknown>`  |
 
-`projectJsonFile` returns what [`pickJson`](authoring-kits.md#inlining-json-at-compile-time) inlines: the paths that it names, projected out of the file and serialized. A check reading an entry's [recorded inputs](publishing-kits.md#what-a-manifest-entry-records) calls it to decide an inlined JSON file the same way the compile that recorded it did.
+`projectJsonFile` returns what [`pickJson`](authoring-kits.md#inlining-json-at-compile-time) inlines: the paths that it names, projected out of the file and serialized. A check reading an entry's [recorded inputs](publishing-kits.md#what-a-manifest-entry-records) calls it to project an inlined JSON file the same way the compile that recorded it did.
 
 ## Package manifests
 

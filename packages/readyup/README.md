@@ -22,7 +22,7 @@ rdy init
 
 This creates two files:
 
-**`.config/readyup.config.ts`** -- repo-level settings:
+**`.config/readyup.config.ts`**: Repo-level settings
 
 ```ts
 import { defineRdyConfig } from 'readyup';
@@ -35,7 +35,7 @@ export default defineRdyConfig({
 });
 ```
 
-**`.readyup/kits/default.ts`** -- starter kit:
+**`.readyup/kits/default.ts`**: Starter kit
 
 ```ts
 import { defineRdyKit } from 'readyup';

@@ -36,7 +36,7 @@ An invocation that fails before producing anything else emits:
 { "schemaVersion": 1, "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
 ```
 
-`code` is one of `usage`, `config`, `kit-load`, or `internal`. The envelope covers only failures preceding dispatch; once the run reaches its kits, a failing kit is reported inside the report:
+`code` is one of `usage`, `config`, `kit-load`, or `internal`. The envelope covers only failures preceding dispatch; once dispatch begins, a failing kit is reported inside the report:
 
 ```json
 { "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }

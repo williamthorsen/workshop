@@ -25,9 +25,9 @@ rdy run -- "--odd-kit-name"
 
 ## Run options
 
-`--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents stays reachable.
+`--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents still appears beneath them.
 
-A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. A block is withheld only when a table will include its row, so a run of one checklist reports its block however little it has to say, and a run that withholds one always ends with the table.
+A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. A block is withheld only when a table will include its row, so a run of one checklist reports its block even when the filters leave nothing in it, and a run that withholds one always ends with the table.
 
 `--diagnose` runs the `check` of every check turned off by its own `skip`, and reports the ones that would have passed: A `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](authoring-kits.md#when-a-check-skips) covers the judgment that this flag cannot make. It is opt-in because it executes exactly the work that a skip was written to avoid, which may reach a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
 
@@ -223,7 +223,7 @@ One more reads the sources that the run's checks examined and reports the pragma
 
 The evidence is what the checks read. A pragma is reported only when some check examined the file containing it -- swept it through [`readTrackedSources`](check-utils.md#project-sources), or named it in [`scanned`](authoring-kits.md#checks) -- and no check of the run suppressed a finding on the line covered by the pragma; a pragma in a file examined by no check is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form in which findings are printed. One ledger spans the invocation, so a file that two kits both examined is scanned once. A diagnosis contributes neither examined paths nor suppressions, the run having turned that check off; a sweep that the check read in its own `skip` before returning the reason was recorded when it ran, and still counts.
 
-Recognition for the report is stricter than for suppression. A token is a site when it is in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Suppression is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never license a finding.
+Recognition for the report is stricter than for suppression. A token is a site when it is in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Suppression is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never cause a suppressed finding to be reported.
 
 Two limits follow from that. Recognition reads JavaScript-family syntax, so a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything.
 
@@ -251,7 +251,7 @@ An import binding no name that the runner could be asked for -- a namespace impo
 | `1`  | Ran and found problems: failed checks, a kit that fails `verify`, a kit that fails to compile |
 | `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error               |
 
-The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that loses a kit part-way exits `2` even when the kits that ran found problems, and still reports what it collected.
+The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that cannot complete a kit exits `2` even when the kits that ran found problems, and still reports what it collected.
 
 ## Listing kits
 
@@ -323,7 +323,7 @@ A local `--from` source with no manifest falls back to listing the compiled kits
 📓 publishing · Publication readiness for a package that ships readyup kits
 ```
 
-Every listed kit is runnable by the command above it, from wherever the sweep was run. A project that sets a custom `compile.outDir` is reached by file instead, since that is the only resolution path that respects it, and its rows are named by a path that resolves from the sweep root:
+Every listed kit is runnable by the command above it, from wherever the sweep was run. The kits of a project that sets a custom `compile.outDir` are run by file instead, since that is the only resolution path that respects it, and its rows are named by a path that resolves from the sweep root:
 
 ```
 ━━ 📁 packages/tooling/
@@ -352,9 +352,9 @@ The sweep considers every directory containing a `package.json`, the working dir
       📓 npm-auto-publish
 ```
 
-Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency is reachable from nowhere else, so its command includes the `cd` that gets there: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
+Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency resolves from no other directory, so its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
 
-This sweep is wider than the one that `--recursive` makes alone. It considers every directory containing a `package.json`, whether or not that directory has a readyup footprint, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one that the question is about. A project with no kit-publishing dependency is not rendered at all, its directory line included, and a sweep that finds nothing prints `No dependency of any project below this directory publishes kits.`
+This sweep is wider than the one that `--recursive` makes alone. It considers every directory containing a `package.json`, whether or not that directory has readyup configuration or kits, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one that the question is about. A project with no kit-publishing dependency is not rendered at all, its directory line included, and a sweep that finds nothing prints `No dependency of any project below this directory publishes kits.`
 
 Unlike every other listing, this view has no heading rules. The two rule weights that it would otherwise need are a stroke apart, and the roles that they would mark are already distinguished by their glyphs; under `--style plain`, which leaves the role glyphs empty, the indentation marks all three levels on its own. That is also why each command is labelled `To run:`: It shares a column with the kits beneath it, and the label keeps it from reading as one more kit.
 
