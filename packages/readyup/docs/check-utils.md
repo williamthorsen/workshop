@@ -6,7 +6,7 @@ Reusable check functions for common assertions:
 import { fileExists, hasPackageJsonField } from 'readyup/check-utils';
 ```
 
-Every path a check utility takes resolves against `cwd` unless it is absolute, in which case it names the file itself; `filesExist` applies that rule to `baseDir` too, and an absolute entry in its list outranks the base directory.
+Every path that a check utility takes resolves against `cwd` unless it is absolute, in which case it names the file itself; `filesExist` applies that rule to `baseDir` too, and an absolute entry in its list outranks the base directory.
 
 Each utility's doc comment states its edge cases and the reasons for its rules. An editor shows the comment on hover; in the published package, it is in the declaration file from which `dist/esm/check-utils/index.d.ts` re-exports the utility. This file is for choosing a utility.
 
@@ -16,7 +16,7 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 | ----------------------------------------- | --------------------------------------------------------- |
 | `missingFrom(category, expected, actual)` | `CheckOutcome` with fraction progress over any collection |
 
-`missingFrom` is what `filesExist` and `hasJsonFields` are built from. Reach for it directly to count anything else.
+`filesExist` and `hasJsonFields` are built from `missingFrom`. Call it directly to count anything else.
 
 ## Filesystem
 
@@ -43,7 +43,7 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 | `hasJsonValue(obj, ...keys)`           | Key path is present                       |
 | `isRecord(value)`                      | Type guard for `Record<string, unknown>`  |
 
-`projectJsonFile` returns what [`pickJson`](authoring-kits.md#inlining-json-at-compile-time) inlines: the paths it names projected out of the file, serialized. A check reading an entry's [recorded inputs](publishing-kits.md#what-a-manifest-entry-records) reaches for it to decide an inlined JSON file the same way the compile that recorded it did.
+`projectJsonFile` returns what [`pickJson`](authoring-kits.md#inlining-json-at-compile-time) inlines: the paths that it names, projected out of the file and serialized. A check reading an entry's [recorded inputs](publishing-kits.md#what-a-manifest-entry-records) calls it to decide an inlined JSON file the same way the compile that recorded it did.
 
 ## Package manifests
 
@@ -62,11 +62,11 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 | `readEnginesNodeFloor(manifest)`     | `{ kind: 'found', floor, raw }`, `{ kind: 'absent' }`, or `{ kind: 'unparseable', raw }` |
 | `satisfiesNodeFloor(version, floor)` | Whether a runtime meets a floor; `undefined` if either is uncomparable                   |
 | `readToolVersionsNode(path?)`        | Node version declared in `.tool-versions`                                                |
-| `esYearForNodeMajor(major)`          | ECMAScript year a Node major supports (`24` → `es2025`)                                  |
+| `esYearForNodeMajor(major)`          | ECMAScript year supported by a Node major (`24` → `es2025`)                              |
 | `readTsconfigLanguageLevel(path)`    | Effective `lib` and `target`, resolved through `extends`                                 |
-| `readTsconfigChain(path)`            | Each config the `extends` chain reaches, and what it declares in its own right           |
+| `readTsconfigChain(path)`            | Each config in the `extends` chain, and what it declares in its own right                |
 
-Each reader reports only what it can see, so a check composing them decides for itself what each unknown means. Reach for `readTsconfigChain` to ask which config declared a setting, or to read a field that the language-level reader does not cover, such as `files` or `include`.
+Each reader reports only what it can see, so a check composing them decides for itself what each unknown means. Call `readTsconfigChain` to find out which config declared a setting, or to read a field that the language-level reader does not cover, such as `files` or `include`.
 
 ```ts
 import {
@@ -138,16 +138,16 @@ const missing = discoverKitPackages().filter((name) => !configuredPackages.inclu
 
 ## Project sources
 
-| Function                              | Returns                                                        |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `listTrackedFiles()`                  | Paths git tracks under `cwd`                                   |
-| `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path the filter selects      |
-| `blankNonCode(text)`                  | The same text with every comment and literal blanked           |
-| `getLineAtOffset(text, offset)`       | The 1-based line holding an offset                             |
-| `countPackageUsage(sources, options)` | Calls into a package, counted only where the source imports it |
-| `buildFindingReport(options)`         | A `FindingOutcome` the runner suppresses, renders, and counts  |
+| Function                              | Returns                                                            |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| `listTrackedFiles()`                  | Paths under `cwd` tracked by git                                   |
+| `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path selected by the filter      |
+| `blankNonCode(text)`                  | The same text with every comment and literal blanked               |
+| `getLineAtOffset(text, offset)`       | The 1-based line containing an offset                              |
+| `countPackageUsage(sources, options)` | Calls into a package, counted only when the source imports it      |
+| `buildFindingReport(options)`         | A `FindingOutcome` that the runner suppresses, renders, and counts |
 
-These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package it already installed provides.
+These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package that it already installed provides.
 
 The paths that `readTrackedSources` returns count toward the evidence on which the run reports a [pragma that suppressed nothing](running-checks.md#advisory-warnings).
 

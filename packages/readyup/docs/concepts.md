@@ -2,7 +2,7 @@
 
 ## Kits, checklists, and checks
 
-A **kit** is a file exporting one or more **checklists**. A checklist holds **checks**, and a check may nest further checks beneath it. A check that fails blocks its descendants.
+A **kit** is a file exporting one or more **checklists**. A checklist contains **checks**, and a check may nest further checks beneath it. A check that fails blocks its descendants.
 
 ```
 kit
@@ -13,7 +13,7 @@ kit
 
 ## Severities
 
-Every check has a severity. It decides whether a failure fails the run and whether the result is reported, and it never decides whether that check itself runs. It reaches later work in one place only: a failed check at or above the failure threshold stops the remaining groups of a [staged checklist](authoring-kits.md#staged-checklists).
+Every check has a severity. It decides whether a failure fails the run and whether the result is reported, and it never decides whether that check itself runs. It affects later work in one case only: A failed check at or above the failure threshold stops the remaining groups of a [staged checklist](authoring-kits.md#staged-checklists).
 
 | Severity    | Meaning           |
 | ----------- | ----------------- |
@@ -36,16 +36,16 @@ A check result has one of three statuses -- `passed`, `failed`, or `skipped`. Th
 
 💊 `FIX` marks a remediation hint rather than a result.
 
-Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: position shows the meaning instead.
+Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: Position shows the meaning instead.
 
 | Rich | Names                                                  |
 | ---- | ------------------------------------------------------ |
 | 📄   | a kit's TypeScript source                              |
 | 📓   | a kit                                                  |
 | 📋   | a checklist                                            |
-| 📦   | the npm package a kit was published in                 |
+| 📦   | the npm package in which a kit was published           |
 | 🌐   | a kit fetched from `github:`, `bitbucket:`, or `--url` |
-| 📁   | a directory a kit was read from                        |
+| 📁   | a directory from which a kit was read                  |
 
 ## Thresholds
 
