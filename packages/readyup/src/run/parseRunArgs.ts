@@ -13,6 +13,7 @@ import { validateRunFlags } from './validateRunFlags.ts';
 export interface ParsedRunArgs {
   all: boolean;
   checklists: string[] | undefined;
+  configPath: string | undefined;
   detail?: JsonDetail;
   diagnose: boolean;
   failOn?: Severity;
@@ -43,6 +44,7 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
 const runOptions = {
   all: { type: 'boolean' },
   checklists: { type: 'string', short: 'c' },
+  config: { type: 'string' },
   detail: { type: 'string' },
   diagnose: { type: 'boolean' },
   'fail-on': { type: 'string' },
@@ -66,6 +68,7 @@ const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checkli
 /** Maps generic "requires a value" errors to domain-specific hints for run-subcommand flags. */
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
+  '--config': '--config requires a path argument',
   '--detail': '--detail requires a projection (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
@@ -89,6 +92,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const parsed = {
     all: values.all === true,
     checklists: values.checklists,
+    config: values.config,
     detail: values.detail,
     diagnose: values.diagnose === true,
     file: values.file,
@@ -130,6 +134,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const parsedArgs: ParsedRunArgs = {
     all: parsed.all,
     checklists,
+    configPath: parsed.config,
     diagnose: parsed.diagnose,
     filePath: parsed.file,
     fromValue: parsed.from,

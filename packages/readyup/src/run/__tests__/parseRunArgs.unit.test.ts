@@ -158,9 +158,19 @@ describe(parseRunArgs, () => {
     expect(() => parseRunArgs(['--unknown'])).toThrow("Unknown option '--unknown'");
   });
 
-  // --config is no longer supported
-  it('rejects --config as an unknown flag', () => {
-    expect(() => parseRunArgs(['--config', 'x'])).toThrow("Unknown option '--config'");
+  // --config flag
+  it('parses --config flag', () => {
+    const result = parseRunArgs(['--config', 'custom/readyup.config.ts']);
+
+    expect(result.configPath).toBe('custom/readyup.config.ts');
+  });
+
+  it('leaves configPath undefined when --config is not given', () => {
+    expect(parseRunArgs([]).configPath).toBeUndefined();
+  });
+
+  it.each([['--config'], ['--config=']])('throws when %s has no value', (arg) => {
+    expect(() => parseRunArgs([arg])).toThrow('--config requires a path argument');
   });
 
   // Short options
