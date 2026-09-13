@@ -29,7 +29,7 @@ export function readJsonValue(filePath: string, ...keys: string[]): unknown {
 }
 
 /** Checks whether a JSON file has all of the specified fields. */
-export function hasJsonFields(filePath: string, fields: string[]): CheckOutcome {
+export function hasJsonFields(filePath: string, fields: readonly string[]): CheckOutcome {
   const data = readJsonFile(filePath) ?? {};
   const presentFields = fields.filter((field) => Object.hasOwn(data, field));
   return missingFrom('fields', fields, presentFields);
