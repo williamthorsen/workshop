@@ -49,6 +49,20 @@ describe(resolveConfiguredPackages, () => {
     ]);
   });
 
+  it('selects every published kit under "all", package by package in configured order', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default', 'preflight']);
+    installPackage(temp, '@beta/kits', ['default', 'drift']);
+
+    const entries = resolveConfiguredPackages(['@beta/kits', '@acme/kits'], 'all', '.js');
+
+    expect(entries.map(describeEntry)).toStrictEqual([
+      '@beta/kits:default',
+      '@beta/kits:drift',
+      '@acme/kits:default',
+      '@acme/kits:preflight',
+    ]);
+  });
+
   // A package publishing nothing under a name asks nothing, so it is not a failure of the run.
   it('skips a configured package that publishes no requested kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);

@@ -110,7 +110,7 @@ rdy run --from npm:@acme/eslint-config drift # a kit that it publishes, by name
 rdy list --from npm:@acme/eslint-config      # what it publishes
 ```
 
-Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named. `--packages` below is the same selection, made across several packages at once.
+Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named, or `--all`, which runs every kit that it publishes. `--packages` below is the same selection, made across several packages at once.
 
 To name several packages once, list them in the config, because running code that a dependency publishes is an opt-in worth writing down:
 
@@ -123,13 +123,14 @@ export default defineRdyConfig({
 ```bash
 rdy run --packages       # the kit named `default`, from every listed package
 rdy run --packages drift # the kit named `drift`, from every listed package publishing it
+rdy run --packages --all # every kit, from every listed package
 ```
 
 The kit name is the selector, exactly as it is for every other source, and each result names the package and version from which it came. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, which leaves no single kit within which to select checklists.
 
 A listed package that does not publish the requested kit is skipped. `rdy run --packages` checks whether this project satisfies what its listed packages require of it, and a package publishing no `default` requires nothing of it: That package contributes no kit, and a run that selects nothing says so and passes. The named form differs in one respect, because naming a kit asks for something specific: A name published by no listed package is a usage error rather than an empty run.
 
-An author uses that rule to keep a kit out of a routine `--packages` run: Publish it under a name other than `default`. It stays listed by `rdy list` and reachable by name, both here and through `--from npm:<package>`. Nothing is needed from the consumer's config, and nothing needs republishing.
+An author uses that rule to keep a kit out of a routine `--packages` run: Publish it under a name other than `default`. It stays listed by `rdy list`, reachable by name both here and through `--from npm:<package>`, and run by `rdy run --packages --all`. Nothing is needed from the consumer's config, and nothing needs republishing.
 
 A listed package that is absent, or that publishes no kits at all, fails the run, and the run names it; `rdy list` warns instead and reports the rest, then names any installed dependency that publishes kits but is not in the list.
 
@@ -174,7 +175,7 @@ A package declaring no `files` field passes the first check, because everything 
 
 Both kits read the convention layout: `.readyup/manifest.json` and bundles directly under `.readyup/kits`. A project that compiles to a different `outDir` still gets its recorded kits checked for freshness, since those paths come from the manifest, but the checks that count compiled bundles report nothing to do. For a published package the layout is not a convention but a contract, and the `packaging` check over recorded paths enforces it: `--from npm:` composes a kit's path from its name, so a bundle recorded anywhere else is listed and then fails to load.
 
-Adding readyup to `packages` in the config makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, under the rule that excludes every kit not named `default`; select it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name. Until readyup is listed, `rdy list` names it among the dependencies that publish kits, and `rdy list --packages` shows the kits that it contains.
+Adding readyup to `packages` in the config makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, under the rule that excludes every kit not named `default`; select it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name, or with `rdy run --packages --all`, which runs every kit of every listed package. Until readyup is listed, `rdy list` names it among the dependencies that publish kits, and `rdy list --packages` shows the kits that it contains.
 
 ## Internal kits
 

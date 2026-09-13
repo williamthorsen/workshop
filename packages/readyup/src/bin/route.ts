@@ -21,6 +21,7 @@ import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { parseRunArgs } from '../run/parseRunArgs.ts';
+import { resolveAllKitSources } from '../run/resolveAllKitSources.ts';
 import { resolveKitSources } from '../run/resolveKitSources.ts';
 import { runCommand } from '../run/runCommand.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
@@ -144,33 +145,43 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
-  let configFields:
-    { internalDir: string; internalInfix: string | undefined; configuredPackages: string[] } | undefined;
+  let config;
   if (!hasExternalSource) {
-    let config;
     try {
       config = await loadConfig();
     } catch (error: unknown) {
       throw configError(describeError(error), { cause: error, hint: extractHint(error) });
     }
-    configFields = {
-      internalDir: config.internal.dir,
-      internalInfix: config.internal.infix,
-      configuredPackages: config.packages,
-    };
   }
+  const configFields =
+    config === undefined
+      ? undefined
+      : {
+          internalDir: config.internal.dir,
+          internalInfix: config.internal.infix,
+          configuredPackages: config.packages,
+        };
 
-  const kitEntries = resolveKitSources({
-    filePath: parsed.filePath,
-    fromValue: parsed.fromValue,
-    urlValue: parsed.urlValue,
-    kitSpecifiers: parsed.kitSpecifiers,
-    checklists: parsed.checklists,
-    jit: parsed.jit,
-    internal: parsed.internal,
-    packages: parsed.packages,
-    ...configFields,
-  });
+  const kitEntries = parsed.all
+    ? await resolveAllKitSources({
+        fromValue: parsed.fromValue,
+        jit: parsed.jit,
+        internal: parsed.internal,
+        packages: parsed.packages,
+        ...configFields,
+        ...(config !== undefined && { compileOutDir: config.compile.outDir }),
+      })
+    : resolveKitSources({
+        filePath: parsed.filePath,
+        fromValue: parsed.fromValue,
+        urlValue: parsed.urlValue,
+        kitSpecifiers: parsed.kitSpecifiers,
+        checklists: parsed.checklists,
+        jit: parsed.jit,
+        internal: parsed.internal,
+        packages: parsed.packages,
+        ...configFields,
+      });
 
   return runCommand(
     {

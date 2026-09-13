@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
@@ -10,31 +9,24 @@ import { discoverKitPackages } from '../check-utils/discoverKitPackages.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
-import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
+import { configError, usageError } from '../errors/RdyError.ts';
 import { collectKitPackageGroups } from '../installed-packages/collectKitPackageGroups.ts';
 import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
-import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
-import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
-import {
-  type DirectorySource,
-  type GlobalSource,
-  type LocalSource,
-  type NpmSource,
-  parseFromValue,
-} from '../kits/parseFromValue.ts';
+import { KITS_DIR } from '../kits/kitsDir.ts';
+import { parseFromValue } from '../kits/parseFromValue.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { SEGMENT_SEPARATOR } from '../layout/layoutEngine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
-import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
+import type { RdyManifest } from '../manifest/manifestSchema.ts';
+import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
-import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
-import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
-import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
+import { buildManifestEntry } from './buildManifestEntry.ts';
+import { collectCompiledKits } from './collectCompiledKits.ts';
+import { collectSourceKits } from './collectSourceKits.ts';
 import { enumerateKits } from './enumerateKits.ts';
 import {
   formatConsumerView,
@@ -47,9 +39,6 @@ import {
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from './formatList.ts';
-
-/** A local `--from` source, which resolves to a directory on this machine. */
-type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
 
 const listOptions = {
   from: { type: 'string' },
@@ -144,7 +133,7 @@ function runManifestMode(manifestArg: string, json: boolean): number {
   );
 }
 
-/** Resolves the manifest path for a `--from` source and displays its kits. */
+/** Displays the kits held by a `--from` source. */
 async function runFromMode(fromArg: string, json: boolean): Promise<number> {
   let source;
   try {
@@ -153,81 +142,19 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
     throw usageError(describeError(error), { cause: error });
   }
 
-  if (source.type === 'github') {
-    const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
-    return runRemoteFromMode({ url, json });
-  }
+  const sourceKits = await collectSourceKits(source);
 
-  if (source.type === 'bitbucket') {
-    const url = `https://api.bitbucket.org/2.0/repositories/${source.workspace}/${source.repo}/src/${source.ref}/.readyup/manifest.json`;
-    return runRemoteFromMode({ url, json });
-  }
-
-  if (source.type === 'npm') {
-    const root = resolveListedPackageRoot(source);
-    return listLocalDirectory(path.join(root, DEFAULT_MANIFEST_PATH), path.join(root, KITS_DIR), fromArg, json);
-  }
-
-  return listLocalDirectory(resolveFromManifestPath(source), resolveFromKitsDir(source), fromArg, json);
-}
-
-/**
- * Locates the package named by a `list --from npm:`, rejecting what `run` rejects for the same source.
- *
- * Listing and running cover the same kits, so a spelling that one accepts and the other refuses would
- * send the reader looking for a difference that does not exist.
- */
-function resolveListedPackageRoot(source: NpmSource): string {
-  if (source.versionSpec !== undefined) {
-    throw usageError(
-      `Listing a published version is not supported yet: "npm:${source.name}@${source.versionSpec}". ` +
-        'Drop the version to list the installed copy.',
-    );
-  }
-
-  const root = resolvePackageRoot(source.name);
-  if (root === undefined) {
-    throw kitLoadError(`Package "${source.name}" is not installed; it must be a direct dependency of this project.`);
-  }
-  return root;
-}
-
-/** Displays the kits that a directory holds, preferring its manifest and falling back to the files on disk. */
-function listLocalDirectory(manifestPath: string, kitsDir: string, fromArg: string, json: boolean): number {
-  const manifest = readLocalManifestIfPresent(manifestPath);
-  const entries =
-    manifest === undefined ? enumerateCompiledKits(kitsDir, manifestPath) : manifestEntries(manifest, manifestPath);
-
-  const output = formatConsumerView({
-    compiledKits: entries.map((entry) => entry.name),
-    fromArg,
-    kitsDir: path.relative(process.cwd(), kitsDir) || '.',
-  });
+  const output =
+    sourceKits.kind === 'remote'
+      ? formatManifestView({ kits: sourceKits.kits, manifestPath: sourceKits.manifestUrl })
+      : formatConsumerView({
+          compiledKits: sourceKits.kits.map((kit) => kit.name),
+          fromArg,
+          kitsDir: path.relative(process.cwd(), sourceKits.kitsDir) || '.',
+        });
   writeHuman(output + '\n', json);
 
-  return finishList(entries, json);
-}
-
-/** Fetches and displays the kits at a remote manifest URL, authenticating where the host is one that readyup knows. */
-async function runRemoteFromMode({ url, json }: { url: string; json: boolean }): Promise<number> {
-  const provider = resolveRemoteProvider(url);
-  const headers = resolveRemoteAuthHeaders(provider);
-
-  let manifest;
-  try {
-    manifest = await loadRemoteManifest({ url, headers });
-  } catch (error: unknown) {
-    throw toRemoteRdyError(error, { code: 'config', provider, tokenForwarded: headers !== undefined, url });
-  }
-
-  writeHuman(formatManifestView({ kits: manifest.kits, manifestPath: url }) + '\n', json);
-
-  // A remote manifest's paths name locations on the host that published it, so they are passed
-  // through rather than rebased onto a directory that does not exist here.
-  return finishList(
-    manifest.kits.map((kit) => buildManifestEntry(kit, undefined)),
-    json,
-  );
+  return finishList(sourceKits.kits, json);
 }
 
 /** Enumerates the kits named by the project config. */
@@ -239,29 +166,24 @@ async function runOwnerMode(json: boolean): Promise<number> {
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
 
   let internalKits;
+  let compiledEntries;
   try {
     internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
+    // A missing manifest is the normal state of a project that never compiled, and says nothing on its own: The
+    // empty-listing hint belongs to the view, which sees the package sections too.
+    compiledEntries = collectCompiledKits({
+      manifestPath: path.resolve(cwd, DEFAULT_MANIFEST_PATH),
+      onUnreadableManifest: warnOfUnreadableManifest,
+      outDir: path.resolve(cwd, config.compile.outDir),
+    });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
-  }
-
-  const manifestPath = path.resolve(cwd, DEFAULT_MANIFEST_PATH);
-  let manifestKits: RdyManifestKit[] = [];
-  try {
-    manifestKits = readManifest(manifestPath).kits;
-  } catch (error: unknown) {
-    // A missing manifest is the normal state of a project that never compiled, and says nothing on its
-    // own: The empty-listing hint belongs to the view, which sees the package sections too. Anything
-    // else is a manifest that exists and cannot be read, which the reader should hear about.
-    if (!(error instanceof ManifestNotFoundError)) {
-      process.stderr.write(`Warning: ${describeError(error)}\n`);
-    }
   }
 
   const packageKits = collectConfiguredPackageKits(config.packages);
   const availablePackages = discoverKitPackages(cwd).filter((name) => !config.packages.includes(name));
 
-  const compiledKits = manifestKits.map((kit) => kit.name);
+  const compiledKits = compiledEntries.map((kit) => kit.name);
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir, cwd);
   const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
   writeHuman(
@@ -278,7 +200,7 @@ async function runOwnerMode(json: boolean): Promise<number> {
 
   const entries: JsonListKitEntry[] = [
     ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),
-    ...manifestKits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath))),
+    ...compiledEntries,
     ...packageKits.map((kit) => buildPackageEntry(kit, true)),
   ];
   return finishList(entries, json, availablePackages);
@@ -368,51 +290,25 @@ async function runRecursiveMode(json: boolean): Promise<number> {
 }
 
 /**
- * Reads one project's compiled kits, preferring its manifest and falling back to the files on disk.
+ * Reads one project's compiled kits for a repo-wide listing.
  *
- * The manifest is where the descriptions live, and a project compiled with `--skip-manifest` still has
- * kits worth naming.
+ * A manifest that nobody can read drops that project's descriptions, not its listing: The kits themselves
+ * are still on disk. An output directory that cannot be read drops the project, and the sweep moves on.
  */
 function collectProjectKits(project: Project): JsonListKitEntry[] {
-  const manifest = readProjectManifest(project.manifestPath);
-  if (manifest !== undefined) {
-    const manifestDir = path.dirname(project.manifestPath);
-    return manifest.kits.map((kit) => buildManifestEntry(kit, manifestDir, project.dir));
-  }
-
   const outDir = path.resolve(project.absolutePath, project.config.compile.outDir);
 
-  let names: string[];
   try {
-    names = enumerateKits({ dir: outDir, extension: '.js' });
+    return collectCompiledKits({
+      manifestPath: project.manifestPath,
+      onUnreadableManifest: warnOfUnreadableManifest,
+      outDir,
+      project: project.dir,
+    });
   } catch (error: unknown) {
     if (!isSkippableFilesystemError(error)) throw error;
     process.stderr.write(`Warning: Cannot read ${outDir}. Omitting ${project.dir} from the listing.\n`);
     return [];
-  }
-
-  return names.map((name) => ({
-    name,
-    kind: 'compiled',
-    project: project.dir,
-    path: path.relative(process.cwd(), path.join(outDir, `${name}.js`)),
-  }));
-}
-
-/**
- * Reads a project's manifest, treating a missing one as absent and reporting an unreadable one.
- *
- * A manifest that nobody can read drops that project's descriptions, not its listing: The kits themselves
- * are still on disk.
- */
-function readProjectManifest(manifestPath: string): RdyManifest | undefined {
-  try {
-    return readManifest(manifestPath);
-  } catch (error: unknown) {
-    if (!(error instanceof ManifestNotFoundError)) {
-      process.stderr.write(`Warning: ${describeError(error)}\n`);
-    }
-    return undefined;
   }
 }
 
@@ -498,6 +394,11 @@ function warnOfDefaultedConfigs(projects: Project[]): void {
   }
 }
 
+/** Warns of a manifest that exists and cannot be read, whose kits the listing then reads from disk. */
+function warnOfUnreadableManifest(error: unknown): void {
+  process.stderr.write(`Warning: ${describeError(error)}\n`);
+}
+
 /** Emits the list payload under `--json`, succeeding whenever the listing's source could be read. */
 function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: string[] = []): number {
   if (json) {
@@ -511,83 +412,9 @@ function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: 
   return EXIT_OK;
 }
 
-/** Returns the rows declared by a manifest, rebasing each recorded path onto the current directory. */
-function manifestEntries(manifest: RdyManifest, manifestPath: string): JsonListKitEntry[] {
-  return manifest.kits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath)));
-}
-
-/**
- * Returns a kit row built from a manifest entry.
- *
- * Every field but `name` and `kind` comes from the manifest, so a kit compiled by an older readyup
- * simply has fewer of them. `checklists` is read here rather than from the kit itself: Listing
- * kits never imports a compiled bundle, so it never runs kit code.
- *
- * `manifestDir` rebases the recorded path onto the current directory, so a consumer can hand it
- * straight to `rdy run --file`. Pass `undefined` for a manifest that is not on this machine.
- *
- * `project` names the directory in which a repo-wide sweep found the kit. Pass `undefined` for a listing
- * that reads one project.
- */
-function buildManifestEntry(kit: RdyManifestKit, manifestDir: string | undefined, project?: string): JsonListKitEntry {
-  const entry: JsonListKitEntry = { name: kit.name, kind: 'compiled' };
-
-  if (project !== undefined) entry.project = project;
-  if (kit.path !== undefined) {
-    entry.path =
-      manifestDir === undefined ? kit.path : path.relative(process.cwd(), path.resolve(manifestDir, kit.path));
-  }
-  if (kit.checklists !== undefined) entry.checklists = kit.checklists;
-  if (kit.description !== undefined) entry.description = kit.description;
-  if (kit.readyupVersion !== undefined) entry.readyupVersion = kit.readyupVersion;
-
-  return entry;
-}
-
 /** Returns a kit row for a TypeScript source awaiting compilation. */
 function buildInternalEntry(name: string, dir: string, extension: string): JsonListKitEntry {
   return { name, kind: 'internal', path: path.relative(process.cwd(), path.join(dir, `${name}${extension}`)) };
-}
-
-/**
- * Enumerates the compiled kits in a directory, for a source that has no manifest beside it.
- *
- * `run --from` resolves a kit by filename alone, so a directory from which it can run is one that `list`
- * must be able to describe. The rows hold only what the filesystem knows: Everything else -- description,
- * checklist names, the readyup version against which a kit was built -- lives in the manifest that is absent.
- *
- * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a
- * path that does not exist would turn a mistyped `--from` into a clean, empty listing.
- */
-function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListKitEntry[] {
-  if (!existsSync(kitsDir)) {
-    const relManifest = path.relative(process.cwd(), manifestPath);
-    const relKitsDir = path.relative(process.cwd(), kitsDir);
-    throw configError(`No manifest found at ${relManifest}, and no kit directory at ${relKitsDir}.`);
-  }
-
-  let names: string[];
-  try {
-    names = enumerateKits({ dir: kitsDir, extension: '.js' });
-  } catch (error: unknown) {
-    throw configError(describeError(error), { cause: error });
-  }
-
-  return names.map((name) => ({
-    name,
-    kind: 'compiled',
-    path: path.relative(process.cwd(), path.join(kitsDir, `${name}.js`)),
-  }));
-}
-
-/** Reads a manifest, returning `undefined` where there is none and reporting any other failure. */
-function readLocalManifestIfPresent(manifestPath: string): RdyManifest | undefined {
-  try {
-    return readManifest(manifestPath);
-  } catch (error: unknown) {
-    if (error instanceof ManifestNotFoundError) return undefined;
-    throw configError(describeError(error), { cause: error });
-  }
 }
 
 /** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
@@ -597,32 +424,4 @@ function readManifestOrThrow(manifestPath: string): RdyManifest {
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
   }
-}
-
-/** Returns the manifest path for a parsed local `--from` source. */
-function resolveFromManifestPath(source: LocalFromSource): string {
-  if (source.type === 'global') {
-    return path.join(resolveHomeDir(), '.readyup/manifest.json');
-  }
-
-  if (source.type === 'directory') {
-    return path.join(path.resolve(source.path), 'manifest.json');
-  }
-
-  // local path
-  return path.join(path.resolve(source.path), '.readyup/manifest.json');
-}
-
-/** Returns the directory in which a local `--from` source keeps its compiled kits, matching `run --from`. */
-function resolveFromKitsDir(source: LocalFromSource): string {
-  if (source.type === 'global') {
-    return path.join(resolveHomeDir(), KITS_DIR);
-  }
-
-  if (source.type === 'directory') {
-    return path.resolve(source.path);
-  }
-
-  // local path
-  return path.join(path.resolve(source.path), KITS_DIR);
 }

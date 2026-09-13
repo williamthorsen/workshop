@@ -63,6 +63,7 @@ Run options:
   --packages [<name>]                Run a kit published by the config's "packages" list (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
+  --all                              Run every kit in the selected source instead of naming kits
   --checklists, -c <name,...>        Filter checklists within the selected kit
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
@@ -153,11 +154,12 @@ ${DOCS_POINTER}
 `;
 
 export const RUN_HELP = `
-Usage: rdy run [kit[:checklist,...] ...] [options]
+Usage: rdy run [kit[:checklist,...] ... | --all] [options]
 
 Run rdy checklists. Positional arguments select kits to run; use colon syntax
 to filter checklists within a kit (e.g., deploy:check1,check2).
 If no arguments are given, all checklists in the default kit are run.
+--all runs every kit in the selected source instead.
 
 Kit source (mutually exclusive):
   --from <source>                    Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref],
@@ -173,6 +175,8 @@ Mode flags (incompatible with --from, --file, --url, --packages):
   --internal                         Use internal kit directory and infix from config
 
 Options:
+  --all                              Run every kit in the selected source instead of naming kits;
+                                     not combinable with kit names, --checklists, --file, or --url
   --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
   --json                             Output results as JSON
@@ -194,6 +198,8 @@ Examples:
   rdy run                                Run every checklist in the default kit
   rdy run deploy                         Run the compiled deploy kit
   rdy run deploy:build,test              Run two checklists from the deploy kit
+  rdy run --all                          Run every compiled kit in the project
+  rdy run --all --packages               Run every kit that the configured packages publish
   rdy run --jit deploy                   Run the deploy kit from its TypeScript source
   rdy run --from global deploy           Run the deploy kit from the global directory
   rdy run --fail-on warn                 Fail the run on warnings as well as errors
