@@ -101,13 +101,6 @@ function buildEntry(url: string, headers: Headers, body: string): CacheEntry | u
   };
 }
 
-/** Reports whether a URL uses a scheme whose responses the cache stores. */
-function isHttpUrl(url: string): boolean {
-  if (!URL.canParse(url)) return false;
-  const { protocol } = new URL(url);
-  return protocol === 'http:' || protocol === 'https:';
-}
-
 /**
  * Reports whether an entry may be served without revalidation.
  *
@@ -120,6 +113,13 @@ function isFresh(entry: CacheEntry): boolean {
   if (elapsedMs < 0) return false;
 
   return entry.ageSec + elapsedMs / 1_000 < entry.maxAgeSec;
+}
+
+/** Reports whether a URL uses a scheme whose responses the cache stores. */
+function isHttpUrl(url: string): boolean {
+  if (!URL.canParse(url)) return false;
+  const { protocol } = new URL(url);
+  return protocol === 'http:' || protocol === 'https:';
 }
 
 /**
