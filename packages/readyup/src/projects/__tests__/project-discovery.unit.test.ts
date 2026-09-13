@@ -35,6 +35,11 @@ const it = baseIt
           'packages/broken/.config/readyup.config.ts': 'export default { this is not TypeScript',
           'packages/broken/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [] }),
 
+          // A config that cannot be evaluated is the project's only readyup footprint.
+          'packages/broken-only/package.json': JSON.stringify({ name: 'broken-only' }),
+          'packages/broken-only/.config/readyup.config.ts': 'export default { this is not TypeScript',
+          'packages/broken-only/kit-sources/lint.ts': 'export default {};',
+
           // Compiled with --skip-manifest: Kits on disk, no manifest beside them.
           'packages/compiled-only/package.json': JSON.stringify({ name: 'compiled-only' }),
           'packages/compiled-only/.readyup/kits/thing.js': 'export default {};',
@@ -74,6 +79,7 @@ describe(discoverKitProjects, () => {
       '.',
       'packages/authored',
       'packages/broken',
+      'packages/broken-only',
       'packages/compiled-only',
       'packages/custom',
       'packages/emptied',
@@ -123,13 +129,29 @@ describe(discoverKitProjects, () => {
     expect(emptied?.manifestPath).toBe(temp.resolve('packages/emptied/.readyup/manifest.json'));
   });
 
-  // Discovery is read-only, so a config that nobody can evaluate drops that project's settings, not its place.
-  it('reports a project whose config fails to evaluate, reading it with default settings', async ({ temp }) => {
-    const { projects, stderr } = await discover(temp.dir);
+  // A config that nobody can evaluate drops that project's settings, not its place.
+  it('reports a project whose config fails to evaluate, with the failure and default settings', async ({ temp }) => {
+    const { projects } = await discover(temp.dir);
     const broken = projects.find((project) => project.dir === 'packages/broken');
 
     expect(broken?.config.compile.srcDir).toBe('.readyup/kits');
-    expect(stderr).toContain('packages/broken');
+    expect(broken?.configError).toBeInstanceOf(Error);
+  });
+
+  // The defaults point at `.readyup/`, where this project holds nothing, so they cannot settle whether it holds kits.
+  it('reports a project whose unevaluable config is its only readyup footprint', async ({ temp }) => {
+    const { projects } = await discover(temp.dir);
+    const brokenOnly = projects.find((project) => project.dir === 'packages/broken-only');
+
+    expect(brokenOnly?.configError).toBeInstanceOf(Error);
+  });
+
+  it('records no failure for a project whose config evaluates', async ({ temp }) => {
+    const { projects } = await discover(temp.dir);
+    const custom = projects.find((project) => project.dir === 'packages/custom');
+
+    expect(custom).toBeDefined();
+    expect(custom?.configError).toBeUndefined();
   });
 
   // Topology comes from the filesystem, so a repo declaring no workspaces is swept like any other.
@@ -187,6 +209,7 @@ describe(discoverProjects, () => {
       '.',
       'packages/authored',
       'packages/broken',
+      'packages/broken-only',
       'packages/compiled-only',
       'packages/custom',
       'packages/emptied',

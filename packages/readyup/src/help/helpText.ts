@@ -25,10 +25,13 @@ If no file is given, all sources from the config's srcDir are compiled.
 Modes:
   rdy compile                  Compile all sources from the config's srcDir
   rdy compile <file>           Compile a single file
+  rdy compile --recursive      Compile the sources of every kit project below this directory
 
 Options:
   --output, -o <path>        Output file path (single-file mode only)
-  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json); not with --recursive
+  --recursive                Compile every kit project below the working directory, each under its
+                             own config and manifest; not combinable with <file>, --output, or --manifest
   --force                    Overwrite compiled kits even if they have drifted from the manifest
   --json                     Report each kit's status as JSON
   --skip-manifest            Do not read or write the manifest
@@ -84,6 +87,7 @@ Examples:
   rdy init                                         Scaffold a starter config and kit
   rdy help concepts                                Read the concepts documentation
   rdy compile                                      Compile every kit source into a bundle
+  rdy compile --recursive                          Compile the kits of every project below this directory
   rdy list --from github:williamthorsen/workshop   List kits published by a repository
 
 ${DOCS_POINTER}

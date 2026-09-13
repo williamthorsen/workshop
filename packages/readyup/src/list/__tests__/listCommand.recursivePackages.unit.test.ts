@@ -115,6 +115,20 @@ describe('list --recursive --packages', () => {
       expect(stdout).toContain('plain-kit@0.4.0 \u{00B7} not listed in the readyup config');
     });
 
+    it('warns of a project whose config cannot be evaluated, and reads it with default settings', async () => {
+      mockLoadConfig.mockImplementation((options: { fromDir?: string } = {}) =>
+        options.fromDir === path.join(process.cwd(), 'packages/app')
+          ? Promise.reject(new Error('bad config'))
+          : Promise.resolve({ ...DEFAULT_CONFIG }),
+      );
+
+      const { exitCode, stdout, stderr } = await list();
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('\u{1F4C1} packages/app/');
+      expect(stderr).toBe('Warning: bad config. Reading packages/app with default settings.\n');
+    });
+
     it('reports the empty-sweep message when no project depends on a publisher', async ({ temp }) => {
       using _cwd = pointCwdAt(temp.resolve('packages/bare'));
       // Keyed on the directory reported by the sweep, which is `.` for whichever project the sweep starts in.

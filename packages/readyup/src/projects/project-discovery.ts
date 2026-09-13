@@ -2,8 +2,6 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
 import { collectSourceFiles } from '../compile/collectSourceFiles.ts';
 import { CONFIG_LOOKUP_PATHS, DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { READYUP_DIR } from '../kits/kitsDir.ts';
@@ -11,6 +9,7 @@ import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
+import { toError } from '../portable/toError.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
 
 /**
@@ -25,7 +24,10 @@ export interface Project {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
   absolutePath: string;
+  /** The project's settings, or the defaults where `configError` is set. */
   config: ResolvedRdyConfig;
+  /** The failure raised by evaluating the project's config file. */
+  configError?: Error;
   /** Where the project's manifest belongs, whether or not one sits there. */
   manifestPath: string;
 }
@@ -44,6 +46,10 @@ export interface DiscoverProjectsOptions {
  * three states of the same project: authored but never compiled, compiled, and compiled but since
  * emptied. A manifest counts on existence alone, however many kits it currently lists, which keeps a
  * project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
+ *
+ * A candidate whose config cannot be evaluated counts as well. Its directories are unknown, so the
+ * defaults cannot say whether it holds kits, and a caller that must not act on those defaults still
+ * has to learn that the project is there.
  */
 export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
   const projects = await discoverProjects(options);
@@ -51,7 +57,7 @@ export async function discoverKitProjects(options: DiscoverProjectsOptions = {})
   return projects.filter(
     (project) =>
       hasReadyupFootprint(project.absolutePath) &&
-      holdsKits(project.absolutePath, project.config, project.manifestPath),
+      (project.configError !== undefined || holdsKits(project.absolutePath, project.config, project.manifestPath)),
   );
 }
 
@@ -70,10 +76,10 @@ export async function discoverProjects(options: DiscoverProjectsOptions = {}): P
   const projects: Project[] = [];
   for (const dir of candidates) {
     const absolutePath = dir === '.' ? root : path.join(root, dir);
-    const config = await readProjectConfig(absolutePath, dir);
+    const { config, configError } = await readProjectConfig(absolutePath);
     const manifestPath = path.join(absolutePath, DEFAULT_MANIFEST_PATH);
 
-    projects.push({ dir, absolutePath, config, manifestPath });
+    projects.push({ dir, absolutePath, config, ...(configError !== undefined && { configError }), manifestPath });
   }
 
   return projects;
@@ -124,20 +130,24 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
   return existsSync(manifestPath) || hasCompiledKits(absolutePath, config) || hasKitSources(absolutePath, config);
 }
 
+/** The settings read for one project, with the failure that replaced them by the defaults. */
+interface ProjectConfigRead {
+  config: ResolvedRdyConfig;
+  configError?: Error;
+}
+
 /**
- * Reads one project's config, falling back to the defaults when it cannot be evaluated.
+ * Reads one project's config, falling back to the defaults and returning the failure when it cannot be evaluated.
  *
- * Discovery is read-only, so a config that fails drops that project's settings, not its discovery.
- * A project declaring no config needs one `existsSync` and evaluates no TypeScript, which lets every
- * candidate be resolved before any of them is judged a kit project.
+ * A config that fails drops that project's settings, not its discovery, and the caller decides what the
+ * failure means for it. A project declaring no config needs one `existsSync` and evaluates no TypeScript,
+ * which lets every candidate be resolved before any of them is judged a kit project.
  */
-async function readProjectConfig(absolutePath: string, dir: string): Promise<ResolvedRdyConfig> {
+async function readProjectConfig(absolutePath: string): Promise<ProjectConfigRead> {
   try {
-    return await loadConfig({ fromDir: absolutePath });
+    return { config: await loadConfig({ fromDir: absolutePath }) };
   } catch (error: unknown) {
-    const detail = describeError(error).replace(/\.$/, '');
-    process.stderr.write(`Warning: ${detail}. Reading ${dir} with default settings.\n`);
-    return { ...DEFAULT_CONFIG };
+    return { config: { ...DEFAULT_CONFIG }, configError: toError(error) };
   }
 }
 

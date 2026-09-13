@@ -315,6 +315,7 @@ async function runPackagesMode(json: boolean): Promise<number> {
  */
 async function runRecursivePackagesMode(json: boolean): Promise<number> {
   const projects = await discoverProjects({ root: process.cwd() });
+  warnOfDefaultedConfigs(projects);
 
   const views: ProjectPackagesView[] = [];
   const entries: JsonListKitEntry[] = [];
@@ -346,6 +347,7 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
 async function runRecursiveMode(json: boolean): Promise<number> {
   const root = process.cwd();
   const projects = await discoverKitProjects({ root });
+  warnOfDefaultedConfigs(projects);
 
   const views: RecursiveProjectView[] = [];
   const entries: JsonListKitEntry[] = [];
@@ -480,6 +482,19 @@ async function loadListingConfig(): Promise<ResolvedRdyConfig> {
     const hint = extractHint(error);
     if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
     return { ...DEFAULT_CONFIG };
+  }
+}
+
+/**
+ * Warns of each swept project whose config could not be evaluated, which the listing reads with default settings.
+ *
+ * Listing is read-only, so it takes the same warn-and-continue that `loadListingConfig` takes for the working directory.
+ */
+function warnOfDefaultedConfigs(projects: Project[]): void {
+  for (const { configError, dir } of projects) {
+    if (configError === undefined) continue;
+    const detail = describeError(configError).replace(/\.$/, '');
+    process.stderr.write(`Warning: ${detail}. Reading ${dir} with default settings.\n`);
   }
 }
 

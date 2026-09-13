@@ -10,14 +10,21 @@ import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
-import { configError, internalError, usageError } from '../errors/RdyError.ts';
+import { configError, internalError, RdyError, usageError } from '../errors/RdyError.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import { type JsonCompileKitEntry, type JsonCompileOutput, SCHEMA_VERSION } from '../schemas/compileOutputSchema.ts';
+import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
+import {
+  type JsonCompileKitEntry,
+  type JsonCompileOutput,
+  type JsonCompileProjectEntry,
+  SCHEMA_VERSION,
+} from '../schemas/compileOutputSchema.ts';
 import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 import { VERSION } from '../version.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
@@ -31,6 +38,7 @@ const compileOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
   output: { type: 'string', short: 'o' },
+  recursive: { type: 'boolean' },
   'skip-manifest': { type: 'boolean' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
@@ -62,6 +70,21 @@ export async function compileCommand(args: string[]): Promise<number> {
     }
   }
 
+  const recursive = values.recursive === true;
+
+  // `--recursive` sweeps every project below the working directory, while each of these names a single target.
+  if (recursive && positionals.length > 0) {
+    throw usageError('--recursive and an input file are mutually exclusive');
+  }
+
+  if (recursive && values.output !== undefined) {
+    throw usageError('--recursive and --output are mutually exclusive');
+  }
+
+  if (recursive && values.manifest !== undefined) {
+    throw usageError('--recursive and --manifest are mutually exclusive');
+  }
+
   if (positionals.length > 1) {
     throw usageError('Too many arguments. Expected a single input file.');
   }
@@ -70,6 +93,11 @@ export async function compileCommand(args: string[]): Promise<number> {
   const json = values.json === true;
   const outputPath = values.output;
   const skipManifest = values['skip-manifest'] === true;
+
+  if (recursive) {
+    return compileRecursive({ force, skipManifest, json });
+  }
+
   const manifestPath = resolveManifestPath(values.manifest);
   const inputPath = positionals[0];
 
@@ -158,12 +186,20 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
  *
  * A kit left alone because it drifted counts against the run just as a failed one does: Both mean
  * the compiled output on disk is not what the source says it should be.
+ *
+ * `projects` is given by a recursive compile alone, and a project that failed counts against the run
+ * whether or not it contributed a kit.
  */
-function finishCompile(kits: JsonCompileKitEntry[], json: boolean): number {
-  const passed = kits.every((kit) => kit.status === 'compiled');
+function finishCompile(kits: JsonCompileKitEntry[], json: boolean, projects?: JsonCompileProjectEntry[]): number {
+  const passed = kits.every((kit) => kit.status === 'compiled') && (projects ?? []).every((project) => project.passed);
 
   if (json) {
-    const output: JsonCompileOutput = { schemaVersion: SCHEMA_VERSION, passed, kits };
+    const output: JsonCompileOutput = {
+      schemaVersion: SCHEMA_VERSION,
+      passed,
+      kits,
+      ...(projects !== undefined && { projects }),
+    };
     process.stdout.write(JSON.stringify(output) + '\n');
   }
 
@@ -188,14 +224,7 @@ interface CompileBatchArgs {
   json: boolean;
 }
 
-/**
- * Compiles every matching `.ts` file in the config-driven source directory.
- *
- * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
- * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
- * the sweep -- an unreadable config, an unwritable manifest -- still throw, because they say nothing
- * about any individual kit.
- */
+/** Compiles every kit source of the project in the working directory, under the config found there. */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const { skipManifest, force, manifestPath, json } = args;
   let config;
@@ -205,8 +234,144 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 
-  const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
-  const outDir = path.resolve(process.cwd(), config.compile.outDir);
+  const kits = await compileProject({ projectDir: process.cwd(), config, manifestPath, force, skipManifest, json });
+  return finishCompile(kits, json);
+}
+
+/** Arguments for the recursive compile path. */
+interface CompileRecursiveArgs {
+  force: boolean;
+  skipManifest: boolean;
+  json: boolean;
+}
+
+/**
+ * Compiles the kits of every kit project below the working directory, each as `rdy compile` run from its directory would.
+ *
+ * The sweep runs to completion across projects as it does across kits: A project that cannot be compiled at
+ * all is reported, the next project is tried, and the run fails. A project whose config cannot be evaluated
+ * is one of those, and is never compiled under the defaults that discovery read it with.
+ */
+async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
+  const { force, skipManifest, json } = args;
+  const root = process.cwd();
+  const projects = await discoverKitProjects({ root });
+
+  if (projects.length === 0) {
+    writeHuman('No kit projects found.\n', json);
+    return finishCompile([], json, []);
+  }
+
+  const kits: JsonCompileKitEntry[] = [];
+  const projectEntries: JsonCompileProjectEntry[] = [];
+  let hasWrittenBlock = false;
+
+  for (const project of projects) {
+    if (project.configError !== undefined) {
+      projectEntries.push(reportProjectFailure(project.dir, describeError(project.configError)));
+      continue;
+    }
+
+    // A project failing on its config writes no block, so separation follows the blocks actually written.
+    if (hasWrittenBlock) writeHuman('\n', json);
+    hasWrittenBlock = true;
+
+    const outcome = await compileSweptProject(project, { root, force, skipManifest, json });
+    kits.push(...outcome.kits);
+    projectEntries.push(outcome.entry);
+  }
+
+  const failedDirs = projectEntries.filter((entry) => !entry.passed).map((entry) => entry.project);
+  if (failedDirs.length > 0) {
+    writeHuman(
+      `\nProblems in ${failedDirs.length} of ${pluralizeWithCount(projects.length, 'project')}: ${failedDirs.join(', ')}\n`,
+      json,
+    );
+  }
+
+  return finishCompile(kits, json, projectEntries);
+}
+
+/** Arguments shared by every project that a recursive compile visits. */
+interface CompileSweptProjectArgs {
+  root: string;
+  force: boolean;
+  skipManifest: boolean;
+  json: boolean;
+}
+
+/** One project's contribution to a recursive compile. */
+interface SweptProjectOutcome {
+  kits: JsonCompileKitEntry[];
+  entry: JsonCompileProjectEntry;
+}
+
+/**
+ * Compiles one discovered project, reporting a failure that stops the project rather than letting it end the sweep.
+ *
+ * Only an `RdyError` is a project failure. Anything else is a defect in rdy, and ends the run.
+ */
+async function compileSweptProject(project: Project, args: CompileSweptProjectArgs): Promise<SweptProjectOutcome> {
+  const { root, force, skipManifest, json } = args;
+
+  try {
+    const kits = await compileProject({
+      projectDir: project.absolutePath,
+      config: project.config,
+      manifestPath: project.manifestPath,
+      force,
+      skipManifest,
+      json,
+      sweep: { root, project: project.dir },
+    });
+    return { kits, entry: { project: project.dir, passed: kits.every((kit) => kit.status === 'compiled') } };
+  } catch (error: unknown) {
+    if (!(error instanceof RdyError)) throw error;
+    return { kits: [], entry: reportProjectFailure(project.dir, error.message) };
+  }
+}
+
+/** Writes the failure of a project that could not be compiled at all, and returns the project's entry. */
+function reportProjectFailure(dir: string, message: string): JsonCompileProjectEntry {
+  process.stderr.write(`Error in ${dir}: ${message}\n`);
+  return { project: dir, passed: false, error: message };
+}
+
+/** Arguments for compiling one project's kit sources. */
+interface CompileProjectArgs {
+  /** Directory against which the config's `srcDir` and `outDir` resolve. */
+  projectDir: string;
+  config: ResolvedRdyConfig;
+  manifestPath: string;
+  force: boolean;
+  skipManifest: boolean;
+  json: boolean;
+  /** The recursive compile that the project belongs to, which names every path against its root. */
+  sweep?: SweepContext;
+}
+
+/** Where a project sits in a recursive compile. */
+interface SweepContext {
+  /** Directory from which the sweep descended. */
+  root: string;
+  /** The project's directory relative to `root`, as discovery reports it. */
+  project: string;
+}
+
+/**
+ * Compiles every matching `.ts` file in a project's config-driven source directory, returning each kit's outcome.
+ *
+ * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
+ * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
+ * the sweep -- an unreadable source directory, an unwritable manifest -- still throw, because they say
+ * nothing about any individual kit.
+ */
+async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitEntry[]> {
+  const { projectDir, config, manifestPath, force, skipManifest, json, sweep } = args;
+  const projectField = sweep === undefined ? {} : { project: sweep.project };
+
+  const srcDir = path.resolve(projectDir, config.compile.srcDir);
+  const outDir = path.resolve(projectDir, config.compile.outDir);
 
   // A missing source directory is treated as an empty one rather than as an error.
   const srcDirExists = existsSync(srcDir);
@@ -221,10 +386,12 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   }
 
   if (tsFiles.length === 0) {
-    return finishEmptySweep({ srcDir, srcDirExists, skipManifest, manifestPath, json });
+    const displayRoot = sweep?.root ?? projectDir;
+    reportEmptySweep({ displayRoot, srcDir, srcDirExists, skipManifest, manifestPath, json });
+    return [];
   }
 
-  const anchor = resolveWorkspaceAnchor(srcDir);
+  const anchor = sweep?.root ?? resolveWorkspaceAnchor(srcDir, projectDir);
   const relSrcDir = path.relative(anchor, srcDir);
   const relOutDir = path.relative(anchor, outDir);
   const label =
@@ -247,7 +414,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     if (drift !== undefined) {
       writeHuman(formatDriftLine(fileName, drift.status), json);
       kitEntries.push(drift.existingKit);
-      kitResults.push({ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) });
+      kitResults.push({ name: kitName, ...projectField, status: 'skipped', error: formatDriftReason(drift.status) });
       skippedCount += 1;
       continue;
     }
@@ -258,25 +425,19 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       const outName = fileName.replace(/\.ts$/, '.js');
       writeHuman(formatResultLine(fileName, outName, result.changed), json);
 
-      const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
-      const relSourcePath = path.relative(manifestDir, srcFile);
       const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
-      kitEntries.push({
-        esbuildVersion: result.esbuildVersion,
-        inputs: closure.inputs,
-        name: kitName,
-        path: relOutputPath,
-        readyupVersion: VERSION,
-        source: relSourcePath,
-        sourceHash: closure.sourceHash,
-        targetHash: result.targetHash,
-        ...(Object.keys(result.bundledDependencies).length > 0 && {
+      kitEntries.push(
+        buildManifestKit(kitName, metadata, {
           bundledDependencies: result.bundledDependencies,
+          esbuildVersion: result.esbuildVersion,
+          inputs: closure.inputs,
+          path: path.relative(manifestDir, path.resolve(result.outputPath)),
+          source: path.relative(manifestDir, srcFile),
+          sourceHash: closure.sourceHash,
+          targetHash: result.targetHash,
         }),
-        ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
-        ...(metadata.description !== undefined && { description: metadata.description }),
-      });
-      kitResults.push({ name: kitName, status: 'compiled' });
+      );
+      kitResults.push({ name: kitName, ...projectField, status: 'compiled' });
     } catch (error: unknown) {
       // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
       // goes on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
@@ -286,8 +447,9 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
       if (existingKit !== undefined) kitEntries.push(existingKit);
 
       const message = describeError(error);
-      process.stderr.write(`Error compiling ${fileName}: ${message}\n`);
-      kitResults.push({ name: kitName, status: 'failed', error: message });
+      const failedSource = sweep === undefined ? fileName : path.relative(sweep.root, srcFile);
+      process.stderr.write(`Error compiling ${failedSource}: ${message}\n`);
+      kitResults.push({ name: kitName, ...projectField, status: 'failed', error: message });
       failedCount += 1;
     }
   }
@@ -313,11 +475,13 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     }
   }
 
-  return finishCompile(kitResults, json);
+  return kitResults;
 }
 
-/** Arguments for the no-kits early return of a batch compile. */
-interface FinishEmptySweepArgs {
+/** Arguments for the no-kits early return of a project compile. */
+interface ReportEmptySweepArgs {
+  /** Directory against which the message names the source directory. */
+  displayRoot: string;
   srcDir: string;
   srcDirExists: boolean;
   skipManifest: boolean;
@@ -332,10 +496,10 @@ interface FinishEmptySweepArgs {
  * left stale. A project holding neither kits nor a manifest is not one that this sweep describes, and
  * gets none seeded for it.
  */
-function finishEmptySweep(args: FinishEmptySweepArgs): number {
-  const { srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
+function reportEmptySweep(args: ReportEmptySweepArgs): void {
+  const { displayRoot, srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
 
-  const relSrc = path.relative(process.cwd(), srcDir);
+  const relSrc = path.relative(displayRoot, srcDir);
   const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
   const writesManifest = !skipManifest && existsSync(manifestPath);
 
@@ -348,8 +512,6 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
       throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
     }
   }
-
-  return finishCompile([], json);
 }
 
 /** The fields that a compile supplies to a manifest kit entry, with paths stated against the manifest. */
@@ -402,6 +564,25 @@ function relativizeInput(input: CompiledInput, manifestDir: string): RdyManifest
     : { hash: input.hash, kind: 'module', path: relativePath };
 }
 
+/** Returns the manifest entry recording a compiled kit, omitting each optional field that it has nothing for. */
+function buildManifestKit(kitName: string, metadata: KitMetadata, compileFields: KitCompileFields): RdyManifestKit {
+  return {
+    esbuildVersion: compileFields.esbuildVersion,
+    inputs: compileFields.inputs,
+    name: kitName,
+    path: compileFields.path,
+    readyupVersion: VERSION,
+    source: compileFields.source,
+    sourceHash: compileFields.sourceHash,
+    targetHash: compileFields.targetHash,
+    ...(Object.keys(compileFields.bundledDependencies).length > 0 && {
+      bundledDependencies: compileFields.bundledDependencies,
+    }),
+    ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
+    ...(metadata.description !== undefined && { description: metadata.description }),
+  };
+}
+
 /** Upserts a kit entry into the manifest at `manifestPath`, writing the result back. */
 function upsertManifest(
   manifestPath: string,
@@ -421,21 +602,7 @@ function upsertManifest(
     }
   }
 
-  const entry: RdyManifestKit = {
-    esbuildVersion: compileFields.esbuildVersion,
-    inputs: compileFields.inputs,
-    name: kitName,
-    path: compileFields.path,
-    readyupVersion: VERSION,
-    source: compileFields.source,
-    sourceHash: compileFields.sourceHash,
-    targetHash: compileFields.targetHash,
-    ...(Object.keys(compileFields.bundledDependencies).length > 0 && {
-      bundledDependencies: compileFields.bundledDependencies,
-    }),
-    ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
-    ...(metadata.description !== undefined && { description: metadata.description }),
-  };
+  const entry = buildManifestKit(kitName, metadata, compileFields);
 
   // Replace existing entry for this kit name, or append.
   const filtered = existingKits.filter((k) => k.name !== kitName);
@@ -529,13 +696,12 @@ function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean): 
 /**
  * Returns the directory against which a compile heading names its paths.
  *
- * The nearest enclosing workspace root wins, then the nearest repository root, then the working
- * directory. `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths
- * against that one would head every workspace's output identically and leave the reader unable to tell
- * whose kits a line reports. A repository with no workspace file still gets a stable anchor, and a
- * directory under neither falls back to the behaviour that it has always had.
+ * The nearest enclosing workspace root wins, then the nearest repository root, then `fallbackDir`.
+ * `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths against
+ * that one would head every workspace's output identically and leave the reader unable to tell whose
+ * kits a line reports. A repository with no workspace file still gets a stable anchor.
  */
-function resolveWorkspaceAnchor(srcDir: string): string {
+function resolveWorkspaceAnchor(srcDir: string, fallbackDir: string): string {
   const markers = ['pnpm-workspace.yaml', '.git'];
 
   for (const marker of markers) {
@@ -546,5 +712,5 @@ function resolveWorkspaceAnchor(srcDir: string): string {
     }
   }
 
-  return process.cwd();
+  return fallbackDir;
 }

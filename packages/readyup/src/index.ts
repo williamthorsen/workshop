@@ -33,7 +33,12 @@ export type { RdyErrorCode } from './errors/RdyError.ts';
 
 // JSON payload types, derived from the zod schemas that also generate the published JSON Schemas
 export type { JsonCounts, JsonErrorBody, JsonWarning, JsonWarningCode } from './schemas/common.ts';
-export type { JsonCompileKitEntry, JsonCompileOutput, JsonCompileStatus } from './schemas/compileOutputSchema.ts';
+export type {
+  JsonCompileKitEntry,
+  JsonCompileOutput,
+  JsonCompileProjectEntry,
+  JsonCompileStatus,
+} from './schemas/compileOutputSchema.ts';
 export type { JsonErrorEnvelope } from './schemas/errorEnvelopeSchema.ts';
 export type { JsonKitKind, JsonListKitEntry, JsonListOutput } from './schemas/listOutputSchema.ts';
 export type {

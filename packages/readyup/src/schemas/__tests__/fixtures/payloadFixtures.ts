@@ -189,3 +189,14 @@ export const compilePayload = {
     { name: 'release', status: 'failed', error: 'Kit must export a default RdyKit' },
   ],
 };
+
+/** A `compile --recursive` payload, whose kits name their projects and whose projects include one that failed. */
+export const recursiveCompilePayload = {
+  schemaVersion: 1,
+  passed: false,
+  kits: [{ name: 'deploy', project: 'packages/api', status: 'compiled' }],
+  projects: [
+    { project: 'packages/api', passed: true },
+    { project: 'packages/broken', passed: false, error: 'Config file could not be evaluated' },
+  ],
+};
