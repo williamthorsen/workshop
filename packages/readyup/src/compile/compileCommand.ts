@@ -11,6 +11,7 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, internalError, usageError } from '../errors/RdyError.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
@@ -188,14 +189,7 @@ interface CompileBatchArgs {
   json: boolean;
 }
 
-/**
- * Compiles every matching `.ts` file in the config-driven source directory.
- *
- * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
- * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
- * the sweep -- an unreadable config, an unwritable manifest -- still throw, because they say nothing
- * about any individual kit.
- */
+/** Compiles every kit source of the project in the working directory, under the config found there. */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const { skipManifest, force, manifestPath, json } = args;
   let config;
@@ -205,8 +199,34 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 
-  const srcDir = path.resolve(process.cwd(), config.compile.srcDir);
-  const outDir = path.resolve(process.cwd(), config.compile.outDir);
+  const kits = await compileProject({ projectDir: process.cwd(), config, manifestPath, force, skipManifest, json });
+  return finishCompile(kits, json);
+}
+
+/** Arguments for compiling one project's kit sources. */
+interface CompileProjectArgs {
+  /** Directory against which the config's `srcDir` and `outDir` resolve. */
+  projectDir: string;
+  config: ResolvedRdyConfig;
+  manifestPath: string;
+  force: boolean;
+  skipManifest: boolean;
+  json: boolean;
+}
+
+/**
+ * Compiles every matching `.ts` file in a project's config-driven source directory, returning each kit's outcome.
+ *
+ * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
+ * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
+ * the sweep -- an unreadable source directory, an unwritable manifest -- still throw, because they say
+ * nothing about any individual kit.
+ */
+async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitEntry[]> {
+  const { projectDir, config, manifestPath, force, skipManifest, json } = args;
+
+  const srcDir = path.resolve(projectDir, config.compile.srcDir);
+  const outDir = path.resolve(projectDir, config.compile.outDir);
 
   // A missing source directory is treated as an empty one rather than as an error.
   const srcDirExists = existsSync(srcDir);
@@ -221,10 +241,11 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   }
 
   if (tsFiles.length === 0) {
-    return finishEmptySweep({ srcDir, srcDirExists, skipManifest, manifestPath, json });
+    reportEmptySweep({ projectDir, srcDir, srcDirExists, skipManifest, manifestPath, json });
+    return [];
   }
 
-  const anchor = resolveWorkspaceAnchor(srcDir);
+  const anchor = resolveWorkspaceAnchor(srcDir, projectDir);
   const relSrcDir = path.relative(anchor, srcDir);
   const relOutDir = path.relative(anchor, outDir);
   const label =
@@ -313,11 +334,12 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     }
   }
 
-  return finishCompile(kitResults, json);
+  return kitResults;
 }
 
-/** Arguments for the no-kits early return of a batch compile. */
-interface FinishEmptySweepArgs {
+/** Arguments for the no-kits early return of a project compile. */
+interface ReportEmptySweepArgs {
+  projectDir: string;
   srcDir: string;
   srcDirExists: boolean;
   skipManifest: boolean;
@@ -332,10 +354,10 @@ interface FinishEmptySweepArgs {
  * left stale. A project holding neither kits nor a manifest is not one that this sweep describes, and
  * gets none seeded for it.
  */
-function finishEmptySweep(args: FinishEmptySweepArgs): number {
-  const { srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
+function reportEmptySweep(args: ReportEmptySweepArgs): void {
+  const { projectDir, srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
 
-  const relSrc = path.relative(process.cwd(), srcDir);
+  const relSrc = path.relative(projectDir, srcDir);
   const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
   const writesManifest = !skipManifest && existsSync(manifestPath);
 
@@ -348,8 +370,6 @@ function finishEmptySweep(args: FinishEmptySweepArgs): number {
       throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
     }
   }
-
-  return finishCompile([], json);
 }
 
 /** The fields that a compile supplies to a manifest kit entry, with paths stated against the manifest. */
@@ -529,13 +549,12 @@ function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean): 
 /**
  * Returns the directory against which a compile heading names its paths.
  *
- * The nearest enclosing workspace root wins, then the nearest repository root, then the working
- * directory. `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths
- * against that one would head every workspace's output identically and leave the reader unable to tell
- * whose kits a line reports. A repository with no workspace file still gets a stable anchor, and a
- * directory under neither falls back to the behaviour that it has always had.
+ * The nearest enclosing workspace root wins, then the nearest repository root, then `fallbackDir`.
+ * `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths against
+ * that one would head every workspace's output identically and leave the reader unable to tell whose
+ * kits a line reports. A repository with no workspace file still gets a stable anchor.
  */
-function resolveWorkspaceAnchor(srcDir: string): string {
+function resolveWorkspaceAnchor(srcDir: string, fallbackDir: string): string {
   const markers = ['pnpm-workspace.yaml', '.git'];
 
   for (const marker of markers) {
@@ -546,5 +565,5 @@ function resolveWorkspaceAnchor(srcDir: string): string {
     }
   }
 
-  return process.cwd();
+  return fallbackDir;
 }
