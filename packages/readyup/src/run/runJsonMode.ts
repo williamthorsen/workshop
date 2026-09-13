@@ -3,6 +3,7 @@ import process from 'node:process';
 import { toRdyError } from '../errors/RdyError.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../kits/types.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatJsonReport, type KitInput } from '../reporting/formatJsonReport.ts';
 import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
@@ -22,6 +23,7 @@ interface JsonRunSettings {
   detail: JsonDetail;
   diagnose: boolean;
   failOn: Severity | undefined;
+  remote: RemoteFetchContext;
   reportOn: Severity | undefined;
 }
 
@@ -38,7 +40,7 @@ export async function runJsonMode(
   settings: JsonRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const { detail, diagnose, failOn, reportOn } = settings;
+  const { detail, diagnose, failOn, remote, reportOn } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
@@ -49,7 +51,7 @@ export async function runJsonMode(
 
   for (const entry of kitEntries) {
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, isJit);
+      const { kit, compileTimeVersion } = await loadKit(entry, isJit, remote);
 
       warnings.push(
         ...warnOnKitStaleness(entry.name, entry.source, tracking),

@@ -14,6 +14,7 @@ import { resolveKitSources } from '../../../src/run/resolveKitSources.ts';
 import { runCommand } from '../../../src/run/runCommand.ts';
 import { ListOutputSchema } from '../../../src/schemas/listOutputSchema.ts';
 import { type JsonKitResultEntry, type JsonReport, ReportSchema } from '../../../src/schemas/reportSchema.ts';
+import { createUncachedRemoteContext } from '../../../src/test-utils/createUncachedRemoteContext.ts';
 import { hashFile } from '../../../src/verify/targetHash.ts';
 
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
@@ -83,7 +84,7 @@ describe('kits readyup publishes', () => {
   it('runs the default kit on a bare invocation', async () => {
     const entries = resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
-    await runCommand({ kitEntries: entries, json: true });
+    await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     expect(kit).toMatchObject({ origin: { package: 'readyup' } });
@@ -97,7 +98,7 @@ describe('kits readyup publishes', () => {
       kitSpecifiers: [{ kitName: 'publishing', checklists: [] }],
     });
 
-    await runCommand({ kitEntries: entries, json: true });
+    await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'publishing');
     expect(kit.checklists.map((checklist) => checklist.name)).toStrictEqual([
@@ -113,7 +114,7 @@ describe('kits readyup publishes', () => {
   it('judges the consuming project rather than the package from which it came', async () => {
     const entries = resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
-    const exitCode = await runCommand({ kitEntries: entries, json: true });
+    const exitCode = await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     const setup = kit.checklists.find((checklist) => checklist.name === 'setup');

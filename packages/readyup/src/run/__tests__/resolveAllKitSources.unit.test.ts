@@ -10,12 +10,19 @@ vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { resolveAllKitSources } from '../resolveAllKitSources.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 
 /** Flags left inactive by a bare `--all`. */
-const baseOptions = { fromValue: undefined, internal: false, jit: false, packages: false };
+const baseOptions = {
+  fromValue: undefined,
+  internal: false,
+  jit: false,
+  packages: false,
+  remote: createUncachedRemoteContext(),
+};
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(

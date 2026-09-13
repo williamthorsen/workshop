@@ -23,6 +23,7 @@ import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
+import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { collectCompiledKits } from './collectCompiledKits.ts';
@@ -142,7 +143,7 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
     throw usageError(describeError(error), { cause: error });
   }
 
-  const sourceKits = await collectSourceKits(source);
+  const sourceKits = await collectSourceKits(source, createRemoteFetchContext({ reload: false }));
 
   const output =
     sourceKits.kind === 'remote'

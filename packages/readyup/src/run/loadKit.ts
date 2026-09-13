@@ -5,8 +5,9 @@ import { kitLoadError, type RdyError } from '../errors/RdyError.ts';
 import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import { type LoadedRdyKit, loadRdyKit } from '../kits/loadRdyKit.ts';
-import { loadRemoteKit, type LoadRemoteKitOptions } from '../remote/loadRemoteKit.ts';
-import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import { loadRemoteKit } from '../remote/loadRemoteKit.ts';
+import { resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { assertSatisfiesVersionFloor } from './version-skew.ts';
@@ -17,8 +18,12 @@ import { assertSatisfiesVersionFloor } from './version-skew.ts';
  * Takes the whole entry rather than its source alone: A kit with readyup imports that the runner cannot satisfy
  * is reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
  */
-export async function loadKit(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
-  const loaded = await loadFromSource(entry, isJit);
+export async function loadKit(
+  entry: ResolvedKitEntry,
+  isJit: boolean,
+  remote: RemoteFetchContext,
+): Promise<LoadedRdyKit> {
+  const loaded = await loadFromSource(entry, isJit, remote);
 
   // Checked outside the load, whose catch blocks rewrap anything thrown inside them through
   // `describeError` and would drop the hint naming the upgrade.
@@ -38,16 +43,22 @@ function isModuleNotFoundError(error: unknown, packageName: string): boolean {
 }
 
 /** Fetches or reads a kit from its source, reporting every failure as the kit-load error that a reader sees. */
-async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<LoadedRdyKit> {
+async function loadFromSource(
+  entry: ResolvedKitEntry,
+  isJit: boolean,
+  remote: RemoteFetchContext,
+): Promise<LoadedRdyKit> {
   const { source } = entry;
 
   if ('url' in source) {
     const provider = resolveRemoteProvider(source.url);
-    const headers = resolveRemoteAuthHeaders(provider);
-    const options: LoadRemoteKitOptions = { url: source.url, ...(headers !== undefined && { headers }) };
 
     try {
-      return await loadRemoteKit(options);
+      return await loadRemoteKit({
+        url: source.url,
+        cache: remote.cache,
+        resolveHeaders: () => remote.resolveAuthHeaders(provider),
+      });
     } catch (error: unknown) {
       // Catch ahead of the remote wrapper: A kit that fetched cleanly and binds symbols that the runner lacks
       // is a diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
@@ -55,7 +66,7 @@ async function loadFromSource(entry: ResolvedKitEntry, isJit: boolean): Promise<
       throw toRemoteRdyError(error, {
         code: 'kit-load',
         provider,
-        tokenForwarded: headers !== undefined,
+        tokenForwarded: remote.resolveAuthHeaders(provider) !== undefined,
         url: source.url,
       });
     }

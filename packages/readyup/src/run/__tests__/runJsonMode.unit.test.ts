@@ -64,6 +64,7 @@ vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
 
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { runJsonMode } from '../runJsonMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
@@ -436,7 +437,8 @@ async function runJson(
 ) {
   using io = captureStdio();
 
-  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, reportOn }, isJit);
+  const remote = createUncachedRemoteContext();
+  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

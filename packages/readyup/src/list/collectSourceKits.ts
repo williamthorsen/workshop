@@ -11,8 +11,9 @@ import type { DirectorySource, FromSource, GlobalSource, LocalSource, NpmSource 
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
-import { resolveRemoteAuthHeaders, resolveRemoteProvider } from '../remote/remote-provider.ts';
+import { resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import type { JsonListKitEntry } from '../schemas/listOutputSchema.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
@@ -27,15 +28,15 @@ export type SourceKits =
 type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
 
 /** Returns the kits that a `--from` source holds, as the rows that `rdy list --from` reports. */
-export async function collectSourceKits(source: FromSource): Promise<SourceKits> {
+export async function collectSourceKits(source: FromSource, remote: RemoteFetchContext): Promise<SourceKits> {
   if (source.type === 'github') {
     const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
-    return collectRemoteKits(url);
+    return collectRemoteKits(url, remote);
   }
 
   if (source.type === 'bitbucket') {
     const url = `https://api.bitbucket.org/2.0/repositories/${source.workspace}/${source.repo}/src/${source.ref}/.readyup/manifest.json`;
-    return collectRemoteKits(url);
+    return collectRemoteKits(url, remote);
   }
 
   if (source.type === 'npm') {
@@ -60,15 +61,19 @@ function collectLocalKits(manifestPath: string, kitsDir: string): SourceKits {
 }
 
 /** Fetches the kits at a remote manifest URL, authenticating where the host is one that readyup knows. */
-async function collectRemoteKits(url: string): Promise<SourceKits> {
+async function collectRemoteKits(url: string, remote: RemoteFetchContext): Promise<SourceKits> {
   const provider = resolveRemoteProvider(url);
-  const headers = resolveRemoteAuthHeaders(provider);
 
   let manifest;
   try {
-    manifest = await loadRemoteManifest({ url, headers });
+    manifest = await loadRemoteManifest({
+      url,
+      cache: remote.cache,
+      resolveHeaders: () => remote.resolveAuthHeaders(provider),
+    });
   } catch (error: unknown) {
-    throw toRemoteRdyError(error, { code: 'config', provider, tokenForwarded: headers !== undefined, url });
+    const tokenForwarded = remote.resolveAuthHeaders(provider) !== undefined;
+    throw toRemoteRdyError(error, { code: 'config', provider, tokenForwarded, url });
   }
 
   // A remote manifest's paths name locations on the host that published it, so they are passed

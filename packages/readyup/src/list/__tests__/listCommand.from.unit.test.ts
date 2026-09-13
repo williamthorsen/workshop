@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,7 +52,12 @@ const validRemoteManifestBody = JSON.stringify({
 });
 
 describe(listCommand, () => {
+  let cacheTree: TempTree;
+
   beforeEach(() => {
+    // A remote listing reads and writes the HTTP cache, which would otherwise be the developer's own.
+    cacheTree = createTempTree({}, { prefix: 'readyup-list-cache-' });
+    vi.stubEnv('XDG_CACHE_HOME', cacheTree.dir);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
     mockResolveBitbucketToken.mockReturnValue(undefined);
@@ -59,6 +65,7 @@ describe(listCommand, () => {
   });
 
   afterEach(() => {
+    cacheTree[Symbol.dispose]();
     vi.restoreAllMocks();
     mockEnumerateKits.mockReset();
     mockLoadConfig.mockReset();
@@ -142,6 +149,19 @@ describe(listCommand, () => {
     );
     expect(stdout).toContain('default \u{00B7} General project health checks');
     expect(stdout).toContain('deploy');
+  });
+
+  it('with --from github:org/repo, reuses a fresh manifest from the cache on a later listing', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(validRemoteManifestBody, { headers: { 'Cache-Control': 'max-age=300' } }),
+    );
+    await list(['--from', 'github:williamthorsen/workshop']);
+
+    const { exitCode, stdout } = await list(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(stdout).toContain('General project health checks');
   });
 
   it('with --from github:org/repo@ref, builds the URL using the supplied ref', async () => {

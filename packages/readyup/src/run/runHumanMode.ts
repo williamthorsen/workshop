@@ -7,6 +7,7 @@ import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
@@ -25,6 +26,7 @@ interface HumanRunSettings {
   diagnose: boolean;
   failOn: Severity | undefined;
   quiet: boolean;
+  remote: RemoteFetchContext;
   reportOn: Severity | undefined;
 }
 
@@ -60,7 +62,7 @@ export async function runHumanMode(
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, isJit);
+      const { kit, compileTimeVersion } = await loadKit(entry, isJit, settings.remote);
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
       warnOnVersionSkew(entry.name, kit, compileTimeVersion);

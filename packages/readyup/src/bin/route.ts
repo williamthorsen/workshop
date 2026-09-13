@@ -19,6 +19,7 @@ import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolv
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
+import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { parseRunArgs } from '../run/parseRunArgs.ts';
 import { resolveAllKitSources } from '../run/resolveAllKitSources.ts';
@@ -161,6 +162,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
           internalInfix: config.internal.infix,
           configuredPackages: config.packages,
         };
+  const remote = createRemoteFetchContext({ reload: false });
 
   const kitEntries = parsed.all
     ? await resolveAllKitSources({
@@ -168,6 +170,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         jit: parsed.jit,
         internal: parsed.internal,
         packages: parsed.packages,
+        remote,
         ...configFields,
         ...(config !== undefined && { compileOutDir: config.compile.outDir }),
       })
@@ -189,6 +192,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
       json: parsed.json,
       diagnose: parsed.diagnose,
       quiet: parsed.quiet,
+      remote,
       ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
       ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
