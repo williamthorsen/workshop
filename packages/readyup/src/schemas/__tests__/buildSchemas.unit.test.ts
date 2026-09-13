@@ -13,6 +13,7 @@ import {
   hintedErrorEnvelopePayload,
   listPayload,
   minimalReportPayload,
+  recursiveCompilePayload,
   reportPayload,
   unknownWarningReportPayload,
   verifyPayload,
@@ -133,6 +134,7 @@ describe('generated JSON Schemas', () => {
       ['list.v1.json', listPayload],
       ['verify.v1.json', verifyPayload],
       ['compile.v1.json', compilePayload],
+      ['compile.v1.json', recursiveCompilePayload],
     ])('accepts a representative payload for %s', (fileName, payload) => {
       const validate = validatorFor(fileName);
 

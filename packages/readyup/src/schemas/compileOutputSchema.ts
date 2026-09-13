@@ -15,29 +15,54 @@ export const SCHEMA_VERSION = 1;
  */
 export const CompileStatusSchema = z.enum(['compiled', 'failed', 'skipped']).meta({ id: 'CompileStatus' });
 
-/** One kit's compile outcome, with the reason only when there is a failure to explain. */
+/**
+ * One kit's compile outcome, with the reason only when there is a failure to explain.
+ *
+ * `project` is emitted under `--recursive` alone, naming the directory of the project that holds the kit,
+ * relative to the directory from which the sweep descended; `'.'` is that directory itself.
+ */
 export const CompileKitEntrySchema = z
   .object({
     name: z.string(),
+    project: z.string().optional(),
     status: CompileStatusSchema,
     error: z.string().optional(),
   })
   .meta({ id: 'CompileKitEntry' });
 
 /**
+ * One project's outcome in a recursive compile.
+ *
+ * `passed` is `true` when every kit in the project compiled. `error` explains a project that could not be
+ * compiled at all, which contributes no kit entries.
+ */
+export const CompileProjectEntrySchema = z
+  .object({
+    project: z.string(),
+    passed: z.boolean(),
+    error: z.string().optional(),
+  })
+  .meta({ id: 'CompileProjectEntry' });
+
+/**
  * Top-level shape of `rdy compile --json`.
  *
  * A sweep runs to completion, so every requested kit appears here whatever happened to the ones
  * before it. `passed` is `true` when every kit compiled, agreeing with exit code 0.
+ *
+ * `projects` is emitted under `--recursive` alone, and lists every project that the sweep visited, so a
+ * project that contributed no kit entry is still reported.
  */
 export const CompileOutputSchema = z
   .object({
     schemaVersion: z.int().min(1),
     passed: z.boolean(),
     kits: z.array(CompileKitEntrySchema),
+    projects: z.array(CompileProjectEntrySchema).optional(),
   })
   .meta({ id: 'CompileOutput' });
 
 export type JsonCompileStatus = z.infer<typeof CompileStatusSchema>;
 export type JsonCompileKitEntry = z.infer<typeof CompileKitEntrySchema>;
 export type JsonCompileOutput = z.infer<typeof CompileOutputSchema>;
+export type JsonCompileProjectEntry = z.infer<typeof CompileProjectEntrySchema>;
