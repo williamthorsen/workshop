@@ -85,6 +85,10 @@ const it = baseIt
             "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
           'packages/blocked/kit-sources/probe.ts': 'export default {};',
           'packages/blocked/dist/kits/probe.js': 'export default {};',
+
+          // Discovered for a config that cannot be evaluated, with nothing under the default directories.
+          'packages/misconfigured/package.json': JSON.stringify({ name: 'misconfigured' }),
+          'packages/misconfigured/.config/readyup.config.ts': 'export default { this is not TypeScript',
         },
         { prefix: 'rdy-recursive-' },
       ),
@@ -255,6 +259,14 @@ describe('list --recursive', () => {
       reads.failReadOf('packages/blocked/dist/kits', 'EMFILE');
 
       await expect(listCommand(['--recursive'])).rejects.toThrow('read failed: EMFILE');
+    });
+
+    it('warns of a project whose config cannot be evaluated, and lists the rest', async () => {
+      const { exitCode, stdout, stderr } = await list(['--recursive']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('packages/readyup/');
+      expect(stderr).toContain('Reading packages/misconfigured with default settings.');
     });
   });
 
