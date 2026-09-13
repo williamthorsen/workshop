@@ -162,7 +162,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
           internalInfix: config.internal.infix,
           configuredPackages: config.packages,
         };
-  const remote = createRemoteFetchContext({ reload: false });
+  const remote = createRemoteFetchContext({ reload: parsed.noCache });
 
   const kitEntries = parsed.all
     ? await resolveAllKitSources({

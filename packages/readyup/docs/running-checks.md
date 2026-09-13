@@ -61,6 +61,10 @@ A check's own [`quiet`](authoring-kits.md#checks) is this flag narrowed to that 
 
 Private repositories use ambient tokens: `GITHUB_TOKEN` (falling back to `gh auth token`) and `BITBUCKET_TOKEN`. Without a token, requests are sent anonymously and succeed only for public repositories.
 
+### Cached remote kits
+
+Kits and manifests fetched from `github:`, `bitbucket:`, or `--url` are cached in `$XDG_CACHE_HOME/readyup/http`, or in `~/.cache/readyup/http` when that variable is unset or relative. A cached copy is reused without a request for as long as the server's `Cache-Control: max-age` allows -- 5 minutes for GitHub and 15 for Bitbucket -- and is then revalidated with the server before its next use. A kit pushed within that window can therefore still run from the older cached copy. `--no-cache` fetches every remote kit and manifest again and replaces the cached copies, so later runs without the flag reuse the fresh ones. `rdy list --from` caches a remote manifest the same way and accepts the same flag. The directory is safe to delete.
+
 ## Reading the output
 
 A check line reads `token name <separator> detail [progress] (duration)`. The separator is `·` in `rich` and `-` in `plain`; progress is shown in brackets. Durations appear from 100 ms up, never on a check that did not run, and always on a tail or total line.
@@ -317,7 +321,7 @@ Configured packages are resolved through `node_modules` rather than through the 
 📓 smoke (readyup v0.22.0)
 ```
 
-A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest.
+A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest, which is read from the cache while it is fresh; see [Cached remote kits](#cached-remote-kits).
 
 ### Listing a whole repository
 

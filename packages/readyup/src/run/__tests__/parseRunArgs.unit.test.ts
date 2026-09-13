@@ -321,6 +321,26 @@ describe(parseRunArgs, () => {
     });
   });
 
+  describe('--no-cache', () => {
+    it('parses as a boolean', () => {
+      expect(parseRunArgs(['--no-cache']).noCache).toBe(true);
+    });
+
+    it('defaults to false', () => {
+      expect(parseRunArgs([]).noCache).toBe(false);
+    });
+
+    it.each([
+      ['--packages', ['--no-cache', '--packages']],
+      ['--from', ['--no-cache', '--from', 'global']],
+      ['--file', ['--no-cache', '--file', 'kit.js']],
+      ['--jit', ['--no-cache', '--jit']],
+      ['--url', ['--no-cache', '--url', 'https://example.com/kit.js']],
+    ])('composes with %s, including sources that fetch nothing', (_label, flags) => {
+      expect(parseRunArgs(flags).noCache).toBe(true);
+    });
+  });
+
   describe('--diagnose', () => {
     it('parses as a boolean', () => {
       expect(parseRunArgs(['--diagnose']).diagnose).toBe(true);

@@ -45,6 +45,7 @@ const listOptions = {
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
+  'no-cache': { type: 'boolean' },
   packages: { type: 'boolean' },
   recursive: { type: 'boolean' },
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
@@ -110,7 +111,7 @@ export async function listCommand(args: string[]): Promise<number> {
   }
 
   if (fromArg !== undefined) {
-    return runFromMode(fromArg, json);
+    return runFromMode(fromArg, json, values['no-cache'] === true);
   }
 
   if (packages) {
@@ -135,7 +136,7 @@ function runManifestMode(manifestArg: string, json: boolean): number {
 }
 
 /** Displays the kits held by a `--from` source. */
-async function runFromMode(fromArg: string, json: boolean): Promise<number> {
+async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Promise<number> {
   let source;
   try {
     source = parseFromValue(fromArg);
@@ -143,7 +144,7 @@ async function runFromMode(fromArg: string, json: boolean): Promise<number> {
     throw usageError(describeError(error), { cause: error });
   }
 
-  const sourceKits = await collectSourceKits(source, createRemoteFetchContext({ reload: false }));
+  const sourceKits = await collectSourceKits(source, createRemoteFetchContext({ reload: noCache }));
 
   const output =
     sourceKits.kind === 'remote'

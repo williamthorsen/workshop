@@ -190,6 +190,16 @@ describe(routeCommand, () => {
   it.each([
     { label: 'top-level', args: ['--help'] },
     { label: 'run', args: ['run', '--help'] },
+    { label: 'list', args: ['list', '--help'] },
+  ])('lists --no-cache in $label help', async ({ args }) => {
+    const { stdout } = await routeCli(args);
+
+    expect(stdout).toContain('--no-cache');
+  });
+
+  it.each([
+    { label: 'top-level', args: ['--help'] },
+    { label: 'run', args: ['run', '--help'] },
   ])('lists --diagnose in $label help', async ({ args }) => {
     const { stdout } = await routeCli(args);
 
@@ -309,6 +319,34 @@ describe(routeCommand, () => {
 
     expect(mockRunCommand).toHaveBeenCalledWith(expect.objectContaining({ diagnose: true }), false);
     expect(exitCode).toBe(0);
+  });
+
+  it.each([
+    { label: 'reloads', noCache: true },
+    { label: 'does not reload', noCache: false },
+  ])('hands runCommand a remote fetch context that $label when --no-cache is $noCache', async ({ noCache }) => {
+    vi.stubEnv('XDG_CACHE_HOME', '/var/cache-home');
+    mockParseRunArgs.mockReturnValue({
+      kitSpecifiers: [],
+      checklists: undefined,
+      filePath: undefined,
+      fromValue: undefined,
+      urlValue: undefined,
+      jit: false,
+      internal: false,
+      json: false,
+      noCache,
+    });
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCli(noCache ? ['run', '--no-cache'] : ['run']);
+
+    expect(mockRunCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        remote: expect.objectContaining({ cache: expect.objectContaining({ reload: noCache }) }),
+      }),
+      false,
+    );
   });
 
   it('includes --json in run help text', async () => {
