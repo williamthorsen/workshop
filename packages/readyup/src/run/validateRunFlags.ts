@@ -3,6 +3,7 @@ import type { KitSpecifier } from './parseKitSpecifiers.ts';
 
 /** The subset of parsed run flags whose combinations are constrained. */
 export interface RunFlagConstraints {
+  all: boolean;
   checklists: string | undefined;
   detail: string | undefined;
   file: string | undefined;
@@ -27,6 +28,10 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
 
   if (sourceFlags.length > 1) {
     throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
+  }
+
+  if (parsed.all) {
+    validateAllSelection(parsed, kitSpecifiers);
   }
 
   // A positional names the kit to select in every configured package, so it narrows the run. Checklist
@@ -71,6 +76,23 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   if (parsed.packages) sourceFlags.push('--packages');
   if (parsed.url !== undefined) sourceFlags.push('--url');
   return sourceFlags;
+}
+
+/** Rejects a selection that contradicts `--all`, which selects every kit in the source rather than a single kit. */
+function validateAllSelection(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): void {
+  if (parsed.file !== undefined) {
+    throw usageError('--all cannot be combined with --file; --file names a single kit');
+  }
+  if (parsed.url !== undefined) {
+    throw usageError('--all cannot be combined with --url; --url names a single kit');
+  }
+  if (kitSpecifiers.length > 0) {
+    const names = kitSpecifiers.map((spec) => spec.kitName).join(', ');
+    throw usageError(`--all cannot be combined with kit names (given: ${names}); it selects every kit in the source`);
+  }
+  if (parsed.checklists !== undefined) {
+    throw usageError('--all cannot be combined with --checklists; checklists select within a single kit');
+  }
 }
 
 /**

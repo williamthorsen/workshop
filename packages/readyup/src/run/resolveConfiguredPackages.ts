@@ -6,6 +6,9 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 /**
  * Resolves the requested kits, drawn from what the configured packages publish, into run entries.
  *
+ * `requestedNames` is either the kit names to select or `'all'`, which selects every published kit package by
+ * package, in configured order.
+ *
  * An empty `packages` list is a usage error: The flag names a config key that the config does not have, so
  * the invocation asks for something that cannot be answered. Configured packages that publish no
  * requested kit are a different case and run nothing, which is the honest answer to "does this project
@@ -13,7 +16,7 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  */
 export function resolveConfiguredPackages(
   configuredPackages: string[],
-  requestedNames: string[],
+  requestedNames: string[] | 'all',
   extension: string,
 ): ResolvedKitEntry[] {
   if (configuredPackages.length === 0) {
@@ -21,8 +24,9 @@ export function resolveConfiguredPackages(
   }
 
   const published = expandConfiguredPackages(configuredPackages, extension);
+  const selected = requestedNames === 'all' ? published : selectRequestedKits(published, requestedNames);
 
-  return selectRequestedKits(published, requestedNames).map((kit) => ({
+  return selected.map((kit) => ({
     name: kit.kitName,
     source: { path: kit.path },
     checklists: [],

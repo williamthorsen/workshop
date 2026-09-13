@@ -11,6 +11,7 @@ import { validateRunFlags } from './validateRunFlags.ts';
 
 /** The run-subcommand flags and positionals, parsed and validated. */
 export interface ParsedRunArgs {
+  all: boolean;
   checklists: string[] | undefined;
   detail?: JsonDetail;
   diagnose: boolean;
@@ -39,6 +40,7 @@ const VALID_SEVERITIES = new Set<string>(['error', 'warn', 'recommend']);
  * shift-key slip must not be able to change what runs.
  */
 const runOptions = {
+  all: { type: 'boolean' },
   checklists: { type: 'string', short: 'c' },
   detail: { type: 'string' },
   diagnose: { type: 'boolean' },
@@ -83,6 +85,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   }
 
   const parsed = {
+    all: values.all === true,
     checklists: values.checklists,
     detail: values.detail,
     diagnose: values.diagnose === true,
@@ -122,6 +125,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const detail = parsed.detail !== undefined ? parseDetailFlag(parsed.detail) : undefined;
 
   const parsedArgs: ParsedRunArgs = {
+    all: parsed.all,
     checklists,
     diagnose: parsed.diagnose,
     filePath: parsed.file,

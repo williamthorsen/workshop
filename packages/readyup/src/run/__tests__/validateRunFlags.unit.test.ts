@@ -112,6 +112,44 @@ describe(validateRunFlags, () => {
     });
   });
 
+  describe('--all selection', () => {
+    it.each([
+      { flag: '--from', overrides: { from: '/path' } },
+      { flag: '--internal', overrides: { internal: true } },
+      { flag: '--jit', overrides: { jit: true } },
+      { flag: '--packages', overrides: { packages: true } },
+    ])('accepts --all with $flag', ({ overrides }) => {
+      expect(() => validateRunFlags(buildConstraints({ ...overrides, all: true }), [])).not.toThrow();
+    });
+
+    it.each([
+      { flag: '--file', overrides: { file: 'path.ts' } },
+      { flag: '--url', overrides: { url: 'https://example.com/kit.js' } },
+    ])('throws when --all is combined with $flag, which names a single kit', ({ flag, overrides }) => {
+      expect(() => validateRunFlags(buildConstraints({ ...overrides, all: true }), [])).toThrow(
+        `--all cannot be combined with ${flag}; ${flag} names a single kit`,
+      );
+    });
+
+    it('throws when --all is combined with kit names, naming them', () => {
+      expect(() =>
+        validateRunFlags(buildConstraints({ all: true }), [buildSpec('deploy'), buildSpec('infra')]),
+      ).toThrow('--all cannot be combined with kit names (given: deploy, infra); it selects every kit in the source');
+    });
+
+    it('throws when --all is combined with an inline checklist filter', () => {
+      expect(() => validateRunFlags(buildConstraints({ all: true }), [buildSpec('deploy', ['build'])])).toThrow(
+        '--all cannot be combined with kit names (given: deploy)',
+      );
+    });
+
+    it('throws when --all is combined with --checklists', () => {
+      expect(() => validateRunFlags(buildConstraints({ all: true, checklists: 'build' }), [])).toThrow(
+        '--all cannot be combined with --checklists; checklists select within a single kit',
+      );
+    });
+  });
+
   describe('--checklists selection', () => {
     it('throws when --checklists is given more than one positional kit', () => {
       expect(() => validateRunFlags(buildConstraints({ checklists: 'x' }), [buildSpec('a'), buildSpec('b')])).toThrow(
@@ -147,6 +185,7 @@ describe(validateRunFlags, () => {
 /** Builds a constraints object whose flags are all inactive, overridden by the given fields. */
 function buildConstraints(overrides: Partial<RunFlagConstraints> = {}): RunFlagConstraints {
   return {
+    all: false,
     checklists: undefined,
     detail: undefined,
     file: undefined,

@@ -305,6 +305,22 @@ describe(parseRunArgs, () => {
     expect(parseRunArgs(['--json'])).not.toHaveProperty('detail');
   });
 
+  describe('--all', () => {
+    it('parses as a boolean', () => {
+      expect(parseRunArgs(['--all']).all).toBe(true);
+    });
+
+    it('defaults to false', () => {
+      expect(parseRunArgs([]).all).toBe(false);
+    });
+
+    it('rejects a kit named alongside it as a usage error', () => {
+      expect(() => parseRunArgs(['--all', 'deploy:build'])).toThrow(
+        expect.objectContaining({ code: 'usage', message: expect.stringContaining('--all cannot be combined') }),
+      );
+    });
+  });
+
   describe('--diagnose', () => {
     it('parses as a boolean', () => {
       expect(parseRunArgs(['--diagnose']).diagnose).toBe(true);
