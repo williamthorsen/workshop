@@ -138,7 +138,7 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(mockLoadConfig).toHaveBeenCalledWith();
+      expect(mockLoadConfig).toHaveBeenCalledWith({});
       expect(mockReadManifest).toHaveBeenCalledTimes(1);
       // Package discovery is mocked out in this file, so the count covers internal kits alone.
       expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
@@ -420,6 +420,36 @@ describe(listCommand, () => {
 
       expect(error.code).toBe('usage');
       expect(error.message).toContain('mutually exclusive');
+    });
+  });
+
+  describe('--config', () => {
+    it.each([
+      { mode: 'owner mode', args: [] },
+      { mode: 'packages mode', args: ['--packages'] },
+    ])('loads the config named by --config in $mode', async ({ args }) => {
+      const { exitCode } = await list([...args, '--config', 'custom/readyup.config.ts']);
+
+      expect(exitCode).toBe(0);
+      expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+    });
+
+    it.each([
+      { args: ['--from', '.'], message: '--config and --from are mutually exclusive' },
+      { args: ['--manifest', '.readyup/manifest.json'], message: '--config and --manifest are mutually exclusive' },
+      { args: ['--recursive'], message: '--recursive and --config are mutually exclusive' },
+    ])('reports a usage error for --config with $args.0', async ({ args, message }) => {
+      const { error } = await listRaising([...args, '--config', 'custom/readyup.config.ts']);
+
+      expect(error.code).toBe('usage');
+      expect(error.message).toBe(message);
+    });
+
+    it('reports a usage error when --config is given an empty value', async () => {
+      const { error } = await listRaising(['--config=']);
+
+      expect(error.code).toBe('usage');
+      expect(error.message).toBe('--config requires a value');
     });
   });
 
