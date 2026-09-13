@@ -258,8 +258,8 @@ describe(listCommand, () => {
       expect(error.message).toContain('permission denied');
     });
 
-    it('renders Internal section without Compiled when manifest file is missing and internal kits exist', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+    it('renders Internal section without Compiled when neither a manifest nor a bundle exists', async () => {
+      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.ts': ['default'] }));
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
@@ -270,6 +270,36 @@ describe(listCommand, () => {
       expect(stdout).toContain('\u{2500}\u{2500} Internal');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toBe('');
+    });
+
+    it('lists the bundles in the output directory under Compiled when there is no manifest', async () => {
+      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.js': ['deploy'] }));
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
+      const { stdout } = await list(['--json']);
+
+      expect(mockEnumerateKits).toHaveBeenCalledWith(
+        expect.objectContaining({ dir: expect.stringMatching(/\.readyup\/kits$/), extension: '.js' }),
+      );
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        kits: [{ name: 'deploy', kind: 'compiled', path: '.readyup/kits/deploy.js' }],
+      });
+    });
+
+    it('lists the bundles on disk past a manifest that cannot be read, and warns', async () => {
+      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.js': ['deploy'] }));
+      mockReadManifest.mockImplementation(() => {
+        throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
+      });
+
+      const { stdout, stderr } = await list([]);
+
+      expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+      expect(stdout).toContain('deploy');
+      expect(stderr).toBe('Warning: Manifest file contains invalid JSON: .readyup/manifest.json\n');
     });
 
     it.each([
@@ -297,7 +327,7 @@ describe(listCommand, () => {
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.ts': ['default'] }));
       mockReadManifest.mockImplementation(() => {
         throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
       });
@@ -459,6 +489,11 @@ describe(listCommand, () => {
 });
 
 // region | Helpers
+
+/** Returns an `enumerateKits` stand-in that yields the names listed for each extension, and none for any other. */
+function enumerateByExtension(namesByExtension: Record<string, string[]>) {
+  return ({ extension }: { extension: string }): string[] => namesByExtension[extension] ?? [];
+}
 
 /** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
 async function list(args: string[]) {
