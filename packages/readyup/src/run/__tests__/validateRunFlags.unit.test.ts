@@ -80,6 +80,27 @@ describe(validateRunFlags, () => {
     });
   });
 
+  describe('--config', () => {
+    it.each([
+      { flag: '--file', overrides: { file: 'path.ts' } },
+      { flag: '--from', overrides: { from: '/path' } },
+      { flag: '--url', overrides: { url: 'https://example.com/kit.js' } },
+    ])('throws when --config is combined with $flag, which reads no config', ({ flag, overrides }) => {
+      expect(() => validateRunFlags(buildConstraints({ ...overrides, config: 'custom.config.ts' }), [])).toThrow(
+        `--config cannot be combined with ${flag}, which reads no config`,
+      );
+    });
+
+    it.each([
+      { label: 'on its own', overrides: {} },
+      { label: 'with --packages', overrides: { packages: true } },
+      { label: 'with --internal', overrides: { internal: true } },
+      { label: 'with --all', overrides: { all: true } },
+    ])('accepts --config $label', ({ overrides }) => {
+      expect(() => validateRunFlags(buildConstraints({ ...overrides, config: 'custom.config.ts' }), [])).not.toThrow();
+    });
+  });
+
   describe('positional kit arguments', () => {
     it.each([
       { flag: '--file', overrides: { file: 'path.ts' } },
@@ -187,6 +208,7 @@ function buildConstraints(overrides: Partial<RunFlagConstraints> = {}): RunFlagC
   return {
     all: false,
     checklists: undefined,
+    config: undefined,
     detail: undefined,
     file: undefined,
     from: undefined,

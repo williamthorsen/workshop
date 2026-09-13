@@ -30,8 +30,11 @@ Modes:
 Options:
   --output, -o <path>        Output file path (single-file mode only)
   --manifest <path>          Manifest file path (default: .readyup/manifest.json); not with --recursive
+  --config <path>            Config file path (default: .config/readyup.config.ts); not with <file>
+                             or --recursive
   --recursive                Compile every kit project below the working directory, each under its
-                             own config and manifest; not combinable with <file>, --output, or --manifest
+                             own config and manifest; not combinable with <file>, --output,
+                             --manifest, or --config
   --force                    Overwrite compiled kits even if they have drifted from the manifest
   --json                     Report each kit's status as JSON
   --skip-manifest            Do not read or write the manifest
@@ -65,6 +68,7 @@ Run options:
   --internal                         Use internal kit directory and infix from config
   --all                              Run every kit in the selected source instead of naming kits
   --checklists, -c <name,...>        Filter checklists within the selected kit
+  --config <path>                    Config file path (default: .config/readyup.config.ts)
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --diagnose                         Report skipped checks whose check would have passed
@@ -127,6 +131,8 @@ Modes:
   rdy list --from bitbucket:ws/repo[@ref]   List kits in a remote Bitbucket repository
 
 Options:
+  --config <path>            Config file path (default: .config/readyup.config.ts); not combinable
+                             with --from, --manifest, or --recursive
   --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
                              global, dir:path, or local path)
   --manifest <path>          List the kits declared by a manifest file
@@ -137,8 +143,8 @@ Options:
                              --recursive, not with --from or --manifest
   --recursive                List compiled kits in every project below the working directory,
                              grouped by project; with --packages, lists each project's
-                             kit-publishing dependencies instead; not combinable with --from
-                             or --manifest
+                             kit-publishing dependencies instead; not combinable with --from,
+                             --manifest, or --config
   --json                     Output the kit list as JSON
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
@@ -182,6 +188,8 @@ Options:
                                      not combinable with kit names, --checklists, --file, or --url
   --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
+  --config <path>                    Config file path (default: .config/readyup.config.ts); not
+                                     combinable with --file, --from, or --url
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --diagnose                         Report skipped checks whose check would have passed

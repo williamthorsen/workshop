@@ -42,6 +42,7 @@ import {
 } from './formatList.ts';
 
 const listOptions = {
+  config: { type: 'string' },
   from: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
@@ -68,34 +69,14 @@ export async function listCommand(args: string[]): Promise<number> {
     }
   }
 
+  const configArg = values.config;
   const fromArg = values.from;
   const json = values.json === true;
   const manifestArg = values.manifest;
-
-  if (fromArg !== undefined && manifestArg !== undefined) {
-    throw usageError('--from and --manifest are mutually exclusive');
-  }
-
   const packages = values.packages === true;
   const recursive = values.recursive === true;
 
-  // `--recursive` sweeps this tree, while the other two name a single foreign source.
-  if (recursive && fromArg !== undefined) {
-    throw usageError('--recursive and --from are mutually exclusive');
-  }
-
-  if (recursive && manifestArg !== undefined) {
-    throw usageError('--recursive and --manifest are mutually exclusive');
-  }
-
-  // `--packages` reports this directory's dependencies, which no foreign source has.
-  if (packages && fromArg !== undefined) {
-    throw usageError('--packages and --from are mutually exclusive');
-  }
-
-  if (packages && manifestArg !== undefined) {
-    throw usageError('--packages and --manifest are mutually exclusive');
-  }
+  rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive });
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
   if (packages && recursive) {
@@ -115,10 +96,60 @@ export async function listCommand(args: string[]): Promise<number> {
   }
 
   if (packages) {
-    return runPackagesMode(json);
+    return runPackagesMode(json, configArg);
   }
 
-  return runOwnerMode(json);
+  return runOwnerMode(json, configArg);
+}
+
+/** The `list` flags whose combinations are constrained. */
+interface ListFlagConstraints {
+  configArg: string | undefined;
+  fromArg: string | undefined;
+  manifestArg: string | undefined;
+  packages: boolean;
+  recursive: boolean;
+}
+
+/**
+ * Rejects a combination of flags naming listings that cannot be produced together, or naming a config that the
+ * listing would not read.
+ */
+function rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive }: ListFlagConstraints): void {
+  if (fromArg !== undefined && manifestArg !== undefined) {
+    throw usageError('--from and --manifest are mutually exclusive');
+  }
+
+  // `--recursive` sweeps this tree, while the other two name a single foreign source.
+  if (recursive && fromArg !== undefined) {
+    throw usageError('--recursive and --from are mutually exclusive');
+  }
+
+  if (recursive && manifestArg !== undefined) {
+    throw usageError('--recursive and --manifest are mutually exclusive');
+  }
+
+  // `--packages` reports this directory's dependencies, which no foreign source has.
+  if (packages && fromArg !== undefined) {
+    throw usageError('--packages and --from are mutually exclusive');
+  }
+
+  if (packages && manifestArg !== undefined) {
+    throw usageError('--packages and --manifest are mutually exclusive');
+  }
+
+  // A sweep reads each project's own config and a foreign source reads none, so neither has a use for `--config`.
+  if (recursive && configArg !== undefined) {
+    throw usageError('--recursive and --config are mutually exclusive');
+  }
+
+  if (configArg !== undefined && fromArg !== undefined) {
+    throw usageError('--config and --from are mutually exclusive');
+  }
+
+  if (configArg !== undefined && manifestArg !== undefined) {
+    throw usageError('--config and --manifest are mutually exclusive');
+  }
 }
 
 /** Displays the kits declared by a manifest file. */
@@ -160,9 +191,9 @@ async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Pr
 }
 
 /** Enumerates the kits named by the project config. */
-async function runOwnerMode(json: boolean): Promise<number> {
+async function runOwnerMode(json: boolean, configPath: string | undefined): Promise<number> {
   const cwd = process.cwd();
-  const config = await loadListingConfig();
+  const config = await loadListingConfig(configPath);
 
   const internalDir = path.join(cwd, KITS_DIR, config.internal.dir);
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
@@ -215,8 +246,8 @@ async function runOwnerMode(json: boolean): Promise<number> {
  * the project's dependencies offer rather than what it holds. Both the packages named by the config and the
  * ones that it omits are reported, since the question is what is available rather than what a run would select.
  */
-async function runPackagesMode(json: boolean): Promise<number> {
-  const config = await loadListingConfig();
+async function runPackagesMode(json: boolean, configPath: string | undefined): Promise<number> {
+  const config = await loadListingConfig(configPath);
   const groups = collectKitPackageGroups({ configuredPackages: config.packages, fromDir: process.cwd() });
 
   writeHuman(formatPackagesView({ groups }) + '\n', json);
@@ -365,15 +396,16 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
 }
 
 /**
- * Loads the project config, falling back to the defaults and reporting a config that it cannot evaluate.
+ * Loads the project config or the one named by `--config`, falling back to the defaults and reporting a
+ * config that it cannot load.
  *
  * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than the
  * whole listing, taking the same warn-and-continue that the corrupt-manifest paths take. `run` still fails
  * hard on the same failure: It would otherwise execute against settings that nobody chose.
  */
-async function loadListingConfig(): Promise<ResolvedRdyConfig> {
+async function loadListingConfig(configPath: string | undefined): Promise<ResolvedRdyConfig> {
   try {
-    return await loadConfig();
+    return await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
   } catch (error: unknown) {
     const detail = describeError(error).replace(/\.$/, '');
     process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);

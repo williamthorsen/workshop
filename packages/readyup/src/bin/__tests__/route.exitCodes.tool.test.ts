@@ -36,6 +36,8 @@ const it = baseIt.extend(
         // Compiling this drives real esbuild, which writes its own diagnostic straight to stderr; the
         // error banner that appears in an otherwise-passing test run belongs to this fixture.
         'broken.ts': 'export default { this is not valid TypeScript\n',
+        // Off the config lookup path, so it is read only where `--config` names it.
+        'invalid.config.ts': 'export default { compile: 42 };\n',
       },
       { prefix: 'readyup-exit-codes-' },
     );
@@ -64,7 +66,8 @@ describe('exit codes', () => {
     { label: 'a bad flag', args: ['--bogus'], expected: 2 },
     { label: 'a missing kit', args: ['absent'], expected: 2 },
     { label: 'an unloadable kit', args: ['invalid'], expected: 2 },
-    { label: 'an unreadable config', args: ['--from', 'https://example.com'], expected: 2 },
+    { label: 'an unreadable config', args: ['--config', 'invalid.config.ts'], expected: 2 },
+    { label: 'a missing config', args: ['--config', 'absent.config.ts'], expected: 2 },
     { label: 'a missing manifest for verify', args: ['verify', '--manifest', 'absent.json'], expected: 2 },
     { label: 'listing an absent source', args: ['list', '--from', 'dir:/definitely/absent'], expected: 2 },
   ])('exits $expected for $label', async ({ args, expected }) => {
@@ -100,16 +103,13 @@ describe('exit codes', () => {
     });
   });
 
-  it('reports code "config" for an unreadable config file', async () => {
-    // A separate tree, so the broken config does not reach the other cases in this file.
-    using broken = createTempTree(
-      { '.config/readyup.config.ts': 'export default { compile: 42 };\n' },
-      { prefix: 'readyup-bad-config-' },
-    );
-    using _cwd = pointCwdAt(broken.dir, { chdir: true });
+  it.for([
+    { label: 'an unreadable config file', configPath: 'invalid.config.ts' },
+    { label: 'a missing config file', configPath: 'absent.config.ts' },
+  ])('reports code "config" for $label', async ({ configPath }) => {
     using io = captureStdio();
 
-    const exitCode = await routeCommand(['--json']);
+    const exitCode = await routeCommand(['--config', configPath, '--json']);
 
     expect(exitCode).toBe(2);
     expect(JSON.parse(io.stdout)).toStrictEqual({

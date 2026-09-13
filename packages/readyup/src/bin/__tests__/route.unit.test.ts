@@ -557,6 +557,15 @@ describe(routeCommand, () => {
     expect(mockLoadConfig).toHaveBeenCalled();
   });
 
+  it('passes the path named by --config to loadConfig', async () => {
+    mockParseRunArgs.mockReturnValue(parsedRunArgs({ configPath: 'custom/readyup.config.ts' }));
+    mockRunCommand.mockResolvedValue(0);
+
+    await routeCli(['run', '--config', 'custom/readyup.config.ts']);
+
+    expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+  });
+
   it('shows compile help and returns 0 for compile --help', async () => {
     const { exitCode, stdout } = await routeCli(['compile', '--help']);
 

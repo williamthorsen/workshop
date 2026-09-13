@@ -149,7 +149,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   let config;
   if (!hasExternalSource) {
     try {
-      config = await loadConfig();
+      config = await loadConfig({ ...(parsed.configPath !== undefined && { overridePath: parsed.configPath }) });
     } catch (error: unknown) {
       throw configError(describeError(error), { cause: error, hint: extractHint(error) });
     }

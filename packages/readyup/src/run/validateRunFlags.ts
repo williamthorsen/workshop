@@ -5,6 +5,7 @@ import type { KitSpecifier } from './parseKitSpecifiers.ts';
 export interface RunFlagConstraints {
   all: boolean;
   checklists: string | undefined;
+  config: string | undefined;
   detail: string | undefined;
   file: string | undefined;
   from: string | undefined;
@@ -55,6 +56,11 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
   }
   if (parsed.internal && sourceType !== undefined) {
     throw usageError(`--internal cannot be combined with ${sourceType}`);
+  }
+
+  // `--packages` is the one source that reads config: The config names the packages that it runs.
+  if (parsed.config !== undefined && sourceType !== undefined && sourceType !== '--packages') {
+    throw usageError(`--config cannot be combined with ${sourceType}, which reads no config`);
   }
 
   if ((sourceType === '--file' || sourceType === '--url') && kitSpecifiers.length > 0) {
