@@ -38,7 +38,7 @@ export function fileDoesNotContain(filePath: string, pattern: RegExp): boolean {
 }
 
 /** Checks whether all specified files exist, with optional base directory. An absolute path names itself. */
-export function filesExist(paths: string[], options?: { baseDir?: string }): CheckOutcome {
+export function filesExist(paths: readonly string[], options?: { baseDir?: string }): CheckOutcome {
   const base = options?.baseDir ? resolve(process.cwd(), options.baseDir) : process.cwd();
   const presentPaths = paths.filter((p) => existsSync(resolve(base, p)));
   return missingFrom('files', paths, presentPaths);

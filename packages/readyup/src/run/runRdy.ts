@@ -262,7 +262,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
  */
 async function collectChildResults(
   parentResult: PassedResult | FailedResult,
-  children: RdyCheck[],
+  children: readonly RdyCheck[],
   run: RunContext,
   childDepth: number,
 ): Promise<RdyResult[]> {
@@ -280,7 +280,7 @@ async function collectChildResults(
  *
  * Each sibling's own result is followed by its subtree before the next sibling appears.
  */
-async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
+async function runSiblingChecks(checks: readonly RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
   const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, run, depth)));
   return siblingTrees.flat();
 }
@@ -291,7 +291,7 @@ async function runSiblingChecks(checks: RdyCheck[], run: RunContext, depth: numb
  * Every skip produced here is a `precondition` skip: An `n/a` skip terminates its own subtree before
  * reaching this point.
  */
-function skipAllDescendants(checks: RdyCheck[], run: RunContext, depth: number): RdyResult[] {
+function skipAllDescendants(checks: readonly RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
   for (const check of checks) {
     results.push(skipCheck(check, run, depth));
@@ -309,7 +309,11 @@ function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
 }
 
 /** Runs preconditions concurrently, reporting whether every one of them passed. */
-async function runPreconditions(preconditions: RdyCheck[], results: RdyResult[], run: RunContext): Promise<boolean> {
+async function runPreconditions(
+  preconditions: readonly RdyCheck[],
+  results: RdyResult[],
+  run: RunContext,
+): Promise<boolean> {
   if (preconditions.length === 0) return true;
 
   const trees = await Promise.all(preconditions.map((c) => executeCheck(c, run)));

@@ -12,8 +12,8 @@ export function defineRdyKit(kit: RdyKit): RdyKit {
 
 /** Returns an array of checklists unchanged, so its literal is type-checked where it is written. */
 export function defineChecklists(
-  checklists: Array<RdyChecklist | RdyStagedChecklist>,
-): Array<RdyChecklist | RdyStagedChecklist> {
+  checklists: ReadonlyArray<RdyChecklist | RdyStagedChecklist>,
+): ReadonlyArray<RdyChecklist | RdyStagedChecklist> {
   return checklists;
 }
 

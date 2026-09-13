@@ -5,7 +5,7 @@ import type { CheckOutcome, FractionProgress } from '../kits/types.ts';
  *
  * Passes where nothing is missing, and otherwise names what was, under a fraction of how many were found.
  */
-export function missingFrom(category: string, expected: string[], actual: string[]): CheckOutcome {
+export function missingFrom(category: string, expected: readonly string[], actual: readonly string[]): CheckOutcome {
   const actualSet = new Set(actual);
   const missing = expected.filter((item) => !actualSet.has(item));
   const passedCount = expected.length - missing.length;

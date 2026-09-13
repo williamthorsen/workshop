@@ -1,5 +1,12 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
+import {
+  defineChecklists,
+  defineRdyChecklist,
+  defineRdyConfig,
+  defineRdyKit,
+  defineRdyStagedChecklist,
+} from '../authoring.ts';
 import type {
   CheckOutcome,
   FindingOutcome,
@@ -62,11 +69,11 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     expectTypeOf<RdyCheck['severity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyCheck['skip']>().toEqualTypeOf<(() => SkipResult | Promise<SkipResult>) | undefined>();
     expectTypeOf<RdyCheck['fix']>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
   });
 
   it('RdyChecklist allows explicit undefined on optional fields', () => {
-    const preconditions: RdyCheck[] | undefined = undefined;
+    const preconditions: readonly RdyCheck[] | undefined = undefined;
     const fixLocation: FixLocation | undefined = undefined;
     const checklist: RdyChecklist = {
       name: 'x',
@@ -76,12 +83,12 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     };
 
     expectTypeOf(checklist).toEqualTypeOf<RdyChecklist>();
-    expectTypeOf<RdyChecklist['preconditions']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyChecklist['preconditions']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
     expectTypeOf<RdyChecklist['fixLocation']>().toEqualTypeOf<FixLocation | undefined>();
   });
 
   it('RdyStagedChecklist allows explicit undefined on optional fields', () => {
-    const preconditions: RdyCheck[] | undefined = undefined;
+    const preconditions: readonly RdyCheck[] | undefined = undefined;
     const fixLocation: FixLocation | undefined = undefined;
     const staged: RdyStagedChecklist = {
       name: 'x',
@@ -91,7 +98,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     };
 
     expectTypeOf(staged).toEqualTypeOf<RdyStagedChecklist>();
-    expectTypeOf<RdyStagedChecklist['preconditions']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyStagedChecklist['preconditions']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
     expectTypeOf<RdyStagedChecklist['fixLocation']>().toEqualTypeOf<FixLocation | undefined>();
   });
 
@@ -117,7 +124,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
 
     expectTypeOf(makeKit).returns.toEqualTypeOf<RdyKit>();
     expectTypeOf<RdyKit['description']>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<RdyKit['suites']>().toEqualTypeOf<Record<string, string[]> | undefined>();
+    expectTypeOf<RdyKit['suites']>().toEqualTypeOf<Record<string, readonly string[]> | undefined>();
     expectTypeOf<RdyKit['defaultSeverity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyKit['failOn']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyKit['reportOn']>().toEqualTypeOf<Severity | undefined>();
@@ -149,5 +156,75 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
 
     const topLevelUndefined: RdyConfig = { compile: undefined, internal: undefined };
     expectTypeOf(topLevelUndefined).toEqualTypeOf<RdyConfig>();
+  });
+});
+
+describe('public authoring helpers with and without as const', () => {
+  const flatChecklist = {
+    name: 'flat',
+    preconditions: [{ name: 'Precondition holds', check: () => true }],
+    checks: [
+      {
+        name: 'Parent holds',
+        severity: 'warn',
+        check: () => true,
+        checks: [{ name: 'Child holds', check: () => true }],
+      },
+    ],
+  } as const;
+
+  const stagedChecklist = {
+    name: 'staged',
+    preconditions: [{ name: 'Precondition holds', check: () => true }],
+    groups: [[{ name: 'First stage holds', check: () => true }], [{ name: 'Second stage holds', check: () => true }]],
+  } as const;
+
+  it('accepts checklists asserted as const', () => {
+    // An inline `[...] as const` argument typechecks even against a mutable parameter, so the array is bound first.
+    const checklists = [flatChecklist, stagedChecklist] as const;
+
+    expectTypeOf(defineRdyChecklist).toBeCallableWith(flatChecklist);
+    expectTypeOf(defineRdyStagedChecklist).toBeCallableWith(stagedChecklist);
+    expectTypeOf(defineChecklists).toBeCallableWith(checklists);
+  });
+
+  it('accepts a kit asserted as const', () => {
+    const kit = { checklists: [flatChecklist, stagedChecklist], suites: { all: ['flat', 'staged'] } } as const;
+
+    expectTypeOf(defineRdyKit).toBeCallableWith(kit);
+  });
+
+  it('accepts a config asserted as const', () => {
+    const config = { packages: ['readyup'] } as const;
+
+    expectTypeOf(defineRdyConfig).toBeCallableWith(config);
+  });
+
+  it('accepts literals written without as const', () => {
+    expectTypeOf(defineRdyChecklist).toBeCallableWith({
+      name: 'flat',
+      preconditions: [{ name: 'Precondition holds', check: () => true }],
+      checks: [
+        {
+          name: 'Parent holds',
+          severity: 'warn',
+          check: () => true,
+          checks: [{ name: 'Child holds', check: () => true }],
+        },
+      ],
+    });
+    expectTypeOf(defineRdyStagedChecklist).toBeCallableWith({
+      name: 'staged',
+      preconditions: [{ name: 'Precondition holds', check: () => true }],
+      groups: [[{ name: 'First stage holds', check: () => true }], [{ name: 'Second stage holds', check: () => true }]],
+    });
+    expectTypeOf(defineChecklists).toBeCallableWith([
+      { name: 'flat', checks: [{ name: 'Check holds', check: () => true }] },
+    ]);
+    expectTypeOf(defineRdyKit).toBeCallableWith({
+      checklists: [{ name: 'flat', checks: [{ name: 'Check holds', check: () => true }] }],
+      suites: { all: ['flat'] },
+    });
+    expectTypeOf(defineRdyConfig).toBeCallableWith({ packages: ['readyup'] });
   });
 });
