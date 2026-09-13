@@ -22,8 +22,9 @@ export interface LoadRemoteManifestOptions extends FetchWithCacheOptions {
  *
  * The fetch goes through the HTTP cache where `cache` names one, and a body served from it is checked as a fetched
  * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
- * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted. Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError` for any other
- * non-2xx response, and a plain `Error` for malformed JSON or a schema-invalid body.
+ * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
+ * Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError` for any other non-2xx
+ * response, and a plain `Error` for malformed JSON or a schema-invalid body.
  */
 export async function loadRemoteManifest({
   url,
