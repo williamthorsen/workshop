@@ -15,6 +15,17 @@ rdy deploy:fast       # a suite
 rdy deploy release    # two kits
 ```
 
+`--all` runs every kit in the source instead of naming them, as though each had been named:
+
+```bash
+rdy run --all                 # every compiled kit in the project
+rdy run --all --jit           # every TypeScript kit source in .readyup/kits
+rdy run --all --from dir:kits # every kit in a directory
+rdy run --all --packages      # every kit that each listed package publishes
+```
+
+The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that holds no kits fails with exit `2` rather than passing.
+
 `--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already has a `:checklist` filter, is an error rather than a merge.
 
 Kit names may contain `/`, as in `shared/deploy`. To name one that starts with `-`, place it last, after `--`:
@@ -306,7 +317,7 @@ Configured packages are resolved through `node_modules` rather than through the 
 📓 smoke (readyup v0.22.0)
 ```
 
-A local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A remote source still requires a manifest.
+A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest.
 
 ### Listing a whole repository
 
