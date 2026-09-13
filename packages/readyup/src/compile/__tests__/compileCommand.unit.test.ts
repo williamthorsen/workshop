@@ -252,6 +252,32 @@ describe(compileCommand, () => {
     expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
   });
 
+  it('loads the config named by --config for a batch compile', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    });
+    mockExistsSync.mockReturnValue(false);
+
+    const { exitCode } = await compile(['--config', 'custom/readyup.config.ts']);
+
+    expect(exitCode).toBe(0);
+    expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+  });
+
+  it('reports a usage error when --config is combined with an input file', async () => {
+    const { error } = await compileRaising(['input.ts', '--config', 'custom/readyup.config.ts']);
+
+    expect(error.code).toBe('usage');
+    expect(error.message).toBe('--config and an input file are mutually exclusive');
+  });
+
+  it('reports a usage error when --config is given an empty value', async () => {
+    const { error } = await compileRaising(['--config=']);
+
+    expect(error.code).toBe('usage');
+    expect(error.message).toContain('--config requires a path argument');
+  });
+
   // Batch compile tests
   it('prints "Compiling kits in" header when srcDir equals outDir', async () => {
     mockLoadConfig.mockResolvedValue({

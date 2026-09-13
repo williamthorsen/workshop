@@ -34,6 +34,7 @@ import { deriveJsPath } from './deriveJsPath.ts';
 import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
 
 const compileOptions = {
+  config: { type: 'string' },
   force: { type: 'boolean' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
@@ -49,6 +50,7 @@ const TRANSFORM_ARROW = '->';
 
 /** Domain-specific hints for compile flags that require a value. */
 const compileHints: Record<string, string> = {
+  '--config': '--config requires a path argument',
   '--output': '--output requires a path argument',
 };
 
@@ -85,6 +87,15 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('--recursive and --manifest are mutually exclusive');
   }
 
+  // A sweep reads each project's own config, and a single-file compile reads none.
+  if (recursive && values.config !== undefined) {
+    throw usageError('--recursive and --config are mutually exclusive');
+  }
+
+  if (positionals.length > 0 && values.config !== undefined) {
+    throw usageError('--config and an input file are mutually exclusive');
+  }
+
   if (positionals.length > 1) {
     throw usageError('Too many arguments. Expected a single input file.');
   }
@@ -111,7 +122,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('--output requires an input file');
   }
 
-  return compileBatch({ skipManifest, force, manifestPath, json });
+  return compileBatch({ skipManifest, force, manifestPath, json, configPath: values.config });
 }
 
 /** Arguments for the single-file compile path. */
@@ -222,14 +233,15 @@ interface CompileBatchArgs {
   force: boolean;
   manifestPath: string;
   json: boolean;
+  configPath: string | undefined;
 }
 
-/** Compiles every kit source of the project in the working directory, under the config found there. */
+/** Compiles every kit source of the working directory's project, under its config or the one named by `--config`. */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
-  const { skipManifest, force, manifestPath, json } = args;
+  const { skipManifest, force, manifestPath, json, configPath } = args;
   let config;
   try {
-    config = await loadConfig();
+    config = await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }

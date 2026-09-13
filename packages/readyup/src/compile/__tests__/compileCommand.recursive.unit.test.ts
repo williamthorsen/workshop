@@ -314,6 +314,10 @@ describe('compile --recursive', () => {
         args: ['--recursive', '--manifest', '.readyup/manifest.json'],
         message: '--recursive and --manifest are mutually exclusive',
       },
+      {
+        args: ['--recursive', '--config', 'custom/readyup.config.ts'],
+        message: '--recursive and --config are mutually exclusive',
+      },
     ])('rejects $args', async ({ args, message }) => {
       const error = await captureError(RdyError, () => compileCommand(args));
 
