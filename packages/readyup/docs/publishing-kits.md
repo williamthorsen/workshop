@@ -18,7 +18,7 @@ A published package can include its kits instead, so consumers access them throu
 ⚪ smoke.ts · no changes
 ```
 
-The directory is named relative to the enclosing workspace root, so `pnpm -r exec rdy compile` gives each workspace's output a distinct heading. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory.
+The directory is named relative to the enclosing workspace root, so a workspace compiled from its own directory still gets a heading that tells it apart from the others. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory. To compile every project in a repository at once, see [Compiling a whole repository](#compiling-a-whole-repository).
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
@@ -34,6 +34,33 @@ A sweep that finds no kits writes a manifest only if one already exists, emptyin
 ```
 
 Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed.
+
+### Compiling a whole repository
+
+`rdy compile --recursive` compiles every kit project below the working directory in one run, heading each project's output with its directories named relative to the working directory:
+
+```
+── Compiling kits in .readyup/kits
+🟢 demo.ts -> 📓 demo.js
+
+── Compiling kits in packages/api/.readyup/kits
+🟢 deploy.ts -> 📓 deploy.js
+⚪ smoke.ts · no changes
+```
+
+The sweep considers the same directories as [`rdy list --recursive`](running-checks.md#listing-a-whole-repository), and compiles each one that has a `.readyup/` directory or a `.config/readyup.config.ts` and holds kit sources, compiled kits, or a manifest. Each project compiles exactly as `rdy compile` run from its own directory would: under its own config, writing its own manifest by the rules above. A project whose kits were all deleted therefore has its manifest emptied, and a workspace with no kits gets no manifest.
+
+Every project is compiled by the readyup that runs the sweep, and by that readyup's esbuild, so every manifest records the same `readyupVersion` and `esbuildVersion`. `pnpm -r exec rdy compile` instead runs each workspace's own installed readyup, and the two agree unless the workspaces install different versions of readyup.
+
+The sweep runs to completion across projects as well as kits. A project that cannot be compiled at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a source directory that cannot be read, and a manifest that cannot be written. A project whose config cannot be evaluated compiles nothing, rather than compiling under default settings. When any project has a failed kit, a drifted kit, or a failure of its own, the run ends with a line naming those projects and exits 1:
+
+```
+Problems in 2 of 5 projects: packages/api, packages/broken
+```
+
+A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` cannot be combined with an input file, `--output`, or `--manifest`, each of which names a single target.
+
+Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be compiled at all, `error`. A project that contributed no kit entry still appears in `projects`.
 
 ### What a manifest entry records
 
