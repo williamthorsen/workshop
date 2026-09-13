@@ -211,7 +211,7 @@ export interface RdyCheck {
   fix?: string | undefined;
 
   /** Dependent checks that run only if this check passes. */
-  checks?: RdyCheck[] | undefined;
+  checks?: readonly RdyCheck[] | undefined;
 }
 
 // -- Results --
@@ -351,9 +351,9 @@ export interface RdyChecklist {
    * other results: A result appears in output only when its severity is at or above the reporting threshold. Each
    * dependent check's own severity determines whether its skipped entry is shown.
    */
-  preconditions?: RdyCheck[] | undefined;
+  preconditions?: readonly RdyCheck[] | undefined;
 
-  checks: RdyCheck[];
+  checks: readonly RdyCheck[];
 
   fixLocation?: FixLocation | undefined;
 }
@@ -361,8 +361,8 @@ export interface RdyChecklist {
 /** A staged checklist where groups run sequentially; checks within each group run concurrently. */
 export interface RdyStagedChecklist {
   name: string;
-  preconditions?: RdyCheck[] | undefined;
-  groups: RdyCheck[][];
+  preconditions?: readonly RdyCheck[] | undefined;
+  groups: ReadonlyArray<readonly RdyCheck[]>;
   fixLocation?: FixLocation | undefined;
 }
 
@@ -376,7 +376,7 @@ export function isFlatChecklist(checklist: RdyChecklist | RdyStagedChecklist): c
 /** A kit of checklists with shared configuration. */
 export interface RdyKit {
   /** Checklists in this kit. */
-  checklists: Array<RdyChecklist | RdyStagedChecklist>;
+  checklists: ReadonlyArray<RdyChecklist | RdyStagedChecklist>;
 
   /** Human-readable summary of what the kit checks. */
   description?: string | undefined;
@@ -388,7 +388,7 @@ export interface RdyKit {
   minReadyupVersion?: string | undefined;
 
   /** Named subsets of checklists. */
-  suites?: Record<string, string[]> | undefined;
+  suites?: Record<string, readonly string[]> | undefined;
 
   /**
    * Default severity for checks that don't declare one.
@@ -427,7 +427,7 @@ export interface RdyConfig {
         infix?: string | undefined;
       }
     | undefined;
-  packages?: string[] | undefined;
+  packages?: readonly string[] | undefined;
 }
 
 /** Fully-resolved config with defaults applied, returned by `loadConfig`. */

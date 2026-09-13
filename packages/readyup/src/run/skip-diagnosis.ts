@@ -15,7 +15,7 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  * no `skip`. A check that would have failed used its skip correctly and contributes nothing, so
  * every entry returned is a finding.
  */
-export async function diagnoseSkips(checks: RdyCheck[], provenance?: KitProvenance): Promise<SkipDiagnosis[]> {
+export async function diagnoseSkips(checks: readonly RdyCheck[], provenance?: KitProvenance): Promise<SkipDiagnosis[]> {
   const diagnoses = await Promise.all(checks.map((check) => diagnoseSkip(check, provenance)));
   return diagnoses.filter((diagnosis) => diagnosis !== undefined);
 }

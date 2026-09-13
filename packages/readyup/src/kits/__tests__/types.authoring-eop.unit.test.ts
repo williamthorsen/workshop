@@ -62,11 +62,11 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     expectTypeOf<RdyCheck['severity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyCheck['skip']>().toEqualTypeOf<(() => SkipResult | Promise<SkipResult>) | undefined>();
     expectTypeOf<RdyCheck['fix']>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
   });
 
   it('RdyChecklist allows explicit undefined on optional fields', () => {
-    const preconditions: RdyCheck[] | undefined = undefined;
+    const preconditions: readonly RdyCheck[] | undefined = undefined;
     const fixLocation: FixLocation | undefined = undefined;
     const checklist: RdyChecklist = {
       name: 'x',
@@ -76,12 +76,12 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     };
 
     expectTypeOf(checklist).toEqualTypeOf<RdyChecklist>();
-    expectTypeOf<RdyChecklist['preconditions']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyChecklist['preconditions']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
     expectTypeOf<RdyChecklist['fixLocation']>().toEqualTypeOf<FixLocation | undefined>();
   });
 
   it('RdyStagedChecklist allows explicit undefined on optional fields', () => {
-    const preconditions: RdyCheck[] | undefined = undefined;
+    const preconditions: readonly RdyCheck[] | undefined = undefined;
     const fixLocation: FixLocation | undefined = undefined;
     const staged: RdyStagedChecklist = {
       name: 'x',
@@ -91,7 +91,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     };
 
     expectTypeOf(staged).toEqualTypeOf<RdyStagedChecklist>();
-    expectTypeOf<RdyStagedChecklist['preconditions']>().toEqualTypeOf<RdyCheck[] | undefined>();
+    expectTypeOf<RdyStagedChecklist['preconditions']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
     expectTypeOf<RdyStagedChecklist['fixLocation']>().toEqualTypeOf<FixLocation | undefined>();
   });
 
@@ -117,7 +117,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
 
     expectTypeOf(makeKit).returns.toEqualTypeOf<RdyKit>();
     expectTypeOf<RdyKit['description']>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<RdyKit['suites']>().toEqualTypeOf<Record<string, string[]> | undefined>();
+    expectTypeOf<RdyKit['suites']>().toEqualTypeOf<Record<string, readonly string[]> | undefined>();
     expectTypeOf<RdyKit['defaultSeverity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyKit['failOn']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyKit['reportOn']>().toEqualTypeOf<Severity | undefined>();
