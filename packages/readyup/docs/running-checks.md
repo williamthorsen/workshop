@@ -36,6 +36,8 @@ rdy run -- "--odd-kit-name"
 
 ## Run options
 
+`--config <path>` reads the settings from the named file in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. It cannot be combined with `--file`, `--from`, or `--url`, none of which reads config.
+
 `--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents still appears beneath them.
 
 A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. A block is withheld only when a table will include its row, so a run of one checklist reports its block even when the filters leave nothing in it, and a run that withholds one always ends with the table.
@@ -323,6 +325,8 @@ Configured packages are resolved through `node_modules` rather than through the 
 
 A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest, which is read from the cache while it is fresh; see [Cached remote kits](#cached-remote-kits).
 
+A plain `rdy list` and `rdy list --packages` read the settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with `--from` or `--manifest`, which read no config, or with `--recursive`, which reads each project's own.
+
 ### Listing a whole repository
 
 `--recursive` sweeps down from the working directory and reports each project's compiled kits under a heading naming the directory that contains them, with the descriptions recorded in that project's manifest:
@@ -348,7 +352,7 @@ Every listed kit is runnable by the command above it, from wherever the sweep wa
 
 Internal kits and configured-package kits are absent: No invocation runs another project's uncompiled sources, and packages are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
 
-The sweep considers every directory containing a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project that it finds is read under its own `.config/readyup.config.ts`. Topology comes from the filesystem rather than a workspace file, so the sweep works the same whatever package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source.
+The sweep considers every directory containing a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project that it finds is read under its own `.config/readyup.config.ts`. Topology comes from the filesystem rather than a workspace file, so the sweep works the same whatever package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source, or with `--config`.
 
 ### Listing a repository's dependencies
 

@@ -20,6 +20,8 @@ A published package can include its kits instead, so consumers access them throu
 
 The directory is named relative to the enclosing workspace root, so a workspace compiled from its own directory still gets a heading that tells it apart from the others. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory. To compile every project in a repository at once, see [Compiling a whole repository](#compiling-a-whole-repository).
 
+`rdy compile` with no input file reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with an input file, which compiles without reading config, or with `--recursive`, which compiles each project under its own config.
+
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
 A sweep that finds no kits writes a manifest only if one already exists, emptying it so that kits since deleted stop being advertised. A project with neither kits nor a manifest is left alone, so sweeping a monorepo does not create `.readyup/` in workspaces that contain no kits.
@@ -58,7 +60,7 @@ The sweep runs to completion across projects as well as kits. A project that can
 Problems in 2 of 5 projects: packages/api, packages/broken
 ```
 
-A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` cannot be combined with an input file, `--output`, or `--manifest`, each of which names a single target.
+A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` cannot be combined with an input file, `--output`, or `--manifest`, each of which names a single target, or with `--config`.
 
 Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be compiled at all, `error`. A project that contributed no kit entry still appears in `projects`.
 

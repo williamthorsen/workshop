@@ -25,6 +25,8 @@ Repo-level settings live in `.config/readyup.config.ts`.
 
 See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages`.
 
+`rdy run`, `rdy compile`, and `rdy list` accept `--config <path>`, which reads the named file in place of `.config/readyup.config.ts`. The path resolves against the working directory, and the directories that the file names resolve as they would in the default file, not against the named file's own directory. A named file that is missing or cannot be loaded stops `run` and `compile` with a config error, while `list` warns and lists with the default settings. [Run options](running-checks.md#run-options), [Listing kits](running-checks.md#listing-kits), and [Compiling](publishing-kits.md#compiling) list the modes that reject it, each of which reads no config or reads each project's own.
+
 ## Kit
 
 | Field               | Type                         | Default     | Meaning                                    |
