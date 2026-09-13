@@ -111,7 +111,10 @@ interface ListFlagConstraints {
   recursive: boolean;
 }
 
-/** Rejects a combination of flags naming listings that cannot be produced together. */
+/**
+ * Rejects a combination of flags naming listings that cannot be produced together, or naming a config that the
+ * listing would not read.
+ */
 function rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive }: ListFlagConstraints): void {
   if (fromArg !== undefined && manifestArg !== undefined) {
     throw usageError('--from and --manifest are mutually exclusive');
