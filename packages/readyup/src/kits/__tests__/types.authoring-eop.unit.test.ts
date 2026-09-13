@@ -1,5 +1,12 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
+import {
+  defineChecklists,
+  defineRdyChecklist,
+  defineRdyConfig,
+  defineRdyKit,
+  defineRdyStagedChecklist,
+} from '../authoring.ts';
 import type {
   CheckOutcome,
   FindingOutcome,
@@ -149,5 +156,75 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
 
     const topLevelUndefined: RdyConfig = { compile: undefined, internal: undefined };
     expectTypeOf(topLevelUndefined).toEqualTypeOf<RdyConfig>();
+  });
+});
+
+describe('public authoring helpers with and without as const', () => {
+  const flatChecklist = {
+    name: 'flat',
+    preconditions: [{ name: 'Precondition holds', check: () => true }],
+    checks: [
+      {
+        name: 'Parent holds',
+        severity: 'warn',
+        check: () => true,
+        checks: [{ name: 'Child holds', check: () => true }],
+      },
+    ],
+  } as const;
+
+  const stagedChecklist = {
+    name: 'staged',
+    preconditions: [{ name: 'Precondition holds', check: () => true }],
+    groups: [[{ name: 'First stage holds', check: () => true }], [{ name: 'Second stage holds', check: () => true }]],
+  } as const;
+
+  it('accepts checklists asserted as const', () => {
+    // An inline `[...] as const` argument typechecks even against a mutable parameter, so the array is bound first.
+    const checklists = [flatChecklist, stagedChecklist] as const;
+
+    expectTypeOf(defineRdyChecklist).toBeCallableWith(flatChecklist);
+    expectTypeOf(defineRdyStagedChecklist).toBeCallableWith(stagedChecklist);
+    expectTypeOf(defineChecklists).toBeCallableWith(checklists);
+  });
+
+  it('accepts a kit asserted as const', () => {
+    const kit = { checklists: [flatChecklist, stagedChecklist], suites: { all: ['flat', 'staged'] } } as const;
+
+    expectTypeOf(defineRdyKit).toBeCallableWith(kit);
+  });
+
+  it('accepts a config asserted as const', () => {
+    const config = { packages: ['readyup'] } as const;
+
+    expectTypeOf(defineRdyConfig).toBeCallableWith(config);
+  });
+
+  it('accepts literals written without as const', () => {
+    expectTypeOf(defineRdyChecklist).toBeCallableWith({
+      name: 'flat',
+      preconditions: [{ name: 'Precondition holds', check: () => true }],
+      checks: [
+        {
+          name: 'Parent holds',
+          severity: 'warn',
+          check: () => true,
+          checks: [{ name: 'Child holds', check: () => true }],
+        },
+      ],
+    });
+    expectTypeOf(defineRdyStagedChecklist).toBeCallableWith({
+      name: 'staged',
+      preconditions: [{ name: 'Precondition holds', check: () => true }],
+      groups: [[{ name: 'First stage holds', check: () => true }], [{ name: 'Second stage holds', check: () => true }]],
+    });
+    expectTypeOf(defineChecklists).toBeCallableWith([
+      { name: 'flat', checks: [{ name: 'Check holds', check: () => true }] },
+    ]);
+    expectTypeOf(defineRdyKit).toBeCallableWith({
+      checklists: [{ name: 'flat', checks: [{ name: 'Check holds', check: () => true }] }],
+      suites: { all: ['flat'] },
+    });
+    expectTypeOf(defineRdyConfig).toBeCallableWith({ packages: ['readyup'] });
   });
 });
