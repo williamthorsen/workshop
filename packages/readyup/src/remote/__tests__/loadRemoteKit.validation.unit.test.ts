@@ -1,3 +1,4 @@
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +7,9 @@ vi.stubGlobal('fetch', mockFetch);
 
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
+
+/** Fetch options that bypass the cache and send no headers. */
+const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
 
 /** Returns a minimal mock Response with the given body and status. */
 function mockResponse(
@@ -34,7 +38,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(kit.checklists).toHaveLength(1);
     const [firstChecklist] = kit.checklists;
@@ -45,7 +49,7 @@ describe('loadRemoteKit validation', () => {
     const jsBody = 'export default {};';
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    await expect(loadRemoteKit({ url: 'https://example.com/config.js' })).rejects.toThrow(
+    await expect(loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions })).rejects.toThrow(
       'Kit file must export checklists',
     );
   });
@@ -59,7 +63,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(kit.fixLocation).toBe('inline');
   });
@@ -72,7 +76,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(kit.fixLocation).toBeUndefined();
   });
@@ -86,7 +90,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(compileTimeVersion).toBe('0.19.2');
   });
@@ -99,7 +103,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(compileTimeVersion).toBeUndefined();
   });
@@ -113,7 +117,7 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { compileTimeVersion } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(compileTimeVersion).toBeUndefined();
   });
@@ -128,7 +132,7 @@ describe('loadRemoteKit validation', () => {
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
     const error = await captureError(UnresolvableKitImportsError, () =>
-      loadRemoteKit({ url: 'https://example.com/config.js' }),
+      loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions }),
     );
 
     expect(error.findings.missing).toStrictEqual([{ specifier: 'readyup/check-utils', names: ['retiredHelper'] }]);
@@ -143,8 +147,34 @@ describe('loadRemoteKit validation', () => {
     `;
     mockFetch.mockResolvedValue(mockResponse(jsBody));
 
-    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js' });
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions });
 
     expect(kit.checklists).toHaveLength(1);
+  });
+
+  it('evaluates a kit served from the cache without fetching it again', async () => {
+    using tree = createTempTree({}, { prefix: 'readyup-remote-kit-cache-' });
+    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const jsBody = `export const checklists = [{ name: 'test', checks: [{ name: 'check-a', check: () => true }] }];`;
+    mockFetch.mockResolvedValueOnce(new Response(jsBody, { headers: { 'Cache-Control': 'max-age=300' } }));
+    await loadRemoteKit({ url: 'https://example.com/config.js', ...options });
+
+    const { kit } = await loadRemoteKit({ url: 'https://example.com/config.js', ...options });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(kit.checklists).toHaveLength(1);
+  });
+
+  it('rejects an HTML page served from the cache, as it rejects a fetched one', async () => {
+    using tree = createTempTree({}, { prefix: 'readyup-remote-kit-cache-' });
+    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const htmlBody = '<!DOCTYPE html><html><body>Error</body></html>';
+    mockFetch.mockResolvedValueOnce(new Response(htmlBody, { headers: { 'Cache-Control': 'max-age=300' } }));
+    await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js', ...options }));
+
+    await expect(loadRemoteKit({ url: 'https://example.com/config.js', ...options })).rejects.toThrow(
+      'Remote kit URL returned an HTML page instead of JavaScript',
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });

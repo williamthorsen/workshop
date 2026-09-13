@@ -10,6 +10,7 @@ import { collectCompiledKits } from '../list/collectCompiledKits.ts';
 import { collectSourceKits } from '../list/collectSourceKits.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { resolveConfiguredPackages } from './resolveConfiguredPackages.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
@@ -24,6 +25,7 @@ interface ResolveAllKitSourcesOptions {
   internalInfix?: string | undefined;
   jit: boolean;
   packages: boolean;
+  remote: RemoteFetchContext;
 }
 
 /**
@@ -46,7 +48,7 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
   }
 
   if (fromValue !== undefined) {
-    const sourceKits = await collectSourceKits(parseFromArgument(fromValue));
+    const sourceKits = await collectSourceKits(parseFromArgument(fromValue), options.remote);
     const names = sourceKits.kits.map((kit) => kit.name);
     return resolveNamedKits(options, names, `--all found no kits in ${fromValue}.`);
   }

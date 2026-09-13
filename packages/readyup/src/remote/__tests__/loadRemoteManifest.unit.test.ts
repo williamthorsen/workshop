@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 
+import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +10,9 @@ vi.stubGlobal('fetch', mockFetch);
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
+
+/** Fetch options that bypass the cache and send no headers. */
+const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
 
 const validManifestBody = JSON.stringify({
   version: 1,
@@ -23,7 +27,7 @@ describe(loadRemoteManifest, () => {
   it('returns parsed manifest on 200 with a valid body', async () => {
     mockFetch.mockResolvedValue(mockResponse(validManifestBody));
 
-    const manifest = await loadRemoteManifest({ url: 'https://example.com/manifest.json' });
+    const manifest = await loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions });
 
     expect(manifest.version).toBe(1);
     expect(manifest.kits).toHaveLength(2);
@@ -35,31 +39,31 @@ describe(loadRemoteManifest, () => {
   it('throws RemoteManifestNotFoundError on 404', async () => {
     mockFetch.mockResolvedValue(mockResponse('Not Found', { status: 404, statusText: 'Not Found' }));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toBeInstanceOf(
-      RemoteManifestNotFoundError,
-    );
+    await expect(
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions }),
+    ).rejects.toBeInstanceOf(RemoteManifestNotFoundError);
   });
 
   it('throws RemoteManifestNotFoundError when response body is an HTML page with <!doctype', async () => {
     mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toBeInstanceOf(
-      RemoteManifestNotFoundError,
-    );
+    await expect(
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions }),
+    ).rejects.toBeInstanceOf(RemoteManifestNotFoundError);
   });
 
   it('throws RemoteManifestNotFoundError when response body starts with <html', async () => {
     mockFetch.mockResolvedValue(mockResponse('<html><body>Not Found</body></html>'));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toBeInstanceOf(
-      RemoteManifestNotFoundError,
-    );
+    await expect(
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions }),
+    ).rejects.toBeInstanceOf(RemoteManifestNotFoundError);
   });
 
   it('throws an error containing URL and status for non-404 non-2xx responses', async () => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status: 500, statusText: 'Internal Server Error' }));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow(
+    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions })).rejects.toThrow(
       'Failed to fetch manifest from https://example.com/manifest.json: 500 Internal Server Error',
     );
   });
@@ -68,7 +72,7 @@ describe(loadRemoteManifest, () => {
     mockFetch.mockResolvedValue(mockResponse('boom', { status, statusText: 'Nope' }));
 
     const error = await captureError(RemoteFetchError, () =>
-      loadRemoteManifest({ url: 'https://example.com/manifest.json' }),
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions }),
     );
 
     expect(error).toHaveProperty('status', status);
@@ -77,7 +81,9 @@ describe(loadRemoteManifest, () => {
   it('throws Error containing URL and "malformed" for invalid JSON, preserving the parse failure as the cause', async () => {
     mockFetch.mockResolvedValue(mockResponse('{ not valid json'));
 
-    const error = await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json' }));
+    const error = await captureError(() =>
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions }),
+    );
 
     const { cause } = error;
     assert.ok(cause instanceof SyntaxError);
@@ -87,17 +93,18 @@ describe(loadRemoteManifest, () => {
   it('throws Error containing URL and "malformed" for schema-invalid JSON', async () => {
     mockFetch.mockResolvedValue(mockResponse(JSON.stringify({ version: 2, kits: [] })));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow(
+    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions })).rejects.toThrow(
       /Manifest at https:\/\/example\.com\/manifest\.json is malformed:/,
     );
   });
 
-  it('forwards supplied headers to fetch', async () => {
+  it('sends the headers that resolveHeaders builds', async () => {
     mockFetch.mockResolvedValue(mockResponse(validManifestBody));
 
     await loadRemoteManifest({
       url: 'https://example.com/manifest.json',
-      headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+      cache: undefined,
+      resolveHeaders: () => ({ Authorization: 'Bearer my-token', 'X-Custom': 'value' }),
     });
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/manifest.json', {
@@ -105,19 +112,34 @@ describe(loadRemoteManifest, () => {
     });
   });
 
-  it('calls fetch with empty headers when none are provided', async () => {
+  it('calls fetch with empty headers when none are resolved', async () => {
     mockFetch.mockResolvedValue(mockResponse(validManifestBody));
 
-    await loadRemoteManifest({ url: 'https://example.com/manifest.json' });
+    await loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions });
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/manifest.json', {
       headers: {},
     });
   });
 
+  it('rejects a schema-invalid body served from the cache, as it rejects a fetched one', async () => {
+    using tree = createTempTree({}, { prefix: 'readyup-remote-manifest-cache-' });
+    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const invalidBody = JSON.stringify({ version: 1, kits: 'none' });
+    mockFetch.mockResolvedValueOnce(new Response(invalidBody, { headers: { 'Cache-Control': 'max-age=300' } }));
+    await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json', ...options }));
+
+    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json', ...options })).rejects.toThrow(
+      'Manifest at https://example.com/manifest.json is malformed',
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
   it('propagates network errors from fetch', async () => {
     mockFetch.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json' })).rejects.toThrow('ECONNREFUSED');
+    await expect(loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions })).rejects.toThrow(
+      'ECONNREFUSED',
+    );
   });
 });

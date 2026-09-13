@@ -22,6 +22,7 @@ export interface ParsedRunArgs {
   jit: boolean;
   json: boolean;
   kitSpecifiers: KitSpecifier[];
+  noCache: boolean;
   packages: boolean;
   quiet: boolean;
   reportOn?: Severity;
@@ -50,6 +51,7 @@ const runOptions = {
   internal: { type: 'boolean' },
   jit: { type: 'boolean' },
   json: { type: 'boolean' },
+  'no-cache': { type: 'boolean' },
   packages: { type: 'boolean' },
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
@@ -94,6 +96,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     internal: values.internal === true,
     jit: values.jit === true,
     json: values.json === true,
+    noCache: values['no-cache'] === true,
     packages: values.packages === true,
     quiet: values.quiet === true,
     url: values.url,
@@ -134,6 +137,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     jit: parsed.jit,
     json: parsed.json,
     kitSpecifiers,
+    noCache: parsed.noCache,
     packages: parsed.packages,
     quiet: parsed.quiet,
     urlValue: parsed.url,

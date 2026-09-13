@@ -10,11 +10,11 @@ import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import { validateKit } from '../kits/validateKit.ts';
 import { isHtmlBody } from '../portable/isHtmlBody.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import { fetchWithCache, type FetchWithCacheOptions } from './fetchWithCache.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
-export interface LoadRemoteKitOptions {
+export interface LoadRemoteKitOptions extends FetchWithCacheOptions {
   url: string;
-  headers?: Record<string, string> | undefined;
 }
 
 /**
@@ -22,13 +22,14 @@ export interface LoadRemoteKitOptions {
  * embedded `__readyupVersion`, which is `undefined` for a kit compiled before that field existed or
  * fetched from a third-party source that omits it.
  *
- * Any supplied headers are sent with the request. This has no auth-scheme knowledge of its own, so `Authorization` and
- * anything else, such as a corporate proxy or telemetry header, are passed already formatted. The fetched content is
- * written to a temp file for dynamic import and cleaned up afterwards. Throws `RemoteFetchError` for a non-2xx
- * response, and a plain `Error` for a body that is not an evaluable kit.
+ * The fetch goes through the HTTP cache where `cache` names one, and a body served from it is checked as a fetched
+ * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
+ * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
+ * The content is written to a temp file for dynamic import and cleaned up afterwards. Throws `RemoteFetchError` for a
+ * non-2xx response, and a plain `Error` for a body that is not an evaluable kit.
  */
-export async function loadRemoteKit({ url, headers = {} }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
-  const response = await fetch(url, { headers });
+export async function loadRemoteKit({ url, cache, resolveHeaders }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
+  const response = await fetchWithCache(url, { cache, resolveHeaders });
 
   if (!response.ok) {
     throw new RemoteFetchError(

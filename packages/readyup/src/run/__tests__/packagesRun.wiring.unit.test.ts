@@ -7,6 +7,7 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 import { runCommand } from '../runCommand.ts';
@@ -265,10 +266,10 @@ interface InstallPackageOptions {
 }
 
 /** Runs the command over the given options, returning its exit code alongside everything it wrote. */
-async function run(options: Parameters<typeof runCommand>[0]) {
+async function run(options: Omit<Parameters<typeof runCommand>[0], 'remote'>) {
   using io = captureStdio();
 
-  const exitCode = await runCommand(options);
+  const exitCode = await runCommand({ ...options, remote: createUncachedRemoteContext() });
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

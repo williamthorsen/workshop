@@ -69,6 +69,7 @@ Run options:
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --diagnose                         Report skipped checks whose check would have passed
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --no-cache                         Fetch remote kits and manifests again, ignoring cached copies
   --quiet                            Hide passed checks from the report; incompatible with --json
   --report-on <severity>             Show this severity or above (error, warn, recommend)
 
@@ -129,6 +130,8 @@ Options:
   --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
                              global, dir:path, or local path)
   --manifest <path>          List the kits declared by a manifest file
+  --no-cache                 Fetch a remote manifest again, ignoring a cached copy; the fresh
+                             copy still replaces the cached one
   --packages                 List every installed dependency that publishes kits, with the kits
                              that each publishes and the command that runs them; combines with
                              --recursive, not with --from or --manifest
@@ -183,6 +186,8 @@ Options:
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
   --diagnose                         Report skipped checks whose check would have passed
   --fail-on <severity>               Fail on this severity or above (error, warn, recommend)
+  --no-cache                         Fetch remote kits and manifests again, ignoring cached copies;
+                                     the fresh copies still replace the cached ones
   --quiet                            Hide passed checks from the report; incompatible with --json
   --report-on <severity>             Show this severity or above (error, warn, recommend)
   --style <auto|plain|rich>          Output style (default: auto)

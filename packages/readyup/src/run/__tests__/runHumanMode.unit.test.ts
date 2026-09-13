@@ -58,6 +58,7 @@ vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
 
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
@@ -686,7 +687,8 @@ async function runHuman(
 ) {
   using io = captureStdio();
 
-  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, reportOn }, isJit);
+  const remote = createUncachedRemoteContext();
+  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, remote, reportOn }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

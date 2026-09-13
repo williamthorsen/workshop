@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -51,7 +52,12 @@ const validRemoteManifestBody = JSON.stringify({
 });
 
 describe(listCommand, () => {
+  let cacheTree: TempTree;
+
   beforeEach(() => {
+    // A remote listing reads and writes the HTTP cache, which would otherwise be the developer's own.
+    cacheTree = createTempTree({}, { prefix: 'readyup-list-cache-' });
+    vi.stubEnv('XDG_CACHE_HOME', cacheTree.dir);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
     mockResolveBitbucketToken.mockReturnValue(undefined);
@@ -59,6 +65,7 @@ describe(listCommand, () => {
   });
 
   afterEach(() => {
+    cacheTree[Symbol.dispose]();
     vi.restoreAllMocks();
     mockEnumerateKits.mockReset();
     mockLoadConfig.mockReset();
@@ -142,6 +149,47 @@ describe(listCommand, () => {
     );
     expect(stdout).toContain('default \u{00B7} General project health checks');
     expect(stdout).toContain('deploy');
+  });
+
+  it('with --from github:org/repo, reuses a fresh manifest from the cache on a later listing', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(validRemoteManifestBody, { headers: { 'Cache-Control': 'max-age=300' } }),
+    );
+    await list(['--from', 'github:williamthorsen/workshop']);
+
+    const { exitCode, stdout } = await list(['--from', 'github:williamthorsen/workshop']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(stdout).toContain('General project health checks');
+  });
+
+  it('with --no-cache, fetches a manifest again while the cached copy is fresh, and caches the fresh copy', async () => {
+    const refreshedManifestBody = JSON.stringify({ version: 1, kits: [{ name: 'default', description: 'Refreshed' }] });
+    const cacheHeaders = { 'Cache-Control': 'max-age=300' };
+    mockFetch
+      .mockResolvedValueOnce(new Response(validRemoteManifestBody, { headers: cacheHeaders }))
+      .mockResolvedValueOnce(new Response(refreshedManifestBody, { headers: cacheHeaders }));
+    await list(['--from', 'github:williamthorsen/workshop']);
+
+    await list(['--no-cache', '--from', 'github:williamthorsen/workshop']);
+    const { stdout } = await list(['--from', 'github:williamthorsen/workshop']);
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
+      { headers: {} },
+    );
+    expect(stdout).toContain('Refreshed');
+  });
+
+  it('with --no-cache and a local source, lists the kits as it would without the flag', async () => {
+    mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'my-kit' }] });
+
+    const { exitCode } = await list(['--no-cache', '--from', 'dir:/some/path']);
+
+    expect(exitCode).toBe(0);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('with --from github:org/repo@ref, builds the URL using the supplied ref', async () => {
