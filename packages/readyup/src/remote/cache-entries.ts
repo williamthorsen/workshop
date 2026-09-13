@@ -53,7 +53,7 @@ export async function writeCacheEntry(cacheDir: string, entry: CacheEntry): Prom
   const tempPath = `${entryPath}.${randomUUID()}.tmp`;
 
   try {
-    await mkdir(cacheDir, { recursive: true });
+    await mkdir(cacheDir, { recursive: true, mode: 0o700 });
     await writeFile(tempPath, JSON.stringify(entry), 'utf8');
     await rename(tempPath, entryPath);
   } catch {

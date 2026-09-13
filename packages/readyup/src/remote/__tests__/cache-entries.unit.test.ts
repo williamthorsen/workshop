@@ -1,3 +1,5 @@
+import { statSync } from 'node:fs';
+
 import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
 import { describe, expect, it } from 'vitest';
 
@@ -64,6 +66,7 @@ describe(writeCacheEntry, () => {
     await writeCacheEntry(cacheDir, kitEntry);
 
     await expect(readCacheEntry(cacheDir, KIT_URL)).resolves.toStrictEqual(kitEntry);
+    expect(statSync(cacheDir).mode & 0o777).toBe(0o700);
   });
 
   it('stores nothing, without throwing, when the cache directory cannot be created', async () => {
