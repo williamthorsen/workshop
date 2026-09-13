@@ -33,8 +33,8 @@ export const CompileKitEntrySchema = z
 /**
  * One project's outcome in a recursive compile.
  *
- * `passed` is `true` when every kit in the project compiled. `error` explains a project that could not be
- * compiled at all, which contributes no kit entries.
+ * `passed` is `true` when the project could be compiled and every kit in it compiled. `error` explains a
+ * project that could not be compiled at all, which contributes no kit entries.
  */
 export const CompileProjectEntrySchema = z
   .object({
@@ -48,7 +48,8 @@ export const CompileProjectEntrySchema = z
  * Top-level shape of `rdy compile --json`.
  *
  * A sweep runs to completion, so every requested kit appears here whatever happened to the ones
- * before it. `passed` is `true` when every kit compiled, agreeing with exit code 0.
+ * before it. `passed` is `true` when every kit compiled and, under `--recursive`, every project passed,
+ * agreeing with exit code 0.
  *
  * `projects` is emitted under `--recursive` alone, and lists every project that the sweep visited, so a
  * project that contributed no kit entry is still reported.
