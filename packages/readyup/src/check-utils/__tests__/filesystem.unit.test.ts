@@ -69,9 +69,10 @@ describe(fileContains, () => {
   it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
     temp.write('data.txt', 'bad stuff');
     const pattern = new RegExp('bad', flags);
+    pattern.lastIndex = 5;
 
     expect([fileContains('data.txt', pattern), fileContains('data.txt', pattern)]).toStrictEqual([true, true]);
-    expect(pattern.lastIndex).toBe(0);
+    expect(pattern.lastIndex).toBe(5);
   });
 });
 
@@ -107,12 +108,13 @@ describe(fileDoesNotContain, () => {
   it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
     temp.write('dirty.txt', 'bad stuff');
     const pattern = new RegExp('bad', flags);
+    pattern.lastIndex = 5;
 
     expect([fileDoesNotContain('dirty.txt', pattern), fileDoesNotContain('dirty.txt', pattern)]).toStrictEqual([
       false,
       false,
     ]);
-    expect(pattern.lastIndex).toBe(0);
+    expect(pattern.lastIndex).toBe(5);
   });
 });
 
