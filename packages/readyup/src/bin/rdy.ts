@@ -6,9 +6,14 @@ import process from 'node:process';
 
 import { hasJsonFlag } from './hasJsonFlag.ts';
 import { resolveHookSpecifier } from './resolveHookSpecifier.ts';
-import { reportFailure, routeCommand } from './route.ts';
+import { reportEscapedFailure, reportFailure, routeCommand } from './route.ts';
 
 const args = process.argv.slice(2);
+
+// These listeners catch a failure that no awaited call observes, which the `try` below cannot reach.
+process.on('uncaughtException', exitOnEscapedFailure);
+process.on('unhandledRejection', exitOnEscapedFailure);
+
 let exitCode: number;
 try {
   // Register the readyup resolver hook before any kit is loaded. Externalized
@@ -33,3 +38,12 @@ try {
   exitCode = reportFailure(error, hasJsonFlag(args));
 }
 process.exit(exitCode);
+
+// region | Helpers
+
+/** Reports a failure that escaped every awaited call and ends the process with the exit code that it produced. */
+function exitOnEscapedFailure(error: unknown): never {
+  process.exit(reportEscapedFailure(error, hasJsonFlag(args)));
+}
+
+// endregion | Helpers
