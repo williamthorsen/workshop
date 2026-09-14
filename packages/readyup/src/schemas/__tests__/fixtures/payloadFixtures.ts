@@ -188,6 +188,14 @@ export const compilePayload = {
     { name: 'deploy', status: 'compiled' },
     { name: 'release', status: 'failed', error: 'Kit must export a default RdyKit' },
   ],
+  warnings: [
+    {
+      code: 'json-inlined',
+      message:
+        'kit "deploy" bundles all of package.json, imported by kits/deploy.ts, so any edit to that file leaves the kit stale.',
+      remedy: 'Replace the import with pickJson, which inlines only the fields that it names.',
+    },
+  ],
 };
 
 /** A `compile --recursive` payload, whose kits name their projects and whose projects include one that failed. */
