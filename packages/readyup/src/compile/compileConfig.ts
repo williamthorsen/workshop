@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashBytes } from '../verify/targetHash.ts';
-import { buildBundle } from './buildBundle.ts';
+import { buildBundle, type InlinedJsonFile } from './buildBundle.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 
@@ -15,6 +15,9 @@ export interface CompileResult {
 
   /** The esbuild that produced the bundle. */
   esbuildVersion: string;
+
+  /** Every JSON file that the bundle includes from outside `node_modules`. */
+  inlinedJson: InlinedJsonFile[];
 
   /** Every file read by the compile outside `node_modules`, with absolute paths. */
   inputs: CompiledInput[];
@@ -33,7 +36,7 @@ export interface CompileResult {
 export async function compileConfig(inputPath: string, outputPath?: string): Promise<CompileResult> {
   const resolvedOutput = path.resolve(outputPath ?? deriveJsPath(inputPath));
 
-  const { bundledDependencies, bytes, esbuildVersion, inputs } = await buildBundle(inputPath);
+  const { bundledDependencies, bytes, esbuildVersion, inlinedJson, inputs } = await buildBundle(inputPath);
   const existing = existsSync(resolvedOutput) ? readFileSync(resolvedOutput) : undefined;
   const changed = existing === undefined || !bytes.equals(existing);
 
@@ -46,6 +49,7 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     bundledDependencies,
     changed,
     esbuildVersion,
+    inlinedJson,
     inputs,
     outputPath: resolvedOutput,
     targetHash: hashBytes(bytes),

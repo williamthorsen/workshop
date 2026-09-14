@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import type { Metafile } from 'esbuild';
 
 import { isRecord } from '../portable/isRecord.ts';
 import { hashFile } from '../verify/targetHash.ts';
@@ -79,8 +80,19 @@ export interface BundleResult {
   /** The esbuild that produced the bundle. */
   esbuildVersion: string;
 
+  /** Every JSON file that the bundle includes from outside `node_modules`, sorted by path. */
+  inlinedJson: InlinedJsonFile[];
+
   /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
   inputs: CompiledInput[];
+}
+
+/** A JSON file that a bundle includes whole, with the modules that import it. */
+export interface InlinedJsonFile {
+  /** Absolute paths, sorted. */
+  importers: string[];
+
+  path: string;
 }
 
 /**
@@ -156,6 +168,7 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
     bundledDependencies: collectBundledDependencies(metafileKeys, workingDir),
     bytes: Buffer.from(outputFile.contents),
     esbuildVersion: esbuild.version,
+    inlinedJson: collectInlinedJson(result.metafile.inputs, workingDir),
     inputs: collectInputs(recorder.inputs, metafileKeys, workingDir),
   };
 }
@@ -189,6 +202,37 @@ function collectBundledDependencies(metafileKeys: string[], workingDir: string):
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([name, versions]) => [name, versions.values().toArray().toSorted().join(', ')]),
   );
+}
+
+/**
+ * Returns the JSON files that the bundle includes from outside `node_modules`, each with the modules that import it.
+ *
+ * Every file listed is one that `collectInputs` records whole, because both read the metafile. A `pickJson` target
+ * never appears: The plugin reads it through the recorder, so esbuild never loads it. Importers are matched on the
+ * metafile's unresolved keys, which is the one form in which esbuild names a file both as an input and as an import.
+ */
+function collectInlinedJson(metafileInputs: Metafile['inputs'], workingDir: string): InlinedJsonFile[] {
+  const importersByKey = new Map<string, Set<string>>();
+  for (const key of Object.keys(metafileInputs)) {
+    // `buildBundle` configures no loaders, so esbuild's JSON loader applies to this extension alone.
+    if (!key.endsWith('.json') || isDependencyFile(path.resolve(workingDir, key))) continue;
+    importersByKey.set(key, new Set());
+  }
+
+  for (const [importerKey, input] of Object.entries(metafileInputs)) {
+    for (const imported of input.imports) {
+      importersByKey.get(imported.path)?.add(path.resolve(workingDir, importerKey));
+    }
+  }
+
+  return importersByKey
+    .entries()
+    .map(([key, importers]) => ({
+      importers: importers.values().toArray().toSorted(),
+      path: path.resolve(workingDir, key),
+    }))
+    .toArray()
+    .toSorted((a, b) => a.path.localeCompare(b.path));
 }
 
 /**

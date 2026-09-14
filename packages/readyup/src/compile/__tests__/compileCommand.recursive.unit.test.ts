@@ -350,6 +350,7 @@ function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/
     bundledDependencies: {},
     changed: true,
     esbuildVersion: '0.99.0-test',
+    inlinedJson: [],
     inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
     outputPath: path.resolve(outputPath),
     targetHash: 'aaaa1111',

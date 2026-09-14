@@ -98,6 +98,7 @@ function compileResult(
     ...result,
     bundledDependencies: {},
     esbuildVersion: ESBUILD_VERSION,
+    inlinedJson: [],
     inputs: [{ hash, kind: 'module', path: path.resolve(entry) }],
   };
 }
