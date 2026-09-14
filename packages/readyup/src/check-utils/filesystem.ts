@@ -23,18 +23,24 @@ export function readFile(filePath: string): string | undefined {
   return readFileSync(fullPath, 'utf8');
 }
 
-/** Checks whether a file contains content matching a regex. */
-export function fileContains(filePath: string, pattern: RegExp): boolean {
+/**
+ * Checks whether a file contains a pattern. A string matches as a literal substring; a regex matches without reading
+ * or changing its `lastIndex`, so a `g` or `y` regex gives the same result on every call.
+ */
+export function fileContains(filePath: string, pattern: string | RegExp): boolean {
   const content = readFile(filePath);
   if (content === undefined) return false;
-  return pattern.test(content);
+  return matchesPattern(content, pattern);
 }
 
-/** Checks that a file does not contain content matching a regex. Passes if the file is absent. */
-export function fileDoesNotContain(filePath: string, pattern: RegExp): boolean {
+/**
+ * Checks that a file does not contain a pattern. Passes if the file is absent. A string matches as a literal substring;
+ * a regex matches without reading or changing its `lastIndex`, so a `g` or `y` regex gives the same result on every call.
+ */
+export function fileDoesNotContain(filePath: string, pattern: string | RegExp): boolean {
   const content = readFile(filePath);
   if (content === undefined) return true;
-  return !pattern.test(content);
+  return !matchesPattern(content, pattern);
 }
 
 /** Checks whether all specified files exist, with optional base directory. An absolute path names itself. */
@@ -56,3 +62,14 @@ export function commandExists(name: string): boolean {
     return false;
   }
 }
+
+// region | Helpers
+
+/** Reports whether content contains a literal substring or matches a regex. */
+function matchesPattern(content: string, pattern: string | RegExp): boolean {
+  if (typeof pattern === 'string') return content.includes(pattern);
+  // `search` starts at index 0 and restores `lastIndex`, which `test` advances on a `g` or `y` regex.
+  return content.search(pattern) !== -1;
+}
+
+// endregion | Helpers

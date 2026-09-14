@@ -53,6 +53,26 @@ describe(fileContains, () => {
   it('returns false when the file does not exist', () => {
     expect(fileContains('missing.txt', /anything/)).toBe(false);
   });
+
+  it('matches a string as a literal substring', ({ temp }) => {
+    temp.write('data.txt', 'import @.agents/PROJECT.md');
+
+    expect(fileContains('data.txt', '@.agents/PROJECT.md')).toBe(true);
+  });
+
+  it('does not read a string as a regex', ({ temp }) => {
+    temp.write('data.txt', 'axb');
+
+    expect(fileContains('data.txt', 'a.b')).toBe(false);
+  });
+
+  it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
+    temp.write('data.txt', 'bad stuff');
+    const pattern = new RegExp('bad', flags);
+
+    expect([fileContains('data.txt', pattern), fileContains('data.txt', pattern)]).toStrictEqual([true, true]);
+    expect(pattern.lastIndex).toBe(0);
+  });
 });
 
 describe(fileDoesNotContain, () => {
@@ -70,6 +90,29 @@ describe(fileDoesNotContain, () => {
 
   it('returns true when the file does not exist', () => {
     expect(fileDoesNotContain('missing.txt', /anything/)).toBe(true);
+  });
+
+  it('returns false when the file contains the string', ({ temp }) => {
+    temp.write('dirty.txt', 'uses a.b here');
+
+    expect(fileDoesNotContain('dirty.txt', 'a.b')).toBe(false);
+  });
+
+  it('does not read a string as a regex', ({ temp }) => {
+    temp.write('clean.txt', 'axb');
+
+    expect(fileDoesNotContain('clean.txt', 'a.b')).toBe(true);
+  });
+
+  it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
+    temp.write('dirty.txt', 'bad stuff');
+    const pattern = new RegExp('bad', flags);
+
+    expect([fileDoesNotContain('dirty.txt', pattern), fileDoesNotContain('dirty.txt', pattern)]).toStrictEqual([
+      false,
+      false,
+    ]);
+    expect(pattern.lastIndex).toBe(0);
   });
 });
 
