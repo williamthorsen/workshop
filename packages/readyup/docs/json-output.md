@@ -36,13 +36,15 @@ An invocation that fails before producing anything else emits:
 { "schemaVersion": 1, "error": { "code": "usage", "message": "Unknown option '--bogus'" } }
 ```
 
-`code` is one of `usage`, `config`, `kit-load`, or `internal`. The envelope covers only failures preceding dispatch; once dispatch begins, a failing kit is reported inside the report:
+`code` is one of `usage`, `config`, `kit-load`, or `internal`. The envelope covers failures preceding dispatch; once dispatch begins, a failing kit is reported inside the report:
 
 ```json
 { "name": "release", "error": { "code": "kit-load", "message": "Cannot find .readyup/kits/release.js" } }
 ```
 
 An error entry has no counts and no verdict, and the top-level totals cover only the kits that ran.
+
+A failure that nothing awaits, such as a rejection leaked by a check that does not await its own async work, produces the envelope even after dispatch. It ends the run with code `internal`, and the results of kits that already ran are not reported.
 
 An error body may also include `hint`, one action that would clear the failure:
 
