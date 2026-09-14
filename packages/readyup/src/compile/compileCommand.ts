@@ -19,6 +19,7 @@ import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
+import type { RaisedWarning } from '../schemas/common.ts';
 import {
   type JsonCompileKitEntry,
   type JsonCompileOutput,
@@ -32,6 +33,7 @@ import { compileConfig } from './compileConfig.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
+import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
 
 const compileOptions = {
   config: { type: 'string' },
@@ -152,7 +154,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   if (drift !== undefined) {
     writeHuman(formatDriftLine(relInput, drift.status), json);
     writeHuman('\nRe-run with --force to overwrite, or move edits into the source.\n', json);
-    return finishCompile([{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }], json);
+    return finishCompile([{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }], [], json);
   }
 
   let result;
@@ -164,11 +166,12 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
     const message = describeError(error);
     process.stderr.write(`Error: ${message}\n`);
-    return finishCompile([{ name: kitName, status: 'failed', error: message }], json);
+    return finishCompile([{ name: kitName, status: 'failed', error: message }], [], json);
   }
 
   const relOutput = path.relative(process.cwd(), result.outputPath);
   writeHuman(formatResultLine(relInput, relOutput, result.changed), json);
+  const warnings = warnOnInlinedJson(kitName, result.inlinedJson);
 
   if (!skipManifest) {
     try {
@@ -189,19 +192,25 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     }
   }
 
-  return finishCompile([{ name: kitName, status: 'compiled' }], json);
+  return finishCompile([{ name: kitName, status: 'compiled' }], warnings, json);
 }
 
 /**
  * Emits the compile payload under `--json` and reduces the run's per-kit statuses to an exit code.
  *
  * A kit left alone because it drifted counts against the run just as a failed one does: Both mean
- * the compiled output on disk is not what the source says it should be.
+ * the compiled output on disk is not what the source says it should be. A warning counts against nothing,
+ * and reaches the payload only where one was raised.
  *
  * `projects` is given by a recursive compile alone, and a project that failed counts against the run
  * whether or not it contributed a kit.
  */
-function finishCompile(kits: JsonCompileKitEntry[], json: boolean, projects?: JsonCompileProjectEntry[]): number {
+function finishCompile(
+  kits: JsonCompileKitEntry[],
+  warnings: RaisedWarning[],
+  json: boolean,
+  projects?: JsonCompileProjectEntry[],
+): number {
   const passed = kits.every((kit) => kit.status === 'compiled') && (projects ?? []).every((project) => project.passed);
 
   if (json) {
@@ -210,6 +219,7 @@ function finishCompile(kits: JsonCompileKitEntry[], json: boolean, projects?: Js
       passed,
       kits,
       ...(projects !== undefined && { projects }),
+      ...(warnings.length > 0 && { warnings }),
     };
     process.stdout.write(JSON.stringify(output) + '\n');
   }
@@ -246,8 +256,15 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 
-  const kits = await compileProject({ projectDir: process.cwd(), config, manifestPath, force, skipManifest, json });
-  return finishCompile(kits, json);
+  const { kits, warnings } = await compileProject({
+    projectDir: process.cwd(),
+    config,
+    manifestPath,
+    force,
+    skipManifest,
+    json,
+  });
+  return finishCompile(kits, warnings, json);
 }
 
 /** Arguments for the recursive compile path. */
@@ -271,11 +288,12 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', json);
-    return finishCompile([], json, []);
+    return finishCompile([], [], json, []);
   }
 
   const kits: JsonCompileKitEntry[] = [];
   const projectEntries: JsonCompileProjectEntry[] = [];
+  const warnings: RaisedWarning[] = [];
   let hasWrittenBlock = false;
 
   for (const project of projects) {
@@ -291,6 +309,7 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
     const outcome = await compileSweptProject(project, { root, force, skipManifest, json });
     kits.push(...outcome.kits);
     projectEntries.push(outcome.entry);
+    warnings.push(...outcome.warnings);
   }
 
   const failedDirs = projectEntries.filter((entry) => !entry.passed).map((entry) => entry.project);
@@ -301,7 +320,7 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
     );
   }
 
-  return finishCompile(kits, json, projectEntries);
+  return finishCompile(kits, warnings, json, projectEntries);
 }
 
 /** Arguments shared by every project that a recursive compile visits. */
@@ -313,8 +332,7 @@ interface CompileSweptProjectArgs {
 }
 
 /** One project's contribution to a recursive compile. */
-interface SweptProjectOutcome {
-  kits: JsonCompileKitEntry[];
+interface SweptProjectOutcome extends ProjectCompileOutcome {
   entry: JsonCompileProjectEntry;
 }
 
@@ -327,7 +345,7 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
   const { root, force, skipManifest, json } = args;
 
   try {
-    const kits = await compileProject({
+    const { kits, warnings } = await compileProject({
       projectDir: project.absolutePath,
       config: project.config,
       manifestPath: project.manifestPath,
@@ -336,10 +354,14 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
       json,
       sweep: { root, project: project.dir },
     });
-    return { kits, entry: { project: project.dir, passed: kits.every((kit) => kit.status === 'compiled') } };
+    return {
+      kits,
+      entry: { project: project.dir, passed: kits.every((kit) => kit.status === 'compiled') },
+      warnings,
+    };
   } catch (error: unknown) {
     if (!(error instanceof RdyError)) throw error;
-    return { kits: [], entry: reportProjectFailure(project.dir, error.message) };
+    return { kits: [], entry: reportProjectFailure(project.dir, error.message), warnings: [] };
   }
 }
 
@@ -362,6 +384,12 @@ interface CompileProjectArgs {
   sweep?: SweepContext;
 }
 
+/** Each kit's outcome in a project compile, and the warnings raised by the kits that compiled. */
+interface ProjectCompileOutcome {
+  kits: JsonCompileKitEntry[];
+  warnings: RaisedWarning[];
+}
+
 /** Where a project sits in a recursive compile. */
 interface SweepContext {
   /** Directory from which the sweep descended. */
@@ -371,14 +399,15 @@ interface SweepContext {
 }
 
 /**
- * Compiles every matching `.ts` file in a project's config-driven source directory, returning each kit's outcome.
+ * Compiles every matching `.ts` file in a project's config-driven source directory, returning each kit's outcome
+ * and the warnings that the compiled kits raised.
  *
  * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
  * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
  * the sweep -- an unreadable source directory, an unwritable manifest -- still throw, because they say
  * nothing about any individual kit.
  */
-async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitEntry[]> {
+async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileOutcome> {
   const { projectDir, config, manifestPath, force, skipManifest, json, sweep } = args;
   const projectField = sweep === undefined ? {} : { project: sweep.project };
 
@@ -400,7 +429,7 @@ async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitE
   if (tsFiles.length === 0) {
     const displayRoot = sweep?.root ?? projectDir;
     reportEmptySweep({ displayRoot, srcDir, srcDirExists, skipManifest, manifestPath, json });
-    return [];
+    return { kits: [], warnings: [] };
   }
 
   const anchor = sweep?.root ?? resolveWorkspaceAnchor(srcDir, projectDir);
@@ -414,6 +443,7 @@ async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitE
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
   const kitEntries: RdyManifestKit[] = [];
   const kitResults: JsonCompileKitEntry[] = [];
+  const warnings: RaisedWarning[] = [];
   let skippedCount = 0;
   let failedCount = 0;
 
@@ -450,6 +480,7 @@ async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitE
         }),
       );
       kitResults.push({ name: kitName, ...projectField, status: 'compiled' });
+      warnings.push(...warnOnInlinedJson(kitName, result.inlinedJson));
     } catch (error: unknown) {
       // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
       // goes on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
@@ -487,7 +518,7 @@ async function compileProject(args: CompileProjectArgs): Promise<JsonCompileKitE
     }
   }
 
-  return kitResults;
+  return { kits: kitResults, warnings };
 }
 
 /** Arguments for the no-kits early return of a project compile. */
