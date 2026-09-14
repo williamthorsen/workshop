@@ -35,7 +35,7 @@ A sweep that finds no kits writes a manifest only if one already exists, emptyin
 1 of 2 kits skipped due to drift. Re-run with --force to overwrite, or move edits into the source.
 ```
 
-Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed.
+Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed. The payload also lists any [warnings](#compile-warnings).
 
 ### Compiling a whole repository
 
@@ -89,6 +89,16 @@ The closure stops at `node_modules`. A dependency's contents are pinned by the l
 What the closure leaves out is recorded as versions instead: `esbuildVersion` names the bundler and `bundledDependencies` each inlined package, one entry per package rather than one per file. When a bundle inlines one package at two versions at once, that package's entry records both versions, sorted and comma-separated. `bundledDependencies` is absent for a kit that bundles nothing, so the presence of `esbuildVersion` shows that an entry has the record at all.
 
 An entry compiled before readyup recorded the closure has no `inputs`; one compiled before the version record has no `esbuildVersion`.
+
+### Compile warnings
+
+`rdy compile` raises advisories about the kits that it compiles. Warnings go to stderr in both modes and appear under a top-level `warnings` in JSON, each as `{ code, message, remedy? }`, absent when none was raised. No warning affects `passed` or the exit code.
+
+| Code           | Raised when                                                           |
+| -------------- | --------------------------------------------------------------------- |
+| `json-inlined` | A kit's bundle includes a JSON file from outside `node_modules` whole |
+
+A JSON file that a kit imports, with or without an import attribute, or loads through `require()`, is bundled whole and recorded whole in `inputs`: Every field ships in the kit, and any edit to the file leaves the kit stale. The warning names the kit, the file, and each module that imports it, and suggests [`pickJson`](authoring-kits.md#inlining-json-at-compile-time), which inlines and records only the fields that it names. A kit that failed to compile raises none, and one reported as `no changes` still raises it, because its bundle still includes the file.
 
 ## Package-hosted kits
 

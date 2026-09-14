@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { WarningSchema } from './common.ts';
+
 /**
  * Version of the `compile` payload.
  *
@@ -53,6 +55,9 @@ export const CompileProjectEntrySchema = z
  *
  * `projects` is emitted under `--recursive` alone, and lists every project that the sweep visited, so a
  * project that contributed no kit entry is still reported.
+ *
+ * `warnings` lists the advisories raised by the kits that compiled, and is absent when none was raised. No
+ * warning affects `passed`.
  */
 export const CompileOutputSchema = z
   .object({
@@ -60,6 +65,7 @@ export const CompileOutputSchema = z
     passed: z.boolean(),
     kits: z.array(CompileKitEntrySchema),
     projects: z.array(CompileProjectEntrySchema).optional(),
+    warnings: z.array(WarningSchema).optional(),
   })
   .meta({ id: 'CompileOutput' });
 

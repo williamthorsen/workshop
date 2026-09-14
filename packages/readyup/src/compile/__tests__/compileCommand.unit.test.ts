@@ -98,7 +98,16 @@ function compileResult(
     ...result,
     bundledDependencies: {},
     esbuildVersion: ESBUILD_VERSION,
+    inlinedJson: [],
     inputs: [{ hash, kind: 'module', path: path.resolve(entry) }],
+  };
+}
+
+/** Builds a changed `compileConfig` result for `entry` whose bundle includes `package.json` whole, imported by the entry. */
+function compileResultInliningJson(entry: string, outputPath: string): CompileResult {
+  return {
+    ...compileResult(entry, { outputPath, changed: true, targetHash: 'aaaa1111' }),
+    inlinedJson: [{ importers: [path.resolve(entry)], path: path.resolve('package.json') }],
   };
 }
 
@@ -769,6 +778,87 @@ describe(compileCommand, () => {
         kits: [{ name: 'deploy', status: 'skipped', error: expect.stringContaining('drifted') }],
       });
     });
+  });
+
+  describe('inlined JSON warnings', () => {
+    beforeEach(() => {
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('missing');
+      });
+    });
+
+    it('warns on stderr after a single-file compile, which still passes', async () => {
+      mockCompileConfig.mockResolvedValue(compileResultInliningJson('deploy.ts', '/abs/deploy.js'));
+
+      const { exitCode, stderr } = await compile(['deploy.ts']);
+
+      expect(exitCode).toBe(0);
+      expect(stderr).toContain('Warning: kit "deploy" bundles all of package.json, imported by deploy.ts,');
+    });
+
+    it('reports the warning in the payload of a single-file compile under --json', async () => {
+      mockCompileConfig.mockResolvedValue(compileResultInliningJson('deploy.ts', '/abs/deploy.js'));
+
+      const { exitCode, stdout, stderr } = await compile(['deploy.ts', '--json']);
+
+      expect(exitCode).toBe(0);
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        passed: true,
+        kits: [{ name: 'deploy', status: 'compiled' }],
+        warnings: [
+          {
+            code: 'json-inlined',
+            message: expect.stringContaining('kit "deploy" bundles all of package.json'),
+            remedy: expect.stringContaining('pickJson'),
+          },
+        ],
+      });
+      expect(stderr).toContain('Warning: kit "deploy"');
+    });
+
+    it('collects the warnings of every kit in a batch compile under --json', async () => {
+      arrangeBatch(['alpha.ts', 'beta.ts']);
+      mockCompileConfig
+        .mockResolvedValueOnce(compileResultInliningJson(kitSource('alpha.ts'), '/abs/alpha.js'))
+        .mockResolvedValueOnce(compileResultInliningJson(kitSource('beta.ts'), '/abs/beta.js'));
+
+      const { exitCode, stdout } = await compile(['--json']);
+
+      expect(exitCode).toBe(0);
+      expect(JSON.parse(stdout)).toMatchObject({
+        passed: true,
+        warnings: [
+          { code: 'json-inlined', message: expect.stringContaining('kit "alpha"') },
+          { code: 'json-inlined', message: expect.stringContaining('kit "beta"') },
+        ],
+      });
+    });
+
+    it('raises no warning for a kit that fails validation', async () => {
+      arrangeBatch(['alpha.ts']);
+      mockCompileConfig.mockResolvedValue(compileResultInliningJson(kitSource('alpha.ts'), '/abs/alpha.js'));
+      mockValidateCompiledOutput.mockRejectedValue(new Error('Kit must export a default RdyKit'));
+
+      const { exitCode, stdout, stderr } = await compile(['--json']);
+
+      expect(exitCode).toBe(1);
+      expect(JSON.parse(stdout)).not.toHaveProperty('warnings');
+      expect(stderr).not.toContain('bundles all of');
+    });
+
+    // region | Helpers
+
+    /** Arranges a batch compile over `fileNames` in the swept source directory. */
+    function arrangeBatch(fileNames: string[]): void {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(fileNames);
+    }
+
+    // endregion | Helpers
   });
 
   it('reports a config error when readdirSync throws during batch compile', async () => {

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import type { Metafile } from 'esbuild';
 
 import { isRecord } from '../portable/isRecord.ts';
 import { hashFile } from '../verify/targetHash.ts';
@@ -21,6 +22,8 @@ import { resolveCompileRoot } from './resolveCompileRoot.ts';
  * than to the kit: One `import zod` inlines 79 files.
  */
 const EXCLUDED_DIRECTORY = 'node_modules';
+
+const IMPORT_ATTRIBUTES_SUFFIX_RE = / with \{[^{}]*\}$/;
 
 /** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
 export const KIT_COMPILE_TARGET = 'es2025';
@@ -79,8 +82,19 @@ export interface BundleResult {
   /** The esbuild that produced the bundle. */
   esbuildVersion: string;
 
+  /** Every JSON file that the bundle includes from outside `node_modules`, sorted by path. */
+  inlinedJson: InlinedJsonFile[];
+
   /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
   inputs: CompiledInput[];
+}
+
+/** A JSON file that a bundle includes whole, with the modules that import it. */
+export interface InlinedJsonFile {
+  /** Absolute paths, sorted. */
+  importers: string[];
+
+  path: string;
 }
 
 /**
@@ -150,13 +164,14 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
     throw new Error(`esbuild produced no output for ${resolvedInput}`);
   }
 
-  const metafileKeys = Object.keys(result.metafile.inputs);
+  const metafileInputs = result.metafile.inputs;
 
   return {
-    bundledDependencies: collectBundledDependencies(metafileKeys, workingDir),
+    bundledDependencies: collectBundledDependencies(metafileInputs, workingDir),
     bytes: Buffer.from(outputFile.contents),
     esbuildVersion: esbuild.version,
-    inputs: collectInputs(recorder.inputs, metafileKeys, workingDir),
+    inlinedJson: collectInlinedJson(metafileInputs, workingDir),
+    inputs: collectInputs(recorder.inputs, metafileInputs, workingDir),
   };
 }
 
@@ -170,10 +185,10 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
  * contributes nothing: The same derivation runs at compile time and at rebuild time, so an
  * unidentifiable package cancels out of the comparison rather than producing a spurious difference.
  */
-function collectBundledDependencies(metafileKeys: string[], workingDir: string): Record<string, string> {
+function collectBundledDependencies(metafileInputs: Metafile['inputs'], workingDir: string): Record<string, string> {
   const versionsByName = new Map<string, Set<string>>();
-  for (const key of metafileKeys) {
-    const resolvedPath = path.resolve(workingDir, key);
+  for (const [key, input] of Object.entries(metafileInputs)) {
+    const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
     if (!isDependencyFile(resolvedPath)) continue;
     const identity = identifyPackage(path.dirname(resolvedPath));
     if (identity === undefined) continue;
@@ -192,6 +207,41 @@ function collectBundledDependencies(metafileKeys: string[], workingDir: string):
 }
 
 /**
+ * Returns the JSON files that the bundle includes from outside `node_modules`, each with the modules that import it.
+ *
+ * Every file listed is one that `collectInputs` records whole, because both read the metafile. A `pickJson` target
+ * never appears: The plugin reads it through the recorder, so esbuild never loads it. Importers are matched on
+ * resolved paths, because esbuild gives a file imported both with and without import attributes two names.
+ */
+function collectInlinedJson(metafileInputs: Metafile['inputs'], workingDir: string): InlinedJsonFile[] {
+  const importersByPath = new Map<string, Set<string>>();
+  for (const [key, input] of Object.entries(metafileInputs)) {
+    const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
+    // `buildBundle` configures no loaders, so esbuild's JSON loader reads a `.json` file and any file imported
+    // `with { type: 'json' }`.
+    const isJson = resolvedPath.endsWith('.json') || input.with?.['type'] === 'json';
+    if (!isJson || isDependencyFile(resolvedPath)) continue;
+    importersByPath.set(resolvedPath, new Set());
+  }
+
+  for (const [importerKey, input] of Object.entries(metafileInputs)) {
+    const importerPath = resolveMetafilePath(importerKey, input.with, workingDir);
+    for (const imported of input.imports) {
+      importersByPath.get(resolveMetafilePath(imported.path, imported.with, workingDir))?.add(importerPath);
+    }
+  }
+
+  return importersByPath
+    .entries()
+    .map(([filePath, importers]) => ({
+      importers: importers.values().toArray().toSorted(),
+      path: filePath,
+    }))
+    .toArray()
+    .toSorted((a, b) => a.path.localeCompare(b.path));
+}
+
+/**
  * Returns the closure of a compile, merging what the recorder read with what esbuild resolved.
  *
  * A recorded read wins over the metafile's account of the same file, because only the recorder knows an
@@ -200,15 +250,19 @@ function collectBundledDependencies(metafileKeys: string[], workingDir: string):
  *
  * Sorted so that recompiling a kit whose inputs have not moved rewrites the manifest identically.
  */
-function collectInputs(recorded: CompiledInput[], metafileKeys: string[], workingDir: string): CompiledInput[] {
+function collectInputs(
+  recorded: CompiledInput[],
+  metafileInputs: Metafile['inputs'],
+  workingDir: string,
+): CompiledInput[] {
   const byIdentity = new Map<string, CompiledInput>();
   for (const input of recorded) {
     if (isDependencyFile(input.path)) continue;
     byIdentity.set(identifyInput(input.kind, input.path), input);
   }
 
-  for (const key of metafileKeys) {
-    const resolvedPath = path.resolve(workingDir, key);
+  for (const [key, input] of Object.entries(metafileInputs)) {
+    const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
     // Excluded before the hash, so a dependency tree is never read from disk: One `import zod` inlines 79 files.
     if (isDependencyFile(resolvedPath)) continue;
     const identity = identifyInput('module', resolvedPath);
@@ -275,6 +329,17 @@ function readPackageIdentity(manifestPath: string): { name: string; version: str
     return undefined;
   }
   return { name: parsed['name'], version: parsed['version'] };
+}
+
+/**
+ * Returns the absolute path of the file that a metafile input or import names.
+ *
+ * esbuild appends import attributes to the name of a file that is imported both with and without them, as in
+ * `data.json with { type: 'json' }`, and that suffix names no file on disk.
+ */
+function resolveMetafilePath(key: string, attributes: Record<string, string> | undefined, workingDir: string): string {
+  const filePath = attributes === undefined ? key : key.replace(IMPORT_ATTRIBUTES_SUFFIX_RE, '');
+  return path.resolve(workingDir, filePath);
 }
 
 // endregion | Helpers

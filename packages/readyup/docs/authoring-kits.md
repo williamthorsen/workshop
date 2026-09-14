@@ -348,6 +348,8 @@ Two consequences follow from the value being resolved at compile time:
 - `pickJson` throws if it is ever reached at runtime. A kit that calls it was not compiled.
 - Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not change, and neither did the bundle -- but the compile records the projection that it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
 
+Importing a JSON file directly, with or without `with { type: 'json' }`, bundles the whole file instead. Every field ships in the kit, and the compile records the file whole, so any edit to it, a version bump included, leaves the kit stale. `rdy compile` reports each such file outside `node_modules` as a [`json-inlined`](publishing-kits.md#compile-warnings) warning.
+
 ## TypeScript settings
 
 Kits compile with no `tsconfig.json`. Whatever config is above a kit is ignored, so the same source compiles to the same bundle in any repository and a published bundle is the one that its author built.

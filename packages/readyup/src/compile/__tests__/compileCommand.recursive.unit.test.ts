@@ -222,6 +222,30 @@ describe('compile --recursive', () => {
         expect(CompileOutputSchema.safeParse(JSON.parse(stdout)).success).toBe(true);
         expect(stderr).toContain('Compiling kits in packages/api/.readyup/kits');
       });
+
+      it('collects the warnings raised by kits across projects, naming paths against the sweep root', async () => {
+        mockCompileConfig.mockImplementation(async (inputPath, outputPath) => {
+          const result = await compileResult(inputPath, outputPath);
+          if (!inputPath.endsWith('demo.ts') && !inputPath.endsWith('deploy.ts')) return result;
+
+          const source = realpathSync(inputPath);
+          // Each kit sits at `.readyup/kits/<kit>.ts` below its project's `package.json`.
+          return {
+            ...result,
+            inlinedJson: [{ importers: [source], path: path.resolve(source, '../../../package.json') }],
+          };
+        });
+
+        const payload = CompileOutputSchema.parse(await compileForPayload());
+
+        expect(payload.passed).toBe(true);
+        expect(payload.warnings?.map((warning) => warning.message)).toStrictEqual([
+          expect.stringContaining('kit "demo" bundles all of package.json, imported by .readyup/kits/demo.ts,'),
+          expect.stringContaining(
+            'kit "deploy" bundles all of packages/api/package.json, imported by packages/api/.readyup/kits/deploy.ts,',
+          ),
+        ]);
+      });
     });
   });
 
@@ -350,6 +374,7 @@ function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/
     bundledDependencies: {},
     changed: true,
     esbuildVersion: '0.99.0-test',
+    inlinedJson: [],
     inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
     outputPath: path.resolve(outputPath),
     targetHash: 'aaaa1111',
