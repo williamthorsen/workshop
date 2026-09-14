@@ -268,7 +268,7 @@ An import binding no name that the runner could be asked for -- a namespace impo
 | `1`  | Ran and found problems: failed checks, a kit that fails `verify`, a kit that fails to compile |
 | `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error               |
 
-The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that cannot complete a kit exits `2` even when the kits that ran found problems, and still reports what it collected. A failure that nothing awaits also exits `2`, but it ends the run at once, and `--json` then emits the [error envelope](json-output.md#error-envelope) rather than the report.
+The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that cannot complete a kit exits `2` even when the kits that ran found problems, and still reports what it collected. A failure that nothing awaits and that surfaces while the run is in progress also exits `2`, but it ends the run at once, and `--json` then emits the [error envelope](json-output.md#error-envelope) rather than the report.
 
 ## Listing kits
 

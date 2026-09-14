@@ -67,7 +67,7 @@ A checklist has either `checks` or `groups`, never both.
 | `fix`      | `string`                                          | --                          | Remediation, shown when the check fails       |
 | `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes    |
 
-A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so it ends the whole run with exit code `2` and an `internal` error.
+A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it surfaces while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
 
 A check returns a boolean or a `CheckOutcome`:
 
