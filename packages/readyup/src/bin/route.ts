@@ -9,7 +9,7 @@ import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
-import { configError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { configError, internalError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
@@ -60,6 +60,20 @@ export async function routeCommand(args: string[]): Promise<number> {
   } catch (error: unknown) {
     return reportFailure(error, json);
   }
+}
+
+/**
+ * Renders a failure that no awaited call observed, and returns its exit code.
+ *
+ * The escape is itself the defect, so the failure is classified `internal` whatever the escaped value's own
+ * classification, and its message is kept in the text.
+ */
+export function reportEscapedFailure(error: unknown, json: boolean): number {
+  const escaped = internalError(`Nothing awaited this failure: ${describeError(error)}`, {
+    cause: error,
+    hint: 'A check that starts async work must await it or return it.',
+  });
+  return reportFailure(escaped, json);
 }
 
 /**
