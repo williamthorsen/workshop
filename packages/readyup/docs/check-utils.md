@@ -20,14 +20,14 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 
 ## Filesystem
 
-| Function                            | Returns                             |
-| ----------------------------------- | ----------------------------------- |
-| `fileExists(path)`                  | File exists                         |
-| `filesExist(paths, options?)`       | `CheckOutcome` over several paths   |
-| `readFile(path)`                    | Contents, or `undefined` if missing |
-| `fileContains(path, pattern)`       | File matches a `RegExp`             |
-| `fileDoesNotContain(path, pattern)` | File does not match a `RegExp`      |
-| `commandExists(name)`               | Command is on `PATH`                |
+| Function                            | Returns                                               |
+| ----------------------------------- | ----------------------------------------------------- |
+| `fileExists(path)`                  | File exists                                           |
+| `filesExist(paths, options?)`       | `CheckOutcome` over several paths                     |
+| `readFile(path)`                    | Contents, or `undefined` if missing                   |
+| `fileContains(path, pattern)`       | File contains a substring or matches a `RegExp`       |
+| `fileDoesNotContain(path, pattern)` | File does not contain a substring or match a `RegExp` |
+| `commandExists(name)`               | Command is on `PATH`                                  |
 
 ## JSON
 
