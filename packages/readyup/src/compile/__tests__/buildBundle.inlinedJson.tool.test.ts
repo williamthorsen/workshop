@@ -11,6 +11,7 @@ const KIT_SOURCE = [
   `import { pickJson } from '${path.resolve(import.meta.dirname, '../pickJson.ts')}';`,
   `import dependencyData from 'tiny-dep/data.json' with { type: 'json' };`,
   `import { tiny } from 'tiny-dep';`,
+  `import data from './data.jsonc' with { type: 'json' };`,
   `import { helper } from './helper.ts';`,
   `import mixed from './mixed.json' with { type: 'json' };`,
   `import pkg from './package.json' with { type: 'json' };`,
@@ -20,7 +21,7 @@ const KIT_SOURCE = [
   `const legacy = require('./legacy.json');`,
   '',
   `export const meta = pickJson('./picked.json', ['version']);`,
-  'export const kit = { dependencyData, helper, legacy, meta, mixed, pkg, settings, shared, tiny };',
+  'export const kit = { data, dependencyData, helper, legacy, meta, mixed, pkg, settings, shared, tiny };',
 ].join('\n');
 
 const HELPER_SOURCE = [
@@ -44,7 +45,7 @@ describe('buildBundle inlined JSON', () => {
     writeFileSync(path.join(treeRoot, 'package.json'), JSON_CONTENT);
     writeFileSync(path.join(treeRoot, 'kit.ts'), KIT_SOURCE);
     writeFileSync(path.join(treeRoot, 'helper.ts'), HELPER_SOURCE);
-    for (const fileName of ['legacy.json', 'mixed.json', 'picked.json', 'settings.json', 'shared.json']) {
+    for (const fileName of ['data.jsonc', 'legacy.json', 'mixed.json', 'picked.json', 'settings.json', 'shared.json']) {
       writeFileSync(path.join(treeRoot, fileName), JSON_CONTENT);
     }
 
@@ -85,6 +86,13 @@ describe('buildBundle inlined JSON', () => {
     expect(inlinedJson).toContainEqual({
       importers: [path.join(treeRoot, 'kit.ts')],
       path: path.join(treeRoot, 'legacy.json'),
+    });
+  });
+
+  it('lists a file loaded as JSON through an import attribute, whatever its extension', () => {
+    expect(inlinedJson).toContainEqual({
+      importers: [path.join(treeRoot, 'kit.ts')],
+      path: path.join(treeRoot, 'data.jsonc'),
     });
   });
 

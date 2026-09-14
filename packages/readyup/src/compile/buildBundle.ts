@@ -217,8 +217,10 @@ function collectInlinedJson(metafileInputs: Metafile['inputs'], workingDir: stri
   const importersByPath = new Map<string, Set<string>>();
   for (const [key, input] of Object.entries(metafileInputs)) {
     const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
-    // `buildBundle` configures no loaders, so esbuild's JSON loader applies to this extension alone.
-    if (!resolvedPath.endsWith('.json') || isDependencyFile(resolvedPath)) continue;
+    // `buildBundle` configures no loaders, so esbuild's JSON loader reads a `.json` file and any file imported
+    // `with { type: 'json' }`.
+    const isJson = resolvedPath.endsWith('.json') || input.with?.['type'] === 'json';
+    if (!isJson || isDependencyFile(resolvedPath)) continue;
     importersByPath.set(resolvedPath, new Set());
   }
 
