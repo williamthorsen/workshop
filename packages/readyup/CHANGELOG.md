@@ -2,6 +2,91 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.37.0 — 2026-09-15
+
+### 🎉 Features
+
+- Accept as const literals in the authoring types and check utilities (#459)
+
+  - Makes the array fields of `RdyCheck`, `RdyChecklist`, `RdyStagedChecklist`, `RdyKit`, and `RdyConfig` readonly, so a kit or config literal asserted `as const` at any level typechecks through the `define*` helpers.
+  - Widens the list parameters of `filesExist`, `hasJsonFields`, and `missingFrom` in `readyup/check-utils` to readonly arrays, so a kit can pass them a list asserted `as const`.
+
+- Add rdy compile --recursive to compile every kit project in one run (#460)
+
+  - Replaces the `pnpm -r exec rdy compile` guidance in `docs/publishing-kits.md` with `rdy compile --recursive`, which produces the same result for each project as a plain `rdy compile` run in the project's directory but compiles every project with the readyup and esbuild that run the command rather than with each workspace's own install.
+
+- Add --all to rdy run to run every kit in the selected source (#461)
+
+  - Adds `--all` to `rdy run`: With no source flag it runs the project's compiled kits, and with `--jit`, `--internal`, `--from`, or `--packages` it runs every kit in that source, including each configured package's kits other than `default`.
+
+- Cache remote kit and manifest fetches, and add --no-cache (#462)
+
+  - Makes `rdy run` and `rdy list` reuse a cached remote kit or manifest without a request for as long as the server's `Cache-Control` header allows (5 minutes on GitHub, 15 on Bitbucket), so a kit pushed within that window can run from the older copy.
+  - Adds a `--no-cache` flag to `rdy run` and `rdy list` that forces a fetch of every remote kit and manifest even when a fresh copy is cached.
+
+- Accept --config in rdy run, compile, and list (#463)
+
+  - Adds a `--config <path>` option to `rdy run`, `rdy compile`, and `rdy list` that loads the named file in place of `.config/readyup.config.ts`. Directories named inside the file resolve against the working directory, as they do for the default config, not against the file's own directory.
+
+- Warn when rdy compile bundles a JSON file into a kit (#466)
+
+  - Adds the `json-inlined` warning, which reports that every field of a bundled JSON file outside `node_modules` ships in the kit and that any edit to the file marks the kit stale, and which suggests replacing the import with `pickJson` to inline only the fields that the kit names.
+  - Fixes the issue that `rdy compile` and `rdy verify --rebuild` failed with `ENOENT` on a kit whose modules imported the same JSON file both with and without an import attribute.
+
+- Show kit checklists and checklist selection hints in rdy list (#467)
+
+  - Adds a row for each checklist beneath its kit in every human-readable `rdy list` view, with names that `rdy list` reads from the manifest written by `rdy compile`, so a kit that has not been compiled shows no checklists.
+  - Adds `checklists` to `rdy list --json` rows for kits published by packages, which previously omitted the field.
+  - Makes `rdy list` and `rdy init` exit with a usage error when given a positional argument, which both commands previously ignored.
+
+- Add compile.exclude and fail sweep sources that share a kit name (#469)
+
+  - Adds `compile.exclude`, a glob or list of globs that removes sources from a `rdy compile` sweep even when `compile.include` matches them, and lets `compile.include` take a list as well, so that a sweep can compile kits in subdirectories while leaving out helper modules and tests.
+  - Makes a sweep fail each source that shares its kit name with another, such as `deploy.ts` and `ops/deploy.ts`, instead of writing two manifest entries under that name, while the other kits still compile and `rdy compile` exits 1.
+
+- Prune orphaned kit bundles in rdy compile and report unrecorded ones (#472)
+
+  - Makes a batch or `--recursive` `rdy compile` delete the bundle of a kit whose source is gone, instead of leaving the `.js` file for `rdy run <name>` and remote consumers to load.
+  - Makes `rdy compile` keep a bundle edited since it was compiled, and fail until `rdy compile --force` deletes it.
+  - Extends the `freshness` check in readyup's `default` and `publishing` kits to fail on every unrecorded bundle under `.readyup/kits`, not only when the manifest records no kits.
+
+  Migration: Delete by hand each bundle named by a `bundle-unrecorded` warning or by the `freshness` check. A bundle left behind by an earlier `rdy compile` is no longer recorded in the manifest, so the upgraded compile reports it rather than deleting it, and the `publishing` kit fails until it is deleted.
+
+- Let a failing check outcome describe its own fix (#478)
+
+  - Adds an optional `fix` to `CheckOutcome`, which `rdy` reports in place of the check's `fix` when the outcome fails.
+
+### 🐛 Bug fixes
+
+- Report failures that escape every awaited call instead of crashing (#464)
+
+  - Makes `rdy` end the run at once with exit code `2` when such a failure surfaces while the run is still in progress, and report it on stderr or, under `--json`, as an `internal` error envelope in place of the report.
+
+- Accept a substring in fileContains and fileDoesNotContain (#465)
+
+  - Fixes inconsistent matching for a `g`- or `y`-flagged regex reused across calls, which could match a file on one call and fail on the next because a matching call advanced its `lastIndex`.
+
+- Count tagged-template and member-access uses in countPackageUsage (#473)
+
+  - Fixes the issue that `countPackageUsage` omitted every use of an export written as a template tag (`` dedent`…` ``) or reached through a member (`IntSeededRng.spawn(…)`), which led an adoption check built on the count to report partial or no adoption for a project that uses the export throughout.
+  - Stops `countPackageUsage` from counting a call through a namespace import (`errors.describeError(…)`), which it counted before.
+
+- Abort remote kit and manifest fetches that take longer than 30 seconds (#474)
+
+  - Fixes the issue that `rdy` would hang until the end of Node `fetch`'s 5-minute timeout when a host serving a remote kit or manifest accepted the connection but never responded, or stopped sending partway through the response.
+
+### 📦 Dependencies
+
+- Upgrade es-module-lexer to v3 (#477)
+
+  - Keeps `scanReadyupImports` from reporting a dynamic import such as ``import(`readyup/${x}`)``, which v3 reports as the glob specifier `readyup/*`, because passing that specifier through would make `rdy run` reject the kit for an unknown subpath.
+
+### 📚 Documentation
+
+- Apply the writing standard to the README and reference docs (#458)
+
+  - Rewrites the prose of `packages/readyup/README.md` and the six files in `packages/readyup/docs/` to follow `plain-speech` and `williamthorsen-writing-preferences`.
+
 ## 0.36.0 — 2026-09-12
 
 ### 🎉 Features
