@@ -21,7 +21,8 @@ export interface WarnOnUnrecordedBundlesArgs {
  * returns one warning per bundle.
  *
  * Nothing shows that a compile wrote such a bundle, so it is reported rather than deleted. A bundle named for a swept
- * kit is accounted for whatever became of that kit, because the bundle left by a failed compile still has its source. The candidates are the files that `rdy run` and `rdy list` treat as kits: not hidden, and not nested.
+ * kit is accounted for whatever became of that kit, because the bundle left by a failed compile still has its source.
+ * The candidates are the files that `rdy run` and `rdy list` treat as kits: not hidden, and not nested.
  *
  * The stderr line is written in both output modes; the returned entries are what JSON mode adds to the payload.
  */
