@@ -63,6 +63,14 @@ describe(resolveRemedies, () => {
       ]);
     });
 
+    it('names a forced compile for a vanished source whose bundle has drifted, which a plain compile keeps', () => {
+      const verdicts = buildVerdicts({ drift: buildDrift(), source: buildMissingSource() });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
+        'Restore kits/deploy.ts, or run `rdy compile --force` to remove the kit and its bundle.',
+      ]);
+    });
+
     it('falls back to a recompile where the entry records no source to name', () => {
       const kit: RdyManifestKit = { name: 'deploy', path: 'kits/deploy.js' };
 
