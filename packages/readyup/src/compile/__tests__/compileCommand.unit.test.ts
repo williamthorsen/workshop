@@ -507,12 +507,16 @@ describe(compileCommand, () => {
 
     // region | Helpers
 
-    /** Arranges a config-driven sweep that finds no kits. */
+    /** Arranges a config-driven sweep that finds no kits, over a manifest that records none where it exists. */
     function arrangeEmptySweep(existence: ArrangeExistenceArgs): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
       });
       arrangeExistence(existence);
+      mockReadManifest.mockImplementation((manifestPath: string) => {
+        if (!existence.manifestExists) throw new ManifestNotFoundError(manifestPath);
+        return { version: 1, kits: [] };
+      });
     }
 
     // endregion | Helpers

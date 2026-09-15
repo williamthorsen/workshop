@@ -24,6 +24,7 @@ import {
   type JsonCompileKitEntry,
   type JsonCompileOutput,
   type JsonCompileProjectEntry,
+  type JsonCompileRemovedEntry,
   SCHEMA_VERSION,
 } from '../schemas/compileOutputSchema.ts';
 import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
@@ -32,6 +33,7 @@ import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
+import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
 import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
 import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
 
@@ -46,6 +48,9 @@ const compileOptions = {
   // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
+
+/** Clause explaining why a bundle is an orphan, shared by its human line and its JSON reason. */
+const NO_SOURCE_CLAUSE = 'no source compiles to it';
 
 /** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */
 const TRANSFORM_ARROW = '->';
@@ -153,8 +158,9 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
   if (drift !== undefined) {
     writeHuman(formatDriftLine(relInput, drift.status), json);
-    writeHuman('\nRe-run with --force to overwrite, or move edits into the source.\n', json);
-    return finishCompile([{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }], [], json);
+    writeHuman(`\n${formatDriftRemedy({ hasOrphan: false, hasSourced: true })}\n`, json);
+    const kits: JsonCompileKitEntry[] = [{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }];
+    return finishCompile({ kits, removed: [], warnings: [] }, json);
   }
 
   let result;
@@ -166,7 +172,10 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
     const message = describeError(error);
     process.stderr.write(`Error: ${message}\n`);
-    return finishCompile([{ name: kitName, status: 'failed', error: message }], [], json);
+    return finishCompile(
+      { kits: [{ name: kitName, status: 'failed', error: message }], removed: [], warnings: [] },
+      json,
+    );
   }
 
   const relOutput = path.relative(process.cwd(), result.outputPath);
@@ -192,7 +201,13 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     }
   }
 
-  return finishCompile([{ name: kitName, status: 'compiled' }], warnings, json);
+  return finishCompile({ kits: [{ name: kitName, status: 'compiled' }], removed: [], warnings }, json);
+}
+
+/** What a compile run did, gathered for its payload and its exit code. */
+interface CompileRunOutcome extends ProjectCompileOutcome {
+  /** Every project that a recursive compile visited; absent from any other run. */
+  projects?: JsonCompileProjectEntry[];
 }
 
 /**
@@ -200,17 +215,12 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
  *
  * A kit left alone because it drifted counts against the run just as a failed one does: Both mean
  * the compiled output on disk is not what the source says it should be. A warning counts against nothing,
- * and reaches the payload only where one was raised.
+ * and reaches the payload only where one was raised, as a removal does.
  *
- * `projects` is given by a recursive compile alone, and a project that failed counts against the run
- * whether or not it contributed a kit.
+ * A project that failed counts against the run whether or not it contributed a kit.
  */
-function finishCompile(
-  kits: JsonCompileKitEntry[],
-  warnings: RaisedWarning[],
-  json: boolean,
-  projects?: JsonCompileProjectEntry[],
-): number {
+function finishCompile(outcome: CompileRunOutcome, json: boolean): number {
+  const { kits, projects, removed, warnings } = outcome;
   const passed = kits.every((kit) => kit.status === 'compiled') && (projects ?? []).every((project) => project.passed);
 
   if (json) {
@@ -219,6 +229,7 @@ function finishCompile(
       passed,
       kits,
       ...(projects !== undefined && { projects }),
+      ...(removed.length > 0 && { removed }),
       ...(warnings.length > 0 && { warnings }),
     };
     process.stdout.write(JSON.stringify(output) + '\n');
@@ -256,7 +267,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 
-  const { kits, warnings } = await compileProject({
+  const outcome = await compileProject({
     projectDir: process.cwd(),
     config,
     manifestPath,
@@ -264,7 +275,7 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     skipManifest,
     json,
   });
-  return finishCompile(kits, warnings, json);
+  return finishCompile(outcome, json);
 }
 
 /** Arguments for the recursive compile path. */
@@ -288,11 +299,12 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', json);
-    return finishCompile([], [], json, []);
+    return finishCompile({ kits: [], projects: [], removed: [], warnings: [] }, json);
   }
 
   const kits: JsonCompileKitEntry[] = [];
   const projectEntries: JsonCompileProjectEntry[] = [];
+  const removed: JsonCompileRemovedEntry[] = [];
   const warnings: RaisedWarning[] = [];
   let hasWrittenBlock = false;
 
@@ -309,6 +321,7 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
     const outcome = await compileSweptProject(project, { root, force, skipManifest, json });
     kits.push(...outcome.kits);
     projectEntries.push(outcome.entry);
+    removed.push(...outcome.removed);
     warnings.push(...outcome.warnings);
   }
 
@@ -320,7 +333,7 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
     );
   }
 
-  return finishCompile(kits, warnings, json, projectEntries);
+  return finishCompile({ kits, projects: projectEntries, removed, warnings }, json);
 }
 
 /** Arguments shared by every project that a recursive compile visits. */
@@ -345,7 +358,7 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
   const { root, force, skipManifest, json } = args;
 
   try {
-    const { kits, warnings } = await compileProject({
+    const outcome = await compileProject({
       projectDir: project.absolutePath,
       config: project.config,
       manifestPath: project.manifestPath,
@@ -355,13 +368,12 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
       sweep: { root, project: project.dir },
     });
     return {
-      kits,
-      entry: { project: project.dir, passed: kits.every((kit) => kit.status === 'compiled') },
-      warnings,
+      ...outcome,
+      entry: { project: project.dir, passed: outcome.kits.every((kit) => kit.status === 'compiled') },
     };
   } catch (error: unknown) {
     if (!(error instanceof RdyError)) throw error;
-    return { kits: [], entry: reportProjectFailure(project.dir, error.message), warnings: [] };
+    return { kits: [], entry: reportProjectFailure(project.dir, error.message), removed: [], warnings: [] };
   }
 }
 
@@ -384,9 +396,10 @@ interface CompileProjectArgs {
   sweep?: SweepContext;
 }
 
-/** Each kit's outcome in a project compile, and the warnings raised by the kits that compiled. */
+/** Each kit's outcome in a project compile, the bundles that it removed, and the warnings that its kits raised. */
 interface ProjectCompileOutcome {
   kits: JsonCompileKitEntry[];
+  removed: JsonCompileRemovedEntry[];
   warnings: RaisedWarning[];
 }
 
@@ -399,17 +412,19 @@ interface SweepContext {
 }
 
 /**
- * Compiles every matching `.ts` file in a project's config-driven source directory, returning each kit's outcome
- * and the warnings that the compiled kits raised.
+ * Compiles every matching `.ts` file in a project's config-driven source directory, prunes the bundles of kits that
+ * no source compiles to any longer, and returns what became of each kit.
  *
  * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
  * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
  * the sweep -- an unreadable source directory, an unwritable manifest -- still throw, because they say
  * nothing about any individual kit.
+ *
+ * A sweep that finds no sources still prunes, and writes the manifest only where one exists: That manifest may list
+ * kits since deleted, and a project holding neither kits nor a manifest gets none seeded for it.
  */
 async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileOutcome> {
   const { projectDir, config, manifestPath, force, skipManifest, json, sweep } = args;
-  const projectField = sweep === undefined ? {} : { project: sweep.project };
 
   const srcDir = path.resolve(projectDir, config.compile.srcDir);
   const outDir = path.resolve(projectDir, config.compile.outDir);
@@ -426,90 +441,67 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
     }
   }
 
-  if (tsFiles.length === 0) {
-    const displayRoot = sweep?.root ?? projectDir;
-    reportEmptySweep({ displayRoot, srcDir, srcDirExists, skipManifest, manifestPath, json });
-    return { kits: [], warnings: [] };
+  const isEmptySweep = tsFiles.length === 0;
+  if (!isEmptySweep) {
+    const anchor = sweep?.root ?? resolveWorkspaceAnchor(srcDir, projectDir);
+    writeHuman(formatSectionHeading(formatSweepLabel(anchor, srcDir, outDir)), json);
   }
-
-  const anchor = sweep?.root ?? resolveWorkspaceAnchor(srcDir, projectDir);
-  const relSrcDir = path.relative(anchor, srcDir);
-  const relOutDir = path.relative(anchor, outDir);
-  const label =
-    srcDir === outDir ? `Compiling kits in ${relSrcDir}` : `Compiling kits from ${relSrcDir} to ${relOutDir}`;
-  writeHuman(formatSectionHeading(label), json);
 
   const manifestDir = path.dirname(manifestPath);
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
-  const kitEntries: RdyManifestKit[] = [];
-  const kitResults: JsonCompileKitEntry[] = [];
-  const warnings: RaisedWarning[] = [];
-  let skippedCount = 0;
-  let failedCount = 0;
+  const sourceContext: SourceSweepContext = {
+    existingKitsByName,
+    force,
+    json,
+    manifestDir,
+    outDir,
+    project: sweep?.project,
+    skipManifest,
+    srcDir,
+    sweepRoot: sweep?.root,
+  };
 
+  const sources: SourceOutcome[] = [];
   for (const fileName of tsFiles) {
-    const srcFile = path.join(srcDir, fileName);
-    const outFile = path.join(outDir, fileName.replace(/\.ts$/, '.js'));
-    const kitName = path.basename(outFile, '.js');
-
-    const drift = detectDrift({ skipManifest, force, existingKit: existingKitsByName.get(kitName), manifestDir });
-    if (drift !== undefined) {
-      writeHuman(formatDriftLine(fileName, drift.status), json);
-      kitEntries.push(drift.existingKit);
-      kitResults.push({ name: kitName, ...projectField, status: 'skipped', error: formatDriftReason(drift.status) });
-      skippedCount += 1;
-      continue;
-    }
-
-    try {
-      const result = await compileConfig(srcFile, outFile);
-      const metadata = await validateCompiledOutput(result.outputPath);
-      const outName = fileName.replace(/\.ts$/, '.js');
-      writeHuman(formatResultLine(fileName, outName, result.changed), json);
-
-      const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
-      kitEntries.push(
-        buildManifestKit(kitName, metadata, {
-          bundledDependencies: result.bundledDependencies,
-          esbuildVersion: result.esbuildVersion,
-          inputs: closure.inputs,
-          path: path.relative(manifestDir, path.resolve(result.outputPath)),
-          source: path.relative(manifestDir, srcFile),
-          sourceHash: closure.sourceHash,
-          targetHash: result.targetHash,
-        }),
-      );
-      kitResults.push({ name: kitName, ...projectField, status: 'compiled' });
-      warnings.push(...warnOnInlinedJson(kitName, result.inlinedJson));
-    } catch (error: unknown) {
-      // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
-      // goes on. The sweep replaces the whole manifest, so a prior record has to be pushed back to
-      // survive, and it still describes the tree: An esbuild failure leaves the previous output and
-      // its hash intact, and a validation failure deletes the output for `verify` to report missing.
-      const existingKit = existingKitsByName.get(kitName);
-      if (existingKit !== undefined) kitEntries.push(existingKit);
-
-      const message = describeError(error);
-      const failedSource = sweep === undefined ? fileName : path.relative(sweep.root, srcFile);
-      process.stderr.write(`Error compiling ${failedSource}: ${message}\n`);
-      kitResults.push({ name: kitName, ...projectField, status: 'failed', error: message });
-      failedCount += 1;
-    }
+    sources.push(await compileSource(fileName, sourceContext));
   }
 
-  if (skippedCount > 0) {
+  const kitEntries = sources.flatMap((source) => (source.entry === undefined ? [] : [source.entry]));
+  const kitResults = sources.map((source) => source.kit);
+  const warnings = sources.flatMap((source) => source.warnings);
+  const skippedCount = kitResults.filter((kit) => kit.status === 'skipped').length;
+  const failedCount = kitResults.filter((kit) => kit.status === 'failed').length;
+
+  const pruned = pruneOrphanedEntries({
+    existingEntries: existingKitsByName.values(),
+    force,
+    manifestDir,
+    outDir,
+    sweptKitNames: new Set(kitResults.map((kit) => kit.name)),
+  });
+  kitEntries.push(...pruned.keptEntries);
+  const writesManifest = !skipManifest && (!isEmptySweep || existsSync(manifestPath));
+
+  if (isEmptySweep) {
+    const manifestOutcome = formatManifestOutcome(skipManifest, writesManifest, kitEntries.length);
     writeHuman(
-      `\n${skippedCount} of ${pluralizeWithCount(tsFiles.length, 'kit')} skipped due to drift.` +
-        ` Re-run with --force to overwrite, or move edits into the source.\n`,
+      formatEmptySweepLine({ displayRoot: sweep?.root ?? projectDir, manifestOutcome, srcDir, srcDirExists }),
       json,
     );
   }
 
-  if (failedCount > 0) {
-    writeHuman(`\n${failedCount} of ${pluralizeWithCount(tsFiles.length, 'kit')} failed to compile.\n`, json);
-  }
+  const orphanReport = reportOrphans(pruned.orphans, { json, outDir, project: sweep?.project });
+  kitResults.push(...orphanReport.kits);
 
-  if (!skipManifest) {
+  const tally = formatSweepTally({
+    compileFailedCount: failedCount,
+    kitCount: tsFiles.length + pruned.orphans.length,
+    orphanReport,
+    sourcedSkippedCount: skippedCount,
+  });
+  if (tally !== '') writeHuman(tally, json);
+
+  if (writesManifest) {
     try {
       kitEntries.sort((a, b) => a.name.localeCompare(b.name));
       writeManifest(manifestPath, { version: 1, kits: kitEntries });
@@ -518,43 +510,201 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
     }
   }
 
-  return { kits: kitResults, warnings };
+  return { kits: kitResults, removed: orphanReport.removed, warnings };
 }
 
-/** Arguments for the no-kits early return of a project compile. */
-interface ReportEmptySweepArgs {
-  /** Directory against which the message names the source directory. */
-  displayRoot: string;
-  srcDir: string;
-  srcDirExists: boolean;
-  skipManifest: boolean;
-  manifestPath: string;
+/** What a project sweep shares with each of its sources. */
+interface SourceSweepContext {
+  existingKitsByName: Map<string, RdyManifestKit>;
+  force: boolean;
   json: boolean;
+  manifestDir: string;
+  outDir: string;
+  /** The project named on the kit's JSON entry, given by a recursive compile alone. */
+  project: string | undefined;
+  skipManifest: boolean;
+  srcDir: string;
+  /** Directory against which a failed source is named, given by a recursive compile alone. */
+  sweepRoot: string | undefined;
+}
+
+/** One source's contribution to its project's compile. */
+interface SourceOutcome {
+  /** The manifest entry recording the kit, absent for a kit that failed before it was ever recorded. */
+  entry: RdyManifestKit | undefined;
+  kit: JsonCompileKitEntry;
+  warnings: RaisedWarning[];
+}
+
+/** Compiles one source of a project sweep behind the drift gate, and returns its contribution to the project. */
+async function compileSource(fileName: string, context: SourceSweepContext): Promise<SourceOutcome> {
+  const { existingKitsByName, force, json, manifestDir, outDir, project, skipManifest, srcDir, sweepRoot } = context;
+  const projectField = project === undefined ? {} : { project };
+  const srcFile = path.join(srcDir, fileName);
+  const outName = fileName.replace(/\.ts$/, '.js');
+  const outFile = path.join(outDir, outName);
+  const kitName = path.basename(outFile, '.js');
+  const existingKit = existingKitsByName.get(kitName);
+
+  const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
+  if (drift !== undefined) {
+    writeHuman(formatDriftLine(fileName, drift.status), json);
+    return {
+      entry: drift.existingKit,
+      kit: { name: kitName, ...projectField, status: 'skipped', error: formatDriftReason(drift.status) },
+      warnings: [],
+    };
+  }
+
+  try {
+    const result = await compileConfig(srcFile, outFile);
+    const metadata = await validateCompiledOutput(result.outputPath);
+    writeHuman(formatResultLine(fileName, outName, result.changed), json);
+
+    const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
+    return {
+      entry: buildManifestKit(kitName, metadata, {
+        bundledDependencies: result.bundledDependencies,
+        esbuildVersion: result.esbuildVersion,
+        inputs: closure.inputs,
+        path: path.relative(manifestDir, path.resolve(result.outputPath)),
+        source: path.relative(manifestDir, srcFile),
+        sourceHash: closure.sourceHash,
+        targetHash: result.targetHash,
+      }),
+      kit: { name: kitName, ...projectField, status: 'compiled' },
+      warnings: warnOnInlinedJson(kitName, result.inlinedJson),
+    };
+  } catch (error: unknown) {
+    // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
+    // goes on. The sweep replaces the whole manifest, so the kit keeps its prior record, which still
+    // describes the tree: An esbuild failure leaves the previous output and its hash intact, and a
+    // validation failure deletes the output for `verify` to report missing.
+    const message = describeError(error);
+    const failedSource = sweepRoot === undefined ? fileName : path.relative(sweepRoot, srcFile);
+    process.stderr.write(`Error compiling ${failedSource}: ${message}\n`);
+    return {
+      entry: existingKit,
+      kit: { name: kitName, ...projectField, status: 'failed', error: message },
+      warnings: [],
+    };
+  }
+}
+
+/** Arguments for reporting the orphans of a project compile. */
+interface ReportOrphansArgs {
+  json: boolean;
+  /** Directory against which a bundle is named, as a source is named against the source directory. */
+  outDir: string;
+  /** The project named on each JSON entry, given by a recursive compile alone. */
+  project: string | undefined;
+}
+
+/** What reporting a sweep's orphans contributes to the project's outcome. */
+interface OrphanReport {
+  failedCount: number;
+  kits: JsonCompileKitEntry[];
+  removed: JsonCompileRemovedEntry[];
+  skippedCount: number;
 }
 
 /**
- * Reports a sweep that found no kits, and settles what becomes of the manifest.
+ * Writes a line for each orphan and returns its contribution to the project's outcome.
  *
- * An existing manifest may still list kits that have since been deleted, so it is emptied rather than
- * left stale. A project holding neither kits nor a manifest is not one that this sweep describes, and
- * gets none seeded for it.
+ * A removed bundle is a removal rather than a kit, so it counts against nothing. A kept one is a kit whose bundle is
+ * not what its manifest entry says it should be, and counts against the run as any other skipped or failed kit does.
  */
-function reportEmptySweep(args: ReportEmptySweepArgs): void {
-  const { displayRoot, srcDir, srcDirExists, skipManifest, manifestPath, json } = args;
+function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): OrphanReport {
+  const { json, outDir, project } = args;
+  const projectField = project === undefined ? {} : { project };
+  const report: OrphanReport = { failedCount: 0, kits: [], removed: [], skippedCount: 0 };
 
-  const relSrc = path.relative(displayRoot, srcDir);
-  const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
-  const writesManifest = !skipManifest && existsSync(manifestPath);
+  for (const orphan of orphans) {
+    const { bundlePath, name } = orphan;
+    const bundleName = path.relative(outDir, bundlePath);
 
-  writeHuman(`${reason}${formatManifestOutcome(skipManifest, writesManifest)}\n`, json);
-
-  if (writesManifest) {
-    try {
-      writeManifest(manifestPath, { version: 1, kits: [] });
-    } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
+    switch (orphan.kind) {
+      case 'removed':
+        writeHuman(formatRemovalLine(bundleName), json);
+        report.removed.push({ name, ...projectField, path: path.relative(process.cwd(), bundlePath) });
+        break;
+      case 'drift':
+        writeHuman(formatDriftLine(bundleName, orphan.status, NO_SOURCE_CLAUSE), json);
+        report.kits.push({
+          name,
+          ...projectField,
+          status: 'skipped',
+          error: `${formatDriftReason(orphan.status)}; ${NO_SOURCE_CLAUSE}`,
+        });
+        report.skippedCount += 1;
+        break;
+      case 'failed':
+        process.stderr.write(`Error removing ${path.relative(process.cwd(), bundlePath)}: ${orphan.message}\n`);
+        report.kits.push({ name, ...projectField, status: 'failed', error: orphan.message });
+        report.failedCount += 1;
+        break;
     }
   }
+
+  return report;
+}
+
+/** Arguments for the line reporting a sweep that found no sources. */
+interface EmptySweepLineArgs {
+  /** Directory against which the line names the source directory. */
+  displayRoot: string;
+  /** The clause naming what became of the manifest, which may be empty. */
+  manifestOutcome: string;
+  srcDir: string;
+  srcDirExists: boolean;
+}
+
+/** Returns the line reporting a sweep that found no sources, and why it found none. */
+function formatEmptySweepLine({ displayRoot, manifestOutcome, srcDir, srcDirExists }: EmptySweepLineArgs): string {
+  const relSrc = path.relative(displayRoot, srcDir);
+  const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
+  return `${reason}${manifestOutcome}\n`;
+}
+
+/** Returns the label heading a sweep, naming its directories against `anchor`. */
+function formatSweepLabel(anchor: string, srcDir: string, outDir: string): string {
+  const relSrcDir = path.relative(anchor, srcDir);
+  if (srcDir === outDir) return `Compiling kits in ${relSrcDir}`;
+  return `Compiling kits from ${relSrcDir} to ${path.relative(anchor, outDir)}`;
+}
+
+/** Counts of the kits that a sweep left out of line with their sources. */
+interface SweepTally {
+  /** Kits whose source failed to compile. */
+  compileFailedCount: number;
+  /** Every kit that the sweep reported on, orphans included. */
+  kitCount: number;
+  orphanReport: OrphanReport;
+  /** Kits with a source whose bundle had drifted. */
+  sourcedSkippedCount: number;
+}
+
+/** Returns the lines closing a sweep, one per kind of problem that it left, or an empty string where it left none. */
+function formatSweepTally(tally: SweepTally): string {
+  const { compileFailedCount, orphanReport, sourcedSkippedCount } = tally;
+  const kits = pluralizeWithCount(tally.kitCount, 'kit');
+  const lines: string[] = [];
+
+  const skippedCount = sourcedSkippedCount + orphanReport.skippedCount;
+  if (skippedCount > 0) {
+    const remedy = formatDriftRemedy({ hasOrphan: orphanReport.skippedCount > 0, hasSourced: sourcedSkippedCount > 0 });
+    lines.push(`\n${skippedCount} of ${kits} skipped due to drift. ${remedy}\n`);
+  }
+
+  if (compileFailedCount > 0) {
+    lines.push(`\n${compileFailedCount} of ${kits} failed to compile.\n`);
+  }
+
+  if (orphanReport.failedCount > 0) {
+    lines.push(`\n${orphanReport.failedCount} of ${kits} could not be removed.\n`);
+  }
+
+  return lines.join('');
 }
 
 /** The fields that a compile supplies to a manifest kit entry, with paths stated against the manifest. */
@@ -712,13 +862,36 @@ function formatResultLine(srcName: string, outName: string, changed: boolean): s
   return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('kit')}${outName}\n`;
 }
 
-/** Returns a warning line for a source, with the hash mismatch from `status` in a block beneath. */
-function formatDriftLine(srcName: string, status: Extract<DriftStatus, { kind: 'drift' }>): string {
+/** Returns a warning line for a kit, with the hash mismatch from `status` and any further `clause` in a block beneath. */
+function formatDriftLine(name: string, status: Extract<DriftStatus, { kind: 'drift' }>, clause?: string): string {
   const target = path.basename(status.resolvedPath);
-  const claim = getLayout().formatCheckLine({ token: 'failedWarn', name: srcName });
-  const reason = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
+  const claim = getLayout().formatCheckLine({ token: 'failedWarn', name });
+  const mismatch = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
+  const reason = clause === undefined ? mismatch : `${mismatch}; ${clause}`;
 
   return [claim, ...getLayout().formatReasonBlock([reason])].join('\n') + '\n';
+}
+
+/** Kinds of kit among those that a sweep left alone because their bundles drifted. */
+interface DriftedKitKinds {
+  /** A kit that no source compiles to any longer. */
+  hasOrphan: boolean;
+  /** A kit compiled from a source that the sweep found. */
+  hasSourced: boolean;
+}
+
+/** Returns what to do about a sweep's drifted kits, where an orphan has no source into which to move its edits. */
+function formatDriftRemedy({ hasOrphan, hasSourced }: DriftedKitKinds): string {
+  if (!hasOrphan) return 'Re-run with --force to overwrite, or move edits into the source.';
+  if (!hasSourced) return 'Re-run with --force to remove, or restore the source.';
+  return 'Re-run with --force to overwrite or remove, or move edits into the source.';
+}
+
+/** Returns a line reporting a bundle removed because no source compiles to it. */
+function formatRemovalLine(bundleName: string): string {
+  return (
+    getLayout().formatCheckLine({ token: 'passed', name: bundleName, detail: `removed, ${NO_SOURCE_CLAUSE}` }) + '\n'
+  );
 }
 
 /** Returns a section heading as a single writable string, newline-terminated. */
@@ -729,11 +902,13 @@ function formatSectionHeading(label: string): string {
 /**
  * Returns the clause naming what a sweep that found no kits did with the manifest.
  *
- * Empty under `--skip-manifest`, where the manifest was never consulted and so has nothing to report.
+ * Empty under `--skip-manifest`, where the manifest was never consulted and so has nothing to report. A written
+ * manifest lists no kits unless an orphan kept its entry.
  */
-function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean): string {
+function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, entryCount: number): string {
   if (skipManifest) return '';
-  return writesManifest ? '; manifest now lists no kits' : '; manifest not written';
+  if (!writesManifest) return '; manifest not written';
+  return `; manifest now lists ${entryCount === 0 ? 'no kits' : pluralizeWithCount(entryCount, 'kit')}`;
 }
 
 /**
