@@ -59,28 +59,29 @@ A checklist has either `checks` or `groups`, never both.
 
 ## Checks
 
-| Field      | Type                                              | Default                     | Meaning                                       |
-| ---------- | ------------------------------------------------- | --------------------------- | --------------------------------------------- |
-| `name`     | `string`                                          | required                    | The claim being asserted                      |
-| `id`       | `string`                                          | --                          | What a pragma writes to suppress its findings |
-| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                   |
-| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`         |
-| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass     |
-| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run         |
-| `fix`      | `string`                                          | --                          | Remediation, shown when the check fails       |
-| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes    |
+| Field      | Type                                              | Default                     | Meaning                                                     |
+| ---------- | ------------------------------------------------- | --------------------------- | ----------------------------------------------------------- |
+| `name`     | `string`                                          | required                    | The claim being asserted                                    |
+| `id`       | `string`                                          | --                          | What a pragma writes to suppress its findings               |
+| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                                 |
+| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`                       |
+| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass                   |
+| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run                       |
+| `fix`      | `string`                                          | --                          | Remediation, shown on a failure whose outcome supplies none |
+| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes                  |
 
 A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it surfaces while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
 
 A check returns a boolean or a `CheckOutcome`:
 
-| Field      | Type       | Meaning                                                                      |
-| ---------- | ---------- | ---------------------------------------------------------------------------- |
-| `ok`       | `boolean`  | Whether the assertion holds                                                  |
-| `detail`   | `string`   | Why this status                                                              |
-| `progress` | `Progress` | `{ type: 'fraction', passedCount, count }` or `{ type: 'percent', percent }` |
+| Field      | Type       | Meaning                                                                         |
+| ---------- | ---------- | ------------------------------------------------------------------------------- |
+| `ok`       | `boolean`  | Whether the assertion holds                                                     |
+| `detail`   | `string`   | Why this status                                                                 |
+| `fix`      | `string`   | What to do about this failure, in place of the check's `fix`; ignored on a pass |
+| `progress` | `Progress` | `{ type: 'fraction', passedCount, count }` or `{ type: 'percent', percent }`    |
 
-A check naming located sites returns a `FindingOutcome` instead, and the runner derives all three from it:
+A check naming located sites returns a `FindingOutcome` instead, and the runner derives `ok`, `detail`, and `progress` from it:
 
 | Field          | Type               | Meaning                                                                         |
 | -------------- | ------------------ | ------------------------------------------------------------------------------- |
@@ -88,7 +89,7 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 | `adoptedCount` | `number`           | Sites already settled, the fraction's numerator; omitted, there is none         |
 | `scanned`      | `string[]`         | Paths that this check examined and read no other way; omitted, it declares none |
 
-`reported` marks the sites named by this check; the rest count toward the fraction and have no other effect. The runner drops the sites that a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, derives `ok` from whether any survived, and counts every survivor into the fraction. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
+`reported` marks the sites named by this check; the rest count toward the fraction and have no other effect. The runner drops the sites that a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, derives `ok` from whether any survived, and counts every survivor into the fraction. A failure's remediation is the check's `fix`. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
 
 `scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded automatically, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` when the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or using `fs` directly -- because nothing else can detect what those read.
 
@@ -127,7 +128,7 @@ Neither is a `quiet` check, though it looks like one: Its name renders only on a
 | skipped | inline, after the separator                             |
 | failed  | in a block beneath the claim, above any thrown `Error:` |
 
-Remediation is not detail. It belongs in `fix`.
+Remediation is not detail. It belongs in `fix`: the check's, or the failing outcome's when the remediation depends on which way the check failed.
 
 This kit exercises all three placements at three levels of nesting:
 
@@ -213,7 +214,7 @@ The third row is the failure mode to watch for: `skip` and `check` ran the ident
 
 **⚪ and 🚫 read differently.** ⚪ means the check does not apply; 🚫 means it never ran, because an ancestor failed or a [precondition](#preconditions) gated it. In a blocked subtree, the runner does not consult a descendant's own `skip`, so a check that would have reported "does not apply" renders as blocked instead. Read a 🚫 as evidence about an ancestor, never about the thing named by the blocked check.
 
-**Prefer a plain-string `fix`.** Outcome-specific remediation belongs in `detail`, which the check returns after running and which can therefore name what actually went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
+**Prefer a plain-string `fix`.** A remediation that depends on which way the check failed belongs in the failing outcome's `fix`, which the check returns after running and which can therefore address what actually went wrong. It replaces the check's `fix` for that failure, and `detail` still states what went wrong. A [getter](#validation) serves one purpose: reaching a value declared below the kit literal.
 
 ## Agent guidance
 
@@ -274,7 +275,7 @@ Invalid kit at .readyup/kits/default.js:
 
 A typo'd `severity` is the mistake for which this matters most: An unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
-A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading.
+A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked, or whose failing outcome supplies its own `fix`, never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading. An outcome's `fix` that is not a string is reported in the same slot, and the check's `fix` is not consulted in its place.
 
 ## Testing a kit
 

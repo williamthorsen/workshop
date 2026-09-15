@@ -65,6 +65,6 @@ One pattern must not read blanked text: one matching a literal's own content, su
 
 ## Writing `fix`
 
-Prefer a plain string. Outcome-specific remediation belongs in `detail`, which the check returns after running and can therefore name what actually went wrong.
+Prefer a plain string. When the remediation depends on which way the check failed, return it as the failing outcome's `fix`, which replaces the check's `fix` for that failure. Keep what went wrong in `detail`, and never put remediation there: It renders without the fix token, stays out of the `Fixes` recap, and is dropped from `--json --detail summary`.
 
 A getter serves one purpose: reaching a value declared below the kit literal. Keep it pure. A `fix` resolves only where a failure renders it, so an impure getter no longer breaks kit load, but it still runs a subprocess or a registry call for a remediation string.
