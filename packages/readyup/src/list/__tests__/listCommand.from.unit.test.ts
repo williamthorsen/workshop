@@ -151,6 +151,15 @@ describe(listCommand, () => {
     expect(stdout).toContain('deploy');
   });
 
+  it('with --from github:org/repo, names the command that runs the listed kits beneath the heading', async () => {
+    mockFetch.mockResolvedValue(mockResponse(validRemoteManifestBody));
+
+    const { stdout } = await list(['--from', 'github:williamthorsen/workshop']);
+
+    const lines = stdout.split('\n');
+    expect(lines[1]).toBe('   To run: rdy run --from github:williamthorsen/workshop [<kit>[:<checklist>,...]]');
+  });
+
   it('with --from github:org/repo, reuses a fresh manifest from the cache on a later listing', async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(validRemoteManifestBody, { headers: { 'Cache-Control': 'max-age=300' } }),

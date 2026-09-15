@@ -43,6 +43,7 @@ const it = baseIt
                 path: 'kits/default.js',
                 description: 'Authoring hygiene for a project that defines readyup kits',
                 readyupVersion: '0.24.0',
+                checklists: ['setup', 'freshness'],
               },
               {
                 name: 'publishing',
@@ -120,8 +121,8 @@ describe('list --recursive', () => {
     it('names a command that runs each project\u{2019}s kits from the sweep root', async () => {
       const { stdout } = await list(['--recursive']);
 
-      expect(stdout).toContain('rdy run <name>');
-      expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
+      expect(stdout).toContain('rdy run <kit>[:<checklist>,...]');
+      expect(stdout).toContain('rdy run --from packages/readyup [<kit>[:<checklist>,...]]');
     });
 
     it('reports the descriptions recorded by the manifest, and renders a bare name without one', async () => {
@@ -132,10 +133,16 @@ describe('list --recursive', () => {
       expect(stdout).not.toContain('demo \u{00B7}');
     });
 
+    it('nests the checklists recorded by the manifest beneath their kit', async () => {
+      const { stdout } = await list(['--recursive']);
+
+      expect(stdout).toContain('readyup kits\n   \u{1F4CB} setup\n   \u{1F4CB} freshness\n\u{1F4D3} publishing');
+    });
+
     it('reaches a project on a relocated output directory by file path', async () => {
       const { stdout } = await list(['--recursive']);
 
-      expect(stdout).toContain('rdy run --file <file path>');
+      expect(stdout).toContain('rdy run --file <file path> [--checklists <checklist>,...]');
       expect(stdout).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
     });
 
@@ -176,6 +183,7 @@ describe('list --recursive', () => {
         path: 'packages/readyup/.readyup/kits/default.js',
         description: 'Authoring hygiene for a project that defines readyup kits',
         readyupVersion: '0.24.0',
+        checklists: ['setup', 'freshness'],
       });
     });
 
