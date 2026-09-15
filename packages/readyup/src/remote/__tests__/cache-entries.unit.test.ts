@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { computeHash } from '../../check-utils/hashing.ts';

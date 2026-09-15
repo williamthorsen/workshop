@@ -1,7 +1,6 @@
 import path from 'node:path';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 

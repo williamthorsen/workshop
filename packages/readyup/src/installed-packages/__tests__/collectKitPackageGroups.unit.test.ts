@@ -1,5 +1,4 @@
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 

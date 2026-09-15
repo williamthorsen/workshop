@@ -1,7 +1,6 @@
 import path from 'node:path';
 
-import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 

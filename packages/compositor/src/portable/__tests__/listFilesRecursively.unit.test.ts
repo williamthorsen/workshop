@@ -1,7 +1,7 @@
 import { symlink } from 'node:fs/promises';
 import path from 'node:path';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { listFilesRecursively } from '../listFilesRecursively.ts';

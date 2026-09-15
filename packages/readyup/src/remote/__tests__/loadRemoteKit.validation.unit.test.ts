@@ -1,5 +1,4 @@
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetch = vi.hoisted(() => vi.fn());

@@ -2,8 +2,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError, captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 

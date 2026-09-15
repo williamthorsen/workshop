@@ -23,7 +23,7 @@
  * gap in the coverage of it.
  */
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 
 import type { ArtifactRead, EdgeContribution } from '../closure/EdgeContributor.ts';

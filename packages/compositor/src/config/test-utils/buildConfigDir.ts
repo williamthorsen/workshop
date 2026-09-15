@@ -1,4 +1,4 @@
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 
 /** Builds a directory holding each path in `files` with the given content, removed when the test ends. */

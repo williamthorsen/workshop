@@ -1,5 +1,4 @@
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError, captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 

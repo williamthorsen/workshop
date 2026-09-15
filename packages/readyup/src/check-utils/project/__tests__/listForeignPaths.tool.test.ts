@@ -1,8 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 
-import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 

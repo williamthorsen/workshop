@@ -1,4 +1,4 @@
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { collectSourceFiles } from '../collectSourceFiles.ts';

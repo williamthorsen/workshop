@@ -1,5 +1,4 @@
-import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { warnOnUnrecordedBundles, type WarnOnUnrecordedBundlesArgs } from '../warnOnUnrecordedBundles.ts';

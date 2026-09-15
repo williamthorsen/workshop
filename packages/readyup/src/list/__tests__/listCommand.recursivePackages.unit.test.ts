@@ -1,8 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 

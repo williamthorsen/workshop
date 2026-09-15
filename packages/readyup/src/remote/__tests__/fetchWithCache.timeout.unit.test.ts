@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { once } from 'node:events';
 import { createServer, type Server } from 'node:http';
 
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { fetchWithCache } from '../fetchWithCache.ts';

@@ -165,23 +165,23 @@ settings:
 catalogs:
   default:
     '@williamthorsen/toolbelt.errors':
-      specifier: 0.7.0
-      version: 0.7.0
+      specifier: 0.8.0
+      version: 0.8.0
     '@williamthorsen/toolbelt.filesystem':
-      specifier: 0.8.3
-      version: 0.8.3
-    '@williamthorsen/toolbelt.packaging':
-      specifier: 0.5.5
-      version: 0.5.5
-    '@williamthorsen/toolbelt.strings':
-      specifier: 7.2.0
-      version: 7.2.0
-    '@williamthorsen/toolbelt.testing':
-      specifier: 0.5.1
-      version: 0.5.1
-    '@williamthorsen/toolbelt.vitest':
       specifier: 0.9.0
       version: 0.9.0
+    '@williamthorsen/toolbelt.packaging':
+      specifier: 0.6.0
+      version: 0.6.0
+    '@williamthorsen/toolbelt.strings':
+      specifier: 8.0.0
+      version: 8.0.0
+    '@williamthorsen/toolbelt.testing':
+      specifier: 0.6.0
+      version: 0.6.0
+    '@williamthorsen/toolbelt.vitest':
+      specifier: 0.10.0
+      version: 0.10.0
     esbuild:
       specifier: 0.28.2
       version: 0.28.2
@@ -215,20 +215,20 @@ importers:
         specifier: 17.0.0
         version: 17.0.0(@typescript-eslint/utils@8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(readyup@packages+readyup)(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
-        specifier: 0.36.0
-        version: 0.36.0(prettier@3.9.6)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        specifier: 0.37.0
+        version: 0.37.0(prettier@3.9.6)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       '@williamthorsen/release-kit':
-        specifier: 10.6.0
-        version: 10.6.0
+        specifier: 10.8.0
+        version: 10.8.0
       '@williamthorsen/strict-lint':
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.8.0
       '@williamthorsen/toolbelt.vitest':
         specifier: 'catalog:'
-        version: 0.9.0(vitest@4.1.11)
+        version: 0.10.0(vitest@4.1.11)
       '@williamthorsen/tsconfig':
         specifier: 0.9.0
         version: 0.9.0(readyup@packages+readyup)
@@ -254,8 +254,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       v11y-check:
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.0
+        version: 0.17.0
       vitest:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
@@ -267,10 +267,10 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.8.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
-        version: 0.5.5
+        version: 0.6.0
       yaml:
         specifier: 2.9.0
         version: 2.9.0
@@ -280,38 +280,38 @@ importers:
     devDependencies:
       '@williamthorsen/toolbelt.filesystem':
         specifier: 'catalog:'
-        version: 0.8.3
+        version: 0.9.0
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
-        version: 0.5.1
+        version: 0.6.0
       '@williamthorsen/toolbelt.vitest':
         specifier: 'catalog:'
-        version: 0.9.0(vitest@4.1.11)
+        version: 0.10.0(vitest@4.1.11)
 
   packages/overlay:
     dependencies:
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.8.0
       '@williamthorsen/toolbelt.strings':
         specifier: 'catalog:'
-        version: 7.2.0
+        version: 8.0.0
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
-        version: 0.5.1
+        version: 0.6.0
 
   packages/readyup:
     dependencies:
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.8.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
-        version: 0.5.5
+        version: 0.6.0
       '@williamthorsen/toolbelt.strings':
         specifier: 'catalog:'
-        version: 7.2.0
+        version: 8.0.0
       es-module-lexer:
         specifier: 3.0.2
         version: 3.0.2
@@ -333,13 +333,13 @@ importers:
         version: 4.0.3
       '@williamthorsen/toolbelt.filesystem':
         specifier: 'catalog:'
-        version: 0.8.3
+        version: 0.9.0
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
-        version: 0.5.1
+        version: 0.6.0
       '@williamthorsen/toolbelt.vitest':
         specifier: 'catalog:'
-        version: 0.9.0(vitest@4.1.11)
+        version: 0.10.0(vitest@4.1.11)
       ajv:
         specifier: 8.20.0
         version: 8.20.0
@@ -1224,12 +1224,12 @@ packages:
     engines: {node: '>=24'}
     hasBin: true
 
-  '@williamthorsen/nmr-core@0.11.0':
-    resolution: {integrity: sha512-X5KONAXgk9NDQmHp9gw0P5/lR49zzONL2TCBpw5tuHXGZOD5rNEXut95pPJOvJUj2YjM9LnKdONLtGagVehqEg==}
+  '@williamthorsen/nmr-core@0.11.1':
+    resolution: {integrity: sha512-NmgY2/575G8Ndyqm+gHPXbuHW5z0Cn7cexMiKBrxgLMVXhk5cAFSa4yueXIXIQtGq1VyA2OzfOgQcyQvODoNcA==}
     engines: {node: '>=24'}
 
-  '@williamthorsen/nmr@0.36.0':
-    resolution: {integrity: sha512-HJPa5AGLs1cF7S2WrwL+ga2eHIOEVLaSUsb6kQlMvqh9MPndZja1IFAKc64GFGQEK14aOAhseVmIl0YLvqrZ5g==}
+  '@williamthorsen/nmr@0.37.0':
+    resolution: {integrity: sha512-H8+ZHWwB57NFX80/dqJHZRQTIdjrujziswyfiWSIOUl3YIg6e5KYiIj2a27m/kF4ZZpBw+SP8rPefXuH9Du5Lg==}
     engines: {node: '>=24.16.0', pnpm: '>=11'}
     hasBin: true
     peerDependencies:
@@ -1245,8 +1245,8 @@ packages:
       vitest:
         optional: true
 
-  '@williamthorsen/release-kit@10.6.0':
-    resolution: {integrity: sha512-orD/4IoJGlehXV4Rypia34CgxefYY5DgONSxN+1Ga8J9q8vLBDQlwvGQdHp9ravhQu++L3NweE1FxkUMUmtgZw==}
+  '@williamthorsen/release-kit@10.8.0':
+    resolution: {integrity: sha512-vx9SnQpo16q820TBrm+jnP/DlOiGuDK9FdrlmYqq2046BB9GrsebG3I579Tmlou7gsq4RlW8nKYrW5t0V+woNQ==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -1257,44 +1257,56 @@ packages:
     peerDependencies:
       eslint: '>=10'
 
-  '@williamthorsen/toolbelt.arrays@6.2.0':
-    resolution: {integrity: sha512-4aEiPVv4SvMN67OsjPJGJW+fGO08OpcfRo9pJbBXjYF8Ibvr1bXUPkCdUJG+8pHy/ofqC5ZdY0FUhHauw6RUew==}
+  '@williamthorsen/toolbelt.arrays@6.3.0':
+    resolution: {integrity: sha512-5OcXAImXqx9Y8yK/XgWslUjNAcG8lkAE5wAAkNnGxVNHSB64AZ8ksKBA8Os6vZV9Y9o+sh+lQFXNX4FDh7ctKg==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.errors@0.7.0':
     resolution: {integrity: sha512-GHqK4v8M+Zg2mYRan4E7Bjz1s8ADUJUtkXjf3ucYDMqVBI/wTuZHClgllbjZgz5T1azB2usG7PY9iO7TidfjbQ==}
     engines: {node: '>=24.0.0'}
 
+  '@williamthorsen/toolbelt.errors@0.8.0':
+    resolution: {integrity: sha512-DaSLvBoXZ3MTof6tO+ZLxqgKDE6GKEALaHzy+kTjHrcpb3rCq2VPt8+X0KtfhFdgo+ikgk7UrgiS7gI1uxK/ZA==}
+    engines: {node: '>=24.0.0'}
+
   '@williamthorsen/toolbelt.filesystem@0.8.3':
     resolution: {integrity: sha512-5hNz/+C9Q1jbrCE0NXKPpFKKeyDLn/8g/JHlV09gEVBlkkq+qIUBxOLVY6gzE8J2ewKZofM3bT+k9T4JJfmekg==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.guards@4.0.1':
-    resolution: {integrity: sha512-Kh511b2d7I3E89T4WySnVO0mR03ILnGClQYN8HqWuUuyQVsx3XNsiLBv/MYm1B2oGnuK/EbusXEU1+kgjfIwYA==}
+  '@williamthorsen/toolbelt.filesystem@0.9.0':
+    resolution: {integrity: sha512-3yBU6MOKcCmWFaPNz+Knsnova0q6d+HAZbSTs6bM/HczmjUi0s13RqcE8zYF2DCbFqNqHNt60zIUXT+O1yVA0w==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.numbers@7.1.0':
-    resolution: {integrity: sha512-G/BqqBHmkdEsq+9MClwQ3s3ORq3i8isVwjbCwdLY9wiflPVoxiK+Dc2S6irBnwuosm1tRuMGAWZin0sc8WOW+A==}
+  '@williamthorsen/toolbelt.guards@4.1.0':
+    resolution: {integrity: sha512-Ra6q2/kPoZRfC+vRViH9m+vIMOi1XWRA36WbsV9k2Q9KRXNX8Mk/ydaUgR/sbejX2EADT9BhdXPhixfz+9KdNg==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.numbers@7.2.0':
+    resolution: {integrity: sha512-7oV8FvLx4VvHHzvXJhilPom2EUQpXtalJz6g65AjCwUaj5PNvrnODDM18ig4SCL76gaT6wurOdrP6J9pAID/og==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.packaging@0.5.5':
     resolution: {integrity: sha512-b8Y8HWnN9WKxVd4rosH+fYhZn2G5ROXDaZO3+YMofTMyT6RvZ2Rjbg4vFHnlGGgif2koyQvO0Iw/049Zvy6TCw==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.sets@3.0.12':
-    resolution: {integrity: sha512-lTQNUA4TkhEn7X8MdyNiONEeL2kmcvm+Eca1XaquDP6Z4HVqCQzuihSuihYeoVvkhigZ9oY2WumU9Kk+y7UJUA==}
+  '@williamthorsen/toolbelt.packaging@0.6.0':
+    resolution: {integrity: sha512-UZXcWUJ/dxu8QsTNLjKw8GTiXcSzqY/9mvxSLp20mmXv/IguTy4CQWNSOcC2TYQGquJdOcDNA3UdgoDmLZ6JYA==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.strings@7.2.0':
-    resolution: {integrity: sha512-8F4S7ErAsAjbQ9TFL0TISZqtqkr44TJDhHRNDe0PHDoGBVqTjKw1gdaN5Dt6RlWQxj7wexPTa2CBB4t4aZO/nQ==}
+  '@williamthorsen/toolbelt.sets@3.0.13':
+    resolution: {integrity: sha512-7xyxvL7/7fz26hj8kJ7uwJOm4tzo3S9ldxrbDZ0QmaEZOspK8Om8R2EASrXb4NpfQ7iSBKPNbRNHHvtZwaBBkQ==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.testing@0.5.1':
-    resolution: {integrity: sha512-X1gnI/HQIA1X1GUMI7yxbzvvzwBYSnUG3BZdytZS5R0U7p5mts+xWMpWfF4XG+s49IvfDvPmDKXlpN9RGYuDSQ==}
+  '@williamthorsen/toolbelt.strings@8.0.0':
+    resolution: {integrity: sha512-lHy/kmjZKAW6cql7u6e81KkKKKuDNwE1suJ7opkYXuL8wk5CXDgksLi0bgsJ7yNN0Ax//BmBWx5ph1M2xgLYQw==}
     engines: {node: '>=24.0.0'}
 
-  '@williamthorsen/toolbelt.vitest@0.9.0':
-    resolution: {integrity: sha512-SnIxJzy78bR1aUZmDUZQzaEC+VI0gGZXGIEpV3Fciczk0UKHQha7tqBw9z8e92mMSbBEKoNqDg/UUSZarVI0Hw==}
+  '@williamthorsen/toolbelt.testing@0.6.0':
+    resolution: {integrity: sha512-uob7PUPz4bmnH58BdBa0uT4wg73iBc3cFC2+CwPdY3nFhcCvx4kcsGRtK0ttp5MTuL1BLJwOQXTJOaKJXJoA6g==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.vitest@0.10.0':
+    resolution: {integrity: sha512-mu/LXifCjs5dlVl1ZI5Jh66rP1W9DvW45p1d6H4ObSSSwruarI/j1PNJP2V+b5zzMR38wgp1yJaog0fElc4V5w==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
       vitest: ^4.0.0
@@ -2513,8 +2525,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  v11y-check@0.16.0:
-    resolution: {integrity: sha512-bYBCawFbunNcFj49Cdk196QT/RU9SsadLhzwuL448c8ec9DMORGt0RRTM+n0g+3pwTK7Mf+/MYEr2UXnrH2N/g==}
+  v11y-check@0.17.0:
+    resolution: {integrity: sha512-KD1+ZkWsH0qizYm/MsTgQguk6O9ARPM4BlCa5Qa3SbQHst2H3tDTS3Om06EGC9Jrj2jUkFvKKoVwP6fR34QWbA==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -3461,13 +3473,13 @@ snapshots:
       yaml: 2.9.0
       zod: 4.5.4
 
-  '@williamthorsen/nmr-core@0.11.0':
+  '@williamthorsen/nmr-core@0.11.1':
     dependencies:
       '@williamthorsen/toolbelt.errors': 0.7.0
 
-  '@williamthorsen/nmr@0.36.0(prettier@3.9.6)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
+  '@williamthorsen/nmr@0.37.0(prettier@3.9.6)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
-      '@williamthorsen/nmr-core': 0.11.0
+      '@williamthorsen/nmr-core': 0.11.1
       '@williamthorsen/toolbelt.errors': 0.7.0
       glob: 13.0.6
       prettier-plugin-sh: 0.19.0(prettier@3.9.6)
@@ -3479,9 +3491,9 @@ snapshots:
       vite: 8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)
       vitest: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
 
-  '@williamthorsen/release-kit@10.6.0':
+  '@williamthorsen/release-kit@10.8.0':
     dependencies:
-      '@williamthorsen/nmr-core': 0.11.0
+      '@williamthorsen/nmr-core': 0.11.1
       '@williamthorsen/toolbelt.errors': 0.7.0
       glob: 13.0.6
       json-stringify-pretty-compact: 4.0.0
@@ -3495,36 +3507,46 @@ snapshots:
       '@williamthorsen/toolbelt.packaging': 0.5.5
       eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
 
-  '@williamthorsen/toolbelt.arrays@6.2.0':
+  '@williamthorsen/toolbelt.arrays@6.3.0':
     dependencies:
-      '@williamthorsen/toolbelt.guards': 4.0.1
-      '@williamthorsen/toolbelt.numbers': 7.1.0
+      '@williamthorsen/toolbelt.guards': 4.1.0
+      '@williamthorsen/toolbelt.numbers': 7.2.0
 
   '@williamthorsen/toolbelt.errors@0.7.0': {}
+
+  '@williamthorsen/toolbelt.errors@0.8.0': {}
 
   '@williamthorsen/toolbelt.filesystem@0.8.3':
     dependencies:
       '@williamthorsen/toolbelt.errors': 0.7.0
 
-  '@williamthorsen/toolbelt.guards@4.0.1': {}
+  '@williamthorsen/toolbelt.filesystem@0.9.0':
+    dependencies:
+      '@williamthorsen/toolbelt.errors': 0.8.0
 
-  '@williamthorsen/toolbelt.numbers@7.1.0': {}
+  '@williamthorsen/toolbelt.guards@4.1.0': {}
+
+  '@williamthorsen/toolbelt.numbers@7.2.0': {}
 
   '@williamthorsen/toolbelt.packaging@0.5.5':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.8.3
 
-  '@williamthorsen/toolbelt.sets@3.0.12': {}
-
-  '@williamthorsen/toolbelt.strings@7.2.0':
+  '@williamthorsen/toolbelt.packaging@0.6.0':
     dependencies:
-      '@williamthorsen/toolbelt.arrays': 6.2.0
-      '@williamthorsen/toolbelt.numbers': 7.1.0
-      '@williamthorsen/toolbelt.sets': 3.0.12
+      '@williamthorsen/toolbelt.filesystem': 0.9.0
 
-  '@williamthorsen/toolbelt.testing@0.5.1': {}
+  '@williamthorsen/toolbelt.sets@3.0.13': {}
 
-  '@williamthorsen/toolbelt.vitest@0.9.0(vitest@4.1.11)':
+  '@williamthorsen/toolbelt.strings@8.0.0':
+    dependencies:
+      '@williamthorsen/toolbelt.arrays': 6.3.0
+      '@williamthorsen/toolbelt.numbers': 7.2.0
+      '@williamthorsen/toolbelt.sets': 3.0.13
+
+  '@williamthorsen/toolbelt.testing@0.6.0': {}
+
+  '@williamthorsen/toolbelt.vitest@0.10.0(vitest@4.1.11)':
     dependencies:
       vitest: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
 
@@ -4725,9 +4747,9 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  v11y-check@0.16.0:
+  v11y-check@0.17.0:
     dependencies:
-      '@williamthorsen/nmr-core': 0.11.0
+      '@williamthorsen/nmr-core': 0.11.1
       '@williamthorsen/toolbelt.errors': 0.7.0
       audit-ci: 7.1.0
       zod: 4.5.4

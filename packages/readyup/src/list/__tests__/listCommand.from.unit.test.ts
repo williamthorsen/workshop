@@ -1,8 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
 
-import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio, createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
