@@ -10,6 +10,7 @@ vi.stubGlobal('fetch', mockFetch);
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteManifest, RemoteManifestNotFoundError } from '../loadRemoteManifest.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
+import { stallUntilAborted } from '../test-utils/stallUntilAborted.ts';
 
 /** Fetch options that bypass the cache and send no headers. */
 const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
@@ -122,6 +123,14 @@ describe(loadRemoteManifest, () => {
       headers: {},
       signal: expect.any(AbortSignal),
     });
+  });
+
+  it('rejects naming the URL and the limit when the fetch times out', async () => {
+    mockFetch.mockImplementation(stallUntilAborted);
+
+    await expect(
+      loadRemoteManifest({ url: 'https://example.com/manifest.json', ...uncachedOptions, timeoutMs: 1 }),
+    ).rejects.toThrow('Timed out after 0.001s fetching https://example.com/manifest.json');
   });
 
   it('rejects a schema-invalid body served from the cache, as it rejects a fetched one', async () => {
