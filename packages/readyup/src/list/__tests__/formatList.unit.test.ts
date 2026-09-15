@@ -819,6 +819,7 @@ function buildKit(packageName: string, kitName: string, description: string | un
     version: '2.1.0',
     kitName,
     description,
+    checklists: undefined,
     path: `node_modules/${packageName}/.readyup/kits/${kitName}.js`,
   };
 }

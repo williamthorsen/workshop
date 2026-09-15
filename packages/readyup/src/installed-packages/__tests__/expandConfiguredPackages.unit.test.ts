@@ -16,8 +16,11 @@ const it = baseIt.extend(
         'node_modules/@acme/kits/.readyup/kits/preflight.js': 'export default {};\n',
         'node_modules/@acme/kits/.readyup/manifest.json': JSON.stringify({
           version: 1,
-          // Only one kit is described, so the pair covers both branches of an optional description.
-          kits: [{ name: 'drift', description: 'Dependency drift' }, { name: 'preflight' }],
+          // Only one kit is described, so the pair covers both branches of each optional field.
+          kits: [
+            { name: 'drift', description: 'Dependency drift', checklists: ['lockfile', 'ranges'] },
+            { name: 'preflight' },
+          ],
         }),
 
         // Kits on disk under a manifest that nobody can parse.
@@ -46,6 +49,7 @@ describe(expandConfiguredPackages, () => {
         version: '2.1.0',
         kitName: 'drift',
         description: 'Dependency drift',
+        checklists: ['lockfile', 'ranges'],
         path: temp.resolve('node_modules/@acme/kits/.readyup/kits/drift.js'),
       },
       {
@@ -53,6 +57,7 @@ describe(expandConfiguredPackages, () => {
         version: '2.1.0',
         kitName: 'preflight',
         description: undefined,
+        checklists: undefined,
         path: temp.resolve('node_modules/@acme/kits/.readyup/kits/preflight.js'),
       },
     ]);
@@ -66,11 +71,12 @@ describe(expandConfiguredPackages, () => {
     expect(kit?.version).toBe('0.4.0');
   });
 
-  // Descriptions live in the manifest, so the directory fallback has none to report.
-  it('leaves a kit undescribed when it comes from the directory fallback', ({ temp }) => {
+  // Descriptions and checklist names live in the manifest, so the directory fallback has neither to report.
+  it('leaves a kit without a description or checklists when it comes from the directory fallback', ({ temp }) => {
     const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
 
     expect(kit?.description).toBeUndefined();
+    expect(kit?.checklists).toBeUndefined();
   });
 
   it('expands every configured package, in configured order', ({ temp }) => {

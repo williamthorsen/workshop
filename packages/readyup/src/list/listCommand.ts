@@ -392,6 +392,7 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
     },
     path: kit.path,
     ...(kit.description !== undefined && { description: kit.description }),
+    ...(kit.checklists !== undefined && { checklists: kit.checklists }),
   };
 }
 

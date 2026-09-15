@@ -34,7 +34,10 @@ const it = baseIt.extend(
         'node_modules/@acme/kits/.readyup/kits/drift.js': 'export default {};',
         'node_modules/@acme/kits/.readyup/manifest.json': JSON.stringify({
           version: 1,
-          kits: [{ name: 'default', description: 'Dependency drift' }, { name: 'drift' }],
+          kits: [
+            { name: 'default', description: 'Dependency drift', checklists: ['lockfile', 'ranges'] },
+            { name: 'drift' },
+          ],
         }),
 
         'node_modules/hidden-kit/package.json': JSON.stringify({ name: 'hidden-kit', version: '3.0.0' }),
@@ -144,6 +147,13 @@ describe('list --packages', () => {
 
       expect(findKit(payload, 'default')).toMatchObject({ description: 'Dependency drift' });
       expect(findKit(payload, 'drift')).not.toHaveProperty('description');
+    });
+
+    it('reports the checklists that a publisher records, and omits the field where there are none', async () => {
+      const payload = await runForPayload();
+
+      expect(findKit(payload, 'default')).toMatchObject({ checklists: ['lockfile', 'ranges'] });
+      expect(findKit(payload, 'drift')).not.toHaveProperty('checklists');
     });
 
     // Every candidate that the owner listing would name appears here as kit rows instead.

@@ -22,6 +22,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
         version: '3.0.0',
         kitName: 'default',
         description: undefined,
+        checklists: undefined,
         path: temp.resolve('packages/kit-workspace/.readyup/kits/default.js'),
       },
     ]);
@@ -45,6 +46,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
         version: '1.0.0',
         kitName: 'default',
         description: undefined,
+        checklists: undefined,
         path: temp.resolve('node_modules/dual/.readyup/kits/default.js'),
       },
     ]);
