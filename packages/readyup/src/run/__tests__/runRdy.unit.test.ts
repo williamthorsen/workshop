@@ -1499,6 +1499,84 @@ describe(runRdy, () => {
       expect(result.severity).toBe('warn');
       expect(result.fix).toBe('Unresolvable fix: the accessor returned number 42');
     });
+
+    it("reports a failing outcome's fix in place of the check's, leaving its accessor unresolved", async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'fails',
+            check: () => ({ ok: false, detail: 'The repo is private', fix: 'Make the repo public' }),
+            get fix() {
+              hits++;
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(hits).toBe(0);
+      expect(result.detail).toBe('The repo is private');
+      expect(result.fix).toBe('Make the repo public');
+    });
+
+    it("reports the check's fix for a failing outcome that supplies none", async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [{ name: 'fails', check: () => ({ ok: false, detail: 'The repo is private' }), fix: 'Run the thing' }],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(result.fix).toBe('Run the thing');
+    });
+
+    it("omits a passing outcome's fix from its result", async () => {
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [{ name: 'passes', check: () => ({ ok: true, fix: 'Make the repo public' }) }],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'passed');
+
+      expect(result).not.toHaveProperty('fix');
+    });
+
+    it("keeps a failure verdict when its outcome's fix is a non-string, without consulting the check's", async () => {
+      let hits = 0;
+      const checklist: RdyChecklist = {
+        name: 'fixes',
+        checks: [
+          {
+            name: 'fails',
+            check: returning({ ok: false, fix: 42 }),
+            severity: 'warn',
+            get fix() {
+              hits++;
+              return 'Run the thing';
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+      const result = report.results[0];
+      assert.ok(result?.status === 'failed');
+
+      expect(hits).toBe(0);
+      expect(result.severity).toBe('warn');
+      expect(result.error).toBeNull();
+      expect(result.fix).toBe('Unresolvable fix: the outcome returned number 42');
+    });
   });
 
   describe('result shape', () => {

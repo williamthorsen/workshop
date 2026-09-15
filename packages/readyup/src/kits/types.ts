@@ -115,6 +115,12 @@ export interface CheckOutcome {
   detail?: string | undefined;
 
   /**
+   * What to do about this failure, in place of the check's own `fix`. For a check whose remediation
+   * depends on which way it failed. Ignored on a pass.
+   */
+  fix?: string | undefined;
+
+  /**
    * Quantitative progress toward the claim, rendered alongside the name. On a pass it stands as
    * the evidence in place of a `detail`; a failing count still needs one, to name what is missing.
    */
