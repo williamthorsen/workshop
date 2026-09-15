@@ -42,7 +42,7 @@ import { listCommand } from '../listCommand.ts';
 describe(listCommand, () => {
   beforeEach(() => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
       packages: [],
     });
@@ -65,7 +65,7 @@ describe(listCommand, () => {
     /** Configures one package and the kit that it publishes. */
     function configureOnePackage(): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: ['@acme/kits'],
       });
@@ -179,7 +179,7 @@ describe(listCommand, () => {
 
     it('uses infix-based extension for internal kits when configured', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: 'int' },
         packages: [],
       });
@@ -204,7 +204,7 @@ describe(listCommand, () => {
 
     it('uses custom-outDir style when outDir differs from default', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined },
+        compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: [],
       });
@@ -335,7 +335,7 @@ describe(listCommand, () => {
       ['infix', { dir: '.', infix: 'internal' }],
     ])('adds --internal to the internal hint when internal.%s is configured', async (_label, internal) => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal,
         packages: [],
       });

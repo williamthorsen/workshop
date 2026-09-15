@@ -213,7 +213,7 @@ describe('list --packages', () => {
 /** Points the mocked config loader at the given package list, leaving every other setting at its default. */
 function configurePackages(packages: string[]): void {
   mockLoadConfig.mockResolvedValue({
-    compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+    compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     internal: { dir: '.', infix: undefined },
     packages,
   });

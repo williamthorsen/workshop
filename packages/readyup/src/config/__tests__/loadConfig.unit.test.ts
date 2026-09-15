@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
@@ -30,7 +31,7 @@ describe(loadConfig, () => {
     const config = await loadConfig();
 
     expect(config).toStrictEqual({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
       packages: [],
     });
@@ -143,7 +144,7 @@ describe(loadConfig, () => {
     expect(config.compile.outDir).toBe('.readyup/kits');
   });
 
-  it('loads compile.include from config', async () => {
+  it('resolves a single compile.include glob to a list', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({
       default: { compile: { include: 'shared/**/*.ts' } },
@@ -151,7 +152,58 @@ describe(loadConfig, () => {
 
     const config = await loadConfig({ overridePath: 'config.ts' });
 
-    expect(config.compile.include).toBe('shared/**/*.ts');
+    expect(config.compile.include).toStrictEqual(['shared/**/*.ts']);
+  });
+
+  it('loads a list of compile.include globs', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { compile: { include: ['*.ts', 'teams/*.ts'] } } });
+
+    const config = await loadConfig({ overridePath: 'config.ts' });
+
+    expect(config.compile.include).toStrictEqual(['*.ts', 'teams/*.ts']);
+  });
+
+  it.each([
+    ['lib/**', ['lib/**']],
+    [
+      ['lib/**', '**/__tests__/**'],
+      ['lib/**', '**/__tests__/**'],
+    ],
+    [[], []],
+  ])('resolves compile.exclude %j to %j', async (declared, resolved) => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { compile: { exclude: declared } } });
+
+    const config = await loadConfig({ overridePath: 'config.ts' });
+
+    expect(config.compile.exclude).toStrictEqual(resolved);
+  });
+
+  it('resolves compile.exclude to an empty list when the key is absent', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { compile: {} } });
+
+    const config = await loadConfig({ overridePath: 'config.ts' });
+
+    expect(config.compile.exclude).toStrictEqual([]);
+  });
+
+  it.each([
+    ['include', ''],
+    ['include', ['*.ts', '']],
+    ['include', []],
+    ['exclude', ''],
+    ['exclude', ['lib/**', '']],
+  ])('rejects compile.%s set to %j, naming the key', async (key, value) => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { compile: { [key]: value } } });
+
+    const error = await captureError(() => loadConfig({ overridePath: 'config.ts' }));
+
+    assert.ok(error instanceof ZodError);
+    // An invalid list entry is reported at its index below the key.
+    expect(error.issues.map((issue) => issue.path.slice(0, 2))).toContainEqual(['compile', key]);
   });
 
   it.each(['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'])(
