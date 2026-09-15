@@ -16,8 +16,8 @@ export interface ReadyupImport {
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
  * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
- * nothing is claimed about what it binds. A dynamic import of a computed specifier, a template literal with
- * substitutions included, names no single module and is dropped. A specifier naming a JSON module is dropped too: It
+ * nothing is claimed about what it binds. A dynamic import of a computed specifier, such as a template literal with
+ * substitutions, names no single module and is dropped. A specifier naming a JSON module is dropped too: It
  * has no named exports to verify, and a runner subpath serving one has no namespace to check against.
  *
  * Throws the lexer's `ParseError` for source it cannot read, which is source Node would not import either.
