@@ -151,7 +151,7 @@ function resolveSourceRemedy(kit: RdyManifestKit, status: SourceStatus): Remedy 
         ? { text: RECOMPILE_REMEDY }
         : {
             path: kit.source,
-            text: `Restore ${kit.source}, or run \`rdy compile\` to drop the kit from the manifest.`,
+            text: `Restore ${kit.source}, or run \`rdy compile\` to remove the kit and its bundle.`,
           };
   }
 }

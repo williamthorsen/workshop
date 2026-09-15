@@ -13,7 +13,7 @@ export const SCHEMA_VERSION = 1;
  * What became of one kit in a compile sweep.
  *
  * `skipped` means the compiled file had drifted from the manifest and was left alone; `failed` means
- * the kit itself could not be bundled or validated.
+ * the kit itself could not be bundled or validated, or that the bundle of a kit with no source could not be deleted.
  */
 export const CompileStatusSchema = z.enum(['compiled', 'failed', 'skipped']).meta({ id: 'CompileStatus' });
 
