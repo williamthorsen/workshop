@@ -4,7 +4,7 @@ import { countPackageUsage } from '../countPackageUsage.ts';
 import type { ProjectSource } from '../readTrackedSources.ts';
 
 const PACKAGE_NAME = '@williamthorsen/toolbelt.errors';
-const EXPORT_NAMES = ['assertIsError', 'describeError'];
+const EXPORT_NAMES = ['assertIsError', 'describeError', 'ErrorCatalog', 'formatError'];
 
 describe(countPackageUsage, () => {
   it('returns zero for a source that defines and calls its own helper of the same name', () => {
@@ -86,6 +86,70 @@ describe(countPackageUsage, () => {
     const source = buildSource(`
       import { describeError } from '${PACKAGE_NAME}';
       export const label = \`error: \${describeError(error)}\`;
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it('counts a tagged template, whether or not whitespace separates the tag from the backtick', () => {
+    const source = buildSource(`
+      import { formatError } from '${PACKAGE_NAME}';
+      export const tight = formatError\`failed\`;
+      export const spaced = formatError  \`failed\`;
+      export const wrapped = formatError
+        \`failed\`;
+    `);
+
+    expect(count(source)).toBe(3);
+  });
+
+  it('counts a member access, including one split across lines', () => {
+    const source = buildSource(`
+      import { ErrorCatalog } from '${PACKAGE_NAME}';
+      export const entry = ErrorCatalog.lookup('E1');
+      export const chained = ErrorCatalog
+        .lookup('E2');
+    `);
+
+    expect(count(source)).toBe(2);
+  });
+
+  it('counts a member access once where the member is also an export', () => {
+    const source = buildSource(`
+      import { ErrorCatalog } from '${PACKAGE_NAME}';
+      export const described = ErrorCatalog.describeError(error);
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it("does not count another object's method of the same name", () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      export const described = logger.describeError(error);
+      export const optional = logger?.describeError(error);
+    `);
+
+    expect(count(source)).toBe(0);
+  });
+
+  it('counts a call whose result is spread', () => {
+    const source = buildSource(`
+      import { describeError } from '${PACKAGE_NAME}';
+      export const characters = [...describeError(error)];
+    `);
+
+    expect(count(source)).toBe(1);
+  });
+
+  it('does not count a tag or a member access written in a comment or a literal', () => {
+    const source = buildSource(`
+      import { ErrorCatalog, formatError } from '${PACKAGE_NAME}';
+      // formatError\`failed\` and ErrorCatalog.lookup replaced the hand-rolled versions.
+      /* formatError\`failed\` and ErrorCatalog.lookup once more. */
+      export const hint = 'use formatError\`failed\` or ErrorCatalog.lookup';
+      export const label = \`prefer formatError\\\`failed\\\` or ErrorCatalog.lookup\`;
+      export const described = formatError\`failed\`;
     `);
 
     expect(count(source)).toBe(1);
