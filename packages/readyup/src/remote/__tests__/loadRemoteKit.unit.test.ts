@@ -76,6 +76,7 @@ describe(loadRemoteKit, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -86,6 +87,7 @@ describe(loadRemoteKit, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: {},
+      signal: expect.any(AbortSignal),
     });
   });
 

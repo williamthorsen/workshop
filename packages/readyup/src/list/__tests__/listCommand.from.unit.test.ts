@@ -139,7 +139,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe(listCommand, () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch).toHaveBeenLastCalledWith(
       'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
     expect(stdout).toContain('Refreshed');
   });
@@ -209,7 +209,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/williamthorsen/workshop/develop/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
   });
 
@@ -222,7 +222,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/williamthorsen/workshop/main/.readyup/manifest.json',
-      { headers: { Authorization: 'token my-token' } },
+      { headers: { Authorization: 'token my-token' }, signal: expect.any(AbortSignal) },
     );
   });
 
@@ -375,7 +375,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
     expect(mockReadManifest).not.toHaveBeenCalled();
     expect(mockLoadConfig).not.toHaveBeenCalled();
@@ -395,7 +395,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/develop/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
   });
 
@@ -408,7 +408,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
-      { headers: { Authorization: 'Bearer bb-token' } },
+      { headers: { Authorization: 'Bearer bb-token' }, signal: expect.any(AbortSignal) },
     );
   });
 
@@ -421,7 +421,7 @@ describe(listCommand, () => {
     expect(exitCode).toBe(0);
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.bitbucket.org/2.0/repositories/tutorials/markdowndemo/src/main/.readyup/manifest.json',
-      { headers: {} },
+      { headers: {}, signal: expect.any(AbortSignal) },
     );
   });
 

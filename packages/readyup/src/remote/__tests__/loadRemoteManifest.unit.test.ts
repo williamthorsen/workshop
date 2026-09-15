@@ -109,6 +109,7 @@ describe(loadRemoteManifest, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/manifest.json', {
       headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -119,6 +120,7 @@ describe(loadRemoteManifest, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/manifest.json', {
       headers: {},
+      signal: expect.any(AbortSignal),
     });
   });
 
