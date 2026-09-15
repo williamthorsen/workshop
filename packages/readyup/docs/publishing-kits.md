@@ -201,7 +201,7 @@ export default defineRdyConfig({
 });
 ```
 
-`rdy run --internal <name>` resolves through these settings, and `rdy list` groups sources under **Internal** and bundles under **Compiled**.
+`rdy run --internal <kit>` resolves through these settings, and `rdy list` groups sources under **Internal** and bundles under **Compiled**.
 
 ## Verifying
 
