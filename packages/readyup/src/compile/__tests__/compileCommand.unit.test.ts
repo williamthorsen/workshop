@@ -644,8 +644,8 @@ describe(compileCommand, () => {
 
   describe('sources sharing a kit name', () => {
     const SHARED_NAME_ERROR =
-      'Kit name "deploy" is shared by deploy.ts and ops/deploy.ts. Rename all but one, or remove them from the sweep ' +
-      'with compile.exclude.';
+      'Kit name "deploy" is shared by deploy.ts and ops/deploy.ts. Keep one, and rename the others or remove them from ' +
+      'the sweep with compile.exclude.';
 
     /** Arranges a batch in which two sources claim the kit name `deploy` and a third compiles. */
     function arrangeSharedNameBatch(): void {

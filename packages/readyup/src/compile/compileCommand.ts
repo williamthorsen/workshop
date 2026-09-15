@@ -741,7 +741,7 @@ function findSharedKitNames(fileNames: string[]): Map<string, string[]> {
 /** Returns the failure reported for each source that claims a kit name shared with other sources. */
 function formatSharedKitNameError(kitName: string, sources: string[]): string {
   const sourceList = new Intl.ListFormat('en', { type: 'conjunction' }).format(sources);
-  return `Kit name "${kitName}" is shared by ${sourceList}. Rename all but one, or remove them from the sweep with compile.exclude.`;
+  return `Kit name "${kitName}" is shared by ${sourceList}. Keep one, and rename the others or remove them from the sweep with compile.exclude.`;
 }
 
 /** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */
