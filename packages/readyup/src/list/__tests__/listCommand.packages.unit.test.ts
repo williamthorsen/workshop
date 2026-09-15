@@ -99,8 +99,10 @@ describe('list --packages', () => {
 
       const { stdout } = await list(['--packages']);
 
-      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<name>]');
-      expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe('   To run: rdy run --from npm:plain-kit <name>');
+      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<kit>]');
+      expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe(
+        '   To run: rdy run --from npm:plain-kit <kit>[:<checklist>,...]',
+      );
     });
 
     it('marks an unconfigured package and leaves a configured one unmarked', async () => {

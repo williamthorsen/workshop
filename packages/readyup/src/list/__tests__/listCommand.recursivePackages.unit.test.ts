@@ -70,16 +70,16 @@ describe('list --recursive --packages', () => {
       expect(stdout.trimEnd().split('\n')).toStrictEqual([
         '\u{1F4C1} ./',
         '   \u{1F4E6} @acme/kits@2.1.0',
-        '      To run: rdy run --packages <name>',
+        '      To run: rdy run --packages <kit>',
         '      \u{1F4D3} drift \u{00B7} Dependency drift',
         '',
         '   \u{1F4E6} plain-kit@0.4.0 \u{00B7} not listed in the readyup config',
-        '      To run: rdy run --from npm:plain-kit <name>',
+        '      To run: rdy run --from npm:plain-kit <kit>[:<checklist>,...]',
         '      \u{1F4D3} smoke',
         '',
         '\u{1F4C1} packages/app/',
         '   \u{1F4E6} plain-kit@0.9.0 \u{00B7} not listed in the readyup config',
-        '      To run: cd packages/app && rdy run --from npm:plain-kit <name>',
+        '      To run: cd packages/app && rdy run --from npm:plain-kit <kit>[:<checklist>,...]',
         '      \u{1F4D3} smoke',
       ]);
     });

@@ -121,8 +121,8 @@ describe('list --recursive', () => {
     it('names a command that runs each project\u{2019}s kits from the sweep root', async () => {
       const { stdout } = await list(['--recursive']);
 
-      expect(stdout).toContain('rdy run <name>');
-      expect(stdout).toContain('rdy run --from packages/readyup [<name>]');
+      expect(stdout).toContain('rdy run <kit>[:<checklist>,...]');
+      expect(stdout).toContain('rdy run --from packages/readyup [<kit>[:<checklist>,...]]');
     });
 
     it('reports the descriptions recorded by the manifest, and renders a bare name without one', async () => {
@@ -142,7 +142,7 @@ describe('list --recursive', () => {
     it('reaches a project on a relocated output directory by file path', async () => {
       const { stdout } = await list(['--recursive']);
 
-      expect(stdout).toContain('rdy run --file <file path>');
+      expect(stdout).toContain('rdy run --file <file path> [--checklists <checklist>,...]');
       expect(stdout).toContain('\u{1F4D3} packages/tooling/dist/kits/lint.js');
     });
 

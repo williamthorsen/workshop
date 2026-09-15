@@ -46,7 +46,7 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
   });
 
   it('adds --internal to the internal hint when the config makes it necessary', () => {
@@ -57,7 +57,9 @@ describe(formatOwnerView, () => {
       needsInternalFlag: true,
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit --internal [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe(
+      '   To run: rdy run --jit --internal [<kit>[:<checklist>,...]]',
+    );
   });
 
   it('renders only the Compiled section when internal kits are empty', () => {
@@ -81,7 +83,7 @@ describe(formatOwnerView, () => {
     const lines = result.split('\n');
 
     expect(lines[0]).toBe('\u{2500}\u{2500} Internal');
-    expect(lines[1]).toBe('   To run: rdy run --jit <name>');
+    expect(lines[1]).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
     expect(lines[2]).toBe(`${INTERNAL} deploy`);
   });
 
@@ -117,8 +119,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<name>]');
-    expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run <name>');
+    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+    expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run <kit>[:<checklist>,...]');
   });
 
   it('uses brackets in compiled hint when default is in compiled kits', () => {
@@ -128,8 +130,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit <name>');
-    expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run [<name>]');
+    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
+    expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run [<kit>[:<checklist>,...]]');
   });
 
   it('omits brackets around positional name when no default kit exists', () => {
@@ -139,8 +141,8 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('rdy run --jit <name>');
-    expect(result).not.toContain('[<name>]');
+    expect(result).toContain('rdy run --jit <kit>[:<checklist>,...]');
+    expect(result).not.toContain('[<kit>[:<checklist>,...]]');
   });
 
   it('includes --jit in internal hints but not compiled hints', () => {
@@ -163,7 +165,7 @@ describe(formatOwnerView, () => {
       packageKits: [{ name: 'default' }, { name: 'npm-auto-publish' }],
     });
 
-    expect(findSectionCommand(result, 'Packages')).toBe('   To run: rdy run --packages [<name>]');
+    expect(findSectionCommand(result, 'Packages')).toBe('   To run: rdy run --packages [<kit>]');
     expect(result).toContain('default');
     expect(result).toContain('npm-auto-publish');
   });
@@ -227,7 +229,7 @@ describe(formatOwnerView, () => {
       compiledStyle: { kind: 'custom-outDir', outDirRel: 'dist/kits' },
     });
 
-    expect(result).toContain('rdy run --file <file path>');
+    expect(result).toContain('rdy run --file <file path> [--checklists <checklist>,...]');
     expect(result).toContain('dist/kits/deploy.js');
     expect(result).toContain('dist/kits/monitor.js');
   });
@@ -286,7 +288,7 @@ describe(formatConsumerView, () => {
       kitsDir: '/resolved/.readyup/kits',
     });
 
-    expect(result).toContain('rdy run --from . [<name>]');
+    expect(result).toContain('rdy run --from . [<kit>[:<checklist>,...]]');
   });
 
   it('omits brackets around positional name when default kit is absent', () => {
@@ -296,8 +298,8 @@ describe(formatConsumerView, () => {
       kitsDir: '/resolved/.readyup/kits',
     });
 
-    expect(result).toContain('rdy run --from . <name>');
-    expect(result).not.toContain('[<name>]');
+    expect(result).toContain('rdy run --from . <kit>[:<checklist>,...]');
+    expect(result).not.toContain('[<kit>[:<checklist>,...]]');
   });
 
   it('nests each kit\u{2019}s checklists beneath it', () => {
@@ -361,6 +363,27 @@ describe(formatManifestView, () => {
 
     expect(lines[0]).toBe('\u{2500}\u{2500} Manifest: .readyup/manifest.json');
     expect(lines[1]).toBe(`${COMPILED} deploy`);
+  });
+
+  it('names the command that runs the kits when given the source that named the manifest', () => {
+    const lines = formatManifestView({
+      kits: [{ name: 'deploy' }],
+      manifestPath: 'https://example.test/.readyup/manifest.json',
+      fromArg: 'github:acme/ops',
+    }).split('\n');
+
+    expect(lines[1]).toBe('   To run: rdy run --from github:acme/ops <kit>[:<checklist>,...]');
+    expect(lines[2]).toBe(`${COMPILED} deploy`);
+  });
+
+  it('brackets the kit and its checklist filter together when the manifest records a default kit', () => {
+    const lines = formatManifestView({
+      kits: [{ name: 'default' }],
+      manifestPath: 'https://example.test/.readyup/manifest.json',
+      fromArg: 'github:acme/ops',
+    }).split('\n');
+
+    expect(lines[1]).toBe('   To run: rdy run --from github:acme/ops [<kit>[:<checklist>,...]]');
   });
 
   it('renders description inline after kit name when present', () => {
@@ -484,7 +507,7 @@ describe(formatPackagesView, () => {
   it('hints a configured package with the run that reaches it', () => {
     const result = formatPackagesView({ groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] });
 
-    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <name>');
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <kit>');
   });
 
   // The hint tells the reader that a `--packages` run would skip this package.
@@ -493,7 +516,9 @@ describe(formatPackagesView, () => {
       groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
     });
 
-    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --from npm:@acme/kits <name>');
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe(
+      '   To run: rdy run --from npm:@acme/kits <kit>[:<checklist>,...]',
+    );
   });
 
   it('brackets the positional name when the package publishes a default kit', () => {
@@ -501,7 +526,7 @@ describe(formatPackagesView, () => {
       groups: [buildGroup({ packageName: '@acme/kits', kits: ['default', 'drift'] })],
     });
 
-    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<name>]');
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<kit>]');
   });
 
   it('marks an unconfigured package and leaves a configured one unmarked', () => {
@@ -583,19 +608,23 @@ describe(formatRecursiveView, () => {
   it('renders the sweep root with a hint naming no project', () => {
     const result = formatRecursiveView({ projects: [buildProject({ dir: '.', kits: ['demo'] })] });
 
-    expect(findProjectCommand(result, './')).toBe('   To run: rdy run <name>');
+    expect(findProjectCommand(result, './')).toBe('   To run: rdy run <kit>[:<checklist>,...]');
   });
 
   it('renders another project with a hint naming it', () => {
     const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['deploy'] })] });
 
-    expect(findProjectCommand(result, 'packages/ui/')).toBe('   To run: rdy run --from packages/ui <name>');
+    expect(findProjectCommand(result, 'packages/ui/')).toBe(
+      '   To run: rdy run --from packages/ui <kit>[:<checklist>,...]',
+    );
   });
 
   it('brackets the positional name when the project holds a default kit', () => {
     const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['default'] })] });
 
-    expect(findProjectCommand(result, 'packages/ui/')).toBe('   To run: rdy run --from packages/ui [<name>]');
+    expect(findProjectCommand(result, 'packages/ui/')).toBe(
+      '   To run: rdy run --from packages/ui [<kit>[:<checklist>,...]]',
+    );
   });
 
   it('renders a description as inline detail, and a kit without one as the bare name', () => {
@@ -639,7 +668,9 @@ describe(formatRecursiveView, () => {
       ],
     });
 
-    expect(findProjectCommand(result, 'packages/tooling/')).toBe('   To run: rdy run --file <file path>');
+    expect(findProjectCommand(result, 'packages/tooling/')).toBe(
+      '   To run: rdy run --file <file path> [--checklists <checklist>,...]',
+    );
     expect(result).toContain(`${COMPILED} packages/tooling/dist/kits/lint.js \u{00B7} Shared lint and format gate`);
   });
 
@@ -693,7 +724,7 @@ describe(formatRecursiveView, () => {
     );
 
     expect(lines[0]).toBe('== packages/ui/');
-    expect(lines[1]).toBe('      To run: rdy run --from packages/ui <name>');
+    expect(lines[1]).toBe('      To run: rdy run --from packages/ui <kit>[:<checklist>,...]');
     expect(lines[2]).toBe('      deploy');
   });
 });
@@ -717,12 +748,12 @@ describe(formatRecursivePackagesView, () => {
     expect(result.split('\n')).toStrictEqual([
       `${DIRECTORY} ./`,
       `   ${PACKAGE} @acme/kits@2.1.0`,
-      '      To run: rdy run --packages <name>',
+      '      To run: rdy run --packages <kit>',
       `      ${COMPILED} drift`,
       '',
       `${DIRECTORY} packages/tooling/`,
       `   ${PACKAGE} plain-kit@2.1.0`,
-      '      To run: cd packages/tooling && rdy run --packages <name>',
+      '      To run: cd packages/tooling && rdy run --packages <kit>',
       `      ${COMPILED} smoke`,
     ]);
   });
@@ -738,7 +769,7 @@ describe(formatRecursivePackagesView, () => {
       ],
     });
 
-    expect(result).toContain('To run: cd packages/tooling && rdy run --from npm:@acme/kits <name>');
+    expect(result).toContain('To run: cd packages/tooling && rdy run --from npm:@acme/kits <kit>[:<checklist>,...]');
   });
 
   it('marks a package omitted by the project config', () => {
@@ -848,7 +879,7 @@ describe(formatRecursivePackagesView, () => {
     expect(result.split('\n')).toStrictEqual([
       '      packages/tooling/',
       '            plain-kit@2.1.0',
-      '            To run: cd packages/tooling && rdy run --packages <name>',
+      '            To run: cd packages/tooling && rdy run --packages <kit>',
       '                  smoke',
     ]);
   });

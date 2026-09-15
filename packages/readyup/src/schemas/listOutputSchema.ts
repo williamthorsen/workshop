@@ -62,8 +62,8 @@ export const ListKitEntrySchema = z
  *
  * Rows are keyed by `name`, `kind`, `project`, and `origin.package` together, never by any subset. Under the
  * default configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a
- * compiled source appears twice: once as `internal`, which `rdy run --jit <name>` runs, and once as
- * `compiled`, which `rdy run <name>` runs. A package's kit is `compiled` as well, so `name` and `kind`
+ * compiled source appears twice: once as `internal`, which `rdy run --jit <kit>` runs, and once as
+ * `compiled`, which `rdy run <kit>` runs. A package's kit is `compiled` as well, so `name` and `kind`
  * alone collide between a project's own kit and a package's kit of the same name, and between two
  * packages publishing that name. A repo-wide listing adds a third collision, since two projects may each
  * hold a `default` kit, and two workspaces may each depend on the same publisher. Every such row is

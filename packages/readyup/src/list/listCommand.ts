@@ -179,7 +179,7 @@ async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Pr
 
   const output =
     sourceKits.kind === 'remote'
-      ? formatManifestView({ kits: sourceKits.kits, manifestPath: sourceKits.manifestUrl })
+      ? formatManifestView({ fromArg, kits: sourceKits.kits, manifestPath: sourceKits.manifestUrl })
       : formatConsumerView({
           compiledKits: sourceKits.kits.map(({ name, checklists }) => ({ name, checklists })),
           fromArg,

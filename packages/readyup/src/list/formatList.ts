@@ -12,6 +12,14 @@ const SECTION_SEPARATOR = '\n\n';
 /** Detail marking a package that the readyup config does not name. */
 const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 
+/**
+ * Command that runs a kit by file, which takes no kit name and so selects checklists by flag alone.
+ *
+ * A project on a custom `outDir` is reachable only this way: Every other resolution path hardcodes the
+ * convention directory.
+ */
+const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,...]';
+
 // -- Kit rows --
 
 /** One listed kit, with the description and checklist names that its manifest records. */
@@ -93,25 +101,25 @@ export function formatOwnerView({
 
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
-    const command = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
+    const command = `rdy run --jit${internalFlag} ${buildKitSelectionHint(internalKits)}`;
     const items = internalKits.map((name) => ({ name }));
     sections.push(formatSection('Internal', buildRunLine(command), items, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const command = `rdy run ${buildKitHint(compiledKits.map((kit) => kit.name))}`;
+      const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
       sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
     } else {
       const pathItems = compiledKits.map((kit) => ({ ...kit, name: `${compiledStyle.outDirRel}/${kit.name}.js` }));
-      sections.push(formatSection('Compiled', buildRunLine('rdy run --file <file path>'), pathItems, 'kit'));
+      sections.push(formatSection('Compiled', buildRunLine(FILE_RUN_COMMAND), pathItems, 'kit'));
     }
   }
 
   if (packageKits.length > 0) {
     // The rows list every published kit -- discovery is not run selection -- so the bracketed optional keeps
     // the promise that every kit listed is reachable by the command above it.
-    sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<name>]'), packageKits, 'sourcePackage'));
+    sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<kit>]'), packageKits, 'sourcePackage'));
   }
 
   if (availablePackages.length > 0) {
@@ -139,7 +147,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
     return formatEmpty('consumer', kitsDir);
   }
 
-  const command = `rdy run --from ${fromArg} ${buildKitHint(compiledKits.map((kit) => kit.name))}`;
+  const command = `rdy run --from ${fromArg} ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
   return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
 }
 
@@ -247,6 +255,8 @@ export function formatEmpty(
 interface ManifestViewOptions {
   kits: Array<KitView & { readyupVersion?: string | undefined }>;
   manifestPath: string;
+  /** The `--from` value that names the manifest's source; a manifest file read directly has none. */
+  fromArg?: string | undefined;
 }
 
 /**
@@ -255,25 +265,52 @@ interface ManifestViewOptions {
  * A kit's line shows its version as a parenthetical and its description as inline detail, each present
  * only when the manifest records it. The `readyup` label distinguishes the runner's version from a
  * version that the kit might declare for itself.
+ *
+ * `fromArg` adds the command that runs the kits beneath the heading. A manifest named by `--manifest` gets
+ * none, since `rdy run` cannot take a manifest file as its source.
  */
-export function formatManifestView({ kits, manifestPath }: ManifestViewOptions): string {
+export function formatManifestView({ fromArg, kits, manifestPath }: ManifestViewOptions): string {
   if (kits.length === 0) {
     return `No kits found in manifest: ${manifestPath}`;
   }
 
+  const heading = getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section');
+  const hintLines =
+    fromArg === undefined
+      ? []
+      : [buildRunLine(`rdy run --from ${fromArg} ${buildKitSelectionHint(kits.map((kit) => kit.name))}`)];
   const items = kits.flatMap((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
     return formatKitRows({ ...kit, name: `${kit.name}${versionSegment}` }, 'kit');
   });
 
-  return [getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
+  return [heading, ...hintLines, ...items].join('\n');
 }
 
 // region | Helpers
 
-/** Returns the positional-name placeholder, bracketed when `kits` contains a default. */
-function buildKitHint(kits: string[]): string {
-  return kits.includes('default') ? '[<name>]' : '<name>';
+/** Returns `hint` wrapped in brackets when `kits` contains a default, which a run naming no kit selects. */
+function bracketIfDefault(hint: string, kits: readonly string[]): string {
+  return kits.includes('default') ? `[${hint}]` : hint;
+}
+
+/**
+ * Returns the kit placeholder for a source that selects kits by name alone, bracketed when `kits` contains a default.
+ *
+ * `--packages` is that source: It rejects a checklist filter, since the kit that it names may be published by
+ * several packages.
+ */
+function buildKitHint(kits: readonly string[]): string {
+  return bracketIfDefault('<kit>', kits);
+}
+
+/**
+ * Returns the kit placeholder with the checklist filter that may follow it, bracketed when `kits` contains a default.
+ *
+ * The bracket wraps the filter too, because a filter needs a kit name before it.
+ */
+function buildKitSelectionHint(kits: readonly string[]): string {
+  return bracketIfDefault('<kit>[:<checklist>,...]', kits);
 }
 
 /**
@@ -284,8 +321,10 @@ function buildKitHint(kits: string[]): string {
  * would include it, and every kit listed stays reachable by the command above it.
  */
 function buildPackageHint(group: KitPackageGroup): string {
-  const nameHint = buildKitHint(group.kits.map((kit) => kit.kitName));
-  return group.configured ? `rdy run --packages ${nameHint}` : `rdy run --from npm:${group.packageName} ${nameHint}`;
+  const kitNames = group.kits.map((kit) => kit.kitName);
+  return group.configured
+    ? `rdy run --packages ${buildKitHint(kitNames)}`
+    : `rdy run --from npm:${group.packageName} ${buildKitSelectionHint(kitNames)}`;
 }
 
 /** Returns a package's name with the version that its own manifest records, where it records one. */
@@ -293,19 +332,14 @@ function buildPackageLabel(group: KitPackageGroup): string {
   return group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
 }
 
-/**
- * Returns the command that runs a project's kits from where the reader stands.
- *
- * A project on a custom `outDir` is reachable only by file: Every other resolution path hardcodes the
- * convention directory.
- */
+/** Returns the command that runs a project's kits from where the reader stands. */
 function buildProjectHint(project: RecursiveProjectView): string {
   if (project.compiledStyle.kind === 'custom-outDir') {
-    return 'rdy run --file <file path>';
+    return FILE_RUN_COMMAND;
   }
 
-  const nameHint = buildKitHint(project.compiledKits.map((kit) => kit.name));
-  return project.dir === '.' ? `rdy run ${nameHint}` : `rdy run --from ${project.dir} ${nameHint}`;
+  const selectionHint = buildKitSelectionHint(project.compiledKits.map((kit) => kit.name));
+  return project.dir === '.' ? `rdy run ${selectionHint}` : `rdy run --from ${project.dir} ${selectionHint}`;
 }
 
 /**
