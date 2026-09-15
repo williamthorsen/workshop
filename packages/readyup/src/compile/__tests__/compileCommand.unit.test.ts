@@ -17,6 +17,7 @@ const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
+const mockWarnOnUnrecordedBundles = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
@@ -54,6 +55,11 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
 
 vi.mock(import('../../verify/checkDrift.ts'), () => ({
   checkDrift: mockCheckDrift,
+}));
+
+// The output directory is scanned through the real filesystem, which these tests replace with sweep-shaped stubs.
+vi.mock(import('../warnOnUnrecordedBundles.ts'), () => ({
+  warnOnUnrecordedBundles: mockWarnOnUnrecordedBundles,
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
@@ -125,6 +131,7 @@ describe(compileCommand, () => {
   beforeEach(() => {
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
+    mockWarnOnUnrecordedBundles.mockReturnValue([]);
     // No path named by these tests holds a symlink, so a real path is the path itself.
     mockRealpathSync.mockImplementation((target: string) => target);
   });
@@ -141,6 +148,7 @@ describe(compileCommand, () => {
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
     mockCheckDrift.mockReset();
+    mockWarnOnUnrecordedBundles.mockReset();
   });
 
   // Explicit input file tests

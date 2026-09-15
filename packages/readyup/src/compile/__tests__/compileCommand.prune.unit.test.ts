@@ -43,7 +43,7 @@ const PROJECT_TREE = {
   }),
 };
 
-describe('compile pruning orphaned kits', () => {
+describe('compile handling bundles that no source compiles to', () => {
   beforeEach(() => {
     mockCompileConfig.mockImplementation(compileResult);
     mockValidateCompiledOutput.mockResolvedValue({ checklists: [] });
@@ -197,24 +197,56 @@ describe('compile pruning orphaned kits', () => {
       expect(stdout).toContain('1 of 1 kit skipped due to drift.');
     });
 
-    it('deletes nothing under --skip-manifest', async () => {
+    it('deletes nothing and warns on nothing under --skip-manifest', async () => {
       using tree = createTempTree(PROJECT_TREE, { prefix: 'rdy-compile-prune-' });
       using _cwd = pointCwdAt(tree.dir);
 
-      await compile(['--skip-manifest']);
+      const { stderr } = await compile(['--skip-manifest']);
 
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(true);
+      expect(stderr).not.toContain('Warning:');
+    });
+
+    it('warns on a bundle that the manifest does not record, keeps it, and passes', async () => {
+      using tree = createTempTree(
+        { ...PROJECT_TREE, '.readyup/kits/old.js': COMPILED },
+        { prefix: 'rdy-compile-prune-' },
+      );
+      using _cwd = pointCwdAt(tree.dir);
+
+      const payload = CompileOutputSchema.parse(await compileForPayload([]));
+
+      expect(tree.exists('.readyup/kits/old.js')).toBe(true);
+      expect(payload.passed).toBe(true);
+      expect(payload.warnings).toStrictEqual([
+        {
+          code: 'bundle-unrecorded',
+          message: 'old.js in .readyup/kits is not recorded in the manifest, and no source compiles to it.',
+          remedy: 'Delete it if its kit was removed.',
+        },
+      ]);
+    });
+
+    it('raises no warning for an edited orphan, whose entry the manifest keeps', async () => {
+      using tree = createTempTree(PROJECT_TREE, { prefix: 'rdy-compile-prune-' });
+      using _cwd = pointCwdAt(tree.dir);
+      tree.write('.readyup/kits/legacy.js', 'export default { edited: true };');
+
+      const { stderr } = await compile([]);
+
+      expect(stderr).not.toContain('Warning:');
     });
   });
 
   describe('a single-file compile', () => {
-    it('deletes nothing and leaves the entries of other kits', async () => {
+    it('deletes nothing, warns on nothing, and leaves the entries of other kits', async () => {
       using tree = createTempTree(PROJECT_TREE, { prefix: 'rdy-compile-prune-' });
       using _cwd = pointCwdAt(tree.dir);
 
-      const { exitCode } = await compile(['.readyup/kits/deploy.ts']);
+      const { exitCode, stderr } = await compile(['.readyup/kits/deploy.ts']);
 
       expect(exitCode).toBe(0);
+      expect(stderr).not.toContain('Warning:');
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(true);
       expect(manifestKitNames(tree)).toStrictEqual(['deploy', 'legacy']);
     });

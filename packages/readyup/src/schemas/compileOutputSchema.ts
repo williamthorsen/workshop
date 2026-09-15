@@ -72,8 +72,8 @@ export const CompileRemovedEntrySchema = z
  *
  * `removed` lists the bundles that the sweep deleted, and is absent when it deleted none.
  *
- * `warnings` lists the advisories raised by the kits that compiled, and is absent when none was raised. No
- * warning affects `passed`.
+ * `warnings` lists the advisories raised by the kits that compiled and by the bundles that nothing accounts for, and
+ * is absent when none was raised. No warning affects `passed`.
  */
 export const CompileOutputSchema = z
   .object({

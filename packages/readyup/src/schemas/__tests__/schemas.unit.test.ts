@@ -250,6 +250,7 @@ describe('JSON payload schemas', () => {
 
     it('binds a producer to the vocabulary declared by this version while the wire stays open', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
+        | 'bundle-unrecorded'
         | 'diagnosis-inconclusive'
         | 'input-stale'
         | 'json-inlined'
@@ -261,6 +262,7 @@ describe('JSON payload schemas', () => {
         | 'version-skew'
       >();
       expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<
+        | 'bundle-unrecorded'
         | 'diagnosis-inconclusive'
         | 'input-stale'
         | 'json-inlined'

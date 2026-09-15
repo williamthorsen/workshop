@@ -69,6 +69,7 @@ describe('generated JSON Schemas', () => {
         {
           type: 'string',
           enum: [
+            'bundle-unrecorded',
             'diagnosis-inconclusive',
             'input-stale',
             'json-inlined',
