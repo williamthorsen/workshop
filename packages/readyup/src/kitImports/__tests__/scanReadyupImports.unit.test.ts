@@ -120,6 +120,14 @@ describe(scanReadyupImports, () => {
     expect(found).toStrictEqual([{ specifier: 'readyup', names: [] }]);
   });
 
+  it('drops a dynamic import of a template literal with substitutions', async () => {
+    const bundle = 'const utils = await import(`readyup/${subpath}`);';
+
+    const found = await scanReadyupImports(bundle);
+
+    expect(found).toStrictEqual([]);
+  });
+
   it('skips a default binding but keeps the named bindings beside it', async () => {
     const bundle = 'import rdy, { defineRdyKit } from "readyup";';
 
