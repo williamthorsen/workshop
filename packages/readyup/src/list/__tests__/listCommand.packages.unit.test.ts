@@ -87,6 +87,12 @@ describe('list --packages', () => {
       expect(stdout).toContain('\u{1F4D3} drift');
     });
 
+    it('nests the checklists recorded by a publisher beneath their kit', async () => {
+      const { stdout } = await list(['--packages']);
+
+      expect(stdout).toContain('Dependency drift\n   \u{1F4CB} lockfile\n   \u{1F4CB} ranges\n\u{1F4D3} drift');
+    });
+
     // The hint tells the reader whether a `--packages` run would reach the package.
     it('hints a configured package with the run reaching it and an unconfigured one with its source', async () => {
       configurePackages(['@acme/kits']);

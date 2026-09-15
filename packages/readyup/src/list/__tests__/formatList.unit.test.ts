@@ -24,6 +24,7 @@ const COMPILED = richFormatter.tokens.kit.glyph;
 const INTERNAL = richFormatter.tokens.kitSource.glyph;
 const DIRECTORY = richFormatter.tokens.sourceDirectory.glyph;
 const PACKAGE = richFormatter.tokens.sourcePackage.glyph;
+const CHECKLIST = richFormatter.tokens.checklist.glyph;
 
 describe(formatOwnerView, () => {
   it('renders only the Internal section when compiled kits are empty', () => {
@@ -62,7 +63,7 @@ describe(formatOwnerView, () => {
   it('renders only the Compiled section when internal kits are empty', () => {
     const result = formatOwnerView({
       internalKits: [],
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
@@ -88,7 +89,7 @@ describe(formatOwnerView, () => {
   it('separates one section from the next with a blank line, opening with none', () => {
     const lines = formatOwnerView({
       internalKits: ['deploy'],
-      compiledKits: ['monitor'],
+      compiledKits: [{ name: 'monitor' }],
       compiledStyle: { kind: 'local-convention' },
     }).split('\n');
     const titleIndexes = lines
@@ -112,7 +113,7 @@ describe(formatOwnerView, () => {
   it('uses brackets around positional name in internal hint when default exists', () => {
     const result = formatOwnerView({
       internalKits: ['default'],
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
@@ -123,7 +124,7 @@ describe(formatOwnerView, () => {
   it('uses brackets in compiled hint when default is in compiled kits', () => {
     const result = formatOwnerView({
       internalKits: ['deploy'],
-      compiledKits: ['default', 'monitor'],
+      compiledKits: [{ name: 'default' }, { name: 'monitor' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
@@ -145,7 +146,7 @@ describe(formatOwnerView, () => {
   it('includes --jit in internal hints but not compiled hints', () => {
     const result = formatOwnerView({
       internalKits: ['default'],
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
@@ -159,7 +160,7 @@ describe(formatOwnerView, () => {
       internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
-      packageKits: ['default', 'npm-auto-publish'],
+      packageKits: [{ name: 'default' }, { name: 'npm-auto-publish' }],
     });
 
     expect(findSectionCommand(result, 'Packages')).toBe('   To run: rdy run --packages [<name>]');
@@ -179,10 +180,50 @@ describe(formatOwnerView, () => {
     expect(findSectionCommand(result, 'Available')).toBe('   Add to "packages" in the readyup config');
   });
 
+  it('nests each compiled kit\u{2019}s checklists beneath it, in the order given', () => {
+    const lines = formatOwnerView({
+      internalKits: [],
+      compiledKits: [{ name: 'deploy', checklists: ['release', 'build'] }, { name: 'monitor' }],
+      compiledStyle: { kind: 'local-convention' },
+    }).split('\n');
+
+    expect(lines.slice(2)).toStrictEqual([
+      `${COMPILED} deploy`,
+      `   ${CHECKLIST} release`,
+      `   ${CHECKLIST} build`,
+      `${COMPILED} monitor`,
+    ]);
+  });
+
+  it('nests a package kit\u{2019}s checklists beneath its label', () => {
+    const lines = formatOwnerView({
+      internalKits: [],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+      packageKits: [{ name: 'readyup@0.36.0 / default', checklists: ['setup', 'freshness'] }],
+    }).split('\n');
+
+    expect(lines.slice(2)).toStrictEqual([
+      `${PACKAGE} readyup@0.36.0 / default`,
+      `   ${CHECKLIST} setup`,
+      `   ${CHECKLIST} freshness`,
+    ]);
+  });
+
+  it('nests checklists beneath a kit named by its file path', () => {
+    const result = formatOwnerView({
+      internalKits: [],
+      compiledKits: [{ name: 'deploy', checklists: ['build'] }],
+      compiledStyle: { kind: 'custom-outDir', outDirRel: 'dist/kits' },
+    });
+
+    expect(result).toContain(`${COMPILED} dist/kits/deploy.js\n   ${CHECKLIST} build`);
+  });
+
   it('renders custom outDir style with file paths', () => {
     const result = formatOwnerView({
       internalKits: [],
-      compiledKits: ['deploy', 'monitor'],
+      compiledKits: [{ name: 'deploy' }, { name: 'monitor' }],
       compiledStyle: { kind: 'custom-outDir', outDirRel: 'dist/kits' },
     });
 
@@ -206,7 +247,7 @@ describe(formatOwnerView, () => {
   it('renders both sections when both have kits', () => {
     const result = formatOwnerView({
       internalKits: ['default'],
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
@@ -218,7 +259,7 @@ describe(formatOwnerView, () => {
 describe(formatConsumerView, () => {
   it('renders compiled kits with the from arg in the hint', () => {
     const result = formatConsumerView({
-      compiledKits: ['default', 'deploy'],
+      compiledKits: [{ name: 'default' }, { name: 'deploy' }],
       fromArg: '.',
       kitsDir: '/resolved/.readyup/kits',
     });
@@ -230,7 +271,7 @@ describe(formatConsumerView, () => {
 
   it('preserves the exact fromArg in the hint', () => {
     const result = formatConsumerView({
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       fromArg: '/other',
       kitsDir: '/other/.readyup/kits',
     });
@@ -240,7 +281,7 @@ describe(formatConsumerView, () => {
 
   it('uses brackets around positional name when default kit exists', () => {
     const result = formatConsumerView({
-      compiledKits: ['default'],
+      compiledKits: [{ name: 'default' }],
       fromArg: '.',
       kitsDir: '/resolved/.readyup/kits',
     });
@@ -250,13 +291,23 @@ describe(formatConsumerView, () => {
 
   it('omits brackets around positional name when default kit is absent', () => {
     const result = formatConsumerView({
-      compiledKits: ['deploy'],
+      compiledKits: [{ name: 'deploy' }],
       fromArg: '.',
       kitsDir: '/resolved/.readyup/kits',
     });
 
     expect(result).toContain('rdy run --from . <name>');
     expect(result).not.toContain('[<name>]');
+  });
+
+  it('nests each kit\u{2019}s checklists beneath it', () => {
+    const result = formatConsumerView({
+      compiledKits: [{ name: 'deploy', checklists: ['build', 'release'] }],
+      fromArg: '.',
+      kitsDir: '/resolved/.readyup/kits',
+    });
+
+    expect(result).toContain(`${COMPILED} deploy\n   ${CHECKLIST} build\n   ${CHECKLIST} release`);
   });
 
   it('returns empty message with resolved kitsDir for local path', () => {
@@ -371,6 +422,28 @@ describe(formatManifestView, () => {
     expect(result).not.toContain('readyup v');
   });
 
+  it('nests the checklists beneath the kit line, after its version and description', () => {
+    const lines = formatManifestView({
+      kits: [{ name: 'default', description: 'Health', readyupVersion: '0.20.0', checklists: ['setup', 'freshness'] }],
+      manifestPath: '.readyup/manifest.json',
+    }).split('\n');
+
+    expect(lines.slice(1)).toStrictEqual([
+      `${COMPILED} default (readyup v0.20.0) \u{00B7} Health`,
+      `   ${CHECKLIST} setup`,
+      `   ${CHECKLIST} freshness`,
+    ]);
+  });
+
+  it('renders no checklist rows for a kit that records an empty list', () => {
+    const lines = formatManifestView({
+      kits: [{ name: 'deploy', checklists: [] }],
+      manifestPath: '.readyup/manifest.json',
+    }).split('\n');
+
+    expect(lines).toStrictEqual(['\u{2500}\u{2500} Manifest: .readyup/manifest.json', `${COMPILED} deploy`]);
+  });
+
   it('omits both segments when both version and description are absent', () => {
     const result = formatManifestView({
       kits: [{ name: 'bare' }],
@@ -460,6 +533,23 @@ describe(formatPackagesView, () => {
     expect(result).not.toContain('preflight \u{00B7}');
   });
 
+  it('nests a kit\u{2019}s checklists beneath it', () => {
+    const result = formatPackagesView({
+      groups: [
+        {
+          packageName: '@acme/kits',
+          version: '2.1.0',
+          configured: true,
+          kits: [buildKit('@acme/kits', 'drift', 'Dependency drift', ['lockfile', 'ranges'])],
+        },
+      ],
+    });
+
+    expect(result).toContain(
+      `${COMPILED} drift \u{00B7} Dependency drift\n   ${CHECKLIST} lockfile\n   ${CHECKLIST} ranges`,
+    );
+  });
+
   it('separates one package block from the next with a blank line', () => {
     const result = formatPackagesView({
       groups: [
@@ -522,6 +612,20 @@ describe(formatRecursiveView, () => {
     expect(result).toContain(`${COMPILED} default \u{00B7} Publication readiness`);
     expect(result).toContain(`${COMPILED} deploy`);
     expect(result).not.toContain('deploy \u{00B7}');
+  });
+
+  it('nests a kit\u{2019}s checklists beneath it', () => {
+    const result = formatRecursiveView({
+      projects: [
+        {
+          dir: 'packages/ui',
+          compiledKits: [{ name: 'default', description: 'Publication readiness', checklists: ['packaging'] }],
+          compiledStyle: { kind: 'local-convention' },
+        },
+      ],
+    });
+
+    expect(result).toContain(`${COMPILED} default \u{00B7} Publication readiness\n   ${CHECKLIST} packaging`);
   });
 
   it('renders a custom-outDir project by file path, against the sweep root', () => {
@@ -674,6 +778,26 @@ describe(formatRecursivePackagesView, () => {
     expect(result).toContain(`${COMPILED} drift \u{00B7} Dependency drift`);
   });
 
+  it('nests a kit\u{2019}s checklists one level beneath the kit', () => {
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: '.',
+          groups: [
+            {
+              packageName: '@acme/kits',
+              version: '2.1.0',
+              configured: true,
+              kits: [buildKit('@acme/kits', 'drift', undefined, ['lockfile'])],
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(result).toContain(`      ${COMPILED} drift\n         ${CHECKLIST} lockfile`);
+  });
+
   it('separates one package from the next with a blank line, and keeps the directory against its first', () => {
     const result = formatRecursivePackagesView({
       projects: [
@@ -727,6 +851,28 @@ describe(formatRecursivePackagesView, () => {
       '            To run: cd packages/tooling && rdy run --packages <name>',
       '                  smoke',
     ]);
+  });
+
+  it('indents a checklist one level beneath its kit in plain style', () => {
+    setStyle('plain');
+
+    const result = formatRecursivePackagesView({
+      projects: [
+        buildProjectPackages({
+          dir: '.',
+          groups: [
+            {
+              packageName: 'plain-kit',
+              version: '2.1.0',
+              configured: true,
+              kits: [buildKit('plain-kit', 'smoke', undefined, ['boot'])],
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(result.split('\n').slice(-2)).toStrictEqual(['                  smoke', '                        boot']);
   });
 });
 
@@ -813,13 +959,18 @@ function buildGroup({
 }
 
 /** Builds one published kit, whose path the packages view never renders. */
-function buildKit(packageName: string, kitName: string, description: string | undefined): PackageKit {
+function buildKit(
+  packageName: string,
+  kitName: string,
+  description: string | undefined,
+  checklists?: string[],
+): PackageKit {
   return {
     packageName,
     version: '2.1.0',
     kitName,
     description,
-    checklists: undefined,
+    checklists,
     path: `node_modules/${packageName}/.readyup/kits/${kitName}.js`,
   };
 }

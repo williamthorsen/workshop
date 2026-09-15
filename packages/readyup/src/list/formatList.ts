@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import type { KitPackageGroup } from '../installed-packages/collectKitPackageGroups.ts';
+import type { PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
@@ -10,6 +11,15 @@ const SECTION_SEPARATOR = '\n\n';
 
 /** Detail marking a package that the readyup config does not name. */
 const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
+
+// -- Kit rows --
+
+/** One listed kit, with the description and checklist names that its manifest records. */
+export interface KitView {
+  name: string;
+  description?: string | undefined;
+  checklists?: readonly string[] | undefined;
+}
 
 // -- Compiled-section style discriminants --
 
@@ -47,10 +57,10 @@ export function resolveCompiledStyle(projectDir: string, outDir: string, renderF
 
 interface OwnerViewOptions {
   internalKits: string[];
-  compiledKits: string[];
+  compiledKits: KitView[];
   compiledStyle: CompiledStyle;
   needsInternalFlag?: boolean;
-  packageKits?: string[];
+  packageKits?: KitView[];
   availablePackages?: string[];
 }
 
@@ -84,15 +94,16 @@ export function formatOwnerView({
   if (internalKits.length > 0) {
     const internalFlag = needsInternalFlag ? ' --internal' : '';
     const command = `rdy run --jit${internalFlag} ${buildKitHint(internalKits)}`;
-    sections.push(formatSection('Internal', buildRunLine(command), internalKits, 'kitSource'));
+    const items = internalKits.map((name) => ({ name }));
+    sections.push(formatSection('Internal', buildRunLine(command), items, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
     if (compiledStyle.kind === 'local-convention') {
-      const command = `rdy run ${buildKitHint(compiledKits)}`;
+      const command = `rdy run ${buildKitHint(compiledKits.map((kit) => kit.name))}`;
       sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
     } else {
-      const pathItems = compiledKits.map((name) => `${compiledStyle.outDirRel}/${name}.js`);
+      const pathItems = compiledKits.map((kit) => ({ ...kit, name: `${compiledStyle.outDirRel}/${kit.name}.js` }));
       sections.push(formatSection('Compiled', buildRunLine('rdy run --file <file path>'), pathItems, 'kit'));
     }
   }
@@ -113,7 +124,7 @@ export function formatOwnerView({
 // -- Consumer view --
 
 interface ConsumerViewOptions {
-  compiledKits: string[];
+  compiledKits: KitView[];
   fromArg: string;
   kitsDir: string;
 }
@@ -128,7 +139,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
     return formatEmpty('consumer', kitsDir);
   }
 
-  const command = `rdy run --from ${fromArg} ${buildKitHint(compiledKits)}`;
+  const command = `rdy run --from ${fromArg} ${buildKitHint(compiledKits.map((kit) => kit.name))}`;
   return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
 }
 
@@ -153,17 +164,11 @@ export function formatPackagesView({ groups }: PackagesViewOptions): string {
 
 // -- Recursive view --
 
-/** One kit reported by a recursive listing, with the description recorded by its project's manifest. */
-export interface RecursiveKitView {
-  name: string;
-  description?: string | undefined;
-}
-
 /** One discovered project's contribution to a recursive listing. */
 export interface RecursiveProjectView {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
-  compiledKits: RecursiveKitView[];
+  compiledKits: KitView[];
   /** Resolved against the sweep root, so a custom-`outDir` row names a path that works from there. */
   compiledStyle: CompiledStyle;
 }
@@ -240,12 +245,12 @@ export function formatEmpty(
 // -- Manifest view --
 
 interface ManifestViewOptions {
-  kits: Array<{ name: string; description?: string | undefined; readyupVersion?: string | undefined }>;
+  kits: Array<KitView & { readyupVersion?: string | undefined }>;
   manifestPath: string;
 }
 
 /**
- * Returns a heading naming the manifest, then one line per kit.
+ * Returns a heading naming the manifest, then one line per kit, followed by its checklists.
  *
  * A kit's line shows its version as a parenthetical and its description as inline detail, each present
  * only when the manifest records it. The `readyup` label distinguishes the runner's version from a
@@ -256,13 +261,9 @@ export function formatManifestView({ kits, manifestPath }: ManifestViewOptions):
     return `No kits found in manifest: ${manifestPath}`;
   }
 
-  const items = kits.map((kit) => {
+  const items = kits.flatMap((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
-    return getLayout().formatCheckLine({
-      token: 'kit',
-      name: `${kit.name}${versionSegment}`,
-      ...(kit.description !== undefined && { detail: kit.description }),
-    });
+    return formatKitRows({ ...kit, name: `${kit.name}${versionSegment}` }, 'kit');
   });
 
   return [getLayout().formatHeading(`Manifest: ${manifestPath}`, 'section'), ...items].join('\n');
@@ -335,7 +336,27 @@ function buildRunLine(command: string, depth = 1): string {
  */
 function formatAvailableSection(availablePackages: string[]): string {
   const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
-  return formatSection('Available', instruction, availablePackages, 'sourcePackage');
+  const items = availablePackages.map((name) => ({ name }));
+  return formatSection('Available', instruction, items, 'sourcePackage');
+}
+
+/**
+ * Returns a kit's line, then a line one level deeper for each checklist that its manifest records.
+ *
+ * The checklists keep the manifest's order, which is the order that the kit declares and runs them in.
+ */
+function formatKitRows(kit: KitView, token: TokenName, depth = 0): string[] {
+  const kitLine = getLayout().formatCheckLine({
+    token,
+    name: kit.name,
+    depth,
+    ...(kit.description !== undefined && { detail: kit.description }),
+  });
+  const checklistLines = (kit.checklists ?? []).map((name) =>
+    getLayout().formatCheckLine({ token: 'checklist', name, depth: depth + 1 }),
+  );
+
+  return [kitLine, ...checklistLines];
 }
 
 /** Returns one package's line under a project's directory, the command running its kits, and a line per kit. */
@@ -346,14 +367,7 @@ function formatNestedPackageBlock(group: KitPackageGroup, runPrefix: string): st
     depth: 1,
     ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
   });
-  const items = group.kits.map((kit) =>
-    getLayout().formatCheckLine({
-      token: 'kit',
-      name: kit.kitName,
-      depth: 2,
-      ...(kit.description !== undefined && { detail: kit.description }),
-    }),
-  );
+  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', 2));
 
   return [packageLine, buildRunLine(`${runPrefix}${buildPackageHint(group)}`, 2), ...items].join('\n');
 }
@@ -365,13 +379,7 @@ function formatPackageBlock(group: KitPackageGroup): string {
     'kit',
     group.configured ? undefined : UNCONFIGURED_DETAIL,
   );
-  const items = group.kits.map((kit) =>
-    getLayout().formatCheckLine({
-      token: 'kit',
-      name: kit.kitName,
-      ...(kit.description !== undefined && { detail: kit.description }),
-    }),
-  );
+  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit'));
 
   return [heading, buildRunLine(buildPackageHint(group)), ...items].join('\n');
 }
@@ -379,12 +387,8 @@ function formatPackageBlock(group: KitPackageGroup): string {
 /** Returns one project's heading, the command running its kits, and a line per kit. */
 function formatProjectBlock(project: RecursiveProjectView): string {
   const heading = getLayout().formatBreadcrumb([{ role: 'sourceDirectory', text: `${project.dir}/` }], 'kit');
-  const items = project.compiledKits.map((kit) =>
-    getLayout().formatCheckLine({
-      token: 'kit',
-      name: resolveKitLabel(project.compiledStyle, kit.name),
-      ...(kit.description !== undefined && { detail: kit.description }),
-    }),
+  const items = project.compiledKits.flatMap((kit) =>
+    formatKitRows({ ...kit, name: resolveKitLabel(project.compiledStyle, kit.name) }, 'kit'),
   );
 
   return [heading, buildRunLine(buildProjectHint(project)), ...items].join('\n');
@@ -412,14 +416,19 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
  * The hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
  * the blank separating one section from the next belongs to whoever assembles them.
  */
-function formatSection(title: string, hintLine: string, kits: string[], token: TokenName): string {
-  const items = kits.map((name) => getLayout().formatCheckLine({ token, name }));
+function formatSection(title: string, hintLine: string, kits: KitView[], token: TokenName): string {
+  const items = kits.flatMap((kit) => formatKitRows(kit, token));
   return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
 /** Returns what a kit's row is named: its bare name, or the path needed by a `--file` invocation. */
 function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
   return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
+}
+
+/** Returns the row that a package's kit is listed as, named by the kit alone. */
+function toKitView(kit: PackageKit): KitView {
+  return { name: kit.kitName, description: kit.description, checklists: kit.checklists };
 }
 
 // endregion | Helpers

@@ -90,6 +90,23 @@ describe(listCommand, () => {
       expect(stdout).not.toContain('No kits found');
     });
 
+    it('nests the checklists recorded by a package kit\u{2019}s manifest beneath it', async () => {
+      configureOnePackage();
+      mockExpandConfiguredPackages.mockReturnValue([
+        {
+          packageName: '@acme/kits',
+          version: '2.1.0',
+          kitName: 'drift',
+          checklists: ['lockfile', 'ranges'],
+          path: '/pkg/.readyup/kits/drift.js',
+        },
+      ]);
+
+      const { stdout } = await list([]);
+
+      expect(stdout).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift\n   \u{1F4CB} lockfile\n   \u{1F4CB} ranges');
+    });
+
     it('names installed packages that publish kits omitted by the config', async () => {
       mockDiscoverKitPackages.mockReturnValue(['@acme/kits', 'plain-kit']);
       configureOnePackage();
@@ -147,6 +164,17 @@ describe(listCommand, () => {
       );
       expect(stdout).toContain('\u{2500}\u{2500} Internal');
       expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+    });
+
+    it('nests the checklists recorded by the manifest beneath each compiled kit', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', checklists: ['build', 'release'] }],
+      });
+
+      const { stdout } = await list([]);
+
+      expect(stdout).toContain('\u{1F4D3} deploy\n   \u{1F4CB} build\n   \u{1F4CB} release');
     });
 
     it('uses infix-based extension for internal kits when configured', async () => {

@@ -43,6 +43,7 @@ const it = baseIt
                 path: 'kits/default.js',
                 description: 'Authoring hygiene for a project that defines readyup kits',
                 readyupVersion: '0.24.0',
+                checklists: ['setup', 'freshness'],
               },
               {
                 name: 'publishing',
@@ -132,6 +133,12 @@ describe('list --recursive', () => {
       expect(stdout).not.toContain('demo \u{00B7}');
     });
 
+    it('nests the checklists recorded by the manifest beneath their kit', async () => {
+      const { stdout } = await list(['--recursive']);
+
+      expect(stdout).toContain('readyup kits\n   \u{1F4CB} setup\n   \u{1F4CB} freshness\n\u{1F4D3} publishing');
+    });
+
     it('reaches a project on a relocated output directory by file path', async () => {
       const { stdout } = await list(['--recursive']);
 
@@ -176,6 +183,7 @@ describe('list --recursive', () => {
         path: 'packages/readyup/.readyup/kits/default.js',
         description: 'Authoring hygiene for a project that defines readyup kits',
         readyupVersion: '0.24.0',
+        checklists: ['setup', 'freshness'],
       });
     });
 
