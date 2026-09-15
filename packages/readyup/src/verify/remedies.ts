@@ -23,14 +23,15 @@ interface Remedy {
  */
 export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): string[] {
   const { drift, inputs, rebuild, source } = verdicts;
+  const targetDrifted = drift.kind === 'drift';
   const raised = [
-    resolveDriftRemedy(drift, rebuild),
-    resolveSourceRemedy(kit, source),
+    resolveDriftRemedy(drift, rebuild, source),
+    resolveSourceRemedy(kit, source, targetDrifted),
     ...resolveInputRemedies(inputs),
     resolveRebuildRemedy(rebuild, source),
   ].filter((remedy): remedy is Remedy => remedy !== undefined);
 
-  return collapseRemedies(raised, drift.kind === 'drift');
+  return collapseRemedies(raised, targetDrifted);
 }
 
 // region | Helpers
@@ -68,13 +69,20 @@ function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
  * Both `drift` branches name `--force`, because `rdy compile` gates on drift and skips the kit rather than
  * overwriting it. They differ in whether there are edits to move first, which is the question that `--rebuild`
  * answers. A missing bundle does not hit that gate, so a plain recompile regenerates it.
+ *
+ * Defers to a source that the hash axis reports as gone, which leaves no source to move edits into.
  */
-function resolveDriftRemedy(status: DriftStatus, rebuild: RebuildStatus | undefined): Remedy | undefined {
+function resolveDriftRemedy(
+  status: DriftStatus,
+  rebuild: RebuildStatus | undefined,
+  source: SourceStatus,
+): Remedy | undefined {
   switch (status.kind) {
     case 'ok':
     case 'unverified':
       return undefined;
     case 'drift':
+      if (source.kind === 'missing') return undefined;
       return {
         text:
           rebuild?.kind === 'ok'
@@ -137,22 +145,24 @@ function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceS
  * Returns the remedy for the source verdict, or `undefined` where there is nothing to fix.
  *
  * A recompile is what drops a vanished kit from the manifest, because the sweep rewrites the whole file from the
- * sources that it finds; nobody edits the entry out by hand.
+ * sources that it finds; nobody edits the entry out by hand. The sweep keeps a drifted bundle, so removing that kit
+ * takes `--force`.
  */
-function resolveSourceRemedy(kit: RdyManifestKit, status: SourceStatus): Remedy | undefined {
+function resolveSourceRemedy(kit: RdyManifestKit, status: SourceStatus, targetDrifted: boolean): Remedy | undefined {
   switch (status.kind) {
     case 'ok':
     case 'unverified':
       return undefined;
     case 'stale':
       return { ...(kit.source !== undefined && { path: kit.source }), text: RECOMPILE_REMEDY };
-    case 'missing':
-      return kit.source === undefined
-        ? { text: RECOMPILE_REMEDY }
-        : {
-            path: kit.source,
-            text: `Restore ${kit.source}, or run \`rdy compile\` to drop the kit from the manifest.`,
-          };
+    case 'missing': {
+      if (kit.source === undefined) return { text: RECOMPILE_REMEDY };
+      const command = targetDrifted ? 'rdy compile --force' : 'rdy compile';
+      return {
+        path: kit.source,
+        text: `Restore ${kit.source}, or run \`${command}\` to remove the kit and its bundle.`,
+      };
+    }
   }
 }
 

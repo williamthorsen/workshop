@@ -198,7 +198,10 @@ export const compilePayload = {
   ],
 };
 
-/** A `compile --recursive` payload, whose kits name their projects and whose projects include one that failed. */
+/**
+ * A `compile --recursive` payload, whose kits and removals name their projects and whose projects include one that
+ * failed.
+ */
 export const recursiveCompilePayload = {
   schemaVersion: 1,
   passed: false,
@@ -207,4 +210,5 @@ export const recursiveCompilePayload = {
     { project: 'packages/api', passed: true },
     { project: 'packages/broken', passed: false, error: 'Config file could not be evaluated' },
   ],
+  removed: [{ name: 'legacy', project: 'packages/api', path: 'packages/api/.readyup/kits/legacy.js' }],
 };

@@ -20,8 +20,8 @@ export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
 
 Bundle TypeScript kit(s) into self-contained ESM bundle(s).
-If no file is given, the sources in the config's srcDir that compile.include and
-compile.exclude select are compiled.
+If no file is given, the sources in the config's srcDir that compile.include and compile.exclude
+select are compiled, and the bundles of kits that no source compiles to are removed.
 
 Modes:
   rdy compile                  Compile the sources that the config selects
@@ -36,8 +36,8 @@ Options:
   --recursive                Compile every kit project below the working directory, each under its
                              own config and manifest; not combinable with <file>, --output,
                              --manifest, or --config
-  --force                    Overwrite compiled kits even if they have drifted from the manifest
-  --json                     Report each kit's status, and any warnings, as JSON
+  --force                    Overwrite or remove compiled kits even if they have drifted from the manifest
+  --json                     Report each kit's status, any removed bundles, and any warnings, as JSON
   --skip-manifest            Do not read or write the manifest
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message

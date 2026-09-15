@@ -171,11 +171,17 @@ describe('compile --recursive', () => {
       );
     });
 
-    it('writes no manifest for a project holding compiled kits alone', async ({ temp }) => {
-      const { stdout } = await compile(['--recursive']);
+    it('writes no manifest for a project holding compiled kits alone, and warns on each of its bundles', async ({
+      temp,
+    }) => {
+      const { stdout, stderr } = await compile(['--recursive']);
 
       expect(existsSync(temp.resolve('clean/packages/compiled-only/.readyup/manifest.json'))).toBe(false);
+      expect(existsSync(temp.resolve('clean/packages/compiled-only/.readyup/kits/thing.js'))).toBe(true);
       expect(stdout).toContain('No .ts files found in packages/compiled-only/.readyup/kits; manifest not written');
+      expect(stderr).toContain(
+        'Warning: thing.js in packages/compiled-only/.readyup/kits is not recorded in the manifest, and no source compiles to it.',
+      );
     });
 
     it('prints no closing problems line when every project passed', async () => {
@@ -219,6 +225,14 @@ describe('compile --recursive', () => {
             { project: 'packages/emptied', passed: true },
             { project: 'packages/tooling', passed: true },
           ],
+          warnings: [
+            {
+              code: 'bundle-unrecorded',
+              message:
+                'thing.js in packages/compiled-only/.readyup/kits is not recorded in the manifest, and no source compiles to it.',
+              remedy: 'Delete it if its kit was removed.',
+            },
+          ],
         });
       });
 
@@ -250,6 +264,7 @@ describe('compile --recursive', () => {
           expect.stringContaining(
             'kit "deploy" bundles all of packages/api/package.json, imported by packages/api/.readyup/kits/deploy.ts,',
           ),
+          expect.stringContaining('thing.js in packages/compiled-only/.readyup/kits is not recorded in the manifest'),
         ]);
       });
     });

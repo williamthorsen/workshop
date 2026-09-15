@@ -282,6 +282,20 @@ describe('publishing kit', () => {
     expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed', severity: 'error' });
   });
 
+  // A consumer can still load an unrecorded bundle by name from the published package.
+  it('blocks on a bundle that the manifest does not record', async () => {
+    writePackageJson(projectRoot, { files: ['.readyup'] });
+    writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
+    writeKit(projectRoot, 'legacy');
+
+    const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
+
+    expect(pickResult(results, 'Every compiled kit is recorded')).toMatchObject({
+      status: 'failed',
+      severity: 'error',
+    });
+  });
+
   // A module inlined by the bundle is as much a part of what a consumer runs as the kit source is, and
   // neither recorded hash describes it.
   it('blocks on a kit whose inlined module has since moved on', async () => {

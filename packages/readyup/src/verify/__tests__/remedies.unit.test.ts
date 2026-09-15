@@ -59,7 +59,15 @@ describe(resolveRemedies, () => {
 
     it('names the vanished source, offering a recompile as the way to drop the kit', () => {
       expect(resolveRemedies(KIT, buildVerdicts({ source: buildMissingSource() }))).toStrictEqual([
-        'Restore kits/deploy.ts, or run `rdy compile` to drop the kit from the manifest.',
+        'Restore kits/deploy.ts, or run `rdy compile` to remove the kit and its bundle.',
+      ]);
+    });
+
+    it('names a forced compile for a vanished source whose bundle has drifted, which a plain compile keeps', () => {
+      const verdicts = buildVerdicts({ drift: buildDrift(), source: buildMissingSource() });
+
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
+        'Restore kits/deploy.ts, or run `rdy compile --force` to remove the kit and its bundle.',
       ]);
     });
 
@@ -131,7 +139,7 @@ describe(resolveRemedies, () => {
       const verdicts = buildVerdicts({ rebuild, source: buildMissingSource() });
 
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
-        'Restore kits/deploy.ts, or run `rdy compile` to drop the kit from the manifest.',
+        'Restore kits/deploy.ts, or run `rdy compile` to remove the kit and its bundle.',
       ]);
     });
   });
@@ -170,7 +178,7 @@ describe(resolveRemedies, () => {
       });
 
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([
-        'Restore kits/deploy.ts, or run `rdy compile` to drop the kit from the manifest.',
+        'Restore kits/deploy.ts, or run `rdy compile` to remove the kit and its bundle.',
       ]);
     });
 

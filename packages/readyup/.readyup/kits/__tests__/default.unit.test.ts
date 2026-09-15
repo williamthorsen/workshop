@@ -117,7 +117,11 @@ describe('default kit', () => {
       const results = await runFreshness();
 
       expect(results.every((result) => result.status === 'passed')).toBe(true);
-      expect(results.filter((result) => result.depth === 0)).toHaveLength(2);
+      expect(results.filter((result) => result.depth === 0).map((result) => result.name)).toStrictEqual([
+        'default is recorded with a source and a bundle hash',
+        'release is recorded with a source and a bundle hash',
+        'Every compiled kit is recorded in the manifest',
+      ]);
     });
 
     it('reports a source edited since it was compiled', async () => {
@@ -343,7 +347,25 @@ describe('default kit', () => {
       const results = await runFreshness();
 
       expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'failed' });
+      expect(results[0]).toMatchObject({
+        status: 'failed',
+        detail: '.readyup/manifest.json records no entry for .readyup/kits/default.js',
+      });
+    });
+
+    // A compile removes a deleted kit's entry, and a bundle left behind stays loadable by name.
+    it('names each bundle that the manifest does not record, beside the kits that it does', async () => {
+      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
+      writeKit(projectRoot, 'legacy');
+      writeKit(projectRoot, 'retired');
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Every compiled kit is recorded')).toMatchObject({
+        status: 'failed',
+        detail: '.readyup/manifest.json records no entry for .readyup/kits/legacy.js, .readyup/kits/retired.js',
+      });
+      expect(pickResult(results, 'default is recorded')).toMatchObject({ status: 'passed' });
     });
   });
 

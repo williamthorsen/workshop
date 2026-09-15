@@ -37,6 +37,7 @@ export type {
   JsonCompileKitEntry,
   JsonCompileOutput,
   JsonCompileProjectEntry,
+  JsonCompileRemovedEntry,
   JsonCompileStatus,
 } from './schemas/compileOutputSchema.ts';
 export type { JsonErrorEnvelope } from './schemas/errorEnvelopeSchema.ts';

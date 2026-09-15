@@ -9,6 +9,7 @@ import {
 } from 'readyup/check-utils';
 
 import {
+  listCompiledBundlePaths,
   type ManifestEntry,
   type ManifestInput,
   readManifestEntries,
@@ -20,7 +21,8 @@ import {
 const NO_INPUTS_REASON = 'The manifest records no inputs for it';
 
 /**
- * Checks asserting that every kit that the manifest records still matches what was recorded for it.
+ * Checks asserting that every kit that the manifest records still matches what was recorded for it, and that the
+ * manifest records every compiled kit.
  *
  * The checks are built when the kit module is evaluated, so a drifted kit is named on its own line
  * rather than buried in one check's detail. Severity is left to the kit: Freshness is advisory while
@@ -28,8 +30,7 @@ const NO_INPUTS_REASON = 'The manifest records no inputs for it';
  */
 export function buildFreshnessChecks(): RdyCheck[] {
   const entries = readManifestEntries();
-  if (entries.length === 0) return [buildUnrecordedBundlesCheck()];
-  return entries.map(buildEntryCheck);
+  return [...entries.map(buildEntryCheck), buildUnrecordedBundlesCheck(entries)];
 }
 
 // region | Helpers
@@ -64,18 +65,19 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
 }
 
 /**
- * The stand-in check for a project whose manifest records no kit.
+ * Checks that the manifest records every bundle in the kit directory.
  *
  * Compiling nothing is legitimate -- `rdy run --jit` runs a kit straight from its source -- so this
- * skips when the kit directory holds no bundle, and fails only on bundles that the manifest cannot
- * account for.
+ * skips when the kit directory holds no bundle. An unrecorded bundle is still loaded by `rdy run` and
+ * fetched by a consumer who names it, while `rdy list` no longer names it, and a compile deletes only
+ * the bundles that the manifest records.
  */
-function buildUnrecordedBundlesCheck(): RdyCheck {
+function buildUnrecordedBundlesCheck(entries: ManifestEntry[]): RdyCheck {
   return {
     name: 'Every compiled kit is recorded in the manifest',
     skip: skipWithoutBundles,
-    check: () => ({ ok: false, detail: `${DEFAULT_MANIFEST_PATH} records no kit` }),
-    fix: `Run 'rdy compile' to record every compiled kit and its hashes`,
+    check: () => describeUnrecordedBundles(entries),
+    fix: `Delete each bundle whose kit was removed, and run 'rdy compile' to record the rest`,
   };
 }
 
@@ -188,6 +190,23 @@ function describeRecordedHashes(entry: ManifestEntry): CheckOutcome {
 
   if (unrecorded.length === 0) return { ok: true };
   return { ok: false, detail: `The manifest records no ${unrecorded.join(' or ')} hash` };
+}
+
+/** Names each bundle in the kit directory that no manifest entry records, with the recorded count as the evidence. */
+function describeUnrecordedBundles(entries: ManifestEntry[]): CheckOutcome {
+  const recordedPaths = new Set(
+    entries.flatMap((entry) => (entry.path === undefined ? [] : [resolveRecordedPath(entry.path)])),
+  );
+  const bundlePaths = listCompiledBundlePaths();
+  const unrecorded = bundlePaths.filter((bundlePath) => !recordedPaths.has(bundlePath));
+  const progress: FractionProgress = {
+    type: 'fraction',
+    passedCount: bundlePaths.length - unrecorded.length,
+    count: bundlePaths.length,
+  };
+
+  if (unrecorded.length === 0) return { ok: true, progress };
+  return { ok: false, detail: `${DEFAULT_MANIFEST_PATH} records no entry for ${unrecorded.join(', ')}`, progress };
 }
 
 // endregion | Helpers
