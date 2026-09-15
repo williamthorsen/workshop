@@ -24,7 +24,16 @@ The directory is named relative to the enclosing workspace root, so a workspace 
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
-A sweep that finds no kits writes a manifest only if one already exists, emptying it so that kits since deleted stop being advertised. A project with neither kits nor a manifest is left alone, so sweeping a monorepo does not create `.readyup/` in workspaces that contain no kits.
+A sweep also prunes the kits that no source compiles to any longer, because the source was deleted or `include` no longer matches it. The sweep drops each such kit's manifest entry and deletes its bundle, provided the bundle still matches the recorded `targetHash` or the entry records no hash:
+
+```
+🟢 deploy.ts -> 📓 deploy.js
+🟢 legacy.js · removed, no source compiles to it
+```
+
+A bundle edited since it was compiled is kept with its entry and counts against the run as a drifted kit does; `--force` deletes it. A bundle that cannot be deleted also keeps its entry and fails the run. An entry recording a bundle outside the output directory is dropped without deleting the file, since a sweep writes nothing there. A single-file compile deletes nothing, and neither does `--skip-manifest`, which reads no record of what was compiled. A bundle that the manifest does not record is reported rather than deleted; see [`bundle-unrecorded`](#compile-warnings).
+
+A sweep that finds no kits writes a manifest only if one already exists, and prunes by the same rules, so kits since deleted stop being advertised and lose their bundles. A project with neither kits nor a manifest is left alone, so sweeping a monorepo does not create `.readyup/` in workspaces that contain no kits.
 
 `rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` -- someone edited the bundle directly:
 
@@ -35,7 +44,9 @@ A sweep that finds no kits writes a manifest only if one already exists, emptyin
 1 of 2 kits skipped due to drift. Re-run with --force to overwrite, or move edits into the source.
 ```
 
-Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed. The payload also lists any [warnings](#compile-warnings).
+For a kit that no source compiles to, the drift reason ends with `no source compiles to it`, and the closing line suggests `--force` to remove the bundle, or restoring the source.
+
+Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `failed`), and the reason it was skipped or failed. A top-level `removed` lists each bundle that the sweep deleted as `{ name, path }`, with `path` relative to the working directory, and is absent when it deleted none. The payload also lists any [warnings](#compile-warnings).
 
 ### Compiling a whole repository
 
@@ -50,7 +61,7 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 ⚪ smoke.ts · no changes
 ```
 
-The sweep considers the same directories as [`rdy list --recursive`](running-checks.md#listing-a-whole-repository), and compiles each one that has a `.readyup/` directory or a `.config/readyup.config.ts` and holds kit sources, compiled kits, or a manifest. Each project compiles exactly as `rdy compile` run from its own directory would: under its own config, writing its own manifest by the rules above. A project whose kits were all deleted therefore has its manifest emptied, and a workspace with no kits gets no manifest.
+The sweep considers the same directories as [`rdy list --recursive`](running-checks.md#listing-a-whole-repository), and compiles each one that has a `.readyup/` directory or a `.config/readyup.config.ts` and holds kit sources, compiled kits, or a manifest. Each project compiles exactly as `rdy compile` run from its own directory would: under its own config, writing its own manifest by the rules above. A project whose kits were all deleted therefore has its manifest emptied and their bundles removed, and a workspace with no kits gets no manifest.
 
 Every project is compiled by the readyup that runs the sweep, and by that readyup's esbuild, so every manifest records the same `readyupVersion` and `esbuildVersion`. `pnpm -r exec rdy compile` instead runs each workspace's own installed readyup, and the two agree unless the workspaces install different versions of readyup.
 
@@ -62,7 +73,7 @@ Problems in 2 of 5 projects: packages/api, packages/broken
 
 A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` cannot be combined with an input file, `--output`, or `--manifest`, each of which names a single target, or with `--config`.
 
-Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be compiled at all, `error`. A project that contributed no kit entry still appears in `projects`.
+Under `--json`, each kit and each removed bundle also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be compiled at all, `error`. A project that contributed no kit entry still appears in `projects`.
 
 ### What a manifest entry records
 
@@ -92,13 +103,16 @@ An entry compiled before readyup recorded the closure has no `inputs`; one compi
 
 ### Compile warnings
 
-`rdy compile` raises advisories about the kits that it compiles. Warnings go to stderr in both modes and appear under a top-level `warnings` in JSON, each as `{ code, message, remedy? }`, absent when none was raised. No warning affects `passed` or the exit code.
+`rdy compile` raises advisories about the kits that it compiles and the bundles that it finds. Warnings go to stderr in both modes and appear under a top-level `warnings` in JSON, each as `{ code, message, remedy? }`, absent when none was raised. No warning affects `passed` or the exit code.
 
-| Code           | Raised when                                                           |
-| -------------- | --------------------------------------------------------------------- |
-| `json-inlined` | A kit's bundle includes a JSON file from outside `node_modules` whole |
+| Code                | Raised when                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `bundle-unrecorded` | A bundle directly under the output directory is neither compiled from a source nor recorded in the manifest |
+| `json-inlined`      | A kit's bundle includes a JSON file from outside `node_modules` whole                                       |
 
 A JSON file that a kit imports, with or without an import attribute, or loads through `require()`, is bundled whole and recorded whole in `inputs`: Every field ships in the kit, and any edit to the file leaves the kit stale. The warning names the kit, the file, and each module that imports it, and suggests [`pickJson`](authoring-kits.md#inlining-json-at-compile-time), which inlines and records only the fields that it names. A kit that failed to compile raises none, and one reported as `no changes` still raises it, because its bundle still includes the file.
+
+Nothing shows that `rdy compile` wrote a bundle that the manifest does not record, so the sweep reports it rather than deleting it. Such a bundle typically belongs to a kit deleted before `rdy compile` pruned bundles, was compiled under `--skip-manifest`, or was copied in by hand, and `rdy run` still loads it by name. The warning names the bundle and its directory. A bundle named for a kit whose source the sweep found is not reported, even when that kit failed to compile. Neither a single-file compile nor `--skip-manifest` raises the warning.
 
 ## Package-hosted kits
 
@@ -168,12 +182,12 @@ rdy list --from npm:readyup           # both, with the checklists that each one 
 
 `default` reports at `warn` and below, so it is safe to run mid-edit:
 
-| Checklist   | What it asserts                                                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                                               |
-| `freshness` | Every kit that the manifest records still matches what was recorded for it: its source, its bundle, and everything the compile inlined. |
+| Checklist   | What it asserts                                                                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                                                                                       |
+| `freshness` | Every kit that the manifest records still matches what was recorded for it (its source, its bundle, and everything the compile inlined), and the manifest records every bundle. |
 
-Both `setup` checks skip for a project that defines no kits of its own: A monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
+Both `setup` checks skip for a project that defines no kits of its own: A monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
 
 `publishing` reports at `error`, for a package that distributes its kits:
 

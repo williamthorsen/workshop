@@ -35,8 +35,8 @@ Options:
   --recursive                Compile every kit project below the working directory, each under its
                              own config and manifest; not combinable with <file>, --output,
                              --manifest, or --config
-  --force                    Overwrite compiled kits even if they have drifted from the manifest
-  --json                     Report each kit's status, and any warnings, as JSON
+  --force                    Overwrite or remove compiled kits even if they have drifted from the manifest
+  --json                     Report each kit's status, any removed bundles, and any warnings, as JSON
   --skip-manifest            Do not read or write the manifest
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
