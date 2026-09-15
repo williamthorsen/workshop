@@ -642,6 +642,71 @@ describe(compileCommand, () => {
     });
   });
 
+  describe('sources sharing a kit name', () => {
+    const SHARED_NAME_ERROR =
+      'Kit name "deploy" is shared by deploy.ts and ops/deploy.ts. Rename all but one, or remove them from the sweep ' +
+      'with compile.exclude.';
+
+    /** Arranges a batch in which two sources claim the kit name `deploy` and a third compiles. */
+    function arrangeSharedNameBatch(): void {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['deploy.ts', 'ops', 'ops/deploy.ts', 'smoke.ts']);
+      mockCompileConfig.mockResolvedValueOnce(
+        compileResult(kitSource('smoke.ts'), { outputPath: '/abs/smoke.js', changed: true, targetHash: 'bbbb2222' }),
+      );
+    }
+
+    it('fails every source that claims the shared name, naming all of them, and compiles the rest', async () => {
+      arrangeSharedNameBatch();
+
+      const { exitCode, stdout, stderr } = await compile([]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(`Error compiling deploy.ts: ${SHARED_NAME_ERROR}\n`);
+      expect(stderr).toContain(`Error compiling ops/deploy.ts: ${SHARED_NAME_ERROR}\n`);
+      expect(mockCompileConfig).toHaveBeenCalledExactlyOnceWith(kitSource('smoke.ts'), expect.any(String));
+      expect(stdout).toContain('2 of 3 kits failed to compile.');
+    });
+
+    it('keeps the prior manifest entry of the shared name exactly once', async () => {
+      arrangeSharedNameBatch();
+      const recordedDeploy = {
+        name: 'deploy',
+        path: 'kits/deploy.js',
+        readyupVersion: VERSION,
+        source: 'kits/deploy.ts',
+        targetHash: 'aaaa1111',
+      };
+      mockReadManifest.mockReturnValue({ version: 1, kits: [recordedDeploy] });
+
+      await compile([]);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [recordedDeploy, expect.objectContaining({ name: 'smoke' })],
+      });
+    });
+
+    it('reports each claiming source as failed under --json', async () => {
+      arrangeSharedNameBatch();
+
+      const { stdout } = await compile(['--json']);
+
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        passed: false,
+        kits: [
+          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
+          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
+          { name: 'smoke', status: 'compiled' },
+        ],
+      });
+    });
+  });
+
   describe('manifest checklist names', () => {
     it('records the checklist names declared by the compiled kit', async () => {
       mockCompileConfig.mockResolvedValue(
