@@ -135,7 +135,7 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
   };
 }
 
-/** Returns a glob key's patterns as a list, or `undefined` where the config did not declare the key. */
+/** Returns a glob key's patterns as a list, or `undefined` when the config did not declare the key. */
 function toPatterns(value: string | readonly string[] | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   return typeof value === 'string' ? [value] : [...value];

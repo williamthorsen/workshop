@@ -438,7 +438,7 @@ export interface ResolvedRdyConfig {
   compile: {
     srcDir: string;
     outDir: string;
-    /** `undefined` where no `include` was declared, which selects every source. */
+    /** `undefined` when no `include` was declared, which selects every source. */
     include: string[] | undefined;
     exclude: string[];
   };

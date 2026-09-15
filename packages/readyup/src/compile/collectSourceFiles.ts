@@ -5,7 +5,7 @@ import picomatch from 'picomatch';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 
 /**
- * Collects the `.ts` files that match `include`, or every one where it is `undefined`, and no `exclude` pattern.
+ * Collects the `.ts` files that match `include` (every one, when `include` is `undefined`) and match no `exclude` pattern.
  *
  * The walk is recursive and the globs are matched against paths relative to `srcDir`, so a project that
  * filters a nested source tree gets the same set from anyone asking what it would compile. `exclude` also
