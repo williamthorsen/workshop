@@ -14,14 +14,17 @@ All helpers are type-safe identity functions that provide editor autocomplete wi
 
 Repo-level settings live in `.config/readyup.config.ts`.
 
-| Key               | Default         | Meaning                                                          |
-| ----------------- | --------------- | ---------------------------------------------------------------- |
-| `compile.srcDir`  | `.readyup/kits` | Directory from which `rdy compile` reads sources                 |
-| `compile.outDir`  | `.readyup/kits` | Directory to which it writes bundles                             |
-| `compile.include` | all `.ts` files | Glob limiting which sources a sweep compiles                     |
-| `internal.dir`    | `.`             | Directory containing internal sources, relative to the kits root |
-| `internal.infix`  | none            | Filename segment marking a file as internal                      |
-| `packages`        | none            | Packages from which `rdy run --packages` runs a published kit    |
+| Key               | Default         | Meaning                                                                                 |
+| ----------------- | --------------- | --------------------------------------------------------------------------------------- |
+| `compile.srcDir`  | `.readyup/kits` | Directory from which `rdy compile` reads sources                                        |
+| `compile.outDir`  | `.readyup/kits` | Directory to which it writes bundles                                                    |
+| `compile.include` | all `.ts` files | Glob, or list of globs, selecting the sources that a sweep compiles                     |
+| `compile.exclude` | none            | Glob, or list of globs, removing sources from a sweep, even ones that `include` selects |
+| `internal.dir`    | `.`             | Directory containing internal sources, relative to the kits root                        |
+| `internal.infix`  | none            | Filename segment marking a file as internal                                             |
+| `packages`        | none            | Packages from which `rdy run --packages` runs a published kit                           |
+
+`compile.include` and `compile.exclude` match paths relative to `compile.srcDir`, and `exclude` also matches hidden files, so `exclude: 'lib/**'` removes every source below `lib/`.
 
 See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages`.
 

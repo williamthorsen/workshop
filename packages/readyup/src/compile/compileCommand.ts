@@ -119,7 +119,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json });
   }
 
-  // No input file -- compile all sources from config
+  // No input file -- compile the sources that the config selects
   if (outputPath !== undefined) {
     throw usageError('--output requires an input file');
   }
