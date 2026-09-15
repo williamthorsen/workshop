@@ -50,8 +50,8 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
     return build(error.message, { cause: error, hint: resolveHint(context, error.status) });
   }
 
-  // A transport failure has no status to reason about and no URL of its own, so it never
-  // gets a hint and needs the URL supplied.
+  // A transport failure has no status to reason about, so it never gets a hint. The URL is added unless the message
+  // already names it, as a timeout's message does.
   const message = describeError(error);
   const detail = message.includes(context.url) ? message : `Failed to reach ${context.url}: ${message}`;
   return build(detail, { cause: error });
