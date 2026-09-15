@@ -260,7 +260,7 @@ The remedy depends on where the kit is maintained:
 | An installed package           | Upgrade the package to a release built for this readyup |
 | A URL or remote repository     | Ask the kit's publisher to recompile it                 |
 
-An import binding no name that the runner could be asked for -- a namespace import, a default import, a dynamic import -- has its names left unchecked. Its subpath is still checked, so a namespace import of a subpath that readyup does not publish fails like any other.
+An import binding no name that the runner could be asked for -- a namespace import, a default import, a dynamic import -- has its names left unchecked. Its subpath is still checked, so a namespace import of a subpath that readyup does not publish fails like any other. A dynamic import of a computed specifier, such as a template literal with substitutions, names no single subpath and is not checked at all.
 
 ## Exit codes
 

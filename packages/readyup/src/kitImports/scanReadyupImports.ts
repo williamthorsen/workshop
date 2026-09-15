@@ -1,4 +1,4 @@
-import { init, parse } from 'es-module-lexer';
+import { type Import, init, parse } from 'es-module-lexer';
 
 /** A `readyup` or `readyup/*` import made by a bundle, with the names that it binds. */
 export interface ReadyupImport {
@@ -16,20 +16,21 @@ export interface ReadyupImport {
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
  * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
- * nothing is claimed about what it binds. A specifier naming a JSON module is dropped: It has no named exports to
- * verify, and a runner subpath serving one has no namespace to check against.
+ * nothing is claimed about what it binds. A dynamic import of a computed specifier, such as a template literal with
+ * substitutions, names no single module and is dropped. A specifier naming a JSON module is dropped too: It
+ * has no named exports to verify, and a runner subpath serving one has no namespace to check against.
  *
  * Throws the lexer's `ParseError` for source it cannot read, which is source Node would not import either.
  */
 export async function scanReadyupImports(bundle: string, sourceName?: string): Promise<ReadyupImport[]> {
-  await init;
+  await init();
   const [imports] = parse(bundle, sourceName);
 
   const found: ReadyupImport[] = [];
   for (const entry of imports) {
-    const specifier = entry.n;
+    const specifier = readModuleSpecifier(entry);
     if (specifier === undefined || !isReadyupSpecifier(specifier) || specifier.endsWith('.json')) continue;
-    found.push({ specifier, names: readBoundNames(bundle.slice(entry.ss, entry.se)) });
+    found.push({ specifier, names: readBoundNames(bundle.slice(entry.importStart, entry.importEnd)) });
   }
   return found;
 }
@@ -88,6 +89,18 @@ function readBoundNames(statement: string): string[] {
     if (name !== undefined) names.push(name);
   }
   return names;
+}
+
+/**
+ * Reads the module that an import record names, if it names a single one.
+ *
+ * The lexer reports a template literal with substitutions as a glob, collapsing each substitution to `*`, so a glob's
+ * specifier is a pattern rather than a module.
+ */
+function readModuleSpecifier(entry: Import): string | undefined {
+  if (entry.type === 'import-meta') return undefined;
+  if (entry.type === 'dynamic' && entry.glob) return undefined;
+  return entry.specifier;
 }
 
 // endregion | Helpers
