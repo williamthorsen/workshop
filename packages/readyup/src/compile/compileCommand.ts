@@ -420,7 +420,7 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
   let tsFiles: string[] = [];
   if (srcDirExists) {
     try {
-      tsFiles = collectSourceFiles(srcDir, config.compile.include);
+      tsFiles = collectSourceFiles(srcDir, config.compile);
     } catch (error: unknown) {
       throw configError(`Failed to read source directory: ${describeError(error)}`, { cause: error });
     }

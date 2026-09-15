@@ -55,7 +55,7 @@ const TYPO_TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-route');
 describe(routeCommand, () => {
   beforeEach(() => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
     });
     mockResolveKitSources.mockReturnValue([

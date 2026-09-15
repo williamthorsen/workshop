@@ -136,6 +136,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
       srcDir?: string;
       outDir?: string;
       include?: string;
+      exclude?: readonly string[];
       dir?: string;
       infix?: string;
     }): RdyConfig {
@@ -144,6 +145,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
           srcDir: opts.srcDir,
           outDir: opts.outDir,
           include: opts.include,
+          exclude: opts.exclude,
         },
         internal: {
           dir: opts.dir,

@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
     srcDir: '.readyup/kits',
     outDir: '.readyup/kits',
     include: undefined,
+    exclude: [],
   },
   internal: {
     dir: '.',
@@ -24,13 +25,18 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
 /** Ordered lookup paths for the config file, resolved relative to the directory being read. */
 export const CONFIG_LOOKUP_PATHS = ['.config/readyup.config.ts'];
 
+/** A glob pattern, which picomatch cannot compile when empty. */
+const PatternSchema = z.string().min(1);
+
 /** Structural schema for RdyConfig. */
 const RdyConfigSchema = z.looseObject({
   compile: z
     .looseObject({
       srcDir: z.string().optional(),
       outDir: z.string().optional(),
-      include: z.string().optional(),
+      // An empty `include` list would select no source at all, which is never what a config means.
+      include: z.union([PatternSchema, z.array(PatternSchema).min(1)]).optional(),
+      exclude: z.union([PatternSchema, z.array(PatternSchema)]).optional(),
     })
     .optional(),
   internal: z
@@ -118,7 +124,8 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
     compile: {
       srcDir: typeof compile?.srcDir === 'string' ? compile.srcDir : DEFAULT_CONFIG.compile.srcDir,
       outDir: typeof compile?.outDir === 'string' ? compile.outDir : DEFAULT_CONFIG.compile.outDir,
-      include: typeof compile?.include === 'string' ? compile.include : undefined,
+      include: toPatterns(compile?.include),
+      exclude: toPatterns(compile?.exclude) ?? [],
     },
     internal: {
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
@@ -126,4 +133,10 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
     },
     packages: Array.isArray(raw.packages) ? raw.packages.filter((name) => typeof name === 'string') : [],
   };
+}
+
+/** Returns a glob key's patterns as a list, or `undefined` where the config did not declare the key. */
+function toPatterns(value: string | readonly string[] | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  return typeof value === 'string' ? [value] : [...value];
 }
