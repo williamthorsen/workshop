@@ -74,7 +74,13 @@ const FIXTURE_TREE = {
     kits: [{ name: 'lint', path: 'kits/lint.js', targetHash: '00000000' }],
   }),
 
-  // Sorts after the broken and drifted projects, so the sweep reaching it shows that they did not end the run.
+  // Two sources that claim the kit name `deploy`, beside a kit that compiles.
+  'faulty/packages/shared-name/package.json': JSON.stringify({ name: 'shared-name' }),
+  'faulty/packages/shared-name/.readyup/kits/deploy.ts': 'export default {};',
+  'faulty/packages/shared-name/.readyup/kits/ops/deploy.ts': 'export default {};',
+  'faulty/packages/shared-name/.readyup/kits/rotate.ts': 'export default {};',
+
+  // Sorts after the broken, drifted, and shared-name projects, so the sweep reaching it shows that they did not end the run.
   'faulty/packages/sound/package.json': JSON.stringify({ name: 'sound' }),
   'faulty/packages/sound/.readyup/kits/ok.ts': 'export default {};',
 
@@ -276,7 +282,7 @@ describe('compile --recursive', () => {
 
       expect(exitCode).toBe(1);
       expect(stdout).toContain(
-        '\nProblems in 3 of 4 projects: packages/broken, packages/drifted, packages/unwritable\n',
+        '\nProblems in 4 of 5 projects: packages/broken, packages/drifted, packages/shared-name, packages/unwritable\n',
       );
     });
 
@@ -300,6 +306,19 @@ describe('compile --recursive', () => {
       expect(compiledSources()).not.toContain('packages/drifted/.readyup/kits/lint.ts');
     });
 
+    it('fails the sources that share a kit name, naming them against the sweep root, and compiles the rest', async () => {
+      const { stderr } = await compile(['--recursive']);
+
+      const sharedNameError =
+        'Kit name "deploy" is shared by packages/shared-name/.readyup/kits/deploy.ts and ' +
+        'packages/shared-name/.readyup/kits/ops/deploy.ts.';
+      expect(stderr).toContain(`Error compiling packages/shared-name/.readyup/kits/deploy.ts: ${sharedNameError}`);
+      expect(stderr).toContain(`Error compiling packages/shared-name/.readyup/kits/ops/deploy.ts: ${sharedNameError}`);
+      expect(compiledSources().filter((source) => source.startsWith('packages/shared-name/'))).toStrictEqual([
+        'packages/shared-name/.readyup/kits/rotate.ts',
+      ]);
+    });
+
     it('reports a project whose manifest cannot be written, and still compiles the projects before it', async () => {
       const { stderr } = await compile(['--recursive']);
 
@@ -314,9 +333,15 @@ describe('compile --recursive', () => {
       expect(payload.kits).toContainEqual(
         expect.objectContaining({ name: 'lint', project: 'packages/drifted', status: 'skipped' }),
       );
+      expect(payload.kits.filter((kit) => kit.project === 'packages/shared-name')).toStrictEqual([
+        { name: 'deploy', project: 'packages/shared-name', status: 'failed', error: expect.stringContaining('deploy') },
+        { name: 'deploy', project: 'packages/shared-name', status: 'failed', error: expect.stringContaining('deploy') },
+        { name: 'rotate', project: 'packages/shared-name', status: 'compiled' },
+      ]);
       expect(payload.projects).toStrictEqual([
         { project: 'packages/broken', passed: false, error: expect.any(String) },
         { project: 'packages/drifted', passed: false },
+        { project: 'packages/shared-name', passed: false },
         { project: 'packages/sound', passed: true },
         { project: 'packages/unwritable', passed: false, error: expect.stringContaining('Error writing manifest') },
       ]);

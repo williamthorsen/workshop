@@ -231,6 +231,10 @@ function handleInit(flags: string[]): number {
     throw usageError(translateParseArgsError(error, 'init'), { cause: error });
   }
 
+  if (parsed.positionals.length > 0) {
+    throw usageError('rdy init does not accept positional arguments.');
+  }
+
   return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
 }
 

@@ -20,11 +20,11 @@ export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
 
 Bundle TypeScript kit(s) into self-contained ESM bundle(s).
-If no file is given, all sources from the config's srcDir are compiled, and the bundles of kits
-that no source compiles to are removed.
+If no file is given, the sources in the config's srcDir that compile.include and compile.exclude
+select are compiled, and the bundles of kits that no source compiles to are removed.
 
 Modes:
-  rdy compile                  Compile all sources from the config's srcDir
+  rdy compile                  Compile the sources that the config selects
   rdy compile <file>           Compile a single file
   rdy compile --recursive      Compile the sources of every kit project below this directory
 
@@ -64,11 +64,11 @@ Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit published by the config's "packages" list (default: "default")
+  --packages [<kit>]                 Run a kit published by the config's "packages" list (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --all                              Run every kit in the selected source instead of naming kits
-  --checklists, -c <name,...>        Filter checklists within the selected kit
+  --checklists, -c <checklist,...>   Filter checklists within the selected kit
   --config <path>                    Config file path (default: .config/readyup.config.ts)
   --json                             Output results as JSON
   --detail <summary|full>            How much of the JSON report to emit (default: full); requires --json
@@ -176,9 +176,9 @@ Kit source (mutually exclusive):
                                      npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<name>]                Run a kit from every package that the config's "packages"
+  --packages [<kit>]                 Run a kit from every package that the config's "packages"
                                      list names, skipping those that do not publish it;
-                                     without a name, the kit named "default"
+                                     without a kit, the kit named "default"
 
 Mode flags (incompatible with --from, --file, --url, --packages):
   --jit                              Run from TypeScript source instead of compiled JS
@@ -187,7 +187,7 @@ Mode flags (incompatible with --from, --file, --url, --packages):
 Options:
   --all                              Run every kit in the selected source instead of naming kits;
                                      not combinable with kit names, --checklists, --file, or --url
-  --checklists, -c <name,...>        Filter checklists within the selected kit; requires a
+  --checklists, -c <checklist,...>   Filter checklists within the selected kit; requires a
                                      single kit and no ":" filter on it
   --config <path>                    Config file path (default: .config/readyup.config.ts); not
                                      combinable with --file, --from, or --url

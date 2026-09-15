@@ -276,22 +276,28 @@ Each section names the command that runs the kits beneath it:
 
 ```
 ── Internal
-   To run: rdy run --jit <name>
+   To run: rdy run --jit <kit>[:<checklist>,...]
 📄 deploy
 📄 smoke
 
 ── Compiled
-   To run: rdy run <name>
+   To run: rdy run <kit>[:<checklist>,...]
 📓 deploy
+   📋 build
+   📋 release
 📓 smoke
+   📋 health
 ```
+
+Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Internal** lists none, and neither does a kit read from disk without a manifest.
 
 Kits from configured packages get their own section, each named package-first so a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config omits is named as a candidate:
 
 ```
 ── Packages
-   To run: rdy run --packages [<name>]
+   To run: rdy run --packages [<kit>]
 📦 @acme/eslint-config@2.1.0 / 📓 drift
+   📋 lockfile
 
 ── Available
    Add to "packages" in the readyup config
@@ -302,26 +308,35 @@ Kits from configured packages get their own section, each named package-first so
 
 ```
 ━━ 📦 @acme/eslint-config@2.1.0
-   To run: rdy run --packages <name>
+   To run: rdy run --packages <kit>
 📓 drift · Dependency drift
+   📋 lockfile
 
 ━━ 📦 @acme/release-kit@4.0.1 · not listed in the readyup config
-   To run: rdy run --from npm:@acme/release-kit [<name>]
+   To run: rdy run --from npm:@acme/release-kit [<kit>[:<checklist>,...]]
 📓 default
+   📋 release-kit
 📓 npm-auto-publish
+   📋 repo
+   📋 packages
 ```
 
-The hint above each block marks the package. A package named in the config is headed by `rdy run --packages`, which is exactly the run that would include it; one omitted from the config is headed by the source that names it directly, and reads `not listed in the readyup config`. Every kit listed is therefore runnable by the command above it, and learning what an unconfigured package contains no longer requires a `--from npm:` listing per package.
+The hint above each block marks the package. A package named in the config is headed by `rdy run --packages`, which is exactly the run that would include it; one omitted from the config is headed by the source that names it directly, and reads `not listed in the readyup config`. Every kit listed is therefore runnable by the command above it, and learning what an unconfigured package contains no longer requires a `--from npm:` listing per package. A `--packages` command names a kit alone, because `rdy run --packages` rejects checklist selection: Several packages may publish the kit that it names.
 
 Configured packages are resolved through `node_modules` rather than through the project's declared dependencies, so one that is installed without being declared is reported here as it is under a plain `rdy list`; when that lookup fails, a name matching one of the project's own workspaces resolves to that workspace, and a name matching neither produces a warning and is omitted. On its own, `--packages` reads the working directory, and it is not combinable with `--from` or `--manifest`. Pairing it with `--recursive` sweeps the whole repository, which [Listing a repository's dependencies](#listing-a-repositorys-dependencies) covers.
 
-`--manifest` reports each kit's compile-time ReadyUp version and description:
+`--manifest` reports each kit's compile-time ReadyUp version, description, and checklists:
 
 ```
 ── Manifest: .readyup/manifest.json
 📓 deploy (readyup v0.22.0) · Pre-deployment checks
+   📋 build
+   📋 release
 📓 smoke (readyup v0.22.0)
+   📋 health
 ```
+
+It names no command, since `rdy run` cannot take a manifest file as its source. A remote `--from` source is listed in the same form, headed by its manifest's URL, with the command that runs its kits beneath the heading.
 
 A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest, which is read from the cache while it is fresh; see [Cached remote kits](#cached-remote-kits).
 
@@ -333,21 +348,28 @@ A plain `rdy list` and `rdy list --packages` read the settings from the file nam
 
 ```
 ━━ 📁 ./
-   To run: rdy run <name>
+   To run: rdy run <kit>[:<checklist>,...]
 📓 demo
+   📋 project-foundations
 
 ━━ 📁 packages/readyup/
-   To run: rdy run --from packages/readyup [<name>]
+   To run: rdy run --from packages/readyup [<kit>[:<checklist>,...]]
 📓 default · Authoring hygiene for a project that defines readyup kits
+   📋 setup
+   📋 freshness
 📓 publishing · Publication readiness for a package that ships readyup kits
+   📋 packaging
+   📋 freshness
+   📋 self-containment
 ```
 
 Every listed kit is runnable by the command above it, from wherever the sweep was run. The kits of a project that sets a custom `compile.outDir` are run by file instead, since that is the only resolution path that respects it, and its rows are named by a path that resolves from the sweep root:
 
 ```
 ━━ 📁 packages/tooling/
-   To run: rdy run --file <file path>
+   To run: rdy run --file <file path> [--checklists <checklist>,...]
 📓 packages/tooling/dist/kits/lint.js · Shared lint and format gate
+   📋 lint
 ```
 
 Internal kits and configured-package kits are absent: No invocation runs another project's uncompiled sources, and packages are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
@@ -361,14 +383,18 @@ The sweep considers every directory containing a `package.json`, the working dir
 ```
 📁 ./
    📦 @acme/eslint-config@2.1.0
-      To run: rdy run --packages [<name>]
+      To run: rdy run --packages <kit>
       📓 drift · Dependency drift
+         📋 lockfile
 
 📁 packages/tooling/
    📦 @acme/release-kit@4.0.1 · not listed in the readyup config
-      To run: cd packages/tooling && rdy run --from npm:@acme/release-kit [<name>]
+      To run: cd packages/tooling && rdy run --from npm:@acme/release-kit [<kit>[:<checklist>,...]]
       📓 default
+         📋 release-kit
       📓 npm-auto-publish
+         📋 repo
+         📋 packages
 ```
 
 Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency resolves from no other directory, so its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.

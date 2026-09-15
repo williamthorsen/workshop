@@ -110,8 +110,9 @@ describe('listCommand wiring', () => {
         }),
       );
 
-      const { stdout } = await list(['--from', 'dir:kits', '--json']);
+      const { stdout, stderr } = await list(['--from', 'dir:kits', '--json']);
 
+      expect(stderr).toContain('\u{1F4D3} deploy\n   \u{1F4CB} preflight\n   \u{1F4CB} release');
       expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [

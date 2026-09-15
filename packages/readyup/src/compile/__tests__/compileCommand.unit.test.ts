@@ -271,7 +271,7 @@ describe(compileCommand, () => {
 
   it('loads the config named by --config for a batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(false);
 
@@ -298,7 +298,7 @@ describe(compileCommand, () => {
   // Batch compile tests
   it('prints "Compiling kits in" header when srcDir equals outDir', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -317,7 +317,7 @@ describe(compileCommand, () => {
   it('names the source directory against the enclosing workspace root', async () => {
     const workspaceRoot = path.resolve(process.cwd(), '..', '..');
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockImplementation((target: string) => {
       if (target.endsWith('pnpm-workspace.yaml')) return target === path.join(workspaceRoot, 'pnpm-workspace.yaml');
@@ -338,7 +338,7 @@ describe(compileCommand, () => {
   // no repository at all. Both still need a stable anchor rather than no heading.
   it('falls back to the working directory when no workspace or repository encloses the source', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockImplementation(
       (target: string) => !target.endsWith('pnpm-workspace.yaml') && !target.endsWith('.git'),
@@ -356,7 +356,7 @@ describe(compileCommand, () => {
 
   it('prints "from ... to ..." header when srcDir differs from outDir', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/dist', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/dist', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -372,7 +372,7 @@ describe(compileCommand, () => {
 
   it('compiles all .ts files and shows per-file status lines', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts', 'b.ts', 'readme.md']);
@@ -410,7 +410,7 @@ describe(compileCommand, () => {
 
   it('uses compile.include glob to filter files during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'shared/*.ts' },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['shared/*.ts'], exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['shared/deploy.ts', 'shared/infra.ts', 'other.ts']);
@@ -435,7 +435,7 @@ describe(compileCommand, () => {
     const { exitCode } = await compile([]);
 
     expect(exitCode).toBe(0);
-    expect(mockPicomatch).toHaveBeenCalledWith('shared/*.ts');
+    expect(mockPicomatch).toHaveBeenCalledWith(['shared/*.ts']);
     expect(mockCompileConfig).toHaveBeenCalledTimes(2);
   });
 
@@ -518,7 +518,7 @@ describe(compileCommand, () => {
     /** Arranges a config-driven sweep that finds no kits, over a manifest that records none where it exists. */
     function arrangeEmptySweep(existence: ArrangeExistenceArgs): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       });
       arrangeExistence(existence);
       mockReadManifest.mockImplementation((manifestPath: string) => {
@@ -545,7 +545,7 @@ describe(compileCommand, () => {
 
   it('returns 1 when post-compile validation fails during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -564,7 +564,7 @@ describe(compileCommand, () => {
     /** Arranges a two-kit batch whose first kit fails to compile and whose second succeeds. */
     function arrangeMixedBatch(): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       });
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -596,7 +596,7 @@ describe(compileCommand, () => {
 
     it('writes a manifest when sources are found but every one fails to compile', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       });
       arrangeExistence({ srcDirExists: true, manifestExists: false });
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -651,6 +651,71 @@ describe(compileCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(stderr).toContain('Error compiling alpha.ts');
+    });
+  });
+
+  describe('sources sharing a kit name', () => {
+    const SHARED_NAME_ERROR =
+      'Kit name "deploy" is shared by deploy.ts and ops/deploy.ts. Keep one, and rename the others or remove them from ' +
+      'the sweep with compile.exclude.';
+
+    /** Arranges a batch in which two sources claim the kit name `deploy` and a third compiles. */
+    function arrangeSharedNameBatch(): void {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['deploy.ts', 'ops', 'ops/deploy.ts', 'smoke.ts']);
+      mockCompileConfig.mockResolvedValueOnce(
+        compileResult(kitSource('smoke.ts'), { outputPath: '/abs/smoke.js', changed: true, targetHash: 'bbbb2222' }),
+      );
+    }
+
+    it('fails every source that claims the shared name, naming all of them, and compiles the rest', async () => {
+      arrangeSharedNameBatch();
+
+      const { exitCode, stdout, stderr } = await compile([]);
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(`Error compiling deploy.ts: ${SHARED_NAME_ERROR}\n`);
+      expect(stderr).toContain(`Error compiling ops/deploy.ts: ${SHARED_NAME_ERROR}\n`);
+      expect(mockCompileConfig).toHaveBeenCalledExactlyOnceWith(kitSource('smoke.ts'), expect.any(String));
+      expect(stdout).toContain('2 of 3 kits failed to compile.');
+    });
+
+    it('keeps the prior manifest entry of the shared name exactly once', async () => {
+      arrangeSharedNameBatch();
+      const recordedDeploy = {
+        name: 'deploy',
+        path: 'kits/deploy.js',
+        readyupVersion: VERSION,
+        source: 'kits/deploy.ts',
+        targetHash: 'aaaa1111',
+      };
+      mockReadManifest.mockReturnValue({ version: 1, kits: [recordedDeploy] });
+
+      await compile([]);
+
+      expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+        version: 1,
+        kits: [recordedDeploy, expect.objectContaining({ name: 'smoke' })],
+      });
+    });
+
+    it('reports each claiming source as failed under --json', async () => {
+      arrangeSharedNameBatch();
+
+      const { stdout } = await compile(['--json']);
+
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        passed: false,
+        kits: [
+          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
+          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
+          { name: 'smoke', status: 'compiled' },
+        ],
+      });
     });
   });
 
@@ -729,7 +794,7 @@ describe(compileCommand, () => {
   describe('--json', () => {
     it('reports every kit status on stdout and keeps prose on stderr', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       });
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -864,7 +929,7 @@ describe(compileCommand, () => {
     /** Arranges a batch compile over `fileNames` in the swept source directory. */
     function arrangeBatch(fileNames: string[]): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined },
+        compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
       });
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(fileNames);
@@ -875,7 +940,7 @@ describe(compileCommand, () => {
 
   it('reports a config error when readdirSync throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockImplementation(() => {
@@ -891,7 +956,7 @@ describe(compileCommand, () => {
 
   it('treats an include glob matching only non-.ts files as a sweep that finds no kits', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: 'data/*' },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['data/*'], exclude: [] },
     });
     arrangeExistence({ srcDirExists: true, manifestExists: true });
     mockReaddirSync.mockReturnValue(['data/readme.md', 'data/config.json']);
@@ -906,7 +971,7 @@ describe(compileCommand, () => {
   /** Arranges a two-kit batch in which both kits compile successfully. */
   function arrangeTwoKitBatch(hashes: { alphaHash?: string; betaHash?: string } = {}): void {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined },
+      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -971,7 +1036,7 @@ describe(compileCommand, () => {
 
   it('skips manifest generation when --skip-manifest is set', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -986,7 +1051,7 @@ describe(compileCommand, () => {
 
   it('uses custom manifest path from --manifest flag', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -1210,7 +1275,7 @@ describe(compileCommand, () => {
 
   it('reports a config error when writeManifest throws during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -1262,7 +1327,7 @@ describe(compileCommand, () => {
 
   it('populates readyupVersion from the runner version on every batch-compile entry', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -1369,7 +1434,7 @@ describe(compileCommand, () => {
 
   it('skips drifted kits during batch compile and preserves their manifest entries', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
@@ -1413,7 +1478,7 @@ describe(compileCommand, () => {
 
   it('compiles all kits when --force is passed during batch compile with drift', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts']);
@@ -1441,7 +1506,7 @@ describe(compileCommand, () => {
 
   it('does not emit drift footer when no kits were skipped', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['a.ts']);
@@ -1457,7 +1522,7 @@ describe(compileCommand, () => {
 
   it('warns on stderr when the existing manifest is unreadable during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts']);
@@ -1476,7 +1541,7 @@ describe(compileCommand, () => {
 
   it('is silent when the manifest is missing during batch compile', async () => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts']);

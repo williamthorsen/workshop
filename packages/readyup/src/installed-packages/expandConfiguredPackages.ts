@@ -14,6 +14,7 @@ export interface PackageKit {
   version: string | undefined;
   kitName: string;
   description: string | undefined;
+  checklists: string[] | undefined;
   path: string;
 }
 
@@ -21,6 +22,7 @@ export interface PackageKit {
 interface PublishedKit {
   name: string;
   description: string | undefined;
+  checklists: string[] | undefined;
 }
 
 /**
@@ -60,6 +62,7 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
     version,
     kitName: kit.name,
     description: kit.description,
+    checklists: kit.checklists,
     path: path.join(kitsDir, `${kit.name}${extension}`),
   }));
 }
@@ -69,18 +72,23 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
  *
  * The same precedence that a local `--from` source already follows, so a package source and a directory source
  * resolve alike. Only a missing manifest falls back: One that exists but cannot be parsed is a broken
- * publication, and quietly reading around it would report a kit list that nobody declared. Descriptions live in
- * the manifest, so the fallback names kits without them.
+ * publication, and quietly reading around it would report a kit list that nobody declared. Descriptions and
+ * checklist names live in the manifest, so the fallback names kits without them.
  */
 function listPublishedKits(root: string, kitsDir: string, extension: string): PublishedKit[] {
   try {
     return readManifest(path.join(root, DEFAULT_MANIFEST_PATH)).kits.map((kit) => ({
       name: kit.name,
       description: kit.description,
+      checklists: kit.checklists,
     }));
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) throw error;
-    return enumerateKits({ dir: kitsDir, extension }).map((name) => ({ name, description: undefined }));
+    return enumerateKits({ dir: kitsDir, extension }).map((name) => ({
+      name,
+      description: undefined,
+      checklists: undefined,
+    }));
   }
 }
 

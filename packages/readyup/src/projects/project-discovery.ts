@@ -102,7 +102,7 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
   const srcDir = path.resolve(absolutePath, config.compile.srcDir);
   if (!existsSync(srcDir)) return false;
   try {
-    return collectSourceFiles(srcDir, config.compile.include).length > 0;
+    return collectSourceFiles(srcDir, config.compile).length > 0;
   } catch (error: unknown) {
     return skipUnreadableDir(srcDir, error);
   }

@@ -49,6 +49,12 @@ const it = baseIt
           'packages/custom/.config/readyup.config.ts': "export default { compile: { srcDir: 'src/kits' } };",
           'packages/custom/src/kits/lint.ts': 'export default {};',
 
+          // A config whose `exclude` removes every source, with nothing compiled and no manifest.
+          'packages/excluded/package.json': JSON.stringify({ name: 'excluded' }),
+          'packages/excluded/.config/readyup.config.ts':
+            "export default { compile: { srcDir: 'kit-sources', exclude: 'lib/**' } };",
+          'packages/excluded/kit-sources/lib/helper.ts': 'export {};',
+
           // Kits since deleted, manifest left behind.
           'packages/emptied/package.json': JSON.stringify({ name: 'emptied' }),
           'packages/emptied/.readyup/manifest.json': JSON.stringify({ version: 1, kits: [{ name: 'gone' }] }),
@@ -102,6 +108,10 @@ describe(discoverKitProjects, () => {
 
   it('reports a project compiled without a manifest beside its kits', async ({ temp }) => {
     await expect(discoverDirs(temp.dir)).resolves.toContain('packages/compiled-only');
+  });
+
+  it('omits a project whose every source its config excludes', async ({ temp }) => {
+    await expect(discoverDirs(temp.dir)).resolves.not.toContain('packages/excluded');
   });
 
   it('omits a workspace with neither a readyup directory nor a readyup config', async ({ temp }) => {
@@ -213,6 +223,7 @@ describe(discoverProjects, () => {
       'packages/compiled-only',
       'packages/custom',
       'packages/emptied',
+      'packages/excluded',
       'packages/plain',
       'packages/tooling',
     ]);

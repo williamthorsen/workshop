@@ -24,7 +24,9 @@ The directory is named relative to the enclosing workspace root, so a workspace 
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
-A sweep also prunes the kits that no source compiles to any longer, because the source was deleted or `include` no longer matches it. The sweep drops each such kit's manifest entry and deletes its bundle, provided the bundle still matches the recorded `targetHash` or the entry records no hash:
+A sweep names each kit after its source's file name, so `deploy.ts` and `ops/deploy.ts` both claim the name `deploy`. The sweep fails every source that claims a shared name, naming all of them, and compiles the rest. Keep one, and rename the others or remove them from the sweep with [`compile.exclude`](authoring-kits.md#config).
+
+A sweep also prunes the kits that no source compiles to any longer, because the source was deleted or `compile.include` and `compile.exclude` no longer select it. The sweep drops each such kit's manifest entry and deletes its bundle, provided the bundle still matches the recorded `targetHash` or the entry records no hash:
 
 ```
 🟢 deploy.ts -> 📓 deploy.js
@@ -215,7 +217,7 @@ export default defineRdyConfig({
 });
 ```
 
-`rdy run --internal <name>` resolves through these settings, and `rdy list` groups sources under **Internal** and bundles under **Compiled**.
+`rdy run --internal <kit>` resolves through these settings, and `rdy list` groups sources under **Internal** and bundles under **Compiled**.
 
 ## Verifying
 

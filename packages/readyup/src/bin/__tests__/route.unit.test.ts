@@ -55,7 +55,7 @@ const TYPO_TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-route');
 describe(routeCommand, () => {
   beforeEach(() => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
     });
     mockResolveKitSources.mockReturnValue([
@@ -635,6 +635,14 @@ describe(routeCommand, () => {
     const { exitCode } = await routeCli(['init', '-f']);
 
     expect(exitCode).toBe(2);
+    expect(mockInitCommand).not.toHaveBeenCalled();
+  });
+
+  it('returns 2 for init with a positional argument, without scaffolding', async () => {
+    const { exitCode, stderr } = await routeCli(['init', 'deploy']);
+
+    expect(exitCode).toBe(2);
+    expect(stderr).toContain('rdy init does not accept positional arguments.');
     expect(mockInitCommand).not.toHaveBeenCalled();
   });
 

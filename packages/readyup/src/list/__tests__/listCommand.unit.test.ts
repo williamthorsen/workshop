@@ -42,7 +42,7 @@ import { listCommand } from '../listCommand.ts';
 describe(listCommand, () => {
   beforeEach(() => {
     mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
       packages: [],
     });
@@ -65,7 +65,7 @@ describe(listCommand, () => {
     /** Configures one package and the kit that it publishes. */
     function configureOnePackage(): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: ['@acme/kits'],
       });
@@ -88,6 +88,23 @@ describe(listCommand, () => {
       expect(stdout).toContain('Packages');
       expect(stdout).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
       expect(stdout).not.toContain('No kits found');
+    });
+
+    it('nests the checklists recorded by a package kit\u{2019}s manifest beneath it', async () => {
+      configureOnePackage();
+      mockExpandConfiguredPackages.mockReturnValue([
+        {
+          packageName: '@acme/kits',
+          version: '2.1.0',
+          kitName: 'drift',
+          checklists: ['lockfile', 'ranges'],
+          path: '/pkg/.readyup/kits/drift.js',
+        },
+      ]);
+
+      const { stdout } = await list([]);
+
+      expect(stdout).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift\n   \u{1F4CB} lockfile\n   \u{1F4CB} ranges');
     });
 
     it('names installed packages that publish kits omitted by the config', async () => {
@@ -149,9 +166,20 @@ describe(listCommand, () => {
       expect(stdout).toContain('\u{2500}\u{2500} Compiled');
     });
 
+    it('nests the checklists recorded by the manifest beneath each compiled kit', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', checklists: ['build', 'release'] }],
+      });
+
+      const { stdout } = await list([]);
+
+      expect(stdout).toContain('\u{1F4D3} deploy\n   \u{1F4CB} build\n   \u{1F4CB} release');
+    });
+
     it('uses infix-based extension for internal kits when configured', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: 'int' },
         packages: [],
       });
@@ -176,7 +204,7 @@ describe(listCommand, () => {
 
     it('uses custom-outDir style when outDir differs from default', async () => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined },
+        compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: [],
       });
@@ -307,7 +335,7 @@ describe(listCommand, () => {
       ['infix', { dir: '.', infix: 'internal' }],
     ])('adds --internal to the internal hint when internal.%s is configured', async (_label, internal) => {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined },
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal,
         packages: [],
       });
@@ -315,7 +343,9 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit --internal [<name>]');
+      expect(stdout).toContain(
+        '\u{2500}\u{2500} Internal\n   To run: rdy run --jit --internal [<kit>[:<checklist>,...]]',
+      );
     });
 
     it('leaves --internal out of the internal hint under the default config', async () => {
@@ -323,7 +353,7 @@ describe(listCommand, () => {
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit [<name>]');
+      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit [<kit>[:<checklist>,...]]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
@@ -515,6 +545,14 @@ describe(listCommand, () => {
 
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--unknown'");
+  });
+
+  it('reports a usage error when positional arguments are supplied, before reading anything', async () => {
+    const { error } = await listRaising(['deploy']);
+
+    expect(error.code).toBe('usage');
+    expect(error.message).toBe('rdy list does not accept positional arguments.');
+    expect(mockLoadConfig).not.toHaveBeenCalled();
   });
 });
 

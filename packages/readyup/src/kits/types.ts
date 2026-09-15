@@ -418,7 +418,10 @@ export interface RdyConfig {
     | {
         srcDir?: string | undefined;
         outDir?: string | undefined;
-        include?: string | undefined;
+        /** Glob or globs, relative to `srcDir`, that a source must match to be compiled. */
+        include?: string | readonly string[] | undefined;
+        /** Glob or globs, relative to `srcDir`, that remove a source from the compile, even one that `include` matches. */
+        exclude?: string | readonly string[] | undefined;
       }
     | undefined;
   internal?:
@@ -435,7 +438,9 @@ export interface ResolvedRdyConfig {
   compile: {
     srcDir: string;
     outDir: string;
-    include: string | undefined;
+    /** `undefined` when no `include` was declared, which selects every source. */
+    include: string[] | undefined;
+    exclude: string[];
   };
   internal: {
     dir: string;

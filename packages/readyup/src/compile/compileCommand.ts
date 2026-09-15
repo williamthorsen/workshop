@@ -125,7 +125,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json });
   }
 
-  // No input file -- compile all sources from config
+  // No input file -- compile the sources that the config selects
   if (outputPath !== undefined) {
     throw usageError('--output requires an input file');
   }
@@ -436,7 +436,7 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
   let tsFiles: string[] = [];
   if (srcDirExists) {
     try {
-      tsFiles = collectSourceFiles(srcDir, config.compile.include);
+      tsFiles = collectSourceFiles(srcDir, config.compile);
     } catch (error: unknown) {
       throw configError(`Failed to read source directory: ${describeError(error)}`, { cause: error });
     }
@@ -450,6 +450,7 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
 
   const manifestDir = path.dirname(manifestPath);
   const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
+  const sharedKitNames = findSharedKitNames(tsFiles);
   const sourceContext: SourceSweepContext = {
     existingKitsByName,
     force,
@@ -457,6 +458,7 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
     manifestDir,
     outDir,
     project: sweep?.project,
+    sharedKitNames,
     skipManifest,
     srcDir,
     sweepRoot: sweep?.root,
@@ -467,7 +469,12 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
     sources.push(await compileSource(fileName, sourceContext));
   }
 
-  const kitEntries = sources.flatMap((source) => (source.entry === undefined ? [] : [source.entry]));
+  // A shared name keeps its prior entry once, however many sources claim it.
+  const kitEntries = existingKitsByName
+    .values()
+    .filter((kit) => sharedKitNames.has(kit.name))
+    .toArray();
+  kitEntries.push(...sources.flatMap((source) => (source.entry === undefined ? [] : [source.entry])));
   const kitResults = sources.map((source) => source.kit);
   const warnings = sources.flatMap((source) => source.warnings);
   const skippedCount = kitResults.filter((kit) => kit.status === 'skipped').length;
@@ -529,6 +536,8 @@ interface SourceSweepContext {
   outDir: string;
   /** The project named on the kit's JSON entry, given by a recursive compile alone. */
   project: string | undefined;
+  /** Each kit name claimed by more than one of the sweep's sources, with the sources that claim it. */
+  sharedKitNames: Map<string, string[]>;
   skipManifest: boolean;
   srcDir: string;
   /** Directory against which a failed source is named, given by a recursive compile alone. */
@@ -537,21 +546,52 @@ interface SourceSweepContext {
 
 /** One source's contribution to its project's compile. */
 interface SourceOutcome {
-  /** The manifest entry recording the kit, absent for a kit that failed before it was ever recorded. */
+  /**
+   * The manifest entry recording the kit, absent for a kit that failed before it was ever recorded and for a source
+   * whose kit name is shared, whose prior entry the project keeps once.
+   */
   entry: RdyManifestKit | undefined;
   kit: JsonCompileKitEntry;
   warnings: RaisedWarning[];
 }
 
-/** Compiles one source of a project sweep behind the drift gate, and returns its contribution to the project. */
+/**
+ * Compiles one source of a project sweep behind the shared-name and drift gates, and returns its contribution to the
+ * project.
+ */
 async function compileSource(fileName: string, context: SourceSweepContext): Promise<SourceOutcome> {
-  const { existingKitsByName, force, json, manifestDir, outDir, project, skipManifest, srcDir, sweepRoot } = context;
+  const {
+    existingKitsByName,
+    force,
+    json,
+    manifestDir,
+    outDir,
+    project,
+    sharedKitNames,
+    skipManifest,
+    srcDir,
+    sweepRoot,
+  } = context;
   const projectField = project === undefined ? {} : { project };
   const srcFile = path.join(srcDir, fileName);
   const outName = fileName.replace(/\.ts$/, '.js');
   const outFile = path.join(outDir, outName);
-  const kitName = path.basename(outFile, '.js');
+  const kitName = deriveKitName(fileName);
   const existingKit = existingKitsByName.get(kitName);
+
+  const namesakes = sharedKitNames.get(kitName);
+  if (namesakes !== undefined) {
+    const message = formatSharedKitNameError(
+      kitName,
+      namesakes.map((namesake) => describeSource(namesake, srcDir, sweepRoot)),
+    );
+    process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
+    return {
+      entry: undefined,
+      kit: { name: kitName, ...projectField, status: 'failed', error: message },
+      warnings: [],
+    };
+  }
 
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
   if (drift !== undefined) {
@@ -588,8 +628,7 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
     // describes the tree: An esbuild failure leaves the previous output and its hash intact, and a
     // validation failure deletes the output for `verify` to report missing.
     const message = describeError(error);
-    const failedSource = sweepRoot === undefined ? fileName : path.relative(sweepRoot, srcFile);
-    process.stderr.write(`Error compiling ${failedSource}: ${message}\n`);
+    process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
     return {
       entry: existingKit,
       kit: { name: kitName, ...projectField, status: 'failed', error: message },
@@ -869,6 +908,32 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   const status = checkDrift(existingKit, manifestDir);
   if (status.kind !== 'drift') return undefined;
   return { status, existingKit };
+}
+
+/** Returns the name of the kit compiled from a source, which is the source's file name without its extension. */
+function deriveKitName(fileName: string): string {
+  return path.basename(fileName, '.ts');
+}
+
+/** Returns a source's path as a failure names it: against the sweep root in a recursive compile, else against `srcDir`. */
+function describeSource(fileName: string, srcDir: string, sweepRoot: string | undefined): string {
+  return sweepRoot === undefined ? fileName : path.relative(sweepRoot, path.join(srcDir, fileName));
+}
+
+/** Returns each kit name claimed by more than one source, with the sources that claim it in sweep order. */
+function findSharedKitNames(fileNames: string[]): Map<string, string[]> {
+  const sourcesByKitName = new Map<string, string[]>();
+  for (const fileName of fileNames) {
+    const kitName = deriveKitName(fileName);
+    sourcesByKitName.set(kitName, [...(sourcesByKitName.get(kitName) ?? []), fileName]);
+  }
+  return new Map([...sourcesByKitName].filter(([, sources]) => sources.length > 1));
+}
+
+/** Returns the failure reported for each source that claims a kit name shared with other sources. */
+function formatSharedKitNameError(kitName: string, sources: string[]): string {
+  const sourceList = new Intl.ListFormat('en', { type: 'conjunction' }).format(sources);
+  return `Kit name "${kitName}" is shared by ${sourceList}. Keep one, and rename the others or remove them from the sweep with compile.exclude.`;
 }
 
 /** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */
