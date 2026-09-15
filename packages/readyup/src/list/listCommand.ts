@@ -61,7 +61,11 @@ export async function listCommand(args: string[]): Promise<number> {
   } catch (error: unknown) {
     throw usageError(translateParseArgsError(error, 'list'), { cause: error });
   }
-  const { values } = parsed;
+  const { positionals, values } = parsed;
+
+  if (positionals.length > 0) {
+    throw usageError('rdy list does not accept positional arguments.');
+  }
 
   for (const [name, value] of Object.entries(values)) {
     if (value === '') {

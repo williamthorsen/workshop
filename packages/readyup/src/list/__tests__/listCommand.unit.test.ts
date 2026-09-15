@@ -546,6 +546,14 @@ describe(listCommand, () => {
     expect(error.code).toBe('usage');
     expect(error.message).toContain("Unknown option '--unknown'");
   });
+
+  it('reports a usage error when positional arguments are supplied, before reading anything', async () => {
+    const { error } = await listRaising(['deploy']);
+
+    expect(error.code).toBe('usage');
+    expect(error.message).toBe('rdy list does not accept positional arguments.');
+    expect(mockLoadConfig).not.toHaveBeenCalled();
+  });
 });
 
 // region | Helpers
