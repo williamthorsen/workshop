@@ -20,7 +20,8 @@ export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
 
 Bundle TypeScript kit(s) into self-contained ESM bundle(s).
-If no file is given, all sources from the config's srcDir are compiled.
+If no file is given, all sources from the config's srcDir are compiled, and the bundles of kits
+that no source compiles to are removed.
 
 Modes:
   rdy compile                  Compile all sources from the config's srcDir
