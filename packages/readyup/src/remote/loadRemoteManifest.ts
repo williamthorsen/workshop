@@ -24,14 +24,10 @@ export interface LoadRemoteManifestOptions extends FetchWithCacheOptions {
  * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
  * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
  * Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError` for any other non-2xx
- * response, and a plain `Error` for malformed JSON or a schema-invalid body.
+ * response, and a plain `Error` for a fetch that times out, malformed JSON, or a schema-invalid body.
  */
-export async function loadRemoteManifest({
-  url,
-  cache,
-  resolveHeaders,
-}: LoadRemoteManifestOptions): Promise<RdyManifest> {
-  const response = await fetchWithCache(url, { cache, resolveHeaders });
+export async function loadRemoteManifest({ url, ...fetchOptions }: LoadRemoteManifestOptions): Promise<RdyManifest> {
+  const response = await fetchWithCache(url, fetchOptions);
 
   if (response.status === 404) {
     throw new RemoteManifestNotFoundError(url);

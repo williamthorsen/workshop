@@ -17,6 +17,7 @@ vi.stubGlobal('fetch', mockFetch);
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { loadRemoteKit } from '../loadRemoteKit.ts';
 import { RemoteFetchError } from '../RemoteFetchError.ts';
+import { stallUntilAborted } from '../test-utils/stallUntilAborted.ts';
 
 /** Fetch options that bypass the cache and send no headers. */
 const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
@@ -76,6 +77,7 @@ describe(loadRemoteKit, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: { Authorization: 'Bearer my-token', 'X-Custom': 'value' },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -86,7 +88,16 @@ describe(loadRemoteKit, () => {
 
     expect(mockFetch).toHaveBeenCalledWith('https://example.com/config.js', {
       headers: {},
+      signal: expect.any(AbortSignal),
     });
+  });
+
+  it('rejects naming the URL and the limit when the fetch times out', async () => {
+    mockFetch.mockImplementation(stallUntilAborted);
+
+    await expect(
+      loadRemoteKit({ url: 'https://example.com/config.js', ...uncachedOptions, timeoutMs: 1 }),
+    ).rejects.toThrow('Timed out after 0.001s fetching https://example.com/config.js');
   });
 
   it('cleans up temp directory even on failure', async () => {

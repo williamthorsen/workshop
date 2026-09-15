@@ -26,10 +26,10 @@ export interface LoadRemoteKitOptions extends FetchWithCacheOptions {
  * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
  * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
  * The content is written to a temp file for dynamic import and cleaned up afterwards. Throws `RemoteFetchError` for a
- * non-2xx response, and a plain `Error` for a body that is not an evaluable kit.
+ * non-2xx response, and a plain `Error` for a fetch that times out or a body that is not an evaluable kit.
  */
-export async function loadRemoteKit({ url, cache, resolveHeaders }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
-  const response = await fetchWithCache(url, { cache, resolveHeaders });
+export async function loadRemoteKit({ url, ...fetchOptions }: LoadRemoteKitOptions): Promise<LoadedRdyKit> {
+  const response = await fetchWithCache(url, fetchOptions);
 
   if (!response.ok) {
     throw new RemoteFetchError(

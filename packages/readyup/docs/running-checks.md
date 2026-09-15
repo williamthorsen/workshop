@@ -63,6 +63,8 @@ A check's own [`quiet`](authoring-kits.md#checks) is this flag narrowed to that 
 
 Private repositories use ambient tokens: `GITHUB_TOKEN` (falling back to `gh auth token`) and `BITBUCKET_TOKEN`. Without a token, requests are sent anonymously and succeed only for public repositories.
 
+A request for a remote kit or manifest fails, with an error naming the URL, if it has not received its whole response within 30 seconds.
+
 ### Cached remote kits
 
 Kits and manifests fetched from `github:`, `bitbucket:`, or `--url` are cached in `$XDG_CACHE_HOME/readyup/http`, or in `~/.cache/readyup/http` when that variable is unset or relative. A cached copy is reused without a request for as long as the server's `Cache-Control: max-age` allows -- 5 minutes for GitHub and 15 for Bitbucket -- and is then revalidated with the server before its next use. A kit pushed within that window can therefore still run from the older cached copy. `--no-cache` fetches every remote kit and manifest again and replaces the cached copies, so later runs without the flag reuse the fresh ones. `rdy list --from` caches a remote manifest the same way and accepts the same flag. The directory is safe to delete.

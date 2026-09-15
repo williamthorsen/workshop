@@ -28,7 +28,10 @@ describe(fetchWithCache, () => {
 
       await fetchWithCache(KIT_URL, { cache: undefined, resolveHeaders: () => ({ Authorization: 'token abc' }) });
 
-      expect(mockFetch).toHaveBeenCalledWith(KIT_URL, { headers: { Authorization: 'token abc' } });
+      expect(mockFetch).toHaveBeenCalledWith(KIT_URL, {
+        headers: { Authorization: 'token abc' },
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('fetches with empty headers when none are resolved', async () => {
@@ -36,7 +39,15 @@ describe(fetchWithCache, () => {
 
       await fetchWithCache(KIT_URL, { cache: undefined, resolveHeaders: () => undefined });
 
-      expect(mockFetch).toHaveBeenCalledWith(KIT_URL, { headers: {} });
+      expect(mockFetch).toHaveBeenCalledWith(KIT_URL, { headers: {}, signal: expect.any(AbortSignal) });
+    });
+
+    it('returns a response whose status allows no body', async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+
+      const response = await fetchWithCache(KIT_URL, { cache: undefined, resolveHeaders: () => undefined });
+
+      expect(response.status).toBe(204);
     });
   });
 
@@ -93,6 +104,7 @@ describe(fetchWithCache, () => {
 
       expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, {
         headers: { Authorization: 'token abc', 'If-None-Match': '"v1"' },
+        signal: expect.any(AbortSignal),
       });
       expect(response.status).toBe(200);
       await expect(response.text()).resolves.toBe(KIT_BODY);
@@ -110,7 +122,10 @@ describe(fetchWithCache, () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 304 }));
       await fetchWithCache(KIT_URL, { cache, resolveHeaders: () => undefined });
 
-      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: { 'If-Modified-Since': lastModified } });
+      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, {
+        headers: { 'If-Modified-Since': lastModified },
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('restarts freshness from the 304, taking the values that it sends', async () => {
@@ -186,7 +201,10 @@ describe(fetchWithCache, () => {
     await fetchWithCache(KIT_URL, { cache, resolveHeaders: () => undefined });
 
     expect(mockFetch).toHaveBeenCalledTimes(3);
-    expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: { 'If-None-Match': '"v1"' } });
+    expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, {
+      headers: { 'If-None-Match': '"v1"' },
+      signal: expect.any(AbortSignal),
+    });
   });
 
   describe('storage', () => {
@@ -260,7 +278,7 @@ describe(fetchWithCache, () => {
       mockFetch.mockResolvedValueOnce(buildKitResponse({ 'Cache-Control': 'max-age=300', ETag: '"v1"' }));
       await fetchWithCache(KIT_URL, { cache, resolveHeaders: () => undefined });
 
-      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: {} });
+      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: {}, signal: expect.any(AbortSignal) });
       await expect(readCacheEntry(cache.dir, KIT_URL)).resolves.toHaveProperty('body', KIT_BODY);
     });
   });
@@ -288,7 +306,7 @@ describe(fetchWithCache, () => {
       await fetchWithCache(KIT_URL, { cache: buildCache(tree, { reload: true }), resolveHeaders: () => undefined });
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: {} });
+      expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: {}, signal: expect.any(AbortSignal) });
     });
 
     it('stores the response that it fetches', async () => {

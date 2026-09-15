@@ -1,6 +1,11 @@
 import { parseCacheControl, parseDeltaSeconds } from '../portable/parseCacheControl.ts';
 import { type CacheEntry, readCacheEntry, removeCacheEntry, writeCacheEntry } from './cache-entries.ts';
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+/** Statuses for which the `Response` constructor throws when given a body, even an empty one. */
+const NULL_BODY_STATUSES = new Set([204, 205, 304]);
+
 /** Where the HTTP cache lives, and whether an invocation reads it. */
 export interface HttpCacheSettings {
   dir: string;
@@ -15,6 +20,9 @@ export interface FetchWithCacheOptions {
 
   /** Builds the request headers; called at most once, and only when a request is sent. */
   resolveHeaders: () => Record<string, string> | undefined;
+
+  /** How long a request may take, from sending it to reading the last byte of its body; 30 seconds by default. */
+  timeoutMs?: number;
 }
 
 /**
@@ -24,10 +32,16 @@ export interface FetchWithCacheOptions {
  * and a 304 is returned as a 200 holding the stored body, so a caller treats a cached response as it would a fetched
  * one. Every other response is returned with the same status, headers, and body. Only `http:` and `https:` URLs are
  * cached, and a cache that cannot be read or written leaves the fetch uncached rather than failing it.
+ *
+ * Every request sent, its body included, must finish within `timeoutMs`, or the fetch rejects with an error naming
+ * the URL and the limit. A stale entry whose revalidation times out is not served.
  */
-export async function fetchWithCache(url: string, { cache, resolveHeaders }: FetchWithCacheOptions): Promise<Response> {
+export async function fetchWithCache(
+  url: string,
+  { cache, resolveHeaders, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchWithCacheOptions,
+): Promise<Response> {
   if (cache === undefined || !isHttpUrl(url)) {
-    return fetch(url, { headers: resolveHeaders() ?? {} });
+    return sendRequest(url, resolveHeaders() ?? {}, timeoutMs);
   }
 
   const storedEntry = cache.reload ? undefined : await readCacheEntry(cache.dir, url);
@@ -39,7 +53,7 @@ export async function fetchWithCache(url: string, { cache, resolveHeaders }: Fet
     ...resolveHeaders(),
     ...(storedEntry !== undefined && buildConditionalHeaders(storedEntry)),
   };
-  const response = await fetch(url, { headers });
+  const response = await sendRequest(url, headers, timeoutMs);
 
   if (storedEntry !== undefined && response.status === 304) {
     await writeCacheEntry(cache.dir, refreshEntry(storedEntry, response.headers));
@@ -139,6 +153,25 @@ function refreshEntry(entry: CacheEntry, headers: Headers): CacheEntry {
     noCache: directives === undefined ? entry.noCache : directives.noCache,
     storedAtMs: Date.now(),
   };
+}
+
+/**
+ * Sends a request and reads its whole body within a time limit, returning a response rebuilt from that body.
+ *
+ * Reading the body here puts a stall partway through it under the same limit as a stall before the headers.
+ */
+async function sendRequest(url: string, headers: Record<string, string>, timeoutMs: number): Promise<Response> {
+  const signal = AbortSignal.timeout(timeoutMs);
+
+  try {
+    const response = await fetch(url, { headers, signal });
+    const text = await response.text();
+    const body = NULL_BODY_STATUSES.has(response.status) ? null : text;
+    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+  } catch (error: unknown) {
+    if (!signal.aborted) throw error;
+    throw new Error(`Timed out after ${timeoutMs / 1_000}s fetching ${url}`, { cause: error });
+  }
 }
 
 // endregion | Helpers
