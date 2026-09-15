@@ -89,14 +89,23 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
 }
 
 /**
- * Resolves a check's remediation message, absorbing an accessor that fails to produce one.
+ * Resolves a failure's remediation message from its outcome's `fix`, or else from its check's, absorbing
+ * a value that is not a string.
  *
- * `fix` may be an accessor, so it is read here and nowhere else: Only a failure renders one, and a
- * check that passes, skips, or is blocked must not do work that it discards. An accessor that throws
- * or yields a non-string is a defect in the kit rather than in the check's subject, so it is reported
- * in the slot that the remediation would occupy and leaves the verdict and its severity alone.
+ * The check's `fix` may be an accessor, so it is read here and nowhere else: Only a failure renders one,
+ * and a check that passes, skips, or is blocked, or whose outcome supplies its own `fix`, must not do work
+ * that it discards. An accessor that throws, or either `fix` yielding a non-string, is a defect in the kit
+ * rather than in the check's subject, so it is reported in the slot that the remediation would occupy and
+ * leaves the verdict and its severity alone. A malformed outcome `fix` is reported without consulting the
+ * check's, so the defect stays visible.
  */
-function resolveFix(check: RdyCheck): string | null {
+function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
+  if (outcomeFix !== undefined) {
+    return typeof outcomeFix === 'string'
+      ? outcomeFix
+      : `Unresolvable fix: the outcome returned ${describeValue(outcomeFix)}`;
+  }
+
   let raw: unknown;
   try {
     // Widened to `unknown`: A kit runs as JavaScript, so an accessor yields whatever its author
@@ -140,7 +149,7 @@ function buildPassedResult(
   return { ...fields, status: 'passed', ok: true, error: null };
 }
 
-/** Builds a failed result, resolving the check's fix because this is the only outcome that renders one. */
+/** Builds a failed result, resolving its fix because this is the only outcome that renders one. */
 function buildFailedResult(
   check: RdyCheck,
   fields: CheckContext & {
@@ -149,8 +158,9 @@ function buildFailedResult(
     error: Error | null;
     progress: Progress | null;
   },
+  outcomeFix?: unknown,
 ): FailedResult {
-  return { ...fields, fix: resolveFix(check), status: 'failed', ok: false };
+  return { ...fields, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
 }
 
 /** Returns a skipped result. */
@@ -236,7 +246,7 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
       const progress = outcome.progress ?? null;
       result = outcome.ok
         ? buildPassedResult({ ...context, detail, durationMs, progress })
-        : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress });
+        : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress }, outcome.fix);
     } else {
       // Reported as a defect rather than as an ordinary failure: The check never expressed a
       // verdict, so the severity that it declared for its subject says nothing about this outcome.
