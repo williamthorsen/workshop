@@ -138,14 +138,14 @@ const missing = discoverKitPackages().filter((name) => !configuredPackages.inclu
 
 ## Project sources
 
-| Function                              | Returns                                                            |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `listTrackedFiles()`                  | Paths under `cwd` tracked by git                                   |
-| `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path selected by the filter      |
-| `blankNonCode(text)`                  | The same text with every comment and literal blanked               |
-| `getLineAtOffset(text, offset)`       | The 1-based line containing an offset                              |
-| `countPackageUsage(sources, options)` | Calls into a package, counted only when the source imports it      |
-| `buildFindingReport(options)`         | A `FindingOutcome` that the runner suppresses, renders, and counts |
+| Function                              | Returns                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `listTrackedFiles()`                  | Paths under `cwd` tracked by git                                                                 |
+| `readTrackedSources(filter?)`         | `{ path, text }` for each tracked path selected by the filter                                    |
+| `blankNonCode(text)`                  | The same text with every comment and literal blanked                                             |
+| `getLineAtOffset(text, offset)`       | The 1-based line containing an offset                                                            |
+| `countPackageUsage(sources, options)` | Calls, tags, and member accesses of a package's exports, counted only when the source imports it |
+| `buildFindingReport(options)`         | A `FindingOutcome` that the runner suppresses, renders, and counts                               |
 
 These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package that it already installed provides.
 
