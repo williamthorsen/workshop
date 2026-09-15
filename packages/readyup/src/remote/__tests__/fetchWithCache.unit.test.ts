@@ -42,7 +42,7 @@ describe(fetchWithCache, () => {
       expect(mockFetch).toHaveBeenCalledWith(KIT_URL, { headers: {}, signal: expect.any(AbortSignal) });
     });
 
-    it('returns a response to which the status allows no body', async () => {
+    it('returns a response whose status allows no body', async () => {
       mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
 
       const response = await fetchWithCache(KIT_URL, { cache: undefined, resolveHeaders: () => undefined });
