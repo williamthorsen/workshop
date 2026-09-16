@@ -79,6 +79,24 @@ describe(loadRdyKit, () => {
     );
   });
 
+  it('names a nested kit by the name that was requested', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReaddirSync.mockReturnValue(buildDirents('release.js'));
+
+    await expect(loadRdyKit('.readyup/kits/team-a/deploy.js', 'team-a/deploy')).rejects.toThrow(
+      'Kit "team-a/deploy" not found at .readyup/kits/team-a/deploy.js. Available kits: release.',
+    );
+  });
+
+  it('names a nested kit by the name that was requested when its source awaits compilation', async () => {
+    // The `.ts` sibling beside the missing bundle exists; nothing else does.
+    mockExistsSync.mockImplementation((target: string) => target.endsWith(path.join('team-a', 'deploy.ts')));
+
+    await expect(loadRdyKit('.readyup/kits/team-a/deploy.js', 'team-a/deploy')).rejects.toThrow(
+      'Kit "team-a/deploy" is not compiled.',
+    );
+  });
+
   it('names the searched directory when no kits sit beside the missing one', async () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockReturnValue([]);

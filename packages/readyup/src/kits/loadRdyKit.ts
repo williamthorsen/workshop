@@ -31,11 +31,11 @@ export interface LoadedRdyKit {
  * A compiled kit binding readyup symbols not exported by this runner never reaches evaluation, so the failure
  * names them rather than surfacing as an `undefined` binding once a check calls one.
  */
-export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
+export async function loadRdyKit(kitPath: string, requestedName?: string): Promise<LoadedRdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
 
   if (!existsSync(resolvedPath)) {
-    throw new Error(diagnoseMissingKit(resolvedPath));
+    throw new Error(diagnoseMissingKit(resolvedPath, requestedName));
   }
 
   // Check a bundle's readyup imports before evaluating it. A `.ts` kit is source rather than a bundle: It binds
@@ -66,14 +66,19 @@ export async function loadRdyKit(kitPath: string): Promise<LoadedRdyKit> {
  * Each branch names the remedy that applies to the state actually found on disk: a source
  * awaiting compilation, a compiled kit requested as source, a project that was never
  * initialized, or a name matching nothing in the directory that was searched.
+ *
+ * The message names `requestedName` where the caller has it, so a kit below a subdirectory is reported under
+ * the name that was asked for rather than under its file's basename. The file's own name still builds the
+ * sibling path that the first branch probes, which sits beside the file rather than below the kit directory.
  */
-function diagnoseMissingKit(resolvedPath: string): string {
+function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefined): string {
   const extension = path.extname(resolvedPath);
-  const name = path.basename(resolvedPath, extension);
+  const fileName = path.basename(resolvedPath, extension);
+  const name = requestedName ?? fileName;
   const dir = path.dirname(resolvedPath);
 
   const siblingExtension = SIBLING_EXTENSIONS[extension];
-  if (siblingExtension !== undefined && existsSync(path.join(dir, `${name}${siblingExtension}`))) {
+  if (siblingExtension !== undefined && existsSync(path.join(dir, `${fileName}${siblingExtension}`))) {
     return extension === '.js'
       ? `Kit "${name}" is not compiled. Run 'rdy compile' to compile it, or 'rdy run --jit' to run it from source.`
       : `Kit "${name}" has no source at ${toDisplayPath(resolvedPath)}, but a compiled kit exists. ` +

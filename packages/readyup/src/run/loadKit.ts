@@ -73,7 +73,7 @@ async function loadFromSource(
   }
 
   try {
-    return await loadRdyKit(source.path);
+    return await loadRdyKit(source.path, entry.name);
   } catch (error: unknown) {
     if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
     if (isJit && isModuleNotFoundError(error, 'readyup')) {
