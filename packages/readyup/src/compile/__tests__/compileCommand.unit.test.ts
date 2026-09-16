@@ -129,6 +129,9 @@ function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
 
 describe(compileCommand, () => {
   beforeEach(() => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
+    });
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
     mockWarnOnUnrecordedBundles.mockReturnValue([]);
@@ -1145,6 +1148,28 @@ describe(compileCommand, () => {
           sourceHash: '5c0urce1',
           targetHash: 'deadbeef',
         },
+      ],
+    });
+  });
+
+  it('names a nested single-file compile by its bundle below the output directory', async () => {
+    const source = path.join(SRC_DIR, 'team-a', 'deploy.ts');
+    mockCompileConfig.mockResolvedValue(
+      compileResult(source, {
+        outputPath: kitSource('team-a/deploy.js'),
+        changed: true,
+        targetHash: 'deadbeef',
+      }),
+    );
+    mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'deploy', description: 'The top-level kit' }] });
+
+    await compile([source]);
+
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [
+        { name: 'deploy', description: 'The top-level kit' },
+        expect.objectContaining({ name: 'team-a/deploy', path: 'kits/team-a/deploy.js' }),
       ],
     });
   });

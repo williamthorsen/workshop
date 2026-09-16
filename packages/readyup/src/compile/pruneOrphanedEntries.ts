@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { isInsideDirectory } from '../portable/isInsideDirectory.ts';
 import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 
 /** Arguments for pruning the manifest entries that a sweep did not produce. */
@@ -91,12 +92,6 @@ function deleteFile(filePath: string): boolean {
     if (isMissingFileError(error)) return false;
     throw error;
   }
-}
-
-/** Reports whether `targetPath` lies below `directory`, rather than being the directory itself or outside it. */
-function isInsideDirectory(directory: string, targetPath: string): boolean {
-  const relativePath = path.relative(directory, targetPath);
-  return relativePath !== '' && !path.isAbsolute(relativePath) && relativePath.split(path.sep)[0] !== '..';
 }
 
 /** Reports whether an error is the filesystem's report that a file does not exist. */

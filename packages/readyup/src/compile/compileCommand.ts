@@ -11,7 +11,7 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, internalError, RdyError, usageError } from '../errors/RdyError.ts';
-import { deriveKitName } from '../kits/deriveKitName.ts';
+import { deriveKitName, deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -151,7 +151,10 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   const resolvedInputPath = path.resolve(inputPath);
   const resolvedOutputPath = path.resolve(outputPath ?? deriveJsPath(resolvedInputPath));
-  const kitName = path.basename(resolvedOutputPath, '.js');
+  // The config is read for `outDir` alone: `--config` and an input file are mutually exclusive, and the
+  // sources that `include` and `exclude` select bear on a sweep rather than on a named file.
+  const config = await loadConfigForSingle();
+  const kitName = deriveKitNameFromBundle(resolvedOutputPath, path.resolve(config.compile.outDir));
   const relInput = path.relative(process.cwd(), resolvedInputPath);
 
   writeHuman(formatSectionHeading('Compiling kit'), json);
@@ -560,7 +563,7 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
   const srcFile = path.join(srcDir, fileName);
   const outName = deriveJsPath(fileName);
   const outFile = path.join(outDir, outName);
-  const kitName = deriveKitName(fileName);
+  const kitName = deriveKitName(fileName, '.ts');
   const existingKit = existingKitsByName.get(kitName);
 
   const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
@@ -878,6 +881,15 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
   const status = checkDrift(existingKit, manifestDir);
   if (status.kind !== 'drift') return undefined;
   return { status, existingKit };
+}
+
+/** Loads the config that a single-file compile reads, reporting a config that cannot be evaluated as a config error. */
+async function loadConfigForSingle(): Promise<ResolvedRdyConfig> {
+  try {
+    return await loadConfig();
+  } catch (error: unknown) {
+    throw configError(describeError(error), { cause: error, hint: extractHint(error) });
+  }
 }
 
 /** Returns a source's path as a failure names it: against the sweep root in a recursive compile, else against `srcDir`. */
