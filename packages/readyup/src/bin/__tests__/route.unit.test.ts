@@ -1,7 +1,6 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockRunCommand = vi.hoisted(() => vi.fn());
 const mockInitCommand = vi.hoisted(() => vi.fn());
@@ -49,8 +48,11 @@ import { DOCS_POINTER } from '../../help/helpText.ts';
 import { routeCommand } from '../route.ts';
 import { routeCli } from '../test-utils/routeCli.ts';
 
-/** Scratch project root for the tests that need a kit file on disk. */
-const TYPO_TEST_DIR = join(import.meta.dirname, '../../../.test-tmp-route');
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-route-' })),
+);
 
 describe(routeCommand, () => {
   beforeEach(() => {
@@ -64,7 +66,6 @@ describe(routeCommand, () => {
   });
 
   afterEach(() => {
-    rmSync(TYPO_TEST_DIR, { recursive: true, force: true });
     vi.restoreAllMocks();
     mockRunCommand.mockReset();
     mockCompileCommand.mockReset();
@@ -838,10 +839,9 @@ describe(routeCommand, () => {
       expect(stderr).toBe('');
     });
 
-    it('runs a bare word as a kit when a kit by that name exists', async () => {
-      mkdirSync(join(TYPO_TEST_DIR, '.readyup/kits'), { recursive: true });
-      writeFileSync(join(TYPO_TEST_DIR, '.readyup/kits/lst.js'), 'export const checklists = [];', 'utf8');
-      vi.spyOn(process, 'cwd').mockReturnValue(TYPO_TEST_DIR);
+    it('runs a bare word as a kit when a kit by that name exists', async ({ temp }) => {
+      temp.write('.readyup/kits/lst.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 

@@ -1,8 +1,6 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
-import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
@@ -36,7 +34,7 @@ describe('--packages run path wiring', () => {
   });
 
   it('expands a configured package into entries with its name and version', ({ temp }) => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
@@ -50,17 +48,17 @@ describe('--packages run path wiring', () => {
     ]);
   });
 
-  it('runs only the default kit when the invocation names none', () => {
-    installPackage('@acme/kits', ['default', 'preflight'], { version: '2.1.0' });
+  it('runs only the default kit when the invocation names none', ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default', 'preflight'], { version: '2.1.0' });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
   });
 
-  it('runs a named kit from every configured package publishing it, in configured order', () => {
-    installPackage('plain-kit', ['default', 'preflight']);
-    installPackage('@acme/kits', ['default', 'preflight']);
+  it('runs a named kit from every configured package publishing it, in configured order', ({ temp }) => {
+    installPackage(temp, 'plain-kit', ['default', 'preflight']);
+    installPackage(temp, '@acme/kits', ['default', 'preflight']);
 
     const entries = resolveKitSources({
       ...baseArgs,
@@ -76,8 +74,8 @@ describe('--packages run path wiring', () => {
   });
 
   // Selection reads names, so the manifest-less path needs no handling of its own -- but it has to resolve alike.
-  it('selects by name when a package ships no manifest', () => {
-    installPackage('plain-kit', ['default', 'preflight'], { hasManifest: false });
+  it('selects by name when a package ships no manifest', ({ temp }) => {
+    installPackage(temp, 'plain-kit', ['default', 'preflight'], { hasManifest: false });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['plain-kit'] });
 
@@ -85,9 +83,9 @@ describe('--packages run path wiring', () => {
   });
 
   // A package publishing no `default` requires nothing of this project, so there is nothing to fail.
-  it('skips a configured package publishing no default', () => {
-    installPackage('plain-kit', ['default']);
-    installPackage('@acme/kits', ['drift', 'preflight']);
+  it('skips a configured package publishing no default', ({ temp }) => {
+    installPackage(temp, 'plain-kit', ['default']);
+    installPackage(temp, '@acme/kits', ['drift', 'preflight']);
 
     const entries = resolveKitSources({
       ...baseArgs,
@@ -98,8 +96,8 @@ describe('--packages run path wiring', () => {
     expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
   });
 
-  it('passes without running a kit when the selection is empty', async () => {
-    installPackage('@acme/kits', ['drift']);
+  it('passes without running a kit when the selection is empty', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['drift']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const { exitCode, stdout } = await run({ kitEntries: entries, json: false });
@@ -108,8 +106,8 @@ describe('--packages run path wiring', () => {
     expect(stdout).toBe('No kits to run.\n');
   });
 
-  it('passes the package and version into the JSON report', async () => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+  it('passes the package and version into the JSON report', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const { exitCode, stdout } = await run({ kitEntries: entries, json: true });
@@ -119,8 +117,8 @@ describe('--packages run path wiring', () => {
     expect(report.kits[0]).toMatchObject({ name: 'default', origin: { package: '@acme/kits', version: '2.1.0' } });
   });
 
-  it('omits the version from the report when the package declares none', async () => {
-    installPackage('@acme/kits', ['default']);
+  it('omits the version from the report when the package declares none', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default']);
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
@@ -130,8 +128,8 @@ describe('--packages run path wiring', () => {
     expect(report.kits[0]?.origin).not.toHaveProperty('version');
   });
 
-  it('names the readyup that compiled a package kit beside the package, not inside it', async () => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
+  it('names the readyup that compiled a package kit beside the package, not inside it', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
@@ -142,8 +140,8 @@ describe('--packages run path wiring', () => {
   });
 
   // A lone dependency-provided kit is the common shape, and its package appears nowhere else on screen.
-  it('heads a single package kit with the package and version in human output', async () => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+  it('heads a single package kit with the package and version in human output', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -152,9 +150,9 @@ describe('--packages run path wiring', () => {
   });
 
   // The defect reported by #238: Every package kit here runs one checklist, so the run tallied nothing at all.
-  it('ends a multi-package run with a table covering every checklist that ran', async () => {
-    installPackage('plain-kit', ['default'], { version: '1.0.0' });
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
+  it('ends a multi-package run with a table covering every checklist that ran', async ({ temp }) => {
+    installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = resolveKitSources({
       ...baseArgs,
       packages: true,
@@ -172,9 +170,9 @@ describe('--packages run path wiring', () => {
   });
 
   // A row is an index into the blocks above it, so it repeats its heading rather than naming its own scheme.
-  it('names each row by the breadcrumb heading that its block has', async () => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
-    installPackage('plain-kit', ['default'], { version: '1.0.0' });
+  it('names each row by the breadcrumb heading that its block has', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
+    installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     const entries = resolveKitSources({
       ...baseArgs,
       packages: true,
@@ -194,12 +192,12 @@ describe('--packages run path wiring', () => {
   });
 
   // A kit that never loaded ran no checklist, and the ones that did are still worth tallying.
-  it('tallies the checklists that ran when a kit fails to load', async () => {
-    installPackage('@acme/kits', ['default'], { version: '2.1.0' });
-    installPackage('plain-kit', ['default'], { version: '1.0.0' });
-    installPackage('broken-kit', ['default'], { version: '3.0.0' });
-    writeFileSync(
-      path.join(process.cwd(), 'node_modules', 'broken-kit', '.readyup', 'kits', 'default.js'),
+  it('tallies the checklists that ran when a kit fails to load', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
+    installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
+    installPackage(temp, 'broken-kit', ['default'], { version: '3.0.0' });
+    temp.write(
+      path.join('node_modules', 'broken-kit', '.readyup', 'kits', 'default.js'),
       'export default { nope: true };\n',
     );
     const entries = resolveKitSources({
@@ -240,20 +238,19 @@ function describeEntry(entry: ResolvedKitEntry): string {
   return `${origin}:${entry.name}`;
 }
 
-/** Installs a package publishing the named kits, each holding one passing check. */
-function installPackage(name: string, kits: string[], options: InstallPackageOptions = {}): void {
+/** Installs a package publishing the named kits, each holding one passing check, under the tree. */
+function installPackage(tree: TempTree, name: string, kits: string[], options: InstallPackageOptions = {}): void {
   const { hasManifest = true, readyupVersion, version } = options;
-  const root = path.join(process.cwd(), 'node_modules', name);
-  mkdirSync(path.join(root, '.readyup', 'kits'), { recursive: true });
-  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, ...(version !== undefined && { version }) }));
+  const root = path.join('node_modules', name);
+  tree.write(path.join(root, 'package.json'), JSON.stringify({ name, ...(version !== undefined && { version }) }));
 
   for (const kit of kits) {
     const body = `export default { checklists: [{ name: '${kit}', checks: [{ name: 'ok', check: () => true }] }] };\n`;
     const stamp = readyupVersion === undefined ? '' : `export const __readyupVersion = '${readyupVersion}';\n`;
-    writeFileSync(path.join(root, '.readyup', 'kits', `${kit}.js`), `${stamp}${body}`);
+    tree.write(path.join(root, '.readyup', 'kits', `${kit}.js`), `${stamp}${body}`);
   }
   if (hasManifest) {
-    writeFileSync(
+    tree.write(
       path.join(root, '.readyup', 'manifest.json'),
       JSON.stringify({ version: 1, kits: kits.map((kit) => ({ name: kit })) }),
     );
