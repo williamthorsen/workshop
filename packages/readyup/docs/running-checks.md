@@ -13,7 +13,10 @@ rdy deploy            # every checklist in the deploy kit
 rdy deploy:build,test # two checklists from it
 rdy deploy:fast       # a suite
 rdy deploy release    # two kits
+rdy ops/deploy        # a kit compiled from a subdirectory
 ```
+
+A kit's name is its source's path below `compile.srcDir`, so a kit compiled from a subdirectory is named and run with that path, as [Compiling](publishing-kits.md#compiling) describes. `rdy list` reports every kit under the name that runs it.
 
 `--all` runs every kit in the source instead of naming them, as though each had been named:
 

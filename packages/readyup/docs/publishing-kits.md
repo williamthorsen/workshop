@@ -24,7 +24,7 @@ The directory is named relative to the enclosing workspace root, so a workspace 
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
-A sweep names each kit after its source's file name, so `deploy.ts` and `ops/deploy.ts` both claim the name `deploy`. The sweep fails every source that claims a shared name, naming all of them, and compiles the rest. Keep one, and rename the others or remove them from the sweep with [`compile.exclude`](authoring-kits.md#config).
+A sweep names each kit after its source's path below [`compile.srcDir`](authoring-kits.md#config), extension stripped, so `deploy.ts` is named `deploy` and `ops/deploy.ts` is named `ops/deploy`. The separator is `/` on every platform, and a nested kit is run under the whole name: `rdy run ops/deploy`. Two sources therefore cannot claim one name, and organizing kits into subdirectories needs nothing from the config.
 
 A sweep also prunes the kits that no source compiles to any longer, because the source was deleted or `compile.include` and `compile.exclude` no longer select it. The sweep drops each such kit's manifest entry and deletes its bundle, provided the bundle still matches the recorded `targetHash` or the entry records no hash:
 
@@ -86,7 +86,7 @@ Under `--json`, each kit and each removed bundle also reports `project`, the dir
 | `description`         | The kit's own description, if it declares one                                                            |
 | `esbuildVersion`      | The esbuild that produced the bundle                                                                     |
 | `inputs`              | Every file read by the compile, each with the hash of what was consumed from it                          |
-| `name`                | The kit's name, which is its compiled file's basename                                                    |
+| `name`                | The kit's name, which is its source's path below `compile.srcDir` with the extension stripped            |
 | `path`                | The compiled bundle, relative to the manifest                                                            |
 | `readyupVersion`      | The readyup that compiled the kit                                                                        |
 | `source`              | The TypeScript from which the bundle was built, relative to the manifest                                 |
