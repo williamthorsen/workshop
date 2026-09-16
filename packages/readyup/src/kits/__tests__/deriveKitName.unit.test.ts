@@ -4,12 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { deriveKitName, deriveKitNameFromBundle } from '../deriveKitName.ts';
 
-// The separator is read through `path.sep`, which one test replaces; an unrestored spy would reach every test after it.
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe(deriveKitName, () => {
+  // The separator is read through `path.sep`, which one case below replaces; an unrestored spy would reach the rest.
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns a top-level source under its own name', () => {
     expect(deriveKitName('deploy.ts', '.ts')).toBe('deploy');
   });
