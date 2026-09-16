@@ -1,5 +1,10 @@
-import baseConfig, { createConfig, patterns } from '@williamthorsen/eslint-config-typescript';
-import { defineConfig } from 'eslint/config';
+import baseConfig, {
+  commonIgnores,
+  createConfig,
+  patterns,
+  toolIgnores,
+} from '@williamthorsen/eslint-config-typescript';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
 // The broad blocks below match on the base config's `patterns`, the same constants it applies its own blocks to,
 // save `no-restricted-syntax`, whose narrower scope `RESTRICTED_SYNTAX` states. Sharing the constants is what
@@ -36,20 +41,10 @@ const RESTRICTED_SYNTAX = [
 
 const config = defineConfig([
   ...baseConfig,
-  {
-    // Nothing here is source this repo authors: a `.sh` file holds no JavaScript to lint, `.claude/` is harness
-    // configuration and the skills CodeAssembly generates into it, the two `.readyup/` entries are what `rdy compile`
-    // writes, and `coverage/`, `dist/`, and `local/` hold generated or machine-local output.
-    ignores: [
-      '**/*.sh',
-      '**/.claude/**',
-      '**/.readyup/**/*.js',
-      '**/.readyup/manifest.json',
-      '**/coverage/**',
-      '**/dist/**',
-      '**/local/**',
-    ],
-  },
+  // The two lists published by the shared config, plus the one entry specific to this repo: compositor's samples are
+  // generator output pinned byte for byte by a drift test, and `nmr lint` resolves to `eslint --fix .`, so a fix
+  // applied there fails that test. `.prettierignore` excludes them on the same grounds.
+  globalIgnores([...commonIgnores, ...toolIgnores, 'packages/compositor/samples/**']),
   {
     // `strict-lint` promotes rule severities and not this report, so the default `warn` would leave a directive
     // whose rule has stopped reporting in place indefinitely.
