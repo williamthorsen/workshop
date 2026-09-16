@@ -1,4 +1,4 @@
-import { unlinkSync } from 'node:fs';
+import { rmdirSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError, isError } from '@williamthorsen/toolbelt.errors';
@@ -70,6 +70,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
         outcome.keptEntries.push(entry);
         outcome.orphans.push({ kind: 'drift', bundlePath, name, status });
       } else if (deleteFile(bundlePath)) {
+        removeEmptiedDirectories(path.dirname(bundlePath), outDir);
         outcome.orphans.push({ kind: 'removed', bundlePath, name });
       }
     } catch (error: unknown) {
@@ -82,6 +83,23 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
 }
 
 // region | Helpers
+
+/**
+ * Removes each directory from `directory` upward that a deletion left empty, stopping below `outDir`.
+ *
+ * The walk stops at the first directory that still holds something and at any directory that cannot be
+ * removed. A directory left empty is untidy rather than wrong, so nothing here fails the compile, and
+ * `outDir` itself stays whether or not the sweep emptied it.
+ */
+function removeEmptiedDirectories(directory: string, outDir: string): void {
+  for (let current = directory; isInsideDirectory(outDir, current); current = path.dirname(current)) {
+    try {
+      rmdirSync(current);
+    } catch {
+      return;
+    }
+  }
+}
 
 /** Deletes a file, returning `false` where there was none to delete. */
 function deleteFile(filePath: string): boolean {
