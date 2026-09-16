@@ -45,6 +45,19 @@ describe(pruneOrphanedEntries, () => {
     expect(tree.exists('kits/deploy.js')).toBe(true);
   });
 
+  it('leaves the bundle of an orphan that the sweep wrote, and drops its entry', () => {
+    using tree = createProject({ 'kits/ops/deploy.js': COMPILED });
+
+    const outcome = prune(tree, {
+      existingEntries: [{ name: 'deploy', path: 'kits/ops/deploy.js' }],
+      sweptBundlePaths: new Set([tree.resolve('kits/ops/deploy.js')]),
+      sweptKitNames: new Set(['ops/deploy']),
+    });
+
+    expect(outcome).toStrictEqual({ keptEntries: [], orphans: [] });
+    expect(tree.exists('kits/ops/deploy.js')).toBe(true);
+  });
+
   it('keeps a bundle edited since it was compiled, with its entry, and reports the drift', () => {
     using tree = createProject({ 'kits/stale.js': COMPILED });
     const entry = recordedEntry(tree, 'stale');
@@ -146,6 +159,7 @@ function prune(tree: TempTree, overrides: Partial<PruneOrphanedEntriesArgs>) {
     force: false,
     manifestDir: tree.dir,
     outDir: tree.resolve('kits'),
+    sweptBundlePaths: new Set(),
     sweptKitNames: new Set(),
     ...overrides,
   });

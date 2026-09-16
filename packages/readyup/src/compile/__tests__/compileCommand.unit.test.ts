@@ -654,68 +654,64 @@ describe(compileCommand, () => {
     });
   });
 
-  describe('sources sharing a kit name', () => {
-    const SHARED_NAME_ERROR =
-      'Kit name "deploy" is shared by deploy.ts and ops/deploy.ts. Keep one, and rename the others or remove them from ' +
-      'the sweep with compile.exclude.';
-
-    /** Arranges a batch in which two sources claim the kit name `deploy` and a third compiles. */
-    function arrangeSharedNameBatch(): void {
+  describe('sources in subdirectories', () => {
+    /** Arranges a batch whose sources include a nested one sharing its basename with a top-level kit. */
+    function arrangeNestedBatch(): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       });
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['deploy.ts', 'ops', 'ops/deploy.ts', 'smoke.ts']);
-      mockCompileConfig.mockResolvedValueOnce(
-        compileResult(kitSource('smoke.ts'), { outputPath: '/abs/smoke.js', changed: true, targetHash: 'bbbb2222' }),
-      );
+      mockReaddirSync.mockReturnValue(['deploy.ts', 'ops', 'ops/deploy.ts']);
+      mockCompileConfig
+        .mockResolvedValueOnce(
+          compileResult(kitSource('deploy.ts'), {
+            outputPath: '/abs/deploy.js',
+            changed: true,
+            targetHash: 'aaaa1111',
+          }),
+        )
+        .mockResolvedValueOnce(
+          compileResult(kitSource('ops/deploy.ts'), {
+            outputPath: '/abs/ops/deploy.js',
+            changed: true,
+            targetHash: 'bbbb2222',
+          }),
+        );
     }
 
-    it('fails every source that claims the shared name, naming all of them, and compiles the rest', async () => {
-      arrangeSharedNameBatch();
-
-      const { exitCode, stdout, stderr } = await compile([]);
-
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain(`Error compiling deploy.ts: ${SHARED_NAME_ERROR}\n`);
-      expect(stderr).toContain(`Error compiling ops/deploy.ts: ${SHARED_NAME_ERROR}\n`);
-      expect(mockCompileConfig).toHaveBeenCalledExactlyOnceWith(kitSource('smoke.ts'), expect.any(String));
-      expect(stdout).toContain('2 of 3 kits failed to compile.');
-    });
-
-    it('keeps the prior manifest entry of the shared name exactly once', async () => {
-      arrangeSharedNameBatch();
-      const recordedDeploy = {
-        name: 'deploy',
-        path: 'kits/deploy.js',
-        readyupVersion: VERSION,
-        source: 'kits/deploy.ts',
-        targetHash: 'aaaa1111',
-      };
-      mockReadManifest.mockReturnValue({ version: 1, kits: [recordedDeploy] });
+    it('names a nested kit by its path below the source directory', async () => {
+      arrangeNestedBatch();
 
       await compile([]);
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
-        kits: [recordedDeploy, expect.objectContaining({ name: 'smoke' })],
+        kits: [expect.objectContaining({ name: 'deploy' }), expect.objectContaining({ name: 'ops/deploy' })],
       });
     });
 
-    it('reports each claiming source as failed under --json', async () => {
-      arrangeSharedNameBatch();
+    it('compiles a nested source sharing its basename with a top-level kit', async () => {
+      arrangeNestedBatch();
 
-      const { stdout } = await compile(['--json']);
+      const { exitCode, stdout } = await compile(['--json']);
 
+      expect(exitCode).toBe(0);
       expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
-        passed: false,
+        passed: true,
         kits: [
-          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
-          { name: 'deploy', status: 'failed', error: SHARED_NAME_ERROR },
-          { name: 'smoke', status: 'compiled' },
+          { name: 'deploy', status: 'compiled' },
+          { name: 'ops/deploy', status: 'compiled' },
         ],
       });
+    });
+
+    it('compiles a nested source into the matching subdirectory of the output directory', async () => {
+      arrangeNestedBatch();
+
+      await compile([]);
+
+      expect(mockCompileConfig).toHaveBeenCalledWith(kitSource('ops/deploy.ts'), kitSource('ops/deploy.js'));
     });
   });
 

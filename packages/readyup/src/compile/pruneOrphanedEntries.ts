@@ -14,6 +14,8 @@ export interface PruneOrphanedEntriesArgs {
   manifestDir: string;
   /** Absolute path of the directory into which the sweep compiles, and outside which nothing is deleted. */
   outDir: string;
+  /** Absolute path of the bundle that every attempted source compiles to, whatever became of it. */
+  sweptBundlePaths: ReadonlySet<string>;
   /** The name of every kit whose source the sweep attempted, whatever became of it. */
   sweptKitNames: ReadonlySet<string>;
 }
@@ -43,11 +45,15 @@ export type OrphanOutcome =
  * compile overwrites a bundle. A drifted bundle is kept unless `force` is set, and one that cannot be deleted is kept.
  * Both keep their entry, because the manifest still describes a file on disk.
  *
+ * An orphan whose bundle the sweep just wrote is dropped without deleting anything: The entry named that bundle under
+ * a name no source claims any more, and the file itself belongs to the kit that now claims it. This is what a rename
+ * looks like from the prune's side, whether the source moved or the naming rule changed beneath it.
+ *
  * An entry recording no path, one whose bundle is already gone, and one whose bundle lies outside `outDir` are
  * dropped without deleting anything and without an outcome. A file outside `outDir` is none that a sweep writes.
  */
 export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutcome {
-  const { existingEntries, force, manifestDir, outDir, sweptKitNames } = args;
+  const { existingEntries, force, manifestDir, outDir, sweptBundlePaths, sweptKitNames } = args;
   const outcome: PruneOutcome = { keptEntries: [], orphans: [] };
 
   for (const entry of existingEntries) {
@@ -55,7 +61,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
 
     const { name } = entry;
     const bundlePath = path.resolve(manifestDir, entry.path);
-    if (!isInsideDirectory(outDir, bundlePath)) continue;
+    if (sweptBundlePaths.has(bundlePath) || !isInsideDirectory(outDir, bundlePath)) continue;
 
     try {
       const status = force ? undefined : checkDrift(entry, manifestDir);
