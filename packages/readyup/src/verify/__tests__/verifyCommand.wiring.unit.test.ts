@@ -1,9 +1,6 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
@@ -18,33 +15,30 @@ import { verifyCommand } from '../verifyCommand.ts';
 const OK = richFormatter.tokens.passed.glyph;
 const FAILED = richFormatter.tokens.failedError.glyph;
 
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'verify-integ-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runTest();
+});
+
 describe('verifyCommand wiring', () => {
-  let tempDir: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(path.join(tmpdir(), 'verify-integ-'));
-    originalCwd = process.cwd();
-    process.chdir(tempDir);
-  });
-
   afterEach(() => {
-    process.chdir(originalCwd);
     vi.restoreAllMocks();
-    rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('returns 0 and reports ok when on-disk compiled kit matches manifest targetHash', async () => {
+  it('returns 0 and reports ok when on-disk compiled kit matches manifest targetHash', async ({ temp }) => {
     const compiled = Buffer.from('export default { checks: [] };\n');
-    writeFileSync(path.join(tempDir, 'demo.js'), compiled);
-    const manifestPath = path.join(tempDir, 'manifest.json');
-    writeFileSync(
-      manifestPath,
-      JSON.stringify({
-        version: 1,
-        kits: [{ name: 'demo', path: 'demo.js', source: 'demo.ts', targetHash: hashBytes(compiled) }],
-      }),
-    );
+    temp.write('demo.js', compiled);
+    temp.writeJson('manifest.json', {
+      version: 1,
+      kits: [{ name: 'demo', path: 'demo.js', source: 'demo.ts', targetHash: hashBytes(compiled) }],
+    });
 
     const { exitCode, stdout, stderr } = await verify(['--manifest', 'manifest.json']);
 
@@ -53,16 +47,12 @@ describe('verifyCommand wiring', () => {
     expect(stderr).toBe('');
   });
 
-  it('returns 1 and reports drift when on-disk compiled kit differs from manifest targetHash', async () => {
-    writeFileSync(path.join(tempDir, 'demo.js'), 'export default { edited: true };\n');
-    const manifestPath = path.join(tempDir, 'manifest.json');
-    writeFileSync(
-      manifestPath,
-      JSON.stringify({
-        version: 1,
-        kits: [{ name: 'demo', path: 'demo.js', source: 'demo.ts', targetHash: 'deadbeef' }],
-      }),
-    );
+  it('returns 1 and reports drift when on-disk compiled kit differs from manifest targetHash', async ({ temp }) => {
+    temp.write('demo.js', 'export default { edited: true };\n');
+    temp.writeJson('manifest.json', {
+      version: 1,
+      kits: [{ name: 'demo', path: 'demo.js', source: 'demo.ts', targetHash: 'deadbeef' }],
+    });
 
     const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -72,39 +62,8 @@ describe('verifyCommand wiring', () => {
   });
 
   describe('source staleness', () => {
-    /**
-     * Writes a matching source/output pair and a manifest recording both hashes, returning the
-     * source path.
-     *
-     * Editing that source is the whole scenario: a kit whose TypeScript moved on while the compiled
-     * bundle from which it was built stayed put.
-     */
-    function writeCompiledPair(): string {
-      const compiled = Buffer.from('export default { checklists: [] };\n');
-      const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
-      const sourcePath = path.join(tempDir, 'demo.ts');
-      writeFileSync(path.join(tempDir, 'demo.js'), compiled);
-      writeFileSync(sourcePath, source);
-      writeFileSync(
-        path.join(tempDir, 'manifest.json'),
-        JSON.stringify({
-          version: 1,
-          kits: [
-            {
-              name: 'demo',
-              path: 'demo.js',
-              source: 'demo.ts',
-              sourceHash: hashBytes(source),
-              targetHash: hashBytes(compiled),
-            },
-          ],
-        }),
-      );
-      return sourcePath;
-    }
-
-    it('returns 0 when both the source and the compiled kit match the manifest', async () => {
-      writeCompiledPair();
+    it('returns 0 when both the source and the compiled kit match the manifest', async ({ temp }) => {
+      writeCompiledPair(temp);
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -112,9 +71,9 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('returns 1 when the source was edited without a recompile', async () => {
-      const sourcePath = writeCompiledPair();
-      writeFileSync(sourcePath, 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
+    it('returns 1 when the source was edited without a recompile', async ({ temp }) => {
+      writeCompiledPair(temp);
+      temp.write('demo.ts', 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -122,9 +81,9 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   source stale`);
     });
 
-    it('returns 1 when the recorded source was deleted', async () => {
-      const sourcePath = writeCompiledPair();
-      rmSync(sourcePath);
+    it('returns 1 when the recorded source was deleted', async ({ temp }) => {
+      writeCompiledPair(temp);
+      temp.rm('demo.ts');
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -132,10 +91,10 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   source file missing`);
     });
 
-    it('reports both source hashes in the JSON entry for a stale kit', async () => {
-      const sourcePath = writeCompiledPair();
+    it('reports both source hashes in the JSON entry for a stale kit', async ({ temp }) => {
+      writeCompiledPair(temp);
       const edited = Buffer.from('export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
-      writeFileSync(sourcePath, edited);
+      temp.write('demo.ts', edited);
 
       const { stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -154,50 +113,8 @@ describe('verifyCommand wiring', () => {
   });
 
   describe('input staleness', () => {
-    const SHARED_MODULE = Buffer.from('export const shared = 1;\n');
-    const PACKAGE_JSON = { name: 'demo', version: '3.1.0' };
-
-    /**
-     * Writes a kit whose compile read a sibling module and a version out of `package.json`, and a
-     * manifest recording all of it.
-     *
-     * The two hash verdicts are arranged to pass, so whatever the run reports comes from the closure.
-     */
-    function writeRecordedClosure(): void {
-      const compiled = Buffer.from('export default { checklists: [] };\n');
-      const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
-      writeFileSync(path.join(tempDir, 'demo.js'), compiled);
-      writeFileSync(path.join(tempDir, 'demo.ts'), source);
-      writeFileSync(path.join(tempDir, 'shared.ts'), SHARED_MODULE);
-      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify(PACKAGE_JSON));
-      writeFileSync(
-        path.join(tempDir, 'manifest.json'),
-        JSON.stringify({
-          version: 1,
-          kits: [
-            {
-              name: 'demo',
-              path: 'demo.js',
-              source: 'demo.ts',
-              sourceHash: hashBytes(source),
-              targetHash: hashBytes(compiled),
-              inputs: [
-                { hash: hashBytes(SHARED_MODULE), kind: 'module', path: 'shared.ts' },
-                {
-                  hash: hashProjection(JSON.stringify({ version: PACKAGE_JSON.version })),
-                  kind: 'inline',
-                  path: 'package.json',
-                  paths: ['version'],
-                },
-              ],
-            },
-          ],
-        }),
-      );
-    }
-
-    it('returns 0 when every file read by the compile still matches', async () => {
-      writeRecordedClosure();
+    it('returns 0 when every file read by the compile still matches', async ({ temp }) => {
+      writeRecordedClosure(temp);
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -205,9 +122,9 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('returns 1 when a module inlined by the bundle was edited without a recompile', async () => {
-      writeRecordedClosure();
-      writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
+    it('returns 1 when a module inlined by the bundle was edited without a recompile', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.write('shared.ts', 'export const shared = 2;\n');
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -215,9 +132,9 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   input stale: shared.ts (module`);
     });
 
-    it('returns 1 when the version to which the kit pinned has moved', async () => {
-      writeRecordedClosure();
-      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, version: '4.0.0' }));
+    it('returns 1 when the version to which the kit pinned has moved', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.writeJson('package.json', { ...PACKAGE_JSON, version: '4.0.0' });
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -225,9 +142,9 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${FAILED} demo\n   input stale: package.json (inline`);
     });
 
-    it('returns 0 when a field not picked by the kit was edited', async () => {
-      writeRecordedClosure();
-      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ ...PACKAGE_JSON, name: 'renamed' }));
+    it('returns 0 when a field not picked by the kit was edited', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.writeJson('package.json', { ...PACKAGE_JSON, name: 'renamed' });
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
 
@@ -235,10 +152,12 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('passes the axis and every failure into the JSON entry, at the schema version it always emitted', async () => {
-      writeRecordedClosure();
-      writeFileSync(path.join(tempDir, 'shared.ts'), 'export const shared = 2;\n');
-      writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'demo' }));
+    it('passes the axis and every failure into the JSON entry, at the schema version it always emitted', async ({
+      temp,
+    }) => {
+      writeRecordedClosure(temp);
+      temp.write('shared.ts', 'export const shared = 2;\n');
+      temp.writeJson('package.json', { name: 'demo' });
 
       const { stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -265,27 +184,8 @@ describe('verifyCommand wiring', () => {
   });
 
   describe('--json', () => {
-    /** Writes a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
-    function writeMixedManifest(): void {
-      const clean = Buffer.from('export default { checks: [] };\n');
-      writeFileSync(path.join(tempDir, 'clean.js'), clean);
-      writeFileSync(path.join(tempDir, 'edited.js'), 'export default { edited: true };\n');
-      writeFileSync(
-        path.join(tempDir, 'manifest.json'),
-        JSON.stringify({
-          version: 1,
-          kits: [
-            { name: 'clean', path: 'clean.js', targetHash: hashBytes(clean) },
-            { name: 'edited', path: 'edited.js', targetHash: 'deadbeef' },
-            { name: 'gone', path: 'gone.js', targetHash: 'abcd1234' },
-            { name: 'unhashed', path: 'clean.js' },
-          ],
-        }),
-      );
-    }
-
-    it('reports every kit status with the hashes compared only by a drift verdict', async () => {
-      writeMixedManifest();
+    it('reports every kit status with the hashes compared only by a drift verdict', async ({ temp }) => {
+      writeMixedManifest(temp);
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -309,8 +209,8 @@ describe('verifyCommand wiring', () => {
       });
     });
 
-    it('emits exactly one JSON document and sends the per-kit prose to stderr', async () => {
-      writeMixedManifest();
+    it('emits exactly one JSON document and sends the per-kit prose to stderr', async ({ temp }) => {
+      writeMixedManifest(temp);
 
       const { stdoutChunks, stderr } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -318,19 +218,16 @@ describe('verifyCommand wiring', () => {
       expect(stderr).toContain(`${OK} clean`);
     });
 
-    it('passes when every kit is ok or unverified', async () => {
+    it('passes when every kit is ok or unverified', async ({ temp }) => {
       const compiled = Buffer.from('export default { checks: [] };\n');
-      writeFileSync(path.join(tempDir, 'demo.js'), compiled);
-      writeFileSync(
-        path.join(tempDir, 'manifest.json'),
-        JSON.stringify({
-          version: 1,
-          kits: [
-            { name: 'demo', path: 'demo.js', targetHash: hashBytes(compiled) },
-            { name: 'unhashed', path: 'demo.js' },
-          ],
-        }),
-      );
+      temp.write('demo.js', compiled);
+      temp.writeJson('manifest.json', {
+        version: 1,
+        kits: [
+          { name: 'demo', path: 'demo.js', targetHash: hashBytes(compiled) },
+          { name: 'unhashed', path: 'demo.js' },
+        ],
+      });
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -338,8 +235,8 @@ describe('verifyCommand wiring', () => {
       expect(JSON.parse(stdout)).toMatchObject({ passed: true });
     });
 
-    it('reports an empty manifest as a passing run with no kits', async () => {
-      writeFileSync(path.join(tempDir, 'manifest.json'), JSON.stringify({ version: 1, kits: [] }));
+    it('reports an empty manifest as a passing run with no kits', async ({ temp }) => {
+      temp.writeJson('manifest.json', { version: 1, kits: [] });
 
       const { exitCode, stdout } = await verify(['--manifest', 'manifest.json', '--json']);
 
@@ -351,6 +248,9 @@ describe('verifyCommand wiring', () => {
 
 // region | Helpers
 
+const SHARED_MODULE = Buffer.from('export const shared = 1;\n');
+const PACKAGE_JSON = { name: 'demo', version: '3.1.0' };
+
 /** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
 async function verify(args: string[]) {
   using io = captureStdio();
@@ -358,6 +258,83 @@ async function verify(args: string[]) {
   const exitCode = await verifyCommand(args);
 
   return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+/**
+ * Writes a matching source/output pair and a manifest recording both hashes.
+ *
+ * Editing that source is the whole scenario: a kit whose TypeScript moved on while the compiled
+ * bundle from which it was built stayed put.
+ */
+function writeCompiledPair(tree: TempTree): void {
+  const compiled = Buffer.from('export default { checklists: [] };\n');
+  const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
+  tree.write('demo.js', compiled);
+  tree.write('demo.ts', source);
+  tree.writeJson('manifest.json', {
+    version: 1,
+    kits: [
+      {
+        name: 'demo',
+        path: 'demo.js',
+        source: 'demo.ts',
+        sourceHash: hashBytes(source),
+        targetHash: hashBytes(compiled),
+      },
+    ],
+  });
+}
+
+/** Writes a manifest naming one matching kit, one drifted kit, and one with no recorded hash. */
+function writeMixedManifest(tree: TempTree): void {
+  const clean = Buffer.from('export default { checks: [] };\n');
+  tree.write('clean.js', clean);
+  tree.write('edited.js', 'export default { edited: true };\n');
+  tree.writeJson('manifest.json', {
+    version: 1,
+    kits: [
+      { name: 'clean', path: 'clean.js', targetHash: hashBytes(clean) },
+      { name: 'edited', path: 'edited.js', targetHash: 'deadbeef' },
+      { name: 'gone', path: 'gone.js', targetHash: 'abcd1234' },
+      { name: 'unhashed', path: 'clean.js' },
+    ],
+  });
+}
+
+/**
+ * Writes a kit whose compile read a sibling module and a version out of `package.json`, and a
+ * manifest recording all of it.
+ *
+ * The two hash verdicts are arranged to pass, so whatever the run reports comes from the closure.
+ */
+function writeRecordedClosure(tree: TempTree): void {
+  const compiled = Buffer.from('export default { checklists: [] };\n');
+  const source = Buffer.from('export default defineRdyKit({ checklists: [] });\n');
+  tree.write('demo.js', compiled);
+  tree.write('demo.ts', source);
+  tree.write('shared.ts', SHARED_MODULE);
+  tree.writeJson('package.json', PACKAGE_JSON);
+  tree.writeJson('manifest.json', {
+    version: 1,
+    kits: [
+      {
+        name: 'demo',
+        path: 'demo.js',
+        source: 'demo.ts',
+        sourceHash: hashBytes(source),
+        targetHash: hashBytes(compiled),
+        inputs: [
+          { hash: hashBytes(SHARED_MODULE), kind: 'module', path: 'shared.ts' },
+          {
+            hash: hashProjection(JSON.stringify({ version: PACKAGE_JSON.version })),
+            kind: 'inline',
+            path: 'package.json',
+            paths: ['version'],
+          },
+        ],
+      },
+    ],
+  });
 }
 
 // endregion | Helpers

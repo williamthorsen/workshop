@@ -1,9 +1,8 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
-import process from 'node:process';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { buildBundle, type BundleResult } from '../buildBundle.ts';
 
@@ -16,64 +15,62 @@ const KIT_SOURCE = [
   'export const kit = { helper, meta, tiny };',
 ].join('\n');
 
+const it = baseIt
+  .extend(
+    'temp',
+    { scope: 'file' },
+    makeFixture(() =>
+      createTempTree(
+        {
+          'kits/data.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
+          'kits/helper.ts': "export const helper = 'helper';\n",
+          'kits/kit.ts': KIT_SOURCE,
+          'node_modules/tiny-dep/index.js': 'export const tiny = 1;\n',
+          'node_modules/tiny-dep/package.json': JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }),
+          // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
+          // temporary directory happens to hold a manifest.
+          'package.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
+        },
+        { prefix: 'reproducibility-' },
+      ),
+    ),
+  )
+  .extend('builds', { scope: 'file' }, async ({ temp }): Promise<Builds> => {
+    const kitPath = temp.resolve('kits/kit.ts');
+
+    const fromRepo = await buildBundle(kitPath);
+    using _cwd = pointCwdAt(temp.resolve('kits'), { chdir: true });
+    const fromKitsDir = await buildBundle(kitPath);
+
+    return { fromKitsDir, fromRepo };
+  });
+
+/** The same kit compiled twice, once from the repo and once from the kit's own directory. */
+interface Builds {
+  fromKitsDir: BundleResult;
+  fromRepo: BundleResult;
+}
+
 /**
  * Compiles one kit from directories that are neither its own nor each other's, which is the property
  * on which `rdy verify --rebuild` rests: It recompiles in whatever directory the verification runs in.
  */
 describe('buildBundle reproducibility', () => {
-  let treeRoot: string;
-  let kitPath: string;
-  let fromRepo: BundleResult;
-  let fromKitsDir: BundleResult;
-  const originalCwd = process.cwd();
-
-  beforeAll(async () => {
-    treeRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'reproducibility-')));
-    // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-    // temporary directory happens to hold a manifest.
-    writeFileSync(path.join(treeRoot, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
-
-    const kitsDir = path.join(treeRoot, 'kits');
-    mkdirSync(kitsDir, { recursive: true });
-    kitPath = path.join(kitsDir, 'kit.ts');
-    writeFileSync(kitPath, KIT_SOURCE);
-    writeFileSync(path.join(kitsDir, 'helper.ts'), "export const helper = 'helper';\n");
-    writeFileSync(path.join(kitsDir, 'data.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
-
-    const dependencyDir = path.join(treeRoot, 'node_modules', 'tiny-dep');
-    mkdirSync(dependencyDir, { recursive: true });
-    writeFileSync(path.join(dependencyDir, 'package.json'), JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }));
-    writeFileSync(path.join(dependencyDir, 'index.js'), 'export const tiny = 1;\n');
-
-    fromRepo = await buildBundle(kitPath);
-
-    process.chdir(kitsDir);
-    try {
-      fromKitsDir = await buildBundle(kitPath);
-    } finally {
-      process.chdir(originalCwd);
-    }
+  it('produces identical bytes whatever directory the compile runs in', ({ builds }) => {
+    expect(builds.fromKitsDir.bytes.equals(builds.fromRepo.bytes)).toBe(true);
   });
 
-  afterAll(() => {
-    rmSync(treeRoot, { recursive: true, force: true });
+  it('records the same input closure', ({ builds }) => {
+    expect(builds.fromKitsDir.inputs).toStrictEqual(builds.fromRepo.inputs);
   });
 
-  it('produces identical bytes whatever directory the compile runs in', () => {
-    expect(fromKitsDir.bytes.equals(fromRepo.bytes)).toBe(true);
+  it('records the same bundled dependencies', ({ builds }) => {
+    expect(builds.fromKitsDir.bundledDependencies).toStrictEqual(builds.fromRepo.bundledDependencies);
   });
 
-  it('records the same input closure', () => {
-    expect(fromKitsDir.inputs).toStrictEqual(fromRepo.inputs);
-  });
-
-  it('records the same bundled dependencies', () => {
-    expect(fromKitsDir.bundledDependencies).toStrictEqual(fromRepo.bundledDependencies);
-  });
-
-  it("names each bundled module against the kit's package root", () => {
+  it("names each bundled module against the kit's package root", ({ builds }) => {
     // The bundle is identical under any anchor derived from the kit, so this assertion pins the anchor
     // to the one under which every committed bundle was compiled.
-    expect(fromRepo.bytes.toString('utf8')).toContain('// kits/kit.ts');
+    expect(builds.fromRepo.bytes.toString('utf8')).toContain('// kits/kit.ts');
   });
 });

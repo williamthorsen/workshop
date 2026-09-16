@@ -1,13 +1,30 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  captureError,
+  captureStdio,
+  createTempTree,
+  pointCwdAt,
+  type TempTree,
+} from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { listCommand } from '../listCommand.ts';
+
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'list-integ-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runTest();
+});
 
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the
@@ -15,34 +32,13 @@ import { listCommand } from '../listCommand.ts';
  * the manifest-less fallback depends -- that `list --from` looks where `run --from` loads.
  */
 describe('listCommand wiring', () => {
-  let tempDir: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(path.join(tmpdir(), 'list-integ-'));
-    originalCwd = process.cwd();
-    process.chdir(tempDir);
-  });
-
   afterEach(() => {
-    process.chdir(originalCwd);
     vi.restoreAllMocks();
-    rmSync(tempDir, { recursive: true, force: true });
   });
-
-  /** Creates a kit directory holding compiled kits, with no manifest beside them. */
-  function writeKitsDir(dirName: string, kitNames: string[]): string {
-    const dir = path.join(tempDir, dirName);
-    mkdirSync(dir, { recursive: true });
-    for (const name of kitNames) {
-      writeFileSync(path.join(dir, `${name}.js`), 'export default { checklists: [] };\n');
-    }
-    return dir;
-  }
 
   describe('--from fallback when no manifest is present', () => {
-    it('lists the compiled kits on disk in human mode', async () => {
-      writeKitsDir('kits', ['alpha', 'beta']);
+    it('lists the compiled kits on disk in human mode', async ({ temp }) => {
+      writeKitsDir(temp, 'kits', ['alpha', 'beta']);
 
       const { exitCode, stdout } = await list(['--from', 'dir:kits']);
 
@@ -51,8 +47,8 @@ describe('listCommand wiring', () => {
       expect(stdout).toContain('beta');
     });
 
-    it('lists them in JSON mode with a name and a path and nothing the manifest would have added', async () => {
-      writeKitsDir('kits', ['alpha']);
+    it('lists them in JSON mode with a name and a path and nothing the manifest would have added', async ({ temp }) => {
+      writeKitsDir(temp, 'kits', ['alpha']);
 
       const { exitCode, stdout } = await list(['--from', 'dir:kits', '--json']);
 
@@ -63,8 +59,8 @@ describe('listCommand wiring', () => {
       });
     });
 
-    it('resolves a local repo path to the same directory that run --from would load from', async () => {
-      writeKitsDir(path.join('repo', '.readyup', 'kits'), ['deploy']);
+    it('resolves a local repo path to the same directory that run --from would load from', async ({ temp }) => {
+      writeKitsDir(temp, path.join('repo', '.readyup', 'kits'), ['deploy']);
 
       const { stdout } = await list(['--from', 'repo', '--json']);
 
@@ -73,10 +69,10 @@ describe('listCommand wiring', () => {
       });
     });
 
-    it('ignores files that are not compiled kits', async () => {
-      const dir = writeKitsDir('kits', ['alpha']);
-      writeFileSync(path.join(dir, 'notes.md'), '# not a kit\n');
-      writeFileSync(path.join(dir, 'alpha.ts'), 'export default {};\n');
+    it('ignores files that are not compiled kits', async ({ temp }) => {
+      writeKitsDir(temp, 'kits', ['alpha']);
+      temp.write('kits/notes.md', '# not a kit\n');
+      temp.write('kits/alpha.ts', 'export default {};\n');
 
       const { stdout } = await list(['--from', 'dir:kits', '--json']);
 
@@ -92,23 +88,20 @@ describe('listCommand wiring', () => {
   });
 
   describe('--from with a manifest present', () => {
-    it('prefers the manifest and reports the fields that only it knows', async () => {
-      writeKitsDir('kits', ['deploy']);
-      writeFileSync(
-        path.join(tempDir, 'kits', 'manifest.json'),
-        JSON.stringify({
-          version: 1,
-          kits: [
-            {
-              name: 'deploy',
-              path: 'deploy.js',
-              checklists: ['preflight', 'release'],
-              description: 'Deploy checks',
-              readyupVersion: '0.21.2',
-            },
-          ],
-        }),
-      );
+    it('prefers the manifest and reports the fields that only it knows', async ({ temp }) => {
+      writeKitsDir(temp, 'kits', ['deploy']);
+      temp.writeJson('kits/manifest.json', {
+        version: 1,
+        kits: [
+          {
+            name: 'deploy',
+            path: 'deploy.js',
+            checklists: ['preflight', 'release'],
+            description: 'Deploy checks',
+            readyupVersion: '0.21.2',
+          },
+        ],
+      });
 
       const { stdout, stderr } = await list(['--from', 'dir:kits', '--json']);
 
@@ -130,8 +123,8 @@ describe('listCommand wiring', () => {
   });
 
   describe('stdout purity', () => {
-    it('emits exactly one JSON document and sends the human view to stderr', async () => {
-      writeKitsDir('kits', ['alpha']);
+    it('emits exactly one JSON document and sends the human view to stderr', async ({ temp }) => {
+      writeKitsDir(temp, 'kits', ['alpha']);
 
       const { stdout, stdoutChunks, stderr } = await list(['--from', 'dir:kits', '--json']);
 
@@ -151,6 +144,13 @@ async function list(args: string[]) {
   const exitCode = await listCommand(args);
 
   return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
+}
+
+/** Creates a kit directory holding compiled kits, with no manifest beside them. */
+function writeKitsDir(tree: TempTree, dirName: string, kitNames: string[]): void {
+  for (const name of kitNames) {
+    tree.write(path.join(dirName, `${name}.js`), 'export default { checklists: [] };\n');
+  }
 }
 
 // endregion | Helpers

@@ -1,9 +1,8 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { captureStdio, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { buildBundle, type InlinedJsonFile } from '../buildBundle.ts';
 
@@ -33,98 +32,102 @@ const HELPER_SOURCE = [
 
 const JSON_CONTENT = JSON.stringify({ name: 'fixture', version: '1.0.0' });
 
-describe('buildBundle inlined JSON', () => {
-  let treeRoot: string;
-  let inlinedJson: InlinedJsonFile[];
-  let stderr: string;
+const PLAIN_JSON_FILES = ['data.jsonc', 'legacy.json', 'mixed.json', 'picked.json', 'settings.json', 'shared.json'];
 
-  beforeAll(async () => {
-    treeRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'inlined-json-')));
-    // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-    // temporary directory happens to hold a manifest.
-    writeFileSync(path.join(treeRoot, 'package.json'), JSON_CONTENT);
-    writeFileSync(path.join(treeRoot, 'kit.ts'), KIT_SOURCE);
-    writeFileSync(path.join(treeRoot, 'helper.ts'), HELPER_SOURCE);
-    for (const fileName of ['data.jsonc', 'legacy.json', 'mixed.json', 'picked.json', 'settings.json', 'shared.json']) {
-      writeFileSync(path.join(treeRoot, fileName), JSON_CONTENT);
-    }
+const it = baseIt
+  .extend(
+    'temp',
+    { scope: 'file' },
+    makeFixture(() =>
+      createTempTree(
+        {
+          'helper.ts': HELPER_SOURCE,
+          'kit.ts': KIT_SOURCE,
+          'node_modules/tiny-dep/data.json': JSON_CONTENT,
+          'node_modules/tiny-dep/index.js': `import own from './own.json' with { type: 'json' };\nexport const tiny = own;\n`,
+          'node_modules/tiny-dep/own.json': JSON_CONTENT,
+          'node_modules/tiny-dep/package.json': JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }),
+          // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
+          // temporary directory happens to hold a manifest.
+          'package.json': JSON_CONTENT,
 
-    const dependencyDir = path.join(treeRoot, 'node_modules', 'tiny-dep');
-    mkdirSync(dependencyDir, { recursive: true });
-    writeFileSync(path.join(dependencyDir, 'package.json'), JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }));
-    writeFileSync(path.join(dependencyDir, 'data.json'), JSON_CONTENT);
-    writeFileSync(path.join(dependencyDir, 'own.json'), JSON_CONTENT);
-    writeFileSync(
-      path.join(dependencyDir, 'index.js'),
-      `import own from './own.json' with { type: 'json' };\nexport const tiny = own;\n`,
-    );
-
+          ...Object.fromEntries(PLAIN_JSON_FILES.map((fileName) => [fileName, JSON_CONTENT])),
+        },
+        { prefix: 'inlined-json-' },
+      ),
+    ),
+  )
+  .extend('compiled', { scope: 'file' }, async ({ temp }): Promise<CompileRecord> => {
     using io = captureStdio();
-    ({ inlinedJson } = await buildBundle(path.join(treeRoot, 'kit.ts')));
-    stderr = io.stderr;
+    const { inlinedJson } = await buildBundle(temp.resolve('kit.ts'));
+
+    return { inlinedJson, stderr: io.stderr };
   });
 
-  afterAll(() => {
-    rmSync(treeRoot, { recursive: true, force: true });
-  });
+/** What the suite's one compile produced: the files that it inlined, and whatever it wrote to stderr. */
+interface CompileRecord {
+  inlinedJson: InlinedJsonFile[];
+  stderr: string;
+}
 
-  it('lists a JSON file imported with an import attribute', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'package.json'),
+describe('buildBundle inlined JSON', () => {
+  it('lists a JSON file imported with an import attribute', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('kit.ts')],
+      path: temp.resolve('package.json'),
     });
   });
 
-  it('lists a JSON file imported without an import attribute', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'settings.json'),
+  it('lists a JSON file imported without an import attribute', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('kit.ts')],
+      path: temp.resolve('settings.json'),
     });
   });
 
-  it('lists a JSON file loaded through require()', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'legacy.json'),
+  it('lists a JSON file loaded through require()', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('kit.ts')],
+      path: temp.resolve('legacy.json'),
     });
   });
 
-  it('lists a file loaded as JSON through an import attribute, whatever its extension', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'data.jsonc'),
+  it('lists a file loaded as JSON through an import attribute, whatever its extension', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('kit.ts')],
+      path: temp.resolve('data.jsonc'),
     });
   });
 
-  it('names every module that imports a JSON file, sorted', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'helper.ts'), path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'shared.json'),
+  it('names every module that imports a JSON file, sorted', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('helper.ts'), temp.resolve('kit.ts')],
+      path: temp.resolve('shared.json'),
     });
   });
 
-  it('names the importers of a JSON file imported both with and without an import attribute', () => {
-    expect(inlinedJson).toContainEqual({
-      importers: [path.join(treeRoot, 'helper.ts'), path.join(treeRoot, 'kit.ts')],
-      path: path.join(treeRoot, 'mixed.json'),
+  it('names the importers of a JSON file imported both with and without an import attribute', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson).toContainEqual({
+      importers: [temp.resolve('helper.ts'), temp.resolve('kit.ts')],
+      path: temp.resolve('mixed.json'),
     });
   });
 
-  it('lists no JSON file from node_modules, whether the kit or a dependency imports it', () => {
-    expect(inlinedJson.filter((file) => file.path.includes('node_modules'))).toStrictEqual([]);
+  it('lists no JSON file from node_modules, whether the kit or a dependency imports it', ({ compiled }) => {
+    expect(compiled.inlinedJson.filter((file) => file.path.includes('node_modules'))).toStrictEqual([]);
   });
 
-  it('lists no pickJson target', () => {
-    expect(inlinedJson.map((file) => file.path)).not.toContain(path.join(treeRoot, 'picked.json'));
+  it('lists no pickJson target', ({ compiled, temp }) => {
+    expect(compiled.inlinedJson.map((file) => file.path)).not.toContain(temp.resolve('picked.json'));
   });
 
-  it('sorts the files by path', () => {
-    const paths = inlinedJson.map((file) => file.path);
+  it('sorts the files by path', ({ compiled }) => {
+    const paths = compiled.inlinedJson.map((file) => file.path);
 
     expect(paths).toStrictEqual(paths.toSorted((a, b) => a.localeCompare(b)));
   });
 
-  it('writes nothing to stderr', () => {
-    expect(stderr).toBe('');
+  it('writes nothing to stderr', ({ compiled }) => {
+    expect(compiled.stderr).toBe('');
   });
 });

@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';
 
@@ -30,13 +30,7 @@ const HOST_TSCONFIG = JSON.stringify({
 
 const ALIASED_MODULE = "export const thing = 'aliased';\n";
 
-const treeRoots: string[] = [];
-
 describe(buildBundle, () => {
-  afterAll(async () => {
-    await Promise.all(treeRoots.map((root) => rm(root, { recursive: true, force: true })));
-  });
-
   it('compiles to identical bytes whether or not a tsconfig.json sits above the kit', async () => {
     const entryPath = writeKitTree(KIT_SOURCE);
 
@@ -78,13 +72,9 @@ describe(buildBundle, () => {
  * there, and the kit sits one directory below the tree root, leaving room for a config above it.
  */
 function writeKitTree(source: string): string {
-  const treeRoot = mkdtempSync(path.join(tmpdir(), 'rdy-host-tsconfig-'));
-  treeRoots.push(treeRoot);
-  const kitsDir = path.join(treeRoot, 'kits');
-  mkdirSync(kitsDir);
-  const entryPath = path.join(kitsDir, 'kit.ts');
-  writeFileSync(entryPath, source, 'utf8');
-  return entryPath;
+  const tree = disposeOnTestFinished(createTempTree({ 'kits/kit.ts': source }, { prefix: 'rdy-host-tsconfig-' }));
+
+  return tree.resolve('kits/kit.ts');
 }
 
 /**

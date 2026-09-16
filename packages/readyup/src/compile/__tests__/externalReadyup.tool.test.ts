@@ -1,9 +1,12 @@
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { compileConfig } from '../compileConfig.ts';
 
@@ -44,17 +47,15 @@ function spawnNode(args: string[]): Promise<SpawnResult> {
   });
 }
 
-describe('readyup externalization + resolver hook', () => {
-  let outputDir: string;
-  let compiledFixturePath: string;
-  let hookOutputPath: string;
-  let compiledSource: string;
-  let compiledSize: number;
-
-  beforeAll(async () => {
-    outputDir = await mkdtemp(path.join(tmpdir(), 'external-readyup-'));
-    compiledFixturePath = path.join(outputDir, 'discoverWorkspaces-fixture.js');
-    hookOutputPath = path.join(outputDir, 'readyupResolverHook.js');
+const it = baseIt
+  .extend(
+    'temp',
+    { scope: 'file' },
+    makeFixture(() => createTempTree({}, { prefix: 'external-readyup-' })),
+  )
+  .extend('built', { scope: 'file' }, async ({ temp }): Promise<BuiltFixture> => {
+    const compiledFixturePath = temp.resolve('discoverWorkspaces-fixture.js');
+    const hookOutputPath = temp.resolve('readyupResolverHook.js');
 
     // Compile the fixture with the production compileConfig pipeline so the
     // assertions exercise exactly what kit authors will ship.
@@ -73,30 +74,45 @@ describe('readyup externalization + resolver hook', () => {
       target: 'es2025',
     });
 
-    compiledSource = await readFile(compiledFixturePath, 'utf8');
-    compiledSize = Buffer.byteLength(compiledSource, 'utf8');
+    const compiledSource = await readFile(compiledFixturePath, 'utf8');
+
+    return {
+      compiledFixturePath,
+      compiledSize: Buffer.byteLength(compiledSource, 'utf8'),
+      compiledSource,
+      hookOutputPath,
+    };
   });
 
-  afterAll(async () => {
-    await rm(outputDir, { recursive: true, force: true });
+/** The compiled fixture and resolver hook that the suite's one build produced. */
+interface BuiltFixture {
+  compiledFixturePath: string;
+  compiledSize: number;
+  compiledSource: string;
+  hookOutputPath: string;
+}
+
+describe('readyup externalization + resolver hook', () => {
+  it('preserves readyup specifiers as live imports in the compiled output', ({ built }) => {
+    expect(built.compiledSource).toMatch(/from\s+["']readyup["']/);
+    expect(built.compiledSource).toMatch(/from\s+["']readyup\/check-utils["']/);
   });
 
-  it('preserves readyup specifiers as live imports in the compiled output', () => {
-    expect(compiledSource).toMatch(/from\s+["']readyup["']/);
-    expect(compiledSource).toMatch(/from\s+["']readyup\/check-utils["']/);
+  it('compiles the fixture below the 2KB regression threshold', ({ built }) => {
+    expect(built.compiledSize).toBeLessThan(BUNDLE_SIZE_LIMIT_BYTES);
   });
 
-  it('compiles the fixture below the 2KB regression threshold', () => {
-    expect(compiledSize).toBeLessThan(BUNDLE_SIZE_LIMIT_BYTES);
-  });
-
-  it('resolves the externalized readyup import via the runner-registered hook in a subprocess', async () => {
+  it('resolves the externalized readyup import via the runner-registered hook in a subprocess', async ({
+    built,
+    temp,
+  }) => {
     // Sanity-check that the temp directory is outside any reachable `node_modules/readyup`
-    // tree. If `mkdtemp(tmpdir())` ever drops the bundle inside a project, this assertion
-    // would silently pass via filesystem walk-up; surface that here for future maintainers.
-    expect(outputDir.startsWith(tmpdir())).toBe(true);
+    // tree. If the tree ever lands inside a project, this assertion would silently pass via
+    // filesystem walk-up; surface that here for future maintainers. The comparison resolves
+    // `tmpdir()` because the tree reports its realpath and `os.tmpdir()` is a symlink on macOS.
+    expect(temp.dir.startsWith(realpathSync(tmpdir()))).toBe(true);
 
-    const result = await spawnNode([WRAPPER_PATH, compiledFixturePath, hookOutputPath]);
+    const result = await spawnNode([WRAPPER_PATH, built.compiledFixturePath, built.hookOutputPath]);
 
     expect(result.stderr).toBe('');
     expect(result.exitCode).toBe(0);

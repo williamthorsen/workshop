@@ -1,9 +1,9 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { isRecord } from '../../portable/isRecord.ts';
 import { buildSchemaDocuments, SCHEMA_BASE_URL, writeSchemaFiles } from '../buildSchemas.ts';
@@ -20,6 +20,12 @@ import {
 } from './fixtures/payloadFixtures.ts';
 
 const documents = new Map(buildSchemaDocuments().map(({ fileName, document }) => [fileName, document]));
+
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'readyup-schemas-' })),
+);
 
 describe('generated JSON Schemas', () => {
   it('emits one document per published payload', () => {
@@ -159,20 +165,14 @@ describe('generated JSON Schemas', () => {
   });
 
   describe('writing the files', () => {
-    const outDir = mkdtempSync(path.join(tmpdir(), 'readyup-schemas-'));
-
-    afterAll(() => {
-      rmSync(outDir, { recursive: true, force: true });
-    });
-
-    it('writes every document as parseable JSON under the given directory', () => {
-      const written = writeSchemaFiles(outDir);
+    it('writes every document as parseable JSON under the given directory', ({ temp }) => {
+      const written = writeSchemaFiles(temp.dir);
 
       expect(written).toHaveLength(5);
-      expect(readdirSync(outDir).toSorted()).toStrictEqual(documents.keys().toArray());
+      expect(temp.list()).toStrictEqual(documents.keys().toArray());
       for (const filePath of written) {
         expect(() => {
-          JSON.parse(readFileSync(filePath, 'utf8'));
+          JSON.parse(temp.read(path.basename(filePath)));
         }).not.toThrow();
       }
     });

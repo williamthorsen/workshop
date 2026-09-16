@@ -1,9 +1,6 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
-import { afterAll, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';
 
@@ -14,13 +11,7 @@ const KIT_DROPPING_HELPER = "import { greeting } from './helpers.ts';\nexport co
 // The same helper module reached through its externalized-specifier consumer, so every import survives.
 const KIT_KEEPING_HELPER = "import { consume } from './helpers.ts';\nexport const kit = consume();\n";
 
-const treeRoots: string[] = [];
-
 describe(buildBundle, () => {
-  afterAll(async () => {
-    await Promise.all(treeRoots.map((root) => rm(root, { recursive: true, force: true })));
-  });
-
   it.each([
     ['named', "import { readdirSync } from 'node:fs';", 'readdirSync'],
     ['default', "import readdirSync from 'node:fs';", 'readdirSync'],
@@ -92,22 +83,18 @@ function importLines(bundle: string): string[] {
  * discoverable but what the test puts there.
  */
 function writeKitTree(importStatement: string, binding: string, kitSource = KIT_DROPPING_HELPER): string {
-  const treeRoot = mkdtempSync(path.join(tmpdir(), 'rdy-orphaned-imports-'));
-  treeRoots.push(treeRoot);
-  const kitsDir = path.join(treeRoot, 'kits');
-  mkdirSync(kitsDir);
-
   const helperSource = [
     importStatement,
     `export function consume(): unknown { return ${binding}; }`,
     "export function greeting(): string { return 'hi'; }",
     '',
   ].join('\n');
-  writeFileSync(path.join(kitsDir, 'helpers.ts'), helperSource, 'utf8');
 
-  const entryPath = path.join(kitsDir, 'kit.ts');
-  writeFileSync(entryPath, kitSource, 'utf8');
-  return entryPath;
+  const tree = disposeOnTestFinished(
+    createTempTree({ 'kits/helpers.ts': helperSource, 'kits/kit.ts': kitSource }, { prefix: 'rdy-orphaned-imports-' }),
+  );
+
+  return tree.resolve('kits/kit.ts');
 }
 
 // endregion | Helpers

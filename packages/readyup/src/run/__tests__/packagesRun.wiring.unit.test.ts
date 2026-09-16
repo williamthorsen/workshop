@@ -1,16 +1,28 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 import { runCommand } from '../runCommand.ts';
+
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'packages-run-' })),
+);
+
+it.aroundEach(async (runTest, { temp }) => {
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runTest();
+});
 
 /**
  * Joins `--packages` to the kits published by an installed package, against a real fixture project.
@@ -19,22 +31,11 @@ import { runCommand } from '../runCommand.ts';
  * and that the kit name selects which of its kits run.
  */
 describe('--packages run path wiring', () => {
-  let projectRoot: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'packages-run-')));
-    originalCwd = process.cwd();
-    process.chdir(projectRoot);
-  });
-
   afterEach(() => {
-    process.chdir(originalCwd);
     vi.restoreAllMocks();
-    rmSync(projectRoot, { recursive: true, force: true });
   });
 
-  it('expands a configured package into entries with its name and version', () => {
+  it('expands a configured package into entries with its name and version', ({ temp }) => {
     installPackage('@acme/kits', ['default'], { version: '2.1.0' });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
@@ -42,7 +43,7 @@ describe('--packages run path wiring', () => {
     expect(entries).toStrictEqual([
       {
         name: 'default',
-        source: { path: path.join(projectRoot, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
+        source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
         checklists: [],
         provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
       },
