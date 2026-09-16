@@ -1,12 +1,29 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { resolvePackageRoot } from '../resolvePackageRoot.ts';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../../..');
+
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  { scope: 'file' },
+  makeFixture(() =>
+    createTempTree(
+      {
+        'node_modules/@acme/kitpkg/package.json': '{"name":"@acme/kitpkg","version":"1.0.0"}\n',
+        // A directory that occupies the name but has no manifest, which is not a package.
+        'node_modules/readyup-fixture-manifestless/': '',
+        'packages/nested/': '',
+      },
+      { prefix: 'resolve-package-root-' },
+    ),
+  ),
+);
 
 describe(resolvePackageRoot, () => {
   describe('against the repo in which it runs', () => {
@@ -39,36 +56,14 @@ describe(resolvePackageRoot, () => {
   });
 
   describe('against a fixture project', () => {
-    let fixtureRoot: string;
-    let nestedDir: string;
-
-    beforeAll(() => {
-      // Resolve the real path up front: macOS reports `/var/...` for a temp dir that is really `/private/var/...`,
-      // and the walk yields real paths.
-      fixtureRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'resolve-package-root-')));
-      nestedDir = path.join(fixtureRoot, 'packages', 'nested');
-      mkdirSync(nestedDir, { recursive: true });
-
-      const installed = path.join(fixtureRoot, 'node_modules', '@acme', 'kitpkg');
-      mkdirSync(installed, { recursive: true });
-      writeFileSync(path.join(installed, 'package.json'), '{"name":"@acme/kitpkg","version":"1.0.0"}\n');
-
-      // A directory that occupies the name but has no manifest, which is not a package.
-      mkdirSync(path.join(fixtureRoot, 'node_modules', 'readyup-fixture-manifestless'), { recursive: true });
-    });
-
-    afterAll(() => {
-      rmSync(fixtureRoot, { recursive: true, force: true });
-    });
-
-    it('finds a package installed in an ancestor directory', () => {
-      expect(resolvePackageRoot('@acme/kitpkg', nestedDir)).toBe(
-        path.join(fixtureRoot, 'node_modules', '@acme', 'kitpkg'),
+    it('finds a package installed in an ancestor directory', ({ temp }) => {
+      expect(resolvePackageRoot('@acme/kitpkg', temp.resolve('packages/nested'))).toBe(
+        temp.resolve('node_modules/@acme/kitpkg'),
       );
     });
 
-    it('ignores a node_modules entry with no manifest', () => {
-      expect(resolvePackageRoot('readyup-fixture-manifestless', nestedDir)).toBeUndefined();
+    it('ignores a node_modules entry with no manifest', ({ temp }) => {
+      expect(resolvePackageRoot('readyup-fixture-manifestless', temp.resolve('packages/nested'))).toBeUndefined();
     });
   });
 });

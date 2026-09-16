@@ -1,10 +1,14 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { hashBytes, hashFile } from '../targetHash.ts';
+
+// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'hash-test-' })),
+);
 
 describe(hashBytes, () => {
   it('returns an 8-character hex string', () => {
@@ -29,34 +33,22 @@ describe(hashBytes, () => {
 });
 
 describe(hashFile, () => {
-  let tempDir: string;
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(path.join(tmpdir(), 'hash-test-'));
-  });
-
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  it('returns an 8-character hex string', () => {
-    const filePath = path.join(tempDir, 'test.js');
-    writeFileSync(filePath, 'export default {};\n', 'utf8');
+  it('returns an 8-character hex string', ({ temp }) => {
+    const filePath = temp.write('test.js', 'export default {};\n');
 
     const result = hashFile(filePath);
 
     expect(result).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it('produces the same hash as hashBytes for the same content', () => {
-    const filePath = path.join(tempDir, 'payload.js');
+  it('produces the same hash as hashBytes for the same content', ({ temp }) => {
     const content = 'export const answer = 42;\n';
-    writeFileSync(filePath, content, 'utf8');
+    const filePath = temp.write('payload.js', content);
 
     expect(hashFile(filePath)).toBe(hashBytes(Buffer.from(content)));
   });
 
-  it('throws when the file does not exist', () => {
-    expect(() => hashFile(path.join(tempDir, 'missing.js'))).toThrow(expect.objectContaining({ code: 'ENOENT' }));
+  it('throws when the file does not exist', ({ temp }) => {
+    expect(() => hashFile(temp.resolve('missing.js'))).toThrow(expect.objectContaining({ code: 'ENOENT' }));
   });
 });

@@ -1,11 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { version as installedEsbuildVersion } from 'esbuild';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { compileConfig, type CompileResult } from '../../compile/compileConfig.ts';
 import { ManifestSchema, type RdyManifestKit } from '../../manifest/manifestSchema.ts';
@@ -33,55 +32,39 @@ export default { checklists: [] };
 /** A readyup old enough that no fixture here could have been compiled by it. */
 const PRIOR_VERSION = '0.19.2';
 
+const it = baseIt
+  .extend(
+    'temp',
+    makeFixture(() =>
+      createTempTree(
+        {
+          'data.json': JSON.stringify({ name: 'demo', version: '1.0.0' }),
+          'kit.ts': KIT_SOURCE,
+          // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
+          // temporary directory happens to hold a manifest.
+          'package.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
+        },
+        { prefix: 'verify-rebuild-' },
+      ),
+    ),
+    // Every test verifies the recorded manifest, so the compile runs whether or not a test names it.
+  )
+  .extend('compiled', { auto: true }, async ({ temp }): Promise<CompileResult> => recordCompiledManifest(temp));
+
+it.aroundEach(async (runTest, { temp }) => {
+  // `runVerify` names the manifest by a relative path, as a real project's invocation does.
+  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+  await runTest();
+});
+
 /**
  * Exercises `--rebuild` against real esbuild, which is what the check is for: The inputs that it
  * catches and the recorded hashes miss are the ones that a mocked bundler stands in for.
  */
 describe('verifyCommand --rebuild', () => {
-  let tempDir: string;
-  let originalCwd: string;
-  let compiled: CompileResult;
-
-  beforeEach(async () => {
-    tempDir = mkdtempSync(path.join(tmpdir(), 'verify-rebuild-'));
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '1.0.0' }));
-    writeFileSync(path.join(tempDir, 'kit.ts'), KIT_SOURCE);
-    // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-    // temporary directory happens to hold a manifest.
-    writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ name: 'fixture', version: '1.0.0' }));
-
-    originalCwd = process.cwd();
-    // `runVerify` names the manifest by a relative path, as a real project's invocation does.
-    process.chdir(tempDir);
-
-    // Record the manifest from a real compile, so its hashes are the ones produced by the pipeline.
-    compiled = await compileConfig(path.join(tempDir, 'kit.ts'), path.join(tempDir, 'kit.js'));
-    writeFileSync(
-      path.join(tempDir, 'manifest.json'),
-      JSON.stringify({
-        version: 1,
-        kits: [
-          {
-            esbuildVersion: compiled.esbuildVersion,
-            name: 'demo',
-            path: 'kit.js',
-            readyupVersion: VERSION,
-            source: 'kit.ts',
-            sourceHash: hashFile(path.join(tempDir, 'kit.ts')),
-            targetHash: compiled.targetHash,
-            ...(Object.keys(compiled.bundledDependencies).length > 0 && {
-              bundledDependencies: compiled.bundledDependencies,
-            }),
-          },
-        ],
-      }),
-    );
-  });
-
   afterEach(() => {
-    process.chdir(originalCwd);
     vi.restoreAllMocks();
-    rmSync(tempDir, { recursive: true, force: true });
   });
 
   it('passes an untouched tree', async () => {
@@ -94,10 +77,10 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('passes an untouched tree from a directory other than the one in which the kit was compiled', async () => {
-    process.chdir(originalCwd);
+  it('passes an untouched tree from a directory other than the one in which the kit was compiled', async ({ temp }) => {
+    using _elsewhere = pointCwdAt(import.meta.dirname, { chdir: true });
 
-    const { exitCode, stdout } = await runVerify({ manifestPath: path.join(tempDir, 'manifest.json') });
+    const { exitCode, stdout } = await runVerify({ manifestPath: temp.resolve('manifest.json') });
 
     expect(exitCode).toBe(0);
     expect(readPayload(stdout)).toMatchObject({
@@ -106,8 +89,8 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('fails a bundle stale only in an inlined JSON file, which both recorded hashes still pass', async () => {
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+  it('fails a bundle stale only in an inlined JSON file, which both recorded hashes still pass', async ({ temp }) => {
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { exitCode, stdout } = await runVerify();
 
@@ -120,18 +103,18 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('inlines the edited value into the recompiled bundle rather than the committed one', async () => {
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+  it('inlines the edited value into the recompiled bundle rather than the committed one', async ({ temp }) => {
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     await runVerify();
 
-    expect(readFileSync(path.join(tempDir, 'kit.js'), 'utf8')).toContain('1.0.0');
+    expect(temp.read('kit.js')).toContain('1.0.0');
   });
 
-  it('fails a bundle stale only in its version stamp, which both recorded hashes still pass', async () => {
+  it('fails a bundle stale only in its version stamp, which both recorded hashes still pass', async ({ temp }) => {
     // A version bump moves neither the source nor the bundle, so the stamp and the hashes recorded for
     // it go stale in agreement and keep matching. Only a recompile reads the version.
-    restampBundle(tempDir, PRIOR_VERSION);
+    restampBundle(temp, PRIOR_VERSION);
 
     const { exitCode, stdout } = await runVerify();
 
@@ -142,8 +125,8 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('reports matching recorded versions on a mismatch that the record cannot explain', async () => {
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+  it('reports matching recorded versions on a mismatch that the record cannot explain', async ({ temp }) => {
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { stdout } = await runVerify();
 
@@ -153,9 +136,9 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('names a recorded esbuild that differs from the one rebuilding', async () => {
-    patchKits(path.join(tempDir, 'manifest.json'), { esbuildVersion: '0.0.1-old' });
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+  it('names a recorded esbuild that differs from the one rebuilding', async ({ temp }) => {
+    patchKits(temp, { esbuildVersion: '0.0.1-old' });
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { stdout } = await runVerify();
 
@@ -164,11 +147,11 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('names a dependency whose recorded version the rebuild does not reproduce', async () => {
-    patchKits(path.join(tempDir, 'manifest.json'), {
+  it('names a dependency whose recorded version the rebuild does not reproduce', async ({ compiled, temp }) => {
+    patchKits(temp, {
       bundledDependencies: { ...compiled.bundledDependencies, picomatch: '0.0.1-old' },
     });
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { stdout } = await runVerify();
 
@@ -180,8 +163,8 @@ describe('verifyCommand --rebuild', () => {
     });
   });
 
-  it('fails a hand-edited bundle', async () => {
-    writeFileSync(path.join(tempDir, 'kit.js'), 'export default { checklists: [] };\n');
+  it('fails a hand-edited bundle', async ({ temp }) => {
+    temp.write('kit.js', 'export default { checklists: [] };\n');
 
     const { exitCode, stderr, stdout } = await runVerify();
 
@@ -192,8 +175,8 @@ describe('verifyCommand --rebuild', () => {
     expect(stderr).toContain('Move the edits into the source, then run `rdy compile --force`.');
   });
 
-  it('reports a passing rebuild beside a recorded hash that has gone wrong', async () => {
-    patchKits(path.join(tempDir, 'manifest.json'), { targetHash: 'deadbeef' });
+  it('reports a passing rebuild beside a recorded hash that has gone wrong', async ({ temp }) => {
+    patchKits(temp, { targetHash: 'deadbeef' });
 
     const { exitCode, stderr, stdout } = await runVerify();
 
@@ -207,8 +190,8 @@ describe('verifyCommand --rebuild', () => {
     expect(stderr).not.toContain('Move the edits into the source');
   });
 
-  it('fails a kit whose source no longer compiles', async () => {
-    writeFileSync(path.join(tempDir, 'kit.ts'), 'export default { checklists: [ ;\n');
+  it('fails a kit whose source no longer compiles', async ({ temp }) => {
+    temp.write('kit.ts', 'export default { checklists: [ ;\n');
 
     const { exitCode, stderr, stdout } = await runVerify();
 
@@ -219,8 +202,8 @@ describe('verifyCommand --rebuild', () => {
     expect(stderr).toContain('Fix the kit source so it compiles.');
   });
 
-  it('leaves every rebuild field out of the payload without the flag', async () => {
-    writeFileSync(path.join(tempDir, 'data.json'), JSON.stringify({ name: 'demo', version: '2.0.0' }));
+  it('leaves every rebuild field out of the payload without the flag', async ({ temp }) => {
+    temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
     const { exitCode, stdout } = await runVerify({ rebuild: false });
 
@@ -231,12 +214,11 @@ describe('verifyCommand --rebuild', () => {
 
 // region | Helpers
 
-/** Applies a patch to every kit recorded in the manifest. */
-function patchKits(manifestPath: string, patch: Partial<RdyManifestKit>): void {
-  const stored: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const manifest = ManifestSchema.parse(stored);
+/** Applies a patch to every kit recorded in the tree's manifest. */
+function patchKits(tree: TempTree, patch: Partial<RdyManifestKit>): void {
+  const manifest = ManifestSchema.parse(tree.readJson('manifest.json'));
   const kits = manifest.kits.map((kit) => ({ ...kit, ...patch }));
-  writeFileSync(manifestPath, JSON.stringify({ ...manifest, kits }));
+  tree.write('manifest.json', JSON.stringify({ ...manifest, kits }));
 }
 
 /**
@@ -251,20 +233,51 @@ function readPayload(stdout: string): JsonVerifyOutput {
 }
 
 /**
+ * Compiles the tree's kit and records the result in a manifest beside it, returning the compile result.
+ *
+ * The manifest holds hashes produced by the pipeline rather than hand-computed ones, so a verdict here
+ * is the one that a real project's compile would have earned.
+ */
+async function recordCompiledManifest(tree: TempTree): Promise<CompileResult> {
+  const result = await compileConfig(tree.resolve('kit.ts'), tree.resolve('kit.js'));
+
+  tree.write(
+    'manifest.json',
+    JSON.stringify({
+      version: 1,
+      kits: [
+        {
+          esbuildVersion: result.esbuildVersion,
+          name: 'demo',
+          path: 'kit.js',
+          readyupVersion: VERSION,
+          source: 'kit.ts',
+          sourceHash: hashFile(tree.resolve('kit.ts')),
+          targetHash: result.targetHash,
+          ...(Object.keys(result.bundledDependencies).length > 0 && {
+            bundledDependencies: result.bundledDependencies,
+          }),
+        },
+      ],
+    }),
+  );
+
+  return result;
+}
+
+/**
  * Rewrites the bundle's version stamp and re-records the manifest against the restamped bundle.
  *
  * The stamp, the recorded `targetHash`, and the recorded `readyupVersion` all name the earlier
  * readyup, which is the state left behind by a version bump.
  */
-function restampBundle(tempDir: string, version: string): void {
-  const bundlePath = path.join(tempDir, 'kit.js');
-  const restamped = readFileSync(bundlePath, 'utf8').replace(
-    /__readyupVersion = "[^"]*"/,
-    () => `__readyupVersion = ${JSON.stringify(version)}`,
-  );
-  writeFileSync(bundlePath, restamped);
+function restampBundle(tree: TempTree, version: string): void {
+  const restamped = tree
+    .read('kit.js')
+    .replace(/__readyupVersion = "[^"]*"/, () => `__readyupVersion = ${JSON.stringify(version)}`);
+  const bundlePath = tree.write('kit.js', restamped);
 
-  patchKits(path.join(tempDir, 'manifest.json'), { readyupVersion: version, targetHash: hashFile(bundlePath) });
+  patchKits(tree, { readyupVersion: version, targetHash: hashFile(bundlePath) });
 }
 
 /**
