@@ -1,5 +1,5 @@
-/** Longest preview rendered before truncation, in characters. */
-const MAX_PREVIEW_LENGTH = 40;
+/** Longest preview rendered before truncation, in UTF-16 code units. */
+const MAX_PREVIEW_CODE_UNITS = 40;
 
 /**
  * Names the runtime type of a value.
@@ -34,7 +34,9 @@ export function previewValue(value: unknown): string {
     return describeType(value);
   }
 
-  return rendered.length > MAX_PREVIEW_LENGTH ? `${rendered.slice(0, MAX_PREVIEW_LENGTH)}...` : rendered;
+  return rendered.length > MAX_PREVIEW_CODE_UNITS
+    ? `${truncateAtClusterBoundary(rendered, MAX_PREVIEW_CODE_UNITS)}...`
+    : rendered;
 }
 
 /**
@@ -48,3 +50,25 @@ export function describeValue(value: unknown): string {
   const preview = previewValue(value);
   return preview === type ? type : `${type} ${preview}`;
 }
+
+// region | Helpers
+
+/**
+ * Returns the longest prefix of `text` that fits `limitInCodeUnits` without splitting a grapheme cluster.
+ *
+ * A cut inside a cluster leaves a fragment: a replacement character for a split surrogate pair, and a
+ * detached mark otherwise. A cluster that alone exceeds `limitInCodeUnits` yields an empty prefix, which
+ * keeps the result bounded.
+ */
+function truncateAtClusterBoundary(text: string, limitInCodeUnits: number): string {
+  // A fixed locale keeps the result independent of the host default; grapheme segmentation carries no tailoring.
+  const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+  let end = 0;
+  for (const { index, segment } of segmenter.segment(text)) {
+    if (index + segment.length > limitInCodeUnits) break;
+    end = index + segment.length;
+  }
+  return text.slice(0, end);
+}
+
+// endregion | Helpers
