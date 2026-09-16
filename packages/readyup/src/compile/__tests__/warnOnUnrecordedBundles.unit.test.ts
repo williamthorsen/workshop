@@ -41,11 +41,10 @@ describe(warnOnUnrecordedBundles, () => {
     expect(warnings).toStrictEqual([]);
   });
 
-  it('considers only the visible bundles directly under the output directory', () => {
+  it('considers only the visible bundles below the output directory', () => {
     using tree = createTempTree(
       {
         '.readyup/kits/.hidden.js': '',
-        '.readyup/kits/checks/helper.js': '',
         '.readyup/kits/notes.md': '',
         '.readyup/kits/source.ts': '',
       },
@@ -54,6 +53,19 @@ describe(warnOnUnrecordedBundles, () => {
     using _io = captureStdio();
 
     expect(warn(tree, {})).toStrictEqual([]);
+  });
+
+  it('raises a warning for a nested bundle, named as the kit that would run it', () => {
+    using tree = createTempTree({ '.readyup/kits/checks/helper.js': '' }, { prefix: 'rdy-unrecorded-bundles-' });
+    using _io = captureStdio();
+
+    expect(warn(tree, {})).toStrictEqual([
+      {
+        code: 'bundle-unrecorded',
+        message: expect.stringContaining('checks/helper.js in'),
+        remedy: 'Delete it if its kit was removed.',
+      },
+    ]);
   });
 
   it('raises nothing for an output directory that does not exist', () => {

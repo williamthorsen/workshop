@@ -100,7 +100,7 @@ function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListK
 
   let names: string[];
   try {
-    names = enumerateKits({ dir: kitsDir, extension: '.js' });
+    names = enumerateKits({ dir: kitsDir, extension: '.js', recursive: true });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
   }

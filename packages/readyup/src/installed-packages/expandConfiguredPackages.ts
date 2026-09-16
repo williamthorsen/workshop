@@ -84,7 +84,7 @@ function listPublishedKits(root: string, kitsDir: string, extension: string): Pu
     }));
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) throw error;
-    return enumerateKits({ dir: kitsDir, extension }).map((name) => ({
+    return enumerateKits({ dir: kitsDir, extension, recursive: true }).map((name) => ({
       name,
       description: undefined,
       checklists: undefined,

@@ -68,6 +68,17 @@ describe(resolveAllKitSources, () => {
       ]);
     });
 
+    it('resolves a nested bundle when there is no manifest', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/ops/deploy.js': '', '.readyup/kits/top.js': '' });
+
+      const entries = await resolveAllKitSources(baseOptions);
+
+      expect(entries).toStrictEqual([
+        { name: 'ops/deploy', source: { path: path.join('.readyup', 'kits', 'ops', 'deploy.js') }, checklists: [] },
+        { name: 'top', source: { path: path.join('.readyup', 'kits', 'top.js') }, checklists: [] },
+      ]);
+    });
+
     it('reaches a relocated output directory through the paths that the manifest records', async ({ temp }) => {
       temp.writeJson('.readyup/manifest.json', { version: 1, kits: [{ name: 'lint', path: '../dist/kits/lint.js' }] });
 

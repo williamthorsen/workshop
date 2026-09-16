@@ -96,7 +96,7 @@ function diagnoseMissingKit(resolvedPath: string): string {
 /** Returns the kit names beside a missing kit, treating an unreadable directory as holding none. */
 function listAvailableKits(dir: string, extension: string): string[] {
   try {
-    return enumerateKits({ dir, extension });
+    return enumerateKits({ dir, extension, recursive: false });
   } catch {
     return [];
   }

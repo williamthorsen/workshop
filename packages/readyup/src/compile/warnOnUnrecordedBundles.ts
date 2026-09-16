@@ -22,7 +22,7 @@ export interface WarnOnUnrecordedBundlesArgs {
  *
  * Nothing shows that a compile wrote such a bundle, so it is reported rather than deleted. A bundle named for a swept
  * kit is accounted for whatever became of that kit, because the bundle left by a failed compile still has its source.
- * The candidates are the files that `rdy run` and `rdy list` treat as kits: not hidden, and not nested.
+ * The candidates are the files that `rdy run` and `rdy list` treat as kits: every bundle below `outDir` that is not hidden.
  *
  * The stderr line is written in both output modes; the returned entries are what JSON mode adds to the payload.
  */
@@ -34,7 +34,7 @@ export function warnOnUnrecordedBundles(args: WarnOnUnrecordedBundlesArgs): Rais
   const displayDir = path.relative(process.cwd(), outDir) || '.';
 
   const warnings: RaisedWarning[] = [];
-  const bundleNames = enumerateKits({ dir: outDir, extension: '.js' });
+  const bundleNames = enumerateKits({ dir: outDir, extension: '.js', recursive: true });
   for (const name of bundleNames) {
     if (sweptKitNames.has(name) || recordedPaths.has(path.join(outDir, `${name}.js`))) continue;
 

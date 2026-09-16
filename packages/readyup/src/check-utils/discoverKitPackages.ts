@@ -38,7 +38,7 @@ function publishesKits(packageName: string, fromDir: string): boolean {
   if (root === undefined) return false;
 
   try {
-    return enumerateKits({ dir: path.join(root, KITS_DIR), extension: '.js' }).length > 0;
+    return enumerateKits({ dir: path.join(root, KITS_DIR), extension: '.js', recursive: true }).length > 0;
   } catch {
     return false;
   }
