@@ -27,34 +27,36 @@ const PACKAGE = richFormatter.tokens.sourcePackage.glyph;
 const CHECKLIST = richFormatter.tokens.checklist.glyph;
 
 describe(formatOwnerView, () => {
-  it('renders only the Internal section when compiled kits are empty', () => {
+  it('renders only the Sources section when compiled kits are empty', () => {
     const result = formatOwnerView({
-      internalKits: ['default', 'deploy'],
+      sourceKits: ['default', 'deploy'],
+      internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('\u{2500}\u{2500} Internal');
+    expect(result).toContain('\u{2500}\u{2500} Sources');
     expect(result).not.toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
   });
 
-  it('omits --internal from the internal hint by default', () => {
+  it('heads the Sources section with the plain --jit command', () => {
     const result = formatOwnerView({
-      internalKits: ['default'],
+      sourceKits: ['default'],
+      internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
   });
 
-  it('adds --internal to the internal hint when the config makes it necessary', () => {
+  it('heads the Internal section with the --internal command', () => {
     const result = formatOwnerView({
+      sourceKits: [],
       internalKits: ['default'],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
-      needsInternalFlag: true,
     });
 
     expect(findSectionCommand(result, 'Internal')).toBe(
@@ -62,13 +64,27 @@ describe(formatOwnerView, () => {
     );
   });
 
-  it('renders only the Compiled section when internal kits are empty', () => {
+  it('renders the source and internal sections as separate axes, sources first', () => {
+    const result = formatOwnerView({
+      sourceKits: ['deploy'],
+      internalKits: ['audit'],
+      compiledKits: [],
+      compiledStyle: { kind: 'local-convention' },
+    });
+
+    expect(result.indexOf('\u{2500}\u{2500} Sources')).toBeLessThan(result.indexOf('\u{2500}\u{2500} Internal'));
+    expect(findSectionCommand(result, 'Sources')).not.toContain('--internal');
+    expect(findSectionCommand(result, 'Internal')).toContain('--internal');
+  });
+
+  it('renders only the Compiled section when the project has no sources', () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
+    expect(result).not.toContain('\u{2500}\u{2500} Sources');
     expect(result).not.toContain('\u{2500}\u{2500} Internal');
     expect(result).toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
@@ -76,13 +92,14 @@ describe(formatOwnerView, () => {
 
   it('splits the section title from its command onto two lines', () => {
     const result = formatOwnerView({
-      internalKits: ['deploy'],
+      sourceKits: ['deploy'],
+      internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
     const lines = result.split('\n');
 
-    expect(lines[0]).toBe('\u{2500}\u{2500} Internal');
+    expect(lines[0]).toBe('\u{2500}\u{2500} Sources');
     expect(lines[1]).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
     expect(lines[2]).toBe(`${INTERNAL} deploy`);
   });
@@ -90,7 +107,8 @@ describe(formatOwnerView, () => {
   // A blank separates one section from the next, and the first section opens the output with no blank at all.
   it('separates one section from the next with a blank line, opening with none', () => {
     const lines = formatOwnerView({
-      internalKits: ['deploy'],
+      sourceKits: ['deploy'],
+      internalKits: [],
       compiledKits: [{ name: 'monitor' }],
       compiledStyle: { kind: 'local-convention' },
     }).split('\n');
@@ -104,39 +122,43 @@ describe(formatOwnerView, () => {
 
   it('fuses neither the command into the title nor the title into the command', () => {
     const result = formatOwnerView({
-      internalKits: ['deploy'],
+      sourceKits: ['deploy'],
+      internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).not.toContain('Internal: rdy run');
+    expect(result).not.toContain('Sources: rdy run');
   });
 
-  it('uses brackets around positional name in internal hint when default exists', () => {
+  it('uses brackets around positional name in the source hint when default exists', () => {
     const result = formatOwnerView({
-      internalKits: ['default'],
+      sourceKits: ['default'],
+      internalKits: [],
       compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
     expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run <kit>[:<checklist>,...]');
   });
 
   it('uses brackets in compiled hint when default is in compiled kits', () => {
     const result = formatOwnerView({
-      internalKits: ['deploy'],
+      sourceKits: ['deploy'],
+      internalKits: [],
       compiledKits: [{ name: 'default' }, { name: 'monitor' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
+    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
     expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run [<kit>[:<checklist>,...]]');
   });
 
   it('omits brackets around positional name when no default kit exists', () => {
     const result = formatOwnerView({
-      internalKits: ['deploy'],
+      sourceKits: ['deploy'],
+      internalKits: [],
       compiledKits: [],
       compiledStyle: { kind: 'local-convention' },
     });
@@ -145,14 +167,15 @@ describe(formatOwnerView, () => {
     expect(result).not.toContain('[<kit>[:<checklist>,...]]');
   });
 
-  it('includes --jit in internal hints but not compiled hints', () => {
+  it('includes --jit in source hints but not compiled hints', () => {
     const result = formatOwnerView({
-      internalKits: ['default'],
+      sourceKits: ['default'],
+      internalKits: [],
       compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(findSectionCommand(result, 'Internal')).toContain('--jit');
+    expect(findSectionCommand(result, 'Sources')).toContain('--jit');
     expect(findSectionCommand(result, 'Compiled')).not.toContain('--jit');
   });
 
@@ -248,12 +271,13 @@ describe(formatOwnerView, () => {
 
   it('renders both sections when both have kits', () => {
     const result = formatOwnerView({
-      internalKits: ['default'],
+      sourceKits: ['default'],
+      internalKits: [],
       compiledKits: [{ name: 'deploy' }],
       compiledStyle: { kind: 'local-convention' },
     });
 
-    expect(result).toContain('\u{2500}\u{2500} Internal');
+    expect(result).toContain('\u{2500}\u{2500} Sources');
     expect(result).toContain('\u{2500}\u{2500} Compiled');
   });
 });

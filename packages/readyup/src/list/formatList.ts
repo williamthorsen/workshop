@@ -64,32 +64,34 @@ export function resolveCompiledStyle(projectDir: string, outDir: string, renderF
 // -- Owner view --
 
 interface OwnerViewOptions {
+  sourceKits?: string[];
   internalKits: string[];
   compiledKits: KitView[];
   compiledStyle: CompiledStyle;
-  needsInternalFlag?: boolean;
   packageKits?: KitView[];
   availablePackages?: string[];
 }
 
 /**
- * Returns the owner-mode output, showing the internal and compiled kit sections.
+ * Returns the owner-mode output, showing the source, internal, and compiled kit sections.
  *
- * Empty sections are omitted. Returns the empty-owner message when both lists are empty.
+ * Empty sections are omitted. Returns the empty-owner message when every list is empty.
  *
- * `needsInternalFlag` adds `--internal` to the internal-section hint. The flag makes a
- * configured internal directory or infix reachable, so the hint would name a failing command
- * without it; the default config needs neither, and omitting it keeps the shorter form.
+ * The two source sections are separate axes rather than one section under two names: `sourceKits` holds
+ * what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and `internalKits` holds
+ * the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal` as well. A caller
+ * whose config declares neither key passes no internal kits, because `--internal` would then resolve every
+ * name exactly as plain `--jit` does and its rows would restate the source rows above them.
  */
 export function formatOwnerView({
+  sourceKits = [],
   internalKits,
   compiledKits,
   compiledStyle,
-  needsInternalFlag = false,
   packageKits = [],
   availablePackages = [],
 }: OwnerViewOptions): string {
-  if (internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
+  if (sourceKits.length === 0 && internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
     // A project with no kits of its own is still told what its dependencies offer, which is the one thing that
     // turns an empty listing into a next step.
     return availablePackages.length === 0
@@ -99,9 +101,14 @@ export function formatOwnerView({
 
   const sections: string[] = [];
 
+  if (sourceKits.length > 0) {
+    const command = `rdy run --jit ${buildKitSelectionHint(sourceKits)}`;
+    const items = sourceKits.map((name) => ({ name }));
+    sections.push(formatSection('Sources', buildRunLine(command), items, 'kitSource'));
+  }
+
   if (internalKits.length > 0) {
-    const internalFlag = needsInternalFlag ? ' --internal' : '';
-    const command = `rdy run --jit${internalFlag} ${buildKitSelectionHint(internalKits)}`;
+    const command = `rdy run --jit --internal ${buildKitSelectionHint(internalKits)}`;
     const items = internalKits.map((name) => ({ name }));
     sections.push(formatSection('Internal', buildRunLine(command), items, 'kitSource'));
   }

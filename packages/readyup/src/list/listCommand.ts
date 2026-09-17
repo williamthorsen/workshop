@@ -6,13 +6,13 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { discoverKitPackages } from '../check-utils/discoverKitPackages.ts';
+import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { collectKitPackageGroups } from '../installed-packages/collectKitPackageGroups.ts';
 import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
-import { KITS_DIR } from '../kits/kitsDir.ts';
 import { parseFromValue } from '../kits/parseFromValue.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
@@ -199,13 +199,21 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   const cwd = process.cwd();
   const config = await loadListingConfig(configPath);
 
-  const internalDir = path.join(cwd, KITS_DIR, config.internal.dir);
+  const srcDir = path.resolve(cwd, config.compile.srcDir);
+  const internalDir = path.join(srcDir, config.internal.dir);
   const internalExtension = config.internal.infix !== undefined ? `.${config.internal.infix}.ts` : '.ts';
+  // Without either key `--internal` resolves a name exactly as plain `--jit` does, so the bucket is the
+  // source selection and rows for it would restate the source rows.
+  const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
 
+  let sourceKits;
   let internalKits;
   let compiledEntries;
   try {
-    internalKits = enumerateKits({ dir: internalDir, extension: internalExtension, recursive: false });
+    sourceKits = collectSourceKitNames(srcDir, config.compile);
+    internalKits = needsInternalFlag
+      ? enumerateKits({ dir: internalDir, extension: internalExtension, recursive: false })
+      : [];
     // A missing manifest is the normal state of a project that never compiled, and says nothing on its own: The
     // empty-listing hint belongs to the view, which sees the package sections too.
     compiledEntries = collectCompiledKits({
@@ -222,13 +230,12 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
 
   const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
   const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir, cwd);
-  const needsInternalFlag = config.internal.dir !== '.' || config.internal.infix !== undefined;
   writeHuman(
     formatOwnerView({
+      sourceKits,
       internalKits,
       compiledKits,
       compiledStyle,
-      needsInternalFlag,
       packageKits: packageKits.map((kit) => ({ name: describePackageKit(kit), checklists: kit.checklists })),
       availablePackages,
     }) + '\n',
@@ -236,7 +243,8 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   );
 
   const entries: JsonListKitEntry[] = [
-    ...internalKits.map((name) => buildInternalEntry(name, internalDir, internalExtension)),
+    ...sourceKits.map((name) => buildSourceEntry(name, srcDir, '.ts', false)),
+    ...internalKits.map((name) => buildSourceEntry(name, internalDir, internalExtension, true)),
     ...compiledEntries,
     ...packageKits.map((kit) => buildPackageEntry(kit, true)),
   ];
@@ -451,9 +459,14 @@ function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: 
   return EXIT_OK;
 }
 
-/** Returns a kit row for a TypeScript source awaiting compilation. */
-function buildInternalEntry(name: string, dir: string, extension: string): JsonListKitEntry {
-  return { name, kind: 'internal', path: path.relative(process.cwd(), path.join(dir, `${name}${extension}`)) };
+/** Returns a kit row for a TypeScript source awaiting compilation, recording whether `--internal` reaches it. */
+function buildSourceEntry(name: string, dir: string, extension: string, internal: boolean): JsonListKitEntry {
+  return {
+    name,
+    kind: 'internal',
+    internal,
+    path: path.relative(process.cwd(), path.join(dir, `${name}${extension}`)),
+  };
 }
 
 /** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
