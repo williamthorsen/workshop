@@ -1,9 +1,10 @@
-import { unlinkSync } from 'node:fs';
+import { rmdirSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { isInsideDirectory } from '../portable/isInsideDirectory.ts';
 import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 
 /** Arguments for pruning the manifest entries that a sweep did not produce. */
@@ -14,6 +15,8 @@ export interface PruneOrphanedEntriesArgs {
   manifestDir: string;
   /** Absolute path of the directory into which the sweep compiles, and outside which nothing is deleted. */
   outDir: string;
+  /** Absolute path of the bundle that every attempted source compiles to, whatever became of it. */
+  sweptBundlePaths: ReadonlySet<string>;
   /** The name of every kit whose source the sweep attempted, whatever became of it. */
   sweptKitNames: ReadonlySet<string>;
 }
@@ -43,11 +46,15 @@ export type OrphanOutcome =
  * compile overwrites a bundle. A drifted bundle is kept unless `force` is set, and one that cannot be deleted is kept.
  * Both keep their entry, because the manifest still describes a file on disk.
  *
+ * An orphan whose bundle the sweep just wrote is dropped without deleting anything: The entry named that bundle under
+ * a name no source claims any more, and the file itself belongs to the kit that now claims it. This is what a rename
+ * looks like from the prune's side, whether the source moved or the naming rule changed beneath it.
+ *
  * An entry recording no path, one whose bundle is already gone, and one whose bundle lies outside `outDir` are
  * dropped without deleting anything and without an outcome. A file outside `outDir` is none that a sweep writes.
  */
 export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutcome {
-  const { existingEntries, force, manifestDir, outDir, sweptKitNames } = args;
+  const { existingEntries, force, manifestDir, outDir, sweptBundlePaths, sweptKitNames } = args;
   const outcome: PruneOutcome = { keptEntries: [], orphans: [] };
 
   for (const entry of existingEntries) {
@@ -55,7 +62,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
 
     const { name } = entry;
     const bundlePath = path.resolve(manifestDir, entry.path);
-    if (!isInsideDirectory(outDir, bundlePath)) continue;
+    if (sweptBundlePaths.has(bundlePath) || !isInsideDirectory(outDir, bundlePath)) continue;
 
     try {
       const status = force ? undefined : checkDrift(entry, manifestDir);
@@ -63,6 +70,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
         outcome.keptEntries.push(entry);
         outcome.orphans.push({ kind: 'drift', bundlePath, name, status });
       } else if (deleteFile(bundlePath)) {
+        removeEmptiedDirectories(path.dirname(bundlePath), outDir);
         outcome.orphans.push({ kind: 'removed', bundlePath, name });
       }
     } catch (error: unknown) {
@@ -76,6 +84,23 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
 
 // region | Helpers
 
+/**
+ * Removes each directory from `directory` upward that a deletion left empty, stopping below `outDir`.
+ *
+ * The walk stops at the first directory that still holds something and at any directory that cannot be
+ * removed. A directory left empty is untidy rather than wrong, so nothing here fails the compile, and
+ * `outDir` itself stays whether or not the sweep emptied it.
+ */
+function removeEmptiedDirectories(directory: string, outDir: string): void {
+  for (let current = directory; isInsideDirectory(outDir, current); current = path.dirname(current)) {
+    try {
+      rmdirSync(current);
+    } catch {
+      return;
+    }
+  }
+}
+
 /** Deletes a file, returning `false` where there was none to delete. */
 function deleteFile(filePath: string): boolean {
   try {
@@ -85,12 +110,6 @@ function deleteFile(filePath: string): boolean {
     if (isMissingFileError(error)) return false;
     throw error;
   }
-}
-
-/** Reports whether `targetPath` lies below `directory`, rather than being the directory itself or outside it. */
-function isInsideDirectory(directory: string, targetPath: string): boolean {
-  const relativePath = path.relative(directory, targetPath);
-  return relativePath !== '' && !path.isAbsolute(relativePath) && relativePath.split(path.sep)[0] !== '..';
 }
 
 /** Reports whether an error is the filesystem's report that a file does not exist. */

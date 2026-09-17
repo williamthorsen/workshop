@@ -91,7 +91,7 @@ export async function discoverProjects(options: DiscoverProjectsOptions = {}): P
 function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig): boolean {
   const outDir = path.resolve(absolutePath, config.compile.outDir);
   try {
-    return enumerateKits({ dir: outDir, extension: '.js' }).length > 0;
+    return enumerateKits({ dir: outDir, extension: '.js', recursive: true }).length > 0;
   } catch (error: unknown) {
     return skipUnreadableDir(outDir, error);
   }

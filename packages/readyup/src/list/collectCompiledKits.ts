@@ -36,7 +36,7 @@ export function collectCompiledKits({
     return manifest.kits.map((kit) => buildManifestEntry(kit, manifestDir, project));
   }
 
-  return enumerateKits({ dir: outDir, extension: '.js' }).map((name) => ({
+  return enumerateKits({ dir: outDir, extension: '.js', recursive: true }).map((name) => ({
     name,
     kind: 'compiled',
     ...(project !== undefined && { project }),

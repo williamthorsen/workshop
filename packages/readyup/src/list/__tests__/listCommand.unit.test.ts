@@ -309,11 +309,25 @@ describe(listCommand, () => {
       const { stdout } = await list(['--json']);
 
       expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringMatching(/\.readyup\/kits$/), extension: '.js' }),
+        expect.objectContaining({ dir: expect.stringMatching(/\.readyup\/kits$/), extension: '.js', recursive: true }),
       );
       expect(JSON.parse(stdout)).toStrictEqual({
         schemaVersion: 1,
         kits: [{ name: 'deploy', kind: 'compiled', path: '.readyup/kits/deploy.js' }],
+      });
+    });
+
+    it('names a nested bundle by the kit that runs it when there is no manifest', async () => {
+      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.js': ['ops/deploy'] }));
+      mockReadManifest.mockImplementation(() => {
+        throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
+      });
+
+      const { stdout } = await list(['--json']);
+
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        kits: [{ name: 'ops/deploy', kind: 'compiled', path: '.readyup/kits/ops/deploy.js' }],
       });
     });
 

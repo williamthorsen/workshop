@@ -236,31 +236,33 @@ describe('compile handling bundles that no source compiles to', () => {
       expect(stderr).not.toContain('Warning:');
     });
 
-    it('keeps the bundle and single entry of a recorded kit whose name two sources now share', async () => {
+    it('keeps the bundle that the sweep wrote, whatever name the prior manifest gave it', async () => {
       using tree = createTempTree(
         {
-          '.readyup/kits/deploy.js': COMPILED,
-          '.readyup/kits/deploy.ts': COMPILED,
+          '.readyup/kits/ops/deploy.js': COMPILED,
           '.readyup/kits/ops/deploy.ts': COMPILED,
           '.readyup/manifest.json': JSON.stringify({
             version: 1,
-            kits: [{ name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts', targetHash: hashOf(COMPILED) }],
+            kits: [
+              {
+                name: 'deploy',
+                path: 'kits/ops/deploy.js',
+                source: 'kits/ops/deploy.ts',
+                targetHash: hashOf(COMPILED),
+              },
+            ],
           }),
         },
         { prefix: 'rdy-compile-prune-' },
       );
       using _cwd = pointCwdAt(tree.dir);
 
-      const payload = CompileOutputSchema.parse(await compileForPayload([]));
+      const { exitCode, stdout } = await compile([]);
 
-      const sharedNameFailure = {
-        name: 'deploy',
-        status: 'failed',
-        error: expect.stringContaining('Kit name "deploy" is shared by deploy.ts and ops/deploy.ts.'),
-      };
-      expect(payload).toStrictEqual({ schemaVersion: 1, passed: false, kits: [sharedNameFailure, sharedNameFailure] });
-      expect(tree.exists('.readyup/kits/deploy.js')).toBe(true);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy']);
+      expect(exitCode).toBe(0);
+      expect(tree.exists('.readyup/kits/ops/deploy.js')).toBe(true);
+      expect(manifestKitNames(tree)).toStrictEqual(['ops/deploy']);
+      expect(stdout).not.toContain('removed');
     });
   });
 

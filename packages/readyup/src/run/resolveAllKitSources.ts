@@ -82,7 +82,7 @@ function parseFromArgument(fromValue: string): FromSource {
 /** Returns the sorted kit names in a directory, reporting a directory that cannot be read as a config error. */
 function readKitNames(dir: string, extension: string): string[] {
   try {
-    return enumerateKits({ dir, extension });
+    return enumerateKits({ dir, extension, recursive: false });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
   }

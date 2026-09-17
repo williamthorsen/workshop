@@ -45,6 +45,40 @@ describe(pruneOrphanedEntries, () => {
     expect(tree.exists('kits/deploy.js')).toBe(true);
   });
 
+  it('leaves the bundle of an orphan that the sweep wrote, and drops its entry', () => {
+    using tree = createProject({ 'kits/ops/deploy.js': COMPILED });
+
+    const outcome = prune(tree, {
+      existingEntries: [{ name: 'deploy', path: 'kits/ops/deploy.js' }],
+      sweptBundlePaths: new Set([tree.resolve('kits/ops/deploy.js')]),
+      sweptKitNames: new Set(['ops/deploy']),
+    });
+
+    expect(outcome).toStrictEqual({ keptEntries: [], orphans: [] });
+    expect(tree.exists('kits/ops/deploy.js')).toBe(true);
+  });
+
+  it('removes the directories that deleting a nested orphan emptied, and keeps the output directory', () => {
+    using tree = createProject({ 'kits/team-a/ops/legacy.js': COMPILED });
+
+    const outcome = prune(tree, { existingEntries: [recordedEntry(tree, 'team-a/ops/legacy')] });
+
+    expect(outcome.orphans).toStrictEqual([
+      { kind: 'removed', bundlePath: tree.resolve('kits/team-a/ops/legacy.js'), name: 'team-a/ops/legacy' },
+    ]);
+    expect(tree.exists('kits/team-a')).toBe(false);
+    expect(tree.exists('kits')).toBe(true);
+  });
+
+  it('leaves a directory that still holds a bundle after an orphan beside it is deleted', () => {
+    using tree = createProject({ 'kits/ops/keep.js': COMPILED, 'kits/ops/legacy.js': COMPILED });
+
+    prune(tree, { existingEntries: [recordedEntry(tree, 'ops/legacy')] });
+
+    expect(tree.exists('kits/ops/legacy.js')).toBe(false);
+    expect(tree.exists('kits/ops/keep.js')).toBe(true);
+  });
+
   it('keeps a bundle edited since it was compiled, with its entry, and reports the drift', () => {
     using tree = createProject({ 'kits/stale.js': COMPILED });
     const entry = recordedEntry(tree, 'stale');
@@ -146,6 +180,7 @@ function prune(tree: TempTree, overrides: Partial<PruneOrphanedEntriesArgs>) {
     force: false,
     manifestDir: tree.dir,
     outDir: tree.resolve('kits'),
+    sweptBundlePaths: new Set(),
     sweptKitNames: new Set(),
     ...overrides,
   });

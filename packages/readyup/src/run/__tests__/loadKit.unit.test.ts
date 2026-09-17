@@ -53,7 +53,7 @@ describe(loadKit, () => {
       mockLoadRdyKit.mockResolvedValue(loaded);
 
       await expect(loadKit(localEntry(), false, createUncachedRemoteContext())).resolves.toBe(loaded);
-      expect(mockLoadRdyKit).toHaveBeenCalledWith('.readyup/kits/default.js');
+      expect(mockLoadRdyKit).toHaveBeenCalledWith('.readyup/kits/default.js', 'default');
     });
 
     it('advises installing readyup when a --jit kit cannot resolve it', async () => {

@@ -183,7 +183,7 @@ describe(runHumanMode, () => {
 
     await runHuman([{ name: 'custom', source: { path: 'custom/path.ts' }, checklists: [] }]);
 
-    expect(mockLoadRdyKit).toHaveBeenCalledWith('custom/path.ts');
+    expect(mockLoadRdyKit).toHaveBeenCalledWith('custom/path.ts', 'custom');
   });
 
   it('shows checklist headers when running multiple checklists in a single kit', async () => {

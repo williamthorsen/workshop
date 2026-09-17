@@ -205,7 +205,7 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   let internalKits;
   let compiledEntries;
   try {
-    internalKits = enumerateKits({ dir: internalDir, extension: internalExtension });
+    internalKits = enumerateKits({ dir: internalDir, extension: internalExtension, recursive: false });
     // A missing manifest is the normal state of a project that never compiled, and says nothing on its own: The
     // empty-listing hint belongs to the view, which sees the package sections too.
     compiledEntries = collectCompiledKits({
