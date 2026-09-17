@@ -4,6 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
+import { assertRelativeKitName } from '../kits/assertRelativeKitName.ts';
 import type { Severity } from '../kits/types.ts';
 import type { JsonDetail } from '../schemas/reportSchema.ts';
 import { type KitSpecifier, parseKitSpecifiers } from './parseKitSpecifiers.ts';
@@ -113,6 +114,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   let kitSpecifiers: KitSpecifier[];
   try {
     kitSpecifiers = parseKitSpecifiers(positionals);
+    for (const spec of kitSpecifiers) assertRelativeKitName(spec.kitName);
   } catch (error: unknown) {
     throw usageError(describeError(error), { cause: error });
   }
