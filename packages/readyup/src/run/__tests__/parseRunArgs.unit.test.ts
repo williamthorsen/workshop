@@ -43,7 +43,7 @@ describe(parseRunArgs, () => {
   it.each([
     ['a parent segment', '../../etc/hosts'],
     ['an absolute path', '/etc/hosts'],
-    ['a leading separator', '\\etc\\hosts'],
+    ['a leading separator', String.raw`\etc\hosts`],
   ])('rejects a kit name holding %s as a usage error', (_label, kitName) => {
     expect(() => parseRunArgs([kitName])).toThrow(
       expect.objectContaining({ code: 'usage', message: expect.stringContaining('--from dir:') }),

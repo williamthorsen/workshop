@@ -15,9 +15,9 @@ describe(assertRelativeKitName, () => {
     ['a parent segment', '../etc/hosts'],
     ['a parent segment below a kit directory', 'ops/../../etc/hosts'],
     ['a trailing parent segment', 'ops/..'],
-    ['a backslash-separated parent segment', '..\\etc\\hosts'],
+    ['a backslash-separated parent segment', String.raw`..\etc\hosts`],
     ['an absolute path', '/etc/hosts'],
-    ['a leading backslash', '\\etc\\hosts'],
+    ['a leading backslash', String.raw`\etc\hosts`],
   ])('rejects %s', async (_label, kitName) => {
     const error = await captureError(Error, () => {
       assertRelativeKitName(kitName);
