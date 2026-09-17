@@ -96,13 +96,9 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('--recursive and --manifest are mutually exclusive');
   }
 
-  // A sweep reads each project's own config, and a single-file compile reads none.
+  // A recursive sweep reads each project's own config, so there is no single config for `--config` to name.
   if (recursive && values.config !== undefined) {
     throw usageError('--recursive and --config are mutually exclusive');
-  }
-
-  if (positionals.length > 0 && values.config !== undefined) {
-    throw usageError('--config and an input file are mutually exclusive');
   }
 
   if (positionals.length > 1) {
@@ -123,7 +119,7 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
-    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json });
+    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json, configPath: values.config });
   }
 
   // No input file -- compile the sources that the config selects
@@ -142,18 +138,19 @@ interface CompileSingleArgs {
   force: boolean;
   manifestPath: string;
   json: boolean;
+  configPath: string | undefined;
 }
 
 /** Compiles a single explicit input file, applying the drift gate before overwriting. */
 async function compileSingle(args: CompileSingleArgs): Promise<number> {
-  const { inputPath, outputPath, skipManifest, force, manifestPath, json } = args;
+  const { inputPath, outputPath, skipManifest, force, manifestPath, json, configPath } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const resolvedInputPath = path.resolve(inputPath);
   const resolvedOutputPath = path.resolve(outputPath ?? deriveJsPath(resolvedInputPath));
-  // The config is read for `outDir` alone: `--config` and an input file are mutually exclusive, and the
-  // sources that `include` and `exclude` select bear on a sweep rather than on a named file.
-  const config = await loadConfigForSingle();
+  // The config is read for `outDir` alone, which gives the kit its name: the sources that `include` and
+  // `exclude` select bear on a sweep rather than on a named file.
+  const config = await loadConfigForSingle(configPath);
   const kitName = deriveKitNameFromBundle(resolvedOutputPath, path.resolve(config.compile.outDir));
   const relInput = path.relative(process.cwd(), resolvedInputPath);
 
@@ -877,9 +874,9 @@ function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
 }
 
 /** Loads the config that a single-file compile reads, reporting a config that cannot be evaluated as a config error. */
-async function loadConfigForSingle(): Promise<ResolvedRdyConfig> {
+async function loadConfigForSingle(configPath: string | undefined): Promise<ResolvedRdyConfig> {
   try {
-    return await loadConfig();
+    return await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }

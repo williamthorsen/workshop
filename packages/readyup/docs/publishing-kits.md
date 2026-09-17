@@ -20,7 +20,7 @@ A published package can include its kits instead, so consumers access them throu
 
 The directory is named relative to the enclosing workspace root, so a workspace compiled from its own directory still gets a heading that tells it apart from the others. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory. To compile every project in a repository at once, see [Compiling a whole repository](#compiling-a-whole-repository).
 
-`rdy compile` with no input file reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with an input file, which compiles without reading config, or with `--recursive`, which compiles each project under its own config.
+`rdy compile` reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `rdy compile <file>` reads `compile.outDir` alone, which gives the kit its name; `compile.include` and `compile.exclude` select a sweep's sources and bear on nothing else. `--config` cannot be combined with `--recursive`, which compiles each project under its own config.
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 

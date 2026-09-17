@@ -284,13 +284,6 @@ describe(compileCommand, () => {
     expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
   });
 
-  it('reports a usage error when --config is combined with an input file', async () => {
-    const { error } = await compileRaising(['input.ts', '--config', 'custom/readyup.config.ts']);
-
-    expect(error.code).toBe('usage');
-    expect(error.message).toBe('--config and an input file are mutually exclusive');
-  });
-
   it('reports a usage error when --config is given an empty value', async () => {
     const { error } = await compileRaising(['--config=']);
 
@@ -1171,6 +1164,29 @@ describe(compileCommand, () => {
         { name: 'deploy', description: 'The top-level kit' },
         expect.objectContaining({ name: 'team-a/deploy', path: 'kits/team-a/deploy.js' }),
       ],
+    });
+  });
+
+  it('names a single-file compile from the output directory of the config that --config names', async () => {
+    mockLoadConfig.mockResolvedValue({
+      compile: { srcDir: 'custom/kits', outDir: 'custom/kits', include: undefined, exclude: [] },
+    });
+    const source = path.join('custom', 'kits', 'ops', 'deploy.ts');
+    mockCompileConfig.mockResolvedValue(
+      compileResult(source, {
+        outputPath: path.resolve('custom/kits/ops/deploy.js'),
+        changed: true,
+        targetHash: 'deadbeef',
+      }),
+    );
+    mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+    await compile([source, '--config', 'custom/readyup.config.ts']);
+
+    expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+    expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
+      version: 1,
+      kits: [expect.objectContaining({ name: 'ops/deploy' })],
     });
   });
 
