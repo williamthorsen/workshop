@@ -13,7 +13,7 @@ const RETIRED_GLYPHS = ['\u{1F9F0}', '\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274
 /** Tokens that name what a thing is rather than reporting an outcome. */
 const ROLE_TOKENS = ['checklist', 'kit', 'kitSource', 'sourceDirectory', 'sourcePackage', 'sourceRemote'] as const;
 
-const engine = createLayoutEngine(plainFormatter);
+const plainEngine = createLayoutEngine(plainFormatter);
 
 const richEntries = TOKEN_NAMES.map((name) => ({ name, ...richFormatter.tokens[name] }));
 
@@ -55,43 +55,43 @@ describe('richFormatter', () => {
   });
 });
 
-describe('rendered output', () => {
+describe('plain rendered output', () => {
   it('is printable ASCII throughout', () => {
     expect(renderEverything()).toMatch(PRINTABLE_ASCII);
   });
 
   it('spells each status as a word that a log search can find', () => {
-    expect(engine.formatCheckLine({ token: 'failedError', name: 'migrations' })).toBe('FAIL  migrations');
+    expect(plainEngine.formatCheckLine({ token: 'failedError', name: 'migrations' })).toBe('FAIL  migrations');
   });
 
   it('reserves the gutter for a token with no glyph, so names stay in one column', () => {
-    const noun = engine.formatCheckLine({ token: 'kit', name: 'deploy' });
-    const status = engine.formatCheckLine({ token: 'passed', name: 'deploy' });
+    const noun = plainEngine.formatCheckLine({ token: 'kit', name: 'deploy' });
+    const status = plainEngine.formatCheckLine({ token: 'passed', name: 'deploy' });
 
     expect(measureNameColumn(noun)).toBe(measureNameColumn(status));
     expect(noun).toBe('      deploy');
   });
 
   it('separates a detail from the name with an ASCII separator', () => {
-    expect(engine.formatCheckLine({ token: 'failedWarn', name: 'lint', detail: 'not installed' })).toBe(
+    expect(plainEngine.formatCheckLine({ token: 'failedWarn', name: 'lint', detail: 'not installed' })).toBe(
       'WARN  lint - not installed',
     );
   });
 
   it('heads a section with an ASCII rule', () => {
-    expect(engine.formatHeading('code-quality', 'section')).toBe('-- code-quality');
-    expect(engine.formatHeading('deploy', 'kit')).toBe('== deploy');
+    expect(plainEngine.formatHeading('code-quality', 'section')).toBe('-- code-quality');
+    expect(plainEngine.formatHeading('deploy', 'kit')).toBe('== deploy');
   });
 
   it('labels a hint with an ASCII word', () => {
-    expect(engine.formatHint('set GITHUB_TOKEN')).toBe('Hint: set GITHUB_TOKEN');
+    expect(plainEngine.formatHint('set GITHUB_TOKEN')).toBe('Hint: set GITHUB_TOKEN');
   });
 });
 
-describe('alignment', () => {
+describe('plain alignment', () => {
   it('starts each nesting level one gutter right of the level above', () => {
     const columns = [0, 1, 2, 3].map((depth) =>
-      measureNameColumn(engine.formatCheckLine({ token: 'passed', name: 'check', depth })),
+      measureNameColumn(plainEngine.formatCheckLine({ token: 'passed', name: 'check', depth })),
     );
 
     expect(columns).toStrictEqual([6, 12, 18, 24]);
@@ -99,8 +99,8 @@ describe('alignment', () => {
 
   it('puts a child token under its parent name at every level', () => {
     for (const depth of [0, 1, 2, 3]) {
-      const parent = engine.formatCheckLine({ token: 'passed', name: 'parent', depth });
-      const child = engine.formatCheckLine({ token: 'blockedPrecondition', name: 'child', depth: depth + 1 });
+      const parent = plainEngine.formatCheckLine({ token: 'passed', name: 'parent', depth });
+      const child = plainEngine.formatCheckLine({ token: 'blockedPrecondition', name: 'child', depth: depth + 1 });
 
       expect(measureIndent(child)).toBe(measureNameColumn(parent));
     }
@@ -108,7 +108,7 @@ describe('alignment', () => {
 
   it('lands the name at one column whichever token leads the line', () => {
     const columns = TOKEN_NAMES.map((token) =>
-      measureNameColumn(engine.formatCheckLine({ token, name: 'check', depth: 2 })),
+      measureNameColumn(plainEngine.formatCheckLine({ token, name: 'check', depth: 2 })),
     );
 
     expect(new Set(columns)).toStrictEqual(new Set([18]));
@@ -116,9 +116,9 @@ describe('alignment', () => {
 
   it('holds the column through three levels of nesting, widest token included', () => {
     const rendered = [
-      engine.formatCheckLine({ token: 'failedError', name: 'bitbucket-pipelines.yml exists' }),
-      engine.formatCheckLine({ token: 'blockedPrecondition', name: 'pipeline runs checks', depth: 1 }),
-      engine.formatCheckLine({ token: 'skippedOptional', name: 'branch-protection query', depth: 2 }),
+      plainEngine.formatCheckLine({ token: 'failedError', name: 'bitbucket-pipelines.yml exists' }),
+      plainEngine.formatCheckLine({ token: 'blockedPrecondition', name: 'pipeline runs checks', depth: 1 }),
+      plainEngine.formatCheckLine({ token: 'skippedOptional', name: 'branch-protection query', depth: 2 }),
     ].join('\n');
 
     expect(rendered).toBe(
@@ -167,11 +167,18 @@ function renderEverything(): string {
 
   return [
     ...TOKEN_NAMES.map((token) =>
-      engine.formatCheckLine({ token, name: 'check', detail: 'detail', progress: '50%', durationMs: 250, depth: 1 }),
+      plainEngine.formatCheckLine({
+        token,
+        name: 'check',
+        detail: 'detail',
+        progress: '50%',
+        durationMs: 250,
+        depth: 1,
+      }),
     ),
-    engine.formatHeading('deploy', 'kit'),
-    engine.formatHeading('build', 'section'),
-    engine.formatBreadcrumb(
+    plainEngine.formatHeading('deploy', 'kit'),
+    plainEngine.formatHeading('build', 'section'),
+    plainEngine.formatBreadcrumb(
       [
         { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
         { role: 'kit', text: 'npm-auto-publish' },
@@ -179,10 +186,10 @@ function renderEverything(): string {
       ],
       'kit',
     ),
-    ...engine.formatReasonBlock(['a reason'], 2),
-    engine.formatHint('set a token'),
-    engine.formatCountLine(counts, 800),
-    ...engine.formatSummaryTable({
+    ...plainEngine.formatReasonBlock(['a reason'], 2),
+    plainEngine.formatHint('set a token'),
+    plainEngine.formatCountLine(counts, 800),
+    ...plainEngine.formatSummaryTable({
       rows: [
         { counts: makeCounts({ passed: 2 }), durationMs: 410, segments: [{ role: 'checklist', text: 'build' }] },
         {
@@ -198,7 +205,7 @@ function renderEverything(): string {
       totals: counts,
       totalDurationMs: 1_810,
     }),
-    ...TOKEN_NAMES.map((token) => engine.inlineGlyph(token)),
+    ...TOKEN_NAMES.map((token) => plainEngine.inlineGlyph(token)),
   ].join('\n');
 }
 
