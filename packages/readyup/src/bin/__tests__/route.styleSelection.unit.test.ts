@@ -2,10 +2,9 @@ import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/can
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
-import { plainFormatter } from '../../layout/plainFormatter.ts';
-import { STYLE_ENV_VAR } from '../../layout/resolveStyle.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { plainFormatter, richFormatter } from '../../layout/formatter.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
+import { STYLE_ENV_VAR } from '../route.ts';
 import { routeCli } from '../test-utils/routeCli.ts';
 
 /** A kit whose single check passes. */
@@ -13,8 +12,8 @@ const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ na
 
 const COMPILED_BYTES = Buffer.from(PASSING_KIT);
 
-const PLAIN_PASS = plainFormatter.tokens.passed.glyph;
-const RICH_PASS = richFormatter.tokens.passed.glyph;
+const PLAIN_PASS = plainFormatter.tokens.passed.text;
+const RICH_PASS = richFormatter.tokens.passed.text;
 
 /**
  * Every command that renders output, with arguments that make it produce some against the fixture.
@@ -110,6 +109,13 @@ describe('a style named ahead of the command', () => {
 
     expect(exitCode).toBe(2);
   });
+
+  it('rejects a flag standing where its value belongs, and does not drop that flag', async () => {
+    const { exitCode, stdout } = await route(['--style', '--json', 'verify', '--manifest', 'manifest.json']);
+
+    expect(exitCode).toBe(2);
+    expect(stdout).toContain('--style requires a value');
+  });
 });
 
 describe('--style rich', () => {
@@ -164,6 +170,7 @@ describe('detection', () => {
   it('chooses rich for a terminal outside CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
+    vi.stubEnv('TERM', 'xterm-256color');
 
     const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
 

@@ -63,17 +63,17 @@ vi.mock(import('../warnOnUnrecordedBundles.ts'), () => ({
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { VERSION } from '../../version.ts';
 import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
 import type { KitMetadata } from '../validateCompiledOutput.ts';
 
-const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.glyph;
-const ICON_COMPILED = richFormatter.tokens.passed.glyph;
-const ICON_DRIFT = richFormatter.tokens.failedWarn.glyph;
-const GLYPH_OUTPUT = richFormatter.tokens.kit.glyph;
+const ICON_NO_CHANGES = richFormatter.tokens.skippedOptional.text;
+const ICON_COMPILED = richFormatter.tokens.passed.text;
+const ICON_DRIFT = richFormatter.tokens.failedWarn.text;
+const GLYPH_OUTPUT = richFormatter.tokens.kit.text;
 
 /** Directory swept by the batch tests, matching the `srcDir` that the mocked config declares. */
 const SRC_DIR = '.readyup/kits';

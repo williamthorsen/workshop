@@ -1,10 +1,10 @@
+import type { OutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
+
+import { plainFormatter, richFormatter } from './formatter.ts';
 import { createLayoutEngine, type LayoutEngine } from './layoutEngine.ts';
-import { plainFormatter } from './plainFormatter.ts';
-import type { Style } from './resolveStyle.ts';
-import { richFormatter } from './richFormatter.ts';
 
 /** One engine per style, each bound to that style's vocabulary. */
-const engines: Record<Style, LayoutEngine> = {
+const engines: Record<OutputStyle, LayoutEngine> = {
   plain: createLayoutEngine(plainFormatter),
   rich: createLayoutEngine(richFormatter),
 };
@@ -24,7 +24,7 @@ export function getLayout(): LayoutEngine {
 }
 
 /** Binds every later render to `style`. */
-export function setStyle(style: Style): void {
+export function setStyle(style: OutputStyle): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The engine is a process singleton.
   active = engines[style];
 }

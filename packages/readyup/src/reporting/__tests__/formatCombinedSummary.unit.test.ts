@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SummaryCounts } from '../../kits/types.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
 import { formatCombinedSummary } from '../formatCombinedSummary.ts';
 
-const PASSED = richFormatter.tokens.passed.glyph;
-const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
-const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
-const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.glyph;
+const PASSED = richFormatter.tokens.passed.text;
+const FAILED_ERROR = richFormatter.tokens.failedError.text;
+const FAILED_WARN = richFormatter.tokens.failedWarn.text;
+const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.text;
 
 /** What a test row varies: the counts that it reports, flattened, alongside its name and duration. */
 type RowOverrides = Partial<SummaryCounts> & { durationMs?: number; name?: string };

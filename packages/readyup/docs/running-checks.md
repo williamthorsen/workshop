@@ -137,13 +137,13 @@ A run spanning several kits tallies them together, each row naming its source an
 
 `--style` selects rendering; `RDY_STYLE` sets a standing preference. The flag outranks the environment variable, which outranks detection.
 
-| Value   | Renders                                                                       |
-| ------- | ----------------------------------------------------------------------------- |
-| `auto`  | `plain` under CI or when output is not a terminal, `rich` otherwise (default) |
-| `plain` | Fixed-width ASCII words                                                       |
-| `rich`  | Emoji tokens                                                                  |
+| Value   | Renders                                                                                              |
+| ------- | ---------------------------------------------------------------------------------------------------- |
+| `auto`  | `plain` under CI, on the Linux console, or when output is not a terminal; `rich` otherwise (default) |
+| `plain` | Fixed-width ASCII words                                                                              |
+| `rich`  | Emoji tokens                                                                                         |
 
-`CI` detects a runner that attaches a pseudo-terminal; the terminal check detects an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. Naming a style that does not exist fails the invocation.
+`CI` detects a runner that attaches a pseudo-terminal; the terminal check detects an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. `TERM=linux` detects the Linux virtual console, a terminal whose font draws no emoji. Naming a style that does not exist fails the invocation.
 
 In `plain`, every character is printable ASCII, heading rules and separators included. A role glyph is omitted but its column is kept, so names stay aligned; in a breadcrumb, which has no column to keep, the spaced separator alone separates one segment from the next:
 

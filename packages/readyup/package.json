@@ -63,6 +63,7 @@
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
     "@williamthorsen/toolbelt.strings": "catalog:",
+    "@williamthorsen/toolbelt.terminal": "0.2.0",
     "es-module-lexer": "3.0.2",
     "jiti": "2.7.0",
     "jsonc-parser": "3.3.1",

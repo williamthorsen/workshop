@@ -4,6 +4,7 @@ import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import { describeInvalidOutputStyle, resolveOutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
 
 import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
@@ -15,7 +16,6 @@ import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from 
 import { initCommand } from '../init/initCommand.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout, setStyle } from '../layout/engine.ts';
-import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
@@ -39,6 +39,12 @@ const CONFIG_FLAG = '--config';
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
+/** Environment variable holding a standing style preference. */
+export const STYLE_ENV_VAR = 'RDY_STYLE';
+
+/** Flag naming the style for one invocation. */
+const STYLE_FLAG = '--style';
+
 /**
  * Routes CLI arguments to the appropriate subcommand, returning the exit code that it produced.
  *
@@ -51,11 +57,17 @@ export async function routeCommand(args: string[]): Promise<number> {
   // Binding the style precedes the try because the catch renders through it: A style named in argv has
   // to govern the usage error that argv itself provokes. A value naming no style still yields one to
   // render with, and becomes the error raised inside.
-  const { style, invalid } = resolveStyle(args, process.env, process.stdout.isTTY);
+  const { style, invalid } = resolveOutputStyle({
+    argv: args,
+    env: process.env,
+    envVar: STYLE_ENV_VAR,
+    flag: STYLE_FLAG,
+    isTty: process.stdout.isTTY,
+  });
   setStyle(style);
 
   try {
-    if (invalid !== undefined) throw usageError(describeInvalidStyle(invalid));
+    if (invalid !== undefined) throw usageError(describeInvalidOutputStyle(invalid));
     return await dispatchCommand(args, json);
   } catch (error: unknown) {
     return reportFailure(error, json);
@@ -237,8 +249,8 @@ function handleInit(flags: string[]): number {
  * Command selection reads the first argument, so a style named ahead of the command would otherwise be
  * taken for a kit name. `routeCommand` has already read the value, so nothing downstream needs the
  * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
- * occurrence for the subcommand's own parser, and leaves a valueless trailing `--style` for it to
- * reject.
+ * occurrence for the subcommand's own parser. A `--style` with no value beside it, whether it ends argv
+ * or precedes another flag, is left for that parser to reject.
  */
 function dropLeadingStyleFlag(argv: string[]): string[] {
   const assignment = `${STYLE_FLAG}=`;
@@ -247,11 +259,16 @@ function dropLeadingStyleFlag(argv: string[]): string[] {
   while (index < argv.length) {
     const arg = argv[index];
     if (arg?.startsWith(assignment) === true) index += 1;
-    else if (arg === STYLE_FLAG && index + 1 < argv.length) index += 2;
+    else if (arg === STYLE_FLAG && isFlagValue(argv[index + 1])) index += 2;
     else break;
   }
 
   return argv.slice(index);
+}
+
+/** Reports whether an argument can be a spaced flag's value, which a dash-led one cannot unless it is `-`. */
+function isFlagValue(arg: string | undefined): boolean {
+  return arg !== undefined && (!arg.startsWith('-') || arg === '-');
 }
 
 /** Returns `true` when the flags request help for the current subcommand. */
