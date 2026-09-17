@@ -32,7 +32,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['default', 'deploy'],
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).toContain('\u{2500}\u{2500} Sources');
@@ -45,7 +44,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['default'],
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
@@ -56,7 +54,6 @@ describe(formatOwnerView, () => {
       sourceKits: [],
       internalKits: ['default'],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(findSectionCommand(result, 'Internal')).toBe(
@@ -69,7 +66,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: ['audit'],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result.indexOf('\u{2500}\u{2500} Sources')).toBeLessThan(result.indexOf('\u{2500}\u{2500} Internal'));
@@ -81,7 +77,6 @@ describe(formatOwnerView, () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [{ name: 'deploy' }],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).not.toContain('\u{2500}\u{2500} Sources');
@@ -95,7 +90,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
     const lines = result.split('\n');
 
@@ -110,7 +104,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: [],
       compiledKits: [{ name: 'monitor' }],
-      compiledStyle: { kind: 'local-convention' },
     }).split('\n');
     const titleIndexes = lines
       .map((line, index) => (line.startsWith('\u{2500}\u{2500} ') ? index : -1))
@@ -125,7 +118,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).not.toContain('Sources: rdy run');
@@ -136,7 +128,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['default'],
       internalKits: [],
       compiledKits: [{ name: 'deploy' }],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
@@ -148,7 +139,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: [],
       compiledKits: [{ name: 'default' }, { name: 'monitor' }],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
@@ -160,7 +150,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['deploy'],
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).toContain('rdy run --jit <kit>[:<checklist>,...]');
@@ -172,7 +161,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['default'],
       internalKits: [],
       compiledKits: [{ name: 'deploy' }],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(findSectionCommand(result, 'Sources')).toContain('--jit');
@@ -184,7 +172,6 @@ describe(formatOwnerView, () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
       packageKits: [{ name: 'default' }, { name: 'npm-auto-publish' }],
     });
 
@@ -198,7 +185,6 @@ describe(formatOwnerView, () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
       availablePackages: ['@acme/release-kit'],
     });
 
@@ -209,7 +195,6 @@ describe(formatOwnerView, () => {
     const lines = formatOwnerView({
       internalKits: [],
       compiledKits: [{ name: 'deploy', checklists: ['release', 'build'] }, { name: 'monitor' }],
-      compiledStyle: { kind: 'local-convention' },
     }).split('\n');
 
     expect(lines.slice(2)).toStrictEqual([
@@ -224,7 +209,6 @@ describe(formatOwnerView, () => {
     const lines = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
       packageKits: [{ name: 'readyup@0.36.0 / default', checklists: ['setup', 'freshness'] }],
     }).split('\n');
 
@@ -235,33 +219,10 @@ describe(formatOwnerView, () => {
     ]);
   });
 
-  it('nests checklists beneath a kit named by its file path', () => {
-    const result = formatOwnerView({
-      internalKits: [],
-      compiledKits: [{ name: 'deploy', checklists: ['build'] }],
-      compiledStyle: { kind: 'custom-outDir', outDirRel: 'dist/kits' },
-    });
-
-    expect(result).toContain(`${COMPILED} dist/kits/deploy.js\n   ${CHECKLIST} build`);
-  });
-
-  it('renders custom outDir style with file paths', () => {
-    const result = formatOwnerView({
-      internalKits: [],
-      compiledKits: [{ name: 'deploy' }, { name: 'monitor' }],
-      compiledStyle: { kind: 'custom-outDir', outDirRel: 'dist/kits' },
-    });
-
-    expect(result).toContain('rdy run --file <file path> [--checklists <checklist>,...]');
-    expect(result).toContain('dist/kits/deploy.js');
-    expect(result).toContain('dist/kits/monitor.js');
-  });
-
   it('returns empty-owner message when both lists are empty', () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).toBe(
@@ -274,7 +235,6 @@ describe(formatOwnerView, () => {
       sourceKits: ['default'],
       internalKits: [],
       compiledKits: [{ name: 'deploy' }],
-      compiledStyle: { kind: 'local-convention' },
     });
 
     expect(result).toContain('\u{2500}\u{2500} Sources');

@@ -229,13 +229,11 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   const availablePackages = discoverKitPackages(cwd).filter((name) => !config.packages.includes(name));
 
   const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
-  const compiledStyle = resolveCompiledStyle(cwd, config.compile.outDir, cwd);
   writeHuman(
     formatOwnerView({
       sourceKits,
       internalKits,
       compiledKits,
-      compiledStyle,
       packageKits: packageKits.map((kit) => ({ name: describePackageKit(kit), checklists: kit.checklists })),
       availablePackages,
     }) + '\n',

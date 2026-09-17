@@ -15,8 +15,9 @@ const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 /**
  * Command that runs a kit by file, which takes no kit name and so selects checklists by flag alone.
  *
- * A project on a custom `outDir` is reachable only this way: Every other resolution path hardcodes the
- * convention directory.
+ * The kits of another project below the sweep root are reachable only this way: Naming one resolves it
+ * against the config of the directory that the reader stands in, which is not the config that put the kit
+ * where it is.
  */
 const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,...]';
 
@@ -67,7 +68,6 @@ interface OwnerViewOptions {
   sourceKits?: string[];
   internalKits: string[];
   compiledKits: KitView[];
-  compiledStyle: CompiledStyle;
   packageKits?: KitView[];
   availablePackages?: string[];
 }
@@ -82,12 +82,15 @@ interface OwnerViewOptions {
  * the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal` as well. A caller
  * whose config declares neither key passes no internal kits, because `--internal` would then resolve every
  * name exactly as plain `--jit` does and its rows would restate the source rows above them.
+ *
+ * Every compiled kit is named rather than pathed, whatever `compile.outDir` is set to, because this view
+ * reports the kits of the directory that the reader stands in and `rdy run <kit>` reads that project's own
+ * `outDir`. Only the repo-wide view, whose rows belong to other projects, still has to path them.
  */
 export function formatOwnerView({
   sourceKits = [],
   internalKits,
   compiledKits,
-  compiledStyle,
   packageKits = [],
   availablePackages = [],
 }: OwnerViewOptions): string {
@@ -114,13 +117,8 @@ export function formatOwnerView({
   }
 
   if (compiledKits.length > 0) {
-    if (compiledStyle.kind === 'local-convention') {
-      const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
-      sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
-    } else {
-      const pathItems = compiledKits.map((kit) => ({ ...kit, name: `${compiledStyle.outDirRel}/${kit.name}.js` }));
-      sections.push(formatSection('Compiled', buildRunLine(FILE_RUN_COMMAND), pathItems, 'kit'));
-    }
+    const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
+    sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
   }
 
   if (packageKits.length > 0) {

@@ -217,13 +217,12 @@ describe(listCommand, () => {
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
-    it('uses custom-outDir style when outDir differs from default', async () => {
+    it('names the kits of a relocated output directory rather than pathing them', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: [],
       });
-      mockEnumerateKits.mockReturnValue([]);
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'deploy' }],
@@ -232,8 +231,8 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('dist/kits/deploy.js');
-      expect(stdout).toContain('--file');
+      expect(stdout).toContain('\u{2500}\u{2500} Compiled\n   To run: rdy run <kit>[:<checklist>,...]');
+      expect(stdout).not.toContain('--file');
     });
 
     it('prints empty-owner message when no kits exist', async () => {
