@@ -883,6 +883,43 @@ describe(routeCommand, () => {
       expect(exitCode).toBe(0);
     });
 
+    it('reads the directories of the config that --config names, in either flag form', async ({ temp }) => {
+      temp.write('kits/src/lst.ts', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
+      // Only the override resolves to a directory holding the kit, so a probe reading the lookup
+      // chain reports a typo instead.
+      mockLoadConfig.mockImplementation((options?: { overridePath?: string }) =>
+        Promise.resolve({
+          compile: {
+            srcDir: options?.overridePath === 'other.config.ts' ? 'kits/src' : 'unread',
+            outDir: 'dist/kits',
+            include: undefined,
+            exclude: [],
+          },
+          internal: { dir: '.', infix: undefined },
+          packages: [],
+        }),
+      );
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const separate = await routeCli(['lst', '--config', 'other.config.ts']);
+      const inline = await routeCli(['lst', '--config=other.config.ts']);
+
+      expect([separate.exitCode, inline.exitCode]).toStrictEqual([0, 0]);
+      expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'other.config.ts' });
+    });
+
+    it('reports a config that cannot be evaluated rather than suggesting a command', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config'));
+
+      const { exitCode, stderr } = await routeCli(['lst']);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain('bad config');
+      expect(stderr).not.toContain('Did you mean');
+    });
+
     it('suggests a command when only the convention directory holds the kit and the config moved', async ({ temp }) => {
       temp.write('.readyup/kits/lst.js', 'export const checklists = [];');
       using _cwd = pointCwdAt(temp.dir);

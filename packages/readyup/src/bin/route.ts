@@ -33,6 +33,9 @@ import { hasJsonFlag } from './hasJsonFlag.ts';
 /** Command names against which a mistyped bare word is matched, including the implicit `run`. */
 export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
+/** Flag naming the config file that a run reads in place of the lookup chain. */
+const CONFIG_FLAG = '--config';
+
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
 
@@ -274,7 +277,8 @@ async function loadRunConfig(overridePath: string | undefined): Promise<Resolved
  *
  * Everything else is a bare word with no source, which `run` resolves against the project's configured
  * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. Probing exactly those is
- * what makes the result match what would run.
+ * what makes the result match what would run, so the probe reads the config that the run would read,
+ * `--config` override included.
  *
  * The config load runs only for a word that `findNearestWord` already matched, so an ordinary invocation
  * never pays for it. A config that fails to load is reported as the config error that it is, rather than
@@ -283,11 +287,27 @@ async function loadRunConfig(overridePath: string | undefined): Promise<Resolved
 async function namesAKit(word: string, args: string[]): Promise<boolean> {
   if (word.includes(':') || hasSourceFlag(args)) return true;
 
-  const { compile } = await loadRunConfig(undefined);
+  const { compile } = await loadRunConfig(readConfigFlag(args));
   const cwd = process.cwd();
   return (
     existsSync(path.join(cwd, compile.outDir, `${word}.js`)) || existsSync(path.join(cwd, compile.srcDir, `${word}.ts`))
   );
+}
+
+/**
+ * Returns the `--config` value in raw argv, or `undefined` where argv names none.
+ *
+ * Scans the way `hasSourceFlag` does, because it runs at the same point, before any flag parsing: it
+ * accepts both `--config value` and `--config=value` and stops at the `--` terminator. An empty value is
+ * read as absent, which is how `parseRunArgs` reads one, and leaves the run to reject it.
+ */
+function readConfigFlag(args: string[]): string | undefined {
+  for (const [index, arg] of args.entries()) {
+    if (arg === '--') return undefined;
+    if (arg === CONFIG_FLAG) return args[index + 1] || undefined;
+    if (arg.startsWith(`${CONFIG_FLAG}=`)) return arg.slice(CONFIG_FLAG.length + 1) || undefined;
+  }
+  return undefined;
 }
 
 /**
