@@ -17,7 +17,7 @@ export interface WarnOnUnrecordedBundlesArgs {
 }
 
 /**
- * Warns on each bundle directly under `outDir` that neither a swept source nor a manifest entry accounts for, and
+ * Warns on each bundle below `outDir` that neither a swept source nor a manifest entry accounts for, and
  * returns one warning per bundle.
  *
  * Nothing shows that a compile wrote such a bundle, so it is reported rather than deleted. A bundle named for a swept

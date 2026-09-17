@@ -535,7 +535,6 @@ interface SourceSweepContext {
   outDir: string;
   /** The project named on the kit's JSON entry, given by a recursive compile alone. */
   project: string | undefined;
-  /** Each kit name claimed by more than one of the sweep's sources, with the sources that claim it. */
   skipManifest: boolean;
   srcDir: string;
   /** Directory against which a failed source is named, given by a recursive compile alone. */
@@ -544,19 +543,13 @@ interface SourceSweepContext {
 
 /** One source's contribution to its project's compile. */
 interface SourceOutcome {
-  /**
-   * The manifest entry recording the kit, absent for a kit that failed before it was ever recorded and for a source
-   * whose kit name is shared, whose prior entry the project keeps once.
-   */
+  /** The manifest entry recording the kit, absent for a kit that failed before it was ever recorded. */
   entry: RdyManifestKit | undefined;
   kit: JsonCompileKitEntry;
   warnings: RaisedWarning[];
 }
 
-/**
- * Compiles one source of a project sweep behind the shared-name and drift gates, and returns its contribution to the
- * project.
- */
+/** Compiles one source of a project sweep behind the drift gate, and returns its contribution to the project. */
 async function compileSource(fileName: string, context: SourceSweepContext): Promise<SourceOutcome> {
   const { existingKitsByName, force, json, manifestDir, outDir, project, skipManifest, srcDir, sweepRoot } = context;
   const projectField = project === undefined ? {} : { project };

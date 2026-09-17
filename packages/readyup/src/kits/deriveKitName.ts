@@ -11,7 +11,7 @@ const BUNDLE_EXTENSION = '.js';
  *
  * Separators become `/` on every platform, because the name is what the manifest records and what
  * `rdy run` takes: a name holding a backslash would name one file on Windows and another nowhere else.
- * A path that does not end in `extension` keeps its whole final segment, as a `.d.ts` source does under `.ts`.
+ * A path that does not end in `extension` keeps its whole final segment.
  */
 export function deriveKitName(relativePath: string, extension: string): string {
   const withoutExtension = relativePath.endsWith(extension) ? relativePath.slice(0, -extension.length) : relativePath;
