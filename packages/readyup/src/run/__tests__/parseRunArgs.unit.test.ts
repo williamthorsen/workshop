@@ -40,6 +40,26 @@ describe(parseRunArgs, () => {
     );
   });
 
+  it.each([
+    ['a parent segment', '../../etc/hosts'],
+    ['an absolute path', '/etc/hosts'],
+    ['a leading separator', String.raw`\etc\hosts`],
+  ])('rejects a kit name holding %s as a usage error', (_label, kitName) => {
+    expect(() => parseRunArgs([kitName])).toThrow(
+      expect.objectContaining({ code: 'usage', message: expect.stringContaining('--from dir:') }),
+    );
+  });
+
+  it('checks the kit name of a specifier that also filters checklists', () => {
+    expect(() => parseRunArgs(['../escape:build'])).toThrow(expect.objectContaining({ code: 'usage' }));
+  });
+
+  it('accepts a kit name that only starts with a dash', () => {
+    const result = parseRunArgs(['--', '--odd-kit-name']);
+
+    expect(result.kitSpecifiers).toStrictEqual([{ kitName: '--odd-kit-name', checklists: [] }]);
+  });
+
   // --checklists flag
   it('parses --checklists with --file', () => {
     const result = parseRunArgs(['--checklists', 'check1,check2', '--file', 'path.ts']);

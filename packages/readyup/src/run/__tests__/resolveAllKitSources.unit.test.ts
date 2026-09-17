@@ -82,7 +82,10 @@ describe(resolveAllKitSources, () => {
     it('reaches a relocated output directory through the paths that the manifest records', async ({ temp }) => {
       temp.writeJson('.readyup/manifest.json', { version: 1, kits: [{ name: 'lint', path: '../dist/kits/lint.js' }] });
 
-      const entries = await resolveAllKitSources({ ...baseOptions, compileOutDir: 'dist/kits' });
+      const entries = await resolveAllKitSources({
+        ...baseOptions,
+        compile: { srcDir: '.readyup/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
+      });
 
       expect(entries).toStrictEqual([
         { name: 'lint', source: { path: path.join('dist', 'kits', 'lint.js') }, checklists: [] },
@@ -122,11 +125,61 @@ describe(resolveAllKitSources, () => {
       expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
     });
 
-    it('fails naming the pattern and directory when the kits directory holds no source', async () => {
+    it('roots --internal on the configured source directory', async ({ temp }) => {
+      temp.writeAll({ 'kits/src/internal/audit.ts': '', '.readyup/kits/internal/stale.ts': '' });
+      const compile = { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] };
+      const internalFlags = { internal: true, internalDir: 'internal', jit: true };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }));
+    });
+
+    it('fails naming the directory when the kits directory holds no source', async () => {
       const error = await captureError(RdyError, () => resolveAllKitSources({ ...baseOptions, jit: true }));
 
       expect(error.code).toBe('kit-load');
-      expect(error.message).toBe('--all found no *.ts kits in .readyup/kits.');
+      expect(error.message).toBe('--all found no kit sources in .readyup/kits.');
+    });
+
+    it('resolves a nested source under --jit, as naming it would', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/ops/deploy.ts': '', '.readyup/kits/top.ts': '' });
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
+    });
+
+    it('omits a source that compile.exclude removes', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
+      const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: ['helpers/**'] };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+    });
+
+    it('omits a source that compile.include does not select', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
+      const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+    });
+
+    it('covers the same kits under --jit as a compiled --all', async ({ temp }) => {
+      temp.writeAll({
+        '.readyup/kits/ops/deploy.js': '',
+        '.readyup/kits/ops/deploy.ts': '',
+        '.readyup/kits/smoke.js': '',
+        '.readyup/kits/smoke.ts': '',
+      });
+
+      const compiled = await resolveAllKitSources(baseOptions);
+      const sources = await resolveAllKitSources({ ...baseOptions, jit: true });
+
+      expect(sources.map((entry) => entry.name)).toStrictEqual(compiled.map((entry) => entry.name));
     });
 
     it('resolves every kit that a --from directory holds, as naming each would', async ({ temp }) => {

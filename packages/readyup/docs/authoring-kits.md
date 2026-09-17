@@ -20,7 +20,7 @@ Repo-level settings live in `.config/readyup.config.ts`.
 | `compile.outDir`  | `.readyup/kits` | Directory to which it writes bundles                                                    |
 | `compile.include` | all `.ts` files | Glob, or list of globs, selecting the sources that a sweep compiles                     |
 | `compile.exclude` | none            | Glob, or list of globs, removing sources from a sweep, even ones that `include` selects |
-| `internal.dir`    | `.`             | Directory containing internal sources, relative to the kits root                        |
+| `internal.dir`    | `.`             | Directory containing internal sources, relative to `compile.srcDir`                     |
 | `internal.infix`  | none            | Filename segment marking a file as internal                                             |
 | `packages`        | none            | Packages from which `rdy run --packages` runs a published kit                           |
 

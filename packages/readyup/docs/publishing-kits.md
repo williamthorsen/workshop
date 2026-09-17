@@ -207,7 +207,7 @@ Adding readyup to `packages` in the config makes `rdy run --packages` include re
 
 ## Internal kits
 
-Internal kits are TypeScript sources that a repo runs on itself rather than publishing. The `internal.dir` and `internal.infix` [config keys](authoring-kits.md#config) locate them.
+Internal kits are TypeScript sources that a repo runs on itself rather than publishing. The `internal.dir` and `internal.infix` [config keys](authoring-kits.md#config) locate them below `compile.srcDir`, which is where the repo's sources live; `--internal` shifts the name by the directory and the filename by the infix, and leaves the root that [Selecting what runs](running-checks.md#selecting-what-runs) states.
 
 An **infix** is a segment between the kit name and the extension. With `infix: 'internal'`, the kit `deploy` lives at `deploy.internal.ts`; with no infix configured -- the default -- it is simply `deploy.ts`.
 

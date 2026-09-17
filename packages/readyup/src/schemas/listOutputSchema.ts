@@ -50,6 +50,17 @@ export const ListKitEntrySchema = z
      */
     project: z.string().optional(),
     origin: ListKitOriginSchema.optional(),
+    /**
+     * Whether `rdy run --jit` needs `--internal` as well to reach this kit.
+     *
+     * Distinct from `kind: 'internal'`, which names the file's form: every TypeScript source takes that kind,
+     * and this field tells the project's internal bucket from the sources that `compile.include` and
+     * `compile.exclude` select. A consumer composing the invocation reads this rather than the kind.
+     *
+     * Carried by every `kind: 'internal'` row, `false` included, so that absence marks a payload written before
+     * the field existed rather than a kit that `--internal` does not reach.
+     */
+    internal: z.boolean().optional(),
     path: z.string().optional(),
     description: z.string().optional(),
     readyupVersion: z.string().optional(),
@@ -73,6 +84,13 @@ export const ListKitEntrySchema = z
  * iterating `kits` relies. A kit published by an unconfigured package satisfies it: `rdy run --packages`
  * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the
  * two apart.
+ *
+ * A row is an invocation rather than a file, so two rows may report the same `path`. A source under
+ * `internal.dir` that `compile.include` and `compile.exclude` also select is one: it is reported once
+ * under its path below `compile.srcDir` with `internal: false`, which `rdy run --jit <kit>` runs, and once
+ * under its name within the bucket with `internal: true`, which `rdy run --jit --internal <kit>` runs. A
+ * consumer that executes every row executes that file twice; one that wants files rather than invocations
+ * groups on `path`.
  *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits. It accompanies the owner listing, which names them without

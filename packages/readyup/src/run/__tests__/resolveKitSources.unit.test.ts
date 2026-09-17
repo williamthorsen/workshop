@@ -1,8 +1,13 @@
+import path from 'node:path';
+
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
+
+/** Compile directories that share no segment with the convention layout, so a fallback cannot pass as a read. */
+const RELOCATED = { srcDir: 'kits/src', outDir: 'dist/kits' };
 
 describe(resolveKitSources, () => {
   // -- Default resolution (compiled .js) --
@@ -80,6 +85,34 @@ describe(resolveKitSources, () => {
         internalInfix: 'int',
       }),
     ).toStrictEqual([{ name: 'deploy', source: { path: '.readyup/kits/internal/deploy.int.js' }, checklists: [] }]);
+  });
+
+  // -- Configured compile directories --
+
+  it('resolves a named kit against compile.outDir', () => {
+    expect(resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }], compile: RELOCATED })).toStrictEqual([
+      { name: 'deploy', source: { path: path.join('dist', 'kits', 'deploy.js') }, checklists: [] },
+    ]);
+  });
+
+  it('resolves a --jit kit against compile.srcDir', () => {
+    expect(
+      resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }], jit: true, compile: RELOCATED }),
+    ).toStrictEqual([{ name: 'deploy', source: { path: path.join('kits', 'src', 'deploy.ts') }, checklists: [] }]);
+  });
+
+  it('roots --internal on compile.outDir', () => {
+    expect(resolve({ internal: true, internalDir: 'internal', compile: RELOCATED })).toStrictEqual([
+      { name: 'default', source: { path: path.join('dist', 'kits', 'internal', 'default.js') }, checklists: [] },
+    ]);
+  });
+
+  it('roots --jit --internal on compile.srcDir', () => {
+    expect(
+      resolve({ jit: true, internal: true, internalDir: 'internal', internalInfix: 'int', compile: RELOCATED }),
+    ).toStrictEqual([
+      { name: 'default', source: { path: path.join('kits', 'src', 'internal', 'default.int.ts') }, checklists: [] },
+    ]);
   });
 
   // -- --file flag --

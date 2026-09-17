@@ -2,6 +2,7 @@ import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/can
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
+const mockCollectSourceKitNames = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
@@ -27,6 +28,10 @@ vi.mock(import('../enumerateKits.ts'), () => ({
   enumerateKits: mockEnumerateKits,
 }));
 
+vi.mock(import('../../compile/collectSourceKitNames.ts'), () => ({
+  collectSourceKitNames: mockCollectSourceKitNames,
+}));
+
 vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../manifest/readManifest.ts')>();
   return {
@@ -46,6 +51,7 @@ describe(listCommand, () => {
       internal: { dir: '.', infix: undefined },
       packages: [],
     });
+    mockCollectSourceKitNames.mockReturnValue([]);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
     mockExpandConfiguredPackages.mockReturnValue([]);
@@ -55,6 +61,7 @@ describe(listCommand, () => {
   afterEach(() => {
     vi.restoreAllMocks();
     mockLoadConfig.mockReset();
+    mockCollectSourceKitNames.mockReset();
     mockEnumerateKits.mockReset();
     mockReadManifest.mockReset();
     mockExpandConfiguredPackages.mockReset();
@@ -146,7 +153,7 @@ describe(listCommand, () => {
 
   describe('owner mode', () => {
     it('loads config and reads manifest for compiled kits', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+      mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'deploy' }],
@@ -157,13 +164,21 @@ describe(listCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockLoadConfig).toHaveBeenCalledWith({});
       expect(mockReadManifest).toHaveBeenCalledTimes(1);
-      // Package discovery is mocked out in this file, so the count covers internal kits alone.
-      expect(mockEnumerateKits).toHaveBeenCalledTimes(1);
-      expect(mockEnumerateKits).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: expect.stringContaining('.readyup/kits'), extension: '.ts' }),
+      expect(mockCollectSourceKitNames).toHaveBeenCalledWith(
+        expect.stringContaining('.readyup/kits'),
+        expect.objectContaining({ include: undefined, exclude: [] }),
       );
-      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).toContain('\u{2500}\u{2500} Sources');
       expect(stdout).toContain('\u{2500}\u{2500} Compiled');
+    });
+
+    it('omits the Internal section under a config that declares no internal bucket', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['default']);
+
+      const { stdout } = await list([]);
+
+      expect(stdout).not.toContain('\u{2500}\u{2500} Internal');
+      expect(mockEnumerateKits).not.toHaveBeenCalled();
     });
 
     it('nests the checklists recorded by the manifest beneath each compiled kit', async () => {
@@ -191,24 +206,23 @@ describe(listCommand, () => {
       expect(mockEnumerateKits).toHaveBeenCalledWith(expect.objectContaining({ extension: '.int.ts' }));
     });
 
-    it('renders only Internal section when manifest has no compiled kits', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+    it('renders only the Sources section when manifest has no compiled kits', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).toContain('\u{2500}\u{2500} Sources');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
-    it('uses custom-outDir style when outDir differs from default', async () => {
+    it('names the kits of a relocated output directory rather than pathing them', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
         packages: [],
       });
-      mockEnumerateKits.mockReturnValue([]);
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'deploy' }],
@@ -217,8 +231,8 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('dist/kits/deploy.js');
-      expect(stdout).toContain('--file');
+      expect(stdout).toContain('\u{2500}\u{2500} Compiled\n   To run: rdy run <kit>[:<checklist>,...]');
+      expect(stdout).not.toContain('--file');
     });
 
     it('prints empty-owner message when no kits exist', async () => {
@@ -234,7 +248,7 @@ describe(listCommand, () => {
 
     it('warns and lists with default settings when config load fails', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
-      mockEnumerateKits.mockReturnValue(['default']);
+      mockCollectSourceKitNames.mockReturnValue(['default']);
 
       const { exitCode, stdout, stderr } = await list([]);
 
@@ -276,6 +290,11 @@ describe(listCommand, () => {
 
     it('reports a config error when enumerateKits throws', async () => {
       const permError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+        internal: { dir: 'internal', infix: undefined },
+        packages: [],
+      });
       mockEnumerateKits.mockImplementation(() => {
         throw permError;
       });
@@ -286,8 +305,19 @@ describe(listCommand, () => {
       expect(error.message).toContain('permission denied');
     });
 
-    it('renders Internal section without Compiled when neither a manifest nor a bundle exists', async () => {
-      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.ts': ['default'] }));
+    it('reports a config error when the source selection throws', async () => {
+      mockCollectSourceKitNames.mockImplementation(() => {
+        throw Object.assign(new Error('permission denied'), { code: 'EACCES' });
+      });
+
+      const { error } = await listRaising([]);
+
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('permission denied');
+    });
+
+    it('renders Sources without Compiled when neither a manifest nor a bundle exists', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
       });
@@ -295,7 +325,7 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).toContain('\u{2500}\u{2500} Sources');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toBe('');
     });
@@ -362,16 +392,16 @@ describe(listCommand, () => {
       );
     });
 
-    it('leaves --internal out of the internal hint under the default config', async () => {
-      mockEnumerateKits.mockReturnValue(['default']);
+    it('heads the Sources section with the plain --jit hint', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['default']);
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Internal\n   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+      expect(stdout).toContain('\u{2500}\u{2500} Sources\n   To run: rdy run --jit [<kit>[:<checklist>,...]]');
     });
 
-    it('writes warning to stderr when manifest read fails with non-missing-file error and internal kits exist', async () => {
-      mockEnumerateKits.mockImplementation(enumerateByExtension({ '.ts': ['default'] }));
+    it('writes warning to stderr when manifest read fails with non-missing-file error and sources exist', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockImplementation(() => {
         throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
       });
@@ -379,7 +409,7 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Internal');
+      expect(stdout).toContain('\u{2500}\u{2500} Sources');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toContain('Warning:');
       expect(stderr).toContain('invalid JSON');
@@ -498,8 +528,8 @@ describe(listCommand, () => {
   });
 
   describe('--json', () => {
-    it('distinguishes internal sources from compiled kits in owner mode', async () => {
-      mockEnumerateKits.mockReturnValue(['draft']);
+    it('distinguishes sources from compiled kits in owner mode', async () => {
+      mockCollectSourceKitNames.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'deploy', path: 'kits/deploy.js', checklists: ['preflight'] }],
@@ -511,20 +541,39 @@ describe(listCommand, () => {
       expect(JSON.parse(stdout)).toMatchObject({
         schemaVersion: 1,
         kits: [
-          { name: 'draft', kind: 'internal', path: expect.stringContaining('draft.ts') },
+          { name: 'draft', kind: 'internal', internal: false, path: expect.stringContaining('draft.ts') },
           { name: 'deploy', kind: 'compiled', checklists: ['preflight'] },
         ],
       });
     });
 
+    it('marks the internal bucket apart from the sources that share its kind', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] },
+        internal: { dir: 'internal', infix: undefined },
+        packages: [],
+      });
+      mockCollectSourceKitNames.mockReturnValue(['draft']);
+      mockEnumerateKits.mockReturnValue(['audit']);
+
+      const { stdout } = await list(['--json']);
+
+      expect(JSON.parse(stdout)).toMatchObject({
+        kits: [
+          { name: 'draft', kind: 'internal', internal: false },
+          { name: 'audit', kind: 'internal', internal: true },
+        ],
+      });
+    });
+
     it('sends the human view to stderr so stdout holds one document', async () => {
-      mockEnumerateKits.mockReturnValue(['draft']);
+      mockCollectSourceKitNames.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const { stdoutChunks, stderr } = await list(['--json']);
 
       expect(stdoutChunks).toHaveLength(1);
-      expect(stderr).toContain('\u{2500}\u{2500} Internal');
+      expect(stderr).toContain('\u{2500}\u{2500} Sources');
     });
 
     it('reports an empty kit list rather than the empty-owner prose', async () => {

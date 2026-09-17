@@ -13,7 +13,7 @@ import { configError, internalError, toRdyError, usageError } from '../errors/Rd
 import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
-import { KITS_DIR } from '../kits/kitsDir.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout, setStyle } from '../layout/engine.ts';
 import { describeInvalidStyle, resolveStyle, STYLE_FLAG } from '../layout/resolveStyle.ts';
 import { listCommand } from '../list/listCommand.ts';
@@ -33,8 +33,8 @@ import { hasJsonFlag } from './hasJsonFlag.ts';
 /** Command names against which a mistyped bare word is matched, including the implicit `run`. */
 export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
 
-/** Extensions that a kit file can take, in the order `run` would resolve them. */
-const KIT_EXTENSIONS = ['.js', '.ts'];
+/** Flag naming the config file that a run reads in place of the lookup chain. */
+const CONFIG_FLAG = '--config';
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
 const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
@@ -141,7 +141,7 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
   // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
   // never reaches it: Naming the subcommand says the word is a kit.
   const typoMatch = findNearestWord(command, COMMAND_NAMES);
-  if (typoMatch !== undefined && !namesAKit(command, args)) {
+  if (typoMatch !== undefined && !(await namesAKit(command, args))) {
     throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
   }
 
@@ -160,18 +160,12 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
-  let config;
-  if (!hasExternalSource) {
-    try {
-      config = await loadConfig({ ...(parsed.configPath !== undefined && { overridePath: parsed.configPath }) });
-    } catch (error: unknown) {
-      throw configError(describeError(error), { cause: error, hint: extractHint(error) });
-    }
-  }
+  const config = hasExternalSource ? undefined : await loadRunConfig(parsed.configPath);
   const configFields =
     config === undefined
       ? undefined
       : {
+          compile: config.compile,
           internalDir: config.internal.dir,
           internalInfix: config.internal.infix,
           configuredPackages: config.packages,
@@ -186,7 +180,6 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         packages: parsed.packages,
         remote,
         ...configFields,
-        ...(config !== undefined && { compileOutDir: config.compile.outDir }),
       })
     : resolveKitSources({
         filePath: parsed.filePath,
@@ -266,6 +259,15 @@ function wantsHelp(flags: string[]): boolean {
   return flags.some((f) => HELP_FLAGS.has(f));
 }
 
+/** Loads the config that a run reads, reporting a file that cannot be evaluated as a config error. */
+async function loadRunConfig(overridePath: string | undefined): Promise<ResolvedRdyConfig> {
+  try {
+    return await loadConfig({ ...(overridePath !== undefined && { overridePath }) });
+  } catch (error: unknown) {
+    throw configError(describeError(error), { cause: error, hint: extractHint(error) });
+  }
+}
+
 /**
  * Reports whether a bare word is a kit rather than a candidate command typo.
  *
@@ -273,13 +275,39 @@ function wantsHelp(flags: string[]): boolean {
  * settles the question outright: Under them the word is a kit by construction, and the kit that it
  * names lives wherever that source resolves rather than on a path worth probing.
  *
- * Everything else is a bare word with no source, which `run` resolves against the conventional kit
- * directory alone. Probing exactly that directory is what makes the result match what would run.
+ * Everything else is a bare word with no source, which `run` resolves against the project's configured
+ * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. Probing exactly those is
+ * what makes the result match what would run, so the probe reads the config that the run would read,
+ * `--config` override included.
+ *
+ * The config load runs only for a word that `findNearestWord` already matched, so an ordinary invocation
+ * never pays for it. A config that fails to load is reported as the config error that it is, rather than
+ * surfacing as a typo suggestion for a word that may well name a kit.
  */
-function namesAKit(word: string, args: string[]): boolean {
+async function namesAKit(word: string, args: string[]): Promise<boolean> {
   if (word.includes(':') || hasSourceFlag(args)) return true;
 
-  return KIT_EXTENSIONS.some((extension) => existsSync(path.join(process.cwd(), KITS_DIR, `${word}${extension}`)));
+  const { compile } = await loadRunConfig(readConfigFlag(args));
+  const cwd = process.cwd();
+  return (
+    existsSync(path.join(cwd, compile.outDir, `${word}.js`)) || existsSync(path.join(cwd, compile.srcDir, `${word}.ts`))
+  );
+}
+
+/**
+ * Returns the `--config` value in raw argv, or `undefined` where argv names none.
+ *
+ * Scans the way `hasSourceFlag` does, because it runs at the same point, before any flag parsing: it
+ * accepts both `--config value` and `--config=value` and stops at the `--` terminator. An empty value is
+ * read as absent, which is how `parseRunArgs` reads one, and leaves the run to reject it.
+ */
+function readConfigFlag(args: string[]): string | undefined {
+  for (const [index, arg] of args.entries()) {
+    if (arg === '--') return undefined;
+    if (arg === CONFIG_FLAG) return args[index + 1] || undefined;
+    if (arg.startsWith(`${CONFIG_FLAG}=`)) return arg.slice(CONFIG_FLAG.length + 1) || undefined;
+  }
+  return undefined;
 }
 
 /**

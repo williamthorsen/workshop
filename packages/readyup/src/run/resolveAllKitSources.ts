@@ -3,9 +3,11 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
-import { KITS_DIR } from '../kits/kitsDir.ts';
+import { resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { collectCompiledKits } from '../list/collectCompiledKits.ts';
 import { collectSourceKits } from '../list/collectSourceKits.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
@@ -16,8 +18,8 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
 
 interface ResolveAllKitSourcesOptions {
-  /** The config's `compile.outDir`; absent where no config was loaded. */
-  compileOutDir?: string | undefined;
+  /** The config's `compile` block; absent where no config was loaded. */
+  compile?: ResolvedRdyConfig['compile'] | undefined;
   configuredPackages?: string[] | undefined;
   fromValue: string | undefined;
   internal: boolean;
@@ -34,6 +36,9 @@ interface ResolveAllKitSourcesOptions {
  * A source reached by kit name is enumerated and then resolved by `resolveKitSources`, so each entry is the one
  * that naming the kit would produce. The project's compiled kits are resolved from the paths that its listing
  * reports instead, which is what reaches a relocated `compile.outDir`.
+ *
+ * Under `--jit` the project's sources are the ones that `compile.include` and `compile.exclude` select, so this
+ * and a compiled `--all` cover the same kits and a module that the kits share is read as a kit by neither.
  *
  * A source holding no kits is a kit-load error: A run that passes with no kits hides a missing compile or a
  * run from the wrong directory.
@@ -53,19 +58,21 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
     return resolveNamedKits(options, names, `--all found no kits in ${fromValue}.`);
   }
 
+  const root = resolveKitRoot(options.compile, jit);
+
   if (internal) {
-    const dir = path.join(KITS_DIR, options.internalDir ?? '.');
+    const dir = path.join(root, options.internalDir ?? '.');
     const internalExtension = options.internalInfix === undefined ? extension : `.${options.internalInfix}${extension}`;
     const names = readKitNames(dir, internalExtension);
     return resolveNamedKits(options, names, `--all found no *${internalExtension} kits in ${dir}.`);
   }
 
   if (jit) {
-    const names = readKitNames(KITS_DIR, extension);
-    return resolveNamedKits(options, names, `--all found no *${extension} kits in ${KITS_DIR}.`);
+    const names = readSourceKitNames(root, options.compile);
+    return resolveNamedKits(options, names, `--all found no kit sources in ${root}.`);
   }
 
-  return resolveCompiledKits(path.resolve(options.compileOutDir ?? KITS_DIR));
+  return resolveCompiledKits(path.resolve(root));
 }
 
 // region | Helpers
@@ -83,6 +90,21 @@ function parseFromArgument(fromValue: string): FromSource {
 function readKitNames(dir: string, extension: string): string[] {
   try {
     return enumerateKits({ dir, extension, recursive: false });
+  } catch (error: unknown) {
+    throw configError(describeError(error), { cause: error });
+  }
+}
+
+/**
+ * Returns the sorted names of the kit sources that the compile settings select, reporting a directory that
+ * cannot be read as a config error.
+ *
+ * Absent a config there is no selection to apply, so every source under the convention directory is a kit,
+ * which is what an unconfigured project compiles.
+ */
+function readSourceKitNames(dir: string, compile: ResolvedRdyConfig['compile'] | undefined): string[] {
+  try {
+    return collectSourceKitNames(dir, { include: compile?.include, exclude: compile?.exclude ?? [] });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
   }
@@ -128,6 +150,7 @@ function resolveNamedKits(
 
   return resolveKitSources({
     checklists: undefined,
+    compile: options.compile,
     filePath: undefined,
     fromValue: options.fromValue,
     internal: options.internal,

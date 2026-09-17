@@ -15,8 +15,9 @@ const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 /**
  * Command that runs a kit by file, which takes no kit name and so selects checklists by flag alone.
  *
- * A project on a custom `outDir` is reachable only this way: Every other resolution path hardcodes the
- * convention directory.
+ * The kits of another project below the sweep root are reachable only this way: Naming one resolves it
+ * against the config of the directory that the reader stands in, which is not the config that put the kit
+ * where it is.
  */
 const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,...]';
 
@@ -64,32 +65,36 @@ export function resolveCompiledStyle(projectDir: string, outDir: string, renderF
 // -- Owner view --
 
 interface OwnerViewOptions {
+  sourceKits?: string[];
   internalKits: string[];
   compiledKits: KitView[];
-  compiledStyle: CompiledStyle;
-  needsInternalFlag?: boolean;
   packageKits?: KitView[];
   availablePackages?: string[];
 }
 
 /**
- * Returns the owner-mode output, showing the internal and compiled kit sections.
+ * Returns the owner-mode output, showing the source, internal, and compiled kit sections.
  *
- * Empty sections are omitted. Returns the empty-owner message when both lists are empty.
+ * Empty sections are omitted. Returns the empty-owner message when every list is empty.
  *
- * `needsInternalFlag` adds `--internal` to the internal-section hint. The flag makes a
- * configured internal directory or infix reachable, so the hint would name a failing command
- * without it; the default config needs neither, and omitting it keeps the shorter form.
+ * The two source sections are separate axes rather than one section under two names: `sourceKits` holds
+ * what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and `internalKits` holds
+ * the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal` as well. A caller
+ * whose config declares neither key passes no internal kits, because `--internal` would then resolve every
+ * name exactly as plain `--jit` does and its rows would restate the source rows above them.
+ *
+ * Every compiled kit is named rather than pathed, whatever `compile.outDir` is set to, because this view
+ * reports the kits of the directory that the reader stands in and `rdy run <kit>` reads that project's own
+ * `outDir`. Only the repo-wide view, whose rows belong to other projects, still has to path them.
  */
 export function formatOwnerView({
+  sourceKits = [],
   internalKits,
   compiledKits,
-  compiledStyle,
-  needsInternalFlag = false,
   packageKits = [],
   availablePackages = [],
 }: OwnerViewOptions): string {
-  if (internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
+  if (sourceKits.length === 0 && internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
     // A project with no kits of its own is still told what its dependencies offer, which is the one thing that
     // turns an empty listing into a next step.
     return availablePackages.length === 0
@@ -99,21 +104,21 @@ export function formatOwnerView({
 
   const sections: string[] = [];
 
+  if (sourceKits.length > 0) {
+    const command = `rdy run --jit ${buildKitSelectionHint(sourceKits)}`;
+    const items = sourceKits.map((name) => ({ name }));
+    sections.push(formatSection('Sources', buildRunLine(command), items, 'kitSource'));
+  }
+
   if (internalKits.length > 0) {
-    const internalFlag = needsInternalFlag ? ' --internal' : '';
-    const command = `rdy run --jit${internalFlag} ${buildKitSelectionHint(internalKits)}`;
+    const command = `rdy run --jit --internal ${buildKitSelectionHint(internalKits)}`;
     const items = internalKits.map((name) => ({ name }));
     sections.push(formatSection('Internal', buildRunLine(command), items, 'kitSource'));
   }
 
   if (compiledKits.length > 0) {
-    if (compiledStyle.kind === 'local-convention') {
-      const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
-      sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
-    } else {
-      const pathItems = compiledKits.map((kit) => ({ ...kit, name: `${compiledStyle.outDirRel}/${kit.name}.js` }));
-      sections.push(formatSection('Compiled', buildRunLine(FILE_RUN_COMMAND), pathItems, 'kit'));
-    }
+    const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
+    sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
   }
 
   if (packageKits.length > 0) {
