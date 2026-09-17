@@ -851,6 +851,53 @@ describe(routeCommand, () => {
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
     });
 
+    it('runs a bare word as a kit when the configured output directory holds its bundle', async ({ temp }) => {
+      temp.write('dist/kits/lst.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
+        internal: { dir: '.', infix: undefined },
+        packages: [],
+      });
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const { exitCode } = await routeCli(['lst']);
+
+      expect(exitCode).toBe(0);
+    });
+
+    it('runs a bare word as a kit when the configured source directory holds its source', async ({ temp }) => {
+      temp.write('kits/src/lst.ts', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
+        internal: { dir: '.', infix: undefined },
+        packages: [],
+      });
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      const { exitCode } = await routeCli(['lst']);
+
+      expect(exitCode).toBe(0);
+    });
+
+    it('suggests a command when only the convention directory holds the kit and the config moved', async ({ temp }) => {
+      temp.write('.readyup/kits/lst.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
+        internal: { dir: '.', infix: undefined },
+        packages: [],
+      });
+
+      const { exitCode, stderr } = await routeCli(['lst']);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Did you mean 'rdy list'?");
+    });
+
     it.each([
       ['--from', ['lst', '--from', 'global']],
       ['--from with an inline value', ['lst', '--from=global']],
