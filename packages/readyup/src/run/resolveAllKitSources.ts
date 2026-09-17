@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
 import { resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
@@ -36,6 +37,9 @@ interface ResolveAllKitSourcesOptions {
  * that naming the kit would produce. The project's compiled kits are resolved from the paths that its listing
  * reports instead, which is what reaches a relocated `compile.outDir`.
  *
+ * Under `--jit` the project's sources are the ones that `compile.include` and `compile.exclude` select, so this
+ * and a compiled `--all` cover the same kits and a module that the kits share is read as a kit by neither.
+ *
  * A source holding no kits is a kit-load error: A run that passes with no kits hides a missing compile or a
  * run from the wrong directory.
  */
@@ -64,8 +68,8 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
   }
 
   if (jit) {
-    const names = readKitNames(root, extension);
-    return resolveNamedKits(options, names, `--all found no *${extension} kits in ${root}.`);
+    const names = readSourceKitNames(root, options.compile);
+    return resolveNamedKits(options, names, `--all found no kit sources in ${root}.`);
   }
 
   return resolveCompiledKits(path.resolve(root));
@@ -86,6 +90,21 @@ function parseFromArgument(fromValue: string): FromSource {
 function readKitNames(dir: string, extension: string): string[] {
   try {
     return enumerateKits({ dir, extension, recursive: false });
+  } catch (error: unknown) {
+    throw configError(describeError(error), { cause: error });
+  }
+}
+
+/**
+ * Returns the sorted names of the kit sources that the compile settings select, reporting a directory that
+ * cannot be read as a config error.
+ *
+ * Absent a config there is no selection to apply, so every source under the convention directory is a kit,
+ * which is what an unconfigured project compiles.
+ */
+function readSourceKitNames(dir: string, compile: ResolvedRdyConfig['compile'] | undefined): string[] {
+  try {
+    return collectSourceKitNames(dir, { include: compile?.include, exclude: compile?.exclude ?? [] });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error });
   }

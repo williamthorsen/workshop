@@ -135,11 +135,51 @@ describe(resolveAllKitSources, () => {
       expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }));
     });
 
-    it('fails naming the pattern and directory when the kits directory holds no source', async () => {
+    it('fails naming the directory when the kits directory holds no source', async () => {
       const error = await captureError(RdyError, () => resolveAllKitSources({ ...baseOptions, jit: true }));
 
       expect(error.code).toBe('kit-load');
-      expect(error.message).toBe('--all found no *.ts kits in .readyup/kits.');
+      expect(error.message).toBe('--all found no kit sources in .readyup/kits.');
+    });
+
+    it('resolves a nested source under --jit, as naming it would', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/ops/deploy.ts': '', '.readyup/kits/top.ts': '' });
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
+    });
+
+    it('omits a source that compile.exclude removes', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
+      const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: ['helpers/**'] };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+    });
+
+    it('omits a source that compile.include does not select', async ({ temp }) => {
+      temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
+      const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+    });
+
+    it('covers the same kits under --jit as a compiled --all', async ({ temp }) => {
+      temp.writeAll({
+        '.readyup/kits/ops/deploy.js': '',
+        '.readyup/kits/ops/deploy.ts': '',
+        '.readyup/kits/smoke.js': '',
+        '.readyup/kits/smoke.ts': '',
+      });
+
+      const compiled = await resolveAllKitSources(baseOptions);
+      const sources = await resolveAllKitSources({ ...baseOptions, jit: true });
+
+      expect(sources.map((entry) => entry.name)).toStrictEqual(compiled.map((entry) => entry.name));
     });
 
     it('resolves every kit that a --from directory holds, as naming each would', async ({ temp }) => {
