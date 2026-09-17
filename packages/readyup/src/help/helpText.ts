@@ -202,8 +202,15 @@ Options:
   --style <auto|plain|rich>          Output style (default: auto)
   --help, -h                         Show this help message
 
-Positional args accept relative paths (e.g., shared/deploy).
-Defaults to .readyup/kits/default.js when no source is given.
+Positional args accept relative paths (e.g., shared/deploy). A name holding a '..'
+segment, an absolute path, or a leading separator is rejected; use --file or
+--from dir: to run a kit from outside the kit directory.
+
+A name resolves against the config's compile.outDir, or compile.srcDir under --jit;
+--internal shifts it by internal.dir and internal.infix without changing that root.
+--all --jit runs the sources that compile.include and compile.exclude select, which
+is the set that rdy compile builds.
+Defaults to the kit named "default" when no source is given.
 
 To pass a positional argument that starts with a '-', place it at the end of the command
 after '--', as in: rdy run -- "--odd-kit-name"

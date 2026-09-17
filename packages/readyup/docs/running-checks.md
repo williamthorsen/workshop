@@ -18,16 +18,20 @@ rdy ops/deploy        # a kit compiled from a subdirectory
 
 A kit's name is its source's path below `compile.srcDir`, so a kit compiled from a subdirectory is named and run with that path, as [Compiling](publishing-kits.md#compiling) describes. `rdy list` reports every kit under the name that runs it.
 
+One rule locates a kit that a name selects: `rdy run <kit>` reads `compile.outDir` and `rdy run --jit <kit>` reads `compile.srcDir`. `--internal` shifts the name by `internal.dir` and the filename by `internal.infix`, leaving that root as it is. `.readyup/kits` stays the root for `--from`, `global`, and `npm:`, which name the layout that another project publishes.
+
+A name is relative to the directory that roots it. One holding a `..` segment, an absolute path, or a leading separator is rejected with exit `2`; to run a kit from outside the tree, name its file with `--file` or its directory with `--from dir:`.
+
 `--all` runs every kit in the source instead of naming them, as though each had been named:
 
 ```bash
 rdy run --all                 # every compiled kit in the project
-rdy run --all --jit           # every TypeScript kit source in .readyup/kits
+rdy run --all --jit           # every kit source that the compile settings select
 rdy run --all --from dir:kits # every kit in a directory
 rdy run --all --packages      # every kit that each listed package publishes
 ```
 
-The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that holds no kits fails with exit `2` rather than passing.
+The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. Under `--jit` the sources are the ones that `compile.include` and `compile.exclude` select, the same set that `rdy compile` builds, so the two forms cover the same kits and a module that the kits share is read as a kit by neither. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that holds no kits fails with exit `2` rather than passing.
 
 `--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already has a `:checklist` filter, is an error rather than a merge.
 
@@ -257,11 +261,11 @@ A kit does not run if it imports a symbol, or a `readyup` subpath, that the runn
 
 The remedy depends on where the kit is maintained:
 
-| Kit source                     | Remedy                                                  |
-| ------------------------------ | ------------------------------------------------------- |
-| This project's `.readyup/kits` | Run `rdy compile` to rebuild it                         |
-| An installed package           | Upgrade the package to a release built for this readyup |
-| A URL or remote repository     | Ask the kit's publisher to recompile it                 |
+| Kit source                 | Remedy                                                  |
+| -------------------------- | ------------------------------------------------------- |
+| This project's own kits    | Run `rdy compile` to rebuild it                         |
+| An installed package       | Upgrade the package to a release built for this readyup |
+| A URL or remote repository | Ask the kit's publisher to recompile it                 |
 
 An import binding no name that the runner could be asked for -- a namespace import, a default import, a dynamic import -- has its names left unchecked. Its subpath is still checked, so a namespace import of a subpath that readyup does not publish fails like any other. A dynamic import of a computed specifier, such as a template literal with substitutions, names no single subpath and is not checked at all.
 
@@ -280,10 +284,14 @@ The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy 
 Each section names the command that runs the kits beneath it:
 
 ```
-── Internal
+── Sources
    To run: rdy run --jit <kit>[:<checklist>,...]
 📄 deploy
 📄 smoke
+
+── Internal
+   To run: rdy run --jit --internal <kit>[:<checklist>,...]
+📄 audit
 
 ── Compiled
    To run: rdy run <kit>[:<checklist>,...]
@@ -294,7 +302,9 @@ Each section names the command that runs the kits beneath it:
    📋 health
 ```
 
-Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Internal** lists none, and neither does a kit read from disk without a manifest.
+**Sources** holds the sources that `compile.include` and `compile.exclude` select under `compile.srcDir`, which are the kits that `rdy compile` builds and `rdy run --jit` runs. **Internal** holds the bucket that `internal.dir` and `internal.infix` declare, and it appears only where one of those keys is set; without them, `--internal` resolves a name exactly as plain `--jit` does, so the section would restate **Sources**.
+
+Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Sources** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
 Kits from configured packages get their own section, each named package-first so a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config omits is named as a candidate:
 
@@ -368,7 +378,7 @@ A plain `rdy list` and `rdy list --packages` read the settings from the file nam
    📋 self-containment
 ```
 
-Every listed kit is runnable by the command above it, from wherever the sweep was run. The kits of a project that sets a custom `compile.outDir` are run by file instead, since that is the only resolution path that respects it, and its rows are named by a path that resolves from the sweep root:
+Every listed kit is runnable by the command above it, from wherever the sweep was run. The kits of a project that sets a custom `compile.outDir` are run by file instead, since naming one would resolve it against the config of the directory that the reader stands in rather than the config that put the kit where it is, and its rows are named by a path that resolves from the sweep root:
 
 ```
 ━━ 📁 packages/tooling/
