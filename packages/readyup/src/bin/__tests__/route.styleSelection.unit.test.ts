@@ -3,9 +3,9 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
 import { plainFormatter } from '../../layout/plainFormatter.ts';
-import { STYLE_ENV_VAR } from '../../layout/resolveStyle.ts';
 import { richFormatter } from '../../layout/richFormatter.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
+import { STYLE_ENV_VAR } from '../route.ts';
 import { routeCli } from '../test-utils/routeCli.ts';
 
 /** A kit whose single check passes. */
@@ -109,6 +109,13 @@ describe('a style named ahead of the command', () => {
     const { exitCode } = await route(['--style']);
 
     expect(exitCode).toBe(2);
+  });
+
+  it('rejects a flag standing where its value belongs, and does not drop that flag', async () => {
+    const { exitCode, stdout } = await route(['--style', '--json', 'verify', '--manifest', 'manifest.json']);
+
+    expect(exitCode).toBe(2);
+    expect(stdout).toContain('--style requires a value');
   });
 });
 
