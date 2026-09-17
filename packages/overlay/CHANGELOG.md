@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.3 — 2026-09-17
+
+### 🧪 Tests
+
+- Move every hand-rolled temp-directory fixture onto createTempTree (#480)
+
+  - Moves the twenty-six readyup and overlay suites that still built a temporary directory of their own onto `createTempTree` from `@williamthorsen/toolbelt.testing`, with `pointCwdAt` for the suites that move the working directory, leaving the repo one temporary-directory idiom rather than two.
+  - Fixes four suites whose scratch directory took a name fixed for the whole file, so a crashed run left a directory that the next run reused rather than replaced, three of them inside `packages/readyup` and covered by no `.gitignore` entry.
+
 ## 0.4.2 — 2026-09-08
 
 ### 📦 Dependencies

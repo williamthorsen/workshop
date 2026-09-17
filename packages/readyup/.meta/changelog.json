@@ -1,5 +1,64 @@
 [
   {
+    "version": "0.38.0",
+    "date": "2026-09-17",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Name kits compiled from nested source directories, and enumerate them (#483)",
+            "body": "- Changes the name of a kit compiled from a subdirectory of `compile.srcDir` to its path below that directory, so a kit compiled from `ops/deploy.ts` is named `ops/deploy` and runs under that name, while a kit at the top of `compile.srcDir` keeps the name that it has.\n- Extends bundle enumeration to the whole kit directory, so `rdy list`, `rdy run --all`, `rdy list --from <dir>`, and the kits of a configured package include nested kits when no manifest records them.\n- Allows `rdy compile <file>` under `--config`, naming that kit from the named config's `compile.outDir` so that it matches the entry that a sweep of the same source records.\n\nMigration: Rename each nested kit to its full path wherever a script, a config, or a manifest reader names it, so that a kit compiled from `ops/deploy.ts` is `ops/deploy` rather than `deploy`. A nested kit could not be run by name before this change, so only `--all` runs and manifest readers observed the old names.",
+            "breaking": true,
+            "migration": "Rename each nested kit to its full path wherever a script, a config, or a manifest reader names it, so that a kit compiled from `ops/deploy.ts` is `ops/deploy` rather than `deploy`. A nested kit could not be run by name before this change, so only `--all` runs and manifest readers observed the old names.",
+            "hash": "35e06b042e41ecb3ea35a1a6a317f1409d068ff7"
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Prevent a value preview from ending in a lone surrogate (#479)",
+            "body": "- Fixes a value preview in a `rdy` check diagnostic that truncation cut into an emoji, an accented character, or another cluster stored as more than one UTF-16 code unit; a split emoji rendered as a replacement character.",
+            "hash": "18efe377dcb07b0f5d336cffda92aeb816ddec0c"
+          },
+          {
+            "description": "Resolve a project's kits against its configured directories (#485)",
+            "body": "- Fixes `rdy run <kit>` and `rdy run --jit <kit>`, which looked only in the hardcoded `.readyup/kits` and so found no kit in a project whose `compile.outDir` or `compile.srcDir` names another directory.\n- Corrects `rdy run --all --jit`, which read every `.ts` file at the top level of the kits directory rather than the sources that `compile.include` and `compile.exclude` select, skipping a kit compiled from a nested source and running a shared helper module as a kit.\n- Stops a kit name that is absolute or that holds a `..` segment from loading a module outside the kits tree, as `rdy run ../../../../../../etc/hosts` did: `rdy run` now exits with a usage error naming `--file` and `--from dir:` as the ways to run a kit from elsewhere.\n- Splits `rdy list` into a \"Sources\" section and an \"Internal\" section, each headed by the command that runs its rows, since a project that set `internal.dir` or `internal.infix` previously got no row for a source that `rdy run --jit` runs.\n\nMigration: In a project that sets both `internal.dir` and a `compile.srcDir` outside `.readyup/kits`, move the internal kits under `compile.srcDir`, or rewrite `internal.dir` as their path relative to it, because `internal.dir` now resolves against the compile directories rather than against `.readyup/kits`. A project that leaves `compile.srcDir` at its default needs no edit.",
+            "breaking": true,
+            "migration": "In a project that sets both `internal.dir` and a `compile.srcDir` outside `.readyup/kits`, move the internal kits under `compile.srcDir`, or rewrite `internal.dir` as their path relative to it, because `internal.dir` now resolves against the compile directories rather than against `.readyup/kits`. A project that leaves `compile.srcDir` at its default needs no edit.",
+            "hash": "6302dc5cbd2747aba939aececc6070d899392c91"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replace the local style resolver and glyph model with toolbelt.terminal (#486)",
+            "body": "- Replaces readyup's local style resolver (`layout/resolveStyle.ts`) and glyph tables (`layout/richFormatter.ts`, `layout/plainFormatter.ts`) with `resolveOutputStyle` and `defineGlyphSet` from `@williamthorsen/toolbelt.terminal`, defining one glyph set in `layout/formatter.ts` that keeps the existing token names, emoji, and plain words.\n- Changes style selection to the shared resolver's rules: `auto` renders plain under `TERM=linux`, and `rdy` reports a spaced `--style` followed by a dash-led argument as `--style requires a value` rather than as an unknown style.",
+            "hash": "a36746b7a7b26774c524c16eb40b4115f8212ac6"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Move every hand-rolled temp-directory fixture onto createTempTree (#480)",
+            "body": "- Moves the twenty-six readyup and overlay suites that still built a temporary directory of their own onto `createTempTree` from `@williamthorsen/toolbelt.testing`, with `pointCwdAt` for the suites that move the working directory, leaving the repo one temporary-directory idiom rather than two.\n- Fixes four suites whose scratch directory took a name fixed for the whole file, so a crashed run left a directory that the next run reused rather than replaced, three of them inside `packages/readyup` and covered by no `.gitignore` entry.",
+            "hash": "f1dabe64495969ed98f48f856de5b2402a2785eb"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.37.0",
     "date": "2026-09-15",
     "sections": [

@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.4.3",
+    "date": "2026-09-17",
+    "sections": [
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Move every hand-rolled temp-directory fixture onto createTempTree (#480)",
+            "body": "- Moves the twenty-six readyup and overlay suites that still built a temporary directory of their own onto `createTempTree` from `@williamthorsen/toolbelt.testing`, with `pointCwdAt` for the suites that move the working directory, leaving the repo one temporary-directory idiom rather than two.\n- Fixes four suites whose scratch directory took a name fixed for the whole file, so a crashed run left a directory that the next run reused rather than replaced, three of them inside `packages/readyup` and covered by no `.gitignore` entry.",
+            "hash": "f1dabe64495969ed98f48f856de5b2402a2785eb"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.2",
     "date": "2026-09-08",
     "sections": [
@@ -10,6 +27,7 @@
           {
             "description": "Upgrade all dependencies and clear the resulting lint and test failures (#447)",
             "body": "- Upgrades every dependency to its latest version and edits source and tests across `compositor`, `overlay`, and `readyup` to match.\n- Moves the `Workspace` interface into `buildWorkspaceFromPackageJson.ts`, clearing a type-only cycle violation.\n- Documents in ReadyUp's README that each published schema document names its payload under `$defs` behind a root `$ref`, and that `schemaVersion` governs the payload's fields rather than the document's rendering.\n\nMigration: Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
+            "migration": "Where code reads `required` or `properties` off a document published under `readyup/schemas`, follow the root `$ref` into `$defs` instead, or read the document through a JSON Schema validator.",
             "hash": "321550f3899dd500837a631c5aa78d475352043e"
           }
         ]
@@ -50,6 +68,7 @@
             "description": "Rename ScriptsSummary.ran to ranCount (#419)",
             "body": "Renames the `ran` field of `OverlayResult.scripts` to `ranCount` for clarity.\n\nMigration: Consumers reading `scripts.ran`, whether from `--json` output or from the `overlay()` return value, read `scripts.ranCount` instead.",
             "breaking": true,
+            "migration": "Consumers reading `scripts.ran`, whether from `--json` output or from the `overlay()` return value, read `scripts.ranCount` instead.",
             "hash": "d6aacd7c4f3ba2285c5f6c8fa8bf6be540f32c9e"
           }
         ]
