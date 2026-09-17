@@ -37,14 +37,14 @@ vi.mock(import('../../compile/loadEsbuild.ts'), () => ({
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import { VERSION } from '../../version.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
-const OK = richFormatter.tokens.passed.glyph;
-const FAILED = richFormatter.tokens.failedError.glyph;
-const UNVERIFIED = richFormatter.tokens.skippedOptional.glyph;
-const FIX = richFormatter.tokens.fix.glyph;
+const OK = richFormatter.tokens.passed.text;
+const FAILED = richFormatter.tokens.failedError.text;
+const UNVERIFIED = richFormatter.tokens.skippedOptional.text;
+const FIX = richFormatter.tokens.fix.text;
 
 describe(verifyCommand, () => {
   beforeEach(() => {

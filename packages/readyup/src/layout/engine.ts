@@ -1,8 +1,7 @@
 import type { OutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
 
+import { plainFormatter, richFormatter } from './formatter.ts';
 import { createLayoutEngine, type LayoutEngine } from './layoutEngine.ts';
-import { plainFormatter } from './plainFormatter.ts';
-import { richFormatter } from './richFormatter.ts';
 
 /** One engine per style, each bound to that style's vocabulary. */
 const engines: Record<OutputStyle, LayoutEngine> = {

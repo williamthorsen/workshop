@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SummaryCounts } from '../../kits/types.ts';
-import { TOKEN_NAMES, type TokenName } from '../formatter.ts';
+import { plainFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../layoutEngine.ts';
-import { plainFormatter } from '../plainFormatter.ts';
-import { richFormatter } from '../richFormatter.ts';
 
 /** Tokens naming a check that did not run. */
 const SKIPPED_TOKENS: TokenName[] = ['blockedPrecondition', 'skippedOptional'];
 
+/** Columns that the engine reserves for a rich token: its two cells and the space after them. */
+const RICH_GUTTER = 3;
+
 const engine = createLayoutEngine(richFormatter);
 
-const PASSED = richFormatter.tokens.passed.glyph;
-const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
-const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
-const SKIPPED = richFormatter.tokens.skippedOptional.glyph;
+const PASSED = richFormatter.tokens.passed.text;
+const FAILED_ERROR = richFormatter.tokens.failedError.text;
+const FAILED_WARN = richFormatter.tokens.failedWarn.text;
+const SKIPPED = richFormatter.tokens.skippedOptional.text;
 
 describe('formatCheckLine', () => {
   it('leads with the token and pads to the gutter', () => {
@@ -119,7 +120,7 @@ describe('formatCheckLine', () => {
         measureNameColumn(engine.formatCheckLine({ token, name: 'check', depth: 2 })),
       );
 
-      expect(new Set(columns)).toStrictEqual(new Set([richFormatter.gutter * 3]));
+      expect(new Set(columns)).toStrictEqual(new Set([RICH_GUTTER * 3]));
     });
   });
 });
@@ -304,8 +305,8 @@ describe('formatCounts', () => {
   it('renders no per-field tokens', () => {
     const counts = makeCounts({ passed: 1, errors: 1, blocked: 1, optional: 1, worstSeverity: 'error' });
 
-    for (const { glyph } of Object.values(richFormatter.tokens)) {
-      expect(engine.formatCounts(counts)).not.toContain(glyph);
+    for (const { text } of Object.values(richFormatter.tokens)) {
+      expect(engine.formatCounts(counts)).not.toContain(text);
     }
   });
 });
@@ -347,11 +348,11 @@ describe('formatSummaryTable', () => {
   /** Returns a rendered table line's width in display columns, its leading token counted as one gutter. */
   function measureWidth(line: string): number {
     const glyph = String.fromCodePoint(line.codePointAt(0) ?? 0);
-    const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === glyph);
+    const token = Object.values(richFormatter.tokens).find((entry) => entry.text === glyph);
     if (token === undefined) return line.length;
 
-    const rendered = glyph + ' '.repeat(richFormatter.gutter - token.width);
-    return richFormatter.gutter + line.slice(rendered.length).length;
+    const rendered = glyph + ' '.repeat(RICH_GUTTER - token.width);
+    return RICH_GUTTER + line.slice(rendered.length).length;
   }
 
   it('renders a heading, two rules, one row per checklist, and a total', () => {
@@ -511,14 +512,14 @@ describe('token and glyph', () => {
   });
 
   it('returns a glyph and one space for mid-line placement', () => {
-    expect(engine.inlineGlyph('kit')).toBe(`${richFormatter.tokens.kit.glyph} `);
+    expect(engine.inlineGlyph('kit')).toBe(`${richFormatter.tokens.kit.text} `);
     expect(engine.inlineGlyph('skippedOptional')).toBe(`${SKIPPED} `);
   });
 
   it('returns an empty string for a token given no glyph by the formatter, so no orphan space is left behind', () => {
     const glyphless = createLayoutEngine({
       ...richFormatter,
-      tokens: { ...richFormatter.tokens, kit: { glyph: '', width: 0 } },
+      tokens: { ...richFormatter.tokens, kit: { text: '', width: 0 } },
     });
 
     expect(glyphless.inlineGlyph('kit')).toBe('');
@@ -565,7 +566,7 @@ function measureNameColumn(line: string): number {
   if (groups === undefined) throw new Error(`Not a token-led line: ${JSON.stringify(line)}`);
   const { glyph, indent, pad } = groups;
 
-  const token = Object.values(richFormatter.tokens).find((entry) => entry.glyph === glyph);
+  const token = Object.values(richFormatter.tokens).find((entry) => entry.text === glyph);
   if (token === undefined) throw new Error(`Unknown glyph: ${JSON.stringify(glyph)}`);
 
   return (indent?.length ?? 0) + token.width + (pad?.length ?? 0);

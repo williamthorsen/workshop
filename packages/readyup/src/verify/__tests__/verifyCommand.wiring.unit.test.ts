@@ -2,7 +2,7 @@ import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@willia
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
 import { hashBytes, hashProjection } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
@@ -12,8 +12,8 @@ import { verifyCommand } from '../verifyCommand.ts';
  * a tempdir, without mocking the drift helper. Unit tests cover the branches; this locks in the wiring
  * (e.g., that `manifestDir` is threaded through correctly).
  */
-const OK = richFormatter.tokens.passed.glyph;
-const FAILED = richFormatter.tokens.failedError.glyph;
+const OK = richFormatter.tokens.passed.text;
+const FAILED = richFormatter.tokens.failedError.text;
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(

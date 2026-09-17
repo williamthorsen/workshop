@@ -1,43 +1,57 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SummaryCounts } from '../../kits/types.ts';
-import { TOKEN_NAMES } from '../formatter.ts';
+import { plainFormatter, richFormatter, TOKEN_NAMES } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
-import { plainFormatter } from '../plainFormatter.ts';
 
 /** Every printable ASCII character, plus the newline that separates rendered lines. */
 const PRINTABLE_ASCII = /^[\u{20}-\u{7E}\n]*$/u;
+
+/** Glyphs that no token may use, each stripped of any variation selector. */
+const RETIRED_GLYPHS = ['\u{1F9F0}', '\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}'];
 
 /** Tokens that name what a thing is rather than reporting an outcome. */
 const ROLE_TOKENS = ['checklist', 'kit', 'kitSource', 'sourceDirectory', 'sourcePackage', 'sourceRemote'] as const;
 
 const engine = createLayoutEngine(plainFormatter);
 
-const entries = TOKEN_NAMES.map((name) => ({ name, ...plainFormatter.tokens[name] }));
+const richEntries = TOKEN_NAMES.map((name) => ({ name, ...richFormatter.tokens[name] }));
 
 describe('plainFormatter', () => {
-  it('supplies a token for every name in the vocabulary and no others', () => {
-    expect(new Set(Object.keys(plainFormatter.tokens))).toStrictEqual(new Set<string>(TOKEN_NAMES));
-  });
-
   it('distinguishes the heading levels by rule character', () => {
     expect(plainFormatter.rules.kit).not.toBe(plainFormatter.rules.section);
   });
 
-  it('leaves room for a separating space after the widest token', () => {
-    const widest = Math.max(...entries.map((entry) => entry.width));
-
-    expect(plainFormatter.gutter).toBeGreaterThan(widest);
-  });
-
-  describe.each(entries)('$name', ({ glyph, width }) => {
-    it('declares the width that it occupies', () => {
-      expect(width).toBe(glyph.length);
-    });
-  });
-
   it.each(ROLE_TOKENS)('gives %s no glyph, so it is omitted rather than substituted', (token) => {
-    expect(plainFormatter.tokens[token].glyph).toBe('');
+    expect(plainFormatter.tokens[token].text).toBe('');
+  });
+});
+
+describe('richFormatter', () => {
+  it('retires every glyph withdrawn from use', () => {
+    const glyphs = richEntries.map((entry) => entry.text);
+
+    for (const retired of RETIRED_GLYPHS) {
+      expect(glyphs).not.toContain(retired);
+    }
+  });
+
+  it('distinguishes the heading levels by rule weight', () => {
+    expect(richFormatter.rules.kit).not.toBe(richFormatter.rules.section);
+  });
+
+  // Anchoring on the property rather than the glyph verifies the two-cell width assumed by the label.
+  it('leads a hint with an emoji that renders wide unaided', () => {
+    expect(richFormatter.hintPrefix).toBe('💡 Hint:');
+    expect(richFormatter.hintPrefix).toMatch(/^\p{Emoji_Presentation} /u);
+  });
+
+  describe.each(richEntries)('$name', ({ text }) => {
+    // `Emoji_Presentation` is the property that makes a code point occupy two cells unaided, which is the
+    // width that the engine pads against. Anchoring to one property also rejects multi-code-point sequences.
+    it('is one code point that renders wide unaided', () => {
+      expect(text).toMatch(/^\p{Emoji_Presentation}$/u);
+    });
   });
 });
 
@@ -97,7 +111,7 @@ describe('alignment', () => {
       measureNameColumn(engine.formatCheckLine({ token, name: 'check', depth: 2 })),
     );
 
-    expect(new Set(columns)).toStrictEqual(new Set([plainFormatter.gutter * 3]));
+    expect(new Set(columns)).toStrictEqual(new Set([18]));
   });
 
   it('holds the column through three levels of nesting, widest token included', () => {

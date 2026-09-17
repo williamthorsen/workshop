@@ -1,4 +1,5 @@
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
+import { measureGlyphColumn } from '@williamthorsen/toolbelt.terminal/candidate';
 
 import type { Severity, SummaryCounts } from '../kits/types.ts';
 import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
@@ -111,8 +112,11 @@ export interface LayoutEngine {
   token(token: TokenName): string;
 }
 
-/** Returns string builders bound to `formatter`, each deriving its spacing from the formatter's gutter. */
+/** Returns string builders bound to `formatter`, each deriving its spacing from the gutter that its tokens need. */
 export function createLayoutEngine(formatter: Formatter): LayoutEngine {
+  // Columns from the start of a status token to the start of the name beside it: the widest token and one space.
+  const gutter = measureGlyphColumn(formatter.tokens) + 1;
+
   /**
    * Returns `segments` as one heading, each behind its role's glyph and separated by the segment separator.
    *
@@ -180,11 +184,11 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * Blank lines within it stay blank rather than becoming trailing whitespace.
    */
   function formatReasonBlock(reasons: string[], depth = 0): string[] {
-    const gutter = indent(depth + 1);
+    const margin = indent(depth + 1);
     return reasons.map((reason) =>
       reason
         .split('\n')
-        .map((line) => (line === '' ? line : `${gutter}${line}`))
+        .map((line) => (line === '' ? line : `${margin}${line}`))
         .join('\n'),
     );
   }
@@ -213,7 +217,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     const totalBody = buildCountBody(totals, totalDurationMs);
 
     const bodyWidth = Math.max(...entries.map((entry) => entry.body.length), totalBody.length);
-    const rule = formatter.rules.section.repeat(formatter.gutter + bodyWidth);
+    const rule = formatter.rules.section.repeat(gutter + bodyWidth);
 
     return [
       formatHeading(SUMMARY_HEADING, 'kit'),
@@ -226,7 +230,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   /** Returns `depth` gutters' worth of spaces. */
   function indent(depth: number): string {
-    return ' '.repeat(formatter.gutter * depth);
+    return ' '.repeat(gutter * depth);
   }
 
   /**
@@ -235,14 +239,14 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * A formatter that gives the token no glyph returns an empty string, so the sentence closes up with no space.
    */
   function inlineGlyph(name: TokenName): string {
-    const { glyph } = formatter.tokens[name];
-    return glyph === '' ? '' : `${glyph} `;
+    const { text } = formatter.tokens[name];
+    return text === '' ? '' : `${text} `;
   }
 
   /** Returns a token's glyph padded to the gutter, so what follows starts at a fixed column. */
   function token(name: TokenName): string {
-    const { glyph: character, width } = formatter.tokens[name];
-    return character + ' '.repeat(formatter.gutter - width);
+    const { text, width } = formatter.tokens[name];
+    return text + ' '.repeat(gutter - width);
   }
 
   // -- Helpers --

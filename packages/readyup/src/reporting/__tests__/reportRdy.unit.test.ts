@@ -8,16 +8,16 @@ import type {
   SkippedResult,
   SummaryCounts,
 } from '../../kits/types.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import { countResults, reportRdy, selectVisibleResults } from '../reportRdy.ts';
 
-const PASSED = richFormatter.tokens.passed.glyph;
-const FAILED_ERROR = richFormatter.tokens.failedError.glyph;
-const FAILED_WARN = richFormatter.tokens.failedWarn.glyph;
-const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.glyph;
-const SKIPPED_OPTIONAL = richFormatter.tokens.skippedOptional.glyph;
-const BLOCKED = richFormatter.tokens.blockedPrecondition.glyph;
-const FIX = richFormatter.tokens.fix.glyph;
+const PASSED = richFormatter.tokens.passed.text;
+const FAILED_ERROR = richFormatter.tokens.failedError.text;
+const FAILED_WARN = richFormatter.tokens.failedWarn.text;
+const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.text;
+const SKIPPED_OPTIONAL = richFormatter.tokens.skippedOptional.text;
+const BLOCKED = richFormatter.tokens.blockedPrecondition.text;
+const FIX = richFormatter.tokens.fix.text;
 
 /** A duration above the engine's floor, so lines eligible for one show it. */
 const SLOW_MS = 250;

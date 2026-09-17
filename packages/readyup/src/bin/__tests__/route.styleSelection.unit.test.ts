@@ -2,8 +2,7 @@ import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/can
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
-import { plainFormatter } from '../../layout/plainFormatter.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { plainFormatter, richFormatter } from '../../layout/formatter.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
 import { STYLE_ENV_VAR } from '../route.ts';
 import { routeCli } from '../test-utils/routeCli.ts';
@@ -13,8 +12,8 @@ const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ na
 
 const COMPILED_BYTES = Buffer.from(PASSING_KIT);
 
-const PLAIN_PASS = plainFormatter.tokens.passed.glyph;
-const RICH_PASS = richFormatter.tokens.passed.glyph;
+const PLAIN_PASS = plainFormatter.tokens.passed.text;
+const RICH_PASS = richFormatter.tokens.passed.text;
 
 /**
  * Every command that renders output, with arguments that make it produce some against the fixture.
@@ -171,6 +170,7 @@ describe('detection', () => {
   it('chooses rich for a terminal outside CI', async () => {
     vi.stubEnv(STYLE_ENV_VAR, undefined);
     vi.stubEnv('CI', undefined);
+    vi.stubEnv('TERM', 'xterm-256color');
 
     const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
 

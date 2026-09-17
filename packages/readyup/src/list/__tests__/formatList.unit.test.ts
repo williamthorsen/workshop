@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { KitPackageGroup } from '../../installed-packages/collectKitPackageGroups.ts';
 import type { PackageKit } from '../../installed-packages/expandConfiguredPackages.ts';
 import { setStyle } from '../../layout/engine.ts';
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import {
   formatConsumerView,
   formatEmpty,
@@ -20,11 +20,11 @@ import {
 } from '../formatList.ts';
 import { findPackageCommand } from '../test-utils/findPackageCommand.ts';
 
-const COMPILED = richFormatter.tokens.kit.glyph;
-const INTERNAL = richFormatter.tokens.kitSource.glyph;
-const DIRECTORY = richFormatter.tokens.sourceDirectory.glyph;
-const PACKAGE = richFormatter.tokens.sourcePackage.glyph;
-const CHECKLIST = richFormatter.tokens.checklist.glyph;
+const COMPILED = richFormatter.tokens.kit.text;
+const INTERNAL = richFormatter.tokens.kitSource.text;
+const DIRECTORY = richFormatter.tokens.sourceDirectory.text;
+const PACKAGE = richFormatter.tokens.sourcePackage.text;
+const CHECKLIST = richFormatter.tokens.checklist.text;
 
 describe(formatOwnerView, () => {
   it('renders only the Sources section when compiled kits are empty', () => {

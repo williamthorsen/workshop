@@ -16,15 +16,15 @@ vi.mock(import('../validateCompiledOutput.ts'), () => ({
   validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
-import { richFormatter } from '../../layout/richFormatter.ts';
+import { richFormatter } from '../../layout/formatter.ts';
 import { ManifestSchema } from '../../manifest/manifestSchema.ts';
 import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
 import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
 
-const ICON_PASSED = richFormatter.tokens.passed.glyph;
-const ICON_DRIFT = richFormatter.tokens.failedWarn.glyph;
+const ICON_PASSED = richFormatter.tokens.passed.text;
+const ICON_DRIFT = richFormatter.tokens.failedWarn.text;
 
 /** Bundle contents as the compile wrote them. */
 const COMPILED = 'export default {};';
