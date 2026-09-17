@@ -11,9 +11,9 @@ const SOURCE_EXTENSION = '.ts';
  * Returns the sorted names of the kits that a project's compile settings select under `srcDir`, or `[]`
  * where `srcDir` does not exist.
  *
- * The selection is `collectSourceFiles`', so what `rdy run --all --jit` and `rdy list` report is what
- * `rdy compile` would build. A module that the kits share is kept out of both by the same `include` or
- * `exclude` that keeps it out of the sweep.
+ * The selection is the one that `collectSourceFiles` applies, so what `rdy run --all --jit` and `rdy list`
+ * report is what `rdy compile` would build. A module that the kits share is kept out of both by the same
+ * `include` or `exclude` that keeps it out of the sweep.
  *
  * A missing directory yields no names rather than an error, which leaves a caller free to report the
  * emptiness in its own terms. Any other filesystem error, such as `EACCES`, is rethrown.

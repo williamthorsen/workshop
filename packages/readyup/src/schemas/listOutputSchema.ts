@@ -85,6 +85,13 @@ export const ListKitEntrySchema = z
  * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the
  * two apart.
  *
+ * A row is an invocation rather than a file, so two rows may report the same `path`. A source under
+ * `internal.dir` that `compile.include` and `compile.exclude` also select is one: it is reported once
+ * under its path below `compile.srcDir` with `internal: false`, which `rdy run --jit <kit>` runs, and once
+ * under its name within the bucket with `internal: true`, which `rdy run --jit --internal <kit>` runs. A
+ * consumer that executes every row executes that file twice; one that wants files rather than invocations
+ * groups on `path`.
+ *
  * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
  * they are candidates to add rather than kits. It accompanies the owner listing, which names them without
  * their kits; every `--packages` listing reports those kits as rows and emits no candidate list.
