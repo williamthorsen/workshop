@@ -4,8 +4,9 @@ import process from 'node:process';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
-import { KITS_DIR } from '../kits/kitsDir.ts';
+import { resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { collectCompiledKits } from '../list/collectCompiledKits.ts';
 import { collectSourceKits } from '../list/collectSourceKits.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
@@ -16,8 +17,8 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
 
 interface ResolveAllKitSourcesOptions {
-  /** The config's `compile.outDir`; absent where no config was loaded. */
-  compileOutDir?: string | undefined;
+  /** The config's `compile` block; absent where no config was loaded. */
+  compile?: ResolvedRdyConfig['compile'] | undefined;
   configuredPackages?: string[] | undefined;
   fromValue: string | undefined;
   internal: boolean;
@@ -53,19 +54,21 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
     return resolveNamedKits(options, names, `--all found no kits in ${fromValue}.`);
   }
 
+  const root = resolveKitRoot(options.compile, jit);
+
   if (internal) {
-    const dir = path.join(KITS_DIR, options.internalDir ?? '.');
+    const dir = path.join(root, options.internalDir ?? '.');
     const internalExtension = options.internalInfix === undefined ? extension : `.${options.internalInfix}${extension}`;
     const names = readKitNames(dir, internalExtension);
     return resolveNamedKits(options, names, `--all found no *${internalExtension} kits in ${dir}.`);
   }
 
   if (jit) {
-    const names = readKitNames(KITS_DIR, extension);
-    return resolveNamedKits(options, names, `--all found no *${extension} kits in ${KITS_DIR}.`);
+    const names = readKitNames(root, extension);
+    return resolveNamedKits(options, names, `--all found no *${extension} kits in ${root}.`);
   }
 
-  return resolveCompiledKits(path.resolve(options.compileOutDir ?? KITS_DIR));
+  return resolveCompiledKits(path.resolve(root));
 }
 
 // region | Helpers
@@ -128,6 +131,7 @@ function resolveNamedKits(
 
   return resolveKitSources({
     checklists: undefined,
+    compile: options.compile,
     filePath: undefined,
     fromValue: options.fromValue,
     internal: options.internal,

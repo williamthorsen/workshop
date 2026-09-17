@@ -4,7 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { usageError } from '../errors/RdyError.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
-import { KITS_DIR } from '../kits/kitsDir.ts';
+import { type CompileDirectories, resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
@@ -25,6 +25,7 @@ export function resolveKitSources({
   internalInfix,
   packages,
   configuredPackages,
+  compile,
 }: {
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -37,6 +38,8 @@ export function resolveKitSources({
   internalInfix?: string | undefined;
   packages?: boolean;
   configuredPackages?: string[] | undefined;
+  /** The config's compile directories; absent where no config was loaded, which is the external-source path. */
+  compile?: CompileDirectories | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
     return [
@@ -80,11 +83,13 @@ export function resolveKitSources({
   }
 
   // Default/internal case: Resolve from the current repo.
+  const root = resolveKitRoot(compile, jit);
+
   if (internal) {
     return specs.map((spec) => ({
       name: spec.kitName,
       source: {
-        path: path.join(KITS_DIR, internalDir ?? '.', buildKitFilename(spec.kitName, internalInfix, extension)),
+        path: path.join(root, internalDir ?? '.', buildKitFilename(spec.kitName, internalInfix, extension)),
       },
       checklists: spec.checklists,
     }));
@@ -92,7 +97,7 @@ export function resolveKitSources({
 
   return specs.map((spec) => ({
     name: spec.kitName,
-    source: { path: path.join(KITS_DIR, `${spec.kitName}${extension}`) },
+    source: { path: path.join(root, `${spec.kitName}${extension}`) },
     checklists: spec.checklists,
   }));
 }

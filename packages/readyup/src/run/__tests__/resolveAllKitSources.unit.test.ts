@@ -82,7 +82,10 @@ describe(resolveAllKitSources, () => {
     it('reaches a relocated output directory through the paths that the manifest records', async ({ temp }) => {
       temp.writeJson('.readyup/manifest.json', { version: 1, kits: [{ name: 'lint', path: '../dist/kits/lint.js' }] });
 
-      const entries = await resolveAllKitSources({ ...baseOptions, compileOutDir: 'dist/kits' });
+      const entries = await resolveAllKitSources({
+        ...baseOptions,
+        compile: { srcDir: '.readyup/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
+      });
 
       expect(entries).toStrictEqual([
         { name: 'lint', source: { path: path.join('dist', 'kits', 'lint.js') }, checklists: [] },
@@ -120,6 +123,16 @@ describe(resolveAllKitSources, () => {
       const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags });
 
       expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
+    });
+
+    it('roots --internal on the configured source directory', async ({ temp }) => {
+      temp.writeAll({ 'kits/src/internal/audit.ts': '', '.readyup/kits/internal/stale.ts': '' });
+      const compile = { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] };
+      const internalFlags = { internal: true, internalDir: 'internal', jit: true };
+
+      const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
+
+      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }));
     });
 
     it('fails naming the pattern and directory when the kits directory holds no source', async () => {

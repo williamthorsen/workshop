@@ -172,6 +172,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
     config === undefined
       ? undefined
       : {
+          compile: config.compile,
           internalDir: config.internal.dir,
           internalInfix: config.internal.infix,
           configuredPackages: config.packages,
@@ -186,7 +187,6 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         packages: parsed.packages,
         remote,
         ...configFields,
-        ...(config !== undefined && { compileOutDir: config.compile.outDir }),
       })
     : resolveKitSources({
         filePath: parsed.filePath,
