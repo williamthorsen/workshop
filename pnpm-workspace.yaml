@@ -14,7 +14,7 @@ catalog:
   '@williamthorsen/toolbelt.testing': 0.6.1
   '@williamthorsen/toolbelt.vitest': 0.10.1
   esbuild: 0.28.2
-  zod: 4.6.1
+  zod: 4.6.5
 
 savePrefix: ''
 
