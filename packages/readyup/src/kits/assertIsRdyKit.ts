@@ -17,8 +17,8 @@ const FixLocationSchema = z.enum(['inline', 'end'], {
 /**
  * Schema for a value that must be a function.
  *
- * Zod 4 offers no composable `z.function()`, so the guard is a `z.custom`. A bare `z.custom` reports
- * "Invalid input", which tells an author nothing, so the message names the type actually supplied.
+ * Zod 4 offers no composable `z.function()`, so the guard is a `z.custom`. Because a bare `z.custom`
+ * reports "Invalid input", which tells an author nothing, the message names the type actually supplied.
  */
 const FunctionSchema = z.custom<(...args: never[]) => unknown>((value) => typeof value === 'function', {
   error: (issue) => `expected a function, got ${describeType(issue.input)}`,
@@ -34,7 +34,7 @@ const DOTTED_NUMERIC_VERSION = /^\d+(?:\.\d+){0,2}$/;
  * Schema for the readyup version that a kit names as its floor.
  *
  * A floor is authored rather than read off an installed package, so it takes no range prefix and no
- * prerelease tail; rejecting those is what keeps a typo from silently never matching. A fourth
+ * prerelease tail; rejecting those keeps a typo from silently never matching. A fourth
  * segment is rejected for the mirror reason: The comparison reads three, and would discard it.
  */
 const MinReadyupVersionSchema = z
@@ -43,7 +43,7 @@ const MinReadyupVersionSchema = z
     error: (issue) => `expected a dotted numeric version, got ${previewValue(issue.input)}`,
   });
 
-/** Schema for the name every check and checklist must have. */
+/** Schema for the name that every check and checklist must have. */
 const NameSchema = z.string('expected a non-empty string').min(1, 'expected a non-empty string');
 
 /**
@@ -54,7 +54,7 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
  *
  * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
  * `fix` from the shape would stop it being type-checked without stopping it being invoked. The
- * preprocess is what leaves an accessor-valued one unread.
+ * preprocess leaves an accessor-valued one unread.
  *
  * The annotation breaks an inference cycle: TypeScript cannot infer a type that recurses through
  * `z.preprocess`. Widening it changes nothing, because no caller reads the parsed output.
@@ -79,7 +79,7 @@ const CheckSchema: z.ZodType = z.preprocess(
  * Fields common to flat and staged checklists.
  *
  * Both `checks` and `groups` are optional here and narrowed by the refinements below. Modelling the
- * two forms as one object rather than a union is what keeps validation errors precise: A union
+ * two forms as one object rather than a union keeps validation errors precise: A union
  * failure reports that neither branch matched, burying the offending check under an
  * `invalid_union` issue whose path stops at the checklist.
  */
@@ -97,8 +97,8 @@ const ChecklistShapeSchema = z.looseObject({
  * The two clauses test different things, and each has to. `isFlatChecklist` discriminates on key
  * presence, so the exclusivity clause does too: A checklist whose `checks` is present but explicitly
  * `undefined`, beside a populated `groups`, would otherwise validate, classify as flat, and hand the
- * runner an array that is not there. The requirement clause tests the value instead, so a key set to
- * `undefined` cannot satisfy the collection that it names.
+ * runner an array that is not there. Because the requirement clause tests the value instead, a key set
+ * to `undefined` cannot satisfy the collection that it names.
  */
 const ChecklistSchema = ChecklistShapeSchema.refine(
   (val) => val.checks !== undefined || val.groups !== undefined,
@@ -121,8 +121,8 @@ const RdyKitSchema = z.looseObject({
  * Validates that a raw value conforms to the RdyKit shape, checks included.
  *
  * Every check is validated wherever it appears, so a typo'd severity or a non-function `check`
- * fails at load rather than silently changing what the run reports. jiti and esbuild type-check
- * nothing, so `defineRdyKit`'s type-level guard protects only authors editing in an IDE.
+ * fails at load rather than silently changing what the run reports. Because jiti and esbuild
+ * type-check nothing, `defineRdyKit`'s type-level guard protects only authors editing in an IDE.
  *
  * Throws an Error whose message names one issue per line, each located by a dot path into the kit.
  * `source` labels the kit to which the issues belong, which matters when the caller loaded it on the
@@ -161,10 +161,10 @@ function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
 /**
  * Returns the check as the schema should see it, with an accessor-valued `fix` hidden from the parse.
  *
- * A getter is deferred to the failure that renders it, so validation must not read one. Hiding it
- * behind a copy that has no `fix` at all is what defers it; a data property passes through untouched.
- * The copy holds descriptors rather than values, so no other accessor on the check is invoked by
- * building it.
+ * Because a getter is deferred to the failure that renders it, validation must not read one. Hiding
+ * it behind a copy that has no `fix` at all defers it; a data property passes through untouched.
+ * Because the copy contains descriptors rather than values, building it invokes no other accessor on
+ * the check.
  */
 function hideAccessorFix(value: unknown): unknown {
   if (!isRecord(value)) return value;

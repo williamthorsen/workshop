@@ -8,11 +8,11 @@ const ESCAPE_HINT = 'Use --file to run a kit by path, or --from dir:<path> to ru
  *
  * Every named resolution composes the name with a root: `run` joins it onto the project's compile
  * directories, `--from dir:`, `global`, and `npm:` onto theirs, and the GitHub and Bitbucket sources
- * interpolate it into a raw-content URL, where a `..` traverses on the host rather than here. Checking
+ * interpolate it into a raw-content URL, in which a `..` traverses on the host rather than here. Checking
  * the name once, where it is parsed, covers all of them.
  *
  * Both separators are treated as one, because a backslash separates on Windows and `deriveKitName`
- * normalizes the two into the `/` that a name carries everywhere.
+ * normalizes the two into the `/` that a name uses everywhere.
  */
 export function assertRelativeKitName(kitName: string): void {
   if (path.isAbsolute(kitName) || /^[/\\]/.test(kitName)) {

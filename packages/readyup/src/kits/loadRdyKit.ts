@@ -28,8 +28,8 @@ export interface LoadedRdyKit {
  * for kits compiled before that field was introduced (and for `.ts` sources, which have no
  * generated banner).
  *
- * A compiled kit binding readyup symbols not exported by this runner never reaches evaluation, so the failure
- * names them rather than surfacing as an `undefined` binding once a check calls one.
+ * A compiled kit binding readyup symbols not exported by this runner is never evaluated, so the failure
+ * names them rather than appearing as an `undefined` binding once a check calls one.
  */
 export async function loadRdyKit(kitPath: string, requestedName?: string): Promise<LoadedRdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
@@ -67,9 +67,10 @@ export async function loadRdyKit(kitPath: string, requestedName?: string): Promi
  * awaiting compilation, a compiled kit requested as source, a project that was never
  * initialized, or a name matching nothing in the directory that was searched.
  *
- * The message names `requestedName` where the caller has it, so a kit below a subdirectory is reported under
- * the name that was asked for rather than under its file's basename. The file's own name still builds the
- * sibling path that the first branch probes, which sits beside the file rather than below the kit directory.
+ * The message names `requestedName` when the caller has it, so a kit below a subdirectory is reported under
+ * the name that was asked for rather than under its file's basename. The first branch still builds the
+ * sibling path that it probes from the file's own name; that path is beside the file rather than below the
+ * kit directory.
  */
 function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefined): string {
   const extension = path.extname(resolvedPath);
@@ -87,8 +88,8 @@ function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefi
 
   const available = listAvailableKits(dir, extension);
 
-  // Scaffolding is the remedy only for a project that has no kits at all. A directory holding kits
-  // under other names gets those names back, whichever kit was asked for.
+  // Scaffolding is the remedy only for a project that has no kits at all. When the directory contains
+  // kits under other names, the message lists those names, whichever kit was asked for.
   if (available.length === 0 && name === 'default' && dir === path.resolve(process.cwd(), KITS_DIR)) {
     return `Kit "default" not found at ${toDisplayPath(resolvedPath)}. Run 'rdy init' to create one.`;
   }
@@ -98,7 +99,7 @@ function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefi
   return `Kit "${name}" not found at ${toDisplayPath(resolvedPath)}. ${availability}`;
 }
 
-/** Returns the kit names beside a missing kit, treating an unreadable directory as holding none. */
+/** Returns the kit names beside a missing kit, treating an unreadable directory as containing none. */
 function listAvailableKits(dir: string, extension: string): string[] {
   try {
     return enumerateKits({ dir, extension, recursive: false });

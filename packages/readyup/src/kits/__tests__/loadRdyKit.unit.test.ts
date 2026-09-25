@@ -49,7 +49,7 @@ describe(loadRdyKit, () => {
     );
   });
 
-  it("suggests 'rdy init' when the kit directory holds no kits at all", async () => {
+  it("suggests 'rdy init' when the kit directory contains no kits at all", async () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockReturnValue([]);
 
@@ -97,7 +97,7 @@ describe(loadRdyKit, () => {
     );
   });
 
-  it('names the searched directory when no kits sit beside the missing one', async () => {
+  it('names the searched directory when no kits are beside the missing one', async () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockReturnValue([]);
 
@@ -106,7 +106,7 @@ describe(loadRdyKit, () => {
     );
   });
 
-  it('treats an unreadable kit directory as holding no kits', async () => {
+  it('treats an unreadable kit directory as containing no kits', async () => {
     mockExistsSync.mockReturnValue(false);
     mockReaddirSync.mockImplementation(() => {
       throw Object.assign(new Error('permission denied'), { code: 'EACCES' });

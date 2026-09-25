@@ -40,7 +40,7 @@ describe(assertIsRdyKit, () => {
     it.each([
       ['checks is undefined beside a populated groups', { name: 'bad', checks: undefined, groups: [[]] }],
       ['groups is undefined beside a populated checks', { name: 'bad', checks: [], groups: undefined }],
-    ])('rejects a checklist where %s', async (_label, checklist) => {
+    ])('rejects a checklist when %s', async (_label, checklist) => {
       await expect(messageFrom({ checklists: [checklist] })).resolves.toContain(
         "checklists[0]: Checklist cannot have both 'checks' and 'groups'",
       );
