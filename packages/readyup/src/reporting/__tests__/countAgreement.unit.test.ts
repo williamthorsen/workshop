@@ -37,7 +37,7 @@ const checklist: RdyChecklist = {
   ],
 };
 
-/** A checklist whose only failing check sits under a passing parent that is below the reporting threshold. */
+/** A checklist whose only failing check is nested under a passing parent that is below the reporting threshold. */
 const nestedChecklist: RdyChecklist = {
   name: 'nested',
   checks: [

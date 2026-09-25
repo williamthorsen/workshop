@@ -19,7 +19,7 @@ const SKIPPED_OPTIONAL = richFormatter.tokens.skippedOptional.text;
 const BLOCKED = richFormatter.tokens.blockedPrecondition.text;
 const FIX = richFormatter.tokens.fix.text;
 
-/** A duration above the engine's floor, so lines eligible for one show it. */
+/** A duration above the engine's floor, so that lines eligible for one show it. */
 const SLOW_MS = 250;
 
 function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
@@ -386,7 +386,7 @@ describe(reportRdy, () => {
 
     // The label distinguishes the tally from the check lines above it, which lead with a token in the
     // same column.
-    it('labels the count line so it does not read as a check', () => {
+    it('labels the count line so that it does not read as a check', () => {
       const output = reportRdy(makeReport({ results: [makePassedResult({ name: 'target' })] })).body;
 
       expect(output.split('\n').at(-1)).toBe(`${PASSED} Total: 1 passed (100ms)`);
@@ -499,7 +499,7 @@ describe(reportRdy, () => {
       expect(output.split('\n')).toContain(`   ${FIX} fix child`);
     });
 
-    // The recap names the check with the token that the tree gave it, so a reader scanning fixes sees which
+    // The recap names the check with the token that the tree gave it: A reader scanning fixes sees which
     // have errors and which have recommendations.
     it('leads a recapped check with its own severity token', () => {
       const output = reportRdy(
@@ -687,7 +687,7 @@ describe(reportRdy, () => {
       }
     });
 
-    it('retains a passed ancestor so a deep failure stays reachable', () => {
+    it('retains a passed ancestor so that a deep failure stays reachable', () => {
       const output = reportRdy(
         makeReport({
           results: [
@@ -842,7 +842,7 @@ describe(reportRdy, () => {
       expect(output.split('\n').at(-1)).toBe(`${FAILED_ERROR} Total: 1 error, 2 passed (90ms)`);
     });
 
-    it('retains a quiet passing parent so a deep failure stays reachable', () => {
+    it('retains a quiet passing parent so that a deep failure stays reachable', () => {
       const output = reportRdy(
         makeReport({
           results: [
