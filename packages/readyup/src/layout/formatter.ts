@@ -46,7 +46,7 @@ export interface Formatter {
  * Each plain status is a word rather than a symbol, so `grep FAIL` finds a failure. The role tokens have no
  * plain glyph: They name what a thing is rather than reporting an outcome, and an uppercase word in the
  * status column would read as a status. Position already says which role a name plays, whether it is a
- * heading's segment or a listed row, and a glyph of zero width still holds its column.
+ * heading's segment or a listed row, and the engine still reserves the column for a glyph of zero width.
  */
 const GLYPHS = defineGlyphSet<TokenName>({
   blockedPrecondition: { plain: 'BLOCK', rich: '\u{1F6AB}' },
@@ -65,8 +65,8 @@ const GLYPHS = defineGlyphSet<TokenName>({
 });
 
 /**
- * A formatter whose output is printable ASCII throughout, so it survives a CI log, a `grep`, a screen
- * reader, and a terminal with no emoji font.
+ * A formatter whose output is printable ASCII throughout, which keeps it readable in a CI log, by `grep`
+ * and a screen reader, and in a terminal with no emoji font.
  */
 export const plainFormatter: Formatter = {
   detailSeparator: '-',

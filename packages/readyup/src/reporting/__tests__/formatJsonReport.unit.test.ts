@@ -203,7 +203,7 @@ describe(formatJsonReport, () => {
       expect(parsed).toHaveProperty('kits.0.compiledWith', '0.19.2');
     });
 
-    it('names the compiling readyup even where it matches the runner', () => {
+    it('names the compiling readyup even when it matches the runner', () => {
       const kits = [{ name: 'deploy', compiledWith: VERSION, entries: [{ name: 'preflight', report: makeReport() }] }];
 
       const parsed: unknown = JSON.parse(formatReport(kits));
@@ -248,7 +248,7 @@ describe(formatJsonReport, () => {
       const parsed: unknown = JSON.parse(formatReport(mixedThresholdKits()));
 
       // The warn-severity failure clears `recommend` but not `error`, so it survives in the kit that
-      // inherited the default and is pruned from the kit that raised the bar.
+      // inherited the default and is pruned from the kit that raised the threshold.
       expect(parsed).toHaveProperty('kits.0.checklists.0.checks.0.name', 'warn-fail');
       expect(parsed).not.toHaveProperty('kits.1.checklists.0.checks');
     });
@@ -280,7 +280,7 @@ describe(formatJsonReport, () => {
       expect(parsed).toMatchObject({ passed: false });
     });
 
-    it('holds a kit verdict that is false when any of its checklists failed', () => {
+    it('sets a kit verdict to false when any of its checklists failed', () => {
       const kit = {
         name: 'deploy',
         entries: [
@@ -453,7 +453,7 @@ describe(formatJsonReport, () => {
   });
 
   describe('check entries', () => {
-    it('reports severity, ok, and skipReason where each applies', () => {
+    it('reports severity, ok, and skipReason when each applies', () => {
       const report = makeReport({
         results: [
           makePassedResult({ name: 'a', severity: 'warn', durationMs: 1 }),

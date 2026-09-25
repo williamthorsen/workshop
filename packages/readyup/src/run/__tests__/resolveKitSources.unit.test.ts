@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { RdyError } from '../../errors/RdyError.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 
-/** Compile directories that share no segment with the convention layout, so a fallback cannot pass as a read. */
+/** Compile directories that share no segment with the convention layout, so that a fallback cannot pass as a read. */
 const RELOCATED = { srcDir: 'kits/src', outDir: 'dist/kits' };
 
 describe(resolveKitSources, () => {
@@ -262,7 +262,8 @@ describe(resolveKitSources, () => {
 
   // -- --packages flag --
 
-  // The flag names a config key, so reaching here with no key read is the same case as an empty one.
+  // The flag names a config key, so a call that passes no value for the key is the same case as one that passes an
+  // empty list.
   it('reports --packages against a config that declares no packages as a usage error', async () => {
     const error = await captureError(RdyError, () => {
       resolve({ packages: true });

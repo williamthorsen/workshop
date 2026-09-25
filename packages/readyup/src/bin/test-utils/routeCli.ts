@@ -20,7 +20,7 @@ export interface RouteCliResult {
  * Routes a CLI invocation, returning its exit code alongside everything it wrote.
  *
  * The terminal defaults to absent, so a test asserting rich output names `--style rich` rather than inheriting
- * a style from the environment that the suite happens to run in.
+ * a style from the environment in which the suite happens to run.
  */
 export async function routeCli(args: string[], options: RouteCliOptions = {}): Promise<RouteCliResult> {
   const { includeConsole = false, isTty = false } = options;

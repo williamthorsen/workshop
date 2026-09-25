@@ -10,14 +10,14 @@ const LEADING_COMMA = /^[ \t]*,/;
 const PRAGMA_TOKENS = new Set(['rdy-ignore', 'rdy-ignore-next-line']);
 
 /**
- * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: An `rdy-ignore` sits on
+ * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: An `rdy-ignore` is on
  * that line, or an `rdy-ignore-next-line` on the one above it.
  *
- * A pragma naming no check suppresses whatever the check. One naming checks suppresses only where an id names a
- * member of `checkIds`, so a check declaring no id, which reaches here with none, is suppressed by the
+ * A pragma naming no check suppresses whatever the check. One naming checks suppresses only when an id names a
+ * member of `checkIds`, so a check declaring no id, for which `checkIds` is empty, is suppressed by the
  * unqualified form alone. Every pragma covering the line is read until one suppresses.
  *
- * Lines are the source's raw text rather than blanked code, so a detector that blanks comments before it scans
+ * Lines are the source's raw text rather than blanked code: A detector that blanks comments before it scans
  * cannot erase a pragma first.
  */
 export function suppressesFinding(lines: readonly string[], line: number, checkIds: readonly string[]): boolean {

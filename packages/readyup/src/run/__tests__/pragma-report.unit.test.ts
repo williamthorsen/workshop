@@ -111,14 +111,14 @@ describe(warnOnUnusedPragmas, () => {
 
 // region | Helpers
 
-/** Opens a ledger holding the given paths as examined and nothing as suppressed. */
+/** Opens a ledger recording the given paths as examined and nothing as suppressed. */
 function scanning(paths: readonly string[]): PragmaLedger {
   const ledger = createPragmaLedger();
   ledger.recordScanned(paths);
   return ledger;
 }
 
-/** Reports over one ledger, returning the entries alongside everything they wrote. */
+/** Reports over one ledger, returning the warnings alongside everything that the call wrote. */
 function warn(ledger: PragmaLedger) {
   using io = captureStdio();
 

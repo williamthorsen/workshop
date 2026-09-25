@@ -31,8 +31,8 @@ interface JsonRunSettings {
  * Runs all kit entries in JSON mode, producing a single JSON report.
  *
  * Each iteration is its own error boundary: Once the run has dispatched, anything the loop body
- * throws is attributable to that kit alone, so it becomes an entry in the report rather than
- * discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
+ * throws is attributable to that kit alone, so the run records it as an entry in the report rather
+ * than discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
  * -- a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
  */
 export async function runJsonMode(
@@ -99,7 +99,7 @@ export async function runJsonMode(
 
   warnings.push(...warnOnUnusedPragmas(pragmaLedger));
 
-  // The top-level thresholds say what the invocation asked for, so an absent flag stays absent
+  // The top-level thresholds say what the invocation asked for: An absent flag stays absent
   // rather than being reported as a default that nobody requested. What governed each kit, including
   // a threshold declared by the kit for itself, appears on that kit's entry.
   const output = formatJsonReport(kitInputs, {

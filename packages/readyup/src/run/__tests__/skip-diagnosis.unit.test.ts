@@ -16,7 +16,7 @@ describe(warnOnMaskedSkips, () => {
       {
         code: 'skip-masks-pass',
         message: 'skipped check "Coverage is at least 90%" in kit "default" / checklist "repo" would have passed.',
-        remedy: 'Narrow its skip to the states where the check would fail, or remove the skip.',
+        remedy: 'Narrow its skip to the states in which the check would fail, or remove the skip.',
       },
     ]);
   });
@@ -29,12 +29,12 @@ describe(warnOnMaskedSkips, () => {
         code: 'diagnosis-inconclusive',
         message:
           'skipped check "Registry is reachable" in kit "default" / checklist "repo" could not be diagnosed: fetch failed.',
-        remedy: 'Fix the check so it returns a verdict, then re-run with --diagnose.',
+        remedy: 'Fix the check so that it returns a verdict, then re-run with --diagnose.',
       },
     ]);
   });
 
-  it('ends the sentence with one period where the reason already has one', () => {
+  it('ends the sentence with one period when the reason already has one', () => {
     const { warnings } = warn([{ name: 'a', verdict: 'inconclusive', reason: 'check() returned null.' }]);
 
     expect(warnings[0]?.message).toBe(
@@ -50,20 +50,20 @@ describe(warnOnMaskedSkips, () => {
 
     expect(stderr).toBe(
       'Warning: skipped check "a" in kit "default" / checklist "repo" would have passed. ' +
-        'Narrow its skip to the states where the check would fail, or remove the skip.\n' +
+        'Narrow its skip to the states in which the check would fail, or remove the skip.\n' +
         'Warning: skipped check "b" in kit "default" / checklist "repo" could not be diagnosed: boom. ' +
-        'Fix the check so it returns a verdict, then re-run with --diagnose.\n',
+        'Fix the check so that it returns a verdict, then re-run with --diagnose.\n',
     );
   });
 
-  it('stays silent where diagnosis did not run', () => {
+  it('stays silent when diagnosis did not run', () => {
     const { warnings, stderr } = warn(undefined);
 
     expect(warnings).toStrictEqual([]);
     expect(stderr).toBe('');
   });
 
-  it('stays silent where diagnosis found nothing', () => {
+  it('stays silent when diagnosis found nothing', () => {
     const { warnings, stderr } = warn([]);
 
     expect(warnings).toStrictEqual([]);

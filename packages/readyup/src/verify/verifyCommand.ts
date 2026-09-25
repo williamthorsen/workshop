@@ -28,7 +28,7 @@ const verifyOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
   rebuild: { type: 'boolean' },
-  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
 
@@ -67,7 +67,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
 
   // Settle the bundler's availability before the run says anything. An exactness check that reports
   // kit after kit and then discovers it could never have run reads as a partial result; raised here,
-  // an absent esbuild is what it is -- a problem with the environment, not with any kit.
+  // the error reports an absent esbuild as a problem with the environment, not with any kit.
   if (rebuild) await requireEsbuild();
 
   let manifest;
@@ -155,7 +155,7 @@ function isPassingVerdict({ drift, inputs, rebuild, source }: KitVerdicts): bool
   return targetPasses && sourcePasses && inputsPass && rebuildPasses;
 }
 
-/** Builds a kit's JSON entry, stating what a verdict compared only where it compared something. */
+/** Builds a kit's JSON entry, stating what a verdict compared only when it compared something. */
 function buildVerifyEntry(name: string, { drift, inputs, rebuild, source }: KitVerdicts): JsonVerifyKitEntry {
   return {
     name,
@@ -213,8 +213,8 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
  * Returns the token for the worst of a kit's verdicts.
  *
  * A mismatch or a missing file on any axis yields a failure. The skip token needs an unverified
- * target and no verdict from the rebuild: A rebuild that reproduced the bundle has checked the kit
- * more exactly than the absent hash would have, so the kit passed rather than went unchecked.
+ * target and no verdict from the rebuild: A kit whose rebuild reproduced the bundle passed rather than
+ * went unchecked, because the rebuild has checked it more exactly than the absent hash would have.
  */
 function resolveToken({ drift, inputs, rebuild, source }: KitVerdicts): TokenName {
   const rebuildFailed = rebuild !== undefined && rebuild.kind !== 'ok';
@@ -271,10 +271,10 @@ function describeInputFailure(failure: InputFailure): string {
 /**
  * Returns a clause describing the rebuild verdict, or `undefined` when there is nothing to add.
  *
- * A passing rebuild is silent only where the hash verdicts already reached `ok` and it would
- * restate them. Anywhere else it speaks, because it then holds the line's strongest evidence: Over
- * a failing verdict it says the bundle reproduces and the manifest's record of it is what went
- * wrong, and over an unverified one it supplies the verdict that the absent hash could not.
+ * A passing rebuild is silent only when the hash verdicts already reached `ok` and it would
+ * restate them. In every other case it adds a clause, because it then has the line's strongest
+ * evidence: Over a failing verdict it says the bundle reproduces and the manifest's record of it is
+ * what went wrong, and over an unverified one it supplies the verdict that the absent hash could not.
  */
 function describeRebuildStatus(status: RebuildStatus | undefined, hashesConfirmed: boolean): string | undefined {
   if (status === undefined) return undefined;

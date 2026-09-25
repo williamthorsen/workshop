@@ -21,7 +21,7 @@ describe(createPragmaLedger, () => {
     expect(ledger.scannedPaths()).toStrictEqual([path.resolve(process.cwd(), 'src/a.ts')]);
   });
 
-  it('holds a path declared once however many checks declare it', () => {
+  it('stores a path once however many checks declare it', () => {
     const ledger = createPragmaLedger();
 
     ledger.recordScanned(['src/a.ts', 'src/b.ts']);
@@ -38,7 +38,7 @@ describe(createPragmaLedger, () => {
     expect(ledger.hasSuppressed(path.resolve(process.cwd(), 'src/a.ts'), 3)).toBe(true);
   });
 
-  it('holds a suppression to the line on which it was recorded', () => {
+  it('limits a suppression to the line on which it was recorded', () => {
     const ledger = createPragmaLedger();
 
     ledger.recordSuppressed('src/a.ts', 3);

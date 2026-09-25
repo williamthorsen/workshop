@@ -25,14 +25,14 @@ it.aroundEach(async (runTest, { temp }) => {
 });
 
 describe(resolveFindingOutcome, () => {
-  it('fails and names each reported finding, by symbol where one is declared', () => {
+  it('fails and names each reported finding, by symbol when one is declared', () => {
     const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE, INLINE] }, []);
 
     expect(outcome.ok).toBe(false);
     expect(outcome.detail).toBe('describeError (src/errors.ts:12), src/report.ts:44');
   });
 
-  it('passes where the check reports none of the sites that it counts', () => {
+  it('passes when the check reports none of the sites that it counts', () => {
     const outcome = resolveFindingOutcome({ adoptedCount: 3, findings: [COUNTED] }, []);
 
     expect(outcome).toStrictEqual({ ok: true, progress: { count: 4, passedCount: 3, type: 'fraction' } });
@@ -44,7 +44,7 @@ describe(resolveFindingOutcome, () => {
     expect(outcome.progress).toStrictEqual({ count: 3, passedCount: 1, type: 'fraction' });
   });
 
-  it('reports no progress where the outcome names no adopted count', () => {
+  it('reports no progress when the outcome names no adopted count', () => {
     const outcome = resolveFindingOutcome({ findings: [CLONE] }, []);
 
     expect(outcome.progress).toBeUndefined();
@@ -83,7 +83,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.progress).toStrictEqual({ count: 2, passedCount: 1, type: 'fraction' });
     });
 
-    it('keeps a finding whose path holds no readable text', () => {
+    it('keeps a finding whose path contains no readable text', () => {
       const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, []);
 
       expect(outcome.detail).toBe('describeError (src/errors.ts:12)');
@@ -99,7 +99,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.ok).toBe(true);
     });
 
-    it('leaves the finding standing for a check that it does not name', ({ temp }) => {
+    it('keeps the finding for a check that it does not name', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, ['toolbelt.errors/other-check']);
@@ -107,7 +107,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.detail).toBe('describeError (src/errors.ts:12)');
     });
 
-    it('leaves the unnamed check a denominator shed by the named check', ({ temp }) => {
+    it("removes a suppressed site from the named check's denominator alone", ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
       const findings = [CLONE, COUNTED];
 
@@ -141,7 +141,7 @@ describe(resolveFindingOutcome, () => {
       expect(ledger.scannedPaths()).toHaveLength(1);
     });
 
-    it('records no examined path where the outcome declares no sweep', () => {
+    it('records no examined path when the outcome declares no sweep', () => {
       const ledger = createPragmaLedger();
 
       resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE] }, [], ledger);
@@ -159,7 +159,7 @@ describe(resolveFindingOutcome, () => {
       expect(ledger.hasSuppressed('src/report.ts', 44)).toBe(false);
     });
 
-    it('records no suppression where the pragma names another check', ({ temp }) => {
+    it('records no suppression when the pragma names another check', ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore other/check');
       const ledger = createPragmaLedger();
 

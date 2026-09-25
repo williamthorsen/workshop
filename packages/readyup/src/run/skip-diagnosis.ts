@@ -24,7 +24,7 @@ export async function diagnoseSkips(checks: readonly RdyCheck[], provenance?: Ki
  * Emits an advisory stderr warning for each diagnosed skip, and returns the entries.
  *
  * `skip-masks-pass` says the skip suppressed a pass, which is the condition that `--diagnose` exists
- * to expose. `diagnosis-inconclusive` says the check reached no verdict, so the run established
+ * to expose. `diagnosis-inconclusive` says the check reached no verdict and the run established
  * nothing about that skip either way; the two are separate codes because a consumer branching on
  * one must never read the other as a masked pass.
  *
@@ -49,9 +49,9 @@ export function warnOnMaskedSkips(
 // region | Helpers
 
 /**
- * Names the check that a warning is about, down to the checklist that holds it.
+ * Names the check that a warning is about, down to the checklist that contains it.
  *
- * A masked pass is a property of one check where the staleness advisories are properties of a kit,
+ * A masked pass is a property of one check whereas the staleness advisories are properties of a kit,
  * and one run may have many of both, so the check's name alone would not say which line to look at.
  */
 function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: string): string {
@@ -60,14 +60,14 @@ function describeCheck(entry: ResolvedKitEntry, checklistName: string, name: str
 }
 
 /**
- * Diagnoses one skipped check, returning `undefined` where its `check` would have failed.
+ * Diagnoses one skipped check, returning `undefined` if its `check` would have failed.
  *
  * A `check` that throws, one whose findings cannot be read, or one returning a value expressing no
  * verdict leaves the question undecided: Reporting any of them as a masked pass would assert something
- * the run never established. Resolving the return value sits inside the guard for that reason, as it
- * does in the runner.
+ * the run never established. The return value is resolved inside the guard for that reason, as it
+ * is in the runner.
  *
- * Nothing here reaches a ledger. The resolution is passed none, and the check runs outside the scope opened by
+ * Nothing here writes to a ledger. The resolution is passed none, and the check runs outside the scope opened by
  * the runner around a live one, so a sweep that it reads here is recorded nowhere. A sweep that it read in its
  * live `skip` was recorded then and stands: What this diagnosis adds is nothing, not what the check contributed
  * while running.
@@ -79,8 +79,8 @@ async function diagnoseSkip(
   let raw: unknown;
   let outcome: unknown;
   try {
-    // Widened to `unknown`: A kit runs as JavaScript, so its functions return whatever their author
-    // wrote, whatever the declared type promised.
+    // Widened to `unknown`: Because a kit runs as JavaScript, its functions return whatever their
+    // author wrote, whatever the declared type promised.
     raw = await check.check();
     outcome = resolveCheckReturn(raw, check, provenance);
   } catch (error_: unknown) {
@@ -102,18 +102,18 @@ function toWarning(entry: ResolvedKitEntry, checklistName: string, diagnosis: Sk
     return {
       code: 'skip-masks-pass',
       message: `${subject} would have passed.`,
-      remedy: 'Narrow its skip to the states where the check would fail, or remove the skip.',
+      remedy: 'Narrow its skip to the states in which the check would fail, or remove the skip.',
     };
   }
 
   return {
     code: 'diagnosis-inconclusive',
     message: `${subject} could not be diagnosed: ${trimTrailingPeriod(diagnosis.reason)}.`,
-    remedy: 'Fix the check so it returns a verdict, then re-run with --diagnose.',
+    remedy: 'Fix the check so that it returns a verdict, then re-run with --diagnose.',
   };
 }
 
-/** Trims a reason's trailing period, so the sentence around it ends with exactly one. */
+/** Trims a reason's trailing period so that the sentence around it ends with exactly one. */
 function trimTrailingPeriod(reason: string): string {
   return reason.endsWith('.') ? reason.slice(0, -1) : reason;
 }

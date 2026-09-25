@@ -14,10 +14,10 @@ import { VERSION } from '../../version.ts';
 import { hashFile } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
-/** Absolute specifier for the `pickJson` marker, so a kit written into a tempdir can import it. */
+/** Absolute specifier for the `pickJson` marker, so that a kit written into a tempdir can import it. */
 const PICK_JSON_MODULE = path.resolve(import.meta.dirname, '../../compile/pickJson.ts');
 
-/** Absolute specifier for an installed package, so the fixture's compile records a bundled dependency. */
+/** Absolute specifier for an installed package, so that the fixture's compile records a bundled dependency. */
 const PICOMATCH_MODULE = createRequire(import.meta.url).resolve('picomatch');
 
 const KIT_SOURCE = `import picomatch from ${JSON.stringify(PICOMATCH_MODULE)};
@@ -41,7 +41,7 @@ const it = baseIt
           'data.json': JSON.stringify({ name: 'demo', version: '1.0.0' }),
           'kit.ts': KIT_SOURCE,
           // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-          // temporary directory happens to hold a manifest.
+          // temporary directory happens to contain a manifest.
           'package.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
         },
         { prefix: 'verify-rebuild-' },
@@ -199,7 +199,7 @@ describe('verifyCommand --rebuild', () => {
     expect(readPayload(stdout)).toMatchObject({
       kits: [{ rebuildStatus: 'failed' }],
     });
-    expect(stderr).toContain('Fix the kit source so it compiles.');
+    expect(stderr).toContain('Fix the kit source so that it compiles.');
   });
 
   it('leaves every rebuild field out of the payload without the flag', async ({ temp }) => {
@@ -235,8 +235,8 @@ function readPayload(stdout: string): JsonVerifyOutput {
 /**
  * Compiles the tree's kit and records the result in a manifest beside it, returning the compile result.
  *
- * The manifest holds hashes produced by the pipeline rather than hand-computed ones, so a verdict here
- * is the one that a real project's compile would have earned.
+ * Because the manifest contains hashes produced by the pipeline rather than hand-computed ones, a verdict
+ * here is the one that a real project's compile would have earned.
  */
 async function recordCompiledManifest(tree: TempTree): Promise<CompileResult> {
   const result = await compileConfig(tree.resolve('kit.ts'), tree.resolve('kit.js'));

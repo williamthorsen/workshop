@@ -25,7 +25,7 @@ export async function loadKit(
 ): Promise<LoadedRdyKit> {
   const loaded = await loadFromSource(entry, isJit, remote);
 
-  // Checked outside the load, whose catch blocks rewrap anything thrown inside them through
+  // Check outside the load, whose catch blocks rewrap anything thrown inside them through
   // `describeError` and would drop the hint naming the upgrade.
   assertSatisfiesVersionFloor(entry.name, loaded.kit);
 

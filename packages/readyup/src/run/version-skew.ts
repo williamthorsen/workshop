@@ -47,7 +47,7 @@ export function warnOnVersionSkew(
 
 // region | Helpers
 
-/** Matches the prerelease and build tails semver appends to a numeric version. */
+/** Matches the prerelease and build tails that semver appends to a numeric version. */
 const VERSION_TAIL = /[-+].*$/;
 
 /**

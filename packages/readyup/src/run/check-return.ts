@@ -39,8 +39,8 @@ export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
  * rather than to the check. The runner and the skip diagnosis both read a verdict off the result, and one
  * resolution between them keeps a diagnosed skip agreeing with the run that it stands in for.
  *
- * A ledger reaches the resolution where the caller keeps one, which is how a run records what its checks
- * examined and suppressed while a diagnosis, passing none, leaves no trace of a check that did not run.
+ * When the caller keeps a ledger, it passes the ledger to the resolution; that is how a run records what its
+ * checks examined and suppressed, while a diagnosis, passing none, leaves no trace of a check that did not run.
  */
 export function resolveCheckReturn(
   raw: unknown,

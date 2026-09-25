@@ -750,7 +750,7 @@ describe(routeCommand, () => {
       expect(stderr).toBe('');
     });
 
-    it('diverts help text to stderr under --json so stdout stays free of prose', async () => {
+    it('diverts help text to stderr under --json so that stdout stays free of prose', async () => {
       const { exitCode, stdout, stderr } = await routeCli(['--help', '--json']);
 
       expect(exitCode).toBe(0);
@@ -851,7 +851,7 @@ describe(routeCommand, () => {
       expect(mockParseRunArgs).toHaveBeenCalledWith(['lst']);
     });
 
-    it('runs a bare word as a kit when the configured output directory holds its bundle', async ({ temp }) => {
+    it('runs a bare word as a kit when the configured output directory contains its bundle', async ({ temp }) => {
       temp.write('dist/kits/lst.js', 'export const checklists = [];');
       using _cwd = pointCwdAt(temp.dir);
       mockLoadConfig.mockResolvedValue({
@@ -867,7 +867,7 @@ describe(routeCommand, () => {
       expect(exitCode).toBe(0);
     });
 
-    it('runs a bare word as a kit when the configured source directory holds its source', async ({ temp }) => {
+    it('runs a bare word as a kit when the configured source directory contains its source', async ({ temp }) => {
       temp.write('kits/src/lst.ts', 'export const checklists = [];');
       using _cwd = pointCwdAt(temp.dir);
       mockLoadConfig.mockResolvedValue({
@@ -886,7 +886,7 @@ describe(routeCommand, () => {
     it('reads the directories of the config that --config names, in either flag form', async ({ temp }) => {
       temp.write('kits/src/lst.ts', 'export const checklists = [];');
       using _cwd = pointCwdAt(temp.dir);
-      // Only the override resolves to a directory holding the kit, so a probe reading the lookup
+      // Only the override resolves to a directory containing the kit, so a probe reading the lookup
       // chain reports a typo instead.
       mockLoadConfig.mockImplementation((options?: { overridePath?: string }) =>
         Promise.resolve({
@@ -920,7 +920,9 @@ describe(routeCommand, () => {
       expect(stderr).not.toContain('Did you mean');
     });
 
-    it('suggests a command when only the convention directory holds the kit and the config moved', async ({ temp }) => {
+    it('suggests a command when only the convention directory contains the kit and the config moved', async ({
+      temp,
+    }) => {
       temp.write('.readyup/kits/lst.js', 'export const checklists = [];');
       using _cwd = pointCwdAt(temp.dir);
       mockLoadConfig.mockResolvedValue({

@@ -52,7 +52,7 @@ function resolvePath(filePath: string): string {
   return path.resolve(process.cwd(), filePath);
 }
 
-/** Keys one located site, by the resolved path holding it and the line on which it sits. */
+/** Keys one located site by the resolved path of the file that contains it and the line on which it appears. */
 function toSiteKey(filePath: string, line: number): string {
   return `${resolvePath(filePath)}:${line}`;
 }

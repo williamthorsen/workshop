@@ -62,7 +62,7 @@ describe(resolveConfiguredPackages, () => {
     ]);
   });
 
-  // A package publishing nothing under a name asks nothing, so it is not a failure of the run.
+  // A package publishing nothing under a name requires nothing, so it is not a failure of the run.
   it('skips a configured package that publishes no requested kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
     installPackage(temp, '@beta/kits', ['default']);
@@ -72,7 +72,7 @@ describe(resolveConfiguredPackages, () => {
     expect(entries.map(describeEntry)).toStrictEqual(['@acme/kits:preflight']);
   });
 
-  // A bare `--packages` fills the name in, so a name that no package publishes is the "requires nothing" case.
+  // Because a bare `--packages` fills the name in, a name that no package publishes is the "requires nothing" case.
   it('resolves to an empty list when no configured package publishes the default kit', ({ temp }) => {
     installPackage(temp, '@acme/kits', ['preflight']);
 

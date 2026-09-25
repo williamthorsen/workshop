@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { hashToRecordedLength } from '../check-utils/hashing.ts';
 
-/** Length of the hex prefix `rdy compile` records for a hash. */
+/** Length of the hex prefix that `rdy compile` records for a hash. */
 const HASH_PREFIX_LENGTH = 8;
 
 /**

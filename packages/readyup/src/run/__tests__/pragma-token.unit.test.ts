@@ -12,7 +12,7 @@ describe(createIgnorePragmaMatcher, () => {
     expect(matches[0]?.[1]).toBe('-next-line');
   });
 
-  it('opens each scan at the start of the text however an earlier matcher was used', () => {
+  it('starts each scan at the beginning of the text however an earlier matcher was used', () => {
     // `matchAll` copies its regular expression's `lastIndex`, so a matcher advanced by one reader would silently
     // report that a pragma before that offset is not there.
     const used = createIgnorePragmaMatcher();

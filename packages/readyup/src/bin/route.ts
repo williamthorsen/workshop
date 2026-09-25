@@ -55,8 +55,8 @@ export async function routeCommand(args: string[]): Promise<number> {
   const json = hasJsonFlag(args);
 
   // Binding the style precedes the try because the catch renders through it: A style named in argv has
-  // to govern the usage error that argv itself provokes. A value naming no style still yields one to
-  // render with, and becomes the error raised inside.
+  // to apply to the usage error that argv itself provokes. A value naming no style still yields one to
+  // render with, and the try block raises the invalid value as a usage error.
   const { style, invalid } = resolveOutputStyle({
     argv: args,
     env: process.env,
@@ -91,7 +91,7 @@ export function reportEscapedFailure(error: unknown, json: boolean): number {
 /**
  * Renders a failed invocation and returns its exit code.
  *
- * Exported so the runner's outer boundary reports a failure that escaped `routeCommand`
+ * Exported so that the runner's outer boundary reports a failure that escaped `routeCommand`
  * through the same channel.
  */
 export function reportFailure(error: unknown, json: boolean): number {
@@ -150,7 +150,7 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
   }
 
   // A bare word that names a kit is always run as that kit; only one that names none can be a
-  // mistyped command. The check sits here rather than in `handleRun` so an explicit `rdy run <word>`
+  // mistyped command. The check is here rather than in `handleRun` so that an explicit `rdy run <word>`
   // never reaches it: Naming the subcommand says the word is a kit.
   const typoMatch = findNearestWord(command, COMMAND_NAMES);
   if (typoMatch !== undefined && !(await namesAKit(command, args))) {
@@ -168,7 +168,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const parsed = parseRunArgs(flags);
 
   // Skip config when an external source flag is active -- external modes don't use config values.
-  // `--packages` is not one of them: The config is where the packages that it runs are named.
+  // `--packages` is not one of them: The config names the packages that it runs.
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
@@ -225,7 +225,7 @@ function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
     force: { type: 'boolean' },
-    // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+    // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
     style: { type: 'string' },
   } as const;
 
@@ -247,7 +247,7 @@ function handleInit(flags: string[]): number {
  * Returns `argv` without a leading `--style` and the value beside it.
  *
  * Command selection reads the first argument, so a style named ahead of the command would otherwise be
- * taken for a kit name. `routeCommand` has already read the value, so nothing downstream needs the
+ * taken for a kit name. `routeCommand` has already read the value. Nothing downstream needs the
  * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
  * occurrence for the subcommand's own parser. A `--style` with no value beside it, whether it ends argv
  * or precedes another flag, is left for that parser to reject.
@@ -293,13 +293,13 @@ async function loadRunConfig(overridePath: string | undefined): Promise<Resolved
  * names lives wherever that source resolves rather than on a path worth probing.
  *
  * Everything else is a bare word with no source, which `run` resolves against the project's configured
- * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. Probing exactly those is
- * what makes the result match what would run, so the probe reads the config that the run would read,
- * `--config` override included.
+ * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. The probe reads the config
+ * that the run would read, `--config` override included, because probing exactly those directories makes
+ * the result match what would run.
  *
- * The config load runs only for a word that `findNearestWord` already matched, so an ordinary invocation
- * never pays for it. A config that fails to load is reported as the config error that it is, rather than
- * surfacing as a typo suggestion for a word that may well name a kit.
+ * The config load runs only for a word that `findNearestWord` already matched. An ordinary invocation
+ * never loads the config. A config that fails to load is reported as the config error that it is, rather
+ * than appearing as a typo suggestion for a word that may well name a kit.
  */
 async function namesAKit(word: string, args: string[]): Promise<boolean> {
   if (word.includes(':') || hasSourceFlag(args)) return true;
@@ -312,9 +312,9 @@ async function namesAKit(word: string, args: string[]): Promise<boolean> {
 }
 
 /**
- * Returns the `--config` value in raw argv, or `undefined` where argv names none.
+ * Returns the `--config` value in raw argv, or `undefined` when argv names none.
  *
- * Scans the way `hasSourceFlag` does, because it runs at the same point, before any flag parsing: it
+ * Scans the way `hasSourceFlag` does, because it runs at the same point, before any flag parsing: It
  * accepts both `--config value` and `--config=value` and stops at the `--` terminator. An empty value is
  * read as absent, which is how `parseRunArgs` reads one, and leaves the run to reject it.
  */

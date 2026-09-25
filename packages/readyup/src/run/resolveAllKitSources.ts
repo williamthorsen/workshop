@@ -18,7 +18,7 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
 
 interface ResolveAllKitSourcesOptions {
-  /** The config's `compile` block; absent where no config was loaded. */
+  /** The config's `compile` block; absent when no config was loaded. */
   compile?: ResolvedRdyConfig['compile'] | undefined;
   configuredPackages?: string[] | undefined;
   fromValue: string | undefined;
@@ -31,16 +31,16 @@ interface ResolveAllKitSourcesOptions {
 }
 
 /**
- * Resolves `--all` into an entry for every kit that the source selected by the other flags holds.
+ * Resolves `--all` into an entry for every kit that the source selected by the other flags contains.
  *
  * A source reached by kit name is enumerated and then resolved by `resolveKitSources`, so each entry is the one
  * that naming the kit would produce. The project's compiled kits are resolved from the paths that its listing
- * reports instead, which is what reaches a relocated `compile.outDir`.
+ * reports instead, which is how the resolver finds a relocated `compile.outDir`.
  *
- * Under `--jit` the project's sources are the ones that `compile.include` and `compile.exclude` select, so this
+ * Under `--jit` the project's sources are the ones that `compile.include` and `compile.exclude` select: This
  * and a compiled `--all` cover the same kits and a module that the kits share is read as a kit by neither.
  *
- * A source holding no kits is a kit-load error: A run that passes with no kits hides a missing compile or a
+ * A source containing no kits is a kit-load error: A run that passes with no kits hides a missing compile or a
  * run from the wrong directory.
  */
 export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions): Promise<ResolvedKitEntry[]> {

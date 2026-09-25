@@ -74,7 +74,7 @@ describe('--packages run path wiring', () => {
   });
 
   // Selection reads names, so the manifest-less path needs no handling of its own -- but it has to resolve alike.
-  it('selects by name when a package ships no manifest', ({ temp }) => {
+  it('selects by name when a package includes no manifest', ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default', 'preflight'], { hasManifest: false });
 
     const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['plain-kit'] });
@@ -82,7 +82,7 @@ describe('--packages run path wiring', () => {
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
   });
 
-  // A package publishing no `default` requires nothing of this project, so there is nothing to fail.
+  // There is nothing to fail, because a package publishing no `default` requires nothing of this project.
   it('skips a configured package publishing no default', ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default']);
     installPackage(temp, '@acme/kits', ['drift', 'preflight']);
@@ -169,7 +169,7 @@ describe('--packages run path wiring', () => {
     expect(lines.at(-1)).toContain('Total: 2 passed');
   });
 
-  // A row is an index into the blocks above it, so it repeats its heading rather than naming its own scheme.
+  // Because a row is an index into the blocks above it, it repeats its heading rather than naming its own scheme.
   it('names each row by the breadcrumb heading that its block has', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
@@ -238,7 +238,7 @@ function describeEntry(entry: ResolvedKitEntry): string {
   return `${origin}:${entry.name}`;
 }
 
-/** Installs a package publishing the named kits, each holding one passing check, under the tree. */
+/** Installs a package publishing the named kits, each containing one passing check, under the tree. */
 function installPackage(tree: TempTree, name: string, kits: string[], options: InstallPackageOptions = {}): void {
   const { hasManifest = true, readyupVersion, version } = options;
   const root = path.join('node_modules', name);

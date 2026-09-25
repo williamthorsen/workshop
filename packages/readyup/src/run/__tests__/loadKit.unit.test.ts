@@ -97,7 +97,7 @@ describe(loadKit, () => {
       expect(error.code).toBe('kit-load');
     });
 
-    it('leaves a missing readyup undiagnosed outside --jit, where the kit is a compiled bundle', async () => {
+    it('leaves a missing readyup undiagnosed outside --jit, because the kit is then a compiled bundle', async () => {
       mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('readyup'));
 
       const error = await captureError(RdyError, () => loadKit(localEntry(), false, createUncachedRemoteContext()));
@@ -140,7 +140,7 @@ describe(loadKit, () => {
     it.each([
       ['GitHub', GITHUB_URL],
       ['Bitbucket', BITBUCKET_URL],
-    ])('builds no header when %s holds no token', async (_provider, url) => {
+    ])('builds no header when %s has no token', async (_provider, url) => {
       mockResolveGitHubToken.mockReturnValue(undefined);
       mockResolveBitbucketToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
@@ -169,7 +169,7 @@ describe(loadKit, () => {
       expect(mockResolveGitHubToken).not.toHaveBeenCalled();
     });
 
-    it("hands the loader the context's cache", async () => {
+    it("passes the context's cache to the loader", async () => {
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       const cache = { dir: '/cache/readyup/http', reload: false };
 
@@ -283,7 +283,7 @@ describe(loadKit, () => {
       await expect(hintFor(GITHUB_URL, 404)).resolves.toBeUndefined();
     });
 
-    it('stays silent for a third-party host, which readyup holds no credential for', async () => {
+    it('stays silent for a third-party host, for which readyup has no credential', async () => {
       await expect(hintFor(THIRD_PARTY_URL, 404)).resolves.toBeUndefined();
     });
 
@@ -338,7 +338,7 @@ function moduleNotFoundError(packageName: string): Error {
   return Object.assign(new Error(`Cannot find package '${packageName}'`), { code: 'MODULE_NOT_FOUND' });
 }
 
-/** Calls the header builder that `loadKit` handed the remote loader on its first call. */
+/** Calls the header builder that `loadKit` passed to the remote loader on its first call. */
 function resolveLoaderHeaders(): Record<string, string> | undefined {
   const [firstCall] = mockLoadRemoteKit.mock.calls;
   assert.ok(firstCall);

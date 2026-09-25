@@ -28,19 +28,19 @@ describe(resolveCheckIds, () => {
   });
 
   describe('given a kit with no publishing package', () => {
-    it('leaves the bare id standing for a directory kit', () => {
+    it('keeps the bare id for a directory kit', () => {
       const ids = resolveCheckIds('no-instanceof-error', { kind: 'directory', label: '.readyup/kits' });
 
       expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
     });
 
-    it('leaves the bare id standing for a remote kit', () => {
+    it('keeps the bare id for a remote kit', () => {
       const ids = resolveCheckIds('no-instanceof-error', { kind: 'remote', label: 'github:org/repo@main' });
 
       expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
     });
 
-    it('leaves the bare id standing where the kit has no provenance', () => {
+    it('keeps the bare id when the kit has no provenance', () => {
       const ids = resolveCheckIds('no-instanceof-error', undefined);
 
       expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });

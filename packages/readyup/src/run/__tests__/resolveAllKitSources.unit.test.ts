@@ -135,7 +135,7 @@ describe(resolveAllKitSources, () => {
       expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }));
     });
 
-    it('fails naming the directory when the kits directory holds no source', async () => {
+    it('fails naming the directory when the kits directory contains no source', async () => {
       const error = await captureError(RdyError, () => resolveAllKitSources({ ...baseOptions, jit: true }));
 
       expect(error.code).toBe('kit-load');
@@ -182,7 +182,7 @@ describe(resolveAllKitSources, () => {
       expect(sources.map((entry) => entry.name)).toStrictEqual(compiled.map((entry) => entry.name));
     });
 
-    it('resolves every kit that a --from directory holds, as naming each would', async ({ temp }) => {
+    it('resolves every kit that a --from directory contains, as naming each would', async ({ temp }) => {
       temp.writeAll({ 'shared/beta.js': '', 'shared/alpha.js': '' });
 
       const entries = await resolveAllKitSources({ ...baseOptions, fromValue: 'dir:shared' });

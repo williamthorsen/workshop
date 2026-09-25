@@ -41,9 +41,9 @@ export interface RunRdyOptions {
    * One ledger spans every kit of an invocation, so a file examined by two kits is reported once. A run
    * passing none records nothing and reports nothing.
    *
-   * It is in scope around each check's `skip` and `check` alike, so a sweep read through `readTrackedSources`
-   * is recorded wherever the check makes it. A kit memoizing one sweep across its checks makes it in the first
-   * `skip` that runs, which a scope covering `check` alone would miss.
+   * Because it is in scope around each check's `skip` and `check` alike, a sweep read through
+   * `readTrackedSources` is recorded wherever the check makes it. A kit memoizing one sweep across its checks
+   * makes it in the first `skip` that runs, which a scope covering `check` alone would miss.
    */
   pragmaLedger?: PragmaLedger | undefined;
 }
@@ -54,11 +54,11 @@ interface PendingDiagnosis {
   result: SkippedResult;
 }
 
-/** What every step of a checklist walk holds. */
+/** The state that every step of a checklist walk shares. */
 interface RunContext {
   defaultSeverity: Severity;
 
-  /** The invocation's record of what its checks examined and suppressed, absent where nothing reads one. */
+  /** The invocation's record of what its checks examined and suppressed, absent when nothing reads one. */
   pragmaLedger: PragmaLedger | undefined;
 
   /** Where the kit came from, read for every check's ids and for nothing else. */
@@ -68,7 +68,7 @@ interface RunContext {
    * The checks whose `skip` returned a reason, in the order their skips resolved.
    *
    * Collected unconditionally, because recording a reference executes nothing; only the diagnosis
-   * that reads them is gated on the option. Each holds its result, so the findings can be read back
+   * that reads them is gated on the option. Each includes its result so that the findings can be read back
    * in the report's own order rather than in the order the skips happened to settle.
    */
   pendingDiagnoses: PendingDiagnosis[];
@@ -92,34 +92,34 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
  * Resolves a failure's remediation message from its outcome's `fix`, or else from its check's, absorbing
  * a value that is not a string.
  *
- * The check's `fix` may be an accessor, so it is read here and nowhere else: Only a failure that the check
+ * Because the check's `fix` may be an accessor, it is read here and nowhere else: Only a failure that the check
  * expressed renders one, and a check that passes, skips, is blocked, or is broken, or whose outcome
  * supplies its own `fix`, must not do work that it discards. An accessor that throws, or either `fix`
  * yielding a non-string, is a defect in the kit rather than in the check's subject, so it is reported in
  * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed
- * outcome `fix` is reported without consulting the check's, so the defect stays visible.
+ * outcome `fix` is reported without consulting the check's, to keep the defect visible.
  */
 function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
   if (outcomeFix !== undefined) {
     return typeof outcomeFix === 'string'
       ? outcomeFix
-      : `Unresolvable fix: the outcome returned ${describeValue(outcomeFix)}`;
+      : `Unresolvable fix: The outcome returned ${describeValue(outcomeFix)}`;
   }
 
   let raw: unknown;
   try {
-    // Widened to `unknown`: A kit runs as JavaScript, so an accessor yields whatever its author
+    // Widened to `unknown`: Because a kit runs as JavaScript, an accessor yields whatever its author
     // wrote, whatever the declared type promised.
     raw = check.fix;
   } catch (error_: unknown) {
     const error = toError(error_);
-    // Quoted so the kit's message stays distinguishable from the sentence around it.
-    return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
+    // Quoted so that the kit's message stays distinguishable from the sentence around it.
+    return `Unresolvable fix: The accessor threw ${JSON.stringify(error.message)}`;
   }
 
   if (raw === undefined) return null;
   if (typeof raw === 'string') return raw;
-  return `Unresolvable fix: the accessor returned ${describeValue(raw)}`;
+  return `Unresolvable fix: The accessor returned ${describeValue(raw)}`;
 }
 
 /** The fields contributed by a check to every result that it can produce. */
@@ -200,9 +200,9 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
   if (check.skip !== undefined) {
     const start = performance.now();
     try {
-      // Widened to `unknown`: A kit runs as JavaScript, so its functions return whatever their
+      // Widened to `unknown`: Because a kit runs as JavaScript, its functions return whatever their
       // author wrote, whatever the declared type promised. Called optionally because the guard above does not
-      // narrow inside the closure, and called on `check` so an accessor-backed `skip` keeps its receiver.
+      // narrow inside the closure, and called on `check` so that an accessor-backed `skip` keeps its receiver.
       const skipResult: unknown = await withSweepRecorder(run.pragmaLedger, () => check.skip?.());
       if (typeof skipResult === 'string') {
         const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
@@ -230,8 +230,8 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
   try {
     const raw: unknown = await withSweepRecorder(run.pragmaLedger, () => check.check());
     const durationMs = performance.now() - start;
-    // Findings become an outcome before anything reads a verdict off them, so the two structured arms are
-    // one branch below.
+    // `resolveCheckReturn` turns findings into an outcome before anything reads a verdict off them, so the
+    // two structured arms are one branch below.
     const outcome: unknown = resolveCheckReturn(raw, check, run.provenance, run.pragmaLedger);
     let result: PassedResult | FailedResult;
     if (typeof outcome === 'boolean') {
@@ -245,8 +245,8 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
         ? buildPassedResult({ ...context, detail, durationMs, progress })
         : buildFailedResult(check, { ...context, detail, durationMs, progress }, outcome.fix);
     } else {
-      // Reported as a defect rather than as an ordinary failure: The check never expressed a
-      // verdict, so the severity that it declared for its subject says nothing about this outcome.
+      // Reported as a defect rather than as an ordinary failure: Because the check never expressed a
+      // verdict, the severity that it declared for its subject says nothing about this outcome.
       const error = new Error(describeUninterpretableReturn(raw));
       result = buildAuthoringErrorResult(context, durationMs, error);
     }
@@ -385,7 +385,7 @@ async function runStagedChecks(
 }
 
 /**
- * Orders the checks awaiting diagnosis by where their results sit in the report.
+ * Orders the checks awaiting diagnosis by where their results appear in the report.
  *
  * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
  * the order back off `results`, which is declaration-ordered by construction, keeps the advisories
@@ -405,7 +405,7 @@ function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCh
  * failure at or above the failure threshold.
  *
  * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
- * cannot then alter it: No diagnostic check can reach a conclusion that already exists, and none
+ * cannot then alter it: No diagnostic check can change a conclusion that already exists, and none
  * is counted in the wall clock that the report records.
  */
 export async function runRdy(
