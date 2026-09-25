@@ -4,7 +4,7 @@ import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
-// Only directory reads are intercepted; the temporary tree still writes through to disk.
+// Intercept only directory reads; the fixture still writes the temporary tree to disk.
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, readdirSync: mockReaddirSync };
@@ -92,7 +92,7 @@ describe(discoverKitProjects, () => {
     ]);
   });
 
-  // A sweep has to reach this project to rewrite the manifest left behind.
+  // A sweep has to find this project to rewrite the manifest left behind.
   it('reports a project whose kits were deleted but whose manifest remains', async ({ temp }) => {
     await expect(discoverDirs(temp.dir)).resolves.toContain('packages/emptied');
   });
@@ -109,7 +109,7 @@ describe(discoverKitProjects, () => {
     await expect(discoverDirs(temp.dir)).resolves.toContain('packages/compiled-only');
   });
 
-  it('omits a project whose every source its config excludes', async ({ temp }) => {
+  it('omits a project whose config excludes every source', async ({ temp }) => {
     await expect(discoverDirs(temp.dir)).resolves.not.toContain('packages/excluded');
   });
 
@@ -138,7 +138,7 @@ describe(discoverKitProjects, () => {
     expect(emptied?.manifestPath).toBe(temp.resolve('packages/emptied/.readyup/manifest.json'));
   });
 
-  // A config that nobody can evaluate drops that project's settings, not its place.
+  // When a config cannot be evaluated, its project loses its settings but is still discovered.
   it('reports a project whose config fails to evaluate, with the failure and default settings', async ({ temp }) => {
     const { projects } = await discover(temp.dir);
     const broken = projects.find((project) => project.dir === 'packages/broken');
@@ -147,7 +147,7 @@ describe(discoverKitProjects, () => {
     expect(broken?.configError).toBeInstanceOf(Error);
   });
 
-  // The defaults point at `.readyup/`, where this project holds nothing, so they cannot settle whether it holds kits.
+  // The defaults point at `.readyup/`, where this project has nothing, so they cannot settle whether it contains kits.
   it('reports a project whose unevaluable config is its only readyup footprint', async ({ temp }) => {
     const { projects } = await discover(temp.dir);
     const brokenOnly = projects.find((project) => project.dir === 'packages/broken-only');
@@ -163,12 +163,12 @@ describe(discoverKitProjects, () => {
     expect(custom?.configError).toBeUndefined();
   });
 
-  // Topology comes from the filesystem, so a repo declaring no workspaces is swept like any other.
+  // Topology comes from the filesystem. A repo declaring no workspaces is swept like any other.
   it('finds nested projects with no workspace file anywhere in the tree', async ({ temp }) => {
     await expect(discoverDirs(temp.dir)).resolves.toContain('packages/authored');
   });
 
-  it('reports no project for a tree holding none', async ({ temp }) => {
+  it('reports no project for a tree containing none', async ({ temp }) => {
     const { projects } = await discover(temp.resolve('packages/plain'));
 
     expect(projects).toStrictEqual([]);
@@ -213,7 +213,7 @@ describe(discoverKitProjects, () => {
 });
 
 describe(discoverProjects, () => {
-  it('reports every directory holding a package manifest, the sweep root first', async ({ temp }) => {
+  it('reports every directory containing a package manifest, the sweep root first', async ({ temp }) => {
     await expect(discoverAllDirs(temp.dir)).resolves.toStrictEqual([
       '.',
       'packages/authored',
@@ -228,7 +228,7 @@ describe(discoverProjects, () => {
     ]);
   });
 
-  // The dependency axis asks what a workspace depends on, and a workspace authoring no kits still answers it.
+  // The dependency axis checks a workspace's dependencies, which a workspace authoring no kits still declares.
   it('reports a workspace with neither a readyup directory nor a readyup config', async ({ temp }) => {
     await expect(discoverAllDirs(temp.dir)).resolves.toContain('packages/plain');
   });

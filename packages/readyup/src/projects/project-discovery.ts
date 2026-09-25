@@ -13,7 +13,7 @@ import { toError } from '../portable/toError.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
 
 /**
- * Glob naming the candidates considered by a sweep: every directory holding a package manifest.
+ * Glob naming the candidates considered by a sweep: every directory containing a package manifest.
  *
  * Topology comes from the filesystem, so discovery is indifferent to which package manager the repo uses.
  */
@@ -24,17 +24,17 @@ export interface Project {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
   absolutePath: string;
-  /** The project's settings, or the defaults where `configError` is set. */
+  /** The project's settings, or the defaults when `configError` is set. */
   config: ResolvedRdyConfig;
   /** The failure raised by evaluating the project's config file. */
   configError?: Error;
-  /** Where the project's manifest belongs, whether or not one sits there. */
+  /** Where the project's manifest belongs, whether or not one exists there. */
   manifestPath: string;
 }
 
 /** Options for the sweeps below. */
 export interface DiscoverProjectsOptions {
-  /** Directory the sweep descends from. */
+  /** Directory from which the sweep descends. */
   root?: string;
 }
 
@@ -48,7 +48,7 @@ export interface DiscoverProjectsOptions {
  * project whose kits were deleted discoverable by the sweep that would rewrite its manifest.
  *
  * A candidate whose config cannot be evaluated counts as well. Its directories are unknown, so the
- * defaults cannot say whether it holds kits, and a caller that must not act on those defaults still
+ * defaults cannot show whether it contains kits, and a caller that must not act on those defaults still
  * has to learn that the project is there.
  */
 export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
@@ -64,8 +64,8 @@ export async function discoverKitProjects(options: DiscoverProjectsOptions = {})
 /**
  * Returns every project in the tree below `root`, each resolved under its own config, root-first.
  *
- * A project is any directory holding a package manifest, whatever its relationship to readyup. That is
- * the set that the dependency axis asks about: A workspace authoring no kits of its own still declares
+ * A project is any directory containing a package manifest, whatever its relationship to readyup. That is
+ * the set that the dependency axis checks: A workspace authoring no kits of its own still declares
  * dependencies that publish them, and it does not need a readyup footprint to have any.
  */
 export async function discoverProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
@@ -87,7 +87,7 @@ export async function discoverProjects(options: DiscoverProjectsOptions = {}): P
 
 // region | Helpers
 
-/** Reports whether a project's `compile.outDir` holds at least one compiled kit. */
+/** Reports whether a project's `compile.outDir` contains at least one compiled kit. */
 function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig): boolean {
   const outDir = path.resolve(absolutePath, config.compile.outDir);
   try {
@@ -97,7 +97,7 @@ function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig): boole
   }
 }
 
-/** Reports whether a project's `compile.srcDir` holds at least one TypeScript kit source. */
+/** Reports whether a project's `compile.srcDir` contains at least one TypeScript kit source. */
 function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean {
   const srcDir = path.resolve(absolutePath, config.compile.srcDir);
   if (!existsSync(srcDir)) return false;
@@ -112,7 +112,7 @@ function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean
  * Reports whether a directory has any readyup footprint at all.
  *
  * A project with neither falls back to the default config, which points inside `.readyup/`: Declaring a
- * source directory anywhere else takes a config file to say so. Testing this before the directory reads
+ * source directory anywhere else requires a config file. Testing this before the directory reads
  * below keeps the sweep from walking a source tree in every workspace of a repo whose kits live in one
  * of them.
  */
@@ -130,7 +130,7 @@ function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath
   return existsSync(manifestPath) || hasCompiledKits(absolutePath, config) || hasKitSources(absolutePath, config);
 }
 
-/** The settings read for one project, with the failure that replaced them by the defaults. */
+/** The settings read for one project, with the failure that caused a fallback to the defaults. */
 interface ProjectConfigRead {
   config: ResolvedRdyConfig;
   configError?: Error;
@@ -139,7 +139,7 @@ interface ProjectConfigRead {
 /**
  * Reads one project's config, falling back to the defaults and returning the failure when it cannot be evaluated.
  *
- * A config that fails drops that project's settings, not its discovery, and the caller decides what the
+ * When a config fails, its project loses its settings but is still discovered, and the caller decides what the
  * failure means for it. A project declaring no config needs one `existsSync` and evaluates no TypeScript,
  * which lets every candidate be resolved before any of them is judged a kit project.
  */
