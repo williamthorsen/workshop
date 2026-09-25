@@ -18,8 +18,9 @@ const it = baseIt.extend(
 
 describe(listForeignPaths, () => {
   beforeEach(() => {
-    // git resolves an attribute against the system-wide file and `core.attributesFile` as well as the repository's
-    // own, so a developer declaring either linguist attribute globally would otherwise change the outcome of these assertions.
+    // git resolves an attribute against the system-wide file and `core.attributesFile` as well as the repository's own,
+    // so a developer declaring either linguist attribute globally would otherwise change the outcome of these
+    // assertions.
     vi.stubEnv('GIT_ATTR_NOSYSTEM', '1');
   });
 

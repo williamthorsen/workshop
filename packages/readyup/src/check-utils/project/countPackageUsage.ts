@@ -19,10 +19,10 @@ export interface CountPackageUsageOptions {
  * name calls it as often as an adopter calls the real one, and counting those would report the project as adopted
  * while naming the clone that it should retire.
  *
- * The two patterns are matched against different texts. The use scan reads a source with comments and literals blanked, so a use named
- * in prose is not counted as one made. The import test locates its match in a source with comments alone blanked,
- * because the specifier that it matches is itself a string literal that full blanking would erase, and then reads
- * the blanked text at that offset to tell an import that the source runs from one that it merely quotes.
+ * The two patterns are matched against different texts. The use scan reads a source with comments and literals blanked,
+ * so a use named in prose is not counted as one made. The import test locates its match in a source with comments alone
+ * blanked, because the specifier that it matches is itself a string literal that full blanking would erase, and then
+ * reads the blanked text at that offset to tell an import that the source runs from one that it merely quotes.
  */
 export function countPackageUsage(sources: readonly ProjectSource[], options: CountPackageUsageOptions): number {
   const { exportNames, packageName } = options;

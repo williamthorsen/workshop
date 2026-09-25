@@ -127,8 +127,8 @@ function findWordEnd(code: string, from: number): number {
  *
  * Two of the keywords are read further than the word itself. `listHeads` passes a binding keyword here only when
  * `HEAD_PATTERN` found no name after it, which leaves a destructuring pattern, so the character opening one is
- * required; that requirement keeps out `as const`, in which the same keyword ends a type assertion. An `import` opening a call is the
- * dynamic form, which is an operand inside the statement around it rather than a statement of its own.
+ * required; that requirement keeps out `as const`, in which the same keyword ends a type assertion. An `import` opening
+ * a call is the dynamic form, which is an operand inside the statement around it rather than a statement of its own.
  */
 function isUnnamedHead(code: string, word: string, wordEnd: number): boolean {
   if (BINDING_KEYWORDS.has(word)) {

@@ -45,9 +45,9 @@ export interface BuildFindingReportOptions<F extends Finding> {
  * the file's last line when it is the last, because the closing brace is not a reliable end marker: A generic
  * constraint and a return-type annotation can each contain braces of their own, and an overload signature has no
  * body to close. If a span is cut short, the check reports the implementation that the rule exists to exempt. A
- * re-exporting barrel declares no implementation and contains no exempted lines, a file declaring the name without exporting it is a
- * hand-roll and is still reported, and a file declaring the export under another name and renaming it on export
- * from a second file is not recognized.
+ * re-exporting barrel declares no implementation and contains no exempted lines, a file declaring the name without
+ * exporting it is a hand-roll and is still reported, and a file declaring the export under another name and renaming it
+ * on export from a second file is not recognized.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;

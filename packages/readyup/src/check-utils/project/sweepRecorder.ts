@@ -23,9 +23,9 @@ export interface SweepRecorder {
 /**
  * Puts a recorder in scope for `fn` and everything it awaits, and returns what `fn` returns.
  *
- * The runner opens one scope per check, so a check reports its sweeps to the run's ledger without being passed
- * one, and work that the runner runs outside a scope -- a skip diagnosis, its own bookkeeping -- reports to nothing. Passing
- * no recorder calls `fn` untouched, which is what a run keeping no ledger does.
+ * The runner opens one scope per check, so a check reports its sweeps to the run's ledger without being passed one, and
+ * work that the runner runs outside a scope -- a skip diagnosis, its own bookkeeping -- reports to nothing. Passing no
+ * recorder calls `fn` untouched, which is what a run keeping no ledger does.
  */
 export function withSweepRecorder<T>(recorder: SweepRecorder | undefined, fn: () => T): T {
   if (recorder === undefined) return fn();

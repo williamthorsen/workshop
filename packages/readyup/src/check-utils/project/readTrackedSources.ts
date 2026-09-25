@@ -35,8 +35,8 @@ export function readSourceText(path: string): string | undefined {
 }
 
 /**
- * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree. `undefined`
- * and an empty list are distinct results: A project that cannot be swept is not one that was swept and contains nothing,
+ * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree. `undefined` and
+ * an empty list are distinct results: A project that cannot be swept is not one that was swept and contains nothing,
  * which is why a check calling this skips on `undefined` rather than reporting a pass.
  *
  * The filter decides a path before anything reads it, so an excluded file is never read. Text is cached per `cwd` for

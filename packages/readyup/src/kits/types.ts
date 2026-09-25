@@ -151,7 +151,10 @@ export interface OutcomeFinding {
 export interface FindingOutcome {
   findings: readonly OutcomeFinding[];
 
-  /** Sites already settled, the numerator of the fraction that the runner renders. When it is omitted, the runner does not render a fraction. */
+  /**
+   * Sites already settled, the numerator of the fraction that the runner renders. When it is omitted, the runner does
+   * not render a fraction.
+   */
   adoptedCount?: number | undefined;
 
   /**

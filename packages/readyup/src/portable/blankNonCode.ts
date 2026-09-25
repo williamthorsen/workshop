@@ -259,7 +259,8 @@ function readWordToken(word: string, previousToken: string): string {
 }
 
 /**
- * Scans code from an offset, blanking every comment and literal that it meets, and returns the offset at which it stopped.
+ * Scans code from an offset, blanking every comment and literal that it meets, and returns the offset at which it
+ * stopped.
  *
  * Stops at the `}` closing an interpolation when scanning one, and at the source's end otherwise. Braces opened
  * inside the interpolation are counted, so an object literal or a block in there closes itself rather than the
