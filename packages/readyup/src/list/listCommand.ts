@@ -49,7 +49,7 @@ const listOptions = {
   'no-cache': { type: 'boolean' },
   packages: { type: 'boolean' },
   recursive: { type: 'boolean' },
-  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
 
@@ -170,7 +170,7 @@ function runManifestMode(manifestArg: string, json: boolean): number {
   );
 }
 
-/** Displays the kits held by a `--from` source. */
+/** Displays the kits in a `--from` source. */
 async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Promise<number> {
   let source;
   try {
@@ -253,7 +253,7 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
  * Enumerates every kit-publishing dependency of the working directory, with the kits that each publishes.
  *
  * The dependency axis alone: A project's own kits belong to the owner listing, and this view reports what
- * the project's dependencies offer rather than what it holds. Both the packages named by the config and the
+ * the project's dependencies offer rather than what it contains. Both the packages named by the config and the
  * ones that it omits are reported, since the question is what is available rather than what a run would select.
  */
 async function runPackagesMode(json: boolean, configPath: string | undefined): Promise<number> {
@@ -276,7 +276,7 @@ async function runPackagesMode(json: boolean, configPath: string | undefined): P
  * declares dependencies that publish them, and that workspace is the one that the question is about.
  *
  * Each project's dependencies are read under its own config, so a package that one workspace configures and
- * another does not is reported as configured where it is.
+ * another does not is reported as configured only for the workspace that configures it.
  */
 async function runRecursivePackagesMode(json: boolean): Promise<number> {
   const projects = await discoverProjects({ root: process.cwd() });
@@ -307,7 +307,7 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
  *
  * Compiled kits only: An internal kit is never reachable from another directory, since `--jit` and
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
- * What is left is exactly the set that a reader can run from where they stand.
+ * What is left is exactly the set that a reader can run from the working directory.
  */
 async function runRecursiveMode(json: boolean): Promise<number> {
   const root = process.cwd();
@@ -335,8 +335,8 @@ async function runRecursiveMode(json: boolean): Promise<number> {
 /**
  * Reads one project's compiled kits for a repo-wide listing.
  *
- * A manifest that nobody can read drops that project's descriptions, not its listing: The kits themselves
- * are still on disk. An output directory that cannot be read drops the project, and the sweep moves on.
+ * For a project whose manifest nobody can read, the listing omits the descriptions but keeps the kits: The kits
+ * themselves are still on disk. A project whose output directory cannot be read is omitted, and the sweep moves on.
  */
 function collectProjectKits(project: Project): JsonListKitEntry[] {
   const outDir = path.resolve(project.absolutePath, project.config.compile.outDir);
@@ -374,9 +374,9 @@ function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
 }
 
 /**
- * Labels a package kit, its package first, so a kit reads the same here as in the heading that a run gives it.
+ * Labels a package kit, its package first, to match the heading that a run gives it.
  *
- * The row's own token supplies the package glyph, so the label holds only what follows it.
+ * The row's own token supplies the package glyph; the label contains only what follows it.
  */
 function describePackageKit(kit: PackageKit): string {
   const version = kit.version === undefined ? '' : `@${kit.version}`;
@@ -387,7 +387,7 @@ function describePackageKit(kit: PackageKit): string {
  * Builds the row for a kit published by an installed package, recording whether the config names it.
  *
  * `project` names the directory whose dependencies were read. Pass `undefined` for a listing that reads
- * one project, and the sweep-relative directory for a repo-wide one, where two workspaces depending on
+ * one project, and the sweep-relative directory for a repo-wide one, in which two workspaces depending on
  * the same package each contribute a row.
  */
 function buildPackageEntry(kit: PackageKit, configured: boolean, project?: string): JsonListKitEntry {
@@ -410,8 +410,8 @@ function buildPackageEntry(kit: PackageKit, configured: boolean, project?: strin
  * Loads the project config or the one named by `--config`, falling back to the defaults and reporting a
  * config that it cannot load.
  *
- * Listing is read-only, so a config that cannot be evaluated drops the caller's settings rather than the
- * whole listing, taking the same warn-and-continue that the corrupt-manifest paths take. `run` still fails
+ * Listing is read-only, so when a config cannot be evaluated, the function drops the caller's settings rather
+ * than the whole listing, taking the same warn-and-continue that the corrupt-manifest paths take. `run` still fails
  * hard on the same failure: It would otherwise execute against settings that nobody chose.
  */
 async function loadListingConfig(configPath: string | undefined): Promise<ResolvedRdyConfig> {
