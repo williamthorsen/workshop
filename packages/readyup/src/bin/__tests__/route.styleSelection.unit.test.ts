@@ -78,7 +78,7 @@ describe('--style plain', () => {
 });
 
 describe('a style named ahead of the command', () => {
-  it.for(RENDERING_COMMANDS)('reaches $name without being taken for a kit name', async ({ args }) => {
+  it.for(RENDERING_COMMANDS)('applies to $name without being taken for a kit name', async ({ args }) => {
     const { exitCode, stderr } = await route(['--style', 'plain', ...args]);
 
     expect(stderr).not.toContain('not found');

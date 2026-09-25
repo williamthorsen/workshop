@@ -103,7 +103,7 @@ function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
   if (outcomeFix !== undefined) {
     return typeof outcomeFix === 'string'
       ? outcomeFix
-      : `Unresolvable fix: the outcome returned ${describeValue(outcomeFix)}`;
+      : `Unresolvable fix: The outcome returned ${describeValue(outcomeFix)}`;
   }
 
   let raw: unknown;
@@ -114,12 +114,12 @@ function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
   } catch (error_: unknown) {
     const error = toError(error_);
     // Quoted so that the kit's message stays distinguishable from the sentence around it.
-    return `Unresolvable fix: the accessor threw ${JSON.stringify(error.message)}`;
+    return `Unresolvable fix: The accessor threw ${JSON.stringify(error.message)}`;
   }
 
   if (raw === undefined) return null;
   if (typeof raw === 'string') return raw;
-  return `Unresolvable fix: the accessor returned ${describeValue(raw)}`;
+  return `Unresolvable fix: The accessor returned ${describeValue(raw)}`;
 }
 
 /** The fields contributed by a check to every result that it can produce. */

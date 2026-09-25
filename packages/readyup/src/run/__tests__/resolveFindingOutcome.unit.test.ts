@@ -107,7 +107,7 @@ describe(resolveFindingOutcome, () => {
       expect(outcome.detail).toBe('describeError (src/errors.ts:12)');
     });
 
-    it('leaves the unnamed check a denominator shed by the named check', ({ temp }) => {
+    it("removes a suppressed site from the named check's denominator alone", ({ temp }) => {
       writeSourceLine(temp, 'src/errors.ts', 12, 'x; // rdy-ignore toolbelt.errors/no-instanceof-error');
       const findings = [CLONE, COUNTED];
 

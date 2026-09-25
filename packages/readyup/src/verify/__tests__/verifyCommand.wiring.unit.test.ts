@@ -263,8 +263,8 @@ async function verify(args: string[]) {
 /**
  * Writes a matching source/output pair and a manifest recording both hashes.
  *
- * Editing that source is the whole scenario: a kit whose TypeScript moved on while the compiled
- * bundle from which it was built stayed put.
+ * Editing that source is the whole scenario: a kit whose TypeScript changed while the compiled
+ * bundle built from it did not.
  */
 function writeCompiledPair(tree: TempTree): void {
   const compiled = Buffer.from('export default { checklists: [] };\n');

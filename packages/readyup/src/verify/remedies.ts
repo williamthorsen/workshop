@@ -6,7 +6,7 @@ import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { hasSourceFailed, type KitVerdicts } from './verdicts.ts';
 
-/** One thing to do about a kit, and the file that it speaks for, if it speaks for one. */
+/** One thing to do about a kit, and the file that it fixes, if it names one. */
 interface Remedy {
   path?: string;
   text: string;
@@ -50,13 +50,13 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
  * Drift alone gates this: A bundle that is merely gone recompiles normally, and its own remedy is the bare recompile.
  */
 function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
-  const spokenFor = new Set<string>();
+  const remediedPaths = new Set<string>();
   const texts: string[] = [];
 
   for (const { path, text } of raised) {
-    if (path !== undefined && spokenFor.has(path)) continue;
+    if (path !== undefined && remediedPaths.has(path)) continue;
     if (targetDrifted && text === RECOMPILE_REMEDY) continue;
-    if (path !== undefined) spokenFor.add(path);
+    if (path !== undefined) remediedPaths.add(path);
     texts.push(text);
   }
 

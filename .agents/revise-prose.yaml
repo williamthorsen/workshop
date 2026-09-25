@@ -16,7 +16,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   doc-descriptions:
@@ -36,7 +41,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   em-dash:
@@ -56,7 +66,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   inline-comments:
@@ -76,7 +91,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   plain-speech:
@@ -96,7 +116,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   reduced-object-relative:
@@ -116,7 +141,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   second-person:
@@ -136,7 +166,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   sentence-case:
@@ -156,7 +191,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   so:
@@ -176,7 +216,12 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   where:
@@ -196,10 +241,25 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/bin
       - packages/readyup/src/help
+      - packages/readyup/src/layout
+      - packages/readyup/src/reporting
+      - packages/readyup/src/run
+      - packages/readyup/src/verify
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
 rejections:
+  - rule: capitalization-after-colon
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/runCommand.unit.test.ts
+    phrase: 'Both modes are mocked: The dispatch owns'
+    ground: a clause precedes and a sentence follows; the capital is correct
+  - rule: plain-speech
+    rule-version: '7'
+    file: packages/readyup/src/run/__tests__/resolveFromSource.unit.test.ts
+    phrase: so it stands in for any
+    ground: "'stands in for' is a kept sense of 'stand'"
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/.readyup/kits/__tests__/publishing.unit.test.ts
@@ -371,15 +431,25 @@ rejections:
     phrase: wherever the kit came
     ground: 'outside the rule: adjunct free relative'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/bin/__tests__/route.runAll.unit.test.ts
+    phrase: found no compiled kits
+    ground: "not the construction: 'found' is the main verb of an asserted error message"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
     phrase: find it unchanged
-    ground: "not the construction: `the rest` is the clause's own subject and `it unchanged` is the object plus predicative complement of `find`"
+    ground: 'not the construction: object and predicate adjective'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
     phrase: make it produce
-    ground: 'not the construction: `that` is an overt subject relativizer on `arguments`, and `it produce` is the object plus bare infinitive of causative `make`'
+    ground: 'not the construction: a causative complement'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/bin/test-utils/routeCli.ts
+    phrase: wherever the suite runs
+    ground: 'outside the rule: a free relative of place'
   - rule: reduced-object-relative
     rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/json.unit.test.ts
@@ -641,65 +711,60 @@ rejections:
     phrase: pass it stands
     ground: 'not the construction: `On a pass` is an adjunct prepositional phrase and `it stands` the main clause'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/layout/__tests__/formatter.unit.test.ts
+    phrase: occupy two cells unaided
+    ground: 'not the construction: verb, object, adjunct'
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/layout/__tests__/layoutEngine.unit.test.ts
     phrase: skip labels unchanged
-    ground: 'not the construction: `unchanged` is an object complement of `leaves`'
+    ground: 'not the construction: object and object complement'
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/__tests__/richFormatter.unit.test.ts
-    phrase: occupy two cells unaided
-    ground: 'not the construction: a causative complement of `makes`'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/layout/engine.ts
     phrase: invocation selects otherwise
-    ground: 'not the construction: an adverbial `until` clause whose subject takes its own verb'
+    ground: "not the construction: 'selects' is the verb of the until-clause"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/layout/formatter.ts
+    phrase: role a name plays
+    ground: an embedded question, not a relative clause
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/layout/formatter.ts
+    phrase: role tokens have
+    ground: "not the construction: 'have' is the sentence's own verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: alongside the totals reported
+    ground: a passive participle with an agent
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: given no glyph by the formatter closes
+    ground: "'given' is a participle and 'closes' is the main verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: non-zero counts joined
-    ground: "not the construction: `joined` is a passive participle, which is the rule's own preferred repair form"
+    ground: "'joined' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/layoutEngine.ts
-    phrase: order every count line presents
-    ground: 'outside the rule: an adjunct relative on `order`, patterning with `the way it works`, whose gap fills no argument position'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: reader scans left
-    ground: "not the construction: `scans` is the sentence's own verb"
+    ground: "not the construction: 'scans' is the sentence's own verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: row's counts begin
-    ground: "not the construction: `begin` is the clause's own verb"
+    ground: "'begin' is the clause's own verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: token no glyph returns
-    ground: 'not the construction: a subject relative that already carries its relativizer'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/plainFormatter.ts
-    phrase: role a name plays
-    ground: 'not the construction: an embedded question under `says`, not a relative clause'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/plainFormatter.ts
-    phrase: role tokens have
-    ground: 'not the construction: `role tokens` is a compound noun and `have` is its own verb'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/resolveStyle.ts
-    phrase: accepted settings widened
-    ground: 'not the construction: the head is a past participle modifying `settings`'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/layout/resolveStyle.ts
-    phrase: wherever the output is not a person's
-    ground: 'not the construction: a `wherever` adverbial clause, not a relative clause'
+    ground: a ditransitive; 'returns' is the main verb
   - rule: reduced-object-relative
     rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
@@ -841,85 +906,140 @@ rejections:
     phrase: supplied headers are sent
     ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/reporting/formatJsonReport.ts
+    phrase: alongside the raw figures
+    ground: the relativizer is present
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/reporting/formatJsonReport.ts
+    phrase: run settings echoed
+    ground: a passive participle with an agentive by-phrase
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/pragmaRecording.wiring.unit.test.ts
+    phrase: ran the skipped check's
+    ground: "'ran' is the main verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/resolveAllKitSources.unit.test.ts
+    phrase: found no compiled kits
+    ground: "not the construction: 'found' is the main verb of an asserted error message"
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/resolveAllKitSources.unit.test.ts
+    phrase: found no kit sources
+    ground: "not the construction: 'found' is the main verb of an asserted error message"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
     phrase: kit its own declared
-    ground: not the construction; a ditransitive with two objects, no relative clause
+    ground: 'not the construction: a double object'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
     phrase: run-level options have
-    ground: not the construction; "have" is the clause's own verb, not an embedded relative
+    ground: "not the construction: 'have' is the clause's main verb"
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
-    phrase: authoring-error tests exercise
-    ground: 'not the construction: "tests" is the sentence''s subject and "exercise" its own main verb'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
     phrase: order the skips resolved
-    ground: 'outside the rule: an adjunct relative on "the order", whose gap fills no argument position'
+    ground: adjunct relative
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
+    phrase: The authoring-error
+    ground: "'exercise' is the sentence's main verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/listPragmaSites.ts
+    phrase: wherever it appears
+    ground: an adverbial free relative
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/run/pragma-report.ts
     phrase: run's checks read
-    ground: 'outside the rule: a fused relative headed by `what`, which is its own relative pronoun and admits no relativizer'
+    ground: fused head
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveAllKitSources.ts
+    phrase: compile settings select
+    ground: the relativizer is present
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveAllKitSources.ts
+    phrase: cover the same kits
+    ground: verb and direct object
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveAllKitSources.ts
+    phrase: found no compiled kits
+    ground: verb and direct object
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveAllKitSources.ts
+    phrase: found no kit sources
+    ground: verb and direct object
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/run/resolveConfiguredPackages.ts
     phrase: configured packages require
-    ground: fused relative headed by `what`, which is its own relative pronoun and admits no relativizer
+    ground: fused head
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/resolveFindingOutcome.ts
     phrase: check's pragmas suppressed
-    ground: interrogative content clause after `is told`, not a relative clause; there is no relativizer position
+    ground: introduced by 'which'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/resolveFromSource.ts
     phrase: syntax stays reserved
-    ground: "not the construction: `stays` is the main clause's own verb, and there is no relative clause"
+    ground: subject and verb of a purpose clause
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runHumanMode.ts
     phrase: kit's checklists need
-    ground: "not the construction: `what` is a fused head and `need` is its clause's own verb"
+    ground: fused head
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runJsonMode.ts
-    phrase: body throws is attributable
-    ground: 'outside the rule: `anything` is a fused head rather than a lexical noun'
+    phrase: anything the loop body
+    ground: fused-head pronoun
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order the reader met
-    ground: 'outside the rule: an adjunct relative, since `met` already has its object'
+    ground: 'adjunct relative: the object is filled'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order the skips happened
-    ground: 'outside the rule: an adjunct relative with no argument gap'
+    ground: 'adjunct relative: the gap fills no argument position'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order their skips resolved
-    ground: 'outside the rule: an adjunct relative, since `resolved` is intransitive here and the gap fills no argument position'
+    ground: 'adjunct relative: the gap fills no argument position'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/runRdy.ts
-    phrase: wherever the check makes
-    ground: 'outside the rule: `wherever` heads a free relative adverbial, and the object `it` is present'
+    phrase: whatever severity the check
+    ground: fused free relative ('whatever severity'), which admits no relativizer
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: wherever the check makes it
+    ground: no head noun; an adjunct
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/run/suppressesFinding.ts
     phrase: naming a check called
-    ground: 'not the construction: `called` is a passive participle, not a relative clause with an embedded subject'
+    ground: participle phrase with a direct object
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/run/version-skew.ts
     phrase: floor the running readyup does not meet
-    ground: 'not the construction: the relative clause already carries an overt relativizer, `whose`'
+    ground: introduced by 'whose'
   - rule: reduced-object-relative
     rule-version: '0'
     file: packages/readyup/src/schemas/common.ts
@@ -946,50 +1066,50 @@ rejections:
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: the relative clause already carries the overt relativizer `whose`'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/verify/__tests__/checkRebuild.unit.test.ts
     phrase: version the rebuild does not reproduce
-    ground: 'not the construction: the relative clause carries the overt relativizer `whose`, which fronts the object of `reproduce`'
+    ground: introduced by 'whose'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/verify/__tests__/verifyCommand.rebuild.tool.test.ts
+    phrase: not a test names
+    ground: "not the construction: 'whether or not' introduces a conditional clause"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/verify/__tests__/verifyCommand.rebuild.tool.test.ts
     phrase: version the rebuild does not reproduce
-    ground: 'not the construction: the overt relativizer `whose` fronts the object of `reproduce`'
+    ground: the relativizer 'whose' is present
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/verify/__tests__/verifyCommand.wiring.unit.test.ts
     phrase: hash verdicts are arranged
-    ground: "not the construction: `are arranged` is the main clause's own verb, and the passive hides no actor the reader needs"
+    ground: "'are arranged' is the main verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/verify/checkRebuild.ts
+    phrase: exactly the question approximated
+    ground: a passive participle with an agentive by-phrase
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/verify/checkRebuild.ts
     phrase: version the rebuild does not reproduce
-    ground: 'not the construction: the relative clause carries the overt relativizer `whose`, with the object pied-piped as `whose recorded version`'
+    ground: introduced by 'whose'
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/verify/checkRebuild.ts
-    phrase: version the rebuild does not reproduce
-    ground: 'not the construction: same pied-piped `whose` relative as line 26'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/verify/remedies.ts
     phrase: order the axes raised
-    ground: 'outside the rule: an adjunct relative whose gap fills no argument position, since `them` already fills the object slot'
+    ground: 'adjunct relative: the object is filled'
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/verify/remedies.ts
-    phrase: wherever the target has drifted
-    ground: 'not the construction: `wherever` heads an adverbial clause, not a relative clause on a lexical head noun'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/verify/verifyCommand.ts
     phrase: one it supplies
-    ground: 'not the construction: same fronted prepositional phrase followed by a main clause; the real site in this sentence was repaired separately'
+    ground: "not the construction: 'it supplies' is the main clause after a prepositional phrase"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/verify/verifyCommand.ts
     phrase: verdict it says
-    ground: 'not the construction: `it` is the subject of the main clause after a fronted prepositional phrase, so `verdict` heads no relative clause'
+    ground: "not the construction: 'it says' is the main clause after a prepositional phrase"
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/vitest.config.ts
@@ -1035,6 +1155,21 @@ rejections:
     file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
     phrase: Your own repo is where the defect appears first.
     ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/bin/__tests__/route.unit.test.ts
+    phrase: Did you mean 'rdy ${expected}'?
+    ground: "not prose: an asserted literal matching the CLI's message"
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/bin/__tests__/route.unit.test.ts
+    phrase: Did you mean 'rdy list'?
+    ground: "not prose: an asserted literal matching the CLI's message"
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/bin/route.ts
+    phrase: Did you mean 'rdy ${typoMatch}'?
+    ground: CLI message; kept consistent with the help command's 'Did you mean', which the record already rejects
   - rule: second-person
     rule-version: '1'
     file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
@@ -1085,6 +1220,91 @@ rejections:
     file: packages/readyup/docs/running-checks.md
     phrase: so there is nothing left to name separately
     ground: three sentences separate it from the previous so; a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/bin/hasJsonFlag.ts
+    phrase: so over-detection sends an error to the wrong channel
+    ground: a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/bin/route.ts
+    phrase: Command selection reads the first argument, so a style named ahead of the command
+    ground: a lone 'so' that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/reporting/__tests__/reportRdy.unit.test.ts
+    phrase: counts hidden passes, so the tally still covers the whole run
+    ground: a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/reporting/formatJsonReport.ts
+    phrase: are what the invocation requested, so each is absent
+    ground: a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/reporting/formatJsonReport.ts
+    phrase: contributes nothing to the totals, so they cover only the kits that did
+    ground: a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/runHumanMode.unit.test.ts
+    phrase: The count includes the newline terminating the block above, so the gap
+    ground: a lone 'so' that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
+    phrase: 'could not be read, so no kit was checked against it: bad JSON'
+    ground: 'not prose: a fixture message literal passed through a mock'
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
+    phrase: A kit runs as JavaScript, so its functions return whatever their author wrote
+    ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/skip-diagnosis.unit.test.ts
+    phrase: Every kit resolved by `--packages` has the same name, so the package
+    ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/kit-staleness.ts
+    phrase: could not be read, so no kit was checked against it
+    ground: states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveAllKitSources.ts
+    phrase: is already a config error, so this selection is never empty
+    ground: states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveKitSources.ts
+    phrase: so this map never covers more than a single spec
+    ground: states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: is a defect in the check itself and not a soft finding, so it overrides
+    ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: is a defect in the kit rather than in the check's subject, so it is reported in
+    ground: states a direct result, three sentences from the previous so
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/run/skip-diagnosis.ts
+    phrase: these are check-derived rather than manifest-derived, so no kit source silences them
+    ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/verify/remedies.ts
+    phrase: The bundle reproduces, so its recorded hash is what is stale.
+    ground: states a direct result; docs/publishing-kits.md quotes the printed message word for word
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/verify/remedies.ts
+    phrase: The sweep keeps a drifted bundle, so removing that kit
+    ground: a lone so that states a direct result
   - rule: where
     rule-version: '1'
     file: packages/readyup/.readyup/kits/checks/buildSelfContainmentChecks.ts
@@ -1147,6 +1367,21 @@ rejections:
     ground: 'outside the rule: names a place (this project, a package, a remote)'
   - rule: where
     rule-version: '1'
+    file: packages/readyup/src/bin/__tests__/route.partialResults.unit.test.ts
+    phrase: keeps the failure off stdout, where a failed check would appear
+    ground: 'names a place: the stdout stream'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
+    phrase: rejects a flag standing where its value belongs
+    ground: 'names a place: the position in argv'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/bin/route.ts
+    phrase: Flags naming where a kit comes from
+    ground: "outside the rule: 'where' names a place (a kit's origin)"
+  - rule: where
+    rule-version: '1'
     file: packages/readyup/src/help/__tests__/help.tool.test.ts
     phrase: shows where a spawned rdy looks for its doc files
     ground: 'outside the rule: names a location'
@@ -1155,3 +1390,63 @@ rejections:
     file: packages/readyup/src/help/helpText.ts
     phrase: Where help output sends a reader for anything it does not cover.
     ground: 'outside the rule: names a place (the destinations that the pointer lists)'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/layout/layoutEngine.ts
+    phrase: with no space where the glyph would be.
+    ground: "'where' names a place, the glyph's position"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/reporting/__tests__/formatJsonReport.unit.test.ts
+    phrase: passes the id into the summary projection, where a failure is all that survives
+    ground: "'where' names a location in the output"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/reporting/reportRdy.ts
+    phrase: the fix standing where the reason would
+    ground: "'where' names a position in the rendered block"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/kit-staleness.unit.test.ts
+    phrase: relative to `.readyup`, where the manifest lives
+    ground: where names a place
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/pragmaRecording.wiring.unit.test.ts
+    phrase: which is where a memoizing kit reads one
+    ground: where names a place in the check
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/__tests__/resolveConfiguredPackages.unit.test.ts
+    phrase: names where a kit would be read from
+    ground: where names a place
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/loadKit.ts
+    phrase: named for where the kit came from
+    ground: where names a place
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/resolveKitSources.ts
+    phrase: the label naming where it was fetched from
+    ground: where names a place
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/runHumanMode.ts
+    phrase: where the kit came from, then the kit itself
+    ground: where names a place
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: by where their results appear in the report
+    ground: where names a position in the report
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: Where the kit came from, read for every check's ids and for nothing else.
+    ground: where names a place of origin
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/run/runRdy.ts
+    phrase: Where the kit came from, which namespaces its checks' ids.
+    ground: where names a place of origin
