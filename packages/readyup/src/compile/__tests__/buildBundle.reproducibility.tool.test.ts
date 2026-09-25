@@ -28,7 +28,7 @@ const it = baseIt
           'node_modules/tiny-dep/index.js': 'export const tiny = 1;\n',
           'node_modules/tiny-dep/package.json': JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }),
           // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-          // temporary directory happens to hold a manifest.
+          // temporary directory happens to contain a manifest.
           'package.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
         },
         { prefix: 'reproducibility-' },
@@ -53,7 +53,7 @@ interface Builds {
 
 /**
  * Compiles one kit from directories that are neither its own nor each other's, which is the property
- * on which `rdy verify --rebuild` rests: It recompiles in whatever directory the verification runs in.
+ * on which `rdy verify --rebuild` depends: It recompiles in whatever directory the verification runs in.
  */
 describe('buildBundle reproducibility', () => {
   it('produces identical bytes whatever directory the compile runs in', ({ builds }) => {

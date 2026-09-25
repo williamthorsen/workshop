@@ -94,7 +94,7 @@ describe('readyupResolverHook', () => {
   });
 
   describe(initialize, () => {
-    it("stores the readyupParentURL so subsequent 'readyup' resolves use it", () => {
+    it("stores the readyupParentURL so that subsequent 'readyup' resolves use it", () => {
       initialize({ readyupParentURL: 'file:///different/runner/node_modules/readyup/index.js' });
       const nextResolve = buildNextResolve();
 
@@ -111,8 +111,8 @@ describe('readyupResolverHook', () => {
   describe('when initialize() has not been called', () => {
     it('throws a descriptive error if a readyup specifier is resolved', async () => {
       // The module-level `readyupParentURL` is set by `initialize()` (called in
-      // `beforeEach`); reset it by re-importing the module in isolation so the
-      // throw branch is reachable.
+      // `beforeEach`); reset it by re-importing the module in isolation so that
+      // the throw branch is reachable.
       vi.resetModules();
       const { resolve: freshResolve } = await import('../readyupResolverHook.ts');
       const nextResolve = buildNextResolve();

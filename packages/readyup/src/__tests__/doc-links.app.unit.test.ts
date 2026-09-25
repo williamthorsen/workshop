@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 const packageDir = path.resolve(import.meta.dirname, '../..');
 const docsDir = 'docs';
 
-/** One relative link, resolved against the file that holds it. */
+/** One relative link, resolved against the file that contains it. */
 interface DocLink {
-  /** Anchor named by the link, or `undefined` where the link names a file alone. */
+  /** Anchor named by the link, or `undefined` when the link names a file alone. */
   anchor: string | undefined;
 
-  /** File holding the link, relative to the package root. */
+  /** File containing the link, relative to the package root. */
   source: string;
 
   /** File named by the link, relative to the package root. */
@@ -50,7 +50,7 @@ describe('documentation links', () => {
 
 // region | Helpers
 
-/** Why a link does not resolve, or `undefined` where it does. */
+/** Why a link does not resolve, or `undefined` when it does. */
 function describeFailure(link: DocLink, anchorsByFile: Map<string, Set<string>>): string | undefined {
   if (!existsSync(path.join(packageDir, link.target))) {
     return `${link.source}: ${link.written} names no file at ${link.target}`;
@@ -95,7 +95,7 @@ function listDocFiles(): string[] {
     .toSorted();
 }
 
-/** Relative links held by one file, absolute URLs and anything inside code excluded. */
+/** Relative links in one file, absolute URLs and anything inside code excluded. */
 function listLinks(source: string): DocLink[] {
   return listProseLines(source)
     .flatMap((line) =>
@@ -113,7 +113,7 @@ function listLinks(source: string): DocLink[] {
     });
 }
 
-/** Lines of one Markdown file that sit outside a fenced code block. */
+/** Lines of one Markdown file that are outside a fenced code block. */
 function listProseLines(file: string): string[] {
   const lines = readFileSync(path.join(packageDir, file), 'utf8').split('\n');
   const prose: string[] = [];
@@ -130,7 +130,7 @@ function listProseLines(file: string): string[] {
   return prose;
 }
 
-/** Splits a link destination into its file part and its anchor, which is `undefined` where it names none. */
+/** Splits a link destination into its file part and its anchor, which is `undefined` when it names none. */
 function splitAnchor(destination: string): [string, string | undefined] {
   const hash = destination.indexOf('#');
   return hash === -1 ? [destination, undefined] : [destination.slice(0, hash), destination.slice(hash + 1)];

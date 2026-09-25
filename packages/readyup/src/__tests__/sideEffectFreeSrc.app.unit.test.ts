@@ -14,11 +14,11 @@ const PACKAGE_JSON_PATH = join(thisFileDir, '..', '..', 'package.json');
 /**
  * Files in `src/` that intentionally have top-level side effects, such as CLI entry points.
  * Each entry is a src-relative POSIX path. The corresponding compiled output MUST appear in
- * package.json's `sideEffects` array so bundlers don't tree-shake it.
+ * package.json's `sideEffects` array so that bundlers don't tree-shake it.
  */
 const INTENTIONAL_SIDE_EFFECT_FILES = new Set<string>(['bin/rdy.ts']);
 
-/** Directories under `src/` that hold test code rather than shipped source, matching nmr's compile-entry exclusions. */
+/** Directories under `src/` that contain test code rather than published source, matching nmr's compile-entry exclusions. */
 const NON_SOURCE_DIRS = new Set<string>(['__fixtures__', '__mocks__', '__tests__', 'test-utils']);
 
 /** TypeScript AST kinds that represent purely declarative top-level statements. */
