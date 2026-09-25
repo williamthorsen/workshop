@@ -7,7 +7,7 @@ import { resolveHomeDir } from '../kits/kitsDir.ts';
 const CACHE_SUBDIRECTORY = path.join('readyup', 'http');
 
 /**
- * Returns the directory of readyup's HTTP cache, or `undefined` where no absolute location can be resolved.
+ * Returns the directory of readyup's HTTP cache, or `undefined` when no absolute location can be resolved.
  *
  * `XDG_CACHE_HOME` counts only when absolute, as the XDG Base Directory specification requires. A home that is not
  * absolute disables the cache: `resolveHomeDir` falls back to a literal `~`, which would resolve against the working

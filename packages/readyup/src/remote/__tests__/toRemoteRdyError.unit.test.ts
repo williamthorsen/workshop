@@ -60,12 +60,12 @@ describe(toRemoteRdyError, () => {
       expect(error.hint).toBe(hint);
     });
 
-    it.each([401, 403, 404])('hints on %i, where a credential would have made the difference', (status) => {
+    it.each([401, 403, 404])('hints on %i, which a credential would have fixed', (status) => {
       expect(toRemoteRdyError(new RemoteFetchError('boom', status), context()).hint).toBe(GITHUB_HINT);
     });
 
     // GitHub serves a private repository's manifest as absent, so the soft-404 path has to hint too
-    // or the GitHub arm would never reach one.
+    // or the GitHub arm would never produce one.
     it('hints on a missing manifest, which is how GitHub reports a private repository', () => {
       const error = toRemoteRdyError(new RemoteManifestNotFoundError(GITHUB_URL), context());
 
@@ -82,7 +82,7 @@ describe(toRemoteRdyError, () => {
       expect(error.hint).toBeUndefined();
     });
 
-    it('stays silent for a host readyup does not authenticate', () => {
+    it('stays silent for a host that readyup does not authenticate', () => {
       const error = toRemoteRdyError(new RemoteFetchError('boom', 401), context({ provider: undefined }));
 
       expect(error.hint).toBeUndefined();

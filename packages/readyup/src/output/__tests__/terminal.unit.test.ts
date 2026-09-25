@@ -25,7 +25,7 @@ describe(printStep, () => {
     expect(silent.info).toHaveBeenCalledWith('\n\u{2500}\u{2500} Scaffolding config');
   });
 
-  it('retires the arrow-prefixed step grammar', () => {
+  it('omits the arrow-prefixed step grammar', () => {
     using silent = silenceConsole(['info']);
 
     printStep('Next steps');
@@ -108,7 +108,7 @@ describe(reportWriteResult, () => {
       expect(silent.error).toHaveBeenCalledWith(`${FAILED} ${PATH}\n   failed to write`);
     });
 
-    it('routes to stderr so a caller redirecting stdout still sees it', () => {
+    it('writes to stderr so that a caller redirecting stdout still sees it', () => {
       using silent = silenceConsole(['error', 'info']);
 
       reportWriteResult(makeResult({ outcome: 'failed', error: 'ENOSPC' }), false);

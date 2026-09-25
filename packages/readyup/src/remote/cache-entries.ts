@@ -23,7 +23,7 @@ const CacheEntrySchema = z.object({
 /** A response stored for a URL. */
 export type CacheEntry = z.infer<typeof CacheEntrySchema>;
 
-/** Reads the entry stored for a URL, or `undefined` where nothing readable is stored for that URL. */
+/** Reads the entry stored for a URL, or `undefined` when nothing readable is stored for that URL. */
 export async function readCacheEntry(cacheDir: string, url: string): Promise<CacheEntry | undefined> {
   let text: string;
   try {
@@ -36,7 +36,7 @@ export async function readCacheEntry(cacheDir: string, url: string): Promise<Cac
   return result.success && result.data.url === url ? result.data : undefined;
 }
 
-/** Removes the entry stored for a URL, doing nothing where there is none or it cannot be removed. */
+/** Removes the entry stored for a URL, doing nothing when there is none or it cannot be removed. */
 export async function removeCacheEntry(cacheDir: string, url: string): Promise<void> {
   await removeFile(resolveEntryPath(cacheDir, url));
 }
@@ -63,7 +63,7 @@ export async function writeCacheEntry(cacheDir: string, entry: CacheEntry): Prom
 
 // region | Helpers
 
-/** Removes a file, doing nothing where it is absent or cannot be removed. */
+/** Removes a file, doing nothing when it is absent or cannot be removed. */
 async function removeFile(filePath: string): Promise<void> {
   try {
     await rm(filePath, { force: true });

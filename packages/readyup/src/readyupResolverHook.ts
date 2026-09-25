@@ -41,7 +41,7 @@ type NextResolve = (specifier: string, context?: Partial<ResolveContext>) => Res
 
 let readyupParentURL: string | undefined;
 
-/** Reports whether a specifier should be routed through the runner's readyup installation. */
+/** Reports whether a specifier should resolve against the runner's readyup installation. */
 function isReadyupSpecifier(specifier: string): boolean {
   return specifier === 'readyup' || specifier.startsWith('readyup/');
 }
@@ -55,11 +55,11 @@ export function initialize(data: ReadyupResolverHookData): void {
 }
 
 /**
- * Routes `readyup` and `readyup/*` specifiers through the runner's own readyup installation by
+ * Resolves `readyup` and `readyup/*` specifiers against the runner's own readyup installation by
  * rewriting `parentURL`, and delegates every other specifier to the default resolver unchanged.
  *
  * A readyup specifier resolved before `initialize()` throws: Falling back to the original
- * `parentURL` would defeat the rewrite and surface later as an opaque `ERR_MODULE_NOT_FOUND`.
+ * `parentURL` would defeat the rewrite and appear later as an opaque `ERR_MODULE_NOT_FOUND`.
  */
 export function resolve(
   specifier: string,

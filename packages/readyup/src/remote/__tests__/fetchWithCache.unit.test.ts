@@ -328,12 +328,12 @@ function buildCache(tree: TempTree, { reload = false }: { reload?: boolean } = {
   return { dir: tree.dir, reload };
 }
 
-/** Returns a successful kit response carrying the given headers. */
+/** Returns a successful kit response with the given headers. */
 function buildKitResponse(headers: Record<string, string>): Response {
   return new Response(KIT_BODY, { status: 200, statusText: 'OK', headers });
 }
 
-/** Creates a temp tree to hold a cache. */
+/** Creates a temp tree to contain a cache. */
 function createCacheTree(entries: Record<string, string> = {}): TempTree {
   return createTempTree(entries, { prefix: 'readyup-http-cache-' });
 }

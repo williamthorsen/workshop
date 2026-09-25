@@ -20,7 +20,7 @@ export function printStep(message: string): void {
 /**
  * Writes a check line for `result`, naming the file and then its outcome.
  *
- * An outcome that failed shows its cause in a block beneath and goes to stderr; the rest go to stdout.
+ * A failed outcome's line shows its cause in a block beneath and is written to stderr; the rest are written to stdout.
  */
 export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
   const { claim, detail, reason, token } = describeWriteResult(result, dryRun);

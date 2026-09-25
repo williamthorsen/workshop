@@ -1,6 +1,6 @@
 /**
  * Returns a Bitbucket token from ambient sources, for authenticating a private repo fetch, or
- * `undefined` where none is set.
+ * `undefined` when none is set.
  *
  * The `BITBUCKET_TOKEN` env var is the only source: No Bitbucket CLI is widely deployed with a stable
  * `auth token` equivalent, and Atlassian's `acli` is Jira- and Confluence-centric.

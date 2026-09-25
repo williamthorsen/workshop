@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 
 /**
  * Returns a GitHub token from ambient sources, for authenticating a private repo fetch, or
- * `undefined` where neither source produces one.
+ * `undefined` when neither source produces one.
  *
  * The `GITHUB_TOKEN` env var is read first, then `gh auth token`.
  */
