@@ -78,10 +78,10 @@ const GLYPH_OUTPUT = richFormatter.tokens.kit.text;
 /** Directory swept by the batch tests, matching the `srcDir` that the mocked config declares. */
 const SRC_DIR = '.readyup/kits';
 
-/** The hash recorded by a compile for its entry point, which is where a manifest entry's `sourceHash` comes from. */
+/** The hash recorded by a compile for its entry point, and the source of a manifest entry's `sourceHash`. */
 const SOURCE_HASH = '5c0urce1';
 
-/** The esbuild version reported by every mocked compile, which is where an entry's `esbuildVersion` comes from. */
+/** The esbuild version reported by every mocked compile, and the source of an entry's `esbuildVersion`. */
 const ESBUILD_VERSION = '0.99.0-test';
 
 /** Returns the absolute path of a kit source in the directory that a batch compile sweeps. */
@@ -92,7 +92,7 @@ function kitSource(fileName: string): string {
 /**
  * Builds a `compileConfig` result whose closure records `entry` as the module from which the bundle was built.
  *
- * Where a test cares which file supplied `sourceHash`, it says so by naming the entry, because the command
+ * When a test cares which file supplied `sourceHash`, it says so by naming the entry, because the command
  * reads the hash back out of the closure rather than hashing the source itself.
  */
 function compileResult(
@@ -135,7 +135,7 @@ describe(compileCommand, () => {
     mockValidateCompiledOutput.mockResolvedValue(kitMetadata());
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
     mockWarnOnUnrecordedBundles.mockReturnValue([]);
-    // No path named by these tests holds a symlink, so a real path is the path itself.
+    // No path named by these tests contains a symlink, so a real path is the path itself.
     mockRealpathSync.mockImplementation((target: string) => target);
   });
 
@@ -330,7 +330,7 @@ describe(compileCommand, () => {
     expect(stdout).toContain(`Compiling kits in ${expected}`);
   });
 
-  // Readyup is published, so it runs in repositories that have no workspace file and in directories under
+  // Because readyup is published, it runs in repositories that have no workspace file and in directories under
   // no repository at all. Both still need a stable anchor rather than no heading.
   it('falls back to the working directory when no workspace or repository encloses the source', async () => {
     mockLoadConfig.mockResolvedValue({
@@ -511,7 +511,7 @@ describe(compileCommand, () => {
 
     // region | Helpers
 
-    /** Arranges a config-driven sweep that finds no kits, over a manifest that records none where it exists. */
+    /** Arranges a config-driven sweep that finds no kits, over a manifest that, if it exists, records none. */
     function arrangeEmptySweep(existence: ArrangeExistenceArgs): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
@@ -967,7 +967,7 @@ describe(compileCommand, () => {
     });
     mockExistsSync.mockReturnValue(true);
     mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
-    // Keyed by the source rather than queued, so a kit skipped by the sweep does not hand its result to the next one.
+    // Keyed by the source rather than queued, so that the next kit does not receive the result of a kit skipped by the sweep.
     mockCompileConfig.mockImplementation((inputPath: string) => {
       const isAlpha = path.basename(inputPath) === 'alpha.ts';
       const result = isAlpha
@@ -1601,7 +1601,7 @@ describe(compileCommand, () => {
     manifestExists: boolean;
   }
 
-  /** Stubs `existsSync` per path, so the source directory and the manifest are arranged independently. */
+  /** Stubs `existsSync` per path, so that the source directory and the manifest are arranged independently. */
   function arrangeExistence(existence: ArrangeExistenceArgs): void {
     const { srcDirExists, manifestExists } = existence;
     mockExistsSync.mockImplementation((target: unknown) =>

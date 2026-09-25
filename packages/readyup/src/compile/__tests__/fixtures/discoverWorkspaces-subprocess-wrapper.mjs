@@ -1,7 +1,7 @@
 // Usage: node discoverWorkspaces-subprocess-wrapper.mjs <compiledFixturePath> <hookPath>
 //
 // Registers the readyup resolver hook against the runner's own readyup
-// installation (using `import.meta.url` as the parent URL so Node walks
+// installation (using `import.meta.url` as the parent URL so that Node walks
 // `node_modules` upward from this file's location into the workspace's readyup
 // package), dynamically imports the compiled fixture, locates the first check
 // in the first checklist of the default-exported kit, and invokes its `check`
