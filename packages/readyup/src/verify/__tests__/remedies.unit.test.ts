@@ -31,13 +31,13 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, buildVerdicts({ drift: buildDrift() }))).toStrictEqual([MOVE_EDITS]);
     });
 
-    it('names re-recording instead where the rebuild reproduces the drifted bundle', () => {
+    it('names re-recording instead when the rebuild reproduces the drifted bundle', () => {
       const verdicts = buildVerdicts({ drift: buildDrift(), rebuild: { kind: 'ok' } });
 
       expect(resolveRemedies(KIT, verdicts)).toStrictEqual([RE_RECORD]);
     });
 
-    it('names only the move-edits remedy where the rebuild also fails, whose recompile the drift gate refuses', () => {
+    it('names only the move-edits remedy when the rebuild also fails, whose recompile the drift gate refuses', () => {
       const rebuild = { kind: 'mismatch', expected: 'aaa', actual: 'bbb' } as const;
 
       expect(resolveRemedies(KIT, buildVerdicts({ drift: buildDrift(), rebuild }))).toStrictEqual([MOVE_EDITS]);
@@ -71,7 +71,7 @@ describe(resolveRemedies, () => {
       ]);
     });
 
-    it('falls back to a recompile where the entry records no source to name', () => {
+    it('falls back to a recompile when the entry records no source to name', () => {
       const kit: RdyManifestKit = { name: 'deploy', path: 'kits/deploy.js' };
 
       expect(resolveRemedies(kit, buildVerdicts({ source: buildMissingSource() }))).toStrictEqual([RECOMPILE]);
@@ -87,7 +87,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, buildVerdicts({ inputs }))).toStrictEqual([RECOMPILE]);
     });
 
-    it('names an input that is gone, offering a recompile where the kit no longer reads it', () => {
+    it('names an input that is gone, offering a recompile if the kit no longer reads it', () => {
       const inputs = buildStaleInputs([{ kind: 'module', path: 'checks/shared.ts', reason: 'missing' }]);
 
       expect(resolveRemedies(KIT, buildVerdicts({ inputs }))).toStrictEqual([
@@ -125,7 +125,9 @@ describe(resolveRemedies, () => {
     it('sends a source that no longer compiles back to the kit rather than to a recompile', () => {
       const rebuild = { kind: 'failed', message: 'Unexpected token' } as const;
 
-      expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual(['Fix the kit source so it compiles.']);
+      expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual([
+        'Fix the kit source so that it compiles.',
+      ]);
     });
 
     it('recompiles to fill in a manifest entry in which the rebuild found nothing recorded', () => {
@@ -134,7 +136,7 @@ describe(resolveRemedies, () => {
       expect(resolveRemedies(KIT, buildVerdicts({ rebuild }))).toStrictEqual([RECOMPILE]);
     });
 
-    it('stays silent where the hash axis owning the absent file has already named it', () => {
+    it('stays silent when the hash axis owning the absent file has already named it', () => {
       const rebuild = { kind: 'missing', reason: 'source file kits/deploy.ts is gone' } as const;
       const verdicts = buildVerdicts({ rebuild, source: buildMissingSource() });
 
@@ -144,7 +146,7 @@ describe(resolveRemedies, () => {
     });
   });
 
-  it('names a shared remedy once for a kit that reaches it on three axes', () => {
+  it('names a shared remedy once for a kit whose three axes each raise it', () => {
     const verdicts = buildVerdicts({
       inputs: buildStaleInputs([
         { kind: 'module', path: 'checks/shared.ts', reason: 'changed', expected: 'aaa', actual: 'bbb' },
@@ -171,7 +173,7 @@ describe(resolveRemedies, () => {
   });
 
   describe('collapsing remedies on which a reader cannot act', () => {
-    it("names one remedy for a source recorded among the kit's own inputs, where both axes report it gone", () => {
+    it("names one remedy for a source recorded among the kit's own inputs, when both axes report it gone", () => {
       const verdicts = buildVerdicts({
         inputs: buildStaleInputs([{ kind: 'module', path: 'kits/deploy.ts', reason: 'missing' }]),
         source: buildMissingSource(),
@@ -182,7 +184,7 @@ describe(resolveRemedies, () => {
       ]);
     });
 
-    it('drops a bare recompile where the target has drifted, which the drift gate refuses to run', () => {
+    it('drops a bare recompile when the target has drifted, which the drift gate refuses to run', () => {
       const verdicts = buildVerdicts({
         drift: buildDrift(),
         inputs: buildStaleInputs([
@@ -219,7 +221,7 @@ describe(resolveRemedies, () => {
         rebuild: { kind: 'failed', message: 'Unexpected token' },
       });
 
-      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, 'Fix the kit source so it compiles.']);
+      expect(resolveRemedies(KIT, verdicts)).toStrictEqual([MOVE_EDITS, 'Fix the kit source so that it compiles.']);
     });
 
     it('keeps a remedy that only offers a recompile as its second branch, whose first branch is not blocked by drift', () => {

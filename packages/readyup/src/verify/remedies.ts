@@ -6,7 +6,7 @@ import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { hasSourceFailed, type KitVerdicts } from './verdicts.ts';
 
-/** One thing to do about a kit, and the file that it speaks for where it speaks for one. */
+/** One thing to do about a kit, and the file that it speaks for, if it speaks for one. */
 interface Remedy {
   path?: string;
   text: string;
@@ -16,8 +16,8 @@ interface Remedy {
  * Returns what to do about a kit's failing verdicts, in axis order and without repetition.
  *
  * Keyed on the whole verdict set rather than one verdict at a time, because a drifted target's remedy depends on what
- * the rebuild found: A bundle that reproduces byte for byte has nothing to move into the source, and it is the
- * recorded hash that needs rewriting.
+ * the rebuild found: A bundle that reproduces byte for byte has nothing to move into the source, and only the
+ * recorded hash needs rewriting.
  *
  * A passing or `unverified` verdict contributes nothing, so a kit that fails no axis gets an empty list.
  */
@@ -39,14 +39,14 @@ export function resolveRemedies(kit: RdyManifestKit, verdicts: KitVerdicts): str
 /**
  * Returns the remedies on which a reader can act, in the order the axes raised them.
  *
- * Two rules, each collapsing a pair that the axes reach independently and neither can see. A file named by more
- * than one axis is remedied once, by the axis that spoke first, which is the one holding the more exact account
+ * Two rules, each collapsing a pair that the axes raise independently and neither can see. A file named by more
+ * than one axis is remedied once, by the axis that named it first, which is the one with the more exact account
  * of it: A kit's own source is recorded among its inputs, so deleting it fails both axes on one path and only the
  * source axis knows the file is the kit's entry.
  *
- * A remedy whose whole action is a bare recompile is dropped wherever the target has drifted, because `rdy compile`
+ * A remedy whose whole action is a bare recompile is dropped whenever the target has drifted, because `rdy compile`
  * refuses a drifted kit and exits non-zero. The `--force` remedy raised by the drift verdict is then the only command
- * that runs, and it recompiles from the same source, so it settles whatever the dropped remedy was raised for.
+ * that runs, and because it recompiles from the same source, it settles whatever the dropped remedy was raised for.
  * Drift alone gates this: A bundle that is merely gone recompiles normally, and its own remedy is the bare recompile.
  */
 function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
@@ -64,7 +64,7 @@ function collapseRemedies(raised: Remedy[], targetDrifted: boolean): string[] {
 }
 
 /**
- * Returns the remedy for the compiled-output verdict, or `undefined` where there is nothing to fix.
+ * Returns the remedy for the compiled-output verdict, or `undefined` when there is nothing to fix.
  *
  * Both `drift` branches name `--force`, because `rdy compile` gates on drift and skips the kit rather than
  * overwriting it. They differ in whether there are edits to move first, which is the question that `--rebuild`
@@ -112,18 +112,18 @@ function resolveInputFailureRemedy(failure: InputFailure): Remedy {
   }
 }
 
-/** Returns one remedy per failing input, and none where the verdict is `ok` or `unverified`. */
+/** Returns one remedy per failing input, and none when the verdict is `ok` or `unverified`. */
 function resolveInputRemedies(status: InputsStatus): Remedy[] {
   return status.kind === 'stale' ? status.failures.map(resolveInputFailureRemedy) : [];
 }
 
 /**
- * Returns the remedy for the rebuild verdict, or `undefined` where there is nothing to add.
+ * Returns the remedy for the rebuild verdict, or `undefined` when there is nothing to add.
  *
  * Defers to a source that the hash axis reports as gone. The verdict names the file only inside a free-text reason,
  * so the caller's path rule cannot see the collision and the deferral is made here.
  *
- * `failed` always speaks. It is about the source rather than the bundle, and a kit that no longer compiles has to
+ * `failed` always raises a remedy. It is about the source rather than the bundle, and a kit that no longer compiles has to
  * be fixed before any remedy naming a recompile can run.
  */
 function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceStatus): Remedy | undefined {
@@ -135,16 +135,16 @@ function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceS
     case 'mismatch':
       return { text: RECOMPILE_REMEDY };
     case 'failed':
-      return { text: 'Fix the kit source so it compiles.' };
+      return { text: 'Fix the kit source so that it compiles.' };
     case 'missing':
       return hasSourceFailed(source) ? undefined : { text: RECOMPILE_REMEDY };
   }
 }
 
 /**
- * Returns the remedy for the source verdict, or `undefined` where there is nothing to fix.
+ * Returns the remedy for the source verdict, or `undefined` when there is nothing to fix.
  *
- * A recompile is what drops a vanished kit from the manifest, because the sweep rewrites the whole file from the
+ * A recompile drops a vanished kit from the manifest, because the sweep rewrites the whole file from the
  * sources that it finds; nobody edits the entry out by hand. The sweep keeps a drifted bundle, so removing that kit
  * takes `--force`.
  */
