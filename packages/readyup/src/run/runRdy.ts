@@ -96,8 +96,8 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
  * expressed renders one, and a check that passes, skips, is blocked, or is broken, or whose outcome
  * supplies its own `fix`, must not do work that it discards. An accessor that throws, or either `fix`
  * yielding a non-string, is a defect in the kit rather than in the check's subject, so it is reported in
- * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed outcome `fix` is reported without consulting the
- * check's, so the defect stays visible.
+ * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed
+ * outcome `fix` is reported without consulting the check's, so the defect stays visible.
  */
 function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
   if (outcomeFix !== undefined) {
@@ -155,12 +155,11 @@ function buildFailedResult(
   fields: CheckContext & {
     detail: string | null;
     durationMs: number;
-    error: Error | null;
     progress: Progress | null;
   },
   outcomeFix?: unknown,
 ): FailedResult {
-  return { ...fields, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
+  return { ...fields, error: null, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
 }
 
 /** Returns a skipped result. */
@@ -238,13 +237,13 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
     if (typeof outcome === 'boolean') {
       result = outcome
         ? buildPassedResult({ ...context, detail: null, durationMs, progress: null })
-        : buildFailedResult(check, { ...context, detail: null, durationMs, error: null, progress: null });
+        : buildFailedResult(check, { ...context, detail: null, durationMs, progress: null });
     } else if (isCheckOutcome(outcome)) {
       const detail = outcome.detail ?? null;
       const progress = outcome.progress ?? null;
       result = outcome.ok
         ? buildPassedResult({ ...context, detail, durationMs, progress })
-        : buildFailedResult(check, { ...context, detail, durationMs, error: null, progress }, outcome.fix);
+        : buildFailedResult(check, { ...context, detail, durationMs, progress }, outcome.fix);
     } else {
       // Reported as a defect rather than as an ordinary failure: The check never expressed a
       // verdict, so the severity that it declared for its subject says nothing about this outcome.
