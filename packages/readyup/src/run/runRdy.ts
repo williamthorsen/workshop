@@ -42,8 +42,8 @@ export interface RunRdyOptions {
    * passing none records nothing and reports nothing.
    *
    * Because it is in scope around each check's `skip` and `check` alike, a sweep read through
-   * `readTrackedSources` is recorded wherever the check makes it. A kit memoizing one sweep across its checks makes it in the first
-   * `skip` that runs, which a scope covering `check` alone would miss.
+   * `readTrackedSources` is recorded wherever the check makes it. A kit memoizing one sweep across its checks
+   * makes it in the first `skip` that runs, which a scope covering `check` alone would miss.
    */
   pragmaLedger?: PragmaLedger | undefined;
 }

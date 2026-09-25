@@ -262,7 +262,8 @@ describe(resolveKitSources, () => {
 
   // -- --packages flag --
 
-  // The flag names a config key, so a call that passes no value for the key is the same case as one that passes an empty list.
+  // The flag names a config key, so a call that passes no value for the key is the same case as one that passes an
+  // empty list.
   it('reports --packages against a config that declares no packages as a usage error', async () => {
     const error = await captureError(RdyError, () => {
       resolve({ packages: true });

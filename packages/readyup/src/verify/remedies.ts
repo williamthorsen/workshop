@@ -6,7 +6,7 @@ import type { RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { hasSourceFailed, type KitVerdicts } from './verdicts.ts';
 
-/** One thing to do about a kit, and the file that it fixes, if it names one. */
+/** One thing to do about a kit, and the file whose finding it resolves, when there is one. */
 interface Remedy {
   path?: string;
   text: string;
@@ -123,8 +123,8 @@ function resolveInputRemedies(status: InputsStatus): Remedy[] {
  * Defers to a source that the hash axis reports as gone. The verdict names the file only inside a free-text reason,
  * so the caller's path rule cannot see the collision and the deferral is made here.
  *
- * `failed` always raises a remedy. It is about the source rather than the bundle, and a kit that no longer compiles has to
- * be fixed before any remedy naming a recompile can run.
+ * `failed` always raises a remedy. It is about the source rather than the bundle, and a kit that no longer compiles
+ * has to be fixed before any remedy naming a recompile can run.
  */
 function resolveRebuildRemedy(status: RebuildStatus | undefined, source: SourceStatus): Remedy | undefined {
   if (status === undefined) return undefined;

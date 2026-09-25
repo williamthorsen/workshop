@@ -221,7 +221,10 @@ describe(verifyCommand, () => {
   });
 
   describe('inputs verdict', () => {
-    /** Arranges a manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis as the only one under test. */
+    /**
+     * Arranges a manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis as the only one
+     * under test.
+     */
     function arrangeSingleKit(): void {
       mockReadManifest.mockReturnValue({
         version: 1,

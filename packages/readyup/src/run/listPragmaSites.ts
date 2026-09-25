@@ -26,9 +26,9 @@ export function isJsFamilyPath(path: string): boolean {
  * Returns the pragmas that a source anchors to a comment's opening delimiter.
  *
  * A token qualifies when it is inside a comment and nothing but whitespace and `*` separates it from the `//` or
- * `/*` that opened the comment. That is stricter than suppression, which matches the token in raw text wherever it appears: A
- * report naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token following
- * anything else in its comment, or a second token on a line, is withheld rather than guessed at.
+ * `/*` that opened the comment. That is stricter than suppression, which matches the token in raw text wherever it
+ * appears: A report naming a site has to be sure the comment is a pragma rather than prose quoting one, so a token
+ * following anything else in its comment, or a second token on a line, is withheld rather than guessed at.
  *
  * `blankComments` is the comment oracle; no second tokenizer is needed to answer a question that it already
  * settles. It preserves its input's length: An offset found in the raw text indexes the same place in the blanked

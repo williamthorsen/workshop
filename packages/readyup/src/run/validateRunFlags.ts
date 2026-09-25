@@ -127,8 +127,8 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
 /**
  * Rejects an output flag that contradicts the report being emitted.
  *
- * Rejecting a flag is better than ignoring it: A caller that passed either flag meant to change the output, and dropping it
- * silently would leave them reading a report that they did not ask for.
+ * Rejecting a flag is better than ignoring it: A caller that passed either flag meant to change the output, and
+ * dropping it silently would leave them reading a report that they did not ask for.
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
   // `--detail` selects how much of the JSON payload to emit, so it does not apply to the human report.
