@@ -7,22 +7,22 @@ const FOREIGN_ATTRIBUTES = ['linguist-generated', 'linguist-vendored'];
 /** The values that leave a file in the sweep: git's two spellings of "not declared", and an explicit opt-out. */
 const UNDECLARED_VALUES = new Set(['false', 'unset', 'unspecified']);
 
-/** Foreign-path sets by the `cwd` against which they were resolved, held for the life of the process. */
+/** Foreign-path sets by the `cwd` against which they were resolved, kept for the life of the process. */
 const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
 
 /**
  * Names the tracked paths that the project declares `linguist-generated` or `linguist-vendored`, which are
  * third-party code inside which a reader could not act on a finding.
  *
- * What the declaration means is git's to decide: `git check-attr` applies the pattern syntax, the nested
+ * Git decides what the declaration means: `git check-attr` applies the pattern syntax, the nested
  * `.gitattributes` files, and the precedence rules, so nothing here parses one. Reading the attribute needs no
- * Linguist install and sees none of Linguist's built-in vendor heuristics.
+ * Linguist install and applies none of Linguist's built-in vendor heuristics.
  *
- * The declaration is whichever one git resolves, which reaches past the repository's tracked `.gitattributes` files
- * to `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file. A path can therefore be declared
- * by something the repository does not contain.
+ * The declaration is whichever one git resolves, and git reads not only the repository's tracked `.gitattributes`
+ * files but also `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file. A path can therefore be
+ * declared by something that the repository does not contain.
  *
- * Memoized per `cwd` for the life of the process, holding the promise rather than the set to which it settles,
+ * Memoized per `cwd` for the life of the process, caching the promise rather than the set to which it settles,
  * because the runner starts sibling checks together: A cache filled on resolution is too late for every check that
  * started alongside the first, and each would invoke git of its own. A rejected lookup is dropped, so a failure is
  * retried rather than remembered.

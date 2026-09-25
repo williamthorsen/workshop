@@ -73,7 +73,7 @@ describe(buildFindingReport, () => {
     });
   });
 
-  it('returns no findings for a project holding none', () => {
+  it('returns no findings for a project with none', () => {
     const outcome = buildFindingReport({ adoptedCount: 0, findings: [], shouldReport: () => true });
 
     expect(outcome).toStrictEqual({ adoptedCount: 0, findings: [] });
@@ -133,7 +133,7 @@ describe(buildFindingReport, () => {
       ]);
     });
 
-    it('returns no findings where the implementation held them all', ({ temp }) => {
+    it('returns no findings when every finding is sited in the implementation', ({ temp }) => {
       writeMonorepo(temp);
 
       const outcome = buildFindingReport({

@@ -114,7 +114,7 @@ describe(countPackageUsage, () => {
     expect(count(source)).toBe(2);
   });
 
-  it('counts a member access once where the member is also an export', () => {
+  it('counts a member access once when the member is also an export', () => {
     const source = buildSource(`
       import { ErrorCatalog } from '${PACKAGE_NAME}';
       export const described = ErrorCatalog.describeError(error);
@@ -202,7 +202,7 @@ describe(countPackageUsage, () => {
 
 // region | Helpers
 
-/** Builds a source holding the given text, at a path that this function never reads. */
+/** Builds a source containing the given text, at a path that this function never reads. */
 function buildSource(text: string): ProjectSource {
   return { path: 'src/source.ts', text };
 }

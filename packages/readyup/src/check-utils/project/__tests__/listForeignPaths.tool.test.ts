@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { listForeignPaths } from '../listForeignPaths.ts';
 
-// Separated from the module's unit suite, which stubs git: the attribute values, the nested-`.gitattributes`
+// Separated from the module's unit suite, which stubs git: The attribute values, the nested-`.gitattributes`
 // precedence, and the relative-path resolution are all git's, and a stub asserting them would pass against a git
 // that disagreed.
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
@@ -19,7 +19,7 @@ const it = baseIt.extend(
 describe(listForeignPaths, () => {
   beforeEach(() => {
     // git resolves an attribute against the system-wide file and `core.attributesFile` as well as the repository's
-    // own, so a developer declaring either linguist attribute globally would otherwise decide these assertions.
+    // own, so a developer declaring either linguist attribute globally would otherwise change the outcome of these assertions.
     vi.stubEnv('GIT_ATTR_NOSYSTEM', '1');
   });
 

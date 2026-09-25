@@ -6,7 +6,7 @@ import { recordSweep } from './sweepRecorder.ts';
 /** Selects the tracked paths that a sweep reads. */
 export type PathFilter = (path: string) => boolean;
 
-/** A tracked file and the text that it holds. */
+/** A tracked file and the text that it contains. */
 export interface ProjectSource {
   readonly path: string;
   readonly text: string;
@@ -21,10 +21,10 @@ const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/ki
 const textsByCwd = new Map<string, Map<string, string | undefined>>();
 
 /**
- * Reads one path's text, from the cache where a sweep already read it, and `undefined` where the path holds none.
+ * Reads one path's text, from the cache when a sweep already read it, and `undefined` when the path contains none.
  *
  * The exclusions governing what a sweep reads do not apply here. This reports on a path that its caller already
- * holds, such as the one named by a finding, rather than deciding what a sweep goes looking at.
+ * has, such as the one named by a finding, rather than deciding what a sweep goes looking at.
  */
 export function readSourceText(path: string): string | undefined {
   const texts = resolveTextCache(process.cwd());
@@ -36,30 +36,30 @@ export function readSourceText(path: string): string | undefined {
 
 /**
  * Reads the project's tracked sources that `filter` selects, or `undefined` outside a git working tree. `undefined`
- * and an empty list are distinct results: A project that cannot be swept is not one that was swept and holds nothing,
- * which is why a check reaching for this skips on `undefined` rather than reporting a pass.
+ * and an empty list are distinct results: A project that cannot be swept is not one that was swept and contains nothing,
+ * which is why a check calling this skips on `undefined` rather than reporting a pass.
  *
- * The filter decides a path before anything reads it, so an excluded file is never read. Text is held per `cwd` for
- * the life of the process, so a file that two kits both select is read once, and each kit reads only the files that
- * the other did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, so a later
- * filter selecting it probes the filesystem no second time. That cache lives here rather than in a kit because a
+ * The filter decides a path before anything reads it, so an excluded file is never read. Text is cached per `cwd` for
+ * the life of the process. A file that two kits both select is read once, and each kit reads only the files that
+ * the other did not ask for. A path that cannot be read as text is omitted and remembered as unreadable, and is not
+ * read again for a later filter that selects it. That cache lives here rather than in a kit because a
  * compiled kit leaves its `readyup` imports unbundled, making `check-utils` one module instance across every kit of
  * a run.
  *
  * Two path sets are dropped whatever the filter returns for them. `node_modules/` and `.readyup/kits/*.js` are
  * excluded outright, the latter being readyup's own generated artifact, which a sweep would otherwise report back to
- * the author of the kit from which it was compiled; that pattern names the default `compile.outDir`, so a project
+ * the author of the kit from which it was compiled. That pattern names the default `compile.outDir`; a project
  * compiling its kits elsewhere excludes that directory in its own filter. Beyond those, a tracked file that the
- * project declares `linguist-generated` or `linguist-vendored` is dropped, so committed bundler output and vendored
- * third-party code stay out of every kit's sweep at once: A finding inside one is advice that nobody can take, and
+ * project declares `linguist-generated` or `linguist-vendored` is dropped, which keeps committed bundler output and
+ * vendored third-party code out of every kit's sweep at once: A finding inside one is advice that nobody can take, and
  * the file would count toward the adoption fraction against which the finding is reported.
  *
  * Both attributes take a bare form and a `=true` form, and an explicit `=false` keeps the file in the sweep. The
- * declaration is read through `git check-attr`, so the pattern syntax, the nested `.gitattributes` files, and the
- * precedence rules are git's; no Linguist install is involved, and none of Linguist's built-in vendor heuristics
- * apply. Git resolves `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file alongside the
- * tracked ones, so a file missing from a sweep may have been declared outside the repository altogether, and
- * `check-attr` reads the working tree, so an uncommitted declaration takes effect as it does for git itself. The
+ * declaration is read through `git check-attr`, which applies git's pattern syntax, nested `.gitattributes` files,
+ * and precedence rules; no Linguist install is involved, and none of Linguist's built-in vendor heuristics apply.
+ * Git resolves `$GIT_DIR/info/attributes`, `core.attributesFile`, and the system-wide file alongside the tracked
+ * ones: A file missing from a sweep may have been declared outside the repository altogether. Because `check-attr`
+ * reads the working tree, an uncommitted declaration takes effect as it does for git itself. The
  * exclusion belongs to this reader alone; `listTrackedFiles` stays the raw listing that it is.
  *
  * The declared-foreign set is resolved once beside the tracked listing rather than per path, so the loop stays a
@@ -97,7 +97,7 @@ function isExcluded(path: string): boolean {
 }
 
 /**
- * Reads a tracked path as text, returning `undefined` where it holds none.
+ * Reads a tracked path as text, returning `undefined` when it contains none.
  *
  * `git ls-files` names entries that are not files: a symlink to a directory, and the gitlink of a checked-out
  * submodule. Both exist, so only the read itself can tell them from a source.
@@ -110,7 +110,7 @@ function readText(path: string): string | undefined {
   }
 }
 
-/** Returns the text cache belonging to `cwd`, opening one where this is the first sweep under it. */
+/** Returns the text cache belonging to `cwd`, opening one when this is the first sweep under it. */
 function resolveTextCache(cwd: string): Map<string, string | undefined> {
   let texts = textsByCwd.get(cwd);
   if (texts === undefined) {
