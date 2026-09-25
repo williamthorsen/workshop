@@ -127,7 +127,7 @@ function adoptionChecklist(...checks: RdyCheck[]): RdyChecklist {
 
 /**
  * Builds a checklist whose one check sweeps the source and reports a finding on each of its two lines,
- * skipping for the reason given where one is passed.
+ * skipping for the reason given if one is passed.
  */
 function scanningChecklist(skipReason?: string): RdyChecklist {
   return {
@@ -151,7 +151,7 @@ function scanningChecklist(skipReason?: string): RdyChecklist {
 
 /**
  * Builds a check that sweeps its path in `skip`, as a kit memoizing one sweep does, then skips for the reason
- * given or runs where none is.
+ * given or runs if none is.
  */
 function skipSweepingCheck(path: string, skipReason?: string): RdyCheck {
   return {
@@ -169,7 +169,7 @@ async function sweep(path: string): Promise<void> {
   await readTrackedSources((tracked) => tracked === path);
 }
 
-/** Builds a check that sweeps its path in `check` and reports no finding, skipping where a reason is given. */
+/** Builds a check that sweeps its path in `check` and reports no finding, skipping if a reason is given. */
 function sweepingCheck(options: { path: string; skipReason?: string }): RdyCheck {
   const { path, skipReason } = options;
   return {

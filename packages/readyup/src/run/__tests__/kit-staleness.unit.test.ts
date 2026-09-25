@@ -42,7 +42,7 @@ describe(readManifestTracking, () => {
     mockReadManifest.mockReset();
   });
 
-  it('returns the manifest and the directory holding it', () => {
+  it('returns the manifest and the directory containing it', () => {
     const manifest = { version: 1, kits: [] };
     mockReadManifest.mockReturnValue(manifest);
 
@@ -83,7 +83,7 @@ describe(readManifestTracking, () => {
     expect(stderr).toContain('could not be read');
   });
 
-  it('names the parse failure in the advisory, so the run says why it stopped checking', () => {
+  it('names the parse failure in the advisory to say why the run stopped checking', () => {
     mockReadManifest.mockImplementation(() => {
       throw new Error('Invalid manifest schema in /abs/.readyup/manifest.json: targetHash must be a hash');
     });
@@ -156,7 +156,7 @@ describe(warnOnKitStaleness, () => {
       ]);
     });
 
-    it('advises on a changed input sitting beside one that is merely gone', () => {
+    it('advises on a changed input alongside one that is merely gone', () => {
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
         failures: [
@@ -381,7 +381,7 @@ describe(warnOnKitStaleness, () => {
     return trackingFor([{ name: 'default', path: MANIFEST_KIT_PATH, source: 'kits/default.ts' }]);
   }
 
-  /** Returns tracking as `readManifestTracking` would have built it, holding the given entries. */
+  /** Returns tracking as `readManifestTracking` would have built it, containing the given entries. */
   function trackingFor(kits: RdyManifestKit[]): ManifestTracking {
     return { manifest: { version: 1, kits }, manifestDir: path.resolve(process.cwd(), '.readyup') };
   }

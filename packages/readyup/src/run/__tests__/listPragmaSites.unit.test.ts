@@ -30,13 +30,13 @@ describe(listPragmaSites, () => {
       expect(sites).toStrictEqual([{ coveredLine: 3, line: 2, token: 'rdy-ignore-next-line' }]);
     });
 
-    it('lists a token that the comment holds with no space after the delimiter', () => {
+    it('lists a token that the comment contains with no space after the delimiter', () => {
       const sites = listPragmaSites('x; //rdy-ignore\n');
 
       expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
     });
 
-    it('reports the line of each token in a source holding several', () => {
+    it('reports the line of each token in a source containing several', () => {
       const sites = listPragmaSites(['// rdy-ignore', 'x;', '/* rdy-ignore-next-line */', 'y;', ''].join('\n'));
 
       expect(sites).toStrictEqual([
@@ -46,7 +46,7 @@ describe(listPragmaSites, () => {
     });
   });
 
-  describe('given a token withheld by the comment rule', () => {
+  describe('given a token excluded by the comment rule', () => {
     it('lists no site for a token in a string literal', () => {
       expect(listPragmaSites("const token = 'rdy-ignore';\n")).toStrictEqual([]);
     });
@@ -78,7 +78,7 @@ describe(listPragmaSites, () => {
     });
   });
 
-  it('lists the tokens that a source holds beside a reason', () => {
+  it('lists the tokens that a source contains beside a reason', () => {
     const sites = listPragmaSites('x; // rdy-ignore toolbelt.errors/no-instanceof-error -- reviewed\n');
 
     expect(sites).toStrictEqual([{ coveredLine: 1, line: 1, token: 'rdy-ignore' }]);
