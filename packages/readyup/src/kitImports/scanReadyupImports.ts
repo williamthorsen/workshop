@@ -15,12 +15,12 @@ export interface ReadyupImport {
  * module's section, so a kit's later sections have imports of their own.
  *
  * A form whose bindings cannot be read statically -- a namespace import, a default import, a dynamic import, a
- * side-effect import, a star re-export -- yields an entry with no names, so its specifier is still reported while
+ * side-effect import, a star re-export -- yields an entry with no names: Its specifier is still reported, and
  * nothing is claimed about what it binds. A dynamic import of a computed specifier, such as a template literal with
  * substitutions, names no single module and is dropped. A specifier naming a JSON module is dropped too: It
  * has no named exports to verify, and a runner subpath serving one has no namespace to check against.
  *
- * Throws the lexer's `ParseError` for source it cannot read, which is source Node would not import either.
+ * Throws the lexer's `ParseError` for source that it cannot read, which Node would not import either.
  */
 export async function scanReadyupImports(bundle: string, sourceName?: string): Promise<ReadyupImport[]> {
   await init();
@@ -38,14 +38,14 @@ export async function scanReadyupImports(bundle: string, sourceName?: string): P
 // region | Helpers
 
 /**
- * The clause standing between the leading keyword and the `from` keyword.
+ * The clause between the leading keyword and the `from` keyword.
  *
  * Greedy up to the last `from` preceding the specifier, so an identifier named `from` inside the clause does not
  * truncate it. A side-effect import has no clause and does not match.
  */
 const CLAUSE_PATTERN = /^(?:import|export)\s*([\s\S]*)from\s*["']/;
 
-/** A comment sitting inside an import clause, in either spelling. */
+/** A comment inside an import clause, in either spelling. */
 const CLAUSE_COMMENT_PATTERN = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
 
 /** The braced group of a named-import clause, absent for a namespace, default-only, or star form. */
@@ -54,7 +54,7 @@ const BRACED_GROUP_PATTERN = /\{([\s\S]*)\}/;
 /**
  * The imported name leading one entry of a braced clause, ahead of any `as` rename.
  *
- * Both spellings allowed by the grammar for the name: A bare identifier, and the quoted form that holds a
+ * Both spellings allowed by the grammar for the name: A bare identifier, and the quoted form that contains a
  * module-export name that an identifier cannot express.
  */
 const LEADING_NAME_PATTERN = /^\s*(?:"([^"]*)"|'([^']*)'|([A-Za-z_$][\w$]*))/;
@@ -69,10 +69,10 @@ function isReadyupSpecifier(specifier: string): boolean {
  *
  * The statement is one that the lexer already identified, so a regular expression is reading trusted input rather
  * than deciding whether the text is an import at all. Comments are removed before the clause is split, since either
- * spelling may sit between a brace and a comma and would otherwise hide the name behind it.
+ * spelling may appear between a brace and a comma and would otherwise hide the name behind it.
  *
- * Every entry allowed by the grammar is read: a bare identifier, `name as local`, and `"name" as local`. What yields
- * no name is an entry holding none, which a trailing comma produces. A default binding sits outside the braces and
+ * Every entry allowed by the grammar is read: a bare identifier, `name as local`, and `"name" as local`. Only an
+ * empty entry, which a trailing comma produces, yields no name. A default binding is outside the braces and
  * is skipped: jiti's CJS interop supplies a module object for it, so a runner exporting no `default` breaks nothing.
  */
 function readBoundNames(statement: string): string[] {
@@ -94,7 +94,7 @@ function readBoundNames(statement: string): string[] {
 /**
  * Reads the module that an import record names, if it names a single one.
  *
- * The lexer reports a template literal with substitutions as a glob, collapsing each substitution to `*`, so a glob's
+ * The lexer reports a template literal with substitutions as a glob and collapses each substitution to `*`. A glob's
  * specifier is a pattern rather than a module.
  */
 function readModuleSpecifier(entry: Import): string | undefined {

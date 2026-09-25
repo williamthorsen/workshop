@@ -6,7 +6,7 @@ import { resolvePackageRoot } from './resolvePackageRoot.ts';
  * Resolution is anchored to the current directory rather than to this module, so the result describes
  * the project being worked on and not readyup's own installation. It also asks the filesystem rather
  * than the module resolver, which keeps ESM-only packages -- whose entry points no `require` condition
- * reaches -- from reading as absent.
+ * reaches -- from being reported as absent.
  */
 export function isPackageInstalled(packageName: string): boolean {
   return resolvePackageRoot(packageName) !== undefined;

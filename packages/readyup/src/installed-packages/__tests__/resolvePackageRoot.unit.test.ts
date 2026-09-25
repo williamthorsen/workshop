@@ -27,7 +27,7 @@ const it = baseIt.extend(
 
 describe(resolvePackageRoot, () => {
   describe('against the repo in which it runs', () => {
-    it('resolves an unscoped dependency to a directory holding its manifest', () => {
+    it('resolves an unscoped dependency to a directory containing its manifest', () => {
       const root = resolvePackageRoot('zod', REPO_ROOT);
 
       expect(root).toBeDefined();
@@ -43,7 +43,7 @@ describe(resolvePackageRoot, () => {
     });
 
     // `readyup` publishes only `import` and `types` conditions, so a require-based resolver fails on it.
-    // Resolving to the workspace checkout is also what makes the walk usable inside this monorepo.
+    // Resolving to the workspace checkout also makes the walk usable inside this monorepo.
     it('resolves an ESM-only workspace package to its source checkout', () => {
       const root = resolvePackageRoot('readyup', REPO_ROOT);
 

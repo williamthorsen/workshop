@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { assertKitImportsResolve } from '../assertKitImportsResolve.ts';
 import { UnresolvableKitImportsError } from '../UnresolvableKitImportsError.ts';
 
-/** The compiled kits shipped by this package, which must stay runnable against the readyup that builds them. */
+/** The compiled kits in this package, which must stay runnable against the readyup that builds them. */
 const COMPILED_KIT_PATHS = ['default.js', 'publishing.js'].map((name) =>
   path.resolve(import.meta.dirname, '../../../.readyup/kits', name),
 );

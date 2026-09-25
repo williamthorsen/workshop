@@ -63,8 +63,8 @@ describe(expandConfiguredPackages, () => {
     ]);
   });
 
-  // The same precedence that a local `--from` source follows, so a package and a directory resolve alike.
-  it('falls back to the kit directory when a package ships no manifest', ({ temp }) => {
+  // The same precedence that a local `--from` source follows, so that a package and a directory resolve alike.
+  it('falls back to the kit directory when a package has no manifest', ({ temp }) => {
     const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
 
     expect(kit?.kitName).toBe('smoke');
@@ -100,7 +100,7 @@ describe(expandConfiguredPackages, () => {
   });
 
   // Falling back here would report a kit list that the publisher never declared.
-  it('surfaces a malformed manifest instead of reading around it', ({ temp }) => {
+  it('rejects a malformed manifest instead of reading around it', ({ temp }) => {
     expect(() => expandConfiguredPackages(['broken-manifest'], '.js', temp.dir)).toThrow(/invalid JSON/);
   });
 });

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { listRunnerExports } from '../listRunnerExports.ts';
 import { scanReadyupImports } from '../scanReadyupImports.ts';
 
-/** A compiled kit shipped by this package, standing in for the shape that esbuild actually emits. */
+/** A compiled kit in this package, standing in for the shape that esbuild actually emits. */
 const COMPILED_KIT_PATH = path.resolve(import.meta.dirname, '../../../.readyup/kits/publishing.js');
 
 describe(scanReadyupImports, () => {
@@ -79,7 +79,7 @@ describe(scanReadyupImports, () => {
     expect(found[0]?.names).toStrictEqual(['fileExists']);
   });
 
-  it('keeps every name in a clause where only one has a comment', async () => {
+  it('keeps every name in a clause in which only one has a comment', async () => {
     const found = await scanReadyupImports('import { a, /* c */ b } from "readyup";');
 
     expect(found[0]?.names).toStrictEqual(['a', 'b']);
