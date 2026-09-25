@@ -7,10 +7,10 @@ import type { JsonPathSpec } from './extractJsonPaths.ts';
 import { projectJsonFile } from './projectJsonFile.ts';
 
 /**
- * The two doors through which a compile plugin reads files.
+ * The two methods through which a compile plugin reads files.
  *
- * Both record, so a file that a plugin reads out of band cannot escape the compile's input closure. A
- * plugin holds a recorder rather than importing `node:fs`, which keeps that property true of the next
+ * Both record, so a file that a plugin reads out of band cannot be left out of the compile's input closure. A
+ * plugin uses a recorder rather than importing `node:fs`, which keeps that property true of the next
  * plugin as well as this one.
  */
 export interface CompileRecorder {
@@ -23,8 +23,8 @@ export interface CompileRecorder {
   /**
    * Reads a JSON file and records the projection of `paths` over it, returning that projection serialized.
    *
-   * Recording the projection rather than the file keeps an edit to a field that the kit did not pick
-   * from reading as staleness.
+   * Because the recorder records the projection rather than the file, an edit to a field that the kit did not
+   * pick is not treated as staleness.
    */
   readProjection(filePath: string, paths: JsonPathSpec): string;
 }

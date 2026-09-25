@@ -104,7 +104,7 @@ describe(`${initCommand.name} error handling`, () => {
     const result = makeScaffoldResult(outcome);
     mockScaffoldConfig.mockReturnValue(result);
 
-    // A failed write is reported per-file before the command throws, so both calls land either way.
+    // A failed write is reported per-file before the command throws, so both calls are made either way.
     try {
       initCommand({ dryRun, force: false });
     } catch {

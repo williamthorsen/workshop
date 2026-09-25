@@ -62,7 +62,7 @@ export interface LoadConfigOptions {
 }
 
 /**
- * Returns the readyup config read from the filesystem, or the defaults where there is none.
+ * Returns the readyup config read from the filesystem, or the defaults when there is none.
  *
  * `.config/readyup.config.ts` is the file checked by the lookup chain, and an explicit override path
  * skips that chain.
@@ -90,7 +90,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Resol
 }
 
 /**
- * Locates the config file, or `undefined` when no lookup path holds one.
+ * Locates the config file, or `undefined` when no config file exists at any lookup path.
  *
  * An override path skips the lookup chain, and a file missing at that path is an error rather than a
  * fall-through to defaults: Naming a config that is not there is a mistake, not a request for defaults.

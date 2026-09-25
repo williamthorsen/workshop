@@ -1,21 +1,21 @@
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-/** Marker naming the directory that a kit belongs to, and the unit that a published package ships as. */
+/** Marker naming the directory to which a kit belongs, and the unit in which a package is published. */
 const PACKAGE_MANIFEST = 'package.json';
 
 /**
- * Returns the directory under which a kit compiles: the nearest ancestor holding a `package.json`, or
- * the source's own directory where no ancestor holds one.
+ * Returns the directory under which a kit compiles: the nearest ancestor containing a `package.json`, or
+ * the source's own directory when no ancestor contains one.
  *
  * esbuild renders every bundled module's path against the working directory and writes it into the
  * output, so this decides what a kit compiles to. Anchoring on the package root makes a bundle
  * reproducible from any directory, and it keeps a bundle's paths naming the kit's place in the package
- * that ships it.
+ * that contains it.
  *
- * The path is real. esbuild reports the paths to which it resolved modules, and a compile resolves
- * the metafile's keys against this directory, so a path reached through a symlink would record a
- * closure whose paths no reader of it can match.
+ * The path is real. Because esbuild reports the paths to which it resolved modules, and a compile resolves
+ * the metafile's keys against this directory, a compile root reached through a symlink would make the compile
+ * record a closure whose paths no reader of it can match.
  */
 export function resolveCompileRoot(inputPath: string): string {
   const sourceDir = path.dirname(path.resolve(inputPath));
@@ -29,10 +29,10 @@ export function resolveCompileRoot(inputPath: string): string {
 // region | Helpers
 
 /**
- * Returns a directory's real path, or the directory itself where it cannot be read.
+ * Returns a directory's real path, or the directory itself when it cannot be read.
  *
- * A source that does not exist has no real directory to resolve to, and is left to fail where the
- * bundler reports it rather than as an `ENOENT` raised on the way there.
+ * A source that does not exist has no real directory to resolve to, and is left for the bundler to report
+ * as a failure rather than failing with an `ENOENT` raised on the way there.
  */
 function toRealPath(directory: string): string {
   try {

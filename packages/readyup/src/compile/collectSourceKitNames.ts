@@ -9,7 +9,7 @@ const SOURCE_EXTENSION = '.ts';
 
 /**
  * Returns the sorted names of the kits that a project's compile settings select under `srcDir`, or `[]`
- * where `srcDir` does not exist.
+ * when `srcDir` does not exist.
  *
  * The selection is the one that `collectSourceFiles` applies, so what `rdy run --all --jit` and `rdy list`
  * report is what `rdy compile` would build. A module that the kits share is kept out of both by the same

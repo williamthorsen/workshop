@@ -33,18 +33,18 @@ export const KIT_COMPILE_TARGET = 'es2025';
  *
  * Supplying this at all stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles from its
  * own sources rather than from whatever configuration the host repo happens to keep above it. The two settings
- * are the ones that esbuild derives rather than fixes; stating them keeps a version bump from moving kit
+ * are the ones that esbuild derives rather than fixes; stating them keeps a version bump from changing kit
  * semantics quietly. Everything else stays at esbuild's default.
  *
  * `target` is left undeclared, which keeps class-field semantics independent of
- * `KIT_COMPILE_TARGET`: esbuild derives `useDefineForClassFields` from the TypeScript `target`, so
+ * `KIT_COMPILE_TARGET`: Because esbuild derives `useDefineForClassFields` from the TypeScript `target`,
  * declaring one here would tie the two back together.
  */
 export const KIT_TSCONFIG = {
   compilerOptions: { experimentalDecorators: false, useDefineForClassFields: true },
 };
 
-/** How to obtain esbuild, named wherever its absence is reported so every path prescribes one remedy. */
+/** How to obtain esbuild, named wherever its absence is reported so that every code path reports the same remedy. */
 export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuild';
 
 /**
@@ -60,10 +60,10 @@ const UNRESOLVED_SPECIFIER_HINT =
 /**
  * Generated-file header prepended to compiled output.
  *
- * Includes an exported `__readyupVersion` constant so the runner can detect skew between the
+ * Includes an exported `__readyupVersion` constant so that the runner can detect skew between the
  * readyup version against which a kit was compiled and the runner's own version at execution time. The
  * constant is part of the bundle, so a kit rebuilt under a different readyup differs from the one on
- * disk even when its source has not moved.
+ * disk even when its source has not changed.
  */
 const GENERATED_HEADER = [
   '/** @noformat -- @generated. Do not edit. Compiled by rdy. */',
@@ -111,10 +111,10 @@ export interface InlinedJsonFile {
  * compile would have produced -- a property that holds by construction rather than by keeping two
  * option objects in agreement.
  *
- * Takes no output path, because none can reach the result: esbuild is invoked without `outfile`. The bundle
- * is determined by the entry point and the plugin. esbuild renders each bundled module's path into the
- * output against the working directory, which `resolveCompileRoot` derives from the kit itself, so the
- * directory from which the compile was invoked does not reach the bundle.
+ * Takes no output path, because none can affect the result: esbuild is invoked without `outfile`. The bundle
+ * is determined by the entry point and the plugin. Because esbuild renders each bundled module's path into the
+ * output against the working directory, which `resolveCompileRoot` derives from the kit itself, the
+ * directory from which the compile was invoked does not affect the bundle.
  *
  * The one place a compile's input closure is known, which is why it returns the closure alongside the
  * bundle rather than leaving a later reader to reconstruct it.
@@ -145,8 +145,8 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
       target: KIT_COMPILE_TARGET,
       tsconfigRaw: KIT_TSCONFIG,
       // No `external` option. `platform: 'node'` already externalizes every `node:`-prefixed specifier,
-      // including ones esbuild does not recognize, and does so knowing builtins are side-effect free.
-      // Naming `node:*` in `external` is what marks builtins side-effectful, which retains their imports
+      // including ones that esbuild does not recognize, and does so knowing builtins are side-effect free.
+      // Naming `node:*` in `external` marks builtins side-effectful, which retains their imports
       // after tree-shaking removes the only consumer. `readyup` is externalized by its plugin for the
       // same reason.
       plugins: [pickJsonPlugin(recorder), externalizeReadyupPlugin()],
@@ -180,9 +180,9 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
 /**
  * Returns the packages inlined by the bundle, by name, from the metafile inputs that the closure excludes.
  *
- * A tree can hold two versions of one package at once, and a bundle can inline both, so a name's value
+ * A tree can contain two versions of one package at once, and a bundle can inline both, so a name's value
  * is every bundled version, sorted and comma-separated. A file whose package cannot be identified
- * contributes nothing: The same derivation runs at compile time and at rebuild time, so an
+ * contributes nothing: Because the same derivation runs at compile time and at rebuild time, an
  * unidentifiable package cancels out of the comparison rather than producing a spurious difference.
  */
 function collectBundledDependencies(metafileInputs: Metafile['inputs'], workingDir: string): Record<string, string> {
@@ -210,15 +210,15 @@ function collectBundledDependencies(metafileInputs: Metafile['inputs'], workingD
  * Returns the JSON files that the bundle includes from outside `node_modules`, each with the modules that import it.
  *
  * Every file listed is one that `collectInputs` records whole, because both read the metafile. A `pickJson` target
- * never appears: The plugin reads it through the recorder, so esbuild never loads it. Importers are matched on
+ * never appears: esbuild never loads it, because the plugin reads it through the recorder. Importers are matched on
  * resolved paths, because esbuild gives a file imported both with and without import attributes two names.
  */
 function collectInlinedJson(metafileInputs: Metafile['inputs'], workingDir: string): InlinedJsonFile[] {
   const importersByPath = new Map<string, Set<string>>();
   for (const [key, input] of Object.entries(metafileInputs)) {
     const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
-    // `buildBundle` configures no loaders, so esbuild's JSON loader reads a `.json` file and any file imported
-    // `with { type: 'json' }`.
+    // Because `buildBundle` configures no loaders, esbuild's default JSON loader reads a `.json` file and any file
+    // imported `with { type: 'json' }`.
     const isJson = resolvedPath.endsWith('.json') || input.with?.['type'] === 'json';
     if (!isJson || isDependencyFile(resolvedPath)) continue;
     importersByPath.set(resolvedPath, new Set());
@@ -244,11 +244,11 @@ function collectInlinedJson(metafileInputs: Metafile['inputs'], workingDir: stri
 /**
  * Returns the closure of a compile, merging what the recorder read with what esbuild resolved.
  *
- * A recorded read wins over the metafile's account of the same file, because only the recorder knows an
- * inline input's path specifier. The metafile keys are relative to the working directory esbuild ran
- * under, which is the kit's own compile root rather than the invocation's, so resolving them cannot drift.
+ * A recorded read takes precedence over the metafile's account of the same file, because only the recorder knows
+ * an inline input's path specifier. Because the metafile keys are relative to the working directory under which
+ * esbuild ran, which is the kit's own compile root rather than the invocation's, resolving them cannot drift.
  *
- * Sorted so that recompiling a kit whose inputs have not moved rewrites the manifest identically.
+ * Sorted so that recompiling a kit whose inputs have not changed rewrites the manifest identically.
  */
 function collectInputs(
   recorded: CompiledInput[],
@@ -263,7 +263,8 @@ function collectInputs(
 
   for (const [key, input] of Object.entries(metafileInputs)) {
     const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
-    // Excluded before the hash, so a dependency tree is never read from disk: One `import zod` inlines 79 files.
+    // Exclude a dependency file before hashing it, to avoid reading a dependency tree from disk: One `import zod`
+    // inlines 79 files.
     if (isDependencyFile(resolvedPath)) continue;
     const identity = identifyInput('module', resolvedPath);
     if (byIdentity.has(identity)) continue;
@@ -277,7 +278,7 @@ function collectInputs(
 }
 
 /**
- * Reports whether an esbuild failure names an import esbuild could not resolve.
+ * Reports whether an esbuild failure names an import that esbuild could not resolve.
  *
  * Reads the failure's own error list rather than its rendered message, and matches on message text
  * because esbuild leaves the machine-readable `id` empty on a resolve error.
@@ -295,10 +296,10 @@ function hasUnresolvedSpecifier(error: unknown): boolean {
 }
 
 /**
- * Returns the name and version of the package holding `directory`, walking up to the nearest
+ * Returns the name and version of the package containing `directory`, walking up to the nearest
  * `package.json` that declares both.
  *
- * The walk never leaves `node_modules`: A store path with no identifiable package returns `undefined`
+ * The walk never leaves `node_modules`: For a store path with no identifiable package, it returns `undefined`
  * rather than climbing on and attributing the file to the host project.
  */
 function identifyPackage(directory: string): { name: string; version: string } | undefined {

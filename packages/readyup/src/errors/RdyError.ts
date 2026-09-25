@@ -9,7 +9,7 @@ import { extractHint } from './error-handling.ts';
  *   combination of arguments.
  * - `config`: Repo configuration or a kit manifest could not be read, written, or parsed.
  * - `kit-load`: A kit could not be resolved, fetched, or evaluated.
- * - `internal`: anything else -- a defect in rdy or an unexpected environment failure.
+ * - `internal`: Anything else -- a defect in rdy or an unexpected environment failure.
  */
 export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 
@@ -17,7 +17,7 @@ export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 export interface RdyErrorOptions {
   cause?: unknown;
 
-  /** One action that the reader can take to clear the failure, where a diagnosis alone would not suggest it. */
+  /** One action that the reader can take to clear the failure, when a diagnosis alone would not suggest it. */
   hint?: string | undefined;
 }
 
@@ -25,9 +25,9 @@ export interface RdyErrorOptions {
  * A failure that prevented rdy from completing the invocation.
  *
  * Every code maps to the same exit status, because the exit code answers "can I retry this
- * invocation?" while `code` holds the diagnosis.
+ * invocation?" while `code` records the diagnosis.
  *
- * `hint` stays out of `message` so the two are reported separately: Human output renders the hint on
+ * `hint` stays out of `message` so that the two are reported separately: Human output renders the hint on
  * its own line through the selected style, and `--json` reports it as its own envelope field.
  */
 export class RdyError extends Error {
@@ -65,9 +65,9 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
 /**
  * Coerces an unknown thrown value into an `RdyError`.
  *
- * Anything not already classified is `internal`: Escaping the command boundary undiagnosed
- * is itself the definition of a defect rather than a known failure mode. A hint held by the value
- * survives the coercion, so a throw site can attach one without every boundary between it and the
+ * Anything not already classified is `internal`: A value that escapes the command boundary undiagnosed
+ * is by definition a defect rather than a known failure mode. The coercion keeps any hint that the value
+ * has, so a throw site can attach one without every boundary between it and the
  * output having to forward it.
  */
 export function toRdyError(error: unknown): RdyError {
