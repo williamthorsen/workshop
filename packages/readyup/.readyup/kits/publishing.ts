@@ -1,8 +1,8 @@
 /**
- * Publication readiness for a package that ships its readyup kits to consumers.
+ * Publication readiness for a package that publishes its readyup kits to consumers.
  *
  * Strict throughout, because everything it checks is a way for a published package to contain checks that
- * do not run, that run against something other than what the author wrote, or to ship a README that the
+ * do not run, that run against something other than what the author wrote, or to publish a README that the
  * registry truncates without reporting anything. `default` is the advisory counterpart, for a project
  * that authors kits without publishing them.
  *
@@ -20,23 +20,23 @@ import { describeLoadablePaths } from './checks/describeLoadablePaths.ts';
 import { describeReadmeSize, README_CODE_POINT_LIMIT } from './checks/describeReadmeSize.ts';
 import { KITS_DIR, MANIFEST_DIR } from './checks/kit-layout.ts';
 
-/** Bundle a bare `rdy run --from npm:<package>` resolves to. */
+/** Bundle to which a bare `rdy run --from npm:<package>` resolves. */
 const DEFAULT_BUNDLE_PATH = path.join(KITS_DIR, 'default.js');
 
 export default defineRdyKit({
   defaultSeverity: 'error',
-  description: 'Publication readiness for a package that ships readyup kits',
+  description: 'Publication readiness for a package that publishes readyup kits',
   checklists: [
     {
       name: 'packaging',
       checks: [
         {
-          name: `The "files" allowlist ships ${MANIFEST_DIR}`,
+          name: `The "files" allowlist includes ${MANIFEST_DIR}`,
           check: describeFilesCoverage,
           fix: `Add "${MANIFEST_DIR}" to the "files" array in package.json`,
         },
         {
-          // The manifest is what `rdy list --from npm:` reads, so a tarball without it publishes kits
+          // `rdy list --from npm:` reads the manifest, so a tarball without it publishes kits
           // that no consumer can discover without running them.
           name: `${DEFAULT_MANIFEST_PATH} exists`,
           check: () => fileExists(DEFAULT_MANIFEST_PATH),
@@ -48,10 +48,10 @@ export default defineRdyKit({
           name: `${DEFAULT_BUNDLE_PATH} exists`,
           severity: 'warn',
           check: () => fileExists(DEFAULT_BUNDLE_PATH),
-          fix: `Name a kit "default" so a bare 'rdy run --from npm:<package>' resolves to it`,
+          fix: `Name a kit "default" so that a bare 'rdy run --from npm:<package>' resolves to it`,
         },
         {
-          name: `Every recorded kit sits in ${KITS_DIR} under its own name`,
+          name: `Every recorded kit is in ${KITS_DIR} under its own name`,
           check: describeLoadablePaths,
           fix: `Compile kits straight into ${KITS_DIR}; a consumer composes the path from the kit's name`,
         },

@@ -15,13 +15,13 @@ export const HELP_FLAGS = new Set(['--help', '-h']);
 /**
  * Prints help for a command or a topic, or the top-level help when given neither.
  *
- * A command wins over a topic of the same name, so naming a subcommand always reaches that command's
- * own help.
+ * A command takes precedence over a topic of the same name, so `rdy help <subcommand>` always prints that
+ * command's own help.
  */
 export function helpCommand(flags: string[], json: boolean): number {
   const helpOptions = {
     help: { type: 'boolean', short: 'h' },
-    // Declared so strict parsing accepts them; `routeCommand` read both before dispatch.
+    // Declared so that strict parsing accepts them; `routeCommand` read both before dispatch.
     json: { type: 'boolean' },
     style: { type: 'string' },
   } as const;

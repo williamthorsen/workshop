@@ -5,7 +5,7 @@ import type { CheckOutcome } from 'readyup';
 import { KITS_DIR, readManifestEntries, resolveRecordedPath } from './kit-layout.ts';
 
 /**
- * Whether every kit that the manifest records sits where a consumer resolves it.
+ * Whether every kit that the manifest records is where a consumer resolves it.
  *
  * `--from npm:<package>` composes a kit's path from its name alone, as `<package>/.readyup/kits/<name>.js`,
  * and never reads the `path` that the manifest recorded. A bundle compiled anywhere else is listable

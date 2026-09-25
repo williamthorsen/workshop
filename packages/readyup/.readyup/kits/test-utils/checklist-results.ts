@@ -21,8 +21,8 @@ export function pickResult(results: RdyResult[], fragment: string): RdyResult {
 /**
  * Runs one of a kit's checklists through the real runner and returns its results.
  *
- * Going through `runRdy` rather than calling the check functions directly is what makes skip conditions
- * and nesting behave in a test the way they will in a run.
+ * Running the checklist through `runRdy` rather than calling the check functions directly makes skip
+ * conditions and nesting behave in a test the way they will in a run.
  */
 export async function runChecklist(kit: RdyKit, checklistName: string): Promise<RdyResult[]> {
   const checklist = kit.checklists.find((candidate) => candidate.name === checklistName);

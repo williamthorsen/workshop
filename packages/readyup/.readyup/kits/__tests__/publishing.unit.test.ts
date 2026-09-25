@@ -46,7 +46,7 @@ describe('publishing kit', () => {
   });
 
   describe('packaging', () => {
-    it('passes a package whose allowlist ships the kit directory', async () => {
+    it('passes a package whose allowlist includes the kit directory', async () => {
       writePublishablePackage(projectRoot);
 
       const results = await runPackaging();
@@ -71,7 +71,7 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed', detail: '"files" lists .' });
     });
 
-    // npm reads these as the same entry, so the check has to as well.
+    // The check has to read these as the same entry, because npm does.
     it('accepts the kit directory however it is spelled', async () => {
       writePublishablePackage(projectRoot, { files: ['./.readyup/'] });
 
@@ -120,9 +120,9 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed' });
     });
 
-    // `default` stands down for a project that defines no kits; a package that ships them and has none
-    // is broken, so this kit keeps reading the absence as an error.
-    it('reports a package holding no kit directory at all', async () => {
+    // `default` skips every check for a project that defines no kits; a package that runs `publishing` and has
+    // no kits is broken, so this kit keeps reading the absence as an error.
+    it('reports a package containing no kit directory at all', async () => {
       writePackageJson(projectRoot, { files: ['.readyup'] });
 
       const results = await runPackaging();
@@ -190,7 +190,8 @@ describe('publishing kit', () => {
         expect(pickResult(results, 'code-point limit')).toMatchObject({ status: 'passed' });
       });
 
-      // npm reads a Markdown README in preference to a bare one, so the check has to measure the same file.
+      // The check has to measure the file that npm reads, and npm reads a Markdown README in preference
+      // to a bare one.
       it('measures the Markdown README rather than a bare README', async () => {
         writePublishablePackage(projectRoot);
         writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README');
@@ -260,7 +261,7 @@ describe('publishing kit', () => {
       expect(results[0]).toMatchObject({ status: 'failed', detail: 'It imports picomatch' });
     });
 
-    it('stands down when the package compiles nothing', async () => {
+    it('skips when the package compiles nothing', async () => {
       mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runSelfContainment();
@@ -270,8 +271,8 @@ describe('publishing kit', () => {
     });
   });
 
-  // Publishing a stale kit ships checks that do not describe the package with which they travel, which
-  // is the failure that this kit exists to stop -- so it blocks where `default` only advises.
+  // A published stale kit contains checks that do not describe the package that contains them, which
+  // is the failure that this kit exists to stop -- so it blocks whereas `default` only advises.
   it('blocks on a kit compiled from a source that has since moved on', async () => {
     writePackageJson(projectRoot, { files: ['.readyup'] });
     const entry = writeKit(projectRoot, 'default');
@@ -323,7 +324,7 @@ async function runSelfContainment(): Promise<RdyResult[]> {
   return runChecklist(await loadOwnKit('publishing'), 'self-containment');
 }
 
-/** Lays down a package that would pass, so a test can spoil exactly the one thing that it is about. */
+/** Writes a package that would pass, so that a test can break exactly the one thing that it is about. */
 function writePublishablePackage(
   projectRoot: string,
   packageJson?: Record<string, unknown>,

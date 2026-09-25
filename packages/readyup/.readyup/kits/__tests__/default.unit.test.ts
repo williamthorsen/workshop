@@ -25,8 +25,8 @@ import {
 } from '../test-utils/project-fixture.ts';
 
 /**
- * JSON file projected by a fixture kit. It sits above the manifest directory, as the canonical
- * `../package.json` does.
+ * JSON file projected by a fixture kit. It is above the manifest directory, as the canonical
+ * `../package.json` is.
  */
 const PROJECTED_JSON_PATH = path.join('..', 'package.json');
 
@@ -52,7 +52,7 @@ describe('default kit', () => {
   });
 
   describe('setup', () => {
-    it('passes a project holding a kit directory, a config, and a manifest', async () => {
+    it('passes a project containing a kit directory, a config, and a manifest', async () => {
       const entry = writeKit(projectRoot, 'default');
       writeKitManifest(projectRoot, [entry]);
       writeRdyConfig(projectRoot);
@@ -63,7 +63,7 @@ describe('default kit', () => {
     });
 
     // A monorepo root that lists `packages` authors no kits of its own, and is not defective for it.
-    it('stands down for a project that defines no kits', async () => {
+    it('skips every check for a project that defines no kits', async () => {
       const results = await runSetup();
 
       expect(results).toHaveLength(2);
@@ -71,8 +71,8 @@ describe('default kit', () => {
       expect(results.every((result) => result.detail === 'This project defines no kits')).toBe(true);
     });
 
-    // The manifest is where a project compiling to a non-default `outDir` declares that it has kits.
-    it('applies to a project holding a manifest but no kit directory', async () => {
+    // A project compiling to a non-default `outDir` declares in the manifest that it has kits.
+    it('applies to a project containing a manifest but no kit directory', async () => {
       writeKitManifest(projectRoot, []);
 
       const results = await runSetup();
@@ -183,8 +183,8 @@ describe('default kit', () => {
       });
     });
 
-    // Without a recorded hash there is nothing to compare against, so the entry fails on its own terms
-    // and the comparisons beneath it never claim a verdict that they cannot support.
+    // Without a recorded hash there is nothing to compare against, so the check fails the entry itself
+    // and skips the comparisons beneath it, which cannot support a verdict.
     it('reports an entry recording no hashes and withholds the comparisons', async () => {
       writeKit(projectRoot, 'default');
       writeKitManifest(projectRoot, [{ name: 'default' }]);
@@ -265,7 +265,7 @@ describe('default kit', () => {
     });
 
     // An entry compiled before readyup recorded the closure says nothing about whether the kit is stale.
-    it('stands down for an entry recording no inputs', async () => {
+    it('skips the comparison for an entry recording no inputs', async () => {
       const { inputs, ...entry } = writeKit(projectRoot, 'default');
       writeKitManifest(projectRoot, [entry]);
 
@@ -291,8 +291,8 @@ describe('default kit', () => {
       });
     });
 
-    // The kit reads raw JSON rather than the manifest schema, so a record that no compile would have
-    // written reaches these two guards instead of failing validation.
+    // The kit reads raw JSON rather than the manifest schema, so these two guards, rather than
+    // validation, reject a record that no compile would have written.
     it('reports an inline record whose path specifier is not one', async () => {
       const entry = writeKit(projectRoot, 'default');
       const input = { hash: '0badcafe', kind: 'inline', path: PROJECTED_JSON_PATH, paths: [42] };
@@ -332,7 +332,7 @@ describe('default kit', () => {
       });
     });
 
-    it('stands down when the project compiles nothing', async () => {
+    it('skips when the project compiles nothing', async () => {
       mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runFreshness();

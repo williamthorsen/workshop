@@ -33,15 +33,15 @@ const baseArgs = {
 };
 
 /**
- * Reaches the kits that readyup publishes the way a consuming project does, through `--from npm:readyup`
+ * Loads the kits that readyup publishes the way a consuming project does, through `--from npm:readyup`
  * against a real `node_modules` tree.
  *
  * The fixture installs the kits by compiling this package's own sources, so the test exercises what
- * ships without waiting on the `prepare` that produces it. The kits' own unit tests cover what each
- * check decides; this locks in the seam that delivers them to a consumer -- that the bundles load from
+ * is published without waiting on the `prepare` that produces it. The kits' own unit tests cover what
+ * each check decides; this test verifies the seam that delivers them to a consumer -- that the bundles load from
  * an installed package, and that the manifest beside them is what `list` reports.
  */
-describe('kits readyup publishes', () => {
+describe('kits that readyup publishes', () => {
   let projectRoot: string;
   let originalCwd: string;
   let stdout: string[];
@@ -109,8 +109,8 @@ describe('kits readyup publishes', () => {
   });
 
   // The kits read the consuming project's working directory, and this one defines no kits of its own.
-  // Every setup check standing down is what says so: A pass would mean they had judged readyup's own
-  // kit directory, which travelled in with the package.
+  // The test therefore expects every setup check to skip: A pass would mean they had judged readyup's own
+  // kit directory, which was installed with the package.
   it('judges the consuming project rather than the package from which it came', async () => {
     const entries = resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
@@ -136,7 +136,7 @@ function pickKitResult(report: JsonReport, kitName: string): JsonKitResultEntry 
 /**
  * Installs this package's kits into a fixture project as an npm dependency would deliver them.
  *
- * The inner symlink is what lets the bundles resolve the `readyup` specifiers left external by
+ * The inner symlink lets the bundles resolve the `readyup` specifiers left external by
  * `rdy compile`. A real consumer gets that from the runner's resolver hook, which `rdy` registers before
  * loading any kit; a test calling the library directly has no runner to register it.
  */

@@ -40,13 +40,13 @@ describe(findForeignSpecifiers, () => {
     expect(findForeignSpecifiers(bundle)).toStrictEqual(['polyfill-package']);
   });
 
-  it('names a dynamic import wherever it sits on the line', () => {
+  it('names a dynamic import anywhere on the line', () => {
     const bundle = 'const loaded = await import("lazy-package");\n';
 
     expect(findForeignSpecifiers(bundle)).toStrictEqual(['lazy-package']);
   });
 
-  // esbuild preserves comments inside an expression, so documented examples reach the bundle. A scan
+  // esbuild preserves comments inside an expression, so the bundle keeps documented examples. A scan
   // that read them would report a package that no one imports.
   it('ignores a specifier-shaped example in a comment', () => {
     const bundle = [

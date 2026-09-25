@@ -1,6 +1,6 @@
 import { TOPICS } from './topics.ts';
 
-/** The topic list that help output prints, rendered from the table so the two cannot diverge. */
+/** The topic list that help output prints, rendered from the table so that the two cannot diverge. */
 const TOPIC_LINES = Object.entries(TOPICS)
   .map(([topic, { summary }]) => `  ${topic.padEnd(30)}${summary}`)
   .join('\n');
@@ -8,9 +8,9 @@ const TOPIC_LINES = Object.entries(TOPICS)
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the doc files explain it, and the skill holds the authoring judgment that neither states. The
- * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
- * for a global install, where no such path exists.
+ * Help lists the surface; the doc files explain it, and the skill contains the authoring judgment that neither
+ * states. The installed path leads because a reader in a consuming repo can open it without a fetch; the repository
+ * URL follows for a global install, which has no such path.
  */
 export const DOCS_POINTER = `Full documentation: node_modules/readyup/docs/
    Online: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
@@ -202,7 +202,7 @@ Options:
   --style <auto|plain|rich>          Output style (default: auto)
   --help, -h                         Show this help message
 
-Positional args accept relative paths (e.g., shared/deploy). A name holding a '..'
+Positional args accept relative paths (e.g., shared/deploy). A name containing a '..'
 segment, an absolute path, or a leading separator is rejected; use --file or
 --from dir: to run a kit from outside the kit directory.
 
