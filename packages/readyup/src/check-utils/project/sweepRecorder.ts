@@ -1,12 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 /**
- * Where the one storage instance is kept, versioned so a later change to `SweepRecorder` stops two copies
+ * Where the one storage instance is kept, versioned so that a later change to `SweepRecorder` stops two copies
  * sharing rather than letting incompatible ones meet.
  */
 const STORAGE_KEY: unique symbol = Symbol.for('readyup.sweep-recording.v1');
 
-/** Reports the paths that a sweep read to the recorder in scope, and to nothing where no scope is open. */
+/** Reports the paths that a sweep read to the recorder in scope, and to nothing when no scope is open. */
 export function recordSweep(paths: readonly string[]): void {
   resolveStorage().getStore()?.recordScanned(paths);
 }
@@ -23,9 +23,9 @@ export interface SweepRecorder {
 /**
  * Puts a recorder in scope for `fn` and everything it awaits, and returns what `fn` returns.
  *
- * The runner opens one scope per check, so a check reads into the run's ledger without being passed one, and
- * work that the runner runs outside a scope -- a skip diagnosis, its own bookkeeping -- reads into nothing. Passing
- * no recorder calls `fn` untouched, which is what a run keeping no ledger does.
+ * The runner opens one scope per check, so a check reports its sweeps to the run's ledger without being passed one, and
+ * work that the runner runs outside a scope -- a skip diagnosis, its own bookkeeping -- reports to nothing. Passing no
+ * recorder calls `fn` untouched, which is what a run keeping no ledger does.
  */
 export function withSweepRecorder<T>(recorder: SweepRecorder | undefined, fn: () => T): T {
   if (recorder === undefined) return fn();
@@ -40,11 +40,11 @@ function isSweepStorage(value: unknown): value is AsyncLocalStorage<SweepRecorde
 }
 
 /**
- * Returns the one storage instance, opening it on the global object where this is the first copy to ask.
+ * Returns the one storage instance, opening it on the global object if this is the first copy to ask.
  *
  * The instance lives on the global rather than in this module because a compiled kit resolves `readyup/*` to
- * the runner's installation while the runner may be running from its own source, and the two then hold
- * separate copies of this file. A store held per copy would leave the kit's sweep reporting to a scope never
+ * the runner's installation while the runner may be running from its own source, and the two then load
+ * separate copies of this file. A store kept per copy would leave the kit's sweep reporting to a scope never
  * opened by the runner.
  */
 function resolveStorage(): AsyncLocalStorage<SweepRecorder> {

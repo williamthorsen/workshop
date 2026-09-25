@@ -79,7 +79,7 @@ describe(runGitRaw, () => {
     vi.clearAllMocks();
   });
 
-  it('returns stdout unchanged, keeping the whitespace that a trim would take', async () => {
+  it('returns stdout unchanged, keeping the whitespace that a trim would remove', async () => {
     execFileAsync.mockResolvedValue({ stdout: ' leading-space.txt\0normal.txt\0', stderr: '' });
 
     const result = await runGitRaw('/repo', 'ls-files', '-z');
@@ -119,7 +119,7 @@ describe(runGitWithInput, () => {
     ]);
   });
 
-  it("rejects with git's own error, which a stdin write failing before it must not displace", async () => {
+  it("rejects with git's own error even when a stdin write fails before it", async () => {
     runWithInput.mockReturnValue({ error: Object.assign(new Error('fatal: not a git repository'), { code: 128 }) });
 
     await expect(runGitWithInput('/repo', 'a.txt\0', 'check-attr', '--stdin')).rejects.toThrow('not a git repository');

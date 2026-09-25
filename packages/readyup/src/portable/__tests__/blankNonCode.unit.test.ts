@@ -51,7 +51,7 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(`const a = '${blank(CLAMP)}';\nconst b = "${blank(CLAMP)}";\n`);
   });
 
-  it('reads an escaped delimiter as part of the literal holding it', () => {
+  it('reads an escaped delimiter as part of the literal containing it', () => {
     const text = String.raw`it\'s ${CLAMP}`;
     const source = `const a = '${text}';\nconst b = 2;\n`;
 
@@ -72,7 +72,7 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(`const s = \`${blank('a ')}\${JSON.stringify({ n: 1 })}${blank(' b')}\`;\n`);
   });
 
-  it('reads an escaped backtick as part of the template holding it', () => {
+  it('reads an escaped backtick as part of the template containing it', () => {
     const text = String.raw`bounded \` ${CLAMP}`;
     const source = `const label = \`${text}\`;\nconst t = 1;\n`;
 
@@ -94,14 +94,14 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(`const pattern = /${blank(body)}/g;\n`);
   });
 
-  it('reads a regular expression holding quote delimiters as one literal', () => {
+  it('reads a regular expression containing quote delimiters as one literal', () => {
     const body = `['"]`;
     const source = `const quote = /${body}/;\nconst tail = "${CLAMP}";\n`;
 
     expect(blankNonCode(source)).toBe(`const quote = /${blank(body)}/;\nconst tail = "${blank(CLAMP)}";\n`);
   });
 
-  it('reads a regular expression holding comment delimiters as one literal', () => {
+  it('reads a regular expression containing comment delimiters as one literal', () => {
     const body = String.raw`\/\/|\/\*`;
     const source = `const comment = /${body}/;\nconst tail = 2;\n`;
 
@@ -128,8 +128,8 @@ describe(blankNonCode, () => {
     expect(blankNonCode(source)).toBe(source);
   });
 
-  // The trailing comment supplies the closing slash. Where the assertion opened a regular expression, the
-  // comment would never be recognized as one and its prose would stand in the output as code.
+  // The trailing comment supplies the closing slash. If the assertion opened a regular expression, the
+  // comment would never be recognized as one and its prose would remain in the output as code.
   it('blanks a comment trailing a division by a non-null assertion', () => {
     const comment = '// percentage of the whole';
     const source = `const r = counts.get(k)! / total; ${comment}\n`;
@@ -183,7 +183,7 @@ describe(blankNonCode, () => {
   });
 
   // `<` opens no regular expression, so a closing tag's slash divides. Were it a regular-expression position, a
-  // line holding two closing tags would blank everything between the first tag's slash and the second's.
+  // line containing two closing tags would blank everything between the first tag's slash and the second's.
   it('leaves JSX closing tags standing as code', () => {
     const source = [
       'const one = <div>{total}</div>;',
@@ -224,7 +224,7 @@ describe(blankNonCode, () => {
     expect(blanked.indexOf('const t')).toBe(source.indexOf('const t'));
   });
 
-  it('leaves a source holding no comment or literal untouched', () => {
+  it('leaves a source containing no comment or literal untouched', () => {
     const source = `export const bounded = ${CLAMP};\n`;
 
     expect(blankNonCode(source)).toBe(source);
@@ -267,7 +267,7 @@ describe(blankComments, () => {
     expect(blankComments(source)).toBe(source);
   });
 
-  it('blanks a block comment holding a quote delimiter', () => {
+  it('blanks a block comment containing a quote delimiter', () => {
     const comment = `/* it's ${CLAMP} */`;
     const source = `${comment}\nconst a = 1;\n`;
 
@@ -282,7 +282,7 @@ function blank(text: string): string {
   return ' '.repeat(text.length);
 }
 
-/** Lists the offset of every line break, which is what a preserved line number rests on. */
+/** Lists the offset of every line break, on which a preserved line number depends. */
 function listLineBreakOffsets(text: string): number[] {
   const offsets: number[] = [];
   for (let index = 0; index < text.length; index += 1) {

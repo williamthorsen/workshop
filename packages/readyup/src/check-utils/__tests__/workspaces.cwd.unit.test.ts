@@ -91,7 +91,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
 
 /**
  * Discovers workspaces with `process.cwd` repointed at `decoyDir` on the first call to `fsFunction`,
- * restoring it before the caller asserts so a failure leaves nothing behind for the next test.
+ * restoring it before the caller asserts so that a failure leaves nothing behind for the next test.
  */
 function discoverWithCwdRepointedAt(decoyDir: string, fsFunction: FsTrigger): Workspace[] {
   const rootDir = process.cwd();
@@ -107,7 +107,7 @@ function discoverWithCwdRepointedAt(decoyDir: string, fsFunction: FsTrigger): Wo
 
 /**
  * Writes a second repo root whose manifests all use the name `decoy`, at the same relative paths as the real
- * root's, so a helper reading through the ambient cwd reports a wrong name rather than an empty result.
+ * root's, so that a helper reading through the ambient cwd reports a wrong name rather than an empty result.
  */
 function writeDecoyRoot(temp: TempTree): string {
   const decoyDir = temp.mkdir('decoy-root');

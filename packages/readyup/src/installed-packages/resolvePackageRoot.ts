@@ -7,13 +7,13 @@ import { isRecord } from '../portable/isRecord.ts';
 /**
  * Locates an installed package's root directory, or `undefined` when the package is not installed.
  *
- * Walks `node_modules` upward from `fromDir` rather than asking the module resolver, which is the wrong
- * instrument twice over: `import.meta.resolve` anchors to readyup's own location instead of the project
+ * Walks `node_modules` upward from `fromDir` rather than asking the module resolver, which is wrong here for
+ * two reasons: `import.meta.resolve` anchors to readyup's own location instead of the project
  * being checked, and `createRequire` anchors correctly but resolves under the `require` condition, which
  * ESM-only packages do not publish. A package directory is also precisely what `exports` exists to hide,
  * so no specifier can name one.
  *
- * Returns the real path, so a pnpm store symlink resolves to the directory that the package occupies and
+ * Returns the real path: A pnpm store symlink resolves to the directory that the package occupies, and
  * a workspace link resolves to its source checkout.
  */
 export function resolvePackageRoot(packageName: string, fromDir: string = process.cwd()): string | undefined {
@@ -35,8 +35,8 @@ export function resolvePackageRoot(packageName: string, fromDir: string = proces
 /**
  * Reads the version declared by an installed package, or `undefined` when it declares none readably.
  *
- * Best effort by design: The version labels output rather than governing it, so a manifest that cannot
- * be read or parsed drops a label and never fails the run.
+ * Best effort by design: The version labels output rather than governing it. When the manifest cannot be
+ * read or parsed, the output omits one label, and the run continues.
  */
 export function readPackageVersion(packageRoot: string): string | undefined {
   try {

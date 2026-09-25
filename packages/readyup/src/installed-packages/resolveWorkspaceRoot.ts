@@ -12,7 +12,7 @@ import { discoverWorkspacesAt } from '../check-utils/workspaces.ts';
  * does not find them. A workspace matches by the `name` that its manifest declares, `private: true` included,
  * because `private` prevents publication to a registry and does not affect discovery inside the repo.
  *
- * Returns the real path, so the result matches what `resolvePackageRoot` returns for a workspace that is
+ * Returns the real path, so that the result matches what `resolvePackageRoot` returns for a workspace that is
  * linked into `node_modules`.
  */
 export function resolveWorkspaceRoot(packageName: string, fromDir: string = process.cwd()): string | undefined {
@@ -26,7 +26,7 @@ export function resolveWorkspaceRoot(packageName: string, fromDir: string = proc
 // region | Helpers
 
 /**
- * Discovers the workspaces of the project at `fromDir`, returning an empty list where discovery fails.
+ * Discovers the workspaces of the project at `fromDir`, returning an empty list when discovery fails.
  *
  * Discovery throws for a project with no root manifest and for workspace globs that readyup cannot expand. In
  * both cases no workspace can match the requested name, and propagating the error would replace the

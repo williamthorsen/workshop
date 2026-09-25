@@ -12,17 +12,17 @@ export interface CountPackageUsageOptions {
  * from its root or any of its subpaths.
  *
  * A use is a call (`name(`), a tagged template (`` name`…` ``), or a member access (`name.member`). A name that is
- * itself a member (`other.name(`) is not a use, so `Class.method(` counts once where both are exports, and another
+ * itself a member (`other.name(`) is not a use, so `Class.method(` counts once when both are exports, and another
  * object's method of the same name counts none. A function passed by name is not counted.
  *
  * The import separates adoption from a name collision. A project hand-rolling its own helper of the same
- * name calls it as often as an adopter calls the real one, and counting those would report the project as adopted in
- * the same breath as naming the clone that it should retire.
+ * name calls it as often as an adopter calls the real one, and counting those would report the project as adopted
+ * while naming the clone that it should retire.
  *
- * The two patterns read two texts. The use scan reads a source with comments and literals blanked, so a use named
- * in prose is not counted as one made. The import test locates its match in a source with comments alone blanked,
- * because the specifier that it matches is itself a string literal that full blanking would erase, and then reads
- * the blanked text at that offset to tell an import that the source runs from one that it merely quotes.
+ * The two patterns are matched against different texts. The use scan reads a source with comments and literals blanked,
+ * so a use named in prose is not counted as one made. The import test locates its match in a source with comments alone
+ * blanked, because the specifier that it matches is itself a string literal that full blanking would erase, and then
+ * reads the blanked text at that offset to tell an import that the source runs from one that it merely quotes.
  */
 export function countPackageUsage(sources: readonly ProjectSource[], options: CountPackageUsageOptions): number {
   const { exportNames, packageName } = options;
@@ -36,7 +36,7 @@ export function countPackageUsage(sources: readonly ProjectSource[], options: Co
     const readable = blankComments(source.text).matchAll(importPattern).toArray();
     if (readable.length === 0) continue;
 
-    // Blanking the literals runs only for a source that names the package, which most do not.
+    // Blank the literals only for a source that names the package, which most do not.
     const code = blankNonCode(source.text);
     const importsPackage = readable.some((match) => isCode(code, match.index));
     if (!importsPackage) continue;
@@ -64,10 +64,10 @@ function buildUsePattern(exportNames: readonly string[]): RegExp {
 }
 
 /**
- * Reports whether the offset at which an import matched holds code rather than the text of a literal.
+ * Reports whether the offset at which an import matched contains code rather than the text of a literal.
  *
- * A match begins at `from`, `import(`, or `require(`, which survives full blanking where the import runs and
- * blanks where the same words sit inside an outer string. The specifier blanks either way, so this offset is the
+ * A match begins at `from`, `import(`, or `require(`, which survives full blanking when the import is code and
+ * is blanked when the same words are inside an outer string. The specifier is blanked either way, so this offset is the
  * only thing separating an import from a source that quotes one.
  */
 function isCode(code: string, offset: number): boolean {

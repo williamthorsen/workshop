@@ -25,8 +25,8 @@ export interface WalkDirectoriesOptions {
   root: string;
   /**
    * Globs matched against each entry that the sweep meets, file and directory alike, as a path relative to
-   * `root`. A matching entry contributes the directory holding it, so a recursive glob ending in
-   * `/package.json` names the directories that hold one. A list matches what any one of its globs matches.
+   * `root`. A matching entry contributes the directory containing it, so a recursive glob ending in
+   * `/package.json` names the directories that contain one. A list matches what any one of its globs matches.
    */
   match: string | string[];
   /**
@@ -39,10 +39,10 @@ export interface WalkDirectoriesOptions {
 }
 
 /**
- * Returns the root-relative paths of the directories holding an entry that matches `match`, sorted.
+ * Returns the root-relative paths of the directories containing an entry that matches `match`, sorted.
  *
- * The root itself is `'.'`, and appears when it holds a match of its own. Paths are POSIX-separated
- * whatever the platform, so a caller may hand them to a glob or print them without rewriting.
+ * The root itself is `'.'`, and appears when it contains a match of its own. Paths are POSIX-separated
+ * whatever the platform, so a caller may pass them to a glob or print them without rewriting.
  */
 export function walkDirectories(options: WalkDirectoriesOptions): string[] {
   const { root, match, prune = DEFAULT_PRUNE_GLOBS, maxDepth = DEFAULT_MAX_DEPTH } = options;
@@ -68,7 +68,7 @@ interface SweepContext {
 }
 
 /**
- * Visits one directory, recording it when it holds a match and descending into the children left unpruned.
+ * Visits one directory, recording it when it contains a match and descending into the children left unpruned.
  *
  * Pruning is settled before matching, so a pruned directory is neither recorded nor descended into.
  */

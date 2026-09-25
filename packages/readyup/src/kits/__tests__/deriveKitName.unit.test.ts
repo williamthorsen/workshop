@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deriveKitName, deriveKitNameFromBundle } from '../deriveKitName.ts';
 
 describe(deriveKitName, () => {
-  // The separator is read through `path.sep`, which one case below replaces; an unrestored spy would reach the rest.
+  // The separator is read through `path.sep`, which one case below replaces; an unrestored spy would affect the rest.
   afterEach(() => {
     vi.restoreAllMocks();
   });

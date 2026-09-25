@@ -36,7 +36,7 @@ export function parseCacheControl(value: string | null): CacheControlDirectives 
   return directives;
 }
 
-/** Parses an HTTP delta-seconds value, optionally quoted, or returns `undefined` where it is not a non-negative integer. */
+/** Parses an HTTP delta-seconds value, optionally quoted, or returns `undefined` if it is not a non-negative integer. */
 export function parseDeltaSeconds(value: string | null): number | undefined {
   if (value === null) return undefined;
   const unquoted = value.trim().replace(/^"(.*)"$/, '$1');

@@ -13,12 +13,12 @@ const PNPM_WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** Leading range operators and the `v` prefix, stripped before a version is parsed from the start of a specifier. */
 const RANGE_PREFIX = /^[\s^~=<>v]+/;
 
-/** Returns the parsed root package.json, or `undefined` where it does not exist or is not an object. */
+/** Returns the parsed root package.json, or `undefined` when it does not exist or is not an object. */
 export function readPackageJson(): Record<string, unknown> | undefined {
   return readJsonFile('package.json');
 }
 
-/** Reports whether package.json has a field, optionally holding a specific value. */
+/** Reports whether package.json has a field, optionally set to a specific value. */
 export function hasPackageJsonField(field: string, expectedValue?: string): boolean {
   return hasJsonField('package.json', field, expectedValue);
 }
@@ -43,8 +43,8 @@ export function hasDevDependency(name: string): boolean {
  * A bare `catalog:` names the `default` catalog, which pnpm also spells `catalog:default`, and which the file writes
  * as the top-level `catalog:` block or as a `default` block under `catalogs:`; any other `catalog:<name>` selects its
  * own block under `catalogs:`. A catalog entry opening a YAML construct that this reader does not follow, such as
- * an alias or a flow mapping, resolves to no version. A version reached through a catalog is read like a declared
- * one, so an entry of `workspace:*` satisfies any floor in its turn.
+ * an alias or a flow mapping, resolves to no version. Because a version reached through a catalog is read like a
+ * declared one, an entry of `workspace:*` satisfies any floor in its turn.
  *
  * The version is read from the start of the specifier, past any range operator, so one naming fewer than three
  * segments (`7`, `^6`) is measured rather than skipped. A specifier that states its version elsewhere, as the `npm:`
@@ -68,7 +68,7 @@ export function hasMinDevDependencyVersion(
   if (declared.startsWith('catalog:')) {
     const resolved = resolveCatalogSpecifier(declared, name);
     if (resolved === undefined) return false;
-    // A catalog entry may itself link to the workspace, which the rule above sees only on a declared specifier.
+    // A catalog entry may itself link to the workspace, which the check above detects only on a declared specifier.
     if (resolved.startsWith('workspace:')) return true;
     specifier = resolved;
   }

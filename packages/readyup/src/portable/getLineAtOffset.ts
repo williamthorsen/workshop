@@ -1,8 +1,8 @@
 /**
- * Returns the 1-based line holding an offset.
+ * Returns the 1-based line containing an offset.
  *
- * Counts from 1 because a reported line names a line that a reader opens in an editor, which is what
- * `buildFindingReport` renders as `path:line`. A line break belongs to the line that it ends, so the offset
+ * Counts from 1 because a reported line names a line that a reader opens in an editor, and
+ * `buildFindingReport` renders it as `path:line`. A line break belongs to the line that it ends, so the offset
  * just past it begins the next.
  *
  * An offset taken from a text produced by `blankNonCode` reads the same line here as the source from which it

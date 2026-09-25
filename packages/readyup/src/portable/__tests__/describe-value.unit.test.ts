@@ -24,7 +24,7 @@ describe(describeType, () => {
 });
 
 describe(previewValue, () => {
-  it('keeps quotes on a string so it stays distinguishable from a number', () => {
+  it('keeps quotes on a string so that it stays distinguishable from a number', () => {
     expect(previewValue('1')).toBe('"1"');
     expect(previewValue(1)).toBe('1');
   });

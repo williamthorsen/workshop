@@ -9,45 +9,45 @@ export interface Finding {
   readonly symbol?: string | undefined;
 }
 
-/** Every finding held by a project, which of them the calling check reports, and how far adoption already got. */
+/** Every finding in a project, which of them the calling check reports, and how far adoption already got. */
 export interface BuildFindingReportOptions<F extends Finding> {
   findings: readonly F[];
   shouldReport: (finding: F) => boolean;
   adoptedCount: number;
-  /** The package that the check is about, whose own implementation the report passes over. */
+  /** The package that the check is about, whose own implementation is excluded from the report. */
   ownImplementation?: OwnImplementation | undefined;
 }
 
 /**
- * Returns the findings held by a project, each marked whether the calling check reports it, for the runner to
+ * Returns the findings in a project, each marked whether the calling check reports it, for the runner to
  * suppress, render, and count.
  *
- * Every retained finding is returned rather than only the reported ones, so the checks of one run share a
- * denominator that the reader can compare across them, and so a site suppressed by a pragma leaves every
+ * Every retained finding is returned rather than only the reported ones, so that the checks of one run share a
+ * denominator that the reader can compare across them, and a site suppressed by a pragma leaves every
  * check's fraction rather than only the fraction of the check that names it.
  *
- * The runner names each reported finding as `symbol (path:line)`, or as `path:line` where the finding declares
+ * The runner names each reported finding as `symbol (path:line)`, or as `path:line` when the finding declares
  * no symbol.
  *
- * The runner honors the `rdy-ignore` pragma, being the layer that holds both the check and the provenance against
- * which a pragma naming that check is matched. A kit passes nothing for the pragma and recognizes nothing, so every
- * kit reporting through here speaks the one dialect of it that readyup defines.
+ * The runner honors the `rdy-ignore` pragma, being the layer that has both the check and the provenance against
+ * which a pragma naming that check is matched. Because a kit passes nothing for the pragma and recognizes nothing,
+ * every kit reporting through here uses the one form of the pragma that readyup defines.
  *
  * A check naming its own package drops the findings sited in the declarations implementing it, from the detail
  * and from both halves of the fraction. The repo publishing an idiom is where the idiom lives, and a kit
  * reporting it there loses the credibility that it needs in every other repo in which it runs. The exemption is
- * scoped to the declaration because a single-package project's workspace is the whole repository, where a
- * workspace-wide exemption would turn the check off; a neighbouring declaration in the same file is ordinary code
+ * scoped to the declaration because a single-package project's workspace is the whole repository, and a
+ * workspace-wide exemption there would turn the check off; a neighbouring declaration in the same file is ordinary code
  * and is still reported.
  *
  * A declaration qualifies by being exported under one of the named exports, from a file inside a workspace whose
  * `package.json` names the package. It owns the lines from its own head to the line before the next head, or to
- * the file's last line where it is the last, because the closing brace is not a reliable end marker: A generic
- * constraint and a return-type annotation can each hold braces of their own, and an overload signature has no
- * body to close. A span cut short reports the implementation that the rule exists to exempt. A re-exporting barrel
- * declares no implementation and holds no exempted lines, a file declaring the name without exporting it is a
- * hand-roll and is still reported, and a file declaring the export under another name and renaming it on export
- * from a second file is not recognized.
+ * the file's last line when it is the last, because the closing brace is not a reliable end marker: A generic
+ * constraint and a return-type annotation can each contain braces of their own, and an overload signature has no
+ * body to close. If a span is cut short, the check reports the implementation that the rule exists to exempt. A
+ * re-exporting barrel declares no implementation and contains no exempted lines, a file declaring the name without
+ * exporting it is a hand-roll and is still reported, and a file declaring the export under another name and renaming it
+ * on export from a second file is not recognized.
  */
 export function buildFindingReport<F extends Finding>(options: BuildFindingReportOptions<F>): FindingOutcome {
   const { adoptedCount, findings, ownImplementation, shouldReport } = options;
@@ -61,8 +61,8 @@ export function buildFindingReport<F extends Finding>(options: BuildFindingRepor
 /**
  * Drops the findings whose line falls inside a declaration implementing the declared package.
  *
- * Each path's exempted lines are resolved once, so a file holding ten findings is read and blanked once
- * between them.
+ * Each path's exempted lines are resolved once, so a file containing ten findings is read and blanked once
+ * for all of them.
  */
 function excludeOwnImplementation<F extends Finding>(
   findings: readonly F[],

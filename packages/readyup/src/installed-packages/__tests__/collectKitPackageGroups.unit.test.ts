@@ -30,7 +30,7 @@ const it = baseIt.extend(
         'node_modules/hidden-kit/package.json': JSON.stringify({ name: 'hidden-kit', version: '3.0.0' }),
         'node_modules/hidden-kit/.readyup/kits/audit.js': 'export default {};\n',
 
-        // Installed, publishing nothing: an empty kit directory, not an absent one.
+        // Installed, publishing nothing: An empty kit directory, not an absent one.
         'node_modules/kitless/package.json': JSON.stringify({ name: 'kitless', version: '1.0.0' }),
         'node_modules/kitless/.readyup/kits/': '',
 
@@ -88,7 +88,7 @@ describe(collectKitPackageGroups, () => {
     ]);
   });
 
-  // Listing is read-only, so a dependency that nobody can read drops its own group rather than the whole listing.
+  // Because listing is read-only, a dependency that nobody can read loses only its own group, not the whole listing.
   it('warns and omits a configured package that cannot be resolved', ({ temp }) => {
     using io = captureStdio();
 
@@ -110,7 +110,7 @@ describe(collectKitPackageGroups, () => {
 
 // region | Helpers
 
-/** Collects the groups, discarding the warnings that an unreadable dependency would print. */
+/** Collects the groups, discarding the warnings printed for an unreadable dependency. */
 function collect(configuredPackages: string[], fromDir: string): KitPackageGroup[] {
   using _io = captureStdio();
 

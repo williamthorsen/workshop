@@ -18,7 +18,7 @@ describe(describeUnresolvableImports, () => {
     );
   });
 
-  it('names the publishing package where the kit has one', () => {
+  it('names the publishing package when the kit has one', () => {
     const { message } = describeUnresolvableImports(MISSING_ONE, {
       kitName: 'drift',
       provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },

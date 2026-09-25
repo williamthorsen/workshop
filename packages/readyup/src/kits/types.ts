@@ -121,7 +121,7 @@ export interface CheckOutcome {
   fix?: string | undefined;
 
   /**
-   * Quantitative progress toward the claim, rendered alongside the name. On a pass it stands as
+   * Quantitative progress toward the claim, rendered alongside the name. On a pass it serves as
    * the evidence in place of a `detail`; a failing count still needs one, to name what is missing.
    */
   progress?: Progress | undefined;
@@ -136,7 +136,7 @@ export interface OutcomeFinding {
   /**
    * Whether the check reports this site, rather than only counting it toward the fraction.
    *
-   * An unreported site reaches the runner all the same, because a site suppressed by a pragma has to leave
+   * The runner receives an unreported site all the same, because a site suppressed by a pragma has to leave
    * every check's denominator rather than only the denominator of the check naming it.
    */
   reported: boolean;
@@ -145,20 +145,23 @@ export interface OutcomeFinding {
 /**
  * A check's located sites, from which the runner derives the verdict, the detail, and the fraction.
  *
- * The sites suppressed by a pragma drop there rather than here: The runner is the only layer holding both the
- * check and the kit's provenance, which is what a pragma naming a check is matched against.
+ * The runner, rather than the check, drops the sites suppressed by a pragma: It is the only layer that has both
+ * the check and the kit's provenance, against which a pragma naming a check is matched.
  */
 export interface FindingOutcome {
   findings: readonly OutcomeFinding[];
 
-  /** Sites already settled, the numerator of the fraction that the runner renders. Omitted, it renders none. */
+  /**
+   * Sites already settled, the numerator of the fraction that the runner renders. When it is omitted, the runner does
+   * not render a fraction.
+   */
   adoptedCount?: number | undefined;
 
   /**
    * The paths that this check examined and read no other way, whether or not any of them yielded a finding.
    *
-   * A sweep read through `readTrackedSources` is recorded on its own, so this is the escape hatch for a check
-   * reading files another way: shelling out to a tool, or reaching for `fs` directly. The run reports an
+   * `readTrackedSources` records a sweep read through it on its own, so this field is for a check reading
+   * files another way: shelling out to a tool, or reaching for `fs` directly. The run reports an
    * unused pragma only in a file examined by some check, by either route.
    */
   scanned?: readonly string[] | undefined;
@@ -181,12 +184,12 @@ export interface RdyCheck {
   /**
    * Stable identifier written by a pragma to suppress this check's findings and no other check's.
    *
-   * Bare here: The runner namespaces it under the publishing package where the kit has one. A check
+   * Bare here: The runner namespaces it under the publishing package when the kit has one. A check
    * naming no located site needs none, and one declaring none is named by no pragma.
    */
   id?: string | undefined;
 
-  /** Assert the claim. Return a boolean, a `CheckOutcome`, or a `FindingOutcome`. */
+  /** Asserts the claim. Returns a boolean, a `CheckOutcome`, or a `FindingOutcome`. */
   check: () => CheckReturnValue | Promise<CheckReturnValue>;
 
   /**
@@ -212,8 +215,8 @@ export interface RdyCheck {
    * What to do about a failure. Remediation belongs here, or in a failing `CheckOutcome`'s `fix` when it
    * depends on which way the check failed, and never in `detail`. An outcome's `fix` replaces this one.
    *
-   * An accessor is resolved only by a failure whose outcome supplies no `fix`, at most once, so it may
-   * read a value initialized below the kit literal.
+   * The runner resolves an accessor only for a failure whose outcome supplies no `fix`, at most once, so
+   * it may read a value initialized below the kit literal.
    */
   fix?: string | undefined;
 
@@ -228,7 +231,7 @@ interface RdyResultBase {
   /** Check name. */
   name: string;
 
-  /** The check's namespaced id as a pragma writes it, or `null` where the check declares none. */
+  /** The check's namespaced id as a pragma writes it, or `null` when the check declares none. */
   id: string | null;
 
   /** Resolved severity for this check. */
@@ -344,7 +347,7 @@ export interface SummaryCounts {
 
 // -- Checklists --
 
-/** A flat checklist where all checks run concurrently. */
+/** A flat checklist whose checks all run concurrently. */
 export interface RdyChecklist {
   name: string;
 
@@ -365,7 +368,7 @@ export interface RdyChecklist {
   fixLocation?: FixLocation | undefined;
 }
 
-/** A staged checklist where groups run sequentially; checks within each group run concurrently. */
+/** A staged checklist whose groups run sequentially; checks within each group run concurrently. */
 export interface RdyStagedChecklist {
   name: string;
   preconditions?: readonly RdyCheck[] | undefined;

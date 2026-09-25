@@ -16,7 +16,7 @@ export function describeType(value: unknown): string {
  * Returns a short, readable preview of a value for a diagnostic message.
  *
  * Strings keep their quotes, so `"1"` stays distinguishable from `1`. Anything long is truncated:
- * the preview is there to identify what was written, and the author has the source. A value with no
+ * The preview is there to identify what was written, and the author has the source. A value with no
  * useful rendering falls back to its type name, which is all that a function or a circular structure
  * could tell a reader anyway.
  */
@@ -61,7 +61,7 @@ export function describeValue(value: unknown): string {
  * keeps the result bounded.
  */
 function truncateAtClusterBoundary(text: string, limitInCodeUnits: number): string {
-  // A fixed locale keeps the result independent of the host default; grapheme segmentation carries no tailoring.
+  // A fixed locale keeps the result independent of the host default; grapheme segmentation has no tailoring.
   const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
   let end = 0;
   for (const { index, segment } of segmenter.segment(text)) {

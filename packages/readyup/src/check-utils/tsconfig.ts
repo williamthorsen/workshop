@@ -17,7 +17,7 @@ export interface TsconfigChain {
   unresolvedExtends: UnresolvedExtends[];
 }
 
-/** One config in a resolved `extends` chain, holding what that config declares in its own right. */
+/** One config in a resolved `extends` chain, containing what that config declares in its own right. */
 export interface TsconfigChainEntry {
   /** `compilerOptions` of `config`, narrowed to a record; `{}` when absent or not an object. */
   compilerOptions: Record<string, unknown>;
@@ -28,7 +28,7 @@ export interface TsconfigChainEntry {
   /**
    * The `extends` specifier that reached this config; `undefined` for the entry config. Unlike `path`, it survives a
    * change of install layout: pnpm resolves a package under `.pnpm` and a workspace link under the directory that it
-   * points at, so one base config resolves to two different paths. Where two branches reach one config, it names the
+   * points at, so one base config resolves to two different paths. When two branches reach one config, it names the
    * branch that reached it first.
    */
   specifier: string | undefined;
@@ -92,7 +92,7 @@ export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
  * missing or unparseable; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
  *
  * Resolves `extends` as TypeScript does, following relative paths and published base configs alike. `chain` and
- * `unresolvedExtends` come back beside the values, so a caller can tell an incomplete read from an undeclared
+ * `unresolvedExtends` are returned with the values, so a caller can tell an incomplete read from an undeclared
  * setting rather than reading both as absent.
  */
 export function readTsconfigLanguageLevel(filePath: string): TsconfigLanguageLevel | undefined {
@@ -188,7 +188,7 @@ function resolveExtendsPath(specifier: string, configDir: string): string | unde
  * Resolves a bare package name to the config declared by the package, as TypeScript does: the `"."` entry of a
  * non-null `exports` map, else the manifest's `tsconfig` field, else `tsconfig.json` in the package root.
  *
- * Reaching the last two takes readyup's own walk, because `exports` exists to hide the directory that they address.
+ * Reaching the last two requires readyup's own walk, because `exports` exists to hide the directory that they address.
  */
 function resolvePackageDefaultConfig(packageName: string, configDir: string): string | undefined {
   const packageRoot = resolvePackageRoot(packageName, configDir);
@@ -228,8 +228,8 @@ function resolvePathSpecifier(specifier: string, baseDir: string): string | unde
  * Resolves a package specifier through Node's resolver anchored at the extending config, so `exports`
  * governs what is reachable and a pnpm symlink resolves to the directory occupied by the package.
  *
- * Resolution runs under the `require` condition, which is the condition under which TypeScript resolves
- * `extends`, so a specifier that this reaches is a specifier that `tsc` reaches.
+ * Resolution runs under the `require` condition, the same condition under which TypeScript resolves
+ * `extends`: A specifier that this reaches is a specifier that `tsc` reaches.
  */
 function resolveThroughNodeResolver(specifier: string, configDir: string): string | undefined {
   let resolved: string;

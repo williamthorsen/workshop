@@ -27,8 +27,8 @@ export function fileMatchesHash(filePath: string, expectedHash: string): boolean
  *
  * The recorded value decides how much of the digest to compare, so every reader of a manifest honors
  * whatever prefix the compile that wrote it used rather than a length of its own that a later readyup
- * could outgrow. It takes the recorded value rather than a length, so no caller can reinstate a fixed
- * comparison by reaching for a constant.
+ * could outgrow. Because it takes the recorded value rather than a length, no caller can reinstate a fixed
+ * comparison by passing a constant.
  */
 export function hashToRecordedLength(content: string | Uint8Array, recorded: string): string {
   return computeHash(content).slice(0, recorded.length);

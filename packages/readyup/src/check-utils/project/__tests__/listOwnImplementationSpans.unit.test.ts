@@ -221,7 +221,7 @@ describe(listOwnImplementationSpans, () => {
 
 // region | Helpers
 
-/** Builds the declaration that a check hands the rule, over the sources supplied by the case. */
+/** Builds the declaration that a check passes to the rule, over the sources supplied by the case. */
 function buildOwnImplementation(sources: readonly ProjectSource[]): OwnImplementation {
   return { exportNames: EXPORT_NAMES, packageName: PACKAGE_NAME, sources };
 }

@@ -25,7 +25,7 @@ export function buildWorkspaceFromPackageJson(
   const nameValue = packageJson['name'];
   const name = typeof nameValue === 'string' ? nameValue : undefined;
   const isPackage = packageJson['private'] !== true;
-  // A `Workspace`'s manifest is frozen, so no holder's write reaches another.
+  // Freeze the manifest so that no holder of a `Workspace` can change what another holder reads.
   deepFreeze(packageJson);
   return Object.freeze({ dir: relDir, absolutePath, name, isPackage, isRoot: relDir === '.', packageJson });
 }

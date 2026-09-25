@@ -27,10 +27,11 @@ interface KitPackageGroupOptions {
  * or published by a workspace, is one that only the config half reports.
  *
  * Configured membership is passed as an argument rather than read here, which leaves the result a
- * function of a directory and a list: A caller sweeping a repository already holds each project's config.
+ * function of a directory and a list: A caller sweeping a repository already has each project's config.
  *
- * A package that cannot be expanded warns and is omitted, matching the warn-and-continue that listing already
- * takes elsewhere. Listing is read-only, so a broken dependency drops its own group rather than the whole listing.
+ * A package that cannot be expanded is reported in a warning and omitted, matching the warn-and-continue behavior
+ * that listing already follows elsewhere. Because listing is read-only, a broken dependency loses only its own group,
+ * not the whole listing.
  */
 export function collectKitPackageGroups({
   configuredPackages,
@@ -43,7 +44,7 @@ export function collectKitPackageGroups({
     const kits = expandOrWarn(packageName, fromDir);
     if (kits.length === 0) return [];
 
-    // Every kit of one package reports that package's version, so the group takes its version from the first.
+    // Every kit of one package reports that package's version. Take the group's version from the first.
     return [{ packageName, version: kits[0]?.version, configured: configured.has(packageName), kits }];
   });
 }

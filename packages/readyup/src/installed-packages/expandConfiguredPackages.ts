@@ -40,11 +40,12 @@ export function expandConfiguredPackages(packageNames: string[], extension: stri
 
 /** Expands one configured package into the kits that it publishes. */
 function expandOnePackage(packageName: string, extension: string, fromDir: string | undefined): PackageKit[] {
-  // Search `node_modules` first, so a package that is both installed and a workspace resolves to the installed copy.
+  // Search `node_modules` first, so that a package that is both installed and a workspace resolves to the
+  // installed copy.
   const root = resolvePackageRoot(packageName, fromDir) ?? resolveWorkspaceRoot(packageName, fromDir);
   if (root === undefined) {
     // Only a configured package name can be unresolved here: A discovered name has already been located
-    // through `resolvePackageRoot`, so the reader must correct the config.
+    // through `resolvePackageRoot`. The error directs the reader to correct the config.
     throw configError(
       `Configured package "${packageName}" was not found; it must be a direct dependency of this project or one of its workspaces.`,
     );
@@ -70,7 +71,7 @@ function expandOnePackage(packageName: string, extension: string, fromDir: strin
 /**
  * Names the kits that a package publishes, preferring its manifest and falling back to its kit directory.
  *
- * The same precedence that a local `--from` source already follows, so a package source and a directory source
+ * The same precedence that a local `--from` source already follows, so that a package source and a directory source
  * resolve alike. Only a missing manifest falls back: One that exists but cannot be parsed is a broken
  * publication, and quietly reading around it would report a kit list that nobody declared. Descriptions and
  * checklist names live in the manifest, so the fallback names kits without them.

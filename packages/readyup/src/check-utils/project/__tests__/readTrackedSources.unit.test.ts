@@ -285,7 +285,7 @@ describe(readSourceText, () => {
     expect(readSourceText('node_modules/dependency/index.js')).toBe('dependency');
   });
 
-  it('returns undefined for a path holding no text, and probes the filesystem for it once', () => {
+  it('returns undefined for a path that has no text, and probes the filesystem for it once', () => {
     expect(readSourceText('src/absent.ts')).toBeUndefined();
     expect(readSourceText('src/absent.ts')).toBeUndefined();
     expect(countProbes('src/absent.ts')).toBe(1);

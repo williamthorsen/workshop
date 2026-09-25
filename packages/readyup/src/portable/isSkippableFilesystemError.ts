@@ -1,6 +1,6 @@
 import { isError } from '@williamthorsen/toolbelt.errors';
 
-/** Filesystem errors that skip one directory rather than ending the whole walk. */
+/** Filesystem errors that make the walk skip one directory rather than end. */
 const SKIPPABLE_ERROR_CODES = new Set(['EACCES', 'ENOENT', 'EPERM']);
 
 /** Reports whether a filesystem failure is one that a read may treat as an empty directory. */

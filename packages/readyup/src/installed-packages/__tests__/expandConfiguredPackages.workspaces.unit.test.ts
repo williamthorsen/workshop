@@ -7,7 +7,7 @@ import { expandConfiguredPackages } from '../expandConfiguredPackages.ts';
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
-  // A tree per test: Workspace discovery holds its result for the life of the process, keyed by directory.
+  // A tree per test: Workspace discovery caches its result for the life of the process, keyed by directory.
   makeFixture(() => createTempTree({}, { prefix: 'expand-packages-workspaces-' })),
 );
 
@@ -35,7 +35,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
     expect(expandConfiguredPackages(['sealed'], '.js', temp.dir).map((kit) => kit.version)).toStrictEqual(['1.2.0']);
   });
 
-  it('prefers the installed copy where a package is both installed and a workspace', ({ temp }) => {
+  it('prefers the installed copy when a package is both installed and a workspace', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
     writeKitPackage(temp, 'packages/dual', { name: 'dual', version: '9.9.9' }, 'default');
     writeKitPackage(temp, 'node_modules/dual', { name: 'dual', version: '1.0.0' }, 'default');
@@ -53,7 +53,7 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
   });
 
   // This suite runs in a repo whose own workspaces include `readyup`, so a result read through the
-  // ambient cwd would resolve the name that the directory under test does not hold.
+  // ambient cwd would resolve the name that the directory under test does not contain.
   it('reads the workspaces of the directory that it is handed, not those of the ambient cwd', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
     writeKitPackage(temp, 'packages/other', { name: 'other', version: '1.0.0' }, 'default');
@@ -63,13 +63,13 @@ describe(`${expandConfiguredPackages.name} workspace fallback`, () => {
     );
   });
 
-  it('names the configured package where the project has no manifest to discover workspaces from', ({ temp }) => {
+  it('names the configured package when the project has no manifest to discover workspaces from', ({ temp }) => {
     expect(() => expandConfiguredPackages(['kit-workspace'], '.js', temp.dir)).toThrow(
       /Configured package "kit-workspace" was not found/,
     );
   });
 
-  it('names the configured package where the workspace globs cannot be expanded', ({ temp }) => {
+  it('names the configured package when the workspace globs cannot be expanded', ({ temp }) => {
     temp.writeJson('package.json', {
       name: 'root',
       private: true,

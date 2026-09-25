@@ -8,9 +8,9 @@ import * as testingNamespace from '../testing/index.ts';
  *
  * Read from the runner's own entry points rather than from a maintained list, so the table cannot drift from the
  * package that it describes. Each entry point is a barrel named in the package's `exports` map, and loading every
- * module that it touches is the point: The whole surface is what a kit binds against.
+ * module that it touches is the point: A kit binds against the whole surface.
  *
- * Type-only exports are absent, correctly: esbuild erases type imports, so no bundle can bind one.
+ * Type-only exports are absent, correctly: No bundle can bind one, because esbuild erases type imports.
  */
 const RUNNER_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['readyup', new Set(Object.keys(rootNamespace))],
@@ -19,7 +19,7 @@ const RUNNER_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['readyup/testing', new Set(Object.keys(testingNamespace))],
 ]);
 
-/** Returns the names exported by a `readyup` specifier, or `undefined` where the runner publishes no such subpath. */
+/** Returns the names exported by a `readyup` specifier, or `undefined` when the runner publishes no such subpath. */
 export function listRunnerExports(specifier: string): ReadonlySet<string> | undefined {
   return RUNNER_EXPORTS.get(specifier);
 }

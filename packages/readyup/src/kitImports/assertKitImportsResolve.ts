@@ -5,7 +5,7 @@ import { type MissingImports, UnresolvableKitImportsError } from './Unresolvable
 /**
  * Verifies that every readyup symbol imported by a compiled bundle is one that the running readyup exports.
  *
- * Runs before the bundle is evaluated, which is what lets a missing symbol be named. Evaluated first, it would
+ * Runs before the bundle is evaluated, which lets the assertion name a missing symbol. Evaluated first, it would
  * become an `undefined` binding under jiti's CJS transpilation, or a raw link error under a native import.
  *
  * Throws `UnresolvableKitImportsError` naming everything the runner cannot supply, so one failure reports the whole
@@ -42,7 +42,7 @@ export async function assertKitImportsResolve(bundle: string, sourceName?: strin
 
 // region | Helpers
 
-/** Renders the collected misses in a stable order, so one gap always reports identically. */
+/** Renders the collected misses in a stable order so that one gap is always reported identically. */
 function toSortedMissing(missingBySpecifier: Map<string, Set<string>>): MissingImports[] {
   return [...missingBySpecifier]
     .map(([specifier, names]): MissingImports => ({ specifier, names: [...names].toSorted() }))

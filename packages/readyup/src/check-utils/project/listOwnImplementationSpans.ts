@@ -3,8 +3,8 @@ import { type DeclarationSpan, listDeclarationSpans } from '../../portable/listD
 import { discoverWorkspaces } from '../workspaces.ts';
 import type { ProjectSource } from './readTrackedSources.ts';
 
-// An export clause and, where one follows, the `from` that makes it a re-export. `[^}]*` stops at the first `}`, which
-// a clause holds only as its own terminator.
+// An export clause and, if one follows, the `from` that makes it a re-export. `[^}]*` stops at the first `}`, which
+// a clause contains only as its own terminator.
 const EXPORT_CLAUSE = /\bexport\s*\{([^}]*)\}\s*(from\b)?/g;
 // One clause item: the local binding, optionally renamed on the way out, behind an optional inline `type` modifier.
 const CLAUSE_ITEM = /^(?:type\s+)?([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?$/;
@@ -20,20 +20,20 @@ export interface OwnImplementation {
 }
 
 /**
- * Lists the line ranges of a path that hold the declared package's own implementation: each top-level declaration
+ * Lists the line ranges of a path that contain the declared package's own implementation: each top-level declaration
  * exported by the file under one of the package's recommended names, in a file inside the workspace publishing the
  * package.
  *
  * Every narrowing is required. A repo publishing the package is where the idiom is supposed to live, but the workspace
  * is the whole repository wherever the root manifest declares the name, as a single-package project's always does, so a
  * workspace-wide rule would turn the check off there, and in any repo it would silence a second file hand-rolling the
- * idiom instead of importing the local implementation. The argument extends one step further, to the declaration: the
- * reasoning reaches a wrapper of the idiom that its own kit detects, which cannot adopt itself, while its neighbours
+ * idiom instead of importing the local implementation. The argument extends one step further, to the declaration: The
+ * reasoning applies to a wrapper of the idiom that its own kit detects, which cannot adopt itself, while its neighbours
  * in the same file are ordinary code.
  *
- * The declaration is read from the file's text, so a detector reporting sites that declare nothing is exempted on the
- * same terms as one reporting a declaration. A file never read by the sweep cannot be shown to declare anything,
- * and a repo whose workspaces cannot be discovered holds no publishing workspace to be inside; either yields no
+ * Because the declaration is read from the file's text, a detector reporting sites that declare nothing is exempted on
+ * the same terms as one reporting a declaration. A file never read by the sweep cannot be shown to declare anything,
+ * and a repo whose workspaces cannot be discovered contains no publishing workspace to be inside; either yields no
  * lines.
  */
 export function listOwnImplementationSpans(
@@ -68,9 +68,9 @@ function containsPath(dir: string, path: string): boolean {
 /**
  * Names the directories of the workspaces publishing the package.
  *
- * Discovery is best effort here: A repo that it cannot read reports as one holding no such workspace, so a check that
- * worked before the rule existed keeps working rather than erroring out of it. The match is on the declared name
- * alone, because what the rule needs is a repo holding the implementation, not one publishing it to a registry.
+ * Discovery is best effort here: A repo that it cannot read is treated as one containing no such workspace, so a check
+ * that worked before the rule existed keeps working rather than erroring out of it. The match is on the declared name
+ * alone, because the rule needs a repo containing the implementation, not one publishing it to a registry.
  */
 function findPublishingWorkspaceDirs(packageName: string): string[] {
   try {

@@ -12,7 +12,7 @@ describe(withSweepRecorder, () => {
     expect(scanned).toStrictEqual([['src/a.ts']]);
   });
 
-  it('reports a sweep made after an await, which is where a check makes one', async () => {
+  it('reports a sweep made after an await, which is when a check makes one', async () => {
     const { recorder, scanned } = createRecorder();
 
     await withSweepRecorder(recorder, async () => {
@@ -29,14 +29,14 @@ describe(withSweepRecorder, () => {
     expect(withSweepRecorder(recorder, () => 'verdict')).toBe('verdict');
   });
 
-  it('calls the function untouched where no recorder is passed', () => {
+  it('calls the function untouched when no recorder is passed', () => {
     expect(withSweepRecorder(undefined, () => 'verdict')).toBe('verdict');
   });
 
   it('keeps concurrent scopes apart', async () => {
     const first = createRecorder();
     const second = createRecorder();
-    // Holds the first scope open until the second has recorded; a single shared variable holding the current
+    // Hold the first scope open until the second has recorded; a single shared variable storing the current
     // recorder would get that interleaving wrong.
     const { promise: gate, resolve: openGate } = Promise.withResolvers<undefined>();
 
@@ -70,11 +70,11 @@ describe(withSweepRecorder, () => {
 });
 
 describe(recordSweep, () => {
-  it('reports to nothing where no scope is open', () => {
+  it('reports to nothing when no scope is open', () => {
     expect(() => recordSweep(['src/a.ts'])).not.toThrow();
   });
 
-  it('reports across two copies of this module, which the runner and a compiled kit hold', async () => {
+  it('reports across two copies of this module, which the runner and a compiled kit each load', async () => {
     const copy = await importSecondCopy();
     const { recorder, scanned } = createRecorder();
 
@@ -90,7 +90,7 @@ describe(recordSweep, () => {
 // region | Helpers
 
 /**
- * Loads a second copy of the module under test, as a run holds when the runner reads its own source and a
+ * Loads a second copy of the module under test, as a run has when the runner reads its own source and a
  * compiled kit resolves `readyup/*` to the built installation.
  *
  * The query string makes it a second copy: The loader keys modules by URL, so the same file under a
