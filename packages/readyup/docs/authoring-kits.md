@@ -26,7 +26,7 @@ Repo-level settings live in `.config/readyup.config.ts`.
 
 `compile.include` and `compile.exclude` match paths relative to `compile.srcDir`, and `exclude` also matches hidden files, so `exclude: 'lib/**'` removes every source below `lib/`.
 
-A sweep reads `compile.srcDir` recursively, and a source below it compiles to the matching subdirectory of `compile.outDir`. Its kit takes the whole path as its name, so `team-a/deploy.ts` becomes the kit `team-a/deploy`, which [Compiling](publishing-kits.md#compiling) covers. A module that the kits share is not a kit, so keep it out of the sweep with `exclude`, or with an `include` that selects the kits alone.
+A sweep reads `compile.srcDir` recursively, and a source below it compiles to the matching subdirectory of `compile.outDir`. Its kit takes the whole path as its name: `team-a/deploy.ts` becomes the kit `team-a/deploy`, which [Compiling](publishing-kits.md#compiling) covers. A module that the kits share is not a kit. Keep it out of the sweep with `exclude`, or with an `include` that selects the kits alone.
 
 See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages`.
 
@@ -72,7 +72,7 @@ A checklist has either `checks` or `groups`, never both.
 | `fix`      | `string`                                          | --                          | Remediation, shown on a failure that reports no `Error:` and whose outcome supplies none |
 | `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes                                               |
 
-A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it surfaces while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
+A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it occurs while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
 
 A check returns a boolean or a `CheckOutcome`:
 
@@ -103,7 +103,7 @@ Three fields, three questions:
 
 A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: The operator leaves the reader to infer which direction is the violation.
 
-State the claim in the third person indicative and capitalize it like a sentence, so a column of names reads as a column of assertions rather than labels.
+State the claim in the third person indicative and capitalize it like a sentence, so that a column of names reads as a column of assertions rather than labels.
 
 | Poor                         | Better                                     | Why                                                      |
 | ---------------------------- | ------------------------------------------ | -------------------------------------------------------- |
@@ -210,7 +210,7 @@ The second question is a fast check, not the rule. A skip is correct whenever th
 
 The last row is the one that the fast check alone gets wrong. `.github/labels.yaml` is a filename written by several label-sync tools, and release-kit generates it only from a `repoLabels` block, so a repo with that file but no such block would have passed `fileExists` and still deserves the skip.
 
-The third row is the failure mode to watch for: `skip` and `check` ran the identical predicate, so the check could never pass. [`rdy run --diagnose`](running-checks.md#run-options) decides that mechanical half, reporting every check that its own `skip` turned off and that would have passed. It decides nothing about applicability.
+The third row is the failure mode to watch for: Because `skip` and `check` ran the identical predicate, the check could never pass. [`rdy run --diagnose`](running-checks.md#run-options) decides that mechanical half, reporting every check that its own `skip` turned off and that would have passed. It decides nothing about applicability.
 
 **Only a skipping parent collapses a group.** A parent whose `skip` fires reports alone: Its descendants are not run, not reported, and not counted. A parent that _fails_ instead renders every descendant as its own 🚫, which is one blocked line per descendant when one skipped line was wanted. `quiet` helps with neither, suppressing passes only.
 
@@ -267,7 +267,7 @@ rdy deploy:fast
 
 Neither `rdy compile` nor `rdy run --jit` type-checks the kit that it loads, so both validate structure at load time, identically -- `rdy compile` refuses to publish a kit that `rdy run` would reject.
 
-Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function, and a `fix` written as a data property must be a string. Unknown keys are allowed, so a kit written for a later ReadyUp still loads.
+Every check is validated wherever it appears: in `checks`, in `groups`, in `preconditions`, and nested. A check needs a non-empty `name` and a `check` function; `severity` must be a valid value; `skip` must be a function, and a `fix` written as a data property must be a string. Because unknown keys are allowed, a kit written for a later ReadyUp still loads.
 
 ```
 Invalid kit at .readyup/kits/default.js:
@@ -304,7 +304,7 @@ it('passes when every package README contains the marker', () => {
 
 `createTempTree` and `pointCwdAt` are the helpers used by ReadyUp for its own suites; any equivalent will do, since the pattern needs a real tree and a `cwd` pointed at it.
 
-Mocking `readyup/check-utils` instead produces a workspace list that discovery cannot return -- most often one with no root entry, which every `!isRoot` filter then passes through untouched, so the filter is never exercised.
+Mocking `readyup/check-utils` instead produces a workspace list that discovery cannot return -- most often one with no root entry, which every `!isRoot` filter passes through untouched. The test then never exercises the filter.
 
 **A function that takes a `Workspace` parameter** needs a value rather than a tree. `readyup/testing` exports a builder for one:
 
@@ -327,11 +327,11 @@ expect(skipIfNotPublishable(makeWorkspace({ packageJson: { name: 'example', priv
 | `isPackage`    | `packageJson.private !== true`                                            |
 | `isRoot`       | `dir === '.'`                                                             |
 
-The last three are derived by the same code that `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` although the call does not set it. An explicit override takes precedence over the derivation, which is how a test states a shape that discovery would not produce. The result is frozen, as a discovered workspace is, and the manifest passed in is copied before freezing, so a literal shared between fixtures stays writable.
+The last three are derived by the same code that `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` although the call does not set it. An explicit override takes precedence over the derivation, which is how a test states a shape that discovery would not produce. The result is frozen, as a discovered workspace is. Because the manifest passed in is copied before freezing, a literal shared between fixtures stays writable.
 
 ## Inlining JSON at compile time
 
-A compiled kit is self-contained, so it cannot read a JSON file that is next to its source. `pickJson` works around that limit by copying selected fields into the bundle while it is being built:
+A compiled kit is self-contained and cannot read a JSON file that is next to its source. `pickJson` works around that limit by copying selected fields into the bundle while it is being built:
 
 ```ts
 import { pickJson } from 'readyup';
@@ -354,7 +354,7 @@ Two consequences follow from the value being resolved at compile time:
 - `pickJson` throws if it is ever reached at runtime. A kit that calls it was not compiled.
 - Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not change, and neither did the bundle -- but the compile records the projection that it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
 
-Importing a JSON file directly, with or without `with { type: 'json' }`, bundles the whole file instead. Every field ships in the kit, and the compile records the file whole, so any edit to it, a version bump included, leaves the kit stale. `rdy compile` reports each such file outside `node_modules` as a [`json-inlined`](publishing-kits.md#compile-warnings) warning.
+Importing a JSON file directly, with or without `with { type: 'json' }`, bundles the whole file instead. Every field is bundled into the kit. Because the compile records the file whole, any edit to it, a version bump included, leaves the kit stale. `rdy compile` reports each such file outside `node_modules` as a [`json-inlined`](publishing-kits.md#compile-warnings) warning.
 
 ## TypeScript settings
 
