@@ -16,7 +16,7 @@ Each payload is specified by a JSON Schema published with the package and includ
 
 Each `$id` is the same path under `https://unpkg.com/readyup/`. The schemas are generated from the definitions from which the exported `Json*` types derive, so the published contract and the types cannot drift apart.
 
-Each document names its payload under `$defs` and points at it from a root `$ref`, so a document is shaped `{ $schema, $id, $ref, $defs }` and the payload's own `required` and `properties` are under `$defs` rather than at the root. A validator resolves the `$ref` and needs nothing further; code reading the document directly has to follow it.
+Each document names its payload under `$defs` and points at it from a root `$ref`: A document is shaped `{ $schema, $id, $ref, $defs }`, and the payload's own `required` and `properties` are under `$defs` rather than at the root. A validator resolves the `$ref` and needs nothing further; code reading the document directly has to follow it.
 
 ## Evolution policy
 
@@ -89,7 +89,7 @@ An error body may also include `hint`, one action that would clear the failure:
 ```
 
 - **`passed`** is the run verdict, agreeing with exit code 0 in every case. Kit and checklist entries have their own.
-- **`counts`** contains the six tallies at report, kit, and checklist level, nested so count names and verdict names share no namespace.
+- **`counts`** contains the six tallies at report, kit, and checklist level, nested so that count names and verdict names share no namespace.
 - **`worstSeverity`** is derived verdict data, omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear at the top level only when the corresponding flag was passed, and on every kit that ran as the value that governed it. See [thresholds](concepts.md#thresholds) for how each resolves.
 - **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit whose bundle records one, including when that version matches the report's own `readyupVersion`, and is absent for a bundle compiled before readyup recorded it and for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](publishing-kits.md#verifying-by-recompiling) reports the same value under a narrower rule, appearing only when it disagrees with the running readyup: That field explains a mismatch, this one records what ran.

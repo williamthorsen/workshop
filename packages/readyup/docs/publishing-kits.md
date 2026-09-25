@@ -18,9 +18,9 @@ A published package can include its kits instead, so consumers access them throu
 ⚪ smoke.ts · no changes
 ```
 
-The directory is named relative to the enclosing workspace root, so a workspace compiled from its own directory still gets a heading that tells it apart from the others. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory. To compile every project in a repository at once, see [Compiling a whole repository](#compiling-a-whole-repository).
+Because the directory is named relative to the enclosing workspace root, a workspace compiled from its own directory still gets a heading that tells it apart from the others. In a repository with no workspace file, the directory is named relative to the repository root; a directory under neither is named relative to the working directory. To compile every project in a repository at once, see [Compiling a whole repository](#compiling-a-whole-repository).
 
-`rdy compile` reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `rdy compile <file>` reads `compile.outDir` alone, which gives the kit its name; `compile.include` and `compile.exclude` select a sweep's sources and bear on nothing else. `--config` cannot be combined with `--recursive`, which compiles each project under its own config.
+`rdy compile` reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `rdy compile <file>` reads `compile.outDir` alone, which gives the kit its name; `compile.include` and `compile.exclude` select a sweep's sources and affect nothing else. `--config` cannot be combined with `--recursive`, which compiles each project under its own config.
 
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
@@ -35,7 +35,7 @@ A sweep also prunes the kits that no source compiles to any longer, because the 
 
 A bundle edited since it was compiled is kept with its entry and counts against the run as a drifted kit does; `--force` deletes it. A bundle that cannot be deleted also keeps its entry and fails the run. An entry recording a bundle outside the output directory is dropped without deleting the file, since a sweep writes nothing there. A single-file compile deletes nothing, and neither does `--skip-manifest`, which reads no record of what was compiled. A bundle that the manifest does not record is reported rather than deleted; see [`bundle-unrecorded`](#compile-warnings).
 
-A sweep that finds no kits writes a manifest only if one already exists, and prunes by the same rules, so kits since deleted stop being advertised and lose their bundles. A project with neither kits nor a manifest is left alone, so sweeping a monorepo does not create `.readyup/` in workspaces that contain no kits.
+A sweep that finds no kits writes a manifest only if one already exists, and prunes by the same rules, so kits since deleted stop being advertised and lose their bundles. Because a project with neither kits nor a manifest is left alone, sweeping a monorepo does not create `.readyup/` in workspaces that contain no kits.
 
 `rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` -- someone edited the bundle directly:
 
@@ -63,7 +63,7 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 ⚪ smoke.ts · no changes
 ```
 
-The sweep considers the same directories as [`rdy list --recursive`](running-checks.md#listing-a-whole-repository), and compiles each one that has a `.readyup/` directory or a `.config/readyup.config.ts` and holds kit sources, compiled kits, or a manifest. Each project compiles exactly as `rdy compile` run from its own directory would: under its own config, writing its own manifest by the rules above. A project whose kits were all deleted therefore has its manifest emptied and their bundles removed, and a workspace with no kits gets no manifest.
+The sweep considers the same directories as [`rdy list --recursive`](running-checks.md#listing-a-whole-repository), and compiles each one that has a `.readyup/` directory or a `.config/readyup.config.ts` and contains kit sources, compiled kits, or a manifest. Each project compiles exactly as `rdy compile` run from its own directory would: under its own config, writing its own manifest by the rules above. A project whose kits were all deleted therefore has its manifest emptied and their bundles removed, and a workspace with no kits gets no manifest.
 
 Every project is compiled by the readyup that runs the sweep, and by that readyup's esbuild, so every manifest records the same `readyupVersion` and `esbuildVersion`. `pnpm -r exec rdy compile` instead runs each workspace's own installed readyup, and the two agree unless the workspaces install different versions of readyup.
 
@@ -79,21 +79,21 @@ Under `--json`, each kit and each removed bundle also reports `project`, the dir
 
 ### What a manifest entry records
 
-| Field                 | Meaning                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------- |
-| `bundledDependencies` | Each package that the bundle inlined, by name, with the version declared by its `package.json`           |
-| `checklists`          | The names of the checklists that the kit declares, so `rdy list` reports them without running the bundle |
-| `description`         | The kit's own description, if it declares one                                                            |
-| `esbuildVersion`      | The esbuild that produced the bundle                                                                     |
-| `inputs`              | Every file read by the compile, each with the hash of what was consumed from it                          |
-| `name`                | The kit's name, which is its source's path below `compile.srcDir` with the extension stripped            |
-| `path`                | The compiled bundle, relative to the manifest                                                            |
-| `readyupVersion`      | The readyup that compiled the kit                                                                        |
-| `source`              | The TypeScript from which the bundle was built, relative to the manifest                                 |
-| `sourceHash`          | Hash of that source, read back out of its own `inputs` record                                            |
-| `targetHash`          | Hash of the compiled bundle                                                                              |
+| Field                 | Meaning                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `bundledDependencies` | Each package that the bundle inlined, by name, with the version declared by its `package.json`                |
+| `checklists`          | The names of the checklists that the kit declares, so that `rdy list` reports them without running the bundle |
+| `description`         | The kit's own description, if it declares one                                                                 |
+| `esbuildVersion`      | The esbuild that produced the bundle                                                                          |
+| `inputs`              | Every file read by the compile, each with the hash of what was consumed from it                               |
+| `name`                | The kit's name, which is its source's path below `compile.srcDir` with the extension stripped                 |
+| `path`                | The compiled bundle, relative to the manifest                                                                 |
+| `readyupVersion`      | The readyup that compiled the kit                                                                             |
+| `source`              | The TypeScript from which the bundle was built, relative to the manifest                                      |
+| `sourceHash`          | Hash of that source, read back out of its own `inputs` record                                                 |
+| `targetHash`          | Hash of the compiled bundle                                                                                   |
 
-Every hash that the manifest records is a prefix of a SHA-256 hex digest, between 8 and 64 characters. Readers compare the digest at the recorded value's own length rather than at a length of their own, so a manifest written by a readyup recording a longer prefix verifies clean instead of reading as wholly stale. Without the floor, a record too short to distinguish anything would pass every check that it reaches.
+Every hash that the manifest records is a prefix of a SHA-256 hex digest, between 8 and 64 characters. Readers compare the digest at the recorded value's own length rather than at a length of their own, so a manifest written by a readyup recording a longer prefix verifies clean instead of reading as wholly stale. Without the floor, a record too short to distinguish anything would pass every check that reads it.
 
 `inputs` is the compile's input closure: every module that the bundle inlined past the entry, and every JSON file projected by [`pickJson`](authoring-kits.md#inlining-json-at-compile-time). A module records the hash of its contents. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field that the kit did not pick is not staleness.
 
@@ -112,7 +112,7 @@ An entry compiled before readyup recorded the closure has no `inputs`; one compi
 | `bundle-unrecorded` | A bundle directly under the output directory is neither compiled from a source nor recorded in the manifest |
 | `json-inlined`      | A kit's bundle includes a JSON file from outside `node_modules` whole                                       |
 
-A JSON file that a kit imports, with or without an import attribute, or loads through `require()`, is bundled whole and recorded whole in `inputs`: Every field ships in the kit, and any edit to the file leaves the kit stale. The warning names the kit, the file, and each module that imports it, and suggests [`pickJson`](authoring-kits.md#inlining-json-at-compile-time), which inlines and records only the fields that it names. A kit that failed to compile raises none, and one reported as `no changes` still raises it, because its bundle still includes the file.
+A JSON file that a kit imports, with or without an import attribute, or loads through `require()`, is bundled whole and recorded whole in `inputs`: The kit includes every field, and any edit to the file leaves the kit stale. The warning names the kit, the file, and each module that imports it, and suggests [`pickJson`](authoring-kits.md#inlining-json-at-compile-time), which inlines and records only the fields that it names. A kit that failed to compile raises none, and one reported as `no changes` still raises it, because its bundle still includes the file.
 
 Nothing shows that `rdy compile` wrote a bundle that the manifest does not record, so the sweep reports it rather than deleting it. Such a bundle typically belongs to a kit deleted before `rdy compile` pruned bundles, was compiled under `--skip-manifest`, or was copied in by hand, and `rdy run` still loads it by name. The warning names the bundle and its directory. A bundle named for a kit whose source the sweep found is not reported, even when that kit failed to compile. Neither a single-file compile nor `--skip-manifest` raises the warning.
 
@@ -164,7 +164,7 @@ A listed package that is absent, or that publishes no kits at all, fails the run
 
 If `node_modules` contains no match, a configured name matching one of the project's own workspaces resolves to that workspace's directory, and its kits are read from there as for any installed package. A monorepo therefore runs its own packages' kits over itself without declaring a dependency on them purely to make them findable. The workspace matches by the `name` declared in its manifest, `private: true` included, and resolution is anchored to the directory whose config named the package, so a `--recursive` sweep reads each project's own workspaces.
 
-Two limitations follow from resolving through `node_modules`, and neither applies to a workspace, because a configured package that `node_modules` does not contain is still resolved through the workspace fallback. A package that is not a workspace must be a **direct** dependency: A strict pnpm layout links nothing else into the project, so a transitive package is genuinely unreachable. And Yarn Plug'n'Play keeps no `node_modules` on disk, so package sources do not resolve under it.
+Two limitations follow from resolving through `node_modules`, and neither applies to a workspace, because a configured package that `node_modules` does not contain is still resolved through the workspace fallback. A package that is not a workspace must be a **direct** dependency: A transitive package is genuinely unreachable, because a strict pnpm layout links nothing else into the project. And package sources do not resolve under Yarn Plug'n'Play, because it keeps no `node_modules` on disk.
 
 A published version other than the installed one is not yet reachable through `npm:`, and `rdy` says so when one is named. Use `--url` with the published address in the meantime:
 
@@ -276,7 +276,7 @@ The three verdicts cover what the compile read and recorded as hashes. A bundle 
 
 A mismatch names which recorded versions changed, read from what the manifest records: the readyup that compiled the bundle, the esbuild, and each bundled package whose version the rebuild does not reproduce. When every recorded version matches, the mismatch says so, which leaves an edited bundle, a changed input, or dependency content changed without a version bump. The comparison reads the rebuild's own record on both sides, so nothing is resolved from the installed tree, and a mismatch for an entry compiled before the version record shows the bare hashes.
 
-The comparison is against the bundle on disk, never the recorded hash, so the verdict is independent of the manifest's bookkeeping and can contradict it. When a bundle reproduces exactly but its recorded hash does not match, the record is at fault, not the kit:
+Because the comparison is against the bundle on disk, never the recorded hash, the verdict is independent of the manifest's bookkeeping and can contradict it. When a bundle reproduces exactly but its recorded hash does not match, the record is at fault, not the kit:
 
 ```
 🔴 deploy
@@ -287,13 +287,13 @@ The comparison is against the bundle on disk, never the recorded hash, so the ve
 
 The remedy changes with it. Otherwise the remedy for a drifted bundle is to move the edits into the source, since only a hand edit explains the drift; here there is nothing to move, and `--force` rewrites the record rather than the kit. Either way the command includes `--force`, because `rdy compile` gates on drift and skips the kit rather than overwriting it.
 
-The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: an exactness check that waived the kits that it could not reach would establish less than it appears to.
+The verdict is `ok`, `mismatch`, `failed` (the source no longer compiles), or `missing` (nothing to recompile, or nothing to compare against). Only `ok` passes. There is no `unverified` here: An exactness check that waived the kits that it could not reach would establish less than it appears to.
 
 Under `--json`, each kit adds `rebuildStatus`. A `mismatch` reports `rebuildExpected` and `rebuildActual`, plus `rebuildCompiledWith` when the bundle was built by a different readyup, `rebuildEsbuild` (the recorded esbuild against the rebuild's) whenever the entry records one, and `rebuildDependencyChanges` when at least one bundled package's version moved; a `failed` reports `rebuildError`. Without the flag, none of these fields appears.
 
 Three things to know before wiring it into CI: It requires esbuild, which a repository that compiles kits already has. The readyup version forms part of a bundle's hash, so a readyup upgrade makes every kit mismatch until recompiled; an esbuild or dependency upgrade causes a mismatch in every bundle that it changes, and the mismatch clause names it. And it must not run after a step that recompiles kits, because recompilation would defeat the comparison.
 
-The directory in which the command runs is not one of them. The same source in the same package always compiles to the same bundle, so `rdy verify --rebuild` returns the same verdict from anywhere in the repository.
+The directory in which the command runs is not one of them. `rdy verify --rebuild` returns the same verdict from anywhere in the repository, because the same source in the same package always compiles to the same bundle.
 
 ```yaml
 - run: npx rdy verify --rebuild

@@ -20,7 +20,7 @@ A kit's name is its source's path below `compile.srcDir`, so a kit compiled from
 
 One rule locates a kit that a name selects: `rdy run <kit>` reads `compile.outDir` and `rdy run --jit <kit>` reads `compile.srcDir`. `--internal` shifts the name by `internal.dir` and the filename by `internal.infix`, leaving that root as it is. `.readyup/kits` stays the root for `--from`, `global`, and `npm:`, which name the layout that another project publishes.
 
-A name is relative to the directory that roots it. One holding a `..` segment, an absolute path, or a leading separator is rejected with exit `2`; to run a kit from outside the tree, name its file with `--file` or its directory with `--from dir:`.
+A name is relative to the directory that roots it. One containing a `..` segment, an absolute path, or a leading separator is rejected with exit `2`; to run a kit from outside the tree, name its file with `--file` or its directory with `--from dir:`.
 
 `--all` runs every kit in the source instead of naming them, as though each had been named:
 
@@ -31,7 +31,7 @@ rdy run --all --from dir:kits # every kit in a directory
 rdy run --all --packages      # every kit that each listed package publishes
 ```
 
-The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. Under `--jit` the sources are the ones that `compile.include` and `compile.exclude` select, the same set that `rdy compile` builds, so the two forms cover the same kits and a module that the kits share is read as a kit by neither. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that holds no kits fails with exit `2` rather than passing.
+The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. Under `--jit` the sources are the ones that `compile.include` and `compile.exclude` select, the same set that `rdy compile` builds, so the two forms cover the same kits and a module that the kits share is read as a kit by neither. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that contains no kits fails with exit `2` rather than passing.
 
 `--checklists` filters within a single kit, and pairs with one positional kit, with `--file` or `--url`, or with no kit at all. Naming two kits, or one that already has a `:checklist` filter, is an error rather than a merge.
 
@@ -45,11 +45,11 @@ rdy run -- "--odd-kit-name"
 
 `--config <path>` reads the settings from the named file in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. It cannot be combined with `--file`, `--from`, or `--url`, none of which reads config.
 
-`--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Both keep the parent checks of anything they show, so a failure nested under passing parents still appears beneath them.
+`--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Because both keep the parent checks of anything they show, a failure nested under passing parents still appears beneath them.
 
-A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. A block is withheld only when a table will include its row, so a run of one checklist reports its block even when the filters leave nothing in it, and a run that withholds one always ends with the table.
+A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. Because a block is withheld only when a table will include its row, a run of one checklist reports its block even when the filters leave nothing in it, and a run that withholds one always ends with the table.
 
-`--diagnose` runs the `check` of every check turned off by its own `skip`, and reports the ones that would have passed: A `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](authoring-kits.md#when-a-check-skips) covers the judgment that this flag cannot make. It is opt-in because it executes exactly the work that a skip was written to avoid, which may reach a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
+`--diagnose` runs the `check` of every check turned off by its own `skip`, and reports the ones that would have passed: A `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](authoring-kits.md#when-a-check-skips) covers the judgment that this flag cannot make. It is opt-in because it executes exactly the work that a skip was written to avoid, which may access a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
 
 A check's own [`quiet`](authoring-kits.md#checks) is this flag narrowed to that one check, and a kit whose every check declares it renders what `--quiet` renders. It is not `skip`, which reports that the check did not run and why: A quiet check runs, and its pass is included in the count line and the exit code like any other -- only the line is withheld. `--json` is unaffected, so `rdy run --json --detail full` shows a quiet check that passed.
 
@@ -120,7 +120,7 @@ The heading of a kit from an installed package, a repository, or a URL names its
 ━━ 📁 ../shared-kits / 📓 default
 ```
 
-A run spanning several kits tallies them together, each row naming its source and kit so it reads without reference to the blocks above. Row names have no role glyphs, since the padding that aligns the columns counts characters rather than terminal cells:
+A run spanning several kits tallies them together, each row naming its source and kit so that it reads without reference to the blocks above. Row names have no role glyphs, since the padding that aligns the columns counts characters rather than terminal cells:
 
 ```
 ━━ Summary
@@ -196,11 +196,11 @@ A kit published by an installed package namespaces its checks under that package
 
 The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason after `--`. Under `--json`, each check entry includes its `id` in both detail projections.
 
-A suppressed finding is removed from the audit rather than downgraded: out of the detail, and out of both halves of the check's fraction, so a project that has settled every remaining site reaches completion rather than staying one short. An unqualified pragma takes the site out of every check's fraction at once, which keeps the checks of one run comparable; a qualified one takes it out of the checks that it names and leaves it counted in the rest.
+A suppressed finding is removed from the audit rather than downgraded: out of the detail, and out of both halves of the check's fraction. A project that has settled every remaining site reaches completion rather than staying one short. An unqualified pragma takes the site out of every check's fraction at once, which keeps the checks of one run comparable; a qualified one takes it out of the checks that it names and leaves it counted in the rest.
 
 The token is read from the source's raw text and matched wherever it appears on the line, so a detector that blanks comments before it scans cannot erase a pragma first, and a line that quotes the token in a string suppresses a finding sited on it.
 
-A pragma that outlives the finding for which it was written is reported under [`pragma-unused`](#advisory-warnings), so a site rewritten or a check retired leaves a comment named by the next run rather than dead text that nobody notices.
+Because a pragma that outlives the finding for which it was written is reported under [`pragma-unused`](#advisory-warnings), a site rewritten or a check retired leaves a comment named by the next run rather than dead text that nobody notices.
 
 ## Advisory warnings
 
@@ -239,7 +239,7 @@ One compares the readyup that compiled a bundle against the one running it.
 | -------------- | ---------------------------------------------------------------- |
 | `version-skew` | A bundle was compiled by a newer readyup than the one running it |
 
-Only that direction is reported: The recorded version is fixed at publish time while runners are upgraded, so a bundle older than the runner is the ordinary state of a published kit. The advisory stands in for a floor that the author never declared, so it is never raised for a kit declaring [`minReadyupVersion`](authoring-kits.md#kit) -- a runner below that floor has already failed to load the kit. A bundle recording no version is not reported, `--jit` runs from TypeScript source included.
+Only that direction is reported: The recorded version is fixed at publish time while runners are upgraded, so a bundle older than the runner is the ordinary state of a published kit. Because the advisory stands in for a floor that the author never declared, it is never raised for a kit declaring [`minReadyupVersion`](authoring-kits.md#kit) -- a runner below that floor has already failed to load the kit. A bundle recording no version is not reported, `--jit` runs from TypeScript source included.
 
 One more reads the sources that the run's checks examined and reports the pragmas among them that suppressed nothing.
 
@@ -247,11 +247,11 @@ One more reads the sources that the run's checks examined and reports the pragma
 | --------------- | ---------------------------------------------------------------------------------- |
 | `pragma-unused` | An [`rdy-ignore` pragma](#suppressing-a-finding) suppressed no finding in this run |
 
-The evidence is what the checks read. A pragma is reported only when some check examined the file containing it -- swept it through [`readTrackedSources`](check-utils.md#project-sources), or named it in [`scanned`](authoring-kits.md#checks) -- and no check of the run suppressed a finding on the line covered by the pragma; a pragma in a file examined by no check is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form in which findings are printed. One ledger spans the invocation, so a file that two kits both examined is scanned once. A diagnosis contributes neither examined paths nor suppressions, the run having turned that check off; a sweep that the check read in its own `skip` before returning the reason was recorded when it ran, and still counts.
+The evidence is what the checks read. A pragma is reported only when some check examined the file containing it -- swept it through [`readTrackedSources`](check-utils.md#project-sources), or named it in [`scanned`](authoring-kits.md#checks) -- and no check of the run suppressed a finding on the line covered by the pragma; a pragma in a file examined by no check is not reported, because the run established nothing about it. Paths are matched by their resolved form, so a check declaring absolute paths and one reporting relative finding paths agree, and the warning prints the path relative to `cwd`, the form in which findings are printed. Because one ledger spans the invocation, a file that two kits both examined is scanned once. A diagnosis contributes neither examined paths nor suppressions, the run having turned that check off; a sweep that the check read in its own `skip` before returning the reason was recorded when it ran, and still counts.
 
 Recognition for the report is stricter than for suppression. A token is a site when it is in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Suppression is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never cause a suppressed finding to be reported.
 
-Two limits follow from that. Recognition reads JavaScript-family syntax, so a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything.
+Two limits follow from that. Because recognition reads JavaScript-family syntax, a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything.
 
 ## Kit import compatibility
 
@@ -277,7 +277,7 @@ An import binding no name that the runner could be asked for -- a namespace impo
 | `1`  | Ran and found problems: failed checks, a kit that fails `verify`, a kit that fails to compile |
 | `2`  | Could not complete the invocation: a usage, config, kit-load, or internal error               |
 
-The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that cannot complete a kit exits `2` even when the kits that ran found problems, and still reports what it collected. A failure that nothing awaits and that surfaces while the run is in progress also exits `2`, but it ends the run at once, and `--json` then emits the [error envelope](json-output.md#error-envelope) rather than the report.
+The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy list` and `rdy init` produce only `0` and `2`. A run that cannot complete a kit exits `2` even when the kits that ran found problems, and still reports what it collected. A failure that nothing awaits and that occurs while the run is in progress also exits `2`, but it ends the run at once, and `--json` then emits the [error envelope](json-output.md#error-envelope) rather than the report.
 
 ## Listing kits
 
@@ -302,13 +302,13 @@ Each section names the command that runs the kits beneath it:
    📋 health
 ```
 
-**Sources** holds the sources that `compile.include` and `compile.exclude` select under `compile.srcDir`, which are the kits that `rdy compile` builds and `rdy run --jit` runs. **Internal** holds the bucket that `internal.dir` and `internal.infix` declare, and it appears only where one of those keys is set; without them, `--internal` resolves a name exactly as plain `--jit` does, so the section would restate **Sources**.
+**Sources** lists the sources that `compile.include` and `compile.exclude` select under `compile.srcDir`, which are the kits that `rdy compile` builds and `rdy run --jit` runs. **Internal** lists the bucket that `internal.dir` and `internal.infix` declare, and it appears only when one of those keys is set; without them, `--internal` resolves a name exactly as plain `--jit` does, so the section would restate **Sources**.
 
-The sections name invocations rather than files, so one file can appear in both. An internal source that `compile.include` and `compile.exclude` also select is listed under **Sources** by its path below `compile.srcDir` and under **Internal** by its name within the bucket, because both commands reach it and `rdy run --all --jit` runs it. To keep the internal bucket out of **Sources**, and out of the compile sweep with it, exclude it: `include: '*.ts'` selects the top level alone, and `exclude: 'internal/**'` names the directory.
+Because the sections name invocations rather than files, one file can appear in both. An internal source that `compile.include` and `compile.exclude` also select is listed under **Sources** by its path below `compile.srcDir` and under **Internal** by its name within the bucket, because it is available to both commands and `rdy run --all --jit` runs it. To keep the internal bucket out of **Sources**, and out of the compile sweep with it, exclude it: `include: '*.ts'` selects the top level alone, and `exclude: 'internal/**'` names the directory.
 
 Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Sources** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
-Kits from configured packages get their own section, each named package-first so a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config omits is named as a candidate:
+Kits from configured packages get their own section, each named package-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config omits is named as a candidate:
 
 ```
 ── Packages
@@ -391,7 +391,7 @@ Every listed kit is runnable by the command above it, from wherever the sweep wa
 
 Internal kits and configured-package kits are absent: No invocation runs another project's uncompiled sources, and packages are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
 
-The sweep considers every directory containing a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project that it finds is read under its own `.config/readyup.config.ts`. Topology comes from the filesystem rather than a workspace file, so the sweep works the same whatever package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source, or with `--config`.
+The sweep considers every directory containing a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project that it finds is read under its own `.config/readyup.config.ts`. Because topology comes from the filesystem rather than a workspace file, the sweep works the same whatever package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source, or with `--config`.
 
 ### Listing a repository's dependencies
 
@@ -414,12 +414,12 @@ The sweep considers every directory containing a `package.json`, the working dir
          📋 packages
 ```
 
-Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. A workspace's own dependency resolves from no other directory, so its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
+Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. Because a workspace's own dependency resolves from no other directory, its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
 
 This sweep is wider than the one that `--recursive` makes alone. It considers every directory containing a `package.json`, whether or not that directory has readyup configuration or kits, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one that the question is about. A project with no kit-publishing dependency is not rendered at all, its directory line included, and a sweep that finds nothing prints `No dependency of any project below this directory publishes kits.`
 
-Unlike every other listing, this view has no heading rules. The two rule weights that it would otherwise need are a stroke apart, and the roles that they would mark are already distinguished by their glyphs; under `--style plain`, which leaves the role glyphs empty, the indentation marks all three levels on its own. That is also why each command is labelled `To run:`: It shares a column with the kits beneath it, and the label keeps it from reading as one more kit.
+Unlike every other listing, this view has no heading rules. The two rule weights that it would otherwise need are one step of stroke width apart, and the roles that they would mark are already distinguished by their glyphs; under `--style plain`, which leaves the role glyphs empty, the indentation marks all three levels on its own. That is also why each command is labelled `To run:`: It shares a column with the kits beneath it, and the label keeps it from reading as one more kit.
 
 Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package that it records rather than by a kind of its own, so `name` and `kind` alone collide between a project's own kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each have a `default`, and under `--recursive --packages` between two workspaces depending on the same package. A consumer indexing on less than the full key silently drops a row.
 
-Every kit published by a package has `origin.configured`, reporting whether the config names that package and so whether `rdy run --packages` would include it. It is emitted under `--packages`, under `--recursive --packages`, and under a plain `rdy list` alike, so a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which appears only in the owner listing: Under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
+Every kit published by a package has `origin.configured`, reporting whether the config names that package, which decides whether `rdy run --packages` would include it. Because it is emitted under `--packages`, under `--recursive --packages`, and under a plain `rdy list` alike, a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which appears only in the owner listing: Under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
