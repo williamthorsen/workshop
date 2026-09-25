@@ -92,11 +92,11 @@ function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
  * Resolves a failure's remediation message from its outcome's `fix`, or else from its check's, absorbing
  * a value that is not a string.
  *
- * The check's `fix` may be an accessor, so it is read here and nowhere else: Only a failure renders one,
- * and a check that passes, skips, or is blocked, or whose outcome supplies its own `fix`, must not do work
- * that it discards. An accessor that throws, or either `fix` yielding a non-string, is a defect in the kit
- * rather than in the check's subject, so it is reported in the slot that the remediation would occupy and
- * leaves the verdict and its severity alone. A malformed outcome `fix` is reported without consulting the
+ * The check's `fix` may be an accessor, so it is read here and nowhere else: Only a failure that the check
+ * expressed renders one, and a check that passes, skips, is blocked, or is broken, or whose outcome
+ * supplies its own `fix`, must not do work that it discards. An accessor that throws, or either `fix`
+ * yielding a non-string, is a defect in the kit rather than in the check's subject, so it is reported in
+ * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed outcome `fix` is reported without consulting the
  * check's, so the defect stays visible.
  */
 function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
@@ -149,7 +149,7 @@ function buildPassedResult(
   return { ...fields, status: 'passed', ok: true, error: null };
 }
 
-/** Builds a failed result, resolving its fix because this is the only outcome that renders one. */
+/** Builds a failed result from the check's verdict, resolving its fix because only such a failure renders one. */
 function buildFailedResult(
   check: RdyCheck,
   fields: CheckContext & {
@@ -173,23 +173,21 @@ function buildSkippedResult(
 /**
  * Returns the result for a check that is broken rather than failing.
  *
- * The declared severity is overridden, because a check that never expressed a verdict says nothing
- * about the urgency of its subject.
+ * A check that never expressed a verdict says nothing about its subject, so the declared severity is
+ * overridden and the check's `fix` is not read: Its remedy addresses a finding that does not exist.
  */
-function buildAuthoringErrorResult(
-  check: RdyCheck,
-  context: CheckContext,
-  durationMs: number,
-  error: Error,
-): FailedResult {
-  return buildFailedResult(check, {
+function buildAuthoringErrorResult(context: CheckContext, durationMs: number, error: Error): FailedResult {
+  return {
     ...context,
     severity: AUTHORING_ERROR_SEVERITY,
     detail: null,
     durationMs,
     error,
     progress: null,
-  });
+    fix: null,
+    status: 'failed',
+    ok: false,
+  };
 }
 
 /**
@@ -217,13 +215,13 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
         const error = new Error(
           `skip() returned ${describeValue(skipResult)}; expected false to run the check, or a reason string to skip it.`,
         );
-        const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
+        const result = buildAuthoringErrorResult(context, performance.now() - start, error);
         const childResults = skipAllDescendants(children, run, depth + 1);
         return [result, ...childResults];
       }
     } catch (error_: unknown) {
       const error = toError(error_);
-      const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
+      const result = buildAuthoringErrorResult(context, performance.now() - start, error);
       const childResults = skipAllDescendants(children, run, depth + 1);
       return [result, ...childResults];
     }
@@ -251,14 +249,14 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
       // Reported as a defect rather than as an ordinary failure: The check never expressed a
       // verdict, so the severity that it declared for its subject says nothing about this outcome.
       const error = new Error(describeUninterpretableReturn(raw));
-      result = buildAuthoringErrorResult(check, context, durationMs, error);
+      result = buildAuthoringErrorResult(context, durationMs, error);
     }
 
     const childResults = await collectChildResults(result, children, run, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
     const error = toError(error_);
-    const result = buildAuthoringErrorResult(check, context, performance.now() - start, error);
+    const result = buildAuthoringErrorResult(context, performance.now() - start, error);
     const childResults = skipAllDescendants(children, run, depth + 1);
     return [result, ...childResults];
   }
