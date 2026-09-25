@@ -340,7 +340,7 @@ describe(discoverWorkspaces, () => {
       expect(Object.isFrozen(workspace?.packageJson)).toBe(true);
     });
 
-    it('freezes values nested inside `packageJson`, where an in-place sort would otherwise land', ({ temp }) => {
+    it('freezes values nested inside `packageJson`, which an in-place sort would otherwise mutate', ({ temp }) => {
       writeRootPackageJson(temp, { name: 'root', files: ['dist', 'bin'], scripts: { build: 'tsc' } });
 
       const [workspace] = discoverWorkspaces();
@@ -383,7 +383,7 @@ describe(discoverWorkspacesAt, () => {
     const workspaces = discoverWorkspacesAt(temp.resolve('nested'));
 
     expect(workspaces.map((w) => w.name)).toStrictEqual(['nested-root', 'alpha']);
-    // The ambient cwd holds no manifest, so a result read through it could not be this one.
+    // The ambient cwd contains no manifest, so a result read through it could not be this one.
     expect(() => discoverWorkspaces()).toThrow(/no readable package.json/);
   });
 
