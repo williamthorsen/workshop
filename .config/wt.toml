@@ -1,6 +1,6 @@
 # Worktrunk configuration file
 # See https://github.com/max-sixty/worktrunk
-[post-create]
+[pre-start]
 direnv = "direnv allow"
 deps = "pnpm install"
 
