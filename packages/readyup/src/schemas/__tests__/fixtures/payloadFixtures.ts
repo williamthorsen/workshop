@@ -1,7 +1,7 @@
 /**
  * Representative payloads for each published JSON contract.
  *
- * Shared by the zod-schema suite and the generated-JSON-Schema suite so both judge the same
+ * Shared by the zod-schema suite and the generated-JSON-Schema suite so that both judge the same
  * documents: A payload accepted by the zod schema but rejected by the published schema is exactly
  * the divergence that the generation step could introduce.
  */
@@ -89,7 +89,7 @@ export const minimalReportPayload = {
 /**
  * A report with an advisory that this readyup does not know about.
  *
- * Stands in for a payload from a later version: The open warning-code set is what keeps a consumer
+ * Stands in for a payload from a later version: The open warning-code set keeps a consumer
  * pinned to `report.v1.json` validating it rather than rejecting it.
  */
 export const unknownWarningReportPayload = {
@@ -119,7 +119,7 @@ export const listPayload = {
   ],
 };
 
-/** A repo-wide listing, where two projects each hold a kit of the same name. */
+/** A repo-wide listing in which two projects each have a kit of the same name. */
 export const recursiveListPayload = {
   schemaVersion: 1,
   kits: [

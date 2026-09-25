@@ -6,7 +6,7 @@ export const SeveritySchema = z.enum(['error', 'warn', 'recommend']).meta({ id: 
 /**
  * Diagnosis of a failure that prevented rdy from completing an invocation.
  *
- * Mirrors the `RdyErrorCode` union in `errors.ts`, which is the taxonomy's prose home; a type test
+ * Mirrors the `RdyErrorCode` union in `errors.ts`, which describes the taxonomy in prose; a type test
  * keeps the two in step.
  */
 export const ErrorCodeSchema = z.enum(['config', 'internal', 'kit-load', 'usage']).meta({ id: 'ErrorCode' });
@@ -14,7 +14,7 @@ export const ErrorCodeSchema = z.enum(['config', 'internal', 'kit-load', 'usage'
 /**
  * The error body in the envelope and, verbatim, in a per-kit error entry inside a report.
  *
- * `hint` names one action that would clear the failure, present only where the diagnosis alone would
+ * `hint` names one action that would clear the failure, present only when the diagnosis alone would
  * not suggest it. It is absent rather than empty when there is nothing to suggest, and never appears
  * inside `message`, so a consumer can present the two separately.
  */
@@ -33,9 +33,9 @@ const CountSchema = z.int().min(0);
  * Result tallies for one scope of a run -- the whole report, one kit, or one checklist.
  *
  * `errors`/`warnings`/`recommendations` bucket failures by severity; `blocked` (precondition-skipped)
- * and `optional` (n/a-skipped) bucket skips by reason. Counts nest under their own object so they
+ * and `optional` (n/a-skipped) bucket skips by reason. Counts nest under their own object so that they
  * share no namespace with the verdict and provenance fields beside them: A count added later cannot
- * collide with a top-level field, which is what makes the additive-evolution policy sound rather
+ * collide with a top-level field, which makes the additive-evolution policy sound rather
  * than merely conventional.
  */
 export const CountsSchema = z
@@ -66,12 +66,12 @@ export const WarningCodeSchema = z.enum([
 /**
  * The wire form of a warning code: a known value, or any other string.
  *
- * Open where `ErrorCodeSchema` is closed, because the two vocabularies do different jobs. An error
+ * Open, unlike `ErrorCodeSchema`, because the two vocabularies do different jobs. An error
  * code selects a consumer's branch, so an unknown one leaves the consumer with nothing to dispatch
- * on and justifies its version bump. A warning labels an advisory whose `message` and `remedy` a
- * consumer can display verbatim, so a code that it has never heard of must still validate: Closing
+ * on and justifies its version bump. Because a warning labels an advisory whose `message` and `remedy`
+ * a consumer can display verbatim, a code that it has never heard of must still validate: Closing
  * this set would make the first new advisory a breaking change. The union keeps the known values
- * visible in the generated schema's `anyOf` rather than trading them for a bare `string`.
+ * visible in the generated schema's `anyOf` rather than replacing them with a bare `string`.
  */
 const WarningCodeWireSchema = WarningCodeSchema.or(z.string()).meta({ id: 'WarningCode' });
 
@@ -79,7 +79,7 @@ const WarningCodeWireSchema = WarningCodeSchema.or(z.string()).meta({ id: 'Warni
  * An advisory condition observed during a run.
  *
  * Mirrors the error body's `{code, message}` shape and adds `remedy`, the one action that clears the
- * condition. Warnings reach stderr in both modes; under `--json` they are additionally captured here,
+ * condition. Warnings are written to stderr in both modes; under `--json` they are additionally captured here,
  * because a consumer that owns only stdout would otherwise never see them.
  */
 export const WarningSchema = z
@@ -106,7 +106,7 @@ export type JsonWarning = z.infer<typeof WarningSchema>;
 /**
  * A warning as this version raises it, narrower than `JsonWarning` on `code`.
  *
- * The wire type accepts any string so a consumer tolerates an advisory from a later readyup. A
+ * The wire type accepts any string so that a consumer tolerates an advisory from a later readyup. A
  * producer may only emit a code declared by this version, so a mistyped one fails to compile rather
  * than entering the published vocabulary.
  */
