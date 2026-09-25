@@ -69,7 +69,7 @@ describe('list --packages', () => {
       ]);
     });
 
-    // Discovery reads the declared dependencies, so only the config half reaches this one.
+    // Discovery reads the declared dependencies, so only the config names this one.
     it('reports a configured package declared by no dependency field', async () => {
       configurePackages(['hidden-kit']);
 
@@ -92,8 +92,8 @@ describe('list --packages', () => {
       expect(stdout).toContain('Dependency drift\n   \u{1F4CB} lockfile\n   \u{1F4CB} ranges\n\u{1F4D3} drift');
     });
 
-    // The hint tells the reader whether a `--packages` run would reach the package.
-    it('hints a configured package with the run reaching it and an unconfigured one with its source', async () => {
+    // The hint tells the reader whether a `--packages` run would include the package.
+    it('hints a configured package with the run that includes it and an unconfigured one with its source', async () => {
       configurePackages(['@acme/kits']);
 
       const { stdout } = await list(['--packages']);
@@ -149,14 +149,14 @@ describe('list --packages', () => {
       });
     });
 
-    it('reports the description that a publisher records, and omits the field where there is none', async () => {
+    it('reports the description that a publisher records, and omits the field when there is none', async () => {
       const payload = await runForPayload();
 
       expect(findKit(payload, 'default')).toMatchObject({ description: 'Dependency drift' });
       expect(findKit(payload, 'drift')).not.toHaveProperty('description');
     });
 
-    it('reports the checklists that a publisher records, and omits the field where there are none', async () => {
+    it('reports the checklists that a publisher records, and omits the field when there are none', async () => {
       const payload = await runForPayload();
 
       expect(findKit(payload, 'default')).toMatchObject({ checklists: ['lockfile', 'ranges'] });

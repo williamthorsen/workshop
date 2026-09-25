@@ -22,7 +22,7 @@ export interface LoadRemoteKitOptions extends FetchWithCacheOptions {
  * embedded `__readyupVersion`, which is `undefined` for a kit compiled before that field existed or
  * fetched from a third-party source that omits it.
  *
- * The fetch goes through the HTTP cache where `cache` names one, and a body served from it is checked as a fetched
+ * The fetch goes through the HTTP cache when `cache` names one, and a body served from it is checked as a fetched
  * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
  * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
  * The content is written to a temp file for dynamic import and cleaned up afterwards. Throws `RemoteFetchError` for a

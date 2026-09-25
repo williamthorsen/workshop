@@ -22,7 +22,7 @@ const it = baseIt
     makeFixture(() =>
       createTempTree(
         {
-          // Sweep root, holding one kit of its own.
+          // Sweep root, containing one kit of its own.
           'package.json': JSON.stringify({ name: 'root' }),
           '.readyup/kits/demo.js': 'export default {};',
           '.readyup/manifest.json': JSON.stringify({
@@ -108,7 +108,7 @@ describe('list --recursive', () => {
   });
 
   describe('rendering', () => {
-    it('groups kits under the project holding them, the sweep root first', async () => {
+    it('groups kits under the project containing them, the sweep root first', async () => {
       const { exitCode, stdout } = await list(['--recursive']);
 
       expect(exitCode).toBe(0);
@@ -138,7 +138,7 @@ describe('list --recursive', () => {
       expect(stdout).toContain('readyup kits\n   \u{1F4CB} setup\n   \u{1F4CB} freshness\n\u{1F4D3} publishing');
     });
 
-    it('reaches a project on a relocated output directory by file path', async () => {
+    it('names the kits of a project on a relocated output directory by file path', async () => {
       const { stdout } = await list(['--recursive']);
 
       expect(stdout).toContain('rdy run --file <file path> [--checklists <checklist>,...]');
@@ -204,7 +204,7 @@ describe('list --recursive', () => {
       expect(parsed.availablePackages).toBeUndefined();
     });
 
-    it('distinguishes two projects that each hold a kit of the same name', async () => {
+    it('distinguishes two projects that each contain a kit of the same name', async () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
       const defaults = parsed.kits.filter((kit) => kit.name === 'default');
 
@@ -231,7 +231,7 @@ describe('list --recursive', () => {
     });
   });
 
-  describe('a project that the filesystem will not fully give up', () => {
+  describe('a project that cannot be fully read from the filesystem', () => {
     it('lists the kits beside a manifest that cannot be parsed, and warns', async () => {
       const { stdout, stderr } = await list(['--recursive']);
 
@@ -240,7 +240,7 @@ describe('list --recursive', () => {
       expect(stderr).toContain('manifest');
     });
 
-    it('names the project of a kit read from disk past a broken manifest', async () => {
+    it('names the project of a kit read from disk despite a broken manifest', async () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
 
       expect(parsed.kits).toContainEqual({

@@ -16,8 +16,8 @@ const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
  * Command that runs a kit by file, which takes no kit name and so selects checklists by flag alone.
  *
  * The kits of another project below the sweep root are reachable only this way: Naming one resolves it
- * against the config of the directory that the reader stands in, which is not the config that put the kit
- * where it is.
+ * against the config of the reader's working directory, which is not the config that set where the kit was
+ * compiled.
  */
 const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,...]';
 
@@ -47,8 +47,8 @@ export type CompiledStyle = LocalConventionStyle | CustomOutDirStyle;
  * Determines the compiled-section display style for a project's `outDir`.
  *
  * Whether an `outDir` is the convention is a fact about the project, so it is settled against
- * `projectDir`; the path shown to a reader has to resolve from where they stand, so it is named against
- * `renderFrom`. They coincide for a listing of the working directory, and diverge for a sweep rendering
+ * `projectDir`. Because the path shown to a reader has to resolve from the reader's working directory, it is
+ * named against `renderFrom`. They coincide for a listing of the working directory, and diverge for a sweep rendering
  * another project's kits.
  */
 export function resolveCompiledStyle(projectDir: string, outDir: string, renderFrom: string): CompiledStyle {
@@ -77,15 +77,15 @@ interface OwnerViewOptions {
  *
  * Empty sections are omitted. Returns the empty-owner message when every list is empty.
  *
- * The two source sections are separate axes rather than one section under two names: `sourceKits` holds
- * what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and `internalKits` holds
+ * The two source sections are separate axes rather than one section under two names: `sourceKits` lists
+ * what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and `internalKits` lists
  * the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal` as well. A caller
  * whose config declares neither key passes no internal kits, because `--internal` would then resolve every
  * name exactly as plain `--jit` does and its rows would restate the source rows above them.
  *
  * Every compiled kit is named rather than pathed, whatever `compile.outDir` is set to, because this view
- * reports the kits of the directory that the reader stands in and `rdy run <kit>` reads that project's own
- * `outDir`. Only the repo-wide view, whose rows belong to other projects, still has to path them.
+ * reports the kits of the reader's working directory and `rdy run <kit>` reads that project's own
+ * `outDir`. Only the repo-wide view, whose rows belong to other projects, still has to name them by path.
  */
 export function formatOwnerView({
   sourceKits = [],
@@ -95,8 +95,8 @@ export function formatOwnerView({
   availablePackages = [],
 }: OwnerViewOptions): string {
   if (sourceKits.length === 0 && internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
-    // A project with no kits of its own is still told what its dependencies offer, which is the one thing that
-    // turns an empty listing into a next step.
+    // The listing for a project with no kits of its own still shows what its dependencies offer, which is the
+    // one next step that an empty listing can give.
     return availablePackages.length === 0
       ? formatEmpty('owner')
       : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join(SECTION_SEPARATOR);
@@ -122,8 +122,8 @@ export function formatOwnerView({
   }
 
   if (packageKits.length > 0) {
-    // The rows list every published kit -- discovery is not run selection -- so the bracketed optional keeps
-    // the promise that every kit listed is reachable by the command above it.
+    // The rows list every published kit -- discovery is not run selection -- so the bracketed optional name
+    // ensures that the command above the rows can run every kit listed.
     sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<kit>]'), packageKits, 'sourcePackage'));
   }
 
@@ -166,8 +166,8 @@ interface PackagesViewOptions {
  * Formats the dependency-axis output: one block per kit-publishing package, headed by the package.
  *
  * Configured and unconfigured packages interleave in one alphabetical list rather than splitting into
- * sections, so a reader asking what their dependencies publish reads one answer. What separates them is
- * the hint shown by each block, which names the command that runs that package's kits.
+ * sections, so a reader asking what their dependencies publish reads one answer. The hint shown by each
+ * block separates them: It names the command that runs that package's kits.
  *
  * A sweep with no groups returns the empty-packages message.
  */
@@ -193,8 +193,8 @@ interface RecursiveViewOptions {
 /**
  * Formats the repo-wide output: one block per project, headed by the directory in which its kits live.
  *
- * A project with nothing compiled contributes no block at all, heading included, so a caller may hand
- * over every project found by discovery. A sweep left with no block returns the empty-sweep message.
+ * A caller may hand over every project found by discovery, because a project with nothing compiled
+ * contributes no block at all, heading included. A sweep left with no block returns the empty-sweep message.
  */
 export function formatRecursiveView({ projects }: RecursiveViewOptions): string {
   const blocks = projects.filter((project) => project.compiledKits.length > 0).map(formatProjectBlock);
@@ -219,9 +219,9 @@ interface RecursivePackagesViewOptions {
  * Formats the repo-wide dependency output: each project's directory, then a block per kit-publishing dependency.
  *
  * Nesting comes from the glyph and the indentation rather than from a heading rule. The two rule weights
- * that this view would otherwise need are a stroke apart, and the roles that they would mark are already
- * told apart by their glyphs; plain style, whose role glyphs are empty, reads the same three levels off
- * the indent.
+ * that this view would otherwise need differ only in stroke weight, and the glyphs already distinguish the
+ * roles that they would mark; in plain style, whose role glyphs are empty, the indent alone shows the same
+ * three levels.
  *
  * A project with no kit-publishing dependency contributes no block at all, its directory line included, so
  * a caller may hand over every project found by discovery. A sweep left with no block returns the empty
@@ -321,7 +321,7 @@ function buildKitSelectionHint(kits: readonly string[]): string {
 /**
  * Returns the command that runs a package's kits, which also marks the package as configured.
  *
- * `rdy run --packages` reaches only the packages named by the config, and every other package is reachable
+ * `rdy run --packages` includes only the packages named by the config, and every other package is reachable
  * by the source naming it directly. So one hint covers both what to run and whether a `--packages` run
  * would include it, and every kit listed stays reachable by the command above it.
  */
@@ -332,12 +332,12 @@ function buildPackageHint(group: KitPackageGroup): string {
     : `rdy run --from npm:${group.packageName} ${buildKitSelectionHint(kitNames)}`;
 }
 
-/** Returns a package's name with the version that its own manifest records, where it records one. */
+/** Returns a package's name with the version that its own manifest records, if it records one. */
 function buildPackageLabel(group: KitPackageGroup): string {
   return group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
 }
 
-/** Returns the command that runs a project's kits from where the reader stands. */
+/** Returns the command that runs a project's kits from the reader's working directory. */
 function buildProjectHint(project: RecursiveProjectView): string {
   if (project.compiledStyle.kind === 'custom-outDir') {
     return FILE_RUN_COMMAND;
@@ -361,7 +361,7 @@ function buildProjectPrefix(dir: string): string {
  * Returns the indented line naming the command that runs the kits beneath it.
  *
  * The label separates the line from the kit rows sharing its column: The role glyphs shown by those rows
- * are empty in plain style, so without it the command reads as one more kit.
+ * are empty in plain style, so without it the command looks like one more kit row.
  */
 function buildRunLine(command: string, depth = 1): string {
   return `${getLayout().indent(depth)}To run: ${command}`;
@@ -370,8 +370,8 @@ function buildRunLine(command: string, depth = 1): string {
 /**
  * Returns the section naming installed packages that publish kits not listed in the config.
  *
- * Its line heads the section with what to do about those packages rather than a command to run, so it
- * has no `To run:` label.
+ * It has no `To run:` label, because its line heads the section with what to do about those packages
+ * rather than a command to run.
  */
 function formatAvailableSection(availablePackages: string[]): string {
   const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
@@ -382,7 +382,7 @@ function formatAvailableSection(availablePackages: string[]): string {
 /**
  * Returns a kit's line, then a line one level deeper for each checklist that its manifest records.
  *
- * The checklists keep the manifest's order, which is the order that the kit declares and runs them in.
+ * The checklists keep the manifest's order, which is the order in which the kit declares and runs them.
  */
 function formatKitRows(kit: KitView, token: TokenName, depth = 0): string[] {
   const kitLine = getLayout().formatCheckLine({
@@ -436,8 +436,8 @@ function formatProjectBlock(project: RecursiveProjectView): string {
 /**
  * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
  *
- * The directory sits directly above its first package, which makes the blank lines within the
- * block read as separating one package from the next rather than the directory from what it heads.
+ * The directory line is directly above its first package, so a reader takes the blank lines within the
+ * block as separating one package from the next rather than the directory from what it heads.
  */
 function formatProjectPackagesBlock(project: ProjectPackagesView): string {
   const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
@@ -451,9 +451,9 @@ function formatProjectPackagesBlock(project: ProjectPackagesView): string {
  * Returns a titled section: the title, `hintLine` beneath it, then the kits.
  *
  * `hintLine` is passed in already indented, because a section headed by a command and one headed by an instruction are
- * built differently and only the caller knows which it holds. Nothing inside is separated by a blank line:
- * The hint sits against the title so it reads as part of the heading, the kits sit against the hint, and
- * the blank separating one section from the next belongs to whoever assembles them.
+ * built differently and only the caller knows which one it is. Nothing inside is separated by a blank line:
+ * The hint is directly beneath the title so that it reads as part of the heading, the kits are directly
+ * beneath the hint, and the blank separating one section from the next is added by whoever assembles them.
  */
 function formatSection(title: string, hintLine: string, kits: KitView[], token: TokenName): string {
   const items = kits.flatMap((kit) => formatKitRows(kit, token));
