@@ -8,7 +8,7 @@ import { sharedOptions } from '../../vitest.shared.ts';
 //
 // The coverage entry extends the inherited `src`-only glob, which would otherwise leave the kit tree unmeasured. Kits
 // are authored under `.readyup/` rather than `src/` because that is the directory that readyup itself reads. One glob
-// covers the checks and the helpers alike, since `test-utils/` sits inside the tree that it serves; the inherited
+// covers the checks and the helpers alike, since `test-utils/` is inside the tree that it serves; the inherited
 // exclude drops the `__tests__/` directories that the same glob would otherwise sweep in. The text reporter shows no
 // `test-utils` group; those files are in the coverage data regardless.
 export default defineVitestConfig(sharedOptions, {

@@ -12,7 +12,7 @@ export interface HelpTopic {
  *
  * A topic resolves to a whole file rather than a set of headings assembled here, so the boundaries
  * stay the documentation's own and a topic cannot drift from what it prints. This table is the sole
- * declaration site: The list rendered by help comes from it, so the topics offered and the topics
+ * declaration site: The list rendered by help comes from it. The topics offered and the topics
  * accepted are the same set by construction.
  */
 export const TOPICS: Readonly<Record<string, HelpTopic>> = {

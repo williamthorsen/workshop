@@ -10,7 +10,7 @@ import { internalError } from '../errors/RdyError.ts';
  *
  * The package root is resolved from this module rather than from the working directory, so the same
  * expression finds the file whether rdy runs from an install, from its build output, or from
- * TypeScript source. `docs` is declared in the manifest's `files`, which is what ships it.
+ * TypeScript source. `docs` is declared in the manifest's `files`, which includes it in the published package.
  */
 export function readDoc(file: string): string {
   const docPath = path.join(findPackageRoot(import.meta.url), 'docs', file);
