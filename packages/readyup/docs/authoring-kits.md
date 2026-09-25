@@ -61,16 +61,16 @@ A checklist has either `checks` or `groups`, never both.
 
 ## Checks
 
-| Field      | Type                                              | Default                     | Meaning                                                     |
-| ---------- | ------------------------------------------------- | --------------------------- | ----------------------------------------------------------- |
-| `name`     | `string`                                          | required                    | The claim being asserted                                    |
-| `id`       | `string`                                          | --                          | What a pragma writes to suppress its findings               |
-| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                                 |
-| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`                       |
-| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass                   |
-| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run                       |
-| `fix`      | `string`                                          | --                          | Remediation, shown on a failure whose outcome supplies none |
-| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes                  |
+| Field      | Type                                              | Default                     | Meaning                                                                                  |
+| ---------- | ------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------- |
+| `name`     | `string`                                          | required                    | The claim being asserted                                                                 |
+| `id`       | `string`                                          | --                          | What a pragma writes to suppress its findings                                            |
+| `check`    | `() => boolean \| CheckOutcome \| FindingOutcome` | required                    | The assertion; may be async                                                              |
+| `severity` | `Severity`                                        | the kit's `defaultSeverity` | Overrides the kit's `defaultSeverity`                                                    |
+| `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass                                                |
+| `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run                                                    |
+| `fix`      | `string`                                          | --                          | Remediation, shown on a failure that reports no `Error:` and whose outcome supplies none |
+| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes                                               |
 
 A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it surfaces while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
 
@@ -277,7 +277,7 @@ Invalid kit at .readyup/kits/default.js:
 
 A typo'd `severity` is the mistake for which this matters most: An unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
-A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, or is blocked, or whose failing outcome supplies its own `fix`, never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading. An outcome's `fix` that is not a string is reported in the same slot, and the check's `fix` is not consulted in its place.
+A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, is blocked, or reports an `Error:`, or whose failing outcome supplies its own `fix`, never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading. An outcome's `fix` that is not a string is reported in the same slot, and the check's `fix` is not consulted in its place.
 
 ## Testing a kit
 

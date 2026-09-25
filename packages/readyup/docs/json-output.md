@@ -95,7 +95,7 @@ An error body may also include `hint`, one action that would clear the failure:
 - **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit whose bundle records one, including when that version matches the report's own `readyupVersion`, and is absent for a bundle compiled before readyup recorded it and for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](publishing-kits.md#verifying-by-recompiling) reports the same value under a narrower rule, appearing only when it disagrees with the running readyup: That field explains a mismatch, this one records what ran.
 - **`warnings`** lists any advisory as `{ code, message, remedy? }`, absent when none was raised.
 
-Payloads are slim by construction: An empty field is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks.
+Payloads are slim by construction: An empty field is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks that report no `error`.
 
 ## Detail level
 
