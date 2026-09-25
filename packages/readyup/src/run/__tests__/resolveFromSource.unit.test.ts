@@ -8,10 +8,10 @@ import type { FromSource } from '../../kits/parseFromValue.ts';
 import type { KitSpecifier } from '../parseKitSpecifiers.ts';
 import { resolveFromSource } from '../resolveFromSource.ts';
 
-/** Repo root, which is where the workspace link for `readyup` lives. */
+/** Repo root, which contains the workspace link for `readyup`. */
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../../../..');
 
-/** The kit with which an invocation naming none has already been filled by the time this resolver runs. */
+/** The kit with which an invocation that names no kit has already been filled by the time this resolver runs. */
 const DEFAULT_SPECS: KitSpecifier[] = [{ kitName: 'default', checklists: [] }];
 
 describe(resolveFromSource, () => {
@@ -120,8 +120,8 @@ describe(resolveFromSource, () => {
   });
 
   // The provenance names the copy against which a check ran, which is the whole point of resolving from an
-  // installed package. It reads from the same manifest that the resolver reads, so a version bump leaves this
-  // alone.
+  // installed package. The expectation reads the version from the same manifest that the resolver reads, so a
+  // version bump requires no change here.
   it('reports the package and its installed version as the kit provenance', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
     const [entry] = resolveFromSource(source, DEFAULT_SPECS, '.js');
@@ -133,7 +133,7 @@ describe(resolveFromSource, () => {
     });
   });
 
-  it('rejects a version spec by naming the flag that reaches a published kit', () => {
+  it('rejects a version spec by naming the flag that fetches a published kit', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: '0.22.0' };
 
     expect(() => resolveFromSource(source, DEFAULT_SPECS, '.js')).toThrow(/not supported yet[\s\S]*--url/);
@@ -164,7 +164,7 @@ describe(resolveFromSource, () => {
 
   // -- dir: source --
 
-  it('resolves a directory source to the kits that it holds directly', () => {
+  it('resolves a directory source to the kits that it contains directly', () => {
     const resolved = path.resolve(process.cwd(), 'custom/kits');
 
     expect(resolveFromSource({ type: 'directory', path: 'custom/kits' }, DEFAULT_SPECS, '.js')).toStrictEqual([

@@ -9,8 +9,8 @@ import { runRdy } from '../runRdy.ts';
 /*
  * A kit runs as JavaScript, so its functions return whatever their author wrote and its fields hold
  * whatever they were assigned; neither jiti nor esbuild type-checks any of it. The authoring-error
- * tests exercise exactly the values forbidden by the declared types, so the wrappers below restate
- * them as the types that those declarations promise.
+ * tests exercise exactly the values forbidden by the declared types. The wrappers below restate those
+ * values as the types that the declarations promise.
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
@@ -1231,7 +1231,7 @@ describe(runRdy, () => {
       );
     });
 
-    it('overrides a declared severity so an uninterpretable return cannot be a soft finding', async () => {
+    it('overrides a declared severity so that an uninterpretable return cannot be a soft finding', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',
         checks: [{ name: 'broken', check: returning('yes'), severity: 'recommend' }],
@@ -1327,7 +1327,7 @@ describe(runRdy, () => {
       expect(report.results[1]?.status).toBe('skipped');
     });
 
-    it('surfaces a severity outside the enum rather than dropping the check from every threshold', async () => {
+    it('reports a severity outside the enum rather than dropping the check from every threshold', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',
         checks: [{ name: 'mistyped', check: () => false, severity: asSeverity('info') }],
@@ -1938,7 +1938,7 @@ describe(runRdy, () => {
       expect(report.results[0]?.id).toBe('toolbelt.errors/no-instanceof-error');
     });
 
-    it('leaves a bare id standing for a kit with no publishing package', async () => {
+    it('leaves a bare id unchanged for a kit with no publishing package', async () => {
       const checklist: RdyChecklist = {
         name: 'adoption',
         checks: [{ name: 'claim', id: 'no-instanceof-error', check: () => true }],
