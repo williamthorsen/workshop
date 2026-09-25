@@ -126,13 +126,13 @@ function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: 
 /**
  * Returns the results accepted by `isVisible`, plus the ancestors of each, in their original order.
  *
- * Requires depth-first order, where a result's descendants are the run of deeper results following it.
- * The returned list preserves that order, so it is valid input to a further pass.
+ * Requires depth-first order, in which a result's descendants are the run of deeper results following it.
+ * Because the returned list preserves that order, it is valid input to a further pass.
  */
 function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult) => boolean): RdyResult[] {
   const visible: RdyResult[] = [];
-  // Scanning right to left, the nearest visible result is a descendant exactly when it is deeper, so its
-  // depth alone decides whether the current result must be retained as an ancestor.
+  // Because the scan runs right to left, the nearest visible result is a descendant exactly when it is
+  // deeper, and its depth alone decides whether the current result must be retained as an ancestor.
   let nearestVisibleDepth = -Infinity;
 
   for (const result of results.toReversed()) {
@@ -154,7 +154,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
     durationMs: result.durationMs,
     // A failed check's detail is its reason, which the block beneath renders.
     ...(!isFailed && result.detail !== null && { detail: result.detail }),
-    // Only a failure names findings, so only a failure gives the reader a pragma to write.
+    // Only a failure gives the reader a pragma to write, because only a failure names findings.
     ...(isFailed && result.id !== null && { checkId: result.id }),
     ...(result.progress !== null && { progress: formatProgress(result.progress) }),
   });
@@ -167,7 +167,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
 /**
  * Returns a failed result's reasons in reading order: its detail, its error, then its fix.
  *
- * Each is present only when the result has it, so a result with none yields an empty list.
+ * Each is present only when the result has it; a result with none yields an empty list.
  */
 function collectReasons(result: FailedResult, includeFix: boolean): string[] {
   const reasons: string[] = [];
@@ -189,7 +189,7 @@ function collectFixes(results: RdyResult[]): AttributedFix[] {
 /**
  * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
  *
- * A recapped fix and an inline one are then one shape, so the fix token marks fix text under either
+ * Because a recapped fix and an inline one are then one shape, the fix token marks fix text under either
  * `fixLocation` rather than marking the check's name in the recap and the fix itself inline.
  */
 function renderFixRecap(fixes: AttributedFix[]): string[] {
@@ -205,7 +205,7 @@ function resolveResultToken(result: RdyResult): TokenName {
   if (result.status === 'skipped') {
     return result.skipReason === 'precondition' ? 'blockedPrecondition' : 'skippedOptional';
   }
-  // A failed check's severity picks its token by the same rule that a tail line's worst severity does.
+  // Resolve a failed check's token from its severity, by the same rule as a tail line's worst severity.
   return resolveWorstToken(result.severity);
 }
 

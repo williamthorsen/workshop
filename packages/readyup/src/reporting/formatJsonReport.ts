@@ -23,8 +23,8 @@ interface ChecklistEntry {
  * Input for a kit that ran, with the reports produced by its checklists and the thresholds that
  * governed them.
  *
- * The thresholds travel with the kit rather than with the run, because a kit may declare its own and
- * the caller has already resolved the cascade by the time it gets here.
+ * The thresholds are part of the kit's input rather than the run's, because a kit may declare its own and
+ * the caller resolves the cascade before passing them in.
  */
 export interface KitResultInput {
   name: string;
@@ -39,7 +39,7 @@ export interface KitResultInput {
  * Input for one kit, discriminated by the presence of `error`.
  *
  * A failed kit is described by the entry to which it serializes, because it passes through verbatim.
- * Failures are interleaved rather than appended so kits keep the order in which they were requested.
+ * Failures are interleaved rather than appended so that kits keep the order in which they were requested.
  */
 export type KitInput = JsonKitErrorEntry | KitResultInput;
 
@@ -48,7 +48,7 @@ export type KitInput = JsonKitErrorEntry | KitResultInput;
  *
  * `failOn` and `reportOn` are what the invocation requested, so each is absent when its flag was not
  * given: A default echoed as though it had been asked for made a kit's own threshold impossible to
- * recover from the payload. `detail` has no per-kit form, so it is always resolved.
+ * recover from the payload. `detail` is always resolved, because it has no per-kit form.
  */
 export interface FormatJsonReportOptions {
   failOn?: Severity;
@@ -61,7 +61,7 @@ export interface FormatJsonReportOptions {
  * A kit that ran, paired with the unrounded figures that the report aggregates from it.
  *
  * The entry's own `durationMs` is already rounded for the wire; totals are summed from the raw value
- * so a run of many short kits does not accumulate one rounding error per kit.
+ * so that a run of many short kits does not accumulate one rounding error per kit.
  */
 interface AggregatedKit {
   entry: JsonKitResultEntry;
@@ -151,7 +151,7 @@ function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit 
  * Splits the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
  * beside them.
  *
- * `worstSeverity` is derived verdict data rather than a count, so it sits outside the object that it
+ * `worstSeverity` is derived verdict data rather than a count, so it is outside the object that it
  * summarizes; a run that failed nothing has no worst severity and omits the field.
  */
 function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity?: Severity } {
@@ -162,7 +162,7 @@ function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity
 /**
  * Returns a checklist entry's `checks` property, omitted when the projection leaves it empty.
  *
- * The reporting threshold prunes first and the detail projection second, so `summary` shows the same
+ * Because the reporting threshold prunes first and the detail projection second, `summary` shows the same
  * failures that `full` would, without the checks that passed around them.
  */
 function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
@@ -230,9 +230,9 @@ function buildCheckEntries(
 }
 
 /**
- * Returns a single JSON check entry, omitting every field that holds nothing.
+ * Returns a single JSON check entry, omitting every field that has no value.
  *
- * A field is present only when it holds information on which the consumer could act: no `null` placeholders,
+ * A field is present only when it contains information on which the consumer could act: no `null` placeholders,
  * no empty `checks` array, and no `fix` on a check that has nothing to remediate. Durations are whole
  * milliseconds, since sub-millisecond precision on a check that took 3ms describes only the scheduler.
  */
