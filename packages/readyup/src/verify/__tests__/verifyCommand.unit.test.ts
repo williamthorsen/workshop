@@ -221,7 +221,7 @@ describe(verifyCommand, () => {
   });
 
   describe('inputs verdict', () => {
-    /** Arranges a manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis alone to speak. */
+    /** Arranges a manifest naming one kit whose two hash verdicts both pass, leaving the inputs axis as the only one under test. */
     function arrangeSingleKit(): void {
       mockReadManifest.mockReturnValue({
         version: 1,
@@ -331,7 +331,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain(`${OK} alpha\n`);
     });
 
-    it('reports a passing rebuild over a stale input, where it names the manifest as what went wrong', async () => {
+    it('reports a passing rebuild over a stale input, because the rebuild then names the manifest as what went wrong', async () => {
       arrangeSingleKit();
       mockCheckInputDrift.mockReturnValue({
         kind: 'stale',
@@ -372,7 +372,7 @@ describe(verifyCommand, () => {
       );
     });
 
-    it('states every verdict before the first remedy, so the diagnosis reads whole', async () => {
+    it('states every verdict before the first remedy, so that the diagnosis appears in one piece', async () => {
       arrangeSingleKit();
       mockCheckDrift.mockReturnValue({
         kind: 'drift',
@@ -395,7 +395,7 @@ describe(verifyCommand, () => {
       );
     });
 
-    it('names a remedy once for a kit that reaches it on two axes', async () => {
+    it('names a remedy once for a kit that needs it on two axes', async () => {
       arrangeSingleKit();
       mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
       mockCheckSourceDrift.mockReturnValue({
@@ -500,7 +500,7 @@ describe(verifyCommand, () => {
       mockCheckSourceDrift.mockReturnValue({ kind: 'ok', sourceHash: '5555aaaa' });
     }
 
-    it('leaves the run untouched without the flag, never reaching for esbuild', async () => {
+    it('leaves the run untouched without the flag, never loading esbuild', async () => {
       arrangeSingleKit();
 
       const { exitCode, stdout } = await verify([]);
@@ -580,7 +580,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('zod 3.24.1 -> 4.0.0');
     });
 
-    it('says the recorded versions match when the toolchain record clears every named cause', async () => {
+    it('says the recorded versions match when the toolchain record rules out every named cause', async () => {
       arrangeSingleKit();
       mockCheckRebuild.mockResolvedValue({
         kind: 'mismatch',
@@ -647,7 +647,7 @@ describe(verifyCommand, () => {
       expect(stdout).toContain('cannot rebuild (no source recorded in manifest)');
     });
 
-    it('states a passing rebuild beside a failing hash verdict, where it changes the reading', async () => {
+    it('states a passing rebuild beside a failing hash verdict, because the pass changes what that verdict means', async () => {
       arrangeSingleKit();
       mockCheckDrift.mockReturnValue({
         kind: 'drift',
@@ -677,7 +677,7 @@ describe(verifyCommand, () => {
       });
     });
 
-    it('speaks over an unverified target, where it supplies the verdict that the absent hash could not', async () => {
+    it('reports a passing rebuild over an unverified target, because the rebuild supplies the verdict that the absent hash could not', async () => {
       mockReadManifest.mockReturnValue({
         version: 1,
         kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts' }],
@@ -779,7 +779,7 @@ describe(verifyCommand, () => {
   });
 
   describe('unified vocabulary', () => {
-    /** Every verdict that the command can report, so one sweep covers each of its lines. */
+    /** Every verdict that the command can report, so that one sweep covers each of its lines. */
     const verdicts = [
       { kind: 'ok', targetHash: 'aaaa1111' },
       { kind: 'drift', expected: 'aaaa1111', actual: 'aaaa9999', resolvedPath: '/abs/alpha.js' },

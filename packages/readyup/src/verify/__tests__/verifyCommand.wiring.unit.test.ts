@@ -9,7 +9,7 @@ import { verifyCommand } from '../verifyCommand.ts';
 
 /**
  * Exercises the full `verifyCommand → checkDrift → hashFile → filesystem` chain against real files in
- * a tempdir, without mocking the drift helper. Unit tests cover the branches; this locks in the wiring
+ * a tempdir, without mocking the drift helper. Unit tests cover the branches; this test verifies the wiring
  * (e.g., that `manifestDir` is threaded through correctly).
  */
 const OK = richFormatter.tokens.passed.text;
@@ -152,7 +152,7 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
-    it('passes the axis and every failure into the JSON entry, at the schema version it always emitted', async ({
+    it('passes the axis and every failure into the JSON entry, at the schema version that it always emitted', async ({
       temp,
     }) => {
       writeRecordedClosure(temp);

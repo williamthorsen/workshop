@@ -25,7 +25,7 @@ export type RebuildStatus =
 /**
  * A bundled package whose recorded version the rebuild does not reproduce.
  *
- * A side is absent where the package was not bundled then or now.
+ * A side is absent when the package was not bundled then or now.
  */
 export interface DependencyChange {
   name: string;
@@ -53,7 +53,7 @@ export interface EsbuildComparison {
  * reports drift and a passing rebuild together, which is how the two verdicts distinguish a corrupt
  * bundle from corrupt bookkeeping.
  *
- * Every way the check can fail to reach a verdict is reported rather than waved through: `missing`
+ * Every way the check can fail to reach a verdict is reported rather than passed: `missing`
  * when an input is absent, `failed` when the source no longer compiles. `failed` is distinct from
  * `mismatch` because the remedy differs -- fix the kit, versus recompile it.
  */
@@ -90,8 +90,8 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
     return { kind: 'ok' };
   }
 
-  // The generated banner embeds the compiling readyup's version, so a version move alone makes an
-  // untouched source rebuild to a different bundle. Report the recorded version to keep that cause
+  // Because the generated banner embeds the compiling readyup's version, a version move alone makes
+  // an untouched source rebuild to a different bundle. Report the recorded version to keep that cause
   // distinguishable from a hand edit.
   const compiledWith = kit.readyupVersion !== VERSION ? kit.readyupVersion : undefined;
 

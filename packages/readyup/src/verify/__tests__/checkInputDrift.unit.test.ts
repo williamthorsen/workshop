@@ -61,7 +61,7 @@ describe(checkInputDrift, () => {
       });
     });
 
-    it.for([12, 64])('returns ok when the record holds a %i-character hash', (length, { temp }) => {
+    it.for([12, 64])('returns ok when the record contains a %i-character hash', (length, { temp }) => {
       temp.write('kits/shared.ts', MODULE_SOURCE);
       const recorded: RdyManifestInput = { ...RECORDED_MODULE, hash: computeHash(MODULE_SOURCE).slice(0, length) };
 
@@ -112,7 +112,7 @@ describe(checkInputDrift, () => {
       });
     });
 
-    it.for([12, 64])('returns ok when the record holds a %i-character projection hash', (length, { temp }) => {
+    it.for([12, 64])('returns ok when the record contains a %i-character projection hash', (length, { temp }) => {
       temp.write('package.json', JSON.stringify(PACKAGE_JSON));
       const projection = JSON.stringify({ version: PACKAGE_JSON.version });
       const recorded: RdyManifestInput = { ...RECORDED_PICK, hash: computeHash(projection).slice(0, length) };

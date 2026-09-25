@@ -180,12 +180,12 @@ describe(checkRebuild, () => {
 
 // region | Helpers
 
-/** Returns a manifest entry naming the source and bundle that `writeKitFiles` lays down. */
+/** Returns a manifest entry naming the source and bundle that `writeKitFiles` writes. */
 function kit() {
   return { name: 'demo', path: 'demo.js', source: 'demo.ts' };
 }
 
-/** Returns a `buildBundle` result that mismatches the bundle that `writeKitFiles` lays down. */
+/** Returns a `buildBundle` result that mismatches the bundle that `writeKitFiles` writes. */
 function rebuildResult(overrides: { esbuildVersion?: string; bundledDependencies?: Record<string, string> } = {}) {
   return {
     bundledDependencies: {},
