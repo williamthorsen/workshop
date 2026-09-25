@@ -70,7 +70,7 @@ describe(pruneOrphanedEntries, () => {
     expect(tree.exists('kits')).toBe(true);
   });
 
-  it('leaves a directory that still holds a bundle after an orphan beside it is deleted', () => {
+  it('leaves a directory that still contains a bundle after an orphan beside it is deleted', () => {
     using tree = createProject({ 'kits/ops/keep.js': COMPILED, 'kits/ops/legacy.js': COMPILED });
 
     prune(tree, { existingEntries: [recordedEntry(tree, 'ops/legacy')] });

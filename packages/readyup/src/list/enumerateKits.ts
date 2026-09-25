@@ -11,7 +11,7 @@ interface EnumerateKitsOptions {
   /**
    * Whether to read the subdirectories of `dir`.
    *
-   * Set for the bundles of a project, which a kit named for its source path puts below `dir`. Unset for the
+   * Set for the bundles of a project, which the compile puts below `dir` for a kit named by its source path. Unset for the
    * internal directory, whose kits `internal.dir` and `internal.infix` declare rather than a path below it.
    */
   recursive: boolean;

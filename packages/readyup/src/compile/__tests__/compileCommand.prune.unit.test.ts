@@ -29,7 +29,7 @@ const ICON_DRIFT = richFormatter.tokens.failedWarn.text;
 /** Bundle contents as the compile wrote them. */
 const COMPILED = 'export default {};';
 
-/** A project holding one kit with a source and one whose source was deleted after both were compiled. */
+/** A project containing one kit with a source and one whose source was deleted after both were compiled. */
 const PROJECT_TREE = {
   '.readyup/kits/deploy.ts': COMPILED,
   '.readyup/kits/legacy.js': COMPILED,

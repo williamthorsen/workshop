@@ -16,18 +16,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   doc-descriptions:
@@ -47,18 +63,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   em-dash:
@@ -78,18 +110,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   inline-comments:
@@ -109,18 +157,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   plain-speech:
@@ -140,18 +204,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   reduced-object-relative:
@@ -171,18 +251,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   second-person:
@@ -202,18 +298,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   sentence-case:
@@ -233,18 +345,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   so:
@@ -264,18 +392,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
   where:
@@ -295,18 +439,34 @@ rules:
       - packages/readyup/config
       - packages/readyup/docs
       - packages/readyup/package.json
+      - packages/readyup/src/__tests__
       - packages/readyup/src/bin
       - packages/readyup/src/check-utils
+      - packages/readyup/src/compile
+      - packages/readyup/src/config
+      - packages/readyup/src/errors
       - packages/readyup/src/help
+      - packages/readyup/src/index.ts
+      - packages/readyup/src/init
       - packages/readyup/src/installed-packages
       - packages/readyup/src/kitImports
       - packages/readyup/src/kits
       - packages/readyup/src/layout
+      - packages/readyup/src/list
+      - packages/readyup/src/manifest
+      - packages/readyup/src/output
       - packages/readyup/src/portable
       - packages/readyup/src/projects
+      - packages/readyup/src/readyupResolverHook.ts
+      - packages/readyup/src/remote
       - packages/readyup/src/reporting
       - packages/readyup/src/run
+      - packages/readyup/src/schemas
+      - packages/readyup/src/severity
+      - packages/readyup/src/test-utils
+      - packages/readyup/src/testing
       - packages/readyup/src/verify
+      - packages/readyup/src/version.ts
       - packages/readyup/tsconfig.json
       - packages/readyup/vitest.config.ts
 rejections:
@@ -646,50 +806,80 @@ rejections:
     phrase: last two requires readyup's
     ground: 'not the construction: the main verb of the sentence'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
-    phrase: directory the compile runs
-    ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
+    phrase: whatever directory the compile runs in
+    ground: 'outside the rule: a fused-head free relative'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
-    phrase: directory the verification runs
-    ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
+    phrase: whatever directory the verification runs in
+    ground: 'outside the rule: a fused-head free relative'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/collectSourceFiles.unit.test.ts
+    phrase: match any of several include globs
+    ground: 'not the construction: the relativizer is already present'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/compileCommand.prune.unit.test.ts
+    phrase: whatever name the prior manifest gave it
+    ground: 'outside the rule: a fused-head free relative'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/fixtures/discoverWorkspaces-fixture.ts
+    phrase: this check nothing to report on
+    ground: "not the construction: infinitival relative on 'nothing' with no embedded subject"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/fixtures/discoverWorkspaces-subprocess-wrapper.mjs
-    phrase: success the fixture's «codespan» writes
-    ground: "not the construction: `On success` is a prepositional adjunct and `writes` is the main clause's own verb"
+    phrase: On success the fixture's `check` writes `resolved-ok` to stdout.
+    ground: "not the construction: prepositional adjunct before the main clause's subject"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
-    phrase: assigned one moves
-    ground: "not the construction: `moves` is the clause's own main verb, with `an assigned one` as its subject"
+    phrase: whereas an assigned one moves into the
+    ground: "not the construction: a clause's own subject and verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
-    phrase: legacy one reaches
-    ground: "not the construction: `reaches` is the clause's own main verb, with `the legacy one` as its subject"
+    phrase: whereas the legacy one
+    ground: "not the construction: a clause's own subject and verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
-    phrase: not a tsconfig.json sits
-    ground: 'not the construction: a `whether or not` correlative, with no head noun and no relative clause'
+    phrase: whether or not a tsconfig.json is above the kit
+    ground: "not the construction: 'not' heads no relative clause"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/compile/buildBundle.ts
-    phrase: configuration the host repo happens
-    ground: 'outside the rule: a fused head, where `whatever` is the relative determiner and admits no relativizer'
+    phrase: whatever configuration the host repo happens to keep above it
+    ground: 'outside the rule: a fused-head free relative'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/compile/collectSourceKitNames.ts
+    phrase: the kits that a project's compile settings select
+    ground: 'not the construction: the relativizer is present'
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/compile/compileCommand.ts
     phrase: failed one does
-    ground: 'not the construction: a comparative clause whose subject is `a failed one`'
+    ground: 'not the construction: a comparative clause with no object gap'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/compile/compileCommand.ts
+    phrase: not it contributed
+    ground: "not the construction: 'whether or not' introduces a clause"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/compile/createCompileRecorder.ts
-    phrase: order the reads happened
-    ground: 'outside the rule: an adjunct relative like `the way it works`, whose gap fills no argument position'
+    phrase: in the order the reads happened
+    ground: 'outside the rule: adjunct relative'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/compile/pruneOrphanedEntries.ts
+    phrase: whether or not the sweep emptied it
+    ground: 'not the construction: no relative clause'
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
@@ -736,15 +926,15 @@ rejections:
     phrase: Show this help message
     ground: 'not the construction: the span runs across a table row boundary'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/index.ts
-    phrase: generate the published JSON Schemas
-    ground: the relativizer `that` is already present
+    phrase: the zod schemas that also generate the published JSON Schemas
+    ground: 'not the construction: the relativizer is present'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/init/initCommand.ts
-    phrase: next steps printed
-    ground: the head is a passive participle, not a reduced object relative
+    phrase: the numbered next steps printed after scaffolding
+    ground: "not the construction: 'printed' is a participle"
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/src/installed-packages/resolveWorkspaceRoot.ts
@@ -836,85 +1026,65 @@ rejections:
     phrase: token no glyph returns
     ground: a ditransitive; 'returns' is the main verb
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: compiled kits found
-    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
-    phrase: compiled kits found
-    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
-    phrase: compiled kits found
-    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
-    phrase: compiled kits found
-    ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: configured one unmarked
-    ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
+    ground: 'not the construction: an object complement'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: kit projects found
-    ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: order they are given
-    ground: 'outside the rule: an adjunct relative on the «the way it works» pattern, whose gap fills no argument position'
+    ground: 'outside the rule: adjunct relative'
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
-    phrase: section heads what
-    ground: "not the construction: «heads» is the sentence's own verb and «what to do» is a fused relative"
-  - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/listCommand.packages.unit.test.ts
     phrase: configured one unmarked
-    ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
+    ground: 'not the construction: an object complement'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts
     phrase: kit projects found
-    ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/listCommand.recursivePackages.unit.test.ts
-    phrase: project the sweep starts
-    ground: a free relative headed by `whichever`, which admits no relativizer; outside the rule as the fused head is
+    phrase: whichever project the sweep starts in
+    ground: 'outside the rule: a fused-head free relative'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/listCommand.unit.test.ts
-    phrase: compiled kits found
-    ground: 'not the construction: a reduced passive inside a string literal asserted against program output'
+    phrase: No compiled kits found
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/__tests__/listCommand.wiring.unit.test.ts
     phrase: cover each mode's branches
-    ground: "not the construction: `cover` is the clause's own verb, not a head noun"
+    ground: "not the construction: the sentence's own verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/list/collectSourceKits.ts
+    phrase: cover the same kits
+    ground: "not the construction: the sentence's own verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/list/formatList.ts
     phrase: compiled kits found
-    ground: 'not the construction: «found» is a participle modifying «kits»'
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/list/formatList.ts
     phrase: kit projects found
-    ground: 'not the construction: «found» is a participle modifying «projects»'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/list/listCommand.ts
-    phrase: cover the same kits
-    ground: "not the construction: `cover` is the clause's own verb, not a head noun"
+    ground: "not the construction: 'found' is a participle"
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/src/portable/__tests__/buildInstallCommand.unit.test.ts
@@ -966,20 +1136,15 @@ rejections:
     phrase: manager the repo uses
     ground: 'not the construction: an embedded question'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/remote/__tests__/remote-provider.unit.test.ts
     phrase: developer happens to be logged
-    ground: 'not the construction: an embedded interrogative under "whether", with no head noun and no gap'
+    ground: 'not the construction: a main-clause subject'
   - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/remote/loadRemoteKit.ts
-    phrase: supplied headers are sent
-    ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/remote/loadRemoteManifest.ts
-    phrase: supplied headers are sent
-    ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
+    rule-version: '1'
+    file: packages/readyup/src/remote/fetchWithCache.ts
+    phrase: Header values that the 304 sends replace the stored ones
+    ground: 'not the construction: the relativizer is already present'
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/src/reporting/formatJsonReport.ts
@@ -1116,30 +1281,35 @@ rejections:
     phrase: floor the running readyup does not meet
     ground: introduced by 'whose'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
+    file: packages/readyup/src/schemas/__tests__/buildSchemas.unit.test.ts
+    phrase: gives each document an $id matching its published location
+    ground: "not the construction: 'matching' is a participle"
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/schemas/__tests__/fixtures/payloadFixtures.ts
+    phrase: judge the same documents
+    ground: "not the construction: the clause's own verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/schemas/common.ts
     phrase: mistyped one fails
-    ground: 'not the construction: `one` is the subject of `fails`, not a relative head'
+    ground: "not the construction: the clause's main verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/schemas/common.ts
     phrase: unknown one leaves
-    ground: 'not the construction: `one` is the subject of `leaves`, not a relative head'
+    ground: "not the construction: the clause's main verb"
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/schemas/reportSchema.ts
-    phrase: tree a report includes
-    ground: 'outside the rule: an embedded interrogative whose fronted wh-phrase fills the gap, so no relativizer can restore'
+    phrase: How much of the detail tree a report includes.
+    ground: 'not the construction: an interrogative clause'
   - rule: reduced-object-relative
-    rule-version: '0'
+    rule-version: '1'
     file: packages/readyup/src/schemas/verifyOutputSchema.ts
-    phrase: least one bundled
-    ground: "not the construction: `at least one` quantifies the subject `package's version`"
-  - rule: reduced-object-relative
-    rule-version: '0'
-    file: packages/readyup/src/schemas/verifyOutputSchema.ts
-    phrase: version the rebuild does not reproduce
-    ground: 'not the construction: the relative clause already carries the overt relativizer `whose`'
+    phrase: whose recorded version the rebuild does not reproduce
+    ground: 'not the construction: the relativizer is present'
   - rule: reduced-object-relative
     rule-version: '1'
     file: packages/readyup/src/verify/__tests__/checkRebuild.unit.test.ts
@@ -1347,6 +1517,16 @@ rejections:
     ground: a lone so that states a direct result
   - rule: so
     rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/fixtures/discoverWorkspaces-subprocess-wrapper.mjs
+    phrase: '`import.meta.url` is unavailable in `node -e` contexts, so a file wrapper'
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/compile/buildBundle.ts
+    phrase: The constant is part of the bundle, so a kit rebuilt under a different readyup differs
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
     file: packages/readyup/src/installed-packages/__tests__/expandConfiguredPackages.unit.test.ts
     phrase: so the directory fallback has neither to report
     ground: a lone so that states a direct result
@@ -1357,6 +1537,11 @@ rejections:
     ground: a lone so that states a direct result
   - rule: so
     rule-version: '1'
+    file: packages/readyup/src/list/enumerateKits.ts
+    phrase: A hidden file is excluded, and so is every file below a hidden directory.
+    ground: "outside the rule: 'so is' stands for a clause"
+  - rule: so
+    rule-version: '1'
     file: packages/readyup/src/portable/blankNonCode.ts
     phrase: so a JSX text node beginning with `/` blanks as far as its closing tag's slash
     ground: a lone so that states a direct result
@@ -1365,6 +1550,11 @@ rejections:
     file: packages/readyup/src/portable/blankNonCode.ts
     phrase: so an object literal or a block in there closes itself
     ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/remote/remote-provider.ts
+    phrase: Matching the host rather than the `--from` scheme covers a `--url` aimed at a provider by construction, so the two flags need no separate code path.
+    ground: a lone `so` that states a direct result
   - rule: so
     rule-version: '1'
     file: packages/readyup/src/reporting/__tests__/reportRdy.unit.test.ts
@@ -1430,6 +1620,41 @@ rejections:
     file: packages/readyup/src/run/skip-diagnosis.ts
     phrase: these are check-derived rather than manifest-derived, so no kit source silences them
     ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/schemas/__tests__/buildSchemas.unit.test.ts
+    phrase: The forward-compatibility promise is made to a consumer running a JSON Schema validator, so it has to be checked through one rather than through zod alone.
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/schemas/common.ts
+    phrase: A producer may only emit a code declared by this version, so a mistyped one fails to compile rather than entering the published vocabulary.
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/schemas/listOutputSchema.ts
+    phrase: '`availablePackages` names installed dependencies that publish kits but are absent from the config, so they are candidates to add rather than kits.'
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/schemas/listOutputSchema.ts
+    phrase: Every field but `name` and `kind` comes from the manifest, so a kit enumerated from the filesystem without one has only those two plus `path`.
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/schemas/verifyOutputSchema.ts
+    phrase: '`rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the payload that it always did.'
+    ground: a lone `so` that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/severity/meetsThreshold.ts
+    phrase: Reports whether `severity` is as severe as `threshold` or more so.
+    ground: 'outside the rule: `so` stands for an adjective'
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/src/severity/meetsThreshold.ts
+    phrase: which is `false`, so it would silently exclude the check
+    ground: a lone `so` that states a direct result
   - rule: so
     rule-version: '1'
     file: packages/readyup/src/verify/remedies.ts
@@ -1532,6 +1757,21 @@ rejections:
     ground: "outside the rule: 'where' names a place"
   - rule: where
     rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/compileCommand.recursive.unit.test.ts
+    phrase: A directory where the manifest file belongs
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/pruneOrphanedEntries.unit.test.ts
+    phrase: A directory where the bundle belongs cannot be unlinked.
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
+    phrase: Writes the host config into the directory above a kit, where esbuild's search would reach it.
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
     file: packages/readyup/src/help/__tests__/help.tool.test.ts
     phrase: shows where a spawned rdy looks for its doc files
     ground: 'outside the rule: names a location'
@@ -1582,6 +1822,11 @@ rejections:
     ground: "'where' names a place, the glyph's position"
   - rule: where
     rule-version: '1'
+    file: packages/readyup/src/list/__tests__/listCommand.wiring.unit.test.ts
+    phrase: that `list --from` looks where `run --from` loads
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
     file: packages/readyup/src/portable/listDeclarationSpans.ts
     phrase: only where a statement could have ended just before it
     ground: "outside the rule: 'where' names a position in the source text"
@@ -1594,6 +1839,16 @@ rejections:
     rule-version: '1'
     file: packages/readyup/src/projects/project-discovery.ts
     phrase: Where the project's manifest belongs
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/readyupResolverHook.ts
+    phrase: regardless of where the kit file lives on disk
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/remote/fetchWithCache.ts
+    phrase: Where the HTTP cache lives, and whether an invocation reads it.
     ground: "outside the rule: 'where' names a place"
   - rule: where
     rule-version: '1'
@@ -1650,3 +1905,18 @@ rejections:
     file: packages/readyup/src/run/runRdy.ts
     phrase: Where the kit came from, which namespaces its checks' ids.
     ground: where names a place of origin
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/schemas/__tests__/schemas.unit.test.ts
+    phrase: at the top level, where the old flat shape put the count
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/schemas/buildSchemas.ts
+    phrase: Where a published schema is served from once the package is on npm.
+    ground: "outside the rule: 'where' names a place"
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/schemas/listOutputSchema.ts
+    phrase: One names where a kit lives in this tree
+    ground: "outside the rule: 'where' names a place"

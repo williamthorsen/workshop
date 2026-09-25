@@ -15,7 +15,7 @@ import { pickJsonPlugin } from '../pickJsonPlugin.ts';
 
 type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
 
-/** Returns a minimal `PluginBuild` stub, which exercises `onLoad` alone. */
+/** Returns a minimal `PluginBuild` stub, which implements `onLoad` alone. */
 function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
   return {
     initialOptions: {},

@@ -62,7 +62,7 @@ const it = baseIt
     await compileConfig(FIXTURE_PATH, compiledFixturePath);
 
     // Build the resolver hook for the subprocess to register. The hook source
-    // has no imports, so esbuild is overkill; a TypeScript-strip via esbuild
+    // has no imports, so bundling is unnecessary; a TypeScript-strip via esbuild
     // produces a self-contained JS module without depending on a prior `nmr build`.
     const esbuild = await import('esbuild');
     await esbuild.build({
