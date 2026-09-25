@@ -216,7 +216,7 @@ importers:
         version: 17.0.0(@typescript-eslint/utils@8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(readyup@packages+readyup)(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
         specifier: 0.39.0
-        version: 0.39.0(prettier@3.9.7)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
+        version: 0.39.0(prettier@3.9.8)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)
       '@williamthorsen/release-kit':
         specifier: 12.0.0
         version: 12.0.0
@@ -245,8 +245,8 @@ importers:
         specifier: 2.1.14
         version: 2.1.14
       prettier:
-        specifier: 3.9.7
-        version: 3.9.7
+        specifier: 3.9.8
+        version: 3.9.8
       readyup:
         specifier: workspace:*
         version: link:packages/readyup
@@ -2280,8 +2280,8 @@ packages:
     peerDependencies:
       prettier: ^3.6.0
 
-  prettier@3.9.7:
-    resolution: {integrity: sha512-T3mF5P7HFzZVLDQuCUNtJj6WK1pcpLMweMNUVwGb01bLNkH9AkKxtZvmInw8K6bnn2O3d6/5RHl6zSHiBAD0Og==}
+  prettier@3.9.8:
+    resolution: {integrity: sha512-WRFq3Wn3WId7LLROfMLdH7xaFr2jR62wU8nLO6rQUOLOxNZUviyJQs1M0iIhLexSFy+L+w0ch66wtoO2jRjG0A==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -3534,16 +3534,16 @@ snapshots:
       '@williamthorsen/toolbelt.terminal': 0.2.0
       yaml: 2.9.1
 
-  '@williamthorsen/nmr@0.39.0(prettier@3.9.7)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
+  '@williamthorsen/nmr@0.39.0(prettier@3.9.8)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@williamthorsen/nmr-core': 0.13.0
       '@williamthorsen/toolbelt.errors': 0.8.1
       glob: 13.0.6
-      prettier-plugin-sh: 0.19.0(prettier@3.9.7)
+      prettier-plugin-sh: 0.19.0(prettier@3.9.8)
       taze: 21.1.0
       typescript: 6.0.3
     optionalDependencies:
-      prettier: 3.9.7
+      prettier: 3.9.8
       vite: 8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0)
       vitest: 4.1.11(@types/node@24.13.5)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.0))
 
@@ -4523,13 +4523,13 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-sh@0.19.0(prettier@3.9.7):
+  prettier-plugin-sh@0.19.0(prettier@3.9.8):
     dependencies:
       '@reteps/dockerfmt': 0.5.4
-      prettier: 3.9.7
+      prettier: 3.9.8
       sh-syntax: 0.6.0
 
-  prettier@3.9.7: {}
+  prettier@3.9.8: {}
 
   proc-log@6.1.0: {}
 

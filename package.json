@@ -39,7 +39,7 @@
     "esbuild": "catalog:",
     "eslint": "10.10.0",
     "lefthook": "2.1.14",
-    "prettier": "3.9.7",
+    "prettier": "3.9.8",
     "readyup": "workspace:*",
     "typescript": "6.0.3",
     "v11y-check": "0.18.1",
