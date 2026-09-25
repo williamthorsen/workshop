@@ -139,8 +139,8 @@ describe(listCommand, () => {
       });
     });
 
-    // A package reaches the owner listing's rows only by being configured, so the marker is always true
-    // here; emitting it regardless spares a consumer from knowing which invocation wrote the payload.
+    // The marker is always true here, because a package appears among the owner listing's rows only when it
+    // is configured. Emitting it regardless spares a consumer from knowing which invocation wrote the payload.
     it('marks every package row as configured', async () => {
       configureOnePackage();
 
@@ -217,7 +217,7 @@ describe(listCommand, () => {
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
-    it('names the kits of a relocated output directory rather than pathing them', async () => {
+    it('names the kits of a relocated output directory rather than giving their paths', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
@@ -361,7 +361,7 @@ describe(listCommand, () => {
       });
     });
 
-    it('lists the bundles on disk past a manifest that cannot be read, and warns', async () => {
+    it('lists the bundles on disk when the manifest cannot be read, and warns', async () => {
       mockEnumerateKits.mockImplementation(enumerateByExtension({ '.js': ['deploy'] }));
       mockReadManifest.mockImplementation(() => {
         throw new Error('Manifest file contains invalid JSON: .readyup/manifest.json');
@@ -566,7 +566,7 @@ describe(listCommand, () => {
       });
     });
 
-    it('sends the human view to stderr so stdout holds one document', async () => {
+    it('sends the human view to stderr so that stdout contains one document', async () => {
       mockCollectSourceKitNames.mockReturnValue(['draft']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 

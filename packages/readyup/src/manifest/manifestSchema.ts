@@ -8,10 +8,10 @@ const JsonPathSpecSchema = z.array(z.union([z.string(), z.array(z.string())]));
 /**
  * Schema for a hash recorded by the manifest, which is a prefix of a SHA-256 hex digest.
  *
- * Every reader compares the digest at the recorded value's own length, so how much of it a record
- * covers is the compile's to choose: A readyup recording a longer prefix does not read as stale to one
+ * Every reader compares the digest at the recorded value's own length, so the compile is free to choose
+ * how much of the digest a record covers: A readyup recording a longer prefix does not read as stale to one
  * that records eight characters. The floor keeps a record too short to distinguish anything from
- * reaching a comparison, where it would pass every axis on every kit.
+ * reaching a comparison, in which it would pass every axis on every kit.
  */
 const RecordedHashSchema = z
   .string()
@@ -22,8 +22,8 @@ const RecordedHashSchema = z
  *
  * `kind` decides what the hash covers. A `module` records the file's contents; an `inline` records the
  * projection substituted by `pickJson`, so an edit to a field that the kit did not pick is not staleness.
- * Only an inline record has `paths`, which is the specifier that produced the projection and so what a
- * reader needs to reproduce it.
+ * Only an inline record has `paths`: the specifier that produced the projection, which a reader needs
+ * to reproduce it.
  *
  * Paths are relative to the manifest directory, as `path` and `source` are.
  */
@@ -35,10 +35,10 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
 /**
  * Schema for a single kit entry in the manifest.
  *
- * `checklists` records the names that `rdy compile` found in the kit, so `rdy list` can report them
+ * `checklists` records the names that `rdy compile` found in the kit, so that `rdy list` can report them
  * without importing and executing the compiled bundle. It is optional because a manifest written by
- * an older readyup has no such record; readers strip what they do not recognize, so adding the
- * field leaves `version` at 1.
+ * an older readyup has no such record. Adding the field leaves `version` at 1, because readers strip
+ * what they do not recognize.
  *
  * `sourceHash` and `targetHash` are the two ends of the compile: the hash of the `.ts` from which the
  * kit was built and the hash of the `.js` that it produced. Comparing each against the file on disk

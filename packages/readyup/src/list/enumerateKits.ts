@@ -18,7 +18,7 @@ interface EnumerateKitsOptions {
 }
 
 /**
- * Returns the sorted names, extension stripped, of the files in `dir` matching `extension`, or `[]` where
+ * Returns the sorted names, extension stripped, of the files in `dir` matching `extension`, or `[]` when
  * `dir` does not exist.
  *
  * A name is the file's path relative to `dir`, so a recursive read returns the name under which `rdy run`

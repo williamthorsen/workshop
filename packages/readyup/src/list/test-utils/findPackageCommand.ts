@@ -1,9 +1,9 @@
 /**
- * Returns the line beneath a package's heading in a rendered listing, which is where its command sits.
+ * Returns the line beneath a package's heading in a rendered listing, which is the line that contains its command.
  *
  * Reading that line positionally is the assertion: A command fused into the heading would still satisfy a
  * `toContain` over the whole output. The heading rule anchors the search, since an unconfigured package's
- * heading has a trailing detail and a kit line could otherwise hold the same text.
+ * heading has a trailing detail and a kit line could otherwise contain the same text.
  */
 export function findPackageCommand(output: string, label: string): string | undefined {
   const lines = output.split('\n');

@@ -147,7 +147,7 @@ describe('ManifestSchema', () => {
     expect(result.data.kits[0]?.readyupVersion).toBe('0.20.0');
   });
 
-  it('accepts a manifest where readyupVersion is omitted', () => {
+  it('accepts a manifest whose kit omits readyupVersion', () => {
     const input = {
       version: 1,
       kits: [{ name: 'deploy' }],
@@ -160,7 +160,7 @@ describe('ManifestSchema', () => {
     expect(result.data.kits[0]?.readyupVersion).toBeUndefined();
   });
 
-  it('rejects a manifest where readyupVersion is a non-string value', () => {
+  it('rejects a manifest whose kit has a non-string readyupVersion', () => {
     const input = {
       version: 1,
       kits: [{ name: 'deploy', readyupVersion: 42 }],
