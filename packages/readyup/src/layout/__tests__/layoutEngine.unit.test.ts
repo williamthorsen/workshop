@@ -28,13 +28,13 @@ describe('formatCheckLine', () => {
     expect(line).toBe(`${PASSED} lockfile \u{00B7} up to date`);
   });
 
-  it('brackets progress rather than spending a second separator on it', () => {
+  it('brackets progress rather than using a second separator for it', () => {
     const line = engine.formatCheckLine({ token: 'passed', name: 'suite', progress: '7 of 10' });
 
     expect(line).toBe(`${PASSED} suite [7 of 10]`);
   });
 
-  it('brackets a check id ahead of the progress, so identity reads before quantity', () => {
+  it('brackets a check id ahead of the progress, so that identity reads before quantity', () => {
     const line = engine.formatCheckLine({
       token: 'failedError',
       name: 'suite',
@@ -115,7 +115,7 @@ describe('formatCheckLine', () => {
       }
     });
 
-    it('lands the name at one column whichever token leads the line', () => {
+    it('puts the name at one column whichever token leads the line', () => {
       const columns = TOKEN_NAMES.map((token) =>
         measureNameColumn(engine.formatCheckLine({ token, name: 'check', depth: 2 })),
       );
@@ -219,7 +219,7 @@ describe('formatBreadcrumb', () => {
 
   // The spacing is the only segment boundary offered by a glyphless style, and segment texts contain slashes
   // of their own, so a bare separator would leave nothing to read the breadcrumb by.
-  it('keeps the separator spaced where a role has no glyph', () => {
+  it('keeps the separator spaced when a role has no glyph', () => {
     const plain = createLayoutEngine(plainFormatter);
     const rendered = plain.formatBreadcrumb(
       [
@@ -394,7 +394,7 @@ describe('formatSummaryTable', () => {
     expect(lines[1]?.length).toBe(measureWidth(lines.at(-1) ?? ''));
   });
 
-  it('pads names so the counts column starts at one place in every row', () => {
+  it('pads names so that the counts column starts at one place in every row', () => {
     const lines = engine.formatSummaryTable(input);
 
     expect(lines[2]?.indexOf('2 passed')).toBe(lines[3]?.indexOf('1 error'));

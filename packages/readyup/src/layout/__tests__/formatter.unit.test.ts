@@ -106,7 +106,7 @@ describe('plain alignment', () => {
     }
   });
 
-  it('lands the name at one column whichever token leads the line', () => {
+  it('puts the name at one column whichever token leads the line', () => {
     const columns = TOKEN_NAMES.map((token) =>
       measureNameColumn(plainEngine.formatCheckLine({ token, name: 'check', depth: 2 })),
     );
@@ -114,7 +114,7 @@ describe('plain alignment', () => {
     expect(new Set(columns)).toStrictEqual(new Set([18]));
   });
 
-  it('holds the column through three levels of nesting, widest token included', () => {
+  it('keeps the name column through three levels of nesting, widest token included', () => {
     const rendered = [
       plainEngine.formatCheckLine({ token: 'failedError', name: 'bitbucket-pipelines.yml exists' }),
       plainEngine.formatCheckLine({ token: 'blockedPrecondition', name: 'pipeline runs checks', depth: 1 }),

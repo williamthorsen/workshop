@@ -49,7 +49,7 @@ interface CountField {
 }
 
 /**
- * Count fields in the order every count line presents them.
+ * Count fields in the order in which every count line presents them.
  *
  * Ordered by outcome rather than alphabetically: The checks that ran, worst news first, then the checks
  * that did not. The reader scans left to right and meets the failures before anything else, and a fixed
@@ -120,7 +120,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns `segments` as one heading, each behind its role's glyph and separated by the segment separator.
    *
-   * A role given no glyph by the formatter closes up, with no space where the glyph would sit.
+   * A role given no glyph by the formatter closes up, with no space where the glyph would be.
    */
   function formatBreadcrumb(segments: BreadcrumbSegment[], level: HeadingLevel, detail?: string): string {
     const rendered = segments.map((segment) => `${inlineGlyph(segment.role)}${segment.text}`);
@@ -160,11 +160,11 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   /**
    * Returns `name` behind a two-character rule whose weight comes from `level`, with `detail` behind
-   * the formatter's separator where there is one.
+   * the formatter's separator when there is one.
    *
    * A heading has no blank line of its own. Separation is a property of the sequence in which a heading
-   * sits, which only the code emitting that sequence can see: A heading deciding for itself is how two
-   * adjacent ones each contribute a blank and open a gap that neither intended.
+   * appears, which only the code emitting that sequence can see: If each heading decided for itself, two
+   * adjacent ones would each contribute a blank and open a gap that neither intended.
    */
   function formatHeading(name: string, level: HeadingLevel, detail?: string): string {
     const suffix = detail === undefined ? '' : ` ${formatter.detailSeparator} ${detail}`;
@@ -196,7 +196,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   /**
    * Returns the summary table's lines: a heading, a rule, one line per row, a closing rule, and a total.
    *
-   * Names are padded and durations right-aligned, so every row's counts begin at the same column. Both
+   * Every row's counts begin at the same column because names are padded and durations right-aligned. Both
    * rules span the widest line that they enclose, the total included. A row names itself by its breadcrumb
    * without the role glyphs added by the matching heading, because padding counts characters while the
    * terminal lays out display width, and a glyph makes the two disagree.
@@ -243,7 +243,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     return text === '' ? '' : `${text} `;
   }
 
-  /** Returns a token's glyph padded to the gutter, so what follows starts at a fixed column. */
+  /** Returns a token's glyph padded to the gutter. Whatever follows it starts at a fixed column. */
   function token(name: TokenName): string {
     const { text, width } = formatter.tokens[name];
     return text + ' '.repeat(gutter - width);
