@@ -35,12 +35,12 @@ const it = baseIt.extend(
         // Compiling this drives real esbuild, which writes its own diagnostic straight to stderr; the
         // error banner that appears in an otherwise-passing test run belongs to this fixture.
         'broken.ts': 'export default { this is not valid TypeScript\n',
-        // Off the config lookup path, so it is read only where `--config` names it.
+        // Off the config lookup path, so it is read only when `--config` names it.
         'invalid.config.ts': 'export default { compile: 42 };\n',
       },
       { prefix: 'readyup-exit-codes-' },
     );
-    // A manifest whose recorded hash cannot match the file on disk, so `verify` reports drift.
+    // A manifest whose recorded hash cannot match the file on disk. `verify` reports the mismatch as drift.
     tree.writeJson('.readyup/manifest.json', {
       version: 1,
       kits: [{ name: 'passing', path: 'kits/passing.js', targetHash: '0'.repeat(8) }],

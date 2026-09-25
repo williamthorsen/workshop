@@ -7,7 +7,7 @@
  *
  * The scan over-detects in one case that a parser would resolve differently: `--file --json` gives `--file` the
  * literal value `--json`. That is deliberate. This result is consulted only when rendering a failure, never on the
- * success path where parsed values govern, so over-detection sends an error to the wrong channel while
+ * success path, which uses the parsed values instead, so over-detection sends an error to the wrong channel while
  * under-detection leaves it unreportable in JSON at all.
  */
 export function hasJsonFlag(argv: string[]): boolean {

@@ -5,7 +5,7 @@ import { describe, expect, it as baseIt } from 'vitest';
 import { VERSION } from '../../version.ts';
 import { routeCommand } from '../route.ts';
 
-/** A kit whose single check passes, shared by every fixture here so only the stamp varies. */
+/** A kit whose single check passes, shared by every fixture here so that only the stamp varies. */
 const KIT_BODY = `export default { checklists: [{ name: 'main', checks: [{ name: 'ok', check: () => true }] }] };\n`;
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
@@ -41,7 +41,7 @@ describe('compile-time readyup version in the run report', () => {
     expect(parsed).not.toHaveProperty('kits.0.origin');
   });
 
-  it('names it even where it matches the runner', async () => {
+  it('names it even when it matches the runner', async () => {
     using io = captureStdio();
 
     await routeCommand(['current', '--json']);
