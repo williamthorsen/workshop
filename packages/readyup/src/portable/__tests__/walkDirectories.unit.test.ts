@@ -4,7 +4,7 @@ import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
-// Only directory reads are intercepted; the temporary tree still writes through to disk.
+// Only directory reads are intercepted; `createTempTree` still writes through to disk.
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, readdirSync: mockReaddirSync };
@@ -36,13 +36,13 @@ const it = baseIt
   .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
 describe(walkDirectories, () => {
-  it('yields every directory holding a match, root-relative and sorted', ({ temp }) => {
+  it('yields every directory containing a match, root-relative and sorted', ({ temp }) => {
     const found = walkDirectories({ root: temp.dir, match: '**/package.json' });
 
     expect(found).toStrictEqual(['.', 'deep/one/two', 'packages/a', 'packages/b']);
   });
 
-  it('yields the sweep root as "." when the root itself holds a match', ({ temp }) => {
+  it('yields the sweep root as "." when the root itself contains a match', ({ temp }) => {
     const found = walkDirectories({ root: temp.dir, match: 'package.json' });
 
     expect(found).toStrictEqual(['.']);
@@ -70,7 +70,7 @@ describe(walkDirectories, () => {
     expect(found).toStrictEqual(['deep/one/two', 'packages/a', 'packages/b']);
   });
 
-  it('yields the directory holding a matching directory, not the match itself', ({ temp }) => {
+  it('yields the directory containing a matching directory, not the match itself', ({ temp }) => {
     const found = walkDirectories({ root: temp.dir, match: '**/.readyup', prune: [] });
 
     expect(found).toStrictEqual(['packages/a']);

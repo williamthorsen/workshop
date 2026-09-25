@@ -10,7 +10,7 @@ describe(getLineAtOffset, () => {
     expect(getLineAtOffset(SOURCE, 0)).toBe(1);
   });
 
-  it('numbers the line holding an offset', () => {
+  it('numbers the line containing an offset', () => {
     expect(getLineAtOffset(SOURCE, SOURCE.indexOf('third'))).toBe(3);
   });
 

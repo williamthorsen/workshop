@@ -1,12 +1,12 @@
 import { getLineAtOffset } from './getLineAtOffset.ts';
 
-// Keywords introducing a binding, which reach the unnamed-head test only where no name follows them.
+// Keywords introducing a binding, which the unnamed-head test reads only when no name follows them.
 const BINDING_KEYWORDS = new Set(['const', 'let', 'var']);
 // A named head: optional modifiers in any order, the keyword introducing the declaration, then the name. Sticky, so a
 // caller tests one offset without slicing the source behind it.
 const HEAD_PATTERN =
   /(?:(?:abstract|async|declare|default|export)\s+)*(?:function[\s*]+|(?:class|const|enum|interface|let|type|var)\s+)([A-Za-z_$][\w$]*)/y;
-// Keywords taking an operand after them, so a head following one continues an expression rather than beginning a
+// Keywords taking an operand after them. A head following one continues an expression rather than beginning a
 // statement. Reading one leaves the window that it inherited, because it completes no operand of its own. The head
 // modifiers are here for `async`, the one among them that is also legal in expression position. Membership is read
 // through `expectsOperand`, which first rules out a property spelled like one of these.
@@ -43,7 +43,7 @@ export interface DeclarationSpan {
   startLine: number;
 }
 
-/** A declaration head found at brace depth 0, with the name that it introduces where it introduces one. */
+/** A declaration head found at brace depth 0, with the name that it introduces if it introduces one. */
 interface Head {
   name?: string | undefined;
   startLine: number;
@@ -53,12 +53,12 @@ interface Head {
  * Lists the top-level named declarations of blanked source as the line ranges that they own, in the order they appear.
  *
  * Takes what `blankNonCode` produced, so a declaration written in a comment or quoted in a string is invisible here
- * while the code around it is not. The lines are the ones that `getLineAtOffset` resolves, which is what a caller
- * holding a finding's line compares against.
+ * while the code around it is not. The lines are the ones that `getLineAtOffset` resolves, and a caller
+ * compares a finding's line against them.
  *
- * A declaration owns the lines from its own head to the line before the next head, or to the file's last line where it
+ * A declaration owns the lines from its own head to the line before the next head, or to the file's last line if it
  * is the last. Starts rather than ends, because the closing brace is not a reliable end marker: A generic constraint
- * and a return-type annotation can each hold braces of their own, and an overload signature has no body to close. A
+ * and a return-type annotation can each contain braces of their own, and an overload signature has no body to close. A
  * span cut short reports code that the caller meant to cover. The error runs the other way instead: A module-scope
  * statement trailing a declaration with no head between them is read as part of it, which is the bias that this
  * takes deliberately.
@@ -68,11 +68,11 @@ interface Head {
  * own. Each is recognized by the keyword with which it opens; a statement opening with an identifier, such as a bare
  * call, has no keyword to recognize it by and is read as part of the declaration before it.
  *
- * A head is recognized at brace depth 0, and only where a statement could have ended just before it, so a named
- * function or class expression in an initializer, in an argument list, or as an arrow's body reads as the expression
- * that it is rather than as a declaration of its own. A keyword still expecting an operand ends no statement, which is
- * what keeps `async`, `new`, and `typeof` from reopening that gap for the expression after them. A declaration nested
- * in a `namespace` or a module block sits below depth 0 and yields no span.
+ * A named function or class expression in an initializer, in an argument list, or as an arrow's body reads as the
+ * expression that it is rather than as a declaration of its own, because a head is recognized at brace depth 0, and
+ * only where a statement could have ended just before it. A keyword still expecting an operand ends no statement, which
+ * keeps `async`, `new`, and `typeof` from reopening that gap for the expression after them. A declaration nested in a
+ * `namespace` or a module block is below depth 0 and yields no span.
  *
  * @internal
  */
@@ -95,11 +95,11 @@ export function listDeclarationSpans(code: string): DeclarationSpan[] {
 // region | Helpers
 
 /**
- * Reports whether a word leaves an operand still expected after it, so the window that it inherited stands.
+ * Reports whether a word leaves an operand still expected after it, so the window that it inherited stays unchanged.
  *
  * A member name spelled like one of the keywords is the property that it names: `mod.default` completes an operand,
  * and withholding the boundary there loses the statement end that semicolon-free source depends on. The introducing
- * `.` or `#` is what tells the two apart, and an optional chain leaves the same `.`.
+ * `.` or `#` tells the two apart, and an optional chain leaves the same `.`.
  */
 function expectsOperand(previousChars: string, word: string): boolean {
   const lastChar = previousChars.at(-1) ?? '';
@@ -108,7 +108,7 @@ function expectsOperand(previousChars: string, word: string): boolean {
   return OPERAND_EXPECTING_KEYWORDS.has(word);
 }
 
-/** Returns the first non-blank character at or after an offset, or the empty string where the source ends first. */
+/** Returns the first non-blank character at or after an offset, or the empty string if the source ends first. */
 function findNextNonBlank(code: string, from: number): string {
   let index = from;
   while (index < code.length && /\s/.test(code[index] ?? '')) index += 1;
@@ -125,9 +125,9 @@ function findWordEnd(code: string, from: number): number {
 /**
  * Reports whether a word opening a statement opens one that declares no name.
  *
- * Two of the keywords are read further than the word itself. A binding keyword reaches here only where `HEAD_PATTERN`
- * found no name after it, which leaves a destructuring pattern, so the character opening one is required; that
- * requirement keeps `as const` out, where the same keyword ends a type assertion. An `import` opening a call is the
+ * Two of the keywords are read further than the word itself. `listHeads` passes a binding keyword here only when
+ * `HEAD_PATTERN` found no name after it, which leaves a destructuring pattern, so the character opening one is
+ * required; that requirement keeps out `as const`, in which the same keyword ends a type assertion. An `import` opening a call is the
  * dynamic form, which is an operand inside the statement around it rather than a statement of its own.
  */
 function isUnnamedHead(code: string, word: string, wordEnd: number): boolean {

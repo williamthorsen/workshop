@@ -28,7 +28,7 @@ describe(toError, () => {
   });
 
   it('wraps a value that has no rendering rather than throwing', () => {
-    // A null-prototype object inherits no `toString`, so `String()` on it throws.
+    // `String()` throws on a null-prototype object, because the object inherits no `toString`.
     const unrenderable: unknown = Object.create(null);
 
     expect(toError(unrenderable)).toBeInstanceOf(Error);

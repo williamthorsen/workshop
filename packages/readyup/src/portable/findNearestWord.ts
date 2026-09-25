@@ -4,9 +4,9 @@ const MAX_TYPO_DISTANCE = 2;
 /**
  * Finds the candidate that a bare word most likely misspells, or `undefined` when none is close enough.
  *
- * A word qualifies by abbreviating a candidate or by sitting within a couple of edits of one, so a
+ * A word qualifies by abbreviating a candidate or by being within a couple of edits of one, so a
  * transposed or wrong letter is caught alongside a truncation. Ties go to the nearest candidate and then
- * to the earlier one in `candidates`, so an alphabetized list yields an alphabetical tie-break. Words
+ * to the earlier one in `candidates`. An alphabetized list yields an alphabetical tie-break. Words
  * starting with `-` are flags, which the argument parser reports on its own.
  */
 export function findNearestWord(input: string, candidates: readonly string[]): string | undefined {
@@ -29,8 +29,8 @@ export function findNearestWord(input: string, candidates: readonly string[]): s
 function measureEditDistance(source: string, target: string): number {
   const targetCharacters = Array.from(target);
 
-  // Each row holds the distance from one prefix of the source to every non-empty prefix of the
-  // target. Column zero is held in a scalar rather than the row because its value is always the
+  // Each row stores the distance from one prefix of the source to every non-empty prefix of the
+  // target. Column zero is kept in a scalar rather than the row because its value is always the
   // row's own index, which keeps every read a plain iteration.
   let previousRow = targetCharacters.map((character, index) => ({ character, distance: index + 1 }));
 

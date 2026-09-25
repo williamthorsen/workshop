@@ -2,7 +2,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 /**
- * Returns a path rendered for display, relative to the current directory where it sits inside it.
+ * Returns a path rendered for display, relative to the current directory if it is inside it.
  *
  * A path outside the current directory keeps its absolute form: A chain of `..` segments is
  * harder to act on than the path that the reader would have typed.

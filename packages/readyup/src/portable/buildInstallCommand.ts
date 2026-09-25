@@ -46,7 +46,7 @@ export function buildInstallCommand(moduleName: string): string {
  * Returns the install command for the package manager governing the current directory.
  *
  * The search walks up from the current directory because in a workspace the lockfile and the
- * `packageManager` declaration sit at the repo root while commands run from a package
+ * `packageManager` declaration are at the repo root while commands run from a package
  * subdirectory. Within a directory an explicit `packageManager` outranks a lockfile, and the
  * nearest directory naming a manager wins over any further up.
  */

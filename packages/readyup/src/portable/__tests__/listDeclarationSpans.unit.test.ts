@@ -136,7 +136,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 1, name: 'round', startLine: 1 }]);
   });
 
-  it('reads a trailing const assertion as part of the declaration holding it', () => {
+  it('reads a trailing const assertion as part of the declaration containing it', () => {
     const spans = listSpans(['export const config = {', '  places: 2,', '} as const;', 'function helper() {}']);
 
     expect(spans).toStrictEqual([
@@ -154,7 +154,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 2, name: 'message', startLine: 2 }]);
   });
 
-  it('reads a named function expression in an argument list as part of the declaration holding it', () => {
+  it('reads a named function expression in an argument list as part of the declaration containing it', () => {
     const spans = listSpans([
       'export const compare = createComparator(',
       '  function byLength(a: string, b: string) {',
@@ -166,13 +166,13 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 5, name: 'compare', startLine: 1 }]);
   });
 
-  it('reads a named class expression in an initializer as part of the declaration holding it', () => {
+  it('reads a named class expression in an initializer as part of the declaration containing it', () => {
     const spans = listSpans(['export const Guard = class Inner {', '  check() {}', '};']);
 
     expect(spans).toStrictEqual([{ endLine: 3, name: 'Guard', startLine: 1 }]);
   });
 
-  it('reads a named function expression returned by an arrow as part of the declaration holding it', () => {
+  it('reads a named function expression returned by an arrow as part of the declaration containing it', () => {
     const spans = listSpans([
       'export const wrap = () =>',
       '  function inner(value: string) {',
@@ -183,7 +183,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 4, name: 'wrap', startLine: 1 }]);
   });
 
-  it('reads an async function expression in an argument list as part of the declaration holding it', () => {
+  it('reads an async function expression in an argument list as part of the declaration containing it', () => {
     const spans = listSpans([
       'export const debounced = debounce(',
       '  async function refresh(id: string) {',
@@ -196,7 +196,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 6, name: 'debounced', startLine: 1 }]);
   });
 
-  it('reads an async function expression returned by an arrow as part of the declaration holding it', () => {
+  it('reads an async function expression returned by an arrow as part of the declaration containing it', () => {
     const spans = listSpans([
       'export const wrap = () =>',
       '  async function inner(id: string) {',
@@ -207,13 +207,13 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 4, name: 'wrap', startLine: 1 }]);
   });
 
-  it('reads a function expression applied by a new operator as part of the declaration holding it', () => {
+  it('reads a function expression applied by a new operator as part of the declaration containing it', () => {
     const spans = listSpans(['export const made = new function Inner() {', '  this.a = 1;', '};']);
 
     expect(spans).toStrictEqual([{ endLine: 3, name: 'made', startLine: 1 }]);
   });
 
-  it('reads a dynamic import as part of the declaration holding it', () => {
+  it('reads a dynamic import as part of the declaration containing it', () => {
     const spans = listSpans(['export const registry = await import(', "  './registry.ts'", ');', 'const tail = 1;']);
 
     expect(spans).toStrictEqual([
@@ -265,7 +265,7 @@ describe(listDeclarationSpans, () => {
     expect(spans).toStrictEqual([{ endLine: 4, name: 'outer', startLine: 1 }]);
   });
 
-  it('names no declaration inside a namespace, which sits at brace depth one', () => {
+  it('names no declaration inside a namespace, which is at brace depth one', () => {
     const spans = listSpans(['export namespace deep {', '  export function describeError(error: unknown) {}', '}']);
 
     expect(spans).toStrictEqual([]);
@@ -281,14 +281,14 @@ describe(listDeclarationSpans, () => {
     ]);
   });
 
-  it('lists no span for a source holding no declaration', () => {
+  it('lists no span for a source containing no declaration', () => {
     expect(listSpans([''])).toStrictEqual([]);
   });
 });
 
 // region | Helpers
 
-/** Blanks the lines supplied by a case and lists the spans that they hold, as a caller of the primitive does. */
+/** Blanks the lines supplied by a case and lists the spans that they contain, as a caller of the primitive does. */
 function listSpans(lines: readonly string[]): DeclarationSpan[] {
   return listDeclarationSpans(blankNonCode(lines.join('\n')));
 }

@@ -13,7 +13,7 @@ const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
  * A `MODULE_NOT_FOUND` or `ERR_MODULE_NOT_FOUND` failure is rethrown naming the file being evaluated
  * and `moduleErrorDetail`, with the install command on a `hint` property beside the message. The hint
  * is set on the error rather than a typed failure, because the same failure is classified under two
- * different codes. An imported value that is not a plain object raises an error naming `exportNoun`.
+ * different codes. When the imported value is not a plain object, the function throws an error naming `exportNoun`.
  */
 export async function jitiImport(
   resolvedPath: string,
