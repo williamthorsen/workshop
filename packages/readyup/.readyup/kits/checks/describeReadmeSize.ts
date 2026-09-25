@@ -11,13 +11,13 @@ export const README_CODE_POINT_LIMIT = 65_536;
  * Whether the README that npm would publish fits inside the registry's `readme` field.
  *
  * The registry truncates the field silently and mid-sentence, so npmjs.com serves a README over the
- * limit as a page that stops inside whatever section reaches the boundary, and shows no section after
+ * limit as a page that stops inside whatever section crosses the limit, and shows no section after
  * it. Code points are the unit in which the registry counts, which is neither bytes nor UTF-16 units.
  *
- * A package with no README passes: There is nothing for npm to truncate. The check has no verdict for
- * a package root that it cannot read, so the read goes uncaught. The measure is the file as committed,
- * and release-kit inserts the version's notes at publish time, so the published field sits closer to
- * the limit than this reports.
+ * A package with no README passes: There is nothing for npm to truncate. The check leaves a failed
+ * read of the package root uncaught, because it has no verdict for a root that it cannot read. The
+ * measure is the file as committed, and release-kit inserts the version's notes at publish time, so
+ * the published field is closer to the limit than this reports.
  */
 export function describeReadmeSize(): CheckOutcome {
   const file = findReadme();
@@ -35,11 +35,11 @@ export function describeReadmeSize(): CheckOutcome {
 // region | Helpers
 
 /**
- * The README that npm would read out of the package root, or `undefined` where it would find none.
+ * The README that npm would read out of the package root, or `undefined` when it would find none.
  *
  * Chosen the way `@npmcli/package-json` chooses it: A candidate is a root file named `README` or
  * `README.*` in any case, the first whose extension reads as Markdown wins, and a bare `README` stands
- * in where none does. A lone `README.txt` is therefore no README to npm, and none to this check either.
+ * in when none does. A lone `README.txt` is therefore no README to npm, and none to this check either.
  */
 function findReadme(): string | undefined {
   const candidates = readdirSync(process.cwd(), { withFileTypes: true })

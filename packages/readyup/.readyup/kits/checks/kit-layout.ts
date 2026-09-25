@@ -7,22 +7,22 @@ import { fileExists, isRecord, type JsonPathSpec, readJsonFile } from 'readyup/c
 
 // -- Paths --
 
-/** Directory holding the manifest. Every path that the manifest records is relative to it. */
+/** Directory containing the manifest. Every path that the manifest records is relative to it. */
 export const MANIFEST_DIR = path.dirname(DEFAULT_MANIFEST_PATH);
 
-/** Directory holding kit sources and the bundles compiled from them. */
+/** Directory containing kit sources and the bundles compiled from them. */
 export const KITS_DIR = path.join(MANIFEST_DIR, 'kits');
 
 // -- Skip reasons --
 
-/** Detail reported by a check that stands down for want of a compiled bundle. */
+/** Detail reported by a check that skips for want of a compiled bundle. */
 export const NO_BUNDLES_REASON = 'There are no compiled kits';
 
 /**
  * Paths of the compiled bundles in the kit directory, relative to the working directory.
  *
- * An absent or unreadable kit directory reads as holding none, which is what lets a check distinguish
- * a project that compiles nothing from one whose bundles have gone missing.
+ * The function treats an absent or unreadable kit directory as containing none, which lets a check
+ * distinguish a project that compiles nothing from one whose bundles have gone missing.
  */
 export function listCompiledBundlePaths(): string[] {
   let entries;
@@ -60,7 +60,7 @@ export interface ManifestEntry {
  * Every field may be absent, because the record comes out of raw JSON rather than the manifest schema:
  * A kit reporting on a manifest cannot fail to load over the manifest on which it is reporting. Only an
  * inline record contains `paths`, which is the specifier that produced the projection whose hash it
- * holds.
+ * records.
  */
 export interface ManifestInput {
   hash: string | undefined;
@@ -72,8 +72,8 @@ export interface ManifestInput {
 /**
  * Kit entries that the manifest records.
  *
- * A manifest that is absent, unparseable, or missing its `kits` array reads as recording none: These
- * kits report on what the project has, and cannot themselves fail to load over what they are checking.
+ * The function treats a manifest that is absent, unparseable, or missing its `kits` array as recording
+ * none: These kits report on what the project has, and cannot themselves fail to load over what they are checking.
  */
 export function readManifestEntries(): ManifestEntry[] {
   const manifest = readJsonFile(DEFAULT_MANIFEST_PATH);
@@ -112,7 +112,7 @@ export function skipWithoutKits(): SkipResult {
 /**
  * Narrows a value to a `pickJson` path specifier, or `undefined` when it is anything else.
  *
- * A specifier holding anything but a key or a key path is rejected whole rather than in part, since a
+ * A specifier containing anything but a key or a key path is rejected whole rather than in part, since a
  * projection taken over some of the paths recorded is not the projection whose hash was recorded.
  */
 function asJsonPathSpec(value: unknown): JsonPathSpec | undefined {

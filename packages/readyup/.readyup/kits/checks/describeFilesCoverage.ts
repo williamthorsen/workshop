@@ -4,13 +4,13 @@ import { readPackageJson } from 'readyup/check-utils';
 import { MANIFEST_DIR } from './kit-layout.ts';
 
 /**
- * Whether the package's `files` allowlist ships the kit directory.
+ * Whether the package's `files` allowlist includes the kit directory.
  *
- * A containment test rather than an npm-packlist emulation: An absent `files` field ships everything
- * and passes, and otherwise one entry must name the kit directory or the package root. A maintainer
- * using globs or negations in `files` gets a false failure. That is accepted, because the bundles and
- * the manifest have to travel together, and a glob covering both cannot be told from one covering
- * neither without resolving it the way npm would.
+ * A containment test rather than an npm-packlist emulation: When `files` is absent, npm publishes
+ * everything and the check passes, and otherwise one entry must name the kit directory or the package
+ * root. A maintainer using globs or negations in `files` gets a false failure. That is accepted, because
+ * the bundles and the manifest have to be published together, and a glob covering both cannot be told
+ * from one covering neither without resolving it the way npm would.
  */
 export function describeFilesCoverage(): CheckOutcome {
   const packageJson = readPackageJson();
@@ -18,7 +18,7 @@ export function describeFilesCoverage(): CheckOutcome {
 
   const files = packageJson['files'];
   if (files === undefined) {
-    return { ok: true, detail: 'package.json declares no "files" allowlist, so everything ships' };
+    return { ok: true, detail: 'package.json declares no "files" allowlist, so everything is published' };
   }
   if (!Array.isArray(files)) return { ok: false, detail: '"files" is not an array' };
 

@@ -24,8 +24,8 @@ const EDITED_BUNDLE = `${SELF_CONTAINED_BUNDLE}// edited by hand\n`;
 /**
  * Asserts that `rdy verify` and the `freshness` kit reach one verdict on a manifest that neither wrote.
  *
- * The two read the same record through different code, and a recorded hash of a length other than the
- * eight characters written by `rdy compile` is where they can disagree. Each case asserts they agree
+ * The two read the same record through different code, and they can disagree on a recorded hash of a
+ * length other than the eight characters written by `rdy compile`. Each case asserts they agree
  * rather than asserting two literal verdicts, so a change to either reader's wording leaves the test
  * meaningful.
  */
@@ -63,7 +63,7 @@ describe('recorded-hash readers', () => {
 
   // Below the floor the two readers agree through the schema rather than through the comparison:
   // `readManifest` rejects the record before `checkDrift` sees it, and `checkDrift` called directly on
-  // a truthful seven-character prefix would return `ok` where the kit reports a malformed record.
+  // a truthful seven-character prefix would return `ok` whereas the kit reports a malformed record.
   it('both reject a bundle recorded with a hash shorter than the format admits', async () => {
     const targetHash = computeHash(SELF_CONTAINED_BUNDLE).slice(0, 7);
     writeKitManifest(projectRoot, [{ ...writeKit(projectRoot, 'default'), targetHash }]);
@@ -80,7 +80,7 @@ describe('recorded-hash readers', () => {
 
 // region | Helpers
 
-/** How each reader judges the recorded bundle: `true` where it finds the kit fresh. */
+/** How each reader judges the recorded bundle: `true` when it finds the kit fresh. */
 async function readsAsFresh(entry: { name: string; path: string; targetHash: string }): Promise<Verdicts> {
   const verify = checkDrift(entry, path.dirname(FIXTURE_MANIFEST_PATH)).kind === 'ok';
 

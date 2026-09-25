@@ -8,18 +8,18 @@ import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
  *
  * Exactly the `external` list passed to esbuild by `rdy compile` (see `src/compile/compileConfig.ts`).
  * Anything else -- a bare package name, a relative path -- names a module that the consumer's project
- * would have to supply, which is what makes a bundle no longer self-contained.
+ * would have to supply, which makes a bundle no longer self-contained.
  */
 const ALLOWED_PREFIXES = ['node:', 'readyup/'];
 const ALLOWED_SPECIFIERS = new Set(['readyup']);
 
 /**
- * Patterns capturing the module specifier from each import form esbuild emits.
+ * Patterns capturing the module specifier from each import form that esbuild emits.
  *
- * A textual scan rather than a parse: Matching generated ESM needs one regular expression where
+ * A textual scan rather than a parse: Matching generated ESM needs one regular expression whereas
  * parsing would need a dependency that the kit cannot bundle. The two statement forms are anchored to
- * the start of a line, which is where esbuild puts every import that it hoists, and which is what keeps
- * the scan off specifier-shaped text in a comment -- esbuild preserves comments inside an expression,
+ * the start of a line, which is where esbuild puts every import that it hoists, and the anchor keeps
+ * the scan from matching specifier-shaped text in a comment -- esbuild preserves comments inside an expression,
  * so a scan that read anywhere on a line would report a documented example as a real import.
  */
 const SPECIFIER_PATTERNS = [
@@ -27,7 +27,7 @@ const SPECIFIER_PATTERNS = [
   /^[ \t]*(?:import|export)\b[^;]*?\bfrom\s*["']([^"']+)["']/gm,
   // A side-effect-only import, which has no clause before the specifier
   /^[ \t]*import\s+["']([^"']+)["']/gm,
-  // A dynamic import, which is an expression and so can sit anywhere on a line
+  // A dynamic import, an expression that can appear anywhere on a line
   /\bimport\s*\(\s*["']([^"']+)["']/g,
 ];
 
@@ -65,7 +65,7 @@ export function findForeignSpecifiers(bundle: string): string[] {
 
 // region | Helpers
 
-/** Reports the specifiers that keep a bundle from standing on its own. */
+/** Reports the specifiers that keep a bundle from being self-contained. */
 function describeSelfContainment(bundlePath: string): CheckOutcome {
   const bundle = readFile(bundlePath);
   if (bundle === undefined) return { ok: false, detail: `${bundlePath} is missing` };

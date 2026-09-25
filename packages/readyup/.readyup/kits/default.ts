@@ -2,7 +2,7 @@
  * Authoring hygiene for any project that defines readyup kits.
  *
  * Advisory throughout: A project mid-edit is not broken, and this kit is meant to be safe to run at any
- * moment. `publishing` is the strict counterpart, for a package that ships its kits to consumers.
+ * moment. `publishing` is the strict counterpart, for a package that publishes its kits to consumers.
  *
  *   rdy run --from npm:readyup
  */
@@ -12,7 +12,7 @@ import { fileExists } from 'readyup/check-utils';
 import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
 import { skipWithoutBundles, skipWithoutKits } from './checks/kit-layout.ts';
 
-/** The one path that `loadConfig` looks in; see `src/loadConfig.ts`. */
+/** The one path in which `loadConfig` looks; see `src/loadConfig.ts`. */
 const CONFIG_PATH = '.config/readyup.config.ts';
 
 export default defineRdyKit({

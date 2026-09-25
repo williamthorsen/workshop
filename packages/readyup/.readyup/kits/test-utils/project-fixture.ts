@@ -8,10 +8,10 @@ import { hashFile, hashProjection } from '../../../src/verify/targetHash.ts';
 /** Path at which a fixture kit's inlined module is recorded, relative to the manifest's own directory. */
 export const FIXTURE_INLINED_MODULE_PATH = path.join('kits', 'checks', 'helper.ts');
 
-/** Kit directory that a fixture project holds, relative to its root. */
+/** Kit directory that a fixture project contains, relative to its root. */
 export const FIXTURE_KITS_DIR = path.join('.readyup', 'kits');
 
-/** Manifest path that a fixture project holds, relative to its root. */
+/** Manifest path that a fixture project contains, relative to its root. */
 export const FIXTURE_MANIFEST_PATH = path.join('.readyup', 'manifest.json');
 
 /** A manifest kit entry, as `rdy compile` records one. */
@@ -48,7 +48,7 @@ export function withInputs(entry: FixtureManifestEntry, ...inputs: FixtureManife
  * Writes a JSON file that a compile would have projected, and returns the record of that projection.
  *
  * The projection and its hash come from the same helpers through which `rdy compile` records, so a test
- * says a projection has moved by editing a picked field rather than by writing a hash of its own.
+ * changes a projection by editing a picked field rather than by writing a hash of its own.
  */
 export function writeInlineInput(
   projectRoot: string,
@@ -63,8 +63,8 @@ export function writeInlineInput(
 /**
  * Writes a kit source and the bundle compiled from it, and returns the entry recording both.
  *
- * The hashes come from the same helper used by `rdy compile`, so a fixture written this way is fresh by
- * construction and a test asking about drift says so by editing the entry that it gets back.
+ * A fixture written this way is fresh by construction, because the hashes come from the same helper
+ * used by `rdy compile`. A test about drift introduces the drift by editing the entry that it gets back.
  */
 export function writeKit(projectRoot: string, name: string, options: WriteKitOptions = {}): FixtureManifestEntry {
   const { bundle = SELF_CONTAINED_BUNDLE, source = DEFAULT_SOURCE } = options;
@@ -110,8 +110,8 @@ export function writePackageJson(projectRoot: string, packageJson: Record<string
  * Writes the manifest recording the given kits exactly as given, records that no schema would produce
  * included.
  *
- * The door for a manifest written by a hand edit or a foreign tool, which is what the kits' defensive
- * narrowing exists for and what a schema-typed entry cannot express.
+ * Covers a manifest written by a hand edit or a foreign tool, for which the kits' defensive narrowing
+ * exists and which a schema-typed entry cannot express.
  */
 export function writeRawKitManifest(projectRoot: string, kits: Array<Record<string, unknown>>): void {
   const manifestPath = path.join(projectRoot, FIXTURE_MANIFEST_PATH);
@@ -124,7 +124,7 @@ export function writeReadme(projectRoot: string, content: string, name = 'README
   writeFileSync(path.join(projectRoot, name), content);
 }
 
-/** Writes a readyup config at the one path that `loadConfig` looks in. */
+/** Writes a readyup config at the one path in which `loadConfig` looks. */
 export function writeRdyConfig(projectRoot: string): void {
   const configPath = path.join(projectRoot, '.config', 'readyup.config.ts');
   mkdirSync(path.dirname(configPath), { recursive: true });
@@ -149,7 +149,7 @@ function writeInputFile(projectRoot: string, recordedPath: string, contents: str
   return filePath;
 }
 
-/** Overrides for the two files laid down by `writeKit`. */
+/** Overrides for the two files written by `writeKit`. */
 interface WriteKitOptions {
   bundle?: string | undefined;
   source?: string | undefined;

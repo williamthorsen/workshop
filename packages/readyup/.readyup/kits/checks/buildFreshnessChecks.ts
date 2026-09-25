@@ -17,7 +17,7 @@ import {
   skipWithoutBundles,
 } from './kit-layout.ts';
 
-/** Detail reported by a check that stands down for an entry compiled before readyup recorded a closure. */
+/** Detail reported by a check that skips an entry compiled before readyup recorded a closure. */
 const NO_INPUTS_REASON = 'The manifest records no inputs for it';
 
 /**
@@ -25,7 +25,7 @@ const NO_INPUTS_REASON = 'The manifest records no inputs for it';
  * manifest records every compiled kit.
  *
  * The checks are built when the kit module is evaluated, so a drifted kit is named on its own line
- * rather than buried in one check's detail. Severity is left to the kit: Freshness is advisory while
+ * rather than listed in one check's detail. Severity is left to the kit: Freshness is advisory while
  * authoring and blocking while publishing, and the same checks serve both.
  */
 export function buildFreshnessChecks(): RdyCheck[] {
@@ -68,7 +68,7 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
  * Checks that the manifest records every bundle in the kit directory.
  *
  * Compiling nothing is legitimate -- `rdy run --jit` runs a kit straight from its source -- so this
- * skips when the kit directory holds no bundle. An unrecorded bundle is still loaded by `rdy run` and
+ * skips when the kit directory contains no bundle. An unrecorded bundle is still loaded by `rdy run` and
  * fetched by a consumer who names it, while `rdy list` no longer names it, and a compile deletes only
  * the bundles that the manifest records.
  */
@@ -103,7 +103,7 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
  * Compares everything a kit's compile read against what was recorded for it.
  *
  * Names every input that no longer matches rather than the first, so one pass names everything to fix.
- * The count stands as the evidence on a pass, since a kit records one input per file read by its compile.
+ * The count is the evidence on a pass, since a kit records one input per file read by its compile.
  */
 function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
   const failures = inputs.map(describeInputDrift).filter((failure) => failure !== undefined);
@@ -121,7 +121,7 @@ function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
  * Compares what was hashed against the hash recorded for it, and reports how it differs.
  *
  * `verb` names what the digest covers: An inline input's is over the projection substituted into the
- * bundle, not over the contents of the file holding it.
+ * bundle, not over the contents of the file containing it.
  */
 function describeHashDrift(filePath: string, hashed: string, expected: string, verb: string): string | undefined {
   const actual = hashToRecordedLength(hashed, expected);
@@ -132,7 +132,7 @@ function describeHashDrift(filePath: string, hashed: string, expected: string, v
 /**
  * Reports which of a recorded input's three required fields are absent.
  *
- * Leads with the path where the record has one, so several incomplete records stay distinguishable
+ * Leads with the path when the record has one, so that several incomplete records stay distinguishable
  * in a detail that joins them.
  */
 function describeIncompleteInput(input: ManifestInput): string {
@@ -150,7 +150,7 @@ function describeIncompleteInput(input: ManifestInput): string {
  * Reports how one recorded input differs from what the compile read, or nothing when it still matches.
  *
  * An inline input is decided by the projection that `rdy compile` recorded rather than by the file
- * holding it, which is what keeps an edit to a field that the kit did not pick from reading as staleness.
+ * containing it, so that an edit to a field that the kit did not pick does not count as staleness.
  * That projection comes from readyup itself: Once its serialization is hashed it is a format, and a
  * second implementation of it would drift from the one that wrote the hash.
  */
