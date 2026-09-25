@@ -8,9 +8,9 @@ const TOPIC_LINES = Object.entries(TOPICS)
 /**
  * Where help output sends a reader for anything it does not cover.
  *
- * Help lists the surface; the doc files explain it, and the skill contains the authoring judgment that neither states. The
- * installed path leads because a reader in a consuming repo can open it without a fetch; the repository URL follows
- * for a global install, which has no such path.
+ * Help lists the surface; the doc files explain it, and the skill contains the authoring judgment that neither
+ * states. The installed path leads because a reader in a consuming repo can open it without a fetch; the repository
+ * URL follows for a global install, which has no such path.
  */
 export const DOCS_POINTER = `Full documentation: node_modules/readyup/docs/
    Online: https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme

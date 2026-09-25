@@ -36,8 +36,8 @@ describe('rdy help, spawned', () => {
   });
 
   // The published entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it
-  // is the only spawn that shows the package root still resolving to the directory that contains `docs/`. It needs build
-  // output, which `nmr ci` produces before it checks and a bare `nmr test` does not.
+  // is the only spawn that shows the package root still resolving to the directory that contains `docs/`.
+  // It needs build output, which `nmr ci` produces before it checks and a bare `nmr test` does not.
   it.skipIf(!existsSync(buildOutput))('resolves the doc files from the published entry point', () => {
     const stdout = runHelp(publishedCli, 'concepts', tmpdir());
 
