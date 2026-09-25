@@ -31,6 +31,11 @@ function asFix(value: unknown): string {
 
 /* eslint-enable @typescript-eslint/consistent-type-assertions */
 
+/** Throws, as a crashing check or skip function does. */
+function throwing(): never {
+  throw new Error('boom');
+}
+
 describe(runRdy, () => {
   describe('flat checklists', () => {
     it('marks passing checks as passed', async () => {
@@ -1451,17 +1456,21 @@ describe(runRdy, () => {
       expect(result.fix).toBe('Unresolvable fix: the accessor threw "version constants are not initialized yet"');
     });
 
-    it('resolves a fix accessor for a check whose own function throws', async () => {
+    it.each<[string, Pick<RdyCheck, 'check' | 'skip'>]>([
+      ['check throws', { check: throwing }],
+      ['skip throws', { check: () => true, skip: throwing }],
+      ['skip returns an uninterpretable value', { check: () => true, skip: skipReturning(true) }],
+      ['check returns an uninterpretable value', { check: returning('yes') }],
+    ])('reports no fix and reads no fix accessor when the %s', async (_label, functions) => {
+      let hits = 0;
       const checklist: RdyChecklist = {
         name: 'fixes',
         checks: [
           {
-            name: 'throws',
-            check: () => {
-              throw new Error('boom');
-            },
-            severity: 'warn',
+            name: 'broken',
+            ...functions,
             get fix() {
+              hits++;
               return 'Run the thing';
             },
           },
@@ -1472,9 +1481,9 @@ describe(runRdy, () => {
       const result = report.results[0];
       assert.ok(result?.status === 'failed');
 
-      expect(result.fix).toBe('Run the thing');
-      expect(result.error?.message).toBe('boom');
-      expect(result.severity).toBe('error');
+      expect(result.error).not.toBeNull();
+      expect(result.fix).toBeNull();
+      expect(hits).toBe(0);
     });
 
     it('keeps a failure verdict when its fix accessor returns a non-string', async () => {
