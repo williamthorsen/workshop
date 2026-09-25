@@ -52,7 +52,7 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
 /**
  * Returns a check that verifies a local ref matches its remote counterpart.
  *
- * A closure-cached probe holds the comparison, so the network call runs at most once however many
+ * A closure-cached probe stores the comparison, so the network call runs at most once however many
  * times the check is evaluated.
  */
 export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyCheck {

@@ -34,7 +34,7 @@ export async function compareRefToRemote(
 }
 
 /**
- * Returns a local ref's SHA, or `undefined` where the ref does not exist, rethrowing errors that mean anything else.
+ * Returns a local ref's SHA, or `undefined` when the ref does not exist, rethrowing errors that mean anything else.
  */
 async function resolveLocalRef(path: string, ref: string): Promise<string | undefined> {
   try {
@@ -46,7 +46,7 @@ async function resolveLocalRef(path: string, ref: string): Promise<string | unde
 }
 
 /**
- * Returns a remote ref's SHA via `ls-remote`, or `undefined` where the ref does not exist. Throws on a network error.
+ * Returns a remote ref's SHA via `ls-remote`, or `undefined` when the ref does not exist. Throws on a network error.
  */
 async function resolveRemoteRef(path: string, ref: string, remote: string): Promise<string | undefined> {
   const output = await runGit(path, 'ls-remote', remote, ref);
@@ -55,7 +55,7 @@ async function resolveRemoteRef(path: string, ref: string, remote: string): Prom
   return sha;
 }
 
-/** Returns the ahead/behind counts from the local tracking ref, or `undefined` where they cannot be computed. */
+/** Returns the ahead/behind counts from the local tracking ref, or `undefined` when they cannot be computed. */
 async function resolveAheadBehind(
   path: string,
   ref: string,
