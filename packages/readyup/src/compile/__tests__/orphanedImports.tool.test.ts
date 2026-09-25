@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { buildBundle } from '../buildBundle.ts';
 
 // A kit that imports only the builtin-free export, so tree-shaking removes the sole consumer of every
-// externalized specifier the helper module imports.
+// externalized specifier that the helper module imports.
 const KIT_DROPPING_HELPER = "import { greeting } from './helpers.ts';\nexport const kit = greeting();\n";
 
-// The same helper module reached through its externalized-specifier consumer, so every import survives.
+// The same helper module reached through its externalized-specifier consumer. Every import survives.
 const KIT_KEEPING_HELPER = "import { consume } from './helpers.ts';\nexport const kit = consume();\n";
 
 describe(buildBundle, () => {
@@ -52,13 +52,13 @@ describe(buildBundle, () => {
 
     const bundle = (await buildBundle(entryPath)).bytes.toString('utf8');
 
-    // An inlined module emits no import statement, so the exact import list is what proves externality.
+    // An inlined module emits no import statement, so the exact import list proves externality.
     expect(importLines(bundle)).toStrictEqual(['import { fileExists } from "readyup/check-utils";']);
   });
 
   it('compiles a node: specifier that esbuild does not recognize', async () => {
-    // What makes dropping `node:*` from `external` safe: esbuild externalizes the whole `node:` prefix
-    // under `platform: 'node'` rather than a fixed list, so a builtin newer than esbuild still resolves.
+    // Dropping `node:*` from `external` is safe because esbuild externalizes the whole `node:` prefix
+    // under `platform: 'node'` rather than a fixed list: A builtin newer than esbuild still resolves.
     const entryPath = writeKitTree("import { open } from 'node:not_a_real_builtin';", 'open', KIT_KEEPING_HELPER);
 
     const bundle = (await buildBundle(entryPath)).bytes.toString('utf8');
@@ -79,7 +79,7 @@ function importLines(bundle: string): string[] {
  * kit's path.
  *
  * `binding` is referenced by `consume` alone, so which kit source is supplied decides whether the import
- * of `binding` has a surviving consumer. The tree sits outside the repository, so nothing above it is
+ * of `binding` has a surviving consumer. Because the tree is outside the repository, nothing above it is
  * discoverable but what the test puts there.
  */
 function writeKitTree(importStatement: string, binding: string, kitSource = KIT_DROPPING_HELPER): string {

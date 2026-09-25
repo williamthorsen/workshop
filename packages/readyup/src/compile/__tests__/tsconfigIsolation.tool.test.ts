@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';
 
-// A decorator and a class field, so the fixture exercises both settings declared by the kit tsconfig.
+// A decorator and a class field, so that the fixture exercises both settings declared by the kit tsconfig.
 const KIT_SOURCE = [
   'declare const decorate: (...args: never[]) => void;',
   'export class Kit {',
@@ -17,13 +17,13 @@ const KIT_SOURCE = [
   '',
 ].join('\n');
 
-// The same field without the decorator, which moves every field into the constructor and takes the
-// class-body form of a defined field with it.
+// The same field without the decorator, which moves every field into the constructor and eliminates the
+// class-body form of a defined field.
 const FIELD_SOURCE = ['export class Kit {', '  field = 1;', '}', ''].join('\n');
 
 // Declares the opposite of both kit settings -- `experimentalDecorators` directly, and
 // `useDefineForClassFields` through the `target` from which esbuild derives it -- plus an alias that
-// resolves, so every assertion below fails if a kit ever reads a host config again.
+// resolves, so that every assertion below fails if a kit ever reads a host config again.
 const HOST_TSCONFIG = JSON.stringify({
   compilerOptions: { experimentalDecorators: true, paths: { '~/*': ['./src/*'] }, target: 'ES2020' },
 });
@@ -31,7 +31,7 @@ const HOST_TSCONFIG = JSON.stringify({
 const ALIASED_MODULE = "export const thing = 'aliased';\n";
 
 describe(buildBundle, () => {
-  it('compiles to identical bytes whether or not a tsconfig.json sits above the kit', async () => {
+  it('compiles to identical bytes whether or not a tsconfig.json is above the kit', async () => {
     const entryPath = writeKitTree(KIT_SOURCE);
 
     const withoutHostConfig = await buildBundle(entryPath);
@@ -46,9 +46,9 @@ describe(buildBundle, () => {
     const decoratorBundle = (await buildBundle(writeKitTree(KIT_SOURCE))).bytes.toString('utf8');
 
     // esbuild names no setting in its output, so the declared values are read back from the lowering
-    // that they produce: A defined field stays in the class body where an assigned one moves into the
-    // constructor, and a proposal-style decorator reaches for `__decorateElement` where the legacy one
-    // reaches for `__decorateClass`.
+    // that they produce: A defined field stays in the class body whereas an assigned one moves into the
+    // constructor, and a proposal-style decorator calls `__decorateElement` whereas the legacy one
+    // calls `__decorateClass`.
     expect(fieldBundle).toContain('field = 1');
     expect(fieldBundle).not.toContain('this.field = 1');
     expect(decoratorBundle).toContain('__decorateElement');
@@ -68,8 +68,8 @@ describe(buildBundle, () => {
 /**
  * Writes a kit source into a fresh temp tree and returns the kit's path.
  *
- * The tree sits outside the repository, so nothing above it is discoverable but what a test puts
- * there, and the kit sits one directory below the tree root, leaving room for a config above it.
+ * The tree is outside the repository, so nothing above it is discoverable but what a test puts
+ * there, and the kit is one directory below the tree root, leaving room for a config above it.
  */
 function writeKitTree(source: string): string {
   const tree = disposeOnTestFinished(createTempTree({ 'kits/kit.ts': source }, { prefix: 'rdy-host-tsconfig-' }));
@@ -80,7 +80,7 @@ function writeKitTree(source: string): string {
 /**
  * Writes the host config into the directory above a kit, where esbuild's search would reach it.
  *
- * The module to which the config's `paths` entry maps is written alongside it, so the alias would resolve
+ * The module to which the config's `paths` entry maps is written alongside it, so that the alias would resolve
  * and a kit reading the config would compile rather than fail.
  */
 function writeHostTsconfig(entryPath: string): void {
