@@ -277,7 +277,7 @@ Invalid kit at .readyup/kits/default.js:
 
 A typo'd `severity` is the mistake for which this matters most: An unrecognized value would otherwise exclude the check from both thresholds, and the run would pass.
 
-A `fix` written as a getter is the half of `fix` validation that is deferred. Load leaves it unread, and the check that fails resolves it -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, is blocked, or reports an `Error:`, or whose failing outcome supplies its own `fix`, never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading. An outcome's `fix` that is not a string is reported in the same slot, and the check's `fix` is not consulted in its place.
+A `fix` written as a getter is the half of `fix` validation that is deferred. Loading the kit does not read it, and readyup resolves it only for a check that fails -- so a getter may reference a constant declared below the kit literal, and a check that passes, skips, is blocked, or reports an `Error:`, or whose failing outcome supplies its own `fix`, never invokes it. A getter that throws or yields a non-string is reported as `Unresolvable fix: ...` in that failure's remediation slot, rather than as a load error that prevents the whole kit from loading. An outcome's `fix` that is not a string is reported in the same slot, and the check's `fix` is not consulted in its place.
 
 ## Testing a kit
 

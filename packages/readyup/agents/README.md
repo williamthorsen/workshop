@@ -16,7 +16,7 @@ The choice changes nothing about adoption: Both modes require the consumer to ru
 
 ## Constraints on the rulebook body
 
-A rulebook may link only into `skills/` and `scripts/`. Every other relative Markdown target is rejected, a path into `node_modules/` included: It resolves under `guidance/rulebooks/` and reports as a rulebook that should have been invoked rather than linked. Name a path outside those trees in a code span instead of a link.
+A rulebook may link only into `skills/` and `scripts/`. Every other relative Markdown target is rejected, a path into `node_modules/` included: `codeassembly validate` resolves it under `guidance/rulebooks/` and reports it as a rulebook that should have been invoked rather than linked. Name a path outside those trees in a code span instead of a link.
 
 Anchor-only links are checked against the body in which they appear, so a fragment naming a heading in `packages/readyup/README.md` or in a file under `packages/readyup/docs/` fails the run. Check `](#` before moving a section between the rulebook and either.
 

@@ -374,7 +374,7 @@ A plain `rdy list` and `rdy list --packages` read the settings from the file nam
 📓 default · Authoring hygiene for a project that defines readyup kits
    📋 setup
    📋 freshness
-📓 publishing · Publication readiness for a package that ships readyup kits
+📓 publishing · Publication readiness for a package that publishes readyup kits
    📋 packaging
    📋 freshness
    📋 self-containment

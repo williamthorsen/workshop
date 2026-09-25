@@ -25,7 +25,7 @@ const DEFAULT_BUNDLE_PATH = path.join(KITS_DIR, 'default.js');
 
 export default defineRdyKit({
   defaultSeverity: 'error',
-  description: 'Publication readiness for a package that ships readyup kits',
+  description: 'Publication readiness for a package that publishes readyup kits',
   checklists: [
     {
       name: 'packaging',

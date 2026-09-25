@@ -120,8 +120,8 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed' });
     });
 
-    // `default` skips every check for a project that defines no kits; a package that ships them and has
-    // none is broken, so this kit keeps reading the absence as an error.
+    // `default` skips every check for a project that defines no kits; a package that runs `publishing` and has
+    // no kits is broken, so this kit keeps reading the absence as an error.
     it('reports a package containing no kit directory at all', async () => {
       writePackageJson(projectRoot, { files: ['.readyup'] });
 

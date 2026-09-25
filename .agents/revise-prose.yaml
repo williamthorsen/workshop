@@ -1,926 +1,1157 @@
-units:
+rules:
+  capitalization-after-colon:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: false
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  doc-descriptions:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: false
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  em-dash:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: true
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  inline-comments:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: false
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
   plain-speech:
-    version: '4'
-    swept-at: 2026-09-12
+    version: '7'
+    swept-at: 2026-09-25
+    detected: false
     roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
       - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
       - packages/readyup/docs
-  williamthorsen-writing-preferences:
-    version: '4'
-    swept-at: 2026-09-12
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  reduced-object-relative:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: true
     roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
       - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
       - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  second-person:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: true
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  sentence-case:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: false
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  so:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: true
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
+  where:
+    version: '1'
+    swept-at: 2026-09-25
+    detected: true
+    roots:
+      - packages/readyup/.config
+      - packages/readyup/.gitignore
+      - packages/readyup/.meta
+      - packages/readyup/.readyup
+      - packages/readyup/CHANGELOG.md
+      - packages/readyup/LICENSE
+      - packages/readyup/README.md
+      - packages/readyup/agents
+      - packages/readyup/bin
+      - packages/readyup/config
+      - packages/readyup/docs
+      - packages/readyup/package.json
+      - packages/readyup/src/help
+      - packages/readyup/tsconfig.json
+      - packages/readyup/vitest.config.ts
 rejections:
-  - rule: plain-speech
-    unit: plain-speech
-    file: packages/readyup/docs/concepts.md
-    phrase: Role glyphs are nouns rather than statuses.
-    ground: a figure that the next sentence already states literally, and the proposed repair reads worse
-    unit-version: '4'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/__tests__/publishing.unit.test.ts
     phrase: consumer runs as the kit source is
-    ground: 'not the construction: a fused head under a comparative, which admits no relativizer'
+    ground: 'not the construction: an as...as comparison, not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/__tests__/publishing.unit.test.ts
     phrase: manifest records default
-    ground: "not the construction: a detail string whose verb is the clause's own"
+    ground: "not the construction: `records` is the sentence's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
-    file: packages/readyup/.readyup/kits/checks/__tests__/findForeignSpecifiers.unit.test.ts
-    phrase: wherever it sits
-    ground: 'outside the rule: a free relative adjunct whose gap fills no argument position'
-  - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
-    phrase: fail an edited bundle recorded
-    ground: "not the construction: `fail` is the sentence's own verb and `recorded` a participle"
+    phrase: Below the floor the two readers agree
+    ground: "not the construction: a fronted adverbial before the main clause's subject"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
-    phrase: floor the two readers
-    ground: 'not the construction: `Below the floor` is a fronted adjunct, and `the two readers agree` is the main clause'
+    phrase: both fail an edited bundle recorded with a %i-character hash
+    ground: 'not the construction: `recorded` is a passive participle'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/checks/__tests__/readerAgreement.unit.test.ts
-    phrase: pass an unchanged bundle recorded
-    ground: "not the construction: `pass` is the sentence's own verb and `recorded` a participle"
+    phrase: both pass an unchanged bundle recorded with a %i-character hash
+    ground: 'not the construction: `recorded` is a passive participle'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/.readyup/kits/checks/kit-layout.ts
-    phrase: raw entry's recorded
-    ground: 'not the construction: a possessive plus a participial modifier'
+    phrase: Projects a raw entry's recorded closure
+    ground: 'not the construction: `recorded` is an attributive participle'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
+    file: packages/readyup/.readyup/kits/test-utils/project-fixture.ts
+    phrase: a fixture kit's inlined module
+    ground: 'not the construction: `inlined` is an attributive participle'
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
     phrase: collapse a group of skips
-    ground: 'not the construction: `structures` is the subject of the interrogative clause and `collapse` its own verb'
+    ground: 'not the construction: verb and object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
     phrase: whenever the subject is not yours
-    ground: 'not the construction: an adverbial clause, not a relative clause'
+    ground: 'not the construction: adverbial clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: anywhere a checklist name is
-    ground: 'outside the rule: `anywhere` is an adverbial fused head with no lexical head noun and no argument gap'
-    unit-version: '4'
+    ground: 'outside the rule: fused-head adverbial, no argument gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: On a pass it reports
-    ground: 'not the construction: `On a pass` is a prepositional phrase and `it` is the subject of the main verb'
-    unit-version: '4'
+    ground: 'not the construction: prepositional phrase and main clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: separate the two cases
-    ground: 'not the construction: a main verb and its direct object'
-    unit-version: '4'
+    ground: 'not the construction: verb and object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
+    file: packages/readyup/docs/authoring-kits.md
+    phrase: the directories that the file names resolve
+    ground: "not the construction: relativizer present; 'names' is the verb"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: The last three are derived
-    ground: "not the construction: the main clause's own passive verb"
-    unit-version: '4'
+    ground: 'not the construction: passive main clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: whenever the subject is not the kit's
-    ground: 'not the construction: `whenever` is a subordinating conjunction with no head noun'
-    unit-version: '4'
+    ground: 'not the construction: adverbial clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/authoring-kits.md
     phrase: wherever it appears
-    ground: 'not the construction: `wherever` is a subordinating conjunction and `appears` is intransitive'
-    unit-version: '4'
+    ground: 'outside the rule: fused-head adverbial, no argument gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/check-utils.md
-    phrase: in which case it names
-    ground: "not the construction: `in which case` already has its relativizer, and `it names` is that relative clause's own verb with its own object"
-    unit-version: '4'
+    phrase: case it names
+    ground: 'not the construction: "in which case" introduces a main clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/publishing-kits.md
-    phrase: at least one bundled package's version
-    ground: 'not the construction: `bundled` is an attributive participle inside a possessive noun phrase'
-    unit-version: '4'
+    phrase: least one bundled
+    ground: 'not the construction: a quantified noun phrase with no relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/publishing-kits.md
-    phrase: gets its recorded kits checked
-    ground: 'not the construction: causative `get` with a past participle, not a relative clause'
-    unit-version: '4'
+    phrase: listed packages require
+    ground: 'outside the rule: fused head "what"'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/publishing-kits.md
-    phrase: what its listed packages require of it
-    ground: 'outside the rule: fused head `what`, which admits no relativizer'
-    unit-version: '4'
+    phrase: recorded kits checked
+    ground: 'not the construction: causative "gets X checked"'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
+    file: packages/readyup/docs/publishing-kits.md
+    phrase: unrecorded one stays
+    ground: 'not the construction: subject and main verb'
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: a qualified one takes
-    ground: 'not the construction: `a qualified one` is the subject of `takes`'
-    unit-version: '4'
+    phrase: argument a pragma covers
+    ground: 'not the construction: a fronted adjunct followed by the main clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: A run that cannot complete a kit exits
-    ground: 'not the construction: `a kit` is the object of `complete` inside a relative clause that already has `that`, and `exits` is the main verb'
-    unit-version: '4'
+    phrase: cause a suppressed finding
+    ground: 'not the construction: main verb and object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: complete a kit exits
+    ground: 'not the construction: main verb and object'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: configuration a compiled source appears
+    ground: 'not the construction: a fronted adjunct followed by the main clause'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: cover the same kits
+    ground: 'not the construction: main verb and object'
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
     phrase: exactly one separates
-    ground: 'not the construction: `exactly one` is the subject of `separates`'
-    unit-version: '4'
+    ground: 'not the construction: subject and main verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
     phrase: keep the parent checks
-    ground: 'not the construction: `keep` is the main verb and `the parent checks` its object'
-    unit-version: '4'
+    ground: 'not the construction: main verb and object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: never cause a suppressed finding to be reported
-    ground: 'not the construction: a causative verb with its object and an infinitive'
-    unit-version: '4'
+    phrase: manager the repository uses
+    ground: 'outside the rule: fused head "whatever"'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: the sources that the run's checks examined
-    ground: "not the construction: the relativizer `that` already precedes the embedded subject `the run's checks`"
-    unit-version: '4'
+    phrase: qualified one takes
+    ground: 'not the construction: subject and main verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: Under the default configuration a compiled source appears
-    ground: 'not the construction: `Under the default configuration` is a prepositional phrase and `a compiled source appears` is the main clause'
-    unit-version: '4'
+    phrase: reuse the fresh ones
+    ground: 'not the construction: main verb and object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: whatever package manager the repository uses
-    ground: 'outside the rule: `whatever package manager` is a fused head, which admits no relativizer'
-    unit-version: '4'
+    phrase: run's checks examined
+    ground: 'not the construction: the relativizer "that" is present'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
     phrase: wherever it appears
-    ground: 'outside the rule: an adverbial free relative with no lexical head and no argument gap'
-    unit-version: '4'
+    ground: 'outside the rule: adjunct free relative'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
+    rule-version: '1'
     file: packages/readyup/docs/running-checks.md
-    phrase: wherever the kit came from
-    ground: 'outside the rule: an adverbial free relative with no lexical head'
-    unit-version: '4'
+    phrase: wherever the kit came
+    ground: 'outside the rule: adjunct free relative'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    file: packages/readyup/docs/running-checks.md
-    phrase: With no argument a pragma covers
-    ground: 'not the construction: `With no argument` is a prepositional phrase and `a pragma covers` is the main clause'
-    unit-version: '4'
-  - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
     phrase: find it unchanged
     ground: "not the construction: `the rest` is the clause's own subject and `it unchanged` is the object plus predicative complement of `find`"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/bin/__tests__/route.styleSelection.unit.test.ts
     phrase: make it produce
     ground: 'not the construction: `that` is an overt subject relativizer on `arguments`, and `it produce` is the object plus bare infinitive of causative `make`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/json.unit.test.ts
     phrase: file contains malformed
     ground: "not the construction: `contains` is the when-clause's own verb, and there is no relative clause"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/tsconfig.unit.test.ts
     phrase: reader reports normalized
     ground: "not the construction: `reports` is the where-clause's own verb, and there is no relative clause"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/workspaces.caching.unit.test.ts
     phrase: alongside the «codespan» factory
     ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts
     phrase: alongside the «codespan» factory
     ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/workspaces.cwd.unit.test.ts
     phrase: bind their «codespan» functions
     ground: "not the construction: `bind` is the main clause's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/__tests__/workspaces.walk.unit.test.ts
     phrase: alongside the «codespan» factory
     ground: 'not the construction: a prepositional phrase with no relative clause and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/discoverKitPackages.ts
     phrase: least one compiled
     ground: 'not the construction: `compiled` is a participial modifier on `kit`, and there is no embedded clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/git/__tests__/factories.unit.test.ts
     phrase: repository it counted
     ground: 'not the construction: an embedded interrogative complement of `say`, not a relative clause, so no relativizer restores'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/package-json.ts
     phrase: naming fewer than three segments
     ground: 'not the construction: `naming` is a participial modifier, and there is no embedded subject'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
     phrase: bind their «codespan» functions
     ground: "not the construction: `bind` is the main clause's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
     phrase: given paths generated
     ground: "not the construction: `paths` is the main verb's object and `generated` its predicative complement"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/__tests__/readTrackedSources.unit.test.ts
     phrase: sweep goes looking
     ground: 'outside the rule: a fused head, which is its own relative pronoun and admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/listForeignPaths.ts
     phrase: declaration means is git's
     ground: fused relative subject clause, not a relative clause on a lexical head
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
     phrase: different one exports
     ground: "`exports` is the sentence's own main verb; not the construction"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
     phrase: hold the declared package's
     ground: the clause already carries the relativizer `that`; not the construction
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
     phrase: repo it would silence
     ground: '`in any repo` is a fronted adjunct and `it would silence` is the main clause; not the construction'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/listOwnImplementationSpans.ts
     phrase: wherever the root manifest declares
     ground: adjunct free relative; the gap fills no argument position
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/readTrackedSources.ts
     phrase: alongside the tracked ones
     ground: a prepositional phrase, not a relative clause
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/readTrackedSources.ts
     phrase: project this way declares
     ground: '`this way` is an adjunct and `declares` is the main verb; not the construction'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/readTrackedSources.ts
     phrase: sweep goes looking
     ground: '`what a sweep goes looking at` is a fused relative; not the construction'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/readTrackedSources.ts
     phrase: sweep reads do not apply
     ground: '`what a sweep reads` is a fused relative; not the construction'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/project/sweepRecorder.ts
     phrase: pass its ledger straight
     ground: 'not the construction: `pass` is the complement of `lets`, with no head noun and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/tool-versions.ts
     phrase: not anything precedes
     ground: a `whether or not` complement clause, not a relative clause
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/check-utils/tsconfig.ts
     phrase: last two takes readyup's
     ground: '`Reaching the last two` is the gerund subject and `takes` the main verb; not the construction'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
     phrase: directory the compile runs
     ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/buildBundle.reproducibility.tool.test.ts
     phrase: directory the verification runs
     ground: 'outside the rule: `whatever directory` is a fused relative, which admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/fixtures/discoverWorkspaces-subprocess-wrapper.mjs
     phrase: success the fixture's «codespan» writes
     ground: "not the construction: `On success` is a prepositional adjunct and `writes` is the main clause's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
     phrase: assigned one moves
     ground: "not the construction: `moves` is the clause's own main verb, with `an assigned one` as its subject"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
     phrase: legacy one reaches
     ground: "not the construction: `reaches` is the clause's own main verb, with `the legacy one` as its subject"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/__tests__/tsconfigIsolation.tool.test.ts
     phrase: not a tsconfig.json sits
     ground: 'not the construction: a `whether or not` correlative, with no head noun and no relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/buildBundle.ts
     phrase: configuration the host repo happens
     ground: 'outside the rule: a fused head, where `whatever` is the relative determiner and admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/compileCommand.ts
     phrase: failed one does
     ground: 'not the construction: a comparative clause whose subject is `a failed one`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/compile/createCompileRecorder.ts
     phrase: order the reads happened
     ground: 'outside the rule: an adjunct relative like `the way it works`, whose gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
     phrase: lookup tables inherit
-    ground: the relativizer `which` is already present
+    ground: 'not the construction: the relativizer "which" is present'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/src/help/helpText.ts
-    phrase: Compile a single file Options
-    ground: a column-aligned help-table row read across the wrap; no relative clause
+    phrase: cached one
+    ground: 'not the construction: the span runs across a table row boundary into a flag name'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/src/help/helpText.ts
-    phrase: Compile a single file Options
-    ground: a help-table row read across the wrap into the next block's heading
+    phrase: doc files explain
+    ground: "not the construction: 'explain' is the main verb of its own clause"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
+    file: packages/readyup/src/help/helpText.ts
+    phrase: List each project's kit-publishing dependencies
+    ground: 'not the construction: a plain noun phrase, with no relative clause'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/help/helpText.ts
+    phrase: List the kits declared
+    ground: "not the construction: 'declared' is a passive participle with a by-phrase"
+  - rule: reduced-object-relative
+    rule-version: '1'
     file: packages/readyup/src/help/helpText.ts
     phrase: List the kits published
-    ground: a help-table row; the span is a verb phrase, not a relative clause
+    ground: "not the construction: 'published' is a passive participle with a by-phrase"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/src/help/helpText.ts
-    phrase: List the kits published
-    ground: a help-table row; the span is a verb phrase, not a relative clause
+    phrase: Run every compiled
+    ground: 'not the construction: the span runs across a command and its description'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
+    file: packages/readyup/src/help/helpText.ts
+    phrase: Show every project's kit-publishing dependencies
+    ground: 'not the construction: a plain noun phrase, with no relative clause'
+  - rule: reduced-object-relative
+    rule-version: '1'
+    file: packages/readyup/src/help/helpText.ts
+    phrase: Show this help message
+    ground: 'not the construction: the span runs across a table row boundary'
+  - rule: reduced-object-relative
+    rule-version: '0'
     file: packages/readyup/src/index.ts
     phrase: generate the published JSON Schemas
     ground: the relativizer `that` is already present
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/init/initCommand.ts
     phrase: next steps printed
     ground: the head is a passive participle, not a reduced object relative
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/installed-packages/resolveWorkspaceRoot.ts
     phrase: cases no workspace can match
     ground: a prepositional phrase followed by the sentence's own main clause
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kitImports/__tests__/listRunnerExports.unit.test.ts
     phrase: named exports for the table to account
     ground: an infinitival purpose clause; no relativizer slot exists
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kitImports/scanReadyupImports.ts
     phrase: later sections have imports
     ground: "not the construction: `have` is the clause's own verb and `imports` its object, so there is no relative clause"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kits/__tests__/assertIsRdyKit.unit.test.ts
     phrase: runner needs resolved
     ground: 'not the construction: the relative clause already carries the overt relativizer `which`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kits/assertIsRdyKit.ts
     phrase: wherever it appears
     ground: 'outside the rule: `wherever it appears` is an adjunct whose gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kits/parseFromValue.ts
     phrase: yield a package named
     ground: 'not the construction: `named` is a past participle modifying `a package`, not an embedded subject and verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kits/types.ts
     phrase: not any of them yielded
     ground: 'not the construction: `whether or not` heads an interrogative complement, not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/kits/types.ts
     phrase: pass it stands
     ground: 'not the construction: `On a pass` is an adjunct prepositional phrase and `it stands` the main clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/__tests__/layoutEngine.unit.test.ts
     phrase: skip labels unchanged
     ground: 'not the construction: `unchanged` is an object complement of `leaves`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/__tests__/richFormatter.unit.test.ts
     phrase: occupy two cells unaided
     ground: 'not the construction: a causative complement of `makes`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/engine.ts
     phrase: invocation selects otherwise
     ground: 'not the construction: an adverbial `until` clause whose subject takes its own verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: non-zero counts joined
     ground: "not the construction: `joined` is a passive participle, which is the rule's own preferred repair form"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: order every count line presents
     ground: 'outside the rule: an adjunct relative on `order`, patterning with `the way it works`, whose gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: reader scans left
     ground: "not the construction: `scans` is the sentence's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: row's counts begin
     ground: "not the construction: `begin` is the clause's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/layoutEngine.ts
     phrase: token no glyph returns
     ground: 'not the construction: a subject relative that already carries its relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/plainFormatter.ts
     phrase: role a name plays
     ground: 'not the construction: an embedded question under `says`, not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/plainFormatter.ts
     phrase: role tokens have
     ground: 'not the construction: `role tokens` is a compound noun and `have` is its own verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/resolveStyle.ts
     phrase: accepted settings widened
     ground: 'not the construction: the head is a past participle modifying `settings`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/layout/resolveStyle.ts
     phrase: wherever the output is not a person's
     ground: 'not the construction: a `wherever` adverbial clause, not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: compiled kits found
     ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: compiled kits found
     ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: compiled kits found
     ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: compiled kits found
     ground: 'not the construction: «found» is a participle modifying «kits», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: configured one unmarked
     ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: kit projects found
     ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: order they are given
     ground: 'outside the rule: an adjunct relative on the «the way it works» pattern, whose gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/formatList.unit.test.ts
     phrase: section heads what
     ground: "not the construction: «heads» is the sentence's own verb and «what to do» is a fused relative"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/listCommand.packages.unit.test.ts
     phrase: configured one unmarked
     ground: 'not the construction: «unmarked» is a small-clause complement of «leaves», not a relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/listCommand.recursive.unit.test.ts
     phrase: kit projects found
     ground: 'not the construction: «found» is a participle modifying «projects», inside an asserted output string'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/listCommand.recursivePackages.unit.test.ts
     phrase: project the sweep starts
     ground: a free relative headed by `whichever`, which admits no relativizer; outside the rule as the fused head is
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/listCommand.unit.test.ts
     phrase: compiled kits found
     ground: 'not the construction: a reduced passive inside a string literal asserted against program output'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/__tests__/listCommand.wiring.unit.test.ts
     phrase: cover each mode's branches
     ground: "not the construction: `cover` is the clause's own verb, not a head noun"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/formatList.ts
     phrase: compiled kits found
     ground: 'not the construction: «found» is a participle modifying «kits»'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/formatList.ts
     phrase: kit projects found
     ground: 'not the construction: «found» is a participle modifying «projects»'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/list/listCommand.ts
     phrase: cover the same kits
     ground: "not the construction: `cover` is the clause's own verb, not a head noun"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/__tests__/buildInstallCommand.unit.test.ts
     phrase: exactly the given paths
     ground: 'not the construction: the span is a prepositional phrase with no relative clause in it'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/blankNonCode.ts
     phrase: postfix one ends
     ground: 'not the construction: `A postfix one` is the subject and `ends` is its own verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/blankNonCode.ts
     phrase: unterminated one has
     ground: 'not the construction: `one` is the subject head and `has` is its own verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/buildInstallCommand.ts
     phrase: directory an explicit «codespan» outranks
     ground: 'not the construction: a fronted prepositional phrase before the main clause, with no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/buildInstallCommand.ts
     phrase: manager wins over any further
     ground: 'not the construction: `naming a manager` is a participle and `wins` is the main verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/portable/listDeclarationSpans.ts
     phrase: last two non-blank characters
     ground: 'not the construction: `read` is a passive participle with no embedded subject'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/projects/project-discovery.ts
     phrase: least one compiled
     ground: 'not the construction: "compiled" is a participial modifier of "kit", not an embedded verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/projects/project-discovery.ts
     phrase: manager the repo uses
     ground: 'not the construction: an embedded interrogative complement of "indifferent to", which admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/projects/project-discovery.ts
     phrase: not one sits
     ground: 'not the construction: "whether or not" plus a main-clause subject, with no head noun and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/remote/__tests__/remote-provider.unit.test.ts
     phrase: developer happens to be logged
     ground: 'not the construction: an embedded interrogative under "whether", with no head noun and no gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/remote/loadRemoteKit.ts
     phrase: supplied headers are sent
     ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/remote/loadRemoteManifest.ts
     phrase: supplied headers are sent
     ground: 'not the construction: a main-clause passive whose «supplied» is a participial premodifier; the actor is the function itself'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
     phrase: kit its own declared
     ground: not the construction; a ditransitive with two objects, no relative clause
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/__tests__/runJsonMode.unit.test.ts
     phrase: run-level options have
     ground: not the construction; "have" is the clause's own verb, not an embedded relative
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
     phrase: authoring-error tests exercise
     ground: 'not the construction: "tests" is the sentence''s subject and "exercise" its own main verb'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/__tests__/runRdy.unit.test.ts
     phrase: order the skips resolved
     ground: 'outside the rule: an adjunct relative on "the order", whose gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/pragma-report.ts
     phrase: run's checks read
     ground: 'outside the rule: a fused relative headed by `what`, which is its own relative pronoun and admits no relativizer'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/resolveConfiguredPackages.ts
     phrase: configured packages require
     ground: fused relative headed by `what`, which is its own relative pronoun and admits no relativizer
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/resolveFindingOutcome.ts
     phrase: check's pragmas suppressed
     ground: interrogative content clause after `is told`, not a relative clause; there is no relativizer position
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/resolveFromSource.ts
     phrase: syntax stays reserved
     ground: "not the construction: `stays` is the main clause's own verb, and there is no relative clause"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runHumanMode.ts
     phrase: kit's checklists need
     ground: "not the construction: `what` is a fused head and `need` is its clause's own verb"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runJsonMode.ts
     phrase: body throws is attributable
     ground: 'outside the rule: `anything` is a fused head rather than a lexical noun'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order the reader met
     ground: 'outside the rule: an adjunct relative, since `met` already has its object'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order the skips happened
     ground: 'outside the rule: an adjunct relative with no argument gap'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runRdy.ts
     phrase: order their skips resolved
     ground: 'outside the rule: an adjunct relative, since `resolved` is intransitive here and the gap fills no argument position'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/runRdy.ts
     phrase: wherever the check makes
     ground: 'outside the rule: `wherever` heads a free relative adverbial, and the object `it` is present'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/suppressesFinding.ts
     phrase: naming a check called
     ground: 'not the construction: `called` is a passive participle, not a relative clause with an embedded subject'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/run/version-skew.ts
     phrase: floor the running readyup does not meet
     ground: 'not the construction: the relative clause already carries an overt relativizer, `whose`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/schemas/common.ts
     phrase: mistyped one fails
     ground: 'not the construction: `one` is the subject of `fails`, not a relative head'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/schemas/common.ts
     phrase: unknown one leaves
     ground: 'not the construction: `one` is the subject of `leaves`, not a relative head'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/schemas/reportSchema.ts
     phrase: tree a report includes
     ground: 'outside the rule: an embedded interrogative whose fronted wh-phrase fills the gap, so no relativizer can restore'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/schemas/verifyOutputSchema.ts
     phrase: least one bundled
     ground: "not the construction: `at least one` quantifies the subject `package's version`"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/schemas/verifyOutputSchema.ts
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: the relative clause already carries the overt relativizer `whose`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/__tests__/checkRebuild.unit.test.ts
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: the relative clause carries the overt relativizer `whose`, which fronts the object of `reproduce`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/__tests__/verifyCommand.rebuild.tool.test.ts
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: the overt relativizer `whose` fronts the object of `reproduce`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/__tests__/verifyCommand.wiring.unit.test.ts
     phrase: hash verdicts are arranged
     ground: "not the construction: `are arranged` is the main clause's own verb, and the passive hides no actor the reader needs"
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/checkRebuild.ts
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: the relative clause carries the overt relativizer `whose`, with the object pied-piped as `whose recorded version`'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/checkRebuild.ts
     phrase: version the rebuild does not reproduce
     ground: 'not the construction: same pied-piped `whose` relative as line 26'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/remedies.ts
     phrase: order the axes raised
     ground: 'outside the rule: an adjunct relative whose gap fills no argument position, since `them` already fills the object slot'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/remedies.ts
     phrase: wherever the target has drifted
     ground: 'not the construction: `wherever` heads an adverbial clause, not a relative clause on a lexical head noun'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/verifyCommand.ts
     phrase: one it supplies
     ground: 'not the construction: same fronted prepositional phrase followed by a main clause; the real site in this sentence was repaired separately'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '0'
     file: packages/readyup/src/verify/verifyCommand.ts
     phrase: verdict it says
     ground: 'not the construction: `it` is the subject of the main clause after a fronted prepositional phrase, so `verdict` heads no relative clause'
   - rule: reduced-object-relative
-    unit: williamthorsen-writing-preferences
-    unit-version: '2'
+    rule-version: '1'
     file: packages/readyup/vitest.config.ts
-    phrase: one holds package-scoped
-    ground: 'not the construction: `this one` is the subject of its own main clause, and its modifier already carries `that`'
+    phrase: alongside its own settings
+    ground: 'not the construction: a prepositional phrase, with no relative clause'
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: a consumer suppressing a finding of yours suppresses every other check's finding on that line too, your kit's and every other kit's alike
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: every other source that you wrote
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: Publish no token of your own for it
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: Suppression is readyup's rather than yours.
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: the package publishing your kit
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: whenever the subject is not yours to assert about
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: whether the thing being checked is yours to assert about
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: Your own repo is where the defect appears first.
+    ground: the pronoun names the agent that the skill instructs
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
+    phrase: Did you mean
+    ground: 'not prose: CLI output string that the test asserts on'
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
+    phrase: Did you mean 'rdy help authoring'?
+    ground: 'not prose: CLI output string that the test asserts on'
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/help/__tests__/helpCommand.unit.test.ts
+    phrase: Did you mean 'rdy help'?
+    ground: 'not prose: CLI output string that the test asserts on'
+  - rule: second-person
+    rule-version: '1'
+    file: packages/readyup/src/help/helpCommand.ts
+    phrase: Did you mean 'rdy help ${match}'?
+    ground: a CLI message rather than documentation, worded as route.ts words its own typo hint
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/authoring-kits.md
+    phrase: so a field added to `Workspace` in a later release does not break the fixture
+    ground: a lone so that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/authoring-kits.md
+    phrase: so a getter may reference
+    ground: a lone so after a dash that states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/publishing-kits.md
+    phrase: so an unrecorded one stays loadable
+    ground: the earlier "So does" stands for a clause; this lone so states a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: so a detector that blanks comments
+    ground: three sentences separate it from the previous so; a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: so it binds whichever readyup runs it
+    ground: three sentences separate it from the previous so; a lone so stating a direct result
+  - rule: so
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: so there is nothing left to name separately
+    ground: three sentences separate it from the previous so; a lone so stating a direct result
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/.readyup/kits/checks/buildSelfContainmentChecks.ts
+    phrase: Move the imported code into the kit source, where esbuild inlines it into the bundle
+    ground: 'outside the rule: `where` names a place (the kit source)'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/.readyup/kits/checks/buildSelfContainmentChecks.ts
+    phrase: which is where esbuild puts every import that it hoists
+    ground: 'outside the rule: `where` names a place (the start of a line)'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/.readyup/kits/checks/describeLoadablePaths.ts
+    phrase: is where a consumer resolves it
+    ground: 'outside the rule: `where` names a location in the package'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/agents/guidance/rulebooks/readyup-kits.md
+    phrase: Your own repo is where the defect appears first.
+    ground: names a place (the repo)
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/authoring-kits.md
+    phrase: Where `detail` renders
+    ground: names a place (render location)
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/authoring-kits.md
+    phrase: Where fixes render
+    ground: names a place (render location)
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/check-utils.md
+    phrase: one reporting where a project hand-rolls what a package that it already installed provides
+    ground: 'outside the rule: names the sites (places) in the project'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/json-output.md
+    phrase: The generator decides where a keyword appears
+    ground: 'outside the rule: a location within the document'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/publishing-kits.md
+    phrase: which is where the repo's sources live
+    ground: 'outside the rule: names a place (a directory)'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: only where it is unnamed
+    ground: 'outside the rule: names the location (project) in the listing'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: the config that put the kit where it is
+    ground: 'outside the rule: names a place'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/docs/running-checks.md
+    phrase: 'The remedy depends on where the kit is maintained:'
+    ground: 'outside the rule: names a place (this project, a package, a remote)'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/help/__tests__/help.tool.test.ts
+    phrase: shows where a spawned rdy looks for its doc files
+    ground: 'outside the rule: names a location'
+  - rule: where
+    rule-version: '1'
+    file: packages/readyup/src/help/helpText.ts
+    phrase: Where help output sends a reader for anything it does not cover.
+    ground: 'outside the rule: names a place (the destinations that the pointer lists)'

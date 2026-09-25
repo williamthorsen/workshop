@@ -18,7 +18,7 @@ const buildOutput = path.join(packageDir, 'dist/esm/bin/rdy.js');
  * Drives the real CLI, which is the only tier that shows where a spawned rdy looks for its doc files.
  *
  * A resolver reading the working directory would satisfy every in-process test, since those run with
- * the package as the working directory. Running from a directory that holds no `docs/` tells the two
+ * the package as the working directory. Running from a directory that contains no `docs/` tells the two
  * apart.
  */
 describe('rdy help, spawned', () => {
@@ -36,7 +36,7 @@ describe('rdy help, spawned', () => {
   });
 
   // The published entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it
-  // is the only spawn that shows the package root still resolving to where `docs/` sits. It needs build
+  // is the only spawn that shows the package root still resolving to the directory that contains `docs/`. It needs build
   // output, which `nmr ci` produces before it checks and a bare `nmr test` does not.
   it.skipIf(!existsSync(buildOutput))('resolves the doc files from the published entry point', () => {
     const stdout = runHelp(publishedCli, 'concepts', tmpdir());
