@@ -50,7 +50,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 
     expect(packages.map((workspace) => workspace.name)).toStrictEqual(['alpha']);
     expect(privateWorkspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'internal']);
-    // Guards the equality below, which two zeroes would also satisfy.
+    // Guard the equality below, which two zeroes would also satisfy.
     expect(walkedForFirstCall).toBeGreaterThan(0);
     expect(readDirectories).toHaveLength(walkedForFirstCall);
   });
@@ -95,7 +95,7 @@ describe(`${discoverWorkspaces.name} memoization`, () => {
 
 // region | Helpers
 
-/** Writes a monorepo with two member packages that differ in `private`, so a filter can tell them apart. */
+/** Writes a monorepo with two member packages that differ in `private`, so that a filter can tell them apart. */
 function writeMonorepo(temp: TempTree): void {
   temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
   temp.writeJson(join('packages/alpha', 'package.json'), { name: 'alpha' });

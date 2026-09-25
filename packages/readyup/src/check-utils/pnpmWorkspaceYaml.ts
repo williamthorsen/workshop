@@ -18,7 +18,7 @@ const DEFAULT_CATALOG_NAME = 'default';
 
 /**
  * Reads the version that a pnpm catalog assigns to a package from `pnpm-workspace.yaml` content.
- * `catalogName` names the catalog to read, defaulting to the one `catalog:` expands to.
+ * `catalogName` names the catalog to read, defaulting to the one to which `catalog:` expands.
  * Returns `undefined` when no catalog resolves the package, an entry that this reader cannot follow included.
  */
 export function findPnpmCatalogVersion(
@@ -159,7 +159,7 @@ function parseMappingEntry(text: string): { key: string; value: string } | undef
   return { key: stripQuotes(rawKey), value: stripQuotes(rawValue) };
 }
 
-/** Returns the trimmed value after a `key:` on the same line, or `null` where there is no inline value. */
+/** Returns the trimmed value after a `key:` on the same line, or `null` when there is no inline value. */
 function extractInlineValue(line: string): string | null {
   const colonIndex = line.indexOf(':');
   if (colonIndex === -1) return null;
@@ -302,7 +302,7 @@ function throwUnsupported(absolutePath: string, lineIndex: number, line: string,
     `pnpm-workspace.yaml: unsupported YAML feature (${feature}) at ${absolutePath}:${lineNumber}\n` +
     `  ${line}\n` +
     "readyup's workspace discovery handles the common block-sequence form for `packages:`.\n" +
-    'If you need broader YAML support, please open an issue.';
+    'To request broader YAML support, please open an issue.';
   throw new Error(message);
 }
 
@@ -313,7 +313,7 @@ function throwNegationUnsupported(absolutePath: string, lineIndex: number, line:
     `pnpm-workspace.yaml: negation pattern "${pattern}" is not supported at ${absolutePath}:${lineNumber}\n` +
     `  ${line}\n` +
     "Negation patterns are not supported in this release of readyup's workspace discovery.\n" +
-    'If you need negation support, please open an issue.';
+    'To request negation support, please open an issue.';
   throw new Error(message);
 }
 

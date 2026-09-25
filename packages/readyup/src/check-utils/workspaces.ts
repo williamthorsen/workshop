@@ -15,7 +15,7 @@ export interface DiscoverWorkspacesOptions {
 
 type WorkspacePatternSource = 'pnpm-workspace.yaml' | 'package.json';
 
-/** Discovered workspaces by the directory against which they were resolved, held for the life of the process. */
+/** Discovered workspaces by the directory against which they were resolved, kept for the life of the process. */
 const workspacesByDir = new Map<string, Workspace[]>();
 
 /**
@@ -28,12 +28,12 @@ const workspacesByDir = new Map<string, Workspace[]>();
  *
  * Memoized per directory for the life of the process: Repeated calls in one run share a single directory walk and
  * the frozen `Workspace` objects that it built, and none of them observes a filesystem change made since the first.
- * `options.filter` applies per call, so it selects from the memoized list rather than being memoized with it.
- * Entries are frozen along with their `packageJson`, so a write throws rather than reaching the next caller, and a
- * discovery that throws is not memoized, so the next call retries it.
+ * `options.filter` applies per call: It selects from the memoized list rather than being memoized with it.
+ * Entries are frozen along with their `packageJson`: A write throws rather than altering what the next caller
+ * receives. Because a discovery that throws is not memoized, the next call retries it.
  *
- * Throws where the root `package.json` is missing or unparseable, whatever the repo's shape. A
- * `pnpm-workspace.yaml` is read by a minimal block-sequence parser, so a config reaching for anchors, flow
+ * Throws when the root `package.json` is missing or unparseable, whatever the repo's shape. A
+ * `pnpm-workspace.yaml` is read by a minimal block-sequence parser, so a config using anchors, flow
  * sequences, tags, or negation patterns raises a clear error rather than being read wrongly.
  */
 export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspace[] {
@@ -41,19 +41,19 @@ export function discoverWorkspaces(options?: DiscoverWorkspacesOptions): Workspa
 }
 
 /**
- * Discovers the workspaces of the repo rooted at `dir`, which a relative path names against `cwd`.
+ * Discovers the workspaces of the repo rooted at `dir`, which is resolved against `cwd` when relative.
  *
  * The directory-taking half of `discoverWorkspaces`, for a caller resolving against a project other than the
- * one in which it is running. It stays out of `check-utils`'s exports: A kit runs in the project that it checks,
- * so the ambient discovery is the one that a kit author wants.
+ * one in which it is running. It is not exported from `check-utils`: A kit runs in the project that it checks,
+ * and the ambient discovery is the one that a kit author wants.
  */
 export function discoverWorkspacesAt(dir: string, options?: DiscoverWorkspacesOptions): Workspace[] {
-  // Resolve before keying the memo, so a relative path and its absolute form share one discovery.
+  // Resolve before keying the memo, so that a relative path and its absolute form share one discovery.
   const rootDir = resolve(dir);
 
   let workspaces = workspacesByDir.get(rootDir);
   if (workspaces === undefined) {
-    // Build before storing, so a discovery that throws leaves nothing behind and the next call retries it.
+    // Build before storing: A discovery that throws then leaves nothing behind, and the next call retries it.
     workspaces = buildWorkspaces(rootDir);
     workspacesByDir.set(rootDir, workspaces);
   }
@@ -82,8 +82,8 @@ function buildWorkspaces(rootDir: string): Workspace[] {
   const patternResult = resolveWorkspacePatterns(rootDir, rootPackageJson);
   if (patternResult === null) return [rootWorkspace];
 
-  // `matchedDirs` is already sorted ascending by `expandPatterns` and holds no `.`, and each workspace's
-  // `dir` equals its entry in that list, so the root leads a sorted result without an extra pass.
+  // `matchedDirs` is already sorted ascending by `expandPatterns` and contains no `.`, and each workspace's
+  // `dir` equals its entry in that list: The root leads a sorted result without an extra pass.
   const matchedDirs = expandPatterns(rootDir, patternResult.patterns, patternResult.source);
   const workspaces: Workspace[] = [rootWorkspace];
   for (const relDir of matchedDirs) {
@@ -156,7 +156,7 @@ function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePa
       throw new Error(
         `Workspace discovery: negation pattern "${pattern}" in ${source} is not supported.\n` +
           'Negation patterns are not supported in this release of readyup.\n' +
-          'If you need negation support, please open an issue.',
+          'To request negation support, please open an issue.',
       );
     }
   }
