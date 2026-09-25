@@ -52,14 +52,15 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
+// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
 // kit-load cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
-// Mocked so no case reads the sources named by the ledger; what the report itself writes is covered by its own tests.
+// Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
+// own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
@@ -166,8 +167,8 @@ describe(runJsonMode, () => {
           reportOn: 'recommend',
         },
       ],
-      // The run named no threshold, so the run-level options have none: The resolved values reach the
-      // serializer on the kit that they governed.
+      // The run named no threshold, so the run-level options have none: `runJsonMode` passes the resolved
+      // values to the serializer on the kit that they governed.
       { detail: 'full' },
     );
   });
@@ -270,7 +271,7 @@ describe(runJsonMode, () => {
       remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     };
 
-    /** Builds two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */
+    /** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
     function twoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
@@ -338,7 +339,7 @@ describe(runJsonMode, () => {
       expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
     });
 
-    it('asks the runner to diagnose only where --diagnose was passed', async () => {
+    it('asks the runner to diagnose only when --diagnose was passed', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 

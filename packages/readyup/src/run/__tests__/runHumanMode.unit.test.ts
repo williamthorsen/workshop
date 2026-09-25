@@ -46,14 +46,15 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
   loadRemoteKit: mockLoadRemoteKit,
 }));
 
-// Mocked so no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
+// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
 // rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
   warnOnKitStaleness: mockWarnOnKitStaleness,
 }));
 
-// Mocked so no case reads the sources named by the ledger; what the report itself writes is covered by its own tests.
+// Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
+// own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
@@ -143,7 +144,7 @@ describe(runHumanMode, () => {
     expect(exitCode).toBe(0);
   });
 
-  it('asks the runner to diagnose only where --diagnose was passed', async () => {
+  it('asks the runner to diagnose only when --diagnose was passed', async () => {
     mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
@@ -212,7 +213,7 @@ describe(runHumanMode, () => {
 
   // A lone local kit running one checklist has no source to name, nothing to be told apart from, and one checklist to
   // report, so its breadcrumb would have no segment at all.
-  it('heads nothing at all for a lone local kit running one checklist', async () => {
+  it('prints no heading at all for a lone local kit running one checklist', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -524,7 +525,7 @@ describe(runHumanMode, () => {
       remedy: 'Move the edits into the source, then run `rdy compile --force`.',
     };
 
-    /** Builds two entries whose names and compiled paths differ, so a kit paired with the wrong source shows. */
+    /** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
     function twoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
@@ -575,7 +576,7 @@ describe(runHumanMode, () => {
   });
 
   describe('unused-pragma advisories', () => {
-    /** Builds two entries whose names and compiled paths differ, so a per-kit ledger would show as two. */
+    /** Builds two entries whose names and compiled paths differ, so that a per-kit ledger would show as two. */
     function twoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
@@ -606,7 +607,7 @@ describe(runHumanMode, () => {
       expect(summaryOrder).toBeLessThan(reportOrder ?? 0);
     });
 
-    it('reports over the kits that ran where another failed to load', async () => {
+    it('reports over the kits that ran when another failed to load', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
 
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
