@@ -43,7 +43,7 @@ export function resolveConfiguredPackages(
  * asks whether this project satisfies what its configured packages require of it, and a package
  * requiring nothing under that name asks nothing of it.
  *
- * Name-major so `--packages a b` runs every package's `a` before any package's `b`, matching the
+ * Name-major so that `--packages a b` runs every package's `a` before any package's `b`, matching the
  * order in which `rdy run a b` runs them against a single source.
  */
 function selectRequestedKits(published: PackageKit[], requestedNames: string[]): PackageKit[] {

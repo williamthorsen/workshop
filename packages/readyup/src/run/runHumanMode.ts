@@ -33,7 +33,7 @@ interface HumanRunSettings {
 /**
  * Runs all kit entries in human-readable mode.
  *
- * Uses the same per-kit boundary as JSON mode, reporting the failure on stderr so it stays
+ * Uses the same per-kit boundary as JSON mode, reporting the failure on stderr so that it stays
  * distinguishable from a failed check, which prints into the stdout report and means a different
  * exit code.
  */
@@ -42,8 +42,8 @@ export async function runHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  // Say so when a run selected nothing, which `--packages` reaches when no configured package publishes
-  // the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
+  // Say so when a run selected nothing, which happens under `--packages` when no configured package
+  // publishes the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
   if (kitEntries.length === 0) {
     process.stdout.write('No kits to run.\n');
     return EXIT_OK;
@@ -78,7 +78,7 @@ export async function runHumanMode(
       if (kitResult.hasDroppedBlock) anyBlockDropped = true;
       if (!kitResult.passed) allPassed = false;
     } catch (error: unknown) {
-      // A kit that never ran is still headed, so stdout lists every kit that the invocation asked for.
+      // Head even a kit that never ran, so that stdout lists every kit that the invocation asked for.
       if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'));
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
@@ -92,12 +92,12 @@ export async function runHumanMode(
     }
   }
 
-  // Tallying follows the last kit rather than riding inside one, so a kit that failed to load still leaves
-  // the table covering the checklists that did run. A dropped block is reported by its row alone, so one
-  // dropped block justifies the table even where a single row is all it has to show.
+  // Tally after the last kit rather than inside one, so a kit that failed to load still leaves the table
+  // covering the checklists that did run. Because a dropped block is reported by its row alone, one dropped
+  // block justifies the table even when the table has only a single row to show.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
-  // Written after the summary table, the last block in which a reported pragma's file may have been named.
+  // Warn after the summary table, the last block in which a reported pragma's file may have been named.
   warnOnUnusedPragmas(pragmaLedger);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
@@ -108,8 +108,8 @@ export async function runHumanMode(
 /**
  * Returns the segments heading every block produced by a kit: where the kit came from, then the kit itself.
  *
- * A kit with no source to name and no sibling kit in the run has nothing to be told apart from, so it
- * heads its blocks with nothing, and a plain local run stays as quiet as it has always been.
+ * A kit with no source to name and no sibling kit in the run has nothing to be told apart from, so its
+ * blocks have no heading, and a plain local run stays as quiet as it has always been.
  */
 function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): BreadcrumbSegment[] {
   const source = describeKitProvenance(entry.provenance);
@@ -140,9 +140,9 @@ function createBlockWriter(): BlockWriter {
 }
 
 /**
- * Returns the segment naming where a kit came from, or `undefined` where there is nothing to name.
+ * Returns the segment naming where a kit came from, or `undefined` when there is nothing to name.
  *
- * A kit held by the local kits directory has no source, and neither does one whose directory resolves to
+ * A kit in the local kits directory has no source, and neither does one whose directory resolves to
  * the working directory: Naming the directory in which the reader is standing tells them nothing. A package
  * states its version because the whole point of running a kit from an installed package is that it
  * matches the version in place, which the reader can only confirm if it is stated.
@@ -189,8 +189,8 @@ async function runKit(
   const checklists = selectChecklists(kit, checklistFilter);
   const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
   const showChecklistSegment = checklists.length > 1;
-  // A block may go unwritten only where the summary table will show the row that it leaves behind. A run of
-  // one checklist tabulates nothing, so its block stands however little it has to say.
+  // A block may go unwritten only when the summary table will show the row that it leaves behind. A run of
+  // one checklist tabulates nothing, so its block is written however little it has to say.
   const willTabulate = isMultiKit || checklists.length > 1;
   const rows: SummaryRow[] = [];
   let allPassed = true;
@@ -222,7 +222,7 @@ async function runKit(
       hasDroppedBlock = true;
     }
 
-    // Written after the block, so the reader has just seen the skipped line that the warning is about.
+    // Warn after the block, so that the reader has just seen the skipped line that the warning is about.
     warnOnMaskedSkips(entry, checklist.name, report.diagnoses);
 
     if (!report.passed) {

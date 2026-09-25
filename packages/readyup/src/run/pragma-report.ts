@@ -15,12 +15,12 @@ interface UnusedPragma extends PragmaSite {
 /**
  * Emits an advisory stderr warning for each pragma that suppressed nothing, and returns the entries.
  *
- * The evidence is what the run's checks read: A pragma is reported only where some check examined the file
- * holding it, by sweeping it or by declaring it, and no check suppressed a finding on the line that it covers. A
- * file examined by no check yields no entry, because the run holds no evidence either way about the pragmas in it.
+ * The evidence is what the run's checks read: A pragma is reported only when some check examined the file
+ * that contains it, by sweeping it or by declaring it, and no check suppressed a finding on the line that it covers. A
+ * file examined by no check yields no entry, because the run has no evidence either way about the pragmas in it.
  *
  * Each examined file is read and scanned once however many checks examined it, and only a JS-family source is
- * scanned at all, recognition resting on syntax read by the blanking.
+ * scanned at all, because recognition relies on the syntax that the blanking reads.
  *
  * Mirrors `warnOnMaskedSkips`: The stderr lines are written in both output modes, and the returned entries are
  * what JSON mode captures into the report for a consumer that owns only stdout.
@@ -50,7 +50,7 @@ function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
   for (const scannedPath of ledger.scannedPaths()) {
     if (!isJsFamilyPath(scannedPath)) continue;
 
-    // Read by the path under which a sweep read it, so the scan reads the sweep's cached text.
+    // Read the file by the path under which a sweep read it, so that the scan reads the sweep's cached text.
     const displayPath = path.relative(process.cwd(), scannedPath);
     const text = readSourceText(displayPath);
     if (text === undefined) continue;

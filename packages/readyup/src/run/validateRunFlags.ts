@@ -35,9 +35,9 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
     validateAllSelection(parsed, kitSpecifiers);
   }
 
-  // A positional names the kit to select in every configured package, so it narrows the run. Checklist
-  // selection cannot: It names checklists within one kit, and `--packages` may reach several packages'
-  // copies of the name. Both spellings of that selection are rejected for the same reason.
+  // A positional narrows the run: It names the kit to select in every configured package. Checklist
+  // selection cannot: It names checklists within one kit, and `--packages` may select that kit in several
+  // packages. Both spellings of that selection are rejected for the same reason.
   if (parsed.packages && parsed.checklists !== undefined) {
     throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
   }
@@ -127,16 +127,16 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
 /**
  * Rejects an output flag that contradicts the report being emitted.
  *
- * Erroring beats ignoring: A caller that passed either flag meant to change the output, and dropping it
+ * Rejecting a flag is better than ignoring it: A caller that passed either flag meant to change the output, and dropping it
  * silently would leave them reading a report that they did not ask for.
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
-  // `--detail` selects how much of the JSON payload to emit, so it has nothing to say about the human report.
+  // `--detail` selects how much of the JSON payload to emit, so it does not apply to the human report.
   if (parsed.detail !== undefined && !parsed.json) {
     throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
   }
 
-  // `--quiet` thins the human detail tree, which `--json` does not emit.
+  // `--quiet` hides passed lines in the human detail tree, which `--json` does not emit.
   if (parsed.quiet && parsed.json) {
     throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
   }

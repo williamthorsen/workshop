@@ -38,7 +38,7 @@ export function resolveKitSources({
   internalInfix?: string | undefined;
   packages?: boolean;
   configuredPackages?: string[] | undefined;
-  /** The config's compile directories; absent where no config was loaded, which is the external-source path. */
+  /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
 }): ResolvedKitEntry[] {
   if (filePath !== undefined) {
@@ -59,7 +59,7 @@ export function resolveKitSources({
   // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
-  // Fill the default before the `--packages` branch reads it, so a bare invocation is structurally
+  // Fill the default before the `--packages` branch reads it, so that a bare invocation is structurally
   // `--packages default` and the two forms cannot select different kits.
   const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
 
@@ -69,7 +69,7 @@ export function resolveKitSources({
   }
 
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
-  // invocation where "one kit" is ambiguous, so this map never covers more than a single spec.
+  // invocation in which "one kit" is ambiguous, so this map never covers more than a single spec.
   const specs = checklists === undefined ? declaredSpecs : declaredSpecs.map((spec) => ({ ...spec, checklists }));
 
   if (fromValue !== undefined) {
@@ -109,7 +109,7 @@ export function resolveKitSources({
  *
  * The scheme is dropped from the label because every kit URL has one and it distinguishes nothing.
  * A URL that does not parse is reported exactly as given, since a value that the runner could not read
- * must reach the reader unaltered.
+ * must be shown to the reader unaltered.
  */
 function describeUrlSource(urlValue: string): { label: string; name: string } {
   if (!URL.canParse(urlValue)) return { label: urlValue, name: urlValue };

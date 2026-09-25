@@ -95,10 +95,10 @@ function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, 
 }
 
 /**
- * Locates the root of a package named by `npm:`, rejecting the forms that are reserved but not yet served.
+ * Locates the root of a package named by `npm:`, rejecting the forms that are reserved but not yet supported.
  *
- * A version spec is parsed rather than ignored so the syntax stays reserved for running a published
- * version; until that lands, naming one points at the flag that reaches a published kit today.
+ * A version spec is parsed rather than ignored so that the syntax stays reserved for running a published
+ * version; until that is supported, naming one points at the flag that runs a published kit today.
  *
  * The not-installed message names the direct-dependency requirement because pnpm's layout links only
  * direct dependencies into a project's `node_modules`. A transitive dependency is genuinely unreachable

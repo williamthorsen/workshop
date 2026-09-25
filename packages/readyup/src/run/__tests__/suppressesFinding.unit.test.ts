@@ -72,7 +72,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
 
-    it('suppresses where it names either form accepted by the check', () => {
+    it('suppresses when it names either form accepted by the check', () => {
       const accepted = ['toolbelt.errors/no-instanceof-error', '@williamthorsen/toolbelt.errors/no-instanceof-error'];
       const lines = linesOf(
         'error instanceof Error; // rdy-ignore @williamthorsen/toolbelt.errors/no-instanceof-error',
@@ -93,7 +93,7 @@ describe(suppressesFinding, () => {
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
-    it('reports false where the named check belongs to another kit', () => {
+    it('reports false when the named check belongs to another kit', () => {
       const lines = linesOf('error instanceof Error; // rdy-ignore other.kit/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
@@ -154,14 +154,14 @@ describe(suppressesFinding, () => {
     expect(suppressesFinding(lines, 1, [])).toBe(true);
   });
 
-  it('reports for each scope where one line has both tokens', () => {
+  it('reports for each scope when one line has both tokens', () => {
     const lines = linesOf('// rdy-ignore rdy-ignore-next-line\nerror;');
 
     expect(suppressesFinding(lines, 1, [])).toBe(true);
     expect(suppressesFinding(lines, 2, [])).toBe(true);
   });
 
-  it('reports false where no line has a pragma', () => {
+  it('reports false when no line has a pragma', () => {
     const lines = linesOf('const a = 1;\nerror instanceof Error;');
 
     expect(suppressesFinding(lines, 2, [])).toBe(false);
