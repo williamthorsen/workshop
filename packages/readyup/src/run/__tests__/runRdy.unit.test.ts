@@ -1453,7 +1453,7 @@ describe(runRdy, () => {
 
       expect(result.severity).toBe('warn');
       expect(result.error).toBeNull();
-      expect(result.fix).toBe('Unresolvable fix: the accessor threw "version constants are not initialized yet"');
+      expect(result.fix).toBe('Unresolvable fix: The accessor threw "version constants are not initialized yet"');
     });
 
     it.each<[string, Pick<RdyCheck, 'check' | 'skip'>]>([
@@ -1506,7 +1506,7 @@ describe(runRdy, () => {
       assert.ok(result?.status === 'failed');
 
       expect(result.severity).toBe('warn');
-      expect(result.fix).toBe('Unresolvable fix: the accessor returned number 42');
+      expect(result.fix).toBe('Unresolvable fix: The accessor returned number 42');
     });
 
     it("reports a failing outcome's fix in place of the check's, leaving its accessor unresolved", async () => {
@@ -1584,7 +1584,7 @@ describe(runRdy, () => {
       expect(hits).toBe(0);
       expect(result.severity).toBe('warn');
       expect(result.error).toBeNull();
-      expect(result.fix).toBe('Unresolvable fix: the outcome returned number 42');
+      expect(result.fix).toBe('Unresolvable fix: The outcome returned number 42');
     });
   });
 
