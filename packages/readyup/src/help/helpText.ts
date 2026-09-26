@@ -95,6 +95,7 @@ Examples:
   rdy help concepts                                Read the concepts documentation
   rdy compile                                      Compile every kit source into a bundle
   rdy compile --recursive                          Compile the kits of every project below this directory
+  rdy verify --recursive                           Verify the kits of every project below this directory
   rdy list --from github:williamthorsen/workshop   List kits published by a repository
 
 ${DOCS_POINTER}
@@ -237,10 +238,12 @@ Usage: rdy verify [options]
 Check compiled kits against the hashes recorded in the manifest.
 
 Options:
-  --manifest <path>          Manifest file path (default: .readyup/manifest.json)
+  --manifest <path>          Manifest file path (default: .readyup/manifest.json); not with --recursive
   --json                     Report each kit's verification status as JSON
   --rebuild                  Also recompile each kit and compare it to the committed bundle;
                              requires esbuild
+  --recursive                Verify every kit project below the working directory, each against its
+                             own manifest; not combinable with --manifest
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
