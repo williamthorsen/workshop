@@ -20,6 +20,7 @@ import {
   listPayload,
   minimalReportPayload,
   recursiveListPayload,
+  recursiveVerifyPayload,
   reportPayload,
   unknownWarningReportPayload,
   verifyPayload,
@@ -35,6 +36,7 @@ describe('JSON payload schemas', () => {
       ['list', ListOutputSchema, listPayload],
       ['recursive list', ListOutputSchema, recursiveListPayload],
       ['verify', VerifyOutputSchema, verifyPayload],
+      ['recursive verify', VerifyOutputSchema, recursiveVerifyPayload],
       ['compile', CompileOutputSchema, compilePayload],
     ])('accepts a representative %s payload', (_label, schema, payload) => {
       expect(() => schema.parse(payload)).not.toThrow();

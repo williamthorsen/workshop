@@ -6,7 +6,7 @@ The path from source to a consumer:
 2. Run `rdy compile` to bundle it to `<name>.js` and record its hashes in `.readyup/manifest.json`.
 3. Commit both the compiled `.js` and the manifest.
 4. Consumers run `rdy run --from github:org/repo`, which fetches the bundle described by the manifest.
-5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled, or `rdy verify --rebuild` to catch a bundle stale in anything the hashes do not record.
+5. Run `rdy verify` in CI to catch a bundle edited by hand or a source left uncompiled, or `rdy verify --rebuild` to catch a bundle stale in anything the hashes do not record. In a monorepo, `rdy verify --recursive` verifies every package's kits in one run.
 
 A published package can include its kits instead, so consumers access them through the dependency that they already have rather than through a repository URL. See [package-hosted kits](#package-hosted-kits).
 
@@ -297,4 +297,37 @@ The directory in which the command runs is not one of them. `rdy verify --rebuil
 
 ```yaml
 - run: npx rdy verify --rebuild
+```
+
+### Verifying a whole repository
+
+`rdy verify --recursive` verifies every kit project below the working directory in one run, each against its own manifest, and heads each project's output with that manifest's path relative to the working directory:
+
+```
+── Verifying kits against .readyup/manifest.json
+🟢 demo
+
+── Verifying kits against packages/api/.readyup/manifest.json
+🔴 deploy
+   drift (expected 6f58905a, got eb104f57)
+   💊 Move the edits into the source, then run `rdy compile --force`.
+
+1 of 1 kits failed verification.
+Error in packages/ui: No manifest at packages/ui/.readyup/manifest.json. Run `rdy compile` in packages/ui to create it.
+
+Problems in 2 of 3 projects: packages/api, packages/ui
+```
+
+The sweep visits the same projects as [`rdy compile --recursive`](#compiling-a-whole-repository), which considers the directories that [`rdy list --recursive`](running-checks.md#listing-a-whole-repository) considers, so a package that starts authoring kits is verified without a change to the CI step. Each project is verified exactly as `rdy verify` run from its own directory would verify it.
+
+The sweep runs to completion across projects. A project that cannot be verified at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a manifest that cannot be read, and a project that contains kits but no manifest, whose remedy is to run `rdy compile` in its directory. A project whose config cannot be evaluated is not verified, rather than verified under default settings. When any project has a failed kit or a failure of its own, the run ends with a line naming those projects and exits 1.
+
+A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` works with `--rebuild` and `--json`, and cannot be combined with `--manifest`, which names a single manifest.
+
+Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be verified at all, `error`.
+
+In a monorepo's CI, the sweep replaces one `rdy verify --manifest` step per package. With `--rebuild`, it must still run before any step that recompiles kits:
+
+```yaml
+- run: npx rdy verify --recursive --rebuild
 ```

@@ -108,10 +108,14 @@ export const RebuildDependencyChangeSchema = z
  * `rebuildEsbuild` is present whenever that record exists, matching or not, so that a consumer reads the
  * comparison rather than reconstructing it from the manifest; `rebuildDependencyChanges` is present
  * only when at least one bundled package's version moved.
+ *
+ * `project` is emitted under `--recursive` alone, naming the directory of the project that contains the kit,
+ * relative to the directory from which the sweep descended; `'.'` is that directory itself.
  */
 export const VerifyKitEntrySchema = z
   .object({
     name: z.string(),
+    project: z.string().optional(),
     status: DriftStatusSchema,
     expected: z.string().optional(),
     actual: z.string().optional(),
@@ -131,16 +135,35 @@ export const VerifyKitEntrySchema = z
   .meta({ id: 'VerifyKitEntry' });
 
 /**
+ * One project's outcome in a recursive verify.
+ *
+ * `passed` is `true` when the project's manifest could be read and every kit in it passed. `error` explains a
+ * project that could not be verified at all, which contributes no kit entries.
+ */
+export const VerifyProjectEntrySchema = z
+  .object({
+    project: z.string(),
+    passed: z.boolean(),
+    error: z.string().optional(),
+  })
+  .meta({ id: 'VerifyProjectEntry' });
+
+/**
  * Top-level shape of `rdy verify --json`.
  *
- * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified`, agreeing with
- * exit code 0. An unreadable manifest produces the error envelope instead of this payload.
+ * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified` and, under `--recursive`,
+ * every project passed, agreeing with exit code 0. An unreadable manifest produces the error envelope instead
+ * of this payload, except under `--recursive`, which reports it as a failed project.
+ *
+ * `projects` is emitted under `--recursive` alone and lists every project that the sweep visited, including
+ * a project that contributed no kit entry.
  */
 export const VerifyOutputSchema = z
   .object({
     schemaVersion: z.int().min(1),
     passed: z.boolean(),
     kits: z.array(VerifyKitEntrySchema),
+    projects: z.array(VerifyProjectEntrySchema).optional(),
   })
   .meta({ id: 'VerifyOutput' });
 
@@ -153,3 +176,4 @@ export type JsonRebuildStatus = z.infer<typeof RebuildStatusSchema>;
 export type JsonSourceStatus = z.infer<typeof SourceStatusSchema>;
 export type JsonVerifyKitEntry = z.infer<typeof VerifyKitEntrySchema>;
 export type JsonVerifyOutput = z.infer<typeof VerifyOutputSchema>;
+export type JsonVerifyProjectEntry = z.infer<typeof VerifyProjectEntrySchema>;

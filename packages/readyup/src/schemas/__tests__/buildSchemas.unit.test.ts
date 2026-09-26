@@ -14,6 +14,7 @@ import {
   listPayload,
   minimalReportPayload,
   recursiveCompilePayload,
+  recursiveVerifyPayload,
   reportPayload,
   unknownWarningReportPayload,
   verifyPayload,
@@ -141,6 +142,7 @@ describe('generated JSON Schemas', () => {
       ['error-envelope.v1.json', hintedErrorEnvelopePayload],
       ['list.v1.json', listPayload],
       ['verify.v1.json', verifyPayload],
+      ['verify.v1.json', recursiveVerifyPayload],
       ['compile.v1.json', compilePayload],
       ['compile.v1.json', recursiveCompilePayload],
     ])('accepts a representative payload for %s', (fileName, payload) => {
