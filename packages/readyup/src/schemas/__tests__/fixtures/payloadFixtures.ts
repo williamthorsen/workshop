@@ -181,6 +181,25 @@ export const legacyVerifyPayload = {
   kits: [{ name: 'deploy', status: 'ok' }],
 };
 
+/** A `verify --recursive` payload, whose kits name their projects and whose projects include one that failed. */
+export const recursiveVerifyPayload = {
+  schemaVersion: 1,
+  passed: false,
+  kits: [
+    { name: 'default', project: '.', status: 'ok', sourceStatus: 'ok', inputsStatus: 'ok' },
+    { name: 'deploy', project: 'packages/api', status: 'ok', sourceStatus: 'ok', inputsStatus: 'ok' },
+  ],
+  projects: [
+    { project: '.', passed: true },
+    { project: 'packages/api', passed: true },
+    {
+      project: 'packages/ui',
+      passed: false,
+      error: 'No manifest at packages/ui/.readyup/manifest.json. Run `rdy compile` in packages/ui to create it.',
+    },
+  ],
+};
+
 export const compilePayload = {
   schemaVersion: 1,
   passed: false,
