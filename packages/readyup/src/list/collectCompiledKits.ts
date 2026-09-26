@@ -8,9 +8,9 @@ import { buildManifestEntry } from './buildManifestEntry.ts';
 import { enumerateKits } from './enumerateKits.ts';
 
 interface CollectCompiledKitsOptions {
-  /** Absolute path at which the project's manifest belongs, whether or not one sits there. */
+  /** Absolute path at which the project's manifest belongs, whether or not one exists there. */
   manifestPath: string;
-  /** Receives the failure of a manifest that exists and cannot be read, which is then read as absent. */
+  /** Receives the failure of a manifest that exists and cannot be read, which is then treated as absent. */
   onUnreadableManifest: (error: unknown) => void;
   /** Absolute path of the project's `compile.outDir`. */
   outDir: string;
@@ -21,7 +21,7 @@ interface CollectCompiledKitsOptions {
 /**
  * Returns a project's compiled kits, preferring its manifest and falling back to the bundles in its output directory.
  *
- * The manifest is where the descriptions live, and a project compiled with `--skip-manifest` still has kits worth
+ * The manifest contains the descriptions, and a project compiled with `--skip-manifest` still has kits worth
  * naming. An output directory that does not exist yields no rows; any other failure to read it is thrown.
  */
 export function collectCompiledKits({

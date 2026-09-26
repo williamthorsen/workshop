@@ -18,7 +18,7 @@ vi.mock(import('../loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
 }));
 
-// Spreads the original so that `realpathSync`, which the compile root is resolved through, stays real.
+// Spread the original so that `realpathSync`, which the compile root is resolved through, stays real.
 vi.mock(import('node:fs'), async (importOriginal) => ({
   ...(await importOriginal()),
   existsSync: mockExistsSync,

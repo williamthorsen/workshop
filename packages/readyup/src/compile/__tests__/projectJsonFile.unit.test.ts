@@ -67,7 +67,7 @@ describe(projectJsonFile, () => {
     expect(error.reason).toBe('invalid-json');
   });
 
-  // The detail names the root as JSON sees it, so an array and a null are distinguishable from an object.
+  // The detail names the root's JSON type, so an array and a null are distinguishable from an object.
   it('reports a non-object root as not-an-object, naming the type that it found', async () => {
     const error = await captureProjectionError('[1,2,3]');
 

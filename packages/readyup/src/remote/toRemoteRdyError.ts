@@ -33,7 +33,7 @@ export interface RemoteFailureContext {
 }
 
 /**
- * Diagnoses a failed remote fetch, attaching a credential hint where one would help.
+ * Diagnoses a failed remote fetch, attaching a credential hint when one would help.
  *
  * Shared by listing and running, which classify the same failure under different codes and otherwise
  * treat it identically.
@@ -50,7 +50,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
     return build(error.message, { cause: error, hint: resolveHint(context, error.status) });
   }
 
-  // A transport failure has no status to reason about, so it never gets a hint. The URL is added unless the message
+  // Because a transport failure has no status to reason about, it never gets a hint. The URL is added unless the message
   // already names it, as a timeout's message does.
   const message = describeError(error);
   const detail = message.includes(context.url) ? message : `Failed to reach ${context.url}: ${message}`;

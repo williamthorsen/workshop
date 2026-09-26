@@ -13,16 +13,16 @@ export type JsonProjectionFailure = 'invalid-json' | 'not-an-object' | 'path-not
 export interface JsonProjectionErrorOptions {
   cause?: unknown;
 
-  /** What the failure found, where `reason` alone does not say it: the root's type, or the key path. */
+  /** What the failure found, when `reason` alone does not say it: the root's type, or the key path. */
   detail?: string | undefined;
 }
 
 /**
  * A JSON file that could not be projected onto a path specifier.
  *
- * `reason` travels separately from `message` so a caller can report the failure in its own wording:
+ * `reason` is stored separately from `message` so that a caller can report the failure in its own wording:
  * `pickJson` names the path as the kit wrote it, while a verdict over a recorded input names the kind
- * of staleness. Holding the diagnosis as data keeps both from matching on message text.
+ * of staleness. Storing the diagnosis as data keeps both from matching on message text.
  */
 export class JsonProjectionError extends Error {
   /** The JSON file, absolute. */

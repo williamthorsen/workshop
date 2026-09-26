@@ -1,5 +1,5 @@
 // Keep this constant in a zod-free module. Re-exporting it from `src/index.ts`
-// drags the module's transitive graph into every compiled user kit. Colocating
+// adds the module's transitive graph to every compiled user kit. Colocating
 // it with `manifestSchema.ts` would reintroduce the zod-bloat regression
 // captured in issue #59.
 

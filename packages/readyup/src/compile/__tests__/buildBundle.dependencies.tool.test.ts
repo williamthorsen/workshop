@@ -16,7 +16,7 @@ const KIT_SOURCE = [
   'export const kit = { broken, outer, tiny };',
 ].join('\n');
 
-/** A repo module whose only import is `zod`, so bundling it reaches the pnpm store. */
+/** A repo module whose only import is `zod`, so its bundle includes a package from the pnpm store. */
 const PNPM_INSTALLED_MODULE = path.resolve(import.meta.dirname, '../../manifest/manifestSchema.ts');
 
 const it = baseIt
@@ -28,7 +28,7 @@ const it = baseIt
         {
           'kit.ts': KIT_SOURCE,
           // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-          // temporary directory happens to hold a manifest.
+          // temporary directory happens to contain a manifest.
           'package.json': JSON.stringify({ name: 'fixture', version: '1.0.0' }),
 
           ...packageEntries('node_modules/broken-dep', { name: 'broken-dep' }, [
@@ -100,7 +100,7 @@ describe('buildBundle bundled dependencies', () => {
 
 // region | Helpers
 
-/** Returns the tree entries for a package directory holding the given package.json body and files. */
+/** Returns the tree entries for a package directory containing the given package.json body and files. */
 function packageEntries(
   packageDir: string,
   packageJson: Record<string, string>,

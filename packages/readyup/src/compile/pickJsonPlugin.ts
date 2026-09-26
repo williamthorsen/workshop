@@ -27,7 +27,7 @@ const PICK_JSON_RE = /\bpickJson\s*\((?<args>[^)]+)\)/g;
  *
  * Every read goes through `recorder`, which puts the module and the JSON file that it projected into
  * the compile's input closure. This module imports no filesystem API of its own, so a read that it
- * performs cannot escape that closure.
+ * performs cannot be left out of that closure.
  */
 export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
   return {
@@ -41,7 +41,7 @@ export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
           throw new Error(`pickJson: Cannot read source file "${args.path}"`);
         }
 
-        // Fast bail: skip files that don't reference pickJson.
+        // Fast bail: Skip files that don't reference pickJson.
         if (!source.includes('pickJson')) return null;
 
         // Replace each pickJson(...) call with an inlined object literal.
@@ -70,7 +70,7 @@ export function pickJsonPlugin(recorder: CompileRecorder): Plugin {
  * Returns the failure to raise for a projection that did not complete, worded as `pickJson` reports it.
  *
  * Names the path as the kit wrote it, which the projection cannot: By the time it reads the file, only
- * the resolved path survives.
+ * the resolved path is available.
  */
 function describeProjectionFailure(error: unknown, relativePath: string, jsonFilePath: string): unknown {
   if (!(error instanceof JsonProjectionError)) return error;

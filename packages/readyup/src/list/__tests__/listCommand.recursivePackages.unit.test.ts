@@ -83,7 +83,7 @@ describe('list --recursive --packages', () => {
       ]);
     });
 
-    // The gate applied by `--recursive` belongs to the authoring axis; this axis asks what a workspace depends on.
+    // The gate applied by `--recursive` belongs to the authoring axis; this axis concerns what a workspace depends on.
     it('reports a workspace with no readyup footprint of its own', async () => {
       const { stdout } = await list();
 
@@ -104,7 +104,8 @@ describe('list --recursive --packages', () => {
       expect(stdout).not.toContain('packages/bare');
     });
 
-    // Configured membership is a fact about one project's config, so the same package is reported differently.
+    // Because configured membership is a fact about one project's config, two projects can report the same
+    // package differently.
     it('marks a package against the config of the project reporting it', async () => {
       configureProjects({ '.': ['@acme/kits'], 'packages/app': ['plain-kit'] });
 
@@ -161,7 +162,7 @@ describe('list --recursive --packages', () => {
       expect(smoke.map((kit) => kit.project)).toStrictEqual(['.', 'packages/app']);
     });
 
-    // Every package's kits are rows of their own here, so there is nothing left to name as a candidate.
+    // Every package's kits are rows of their own here. No package is left to name as a candidate.
     it('emits no candidate list', async () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
 

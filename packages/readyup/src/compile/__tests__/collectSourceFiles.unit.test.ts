@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { collectSourceFiles } from '../collectSourceFiles.ts';
 
-/** A source directory holding kits at the top level and below it, helpers, tests, a hidden file, and a non-source. */
+/** A source directory containing kits at the top level and below it, helpers, tests, a hidden file, and a non-source. */
 const SOURCE_TREE = {
   '__tests__/deploy.unit.test.ts': 'export {};',
   'deploy.ts': 'export default {};',

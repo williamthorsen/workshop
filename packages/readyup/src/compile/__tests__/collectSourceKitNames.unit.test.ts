@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { collectSourceKitNames } from '../collectSourceKitNames.ts';
 
-/** A source directory holding kits at the top level and below it, a shared module, and a hidden source. */
+/** A source directory containing kits at the top level and below it, a shared module, and a hidden source. */
 const SOURCE_TREE = {
   'deploy.ts': 'export default {};',
   'helpers/.draft.ts': 'export {};',

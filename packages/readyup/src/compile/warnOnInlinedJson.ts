@@ -15,7 +15,7 @@ export function warnOnInlinedJson(kitName: string, inlinedJson: InlinedJsonFile[
     const importers = file.importers.map(toDisplayPath).join(', ');
     const warning: RaisedWarning = {
       code: 'json-inlined',
-      message: `kit "${kitName}" bundles all of ${toDisplayPath(file.path)}, imported by ${importers}, so every field ships in the kit and any edit to the file leaves the kit stale.`,
+      message: `kit "${kitName}" bundles all of ${toDisplayPath(file.path)}, imported by ${importers}, so every field is included in the kit and any edit to the file leaves the kit stale.`,
       remedy: 'Replace the import with pickJson, which inlines only the fields that it names.',
     };
     process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);

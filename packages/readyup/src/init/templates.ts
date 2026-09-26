@@ -19,7 +19,7 @@ export const rdyKitTemplate = `import { defineRdyKit } from 'readyup';
  * Each checklist contains checks that run before a deployment or other operation.
  * Checks run concurrently within a checklist.
  *
- * Three fields, three questions: \`name\` states what must be true, phrased so it reads
+ * Three fields, three questions: \`name\` states what must be true, phrased so that it reads
  * true on a pass; \`detail\` explains why this status; \`fix\` says what to do about it.
  *
  * The rules that need judgment -- above all, when a check should skip rather than pass --

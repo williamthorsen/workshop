@@ -19,7 +19,7 @@ import type { JsonListKitEntry } from '../schemas/listOutputSchema.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { enumerateKits } from './enumerateKits.ts';
 
-/** The kits that a `--from` source holds, with the location from which they were read. */
+/** The kits that a `--from` source contains, with the location from which they were read. */
 export type SourceKits =
   | { kind: 'local'; kits: JsonListKitEntry[]; kitsDir: string }
   | { kind: 'remote'; kits: JsonListKitEntry[]; manifestUrl: string };
@@ -27,7 +27,7 @@ export type SourceKits =
 /** A local `--from` source, which resolves to a directory on this machine. */
 type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
 
-/** Returns the kits that a `--from` source holds, as the rows that `rdy list --from` reports. */
+/** Returns the kits that a `--from` source contains, as the rows that `rdy list --from` reports. */
 export async function collectSourceKits(source: FromSource, remote: RemoteFetchContext): Promise<SourceKits> {
   if (source.type === 'github') {
     const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
@@ -49,7 +49,7 @@ export async function collectSourceKits(source: FromSource, remote: RemoteFetchC
 
 // region | Helpers
 
-/** Reads the kits that a directory holds, preferring its manifest and falling back to the files on disk. */
+/** Reads the kits that a directory contains, preferring its manifest and falling back to the files on disk. */
 function collectLocalKits(manifestPath: string, kitsDir: string): SourceKits {
   const manifest = readLocalManifestIfPresent(manifestPath);
   const kits =
@@ -60,7 +60,7 @@ function collectLocalKits(manifestPath: string, kitsDir: string): SourceKits {
   return { kind: 'local', kits, kitsDir };
 }
 
-/** Fetches the kits at a remote manifest URL, authenticating where the host is one that readyup knows. */
+/** Fetches the kits at a remote manifest URL, authenticating when the host is one that readyup knows. */
 async function collectRemoteKits(url: string, remote: RemoteFetchContext): Promise<SourceKits> {
   const provider = resolveRemoteProvider(url);
 
@@ -84,9 +84,9 @@ async function collectRemoteKits(url: string, remote: RemoteFetchContext): Promi
 /**
  * Enumerates the compiled kits in a directory, for a source that has no manifest beside it.
  *
- * `run --from` resolves a kit by filename alone, so a directory from which it can run is one that `list`
- * must be able to describe. The rows hold only what the filesystem knows: Everything else -- description,
- * checklist names, the readyup version against which a kit was built -- lives in the manifest that is absent.
+ * Because `run --from` resolves a kit by filename alone, `list` must be able to describe any directory
+ * from which it can run a kit. The rows contain only what the filesystem knows: Everything else -- description,
+ * checklist names, the readyup version against which a kit was built -- is recorded in the manifest that is absent.
  *
  * A source with neither a manifest nor a kit directory is still an error. Reporting "no kits" for a
  * path that does not exist would turn a mistyped `--from` into a clean, empty listing.
@@ -112,7 +112,7 @@ function enumerateCompiledKits(kitsDir: string, manifestPath: string): JsonListK
   }));
 }
 
-/** Reads a manifest, returning `undefined` where there is none and reporting any other failure. */
+/** Reads a manifest, returning `undefined` when there is none and reporting any other failure. */
 function readLocalManifestIfPresent(manifestPath: string): RdyManifest | undefined {
   try {
     return readManifest(manifestPath);

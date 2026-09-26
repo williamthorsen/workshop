@@ -24,7 +24,7 @@ import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
 import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
 
-/** The tree swept by every test: one repository whose projects all compile, and one holding each project-level failure. */
+/** The tree swept by every test: one repository whose projects all compile, and one containing each project-level failure. */
 const FIXTURE_TREE = {
   // -- A repository whose every project compiles --
 
@@ -55,7 +55,7 @@ const FIXTURE_TREE = {
     "export default { compile: { srcDir: 'kit-sources', outDir: 'dist/kits' } };",
   'clean/packages/tooling/kit-sources/lint.ts': 'export default {};',
 
-  // -- A repository holding a project-level failure of each kind --
+  // -- A repository containing a project-level failure of each kind --
 
   'faulty/package.json': JSON.stringify({ name: 'faulty' }),
 
@@ -78,7 +78,7 @@ const FIXTURE_TREE = {
   'faulty/packages/sound/package.json': JSON.stringify({ name: 'sound' }),
   'faulty/packages/sound/.readyup/kits/ok.ts': 'export default {};',
 
-  // A directory where the manifest file belongs, so writing the manifest fails.
+  // A directory where the manifest file belongs: Writing the manifest fails.
   'faulty/packages/unwritable/package.json': JSON.stringify({ name: 'unwritable' }),
   'faulty/packages/unwritable/.readyup/kits/audit.ts': 'export default {};',
   'faulty/packages/unwritable/.readyup/manifest.json/.keep': '',
@@ -167,7 +167,7 @@ describe('compile --recursive', () => {
       );
     });
 
-    it('writes no manifest for a project holding compiled kits alone, and warns on each of its bundles', async ({
+    it('writes no manifest for a project containing compiled kits alone, and warns on each of its bundles', async ({
       temp,
     }) => {
       const { stdout, stderr } = await compile(['--recursive']);
@@ -246,7 +246,7 @@ describe('compile --recursive', () => {
           if (!inputPath.endsWith('demo.ts') && !inputPath.endsWith('deploy.ts')) return result;
 
           const source = realpathSync(inputPath);
-          // Each kit sits at `.readyup/kits/<kit>.ts` below its project's `package.json`.
+          // Each kit is at `.readyup/kits/<kit>.ts` below its project's `package.json`.
           return {
             ...result,
             inlinedJson: [{ importers: [source], path: path.resolve(source, '../../../package.json') }],
@@ -271,7 +271,7 @@ describe('compile --recursive', () => {
     });
   });
 
-  describe('a repository holding project-level failures', () => {
+  describe('a repository containing project-level failures', () => {
     it.aroundEach(async (runTest, { temp }) => {
       using _cwd = pointCwdAt(temp.resolve('faulty'));
 
@@ -330,7 +330,7 @@ describe('compile --recursive', () => {
     });
   });
 
-  describe('a tree holding no kit project', () => {
+  describe('a tree containing no kit project', () => {
     it('says so and passes', async ({ temp }) => {
       using _cwd = pointCwdAt(temp.resolve('clean/packages/plain'));
 

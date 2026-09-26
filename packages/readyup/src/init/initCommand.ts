@@ -9,7 +9,7 @@ import { scaffoldConfig } from './scaffold.ts';
 
 /** Steps that follow scaffolding regardless of whether readyup is already installed. */
 const STANDARD_NEXT_STEPS = [
-  'Customize .config/readyup.config.ts with your compile settings.',
+  'Customize .config/readyup.config.ts with the compile settings for this project.',
   'Add checklists to .readyup/kits/.',
   'Compile the kits: rdy compile',
   'Run the checks: rdy run (or rdy run --jit to run straight from the TypeScript source).',
@@ -43,7 +43,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
   reportWriteResult(result.configResult, dryRun);
   reportWriteResult(result.kitResult, dryRun);
 
-  // `reportWriteResult` has already printed the per-file reason, so the thrown message stays terse.
+  // Keep the thrown message terse, because `reportWriteResult` has already printed the per-file reason.
   const failure = [result.configResult, result.kitResult].find((r) => r.outcome === 'failed');
   if (failure !== undefined) {
     throw configError(`Failed to scaffold ${failure.filePath}`);
@@ -62,7 +62,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
  *
  * The install step leads when readyup does not resolve from the project, because every later step
  * depends on it: compiling a kit resolves the kit's readyup import, and running one loads the CLI.
- * Numbering is computed so the conditional step leaves no gap.
+ * Numbering is computed so that the conditional step leaves no gap.
  */
 function buildNextSteps(): string {
   const steps = isPackageInstalled('readyup')

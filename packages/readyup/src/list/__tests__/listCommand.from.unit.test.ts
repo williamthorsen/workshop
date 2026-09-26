@@ -306,7 +306,7 @@ describe(listCommand, () => {
       expect(error.hint).toBe(GITHUB_HINT);
     });
 
-    it('hints on the HTML soft-404 GitHub serves for a private repository', async () => {
+    it('hints on the HTML soft-404 that GitHub serves for a private repository', async () => {
       mockFetch.mockResolvedValue(mockResponse('<!DOCTYPE html><html><body>Not Found</body></html>'));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));

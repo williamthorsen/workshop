@@ -19,7 +19,7 @@ export interface KitMetadata {
 /**
  * Imports a compiled kit bundle, validates it semantically, and returns the metadata that it yields.
  *
- * A validation failure deletes the output file, so no invalid bundle is left on disk.
+ * Deletes the output file when validation fails, so no invalid bundle is left on disk.
  */
 export async function validateCompiledOutput(outputPath: string): Promise<KitMetadata> {
   const fileUrl = `${pathToFileURL(outputPath).href}?t=${Date.now()}`;

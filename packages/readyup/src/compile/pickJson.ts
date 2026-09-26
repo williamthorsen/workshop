@@ -2,7 +2,7 @@
  * Declares selected JSON paths for compile-time inlining.
  *
  * The declaration exists for type-checking in kit source files alone: `pickJsonPlugin` replaces every
- * call with an object literal holding only the requested fields, so reaching this body at runtime
+ * call with an object literal containing only the requested fields, so reaching this body at runtime
  * means the kit was never compiled.
  */
 export function pickJson(_relativePath: string, _paths: Array<string | Array<string>>): Record<string, unknown> {

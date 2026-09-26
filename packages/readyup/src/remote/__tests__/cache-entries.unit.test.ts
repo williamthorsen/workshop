@@ -59,7 +59,7 @@ describe(writeCacheEntry, () => {
     expect(tree.listFiles()).toStrictEqual([`${computeHash(KIT_URL)}.json`]);
   });
 
-  it('creates the cache directory where it does not exist', async () => {
+  it('creates the cache directory when it does not exist', async () => {
     using tree = createTempTree({}, { prefix: 'readyup-cache-entries-' });
     const cacheDir = tree.resolve('readyup/http');
 

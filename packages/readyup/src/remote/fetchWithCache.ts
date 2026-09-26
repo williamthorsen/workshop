@@ -29,7 +29,7 @@ export interface FetchWithCacheOptions {
  * Fetches a URL through a private HTTP cache, serving a stored body without a request while it is fresh.
  *
  * An entry is fresh for the response's `max-age`, less its `Age`. A stale entry is revalidated with its validator,
- * and a 304 is returned as a 200 holding the stored body, so a caller treats a cached response as it would a fetched
+ * and a 304 is returned as a 200 containing the stored body, so that a caller treats a cached response as it would a fetched
  * one. Every other response is returned with the same status, headers, and body. Only `http:` and `https:` URLs are
  * cached, and a cache that cannot be read or written leaves the fetch uncached rather than failing it.
  *
@@ -76,12 +76,12 @@ export async function fetchWithCache(
 
 // region | Helpers
 
-/** Returns a successful response holding a stored body. */
+/** Returns a successful response containing a stored body. */
 function buildCachedResponse(body: string): Response {
   return new Response(body, { status: 200, statusText: 'OK' });
 }
 
-/** Returns the header asking the server to confirm a stored entry, or no header where the entry has no validator. */
+/** Returns the header asking the server to confirm a stored entry, or no header when the entry has no validator. */
 function buildConditionalHeaders(entry: CacheEntry): Record<string, string> {
   if (entry.etag !== undefined) return { 'If-None-Match': entry.etag };
   if (entry.lastModified !== undefined) return { 'If-Modified-Since': entry.lastModified };
@@ -89,7 +89,7 @@ function buildConditionalHeaders(entry: CacheEntry): Record<string, string> {
 }
 
 /**
- * Builds the entry to store for a 200 response, or returns `undefined` where the response may not be stored.
+ * Builds the entry to store for a 200 response, or returns `undefined` when the response may not be stored.
  *
  * A response is stored unless it forbids storage, provided that it declares a positive `max-age` or a validator
  * with which to revalidate it.
@@ -118,7 +118,7 @@ function buildEntry(url: string, headers: Headers, body: string): CacheEntry | u
 /**
  * Reports whether an entry may be served without revalidation.
  *
- * An entry stored at a time later than the clock now reads is stale, so a clock set back cannot extend freshness.
+ * An entry stored at a time later than the clock now reads is stale, so that a clock set back cannot extend freshness.
  */
 function isFresh(entry: CacheEntry): boolean {
   if (entry.noCache || entry.maxAgeSec === undefined) return false;
@@ -158,7 +158,8 @@ function refreshEntry(entry: CacheEntry, headers: Headers): CacheEntry {
 /**
  * Sends a request and reads its whole body within a time limit, returning a response rebuilt from that body.
  *
- * Reading the body here puts a stall partway through it under the same limit as a stall before the headers.
+ * Because this function reads the body here, the same limit applies to a stall partway through the body as to a
+ * stall before the headers.
  */
 async function sendRequest(url: string, headers: Record<string, string>, timeoutMs: number): Promise<Response> {
   const signal = AbortSignal.timeout(timeoutMs);

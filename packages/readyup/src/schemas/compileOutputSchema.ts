@@ -20,7 +20,7 @@ export const CompileStatusSchema = z.enum(['compiled', 'failed', 'skipped']).met
 /**
  * One kit's compile outcome, with the reason only when there is a failure to explain.
  *
- * `project` is emitted under `--recursive` alone, naming the directory of the project that holds the kit,
+ * `project` is emitted under `--recursive` alone, naming the directory of the project that contains the kit,
  * relative to the directory from which the sweep descended; `'.'` is that directory itself.
  */
 export const CompileKitEntrySchema = z
@@ -65,10 +65,10 @@ export const CompileRemovedEntrySchema = z
  * A sweep runs to completion, so every requested kit appears here whatever happened to the ones
  * before it. `passed` is `true` when every kit compiled and, under `--recursive`, every project passed,
  * agreeing with exit code 0. A kit whose source is gone and whose bundle was kept appears among `kits`
- * as `skipped` or `failed`, so it counts against `passed` as any other kit does.
+ * as `skipped` or `failed` and counts against `passed` as any other kit does.
  *
- * `projects` is emitted under `--recursive` alone, and lists every project that the sweep visited, so a
- * project that contributed no kit entry is still reported.
+ * `projects` is emitted under `--recursive` alone and lists every project that the sweep visited, including
+ * a project that contributed no kit entry.
  *
  * `removed` lists the bundles that the sweep deleted, and is absent when it deleted none.
  *

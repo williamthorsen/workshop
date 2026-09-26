@@ -57,13 +57,13 @@ const it = baseIt
     const compiledFixturePath = temp.resolve('discoverWorkspaces-fixture.js');
     const hookOutputPath = temp.resolve('readyupResolverHook.js');
 
-    // Compile the fixture with the production compileConfig pipeline so the
-    // assertions exercise exactly what kit authors will ship.
+    // Compile the fixture with the production compileConfig pipeline so that the
+    // assertions exercise exactly what kit authors will publish.
     await compileConfig(FIXTURE_PATH, compiledFixturePath);
 
     // Build the resolver hook for the subprocess to register. The hook source
-    // has no imports, so esbuild is overkill; a TypeScript-strip via esbuild
-    // gives a self-contained JS module without depending on a prior `nmr build`.
+    // has no imports, so bundling is unnecessary; a TypeScript-strip via esbuild
+    // produces a self-contained JS module without depending on a prior `nmr build`.
     const esbuild = await import('esbuild');
     await esbuild.build({
       entryPoints: [HOOK_SOURCE_PATH],
@@ -107,8 +107,8 @@ describe('readyup externalization + resolver hook', () => {
     temp,
   }) => {
     // Sanity-check that the temp directory is outside any reachable `node_modules/readyup`
-    // tree. If the tree ever lands inside a project, this assertion would silently pass via
-    // filesystem walk-up; surface that here for future maintainers. The comparison resolves
+    // tree. If the tree is ever created inside a project, this assertion would silently pass via
+    // filesystem walk-up; make that visible here for future maintainers. The comparison resolves
     // `tmpdir()` because the tree reports its realpath and `os.tmpdir()` is a symlink on macOS.
     expect(temp.dir.startsWith(realpathSync(tmpdir()))).toBe(true);
 

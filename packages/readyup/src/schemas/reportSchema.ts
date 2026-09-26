@@ -12,7 +12,7 @@ export const SCHEMA_VERSION = 1;
 /** How much of the detail tree a report includes. */
 export const DetailSchema = z.enum(['summary', 'full']).meta({ id: 'Detail' });
 
-/** Progress a check reported alongside its verdict, discriminated by `type`. */
+/** Progress reported by a check alongside its verdict, discriminated by `type`. */
 export const ProgressSchema = z
   .discriminatedUnion('type', [
     z.object({
@@ -32,7 +32,7 @@ export const ProgressSchema = z
  *
  * `ok` is three-valued rather than optional: `null` is the verdict that a skipped check has, not a
  * missing field. Every other optional field is omitted when it holds nothing, so a passed check
- * with no detail serializes to five keys. Nesting is recursive -- `checks` holds the results of
+ * with no detail serializes to five keys. Nesting is recursive -- `checks` contains the results of
  * checks that ran only because this one passed.
  */
 export const CheckEntrySchema = z
@@ -93,7 +93,7 @@ export const KitOriginSchema = z
  * exports. It is present whenever that stamp is, including when it equals the report's own
  * `readyupVersion`, so its absence means the kit has no stamp: a bundle compiled before the
  * stamp existed, or a `--jit` run that loaded TypeScript source. `rdy verify` reports the same
- * value as `rebuildCompiledWith` under a narrower rule, appearing only where it differs from the
+ * value as `rebuildCompiledWith` under a narrower rule, appearing only when it differs from the
  * running readyup.
  */
 export const KitResultEntrySchema = z
@@ -136,11 +136,11 @@ export const KitEntrySchema = z.union([KitErrorEntrySchema, KitResultEntrySchema
  * only ever emitted once the run reaches its kits, so `passed: false` means "ran, but incompletely
  * or with failures" and never "could not start": That failure produces the error envelope instead.
  *
- * `failOn` and `reportOn` here are what the invocation requested, so each is present only when its
+ * Because `failOn` and `reportOn` here are what the invocation requested, each is present only when its
  * flag was given and absence means "not requested" rather than "defaulted". The thresholds that
  * governed a kit live on that kit's entry, because a kit may declare its own and one run-level value
- * cannot describe kits that differ. `detail` has no per-kit resolution, so requested and effective
- * are the same value and it is always present.
+ * cannot describe kits that differ. `detail` has no per-kit resolution: Requested and effective
+ * are the same value, and it is always present.
  */
 export const ReportSchema = z
   .object({

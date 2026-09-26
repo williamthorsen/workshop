@@ -18,7 +18,7 @@ export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKin
  * rather than as a third `kind` also keeps the payload additive: Widening a closed set would bump
  * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
  *
- * `configured` reports whether the readyup config names the package, which is what decides whether
+ * `configured` reports whether the readyup config names the package, which decides whether
  * `rdy run --packages` would reach the kit. Under a repo-wide sweep the config is the one belonging to
  * the row's own `project`, so the same package reports differently across workspaces. It is absent only
  * from a payload written before the field existed, never as a way of saying `false`.
@@ -57,7 +57,7 @@ export const ListKitEntrySchema = z
      * and this field tells the project's internal bucket from the sources that `compile.include` and
      * `compile.exclude` select. A consumer composing the invocation reads this rather than the kind.
      *
-     * Carried by every `kind: 'internal'` row, `false` included, so that absence marks a payload written before
+     * Present on every `kind: 'internal'` row, `false` included, so that absence marks a payload written before
      * the field existed rather than a kit that `--internal` does not reach.
      */
     internal: z.boolean().optional(),
@@ -74,19 +74,19 @@ export const ListKitEntrySchema = z
  * Rows are keyed by `name`, `kind`, `project`, and `origin.package` together, never by any subset. Under the
  * default configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a
  * compiled source appears twice: once as `internal`, which `rdy run --jit <kit>` runs, and once as
- * `compiled`, which `rdy run <kit>` runs. A package's kit is `compiled` as well, so `name` and `kind`
+ * `compiled`, which `rdy run <kit>` runs. Because a package's kit is `compiled` as well, `name` and `kind`
  * alone collide between a project's own kit and a package's kit of the same name, and between two
  * packages publishing that name. A repo-wide listing adds a third collision, since two projects may each
- * hold a `default` kit, and two workspaces may each depend on the same publisher. Every such row is
+ * have a `default` kit, and two workspaces may each depend on the same publisher. Every such row is
  * meaningful, and a consumer indexing on less than the full key silently drops one of them.
  *
  * Every row is a kit that some invocation would execute, which is the invariant on which a consumer
  * iterating `kits` relies. A kit published by an unconfigured package satisfies it: `rdy run --packages`
- * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` is what tells the
- * two apart.
+ * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` tells the two
+ * apart.
  *
  * A row is an invocation rather than a file, so two rows may report the same `path`. A source under
- * `internal.dir` that `compile.include` and `compile.exclude` also select is one: it is reported once
+ * `internal.dir` that `compile.include` and `compile.exclude` also select is one: It is reported once
  * under its path below `compile.srcDir` with `internal: false`, which `rdy run --jit <kit>` runs, and once
  * under its name within the bucket with `internal: true`, which `rdy run --jit --internal <kit>` runs. A
  * consumer that executes every row executes that file twice; one that wants files rather than invocations

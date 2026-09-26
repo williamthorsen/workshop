@@ -167,7 +167,7 @@ describe(formatOwnerView, () => {
     expect(findSectionCommand(result, 'Compiled')).not.toContain('--jit');
   });
 
-  // Discovery is not run selection, so the rows list every published kit and the optional name reaches each.
+  // Discovery is not run selection, so the rows list every published kit and the optional name can select each.
   it('heads the Packages section with the optional-name form of the run command', () => {
     const result = formatOwnerView({
       internalKits: [],
@@ -180,7 +180,7 @@ describe(formatOwnerView, () => {
     expect(result).toContain('npm-auto-publish');
   });
 
-  // The section heads what to do about these packages, not a command, so the run label would misname it.
+  // The section is headed by what to do about these packages, not by a command. A run label would misname that line.
   it('heads the Available section with its instruction, unlabelled', () => {
     const result = formatOwnerView({
       internalKits: [],
@@ -339,7 +339,7 @@ describe(formatManifestView, () => {
     expect(result).toContain(`${COMPILED} monitor`);
   });
 
-  it('sits the kits against the heading, with no blank line anywhere', () => {
+  it('places the kits directly beneath the heading, with no blank line anywhere', () => {
     const lines = formatManifestView({
       kits: [{ name: 'deploy' }],
       manifestPath: '.readyup/manifest.json',
@@ -488,7 +488,7 @@ describe(formatPackagesView, () => {
     expect(result).toContain(`\u{2501}\u{2501} ${PACKAGE} plain-kit\n`);
   });
 
-  it('hints a configured package with the run that reaches it', () => {
+  it('hints a configured package with the run that includes it', () => {
     const result = formatPackagesView({ groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] });
 
     expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <kit>');
@@ -603,7 +603,7 @@ describe(formatRecursiveView, () => {
     );
   });
 
-  it('brackets the positional name when the project holds a default kit', () => {
+  it('brackets the positional name when the project contains a default kit', () => {
     const result = formatRecursiveView({ projects: [buildProject({ dir: 'packages/ui', kits: ['default'] })] });
 
     expect(findProjectCommand(result, 'packages/ui/')).toBe(
@@ -743,7 +743,7 @@ describe(formatRecursivePackagesView, () => {
   });
 
   // The command has to run the kits beneath it from wherever the sweep was run.
-  it('reaches a workspace dependency by changing into the workspace that declares it', () => {
+  it('runs the kits of a workspace dependency by changing into the workspace that declares it', () => {
     const result = formatRecursivePackagesView({
       projects: [
         buildProjectPackages({
@@ -949,7 +949,7 @@ describe(formatEmpty, () => {
 // region | Helpers
 
 /**
- * Builds a configured package group holding the named kits, each undescribed.
+ * Builds a configured package group containing the named kits, each undescribed.
  *
  * `version` defaults to `2.1.0`, which an explicit `undefined` takes as well: A group naming no version
  * is built inline.
@@ -990,7 +990,7 @@ function buildKit(
   };
 }
 
-/** Builds a project on the default outDir, holding the named kits and no descriptions. */
+/** Builds a project on the default outDir, containing the named kits and no descriptions. */
 function buildProject({ dir, kits }: { dir: string; kits: string[] }): RecursiveProjectView {
   return {
     dir,
@@ -1004,7 +1004,7 @@ function buildProjectPackages({ dir, groups }: { dir: string; groups: KitPackage
   return { dir, groups };
 }
 
-/** Returns the line beneath a project's heading, which is where its command sits. */
+/** Returns the line beneath a project's heading, which contains its command. */
 function findProjectCommand(output: string, heading: string): string | undefined {
   const lines = output.split('\n');
   const headingIndex = lines.findIndex((line) => line.endsWith(` ${heading}`));
@@ -1012,7 +1012,7 @@ function findProjectCommand(output: string, heading: string): string | undefined
 }
 
 /**
- * Returns the line beneath a section's title, which is where its command sits.
+ * Returns the line beneath a section's title, which contains its command.
  *
  * Reading that line positionally is the assertion: A command fused into the title would still satisfy a
  * `toContain` over the whole output.

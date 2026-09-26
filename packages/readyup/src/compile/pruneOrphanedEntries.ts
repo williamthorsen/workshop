@@ -9,7 +9,7 @@ import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 
 /** Arguments for pruning the manifest entries that a sweep did not produce. */
 export interface PruneOrphanedEntriesArgs {
-  /** The entries of the manifest as it stood before the sweep. */
+  /** The entries of the manifest as it was before the sweep. */
   existingEntries: Iterable<RdyManifestKit>;
   force: boolean;
   manifestDir: string;
@@ -25,7 +25,7 @@ export interface PruneOrphanedEntriesArgs {
 export interface PruneOutcome {
   /** Orphaned entries that stay in the manifest, because their bundle is still on disk. */
   keptEntries: RdyManifestKit[];
-  /** Each orphan that deleted a bundle or kept one, in manifest order. */
+  /** Each orphan whose bundle was deleted or kept, in manifest order. */
   orphans: OrphanOutcome[];
 }
 
@@ -47,11 +47,11 @@ export type OrphanOutcome =
  * Both keep their entry, because the manifest still describes a file on disk.
  *
  * An orphan whose bundle the sweep just wrote is dropped without deleting anything: The entry named that bundle under
- * a name no source claims any more, and the file itself belongs to the kit that now claims it. This is what a rename
- * looks like from the prune's side, whether the source moved or the naming rule changed beneath it.
+ * a name that no source claims any more, and the file itself belongs to the kit that now claims it. This is how the
+ * prune sees a rename, whether the source moved or the naming rule changed.
  *
  * An entry recording no path, one whose bundle is already gone, and one whose bundle lies outside `outDir` are
- * dropped without deleting anything and without an outcome. A file outside `outDir` is none that a sweep writes.
+ * dropped without deleting anything and without an outcome. A sweep writes no file outside `outDir`.
  */
 export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutcome {
   const { existingEntries, force, manifestDir, outDir, sweptBundlePaths, sweptKitNames } = args;
@@ -87,7 +87,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
 /**
  * Removes each directory from `directory` upward that a deletion left empty, stopping below `outDir`.
  *
- * The walk stops at the first directory that still holds something and at any directory that cannot be
+ * The walk stops at the first directory that still contains something and at any directory that cannot be
  * removed. A directory left empty is untidy rather than wrong, so nothing here fails the compile, and
  * `outDir` itself stays whether or not the sweep emptied it.
  */
@@ -101,7 +101,7 @@ function removeEmptiedDirectories(directory: string, outDir: string): void {
   }
 }
 
-/** Deletes a file, returning `false` where there was none to delete. */
+/** Deletes a file, returning `false` when there was none to delete. */
 function deleteFile(filePath: string): boolean {
   try {
     unlinkSync(filePath);

@@ -47,7 +47,7 @@ const compileOptions = {
   output: { type: 'string', short: 'o' },
   recursive: { type: 'boolean' },
   'skip-manifest': { type: 'boolean' },
-  // Declared so strict parsing accepts it; `routeCommand` consumed its value before dispatch.
+  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
 
@@ -148,8 +148,8 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   const resolvedInputPath = path.resolve(inputPath);
   const resolvedOutputPath = path.resolve(outputPath ?? deriveJsPath(resolvedInputPath));
-  // The config is read for `outDir` alone, which gives the kit its name: the sources that `include` and
-  // `exclude` select bear on a sweep rather than on a named file.
+  // The config is read for `outDir` alone, which gives the kit its name: The sources that `include` and
+  // `exclude` select matter to a sweep rather than to a named file.
   const config = await loadConfigForSingle(configPath);
   const kitName = deriveKitNameFromBundle(resolvedOutputPath, path.resolve(config.compile.outDir));
   const relInput = path.relative(process.cwd(), resolvedInputPath);
@@ -217,7 +217,7 @@ interface CompileRunOutcome extends ProjectCompileOutcome {
  *
  * A kit left alone because it drifted counts against the run just as a failed one does: Both mean
  * the compiled output on disk is not what the source says it should be. A warning counts against nothing,
- * and reaches the payload only where one was raised, as a removal does.
+ * and appears in the payload only when one was raised, as a removal does.
  *
  * A project that failed counts against the run whether or not it contributed a kit.
  */
@@ -240,12 +240,12 @@ function finishCompile(outcome: CompileRunOutcome, json: boolean): number {
   return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
-/** Returns a drift skip described for the JSON payload, where there is no formatted line to read. */
+/** Returns a drift skip described for the JSON payload, which has no formatted line to read. */
 function formatDriftReason(status: Extract<DriftStatus, { kind: 'drift' }>): string {
   return `Compiled output has drifted from the manifest (expected ${status.expected}, got ${status.actual})`;
 }
 
-/** Returns the manifest output path, taken from `--manifest` where that flag was given. */
+/** Returns the manifest output path, taken from `--manifest` when that flag was given. */
 function resolveManifestPath(flagValue: string | undefined): string {
   return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
 }
@@ -316,7 +316,7 @@ async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
       continue;
     }
 
-    // A project failing on its config writes no block, so separation follows the blocks actually written.
+    // No block is written for a project that fails on its config, so separation follows the blocks actually written.
     if (hasWrittenBlock) writeHuman('\n', json);
     hasWrittenBlock = true;
 
@@ -405,7 +405,7 @@ interface ProjectCompileOutcome {
   warnings: RaisedWarning[];
 }
 
-/** Where a project sits in a recursive compile. */
+/** A project's location in a recursive compile. */
 interface SweepContext {
   /** Directory from which the sweep descended. */
   root: string;
@@ -418,12 +418,12 @@ interface SweepContext {
  * no source compiles to any longer, and returns what became of each kit.
  *
  * The sweep runs to completion: A kit that fails to compile is reported and the next one is tried,
- * so one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
+ * so that one broken kit cannot hide the state of every kit that sorts after it. Failures on the way to
  * the sweep -- an unreadable source directory, an unwritable manifest -- still throw, because they say
  * nothing about any individual kit.
  *
- * A sweep that finds no sources still prunes, and writes the manifest only where one exists: That manifest may list
- * kits since deleted, and a project holding neither kits nor a manifest gets none seeded for it.
+ * A sweep that finds no sources still prunes, and writes the manifest only when one exists: That manifest may list
+ * kits since deleted, and the sweep seeds no manifest for a project with neither kits nor a manifest.
  */
 async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileOutcome> {
   const { projectDir, config, manifestPath, force, skipManifest, json, sweep } = args;
@@ -587,8 +587,8 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
     };
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
-    // goes on. The sweep replaces the whole manifest, so the kit keeps its prior record, which still
-    // describes the tree: An esbuild failure leaves the previous output and its hash intact, and a
+    // goes on. Because the sweep replaces the whole manifest, this returns the kit's prior record to keep it
+    // there. That record still describes the tree: An esbuild failure leaves the previous output and its hash intact, and a
     // validation failure deletes the output for `verify` to report missing.
     const message = describeError(error);
     process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
@@ -705,7 +705,7 @@ interface SweepTally {
   sourcedSkippedCount: number;
 }
 
-/** Returns the lines closing a sweep, one per kind of problem that it left, or an empty string where it left none. */
+/** Returns the lines closing a sweep, one per kind of problem that it left, or an empty string when it left none. */
 function formatSweepTally(tally: SweepTally): string {
   const { compileFailedCount, orphanReport, sourcedSkippedCount } = tally;
   const kits = pluralizeWithCount(tally.kitCount, 'kit');
@@ -749,12 +749,12 @@ interface ClosureFields {
  * Returns the manifest fields supplied by a compile's closure, with paths stated against the manifest.
  *
  * `sourceHash` is the entry's own record rather than a second reading of the file, so the two cannot
- * disagree. A closure holding no record of the entry is a defect in rdy rather than an occasion to hash
+ * disagree. A closure with no record of the entry is a defect in rdy rather than an occasion to hash
  * the file again: Deriving is the point, and hashing separately would restore exactly the disagreement
  * that deriving prevents.
  *
  * The entry is matched by its real path, because esbuild reports the path to which it resolved a module,
- * which differs from the path handed to a compile wherever a directory above it is a symlink.
+ * which differs from the path passed to a compile wherever a directory above it is a symlink.
  */
 function deriveClosureFields(inputs: CompiledInput[], entryPath: string, manifestDir: string): ClosureFields {
   const realEntryPath = realpathSync(entryPath);
@@ -809,7 +809,7 @@ function upsertManifest(
     const existing = readManifest(manifestPath);
     existingKits = existing.kits;
   } catch (error: unknown) {
-    // Missing manifest is expected for first compile; other failures should surface.
+    // Missing manifest is expected for first compile; other failures should be reported.
     if (!(error instanceof ManifestNotFoundError)) {
       const message = describeError(error);
       process.stderr.write(`Warning: ${message}; starting with empty manifest\n`);
@@ -826,7 +826,7 @@ function upsertManifest(
 }
 
 /**
- * Returns the manifest's kits indexed by name, or an empty index where the manifest is missing.
+ * Returns the manifest's kits indexed by name, or an empty index when the manifest is missing.
  *
  * A missing manifest is the normal state of a first compile. Any other failure is written to stderr
  * and leaves the drift gate a no-op.
@@ -862,7 +862,7 @@ interface DriftSkip {
 }
 
 /**
- * Returns a single kit's drift status alongside the manifest entry to preserve, or `undefined` where
+ * Returns a single kit's drift status alongside the manifest entry to preserve, or `undefined` when
  * the kit should proceed to compile.
  */
 function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
@@ -915,7 +915,7 @@ interface DriftedKitKinds {
   hasSourced: boolean;
 }
 
-/** Returns what to do about a sweep's drifted kits, where an orphan has no source into which to move its edits. */
+/** Returns what to do about a sweep's drifted kits. An orphan has no source into which to move its edits. */
 function formatDriftRemedy({ hasOrphan, hasSourced }: DriftedKitKinds): string {
   if (!hasOrphan) return 'Re-run with --force to overwrite, or move edits into the source.';
   if (!hasSourced) return 'Re-run with --force to remove, or restore the source.';
@@ -937,7 +937,7 @@ function formatSectionHeading(label: string): string {
 /**
  * Returns the clause naming what a sweep that found no kits did with the manifest.
  *
- * Empty under `--skip-manifest`, where the manifest was never consulted and so has nothing to report. A written
+ * Empty under `--skip-manifest`, because the run never consulted the manifest and has nothing to report about it. A written
  * manifest lists no kits unless an orphan kept its entry.
  */
 function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, entryCount: number): string {
@@ -949,9 +949,9 @@ function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, e
 /**
  * Returns the directory against which a compile heading names its paths.
  *
- * The nearest enclosing workspace root wins, then the nearest repository root, then `fallbackDir`.
+ * The nearest enclosing workspace root takes precedence, then the nearest repository root, then `fallbackDir`.
  * `pnpm -r exec rdy compile` gives each workspace its own working directory, so naming paths against
- * that one would head every workspace's output identically and leave the reader unable to tell whose
+ * that one would give every workspace's output the same heading and leave the reader unable to tell whose
  * kits a line reports. A repository with no workspace file still gets a stable anchor.
  */
 function resolveWorkspaceAnchor(srcDir: string, fallbackDir: string): string {

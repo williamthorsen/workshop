@@ -19,7 +19,7 @@ const it = baseIt.extend(
   makeFixture(() => {
     const tree = createTempTree({}, { prefix: 'rdy-init-scaffold-' });
     // The scaffolded kit imports `readyup` by name, and jiti resolves that by walking up from the kit
-    // file. The link is what the walk finds, standing in for the install that a real project would have.
+    // file. The walk finds the link, which stands in for the install that a real project would have.
     tree.symlink('node_modules/readyup', PACKAGE_ROOT);
 
     return tree;
@@ -36,7 +36,7 @@ it.aroundEach(async (runTest, { temp }) => {
 /**
  * Covers the kit that `rdy init` writes by running it, rather than comparing it to the template from which it came.
  *
- * The template is a string, so no typecheck or lint reaches it. Loading it through the same path that
+ * The template is a string, so no typecheck or lint covers it. Loading it through the same path that
  * `rdy run --jit` takes proves that a scaffolded project works before its author has written anything.
  */
 describe('scaffolded kit', () => {

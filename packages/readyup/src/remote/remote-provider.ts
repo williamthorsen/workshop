@@ -13,8 +13,8 @@ const PROVIDER_HOSTS: Record<RemoteProvider, string> = {
 /**
  * Builds the `Authorization` header for a provider, or `undefined` when none can be built.
  *
- * Absorbs the scheme difference between the two providers, so no caller spells out `token` against
- * `Bearer`. Returns `undefined` both for an unknown provider and for a known one with no ambient
+ * Handles the scheme difference between the two providers, so that no caller chooses between `token`
+ * and `Bearer`. Returns `undefined` both for an unknown provider and for a known one with no ambient
  * token, which is the state that a caller reports as "no credential was forwarded".
  */
 export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): Record<string, string> | undefined {
@@ -35,8 +35,8 @@ export function resolveRemoteAuthHeaders(provider: RemoteProvider | undefined): 
  * Names the provider serving a URL, or `undefined` for a host that readyup does not authenticate.
  *
  * Matching the host rather than the `--from` scheme covers a `--url` aimed at a provider by
- * construction, so the two flags need no separate code path. The comparison is against the parsed
- * host, so a third-party URL with a provider's name elsewhere in it does not match.
+ * construction, so the two flags need no separate code path. Because the comparison is against the
+ * parsed host, a third-party URL with a provider's name elsewhere in it does not match.
  */
 export function resolveRemoteProvider(url: string): RemoteProvider | undefined {
   const host = parseHost(url);

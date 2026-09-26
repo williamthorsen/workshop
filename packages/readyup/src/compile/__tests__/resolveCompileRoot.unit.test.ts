@@ -26,12 +26,12 @@ const it = baseIt.extend(
       { prefix: 'compile-root-' },
     );
 
-    // Two cases below assert that a walk reaching the filesystem root finds no manifest, which only holds
-    // where no directory above the fixture has a manifest of its own.
+    // Two cases below assert that a walk reaching the filesystem root finds no manifest, which holds only
+    // when no directory above the fixture has a manifest of its own.
     const ancestorManifest = findAncestorManifest(tree.dir);
     assert.ok(
       ancestorManifest === undefined,
-      `${ancestorManifest} sits above the fixture, so the unpackaged cases cannot be tested here`,
+      `${ancestorManifest} is above the fixture, so the unpackaged cases cannot be tested here`,
     );
 
     tree.symlink('link', tree.resolve('outer'));
@@ -41,19 +41,19 @@ const it = baseIt.extend(
 );
 
 describe(resolveCompileRoot, () => {
-  it('returns the nearest ancestor holding a package.json', ({ temp }) => {
+  it('returns the nearest ancestor containing a package.json', ({ temp }) => {
     const root = resolveCompileRoot(temp.resolve('outer/inner/kits/kit.ts'));
 
     expect(root).toBe(temp.resolve('outer/inner'));
   });
 
-  it('walks past ancestors holding none', ({ temp }) => {
+  it('walks past ancestors containing none', ({ temp }) => {
     const root = resolveCompileRoot(temp.resolve('outer/deep/kits/kit.ts'));
 
     expect(root).toBe(temp.resolve('outer'));
   });
 
-  it("returns the source's own directory when no ancestor holds a package.json", ({ temp }) => {
+  it("returns the source's own directory when no ancestor contains a package.json", ({ temp }) => {
     const kitsDir = temp.resolve('unpackaged/kits');
 
     expect(resolveCompileRoot(path.join(kitsDir, 'kit.ts'))).toBe(kitsDir);
@@ -74,7 +74,7 @@ describe(resolveCompileRoot, () => {
 
 // region | Helpers
 
-/** Returns the nearest directory at or above `fromDir` holding a `package.json`, or undefined where none does. */
+/** Returns the nearest directory at or above `fromDir` containing a `package.json`, or undefined when none does. */
 function findAncestorManifest(fromDir: string): string | undefined {
   for (let directory = fromDir; ; directory = path.dirname(directory)) {
     if (existsSync(path.join(directory, 'package.json'))) return directory;

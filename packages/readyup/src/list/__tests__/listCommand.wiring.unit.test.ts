@@ -146,7 +146,7 @@ async function list(args: string[]) {
   return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
 }
 
-/** Creates a kit directory holding compiled kits, with no manifest beside them. */
+/** Creates a kit directory containing compiled kits, with no manifest beside them. */
 function writeKitsDir(tree: TempTree, dirName: string, kitNames: string[]): void {
   for (const name of kitNames) {
     tree.write(path.join(dirName, `${name}.js`), 'export default { checklists: [] };\n');

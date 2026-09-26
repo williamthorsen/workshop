@@ -24,7 +24,7 @@ describe('published tarball', () => {
     expect(packedPaths).toContain('agents/guidance/rulebooks/readyup-kits.md');
   });
 
-  // npm ships `README.md` whatever `files` says, but nothing ships `docs/` unless the manifest names it,
+  // npm packs `README.md` whatever `files` says, but nothing packs `docs/` unless the manifest names it,
   // and every topic reads one file from there.
   it('includes the doc file that each `rdy help` topic reads', () => {
     const topicFiles = Object.values(TOPICS).map(({ file }) => `docs/${file}`);
@@ -36,7 +36,7 @@ describe('published tarball', () => {
 // region | Helpers
 
 /**
- * Returns the package-root-relative paths `pnpm pack` would publish. Scripts are skipped so `prepare` does not
+ * Returns the package-root-relative paths that `pnpm pack` would publish. Scripts are skipped so that `prepare` does not
  * regenerate schemas, compile the package, and recompile every kit: Nothing asserted here reads that output, and
  * producing it would rewrite the working tree as a side effect of a question about `files`. `pnpm pack` rejects a
  * bare `--ignore-scripts`, hence the `--config` form.

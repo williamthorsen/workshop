@@ -39,13 +39,13 @@ describe(resolveRemoteAuthHeaders, () => {
     mockResolveGitHubToken.mockReset();
   });
 
-  it('sends a GitHub token under the token scheme', () => {
+  it('returns a GitHub token under the token scheme', () => {
     mockResolveGitHubToken.mockReturnValue('gh-secret');
 
     expect(resolveRemoteAuthHeaders('github')).toStrictEqual({ Authorization: 'token gh-secret' });
   });
 
-  it('sends a Bitbucket token under the Bearer scheme', () => {
+  it('returns a Bitbucket token under the Bearer scheme', () => {
     mockResolveBitbucketToken.mockReturnValue('bb-secret');
 
     expect(resolveRemoteAuthHeaders('bitbucket')).toStrictEqual({ Authorization: 'Bearer bb-secret' });

@@ -65,7 +65,7 @@ describe('generated JSON Schemas', () => {
       ]);
     });
 
-    it('requires the effective thresholds on a kit that ran, where the top level leaves them optional', () => {
+    it('requires the effective thresholds on a kit that ran, whereas the top level leaves them optional', () => {
       expect(valueAt(report, '$defs', 'KitResultEntry', 'required')).toContain('failOn');
       expect(valueAt(report, '$defs', 'KitResultEntry', 'required')).toContain('reportOn');
     });
@@ -115,7 +115,7 @@ describe('generated JSON Schemas', () => {
       ]);
     });
 
-    it('leaves objects open so an added optional field does not invalidate the version', () => {
+    it('leaves objects open so that an added optional field does not invalidate the version', () => {
       expect(objectAt(report, '$defs', 'Report')).not.toHaveProperty('additionalProperties');
       expect(objectAt(report, '$defs', 'CheckEntry')).not.toHaveProperty('additionalProperties');
     });
@@ -124,7 +124,7 @@ describe('generated JSON Schemas', () => {
   describe('error-envelope document', () => {
     const envelope = documentFor('error-envelope.v1.json');
 
-    it('publishes the hint as an optional field, which is what keeps the version at 1', () => {
+    it('publishes the hint as an optional field, which keeps the version at 1', () => {
       expect(objectAt(envelope, '$defs', 'ErrorBody', 'properties', 'hint')).toStrictEqual({ type: 'string' });
       expect(valueAt(envelope, '$defs', 'ErrorBody', 'required')).toStrictEqual(['code', 'message']);
     });
@@ -159,7 +159,7 @@ describe('generated JSON Schemas', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, warnings: 2 })).toBe(false);
     });
 
-    it('accepts a report with a field that it has never heard of', () => {
+    it('accepts a report with a field that the schema does not declare', () => {
       expect(validatorFor('report.v1.json')({ ...minimalReportPayload, addedLater: 'ok' })).toBe(true);
     });
   });

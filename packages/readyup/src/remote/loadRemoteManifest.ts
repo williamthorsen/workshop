@@ -20,7 +20,7 @@ export interface LoadRemoteManifestOptions extends FetchWithCacheOptions {
 /**
  * Fetches a manifest from a URL and returns it parsed and schema-validated.
  *
- * The fetch goes through the HTTP cache where `cache` names one, and a body served from it is checked as a fetched
+ * The fetch goes through the HTTP cache when `cache` names one, and a body served from it is checked as a fetched
  * body is. `resolveHeaders` builds the headers of any request sent. This has no auth-scheme knowledge of its own,
  * so `Authorization` and anything else, such as a corporate proxy or telemetry header, are built already formatted.
  * Throws `RemoteManifestNotFoundError` for a 404 or an HTML soft-404, `RemoteFetchError` for any other non-2xx

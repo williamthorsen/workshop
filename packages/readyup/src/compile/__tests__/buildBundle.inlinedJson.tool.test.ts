@@ -48,7 +48,7 @@ const it = baseIt
           'node_modules/tiny-dep/own.json': JSON_CONTENT,
           'node_modules/tiny-dep/package.json': JSON.stringify({ name: 'tiny-dep', version: '1.0.0' }),
           // Anchors the compile on the fixture's own root rather than on whichever ancestor of the OS
-          // temporary directory happens to hold a manifest.
+          // temporary directory happens to contain a manifest.
           'package.json': JSON_CONTENT,
 
           ...Object.fromEntries(PLAIN_JSON_FILES.map((fileName) => [fileName, JSON_CONTENT])),

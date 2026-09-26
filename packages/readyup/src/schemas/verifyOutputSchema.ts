@@ -35,7 +35,7 @@ export const InputsStatusSchema = z.enum(['ok', 'stale', 'unverified']).meta({ i
  * `path` is the file as the manifest records it, relative to the manifest directory, and `kind`
  * separates a module inlined by the bundle from a JSON projection substituted by `pickJson`.
  *
- * Discriminated on `reason` so each cause states exactly what it compared, as `ManifestInputSchema`
+ * Discriminated on `reason` so that each cause states exactly what it compared, as `ManifestInputSchema`
  * discriminates the record that this reads back: `changed` has the hash pair, `missing` has
  * neither, and `unprojectable` has a diagnosis instead and is inline-only, since only a
  * projection can fail to be reproduced. A consumer generating types from this narrows by `reason`
@@ -78,7 +78,7 @@ export const RebuildEsbuildSchema = z
  * One bundled package whose recorded version the rebuild does not reproduce.
  *
  * `recorded` is the version bundled by the compile and `rebuilt` the one bundled by the rebuild; a
- * side is absent where the package was not bundled then or now. A side with several comma-separated
+ * side is absent when the package was not bundled then or now. A side with several comma-separated
  * versions is a package inlined by the bundle at more than one version at once.
  */
 export const RebuildDependencyChangeSchema = z
@@ -92,20 +92,20 @@ export const RebuildDependencyChangeSchema = z
  * are present only on a `drift` verdict, since no other status has two hashes to compare.
  * `sourceExpected` and `sourceActual` are their counterparts for the source, present only on
  * `stale`. `inputFailures` is the same idea for the recorded input closure, present only on a
- * `stale` `inputsStatus` and holding one entry per input rather than a pair of hashes, since a kit
- * can be stale in several inputs at once. `sourceStatus` and `inputsStatus` are optional so a
+ * `stale` `inputsStatus` and containing one entry per input rather than a pair of hashes, since a kit
+ * can be stale in several inputs at once. `sourceStatus` and `inputsStatus` are optional so that a
  * consumer pinned to this schema still validates a payload from a readyup that predates either.
  *
  * `rebuildStatus` and its fields appear only under `--rebuild`, so a run without the flag emits the
  * payload that it always did. `rebuildExpected` is the hash of the recompiled bundle and
  * `rebuildActual` the hash of the bundle on disk, both present only on `mismatch`; `rebuildError`
- * holds the compile failure on `failed`. `rebuildCompiledWith` names the readyup by which a
- * mismatched bundle was built, present only when it differs from the running one, which is what
+ * contains the compile failure on `failed`. `rebuildCompiledWith` names the readyup by which a
+ * mismatched bundle was built, present only when it differs from the running one, which
  * separates a mismatch caused by a readyup upgrade from one caused by an edited bundle.
  *
  * `rebuildEsbuild` and `rebuildDependencyChanges` extend the same idea to the toolchain record: Both
  * appear only on `mismatch`, and only for a kit whose manifest entry records an `esbuildVersion`.
- * `rebuildEsbuild` is present whenever that record exists, matching or not, so a consumer reads the
+ * `rebuildEsbuild` is present whenever that record exists, matching or not, so that a consumer reads the
  * comparison rather than reconstructing it from the manifest; `rebuildDependencyChanges` is present
  * only when at least one bundled package's version moved.
  */

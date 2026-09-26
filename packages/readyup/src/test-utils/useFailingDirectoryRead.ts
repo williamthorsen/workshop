@@ -13,8 +13,8 @@ export interface FailingDirectoryRead {
 /**
  * Binds a suite's mocked `readdirSync` to a directory tree, failing nothing until asked.
  *
- * The mock is a parameter because `vi.mock` hoists per file, so each suite owns its own. Binding points the
- * mock at the real reader, so a suite that binds once per test starts each test from a reader that fails
+ * The mock is a parameter because `vi.mock` hoists per file, so each suite owns its own. Because binding points
+ * the mock at the real reader, a suite that binds once per test starts each test from a reader that fails
  * nothing.
  */
 export function useFailingDirectoryRead(mock: Mock, root: string): FailingDirectoryRead {
