@@ -218,7 +218,7 @@ interface RecursivePackagesViewOptions {
 /**
  * Formats the repo-wide dependency output: each project's directory, then a block per kit-publishing dependency.
  *
- * Nesting comes from the glyph and the indentation rather than from a heading rule. The two rule weights
+ * Nesting comes from the glyph and the indentation rather than from a heading rule. The two heading rules
  * that this view would otherwise need differ only in stroke weight, and the glyphs already distinguish the
  * roles that they would mark; in plain style, whose role glyphs are empty, the indent alone shows the same
  * three levels.

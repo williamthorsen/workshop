@@ -263,7 +263,7 @@ function collectInputs(
 
   for (const [key, input] of Object.entries(metafileInputs)) {
     const resolvedPath = resolveMetafilePath(key, input.with, workingDir);
-    // Exclude a dependency file before hashing it, to avoid reading a dependency tree from disk: One `import zod`
+    // Skip a dependency file rather than hash it, to avoid reading a dependency tree from disk: One `import zod`
     // inlines 79 files.
     if (isDependencyFile(resolvedPath)) continue;
     const identity = identifyInput('module', resolvedPath);
