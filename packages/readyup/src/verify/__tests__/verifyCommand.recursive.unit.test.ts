@@ -1,9 +1,8 @@
 import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { afterEach, describe, expect, it as baseIt } from 'vitest';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
-import { setStyle } from '../../layout/engine.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
 import { hashBytes } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
@@ -72,10 +71,6 @@ describe('verify --recursive', () => {
     'temp',
     makeFixture(() => createTempTree(FIXTURE_TREE, { prefix: 'rdy-verify-recursive-' })),
   );
-
-  afterEach(() => {
-    setStyle('rich');
-  });
 
   describe('a repository whose every project passes', () => {
     it.aroundEach(async (runTest, { temp }) => {
