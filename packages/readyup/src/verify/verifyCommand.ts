@@ -63,12 +63,38 @@ export async function verifyCommand(args: string[]): Promise<number> {
   const json = values.json === true;
   const rebuild = values.rebuild === true;
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
-  const manifestDir = path.dirname(manifestPath);
 
   // Settle the bundler's availability before the run says anything. An exactness check that reports
   // kit after kit and then discovers it could never have run reads as a partial result; raised here,
   // the error reports an absent esbuild as a problem with the environment, not with any kit.
   if (rebuild) await requireEsbuild();
+
+  const { kits, passed } = await verifyManifest({ manifestPath, rebuild, json });
+  return finishVerify(kits, passed, json);
+}
+
+/** Arguments for verifying the kits of one manifest. */
+interface VerifyManifestArgs {
+  manifestPath: string;
+  rebuild: boolean;
+  json: boolean;
+}
+
+/** One manifest's contribution to a verify run. */
+interface ManifestVerification {
+  kits: JsonVerifyKitEntry[];
+  /** `true` when every kit in the manifest passed, and so when the manifest lists none. */
+  passed: boolean;
+}
+
+/**
+ * Verifies every kit that a manifest lists, writing a heading and one line per kit.
+ *
+ * Throws a config error for an unreadable manifest.
+ */
+async function verifyManifest(args: VerifyManifestArgs): Promise<ManifestVerification> {
+  const { manifestPath, rebuild, json } = args;
+  const manifestDir = path.dirname(manifestPath);
 
   let manifest;
   try {
@@ -82,7 +108,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
 
   if (manifest.kits.length === 0) {
     writeHuman('(no kits in manifest)\n', json);
-    return finishVerify([], true, json);
+    return { kits: [], passed: true };
   }
 
   const entries: JsonVerifyKitEntry[] = [];
@@ -105,7 +131,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
     writeHuman(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`, json);
   }
 
-  return finishVerify(entries, failed === 0, json);
+  return { kits: entries, passed: failed === 0 };
 }
 
 /**
