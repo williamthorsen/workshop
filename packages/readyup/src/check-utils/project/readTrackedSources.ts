@@ -20,6 +20,11 @@ const EXCLUDED_PATH_PATTERNS = [/(?:^|\/)node_modules\//, /(?:^|\/)\.readyup\/ki
  */
 const textsByCwd = new Map<string, Map<string, string | undefined>>();
 
+/** Reports whether a path is one that no sweep reads, whatever a filter says of it. */
+export function isSweepExcluded(path: string): boolean {
+  return EXCLUDED_PATH_PATTERNS.some((pattern) => pattern.test(path));
+}
+
 /**
  * Reads one path's text, from the cache when a sweep already read it, and `undefined` when the path contains none.
  *
@@ -66,8 +71,8 @@ export function readSourceText(path: string): string | undefined {
  * plain pass over the listing.
  *
  * The paths returned are reported to the sweep recorder that the runner has in scope, which is the evidence on
- * which the unused-pragma report rests. A check reading the project this way declares nothing to have its sweep
- * recorded, and a sweep that it reads in `skip` counts as much as one that it reads in `check`.
+ * which the unused-pragma and unmarked-generated reports rest. A check reading the project this way declares nothing
+ * to have its sweep recorded, and a sweep that it reads in `skip` counts as much as one that it reads in `check`.
  */
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
   const tracked = await listTrackedFiles();
@@ -76,7 +81,7 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
 
   const sources: ProjectSource[] = [];
   for (const path of tracked) {
-    if (isExcluded(path) || foreign.has(path)) continue;
+    if (isSweepExcluded(path) || foreign.has(path)) continue;
     if (filter !== undefined && !filter(path)) continue;
 
     const text = readSourceText(path);
@@ -90,11 +95,6 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
 }
 
 // region | Helpers
-
-/** Reports whether a path is one read by no sweep. */
-function isExcluded(path: string): boolean {
-  return EXCLUDED_PATH_PATTERNS.some((pattern) => pattern.test(path));
-}
 
 /**
  * Reads a tracked path as text, returning `undefined` when it contains none.

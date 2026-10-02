@@ -10,6 +10,7 @@ import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
+import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
 import { loadKit } from './loadKit.ts';
 import { warnOnUnusedPragmas } from './pragma-report.ts';
@@ -97,8 +98,9 @@ export async function runHumanMode(
   // block justifies the table even when the table has only a single row to show.
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
-  // Warn after the summary table, the last block in which a reported pragma's file may have been named.
+  // Warn after the summary table, the last block in which a reported file may have been named.
   warnOnUnusedPragmas(pragmaLedger);
+  await warnOnUnmarkedGeneratedSources(pragmaLedger);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }

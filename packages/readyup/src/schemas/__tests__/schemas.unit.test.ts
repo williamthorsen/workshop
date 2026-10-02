@@ -254,6 +254,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
         | 'bundle-unrecorded'
         | 'diagnosis-inconclusive'
+        | 'generated-unmarked'
         | 'input-stale'
         | 'json-inlined'
         | 'manifest-unreadable'
@@ -266,6 +267,7 @@ describe('JSON payload schemas', () => {
       expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<
         | 'bundle-unrecorded'
         | 'diagnosis-inconclusive'
+        | 'generated-unmarked'
         | 'input-stale'
         | 'json-inlined'
         | 'manifest-unreadable'

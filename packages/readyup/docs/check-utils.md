@@ -149,6 +149,8 @@ const missing = discoverKitPackages().filter((name) => !configuredPackages.inclu
 
 These six are what an adoption kit needs -- one reporting where a project hand-rolls what a package that it already installed provides.
 
+`readTrackedSources` drops three kinds of tracked file, whatever the filter returns for them, because a finding inside one is advice that nobody can take: anything under `node_modules/`, ReadyUp's own compiled kits at `.readyup/kits/*.js`, and any file that the project marks `linguist-generated` or `linguist-vendored` in `.gitattributes`. A mark takes its bare form or `=true`, and an explicit `=false` keeps the file. Git resolves the marks, so a nested `.gitattributes`, `$GIT_DIR/info/attributes`, and `core.attributesFile` count as well. A run reports committed bundler output that is missing a mark as [`generated-unmarked`](running-checks.md#advisory-warnings). `listTrackedFiles` drops nothing.
+
 The paths that `readTrackedSources` returns count toward the evidence on which the run reports a [pragma that suppressed nothing](running-checks.md#advisory-warnings).
 
 The runner applies the [`rdy-ignore` pragma](running-checks.md#suppressing-a-finding) to the findings that `buildFindingReport` returns.

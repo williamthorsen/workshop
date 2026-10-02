@@ -253,6 +253,27 @@ Recognition for the report is stricter than for suppression. A token is a site w
 
 Two limits follow from that. Because recognition reads JavaScript-family syntax, a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything.
 
+The last reads the same sources and reports committed bundler output that the project has not marked.
+
+| Code                 | Raised when                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `generated-unmarked` | A tracked source that a check examined looks like bundler output and is marked neither `linguist-generated` nor `linguist-vendored` |
+
+A file marked with either attribute is one that [the sweep skips](check-utils.md#project-sources), so a kit's findings inside an unmarked bundle are findings inside code that the project did not write. The warning names the file and the line that marks it, written relative to the repository root and anchored with a leading `/`, so that it belongs in the root `.gitattributes` wherever `rdy` ran:
+
+```
+Warning: dist/app.mjs looks like bundler output (its mean line length exceeds 250 characters) and is not marked as generated. Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.
+```
+
+The same line also collapses the file in GitHub's pull-request diffs and leaves it out of the repository's language statistics.
+
+A JavaScript-family source looks like bundler output on either of two signals, because neither covers the other:
+
+- **Line density.** Its mean line length exceeds 250 characters. Minified bundles run far above that and hand-written code far below it. A file shorter than 1,000 characters is not judged this way, since one long line dominates its mean.
+- **A bundler header.** One of its first 20 lines opens with an esbuild runtime helper declaration (`var __defProp = `, `var __commonJS = `, or `var __toESM = `) or with webpack's `/******/` bootstrap marker, or a comment among its first 5 lines contains `@generated`. A helper quoted in a string or a comment does not count, since only a line that opens with it matches. This catches an unminified bundle, whose lines are as short as hand-written ones.
+
+The evidence is the same as for `pragma-unused`: A file not examined by any check, or not tracked by git, is not reported. ReadyUp's own compiled kits under `.readyup/kits/` are never reported. The warning only advises: A flagged file stays in every sweep until the project marks it, so a false positive costs one line of output and nothing else.
+
 ## Kit import compatibility
 
 A compiled kit leaves its `readyup` imports unbundled, so it binds whichever readyup runs it rather than the one that built it. Before running a bundle, `rdy run` reads the `readyup` symbols that it imports and compares them against what the running readyup exports.

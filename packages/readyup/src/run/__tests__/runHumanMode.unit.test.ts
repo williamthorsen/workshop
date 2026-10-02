@@ -17,6 +17,15 @@ const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
 const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
+const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+
+/** A warning as the unmarked-generated report returns it. */
+const GENERATED_UNMARKED = {
+  code: 'generated-unmarked',
+  message:
+    'dist/app.mjs looks like bundler output (its mean line length exceeds 250 characters) and is not marked as generated.',
+  remedy: 'Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.',
+};
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -59,6 +68,11 @@ vi.mock(import('../pragma-report.ts'), () => ({
   warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
 }));
 
+// Mocked for the same reason as the pragma report.
+vi.mock(import('../generated-report.ts'), () => ({
+  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+}));
+
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
@@ -80,6 +94,7 @@ describe(runHumanMode, () => {
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
     mockWarnOnKitStaleness.mockReturnValue([]);
     mockWarnOnUnusedPragmas.mockReturnValue([]);
+    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -93,6 +108,7 @@ describe(runHumanMode, () => {
     mockReadManifestTracking.mockReset();
     mockWarnOnKitStaleness.mockReset();
     mockWarnOnUnusedPragmas.mockReset();
+    mockWarnOnUnmarkedGeneratedSources.mockReset();
   });
 
   it('says the run selected no kits rather than printing nothing', async () => {
@@ -614,6 +630,23 @@ describe(runHumanMode, () => {
 
       expect(mockWarnOnUnusedPragmas).toHaveBeenCalledTimes(1);
       expect(exitCode).toBe(2);
+    });
+  });
+
+  describe('unmarked-generated advisories', () => {
+    it('reports over the invocation ledger, after the unused-pragma report, and leaves the exit code alone', async () => {
+      mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([GENERATED_UNMARKED]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
+
+      const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
+      expect(mockWarnOnUnmarkedGeneratedSources).toHaveBeenCalledExactlyOnceWith(ledger);
+      const [pragmaOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
+      const [generatedOrder] = mockWarnOnUnmarkedGeneratedSources.mock.invocationCallOrder;
+      expect(pragmaOrder).toBeLessThan(generatedOrder ?? 0);
+      expect(exitCode).toBe(0);
     });
   });
 
