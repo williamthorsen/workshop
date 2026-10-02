@@ -72,6 +72,20 @@ const GENERATED_HEADER = [
   '',
 ].join('\n');
 
+/**
+ * Lines giving a bundle a working `require`, inserted after `GENERATED_HEADER` when the bundle calls one.
+ *
+ * esbuild routes an inlined CommonJS module's `require()` of an external module through its `__require` shim, which
+ * throws in ESM unless a `require` is in scope. The `require` binding cannot collide with a bundled symbol: The
+ * shim reads the free global `require`, and esbuild never renames a bundled symbol to a free global that the bundle
+ * references.
+ */
+const REQUIRE_SHIM = [
+  "import { createRequire as __rdyCreateRequire } from 'node:module';",
+  'const require = __rdyCreateRequire(import.meta.url);',
+  '',
+].join('\n');
+
 /** A kit's compiled bundle and the closure of files that the compile read to produce it. */
 export interface BundleResult {
   /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
@@ -105,6 +119,9 @@ export interface InlinedJsonFile {
  * `externalizeReadyupPlugin` the rest, both in a form that leaves them side-effect free. The
  * externalized `readyup` specifiers are resolved at runtime by the `rdy` runner's module-resolution
  * hook (`readyupResolverHook.ts`), which routes them to the runner's own readyup installation.
+ *
+ * A bundle whose inlined CommonJS code calls `require()` on an external module gets a working `require`, built from
+ * `node:module`'s `createRequire`. Any other bundle is left byte for byte as esbuild emits it.
  *
  * The single place the bundler is configured. `compileConfig` writes what this returns and
  * `checkRebuild` compares against it, so the bundle recompiled by a verification is the bundle that a
@@ -165,10 +182,11 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
   }
 
   const metafileInputs = result.metafile.inputs;
+  const bytes = Buffer.from(outputFile.contents);
 
   return {
     bundledDependencies: collectBundledDependencies(metafileInputs, workingDir),
-    bytes: Buffer.from(outputFile.contents),
+    bytes: hasExternalRequireCall(metafileInputs) ? insertRequireShim(bytes) : bytes,
     esbuildVersion: esbuild.version,
     inlinedJson: collectInlinedJson(metafileInputs, workingDir),
     inputs: collectInputs(recorder.inputs, metafileInputs, workingDir),
@@ -277,6 +295,13 @@ function collectInputs(
     .toSorted((a, b) => a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind));
 }
 
+/** Reports whether any bundled module calls `require()` on a module that the bundle leaves external. */
+function hasExternalRequireCall(metafileInputs: Metafile['inputs']): boolean {
+  return Object.values(metafileInputs).some((input) =>
+    input.imports.some((imported) => imported.external === true && imported.kind === 'require-call'),
+  );
+}
+
 /**
  * Reports whether an esbuild failure names an import that esbuild could not resolve.
  *
@@ -310,6 +335,20 @@ function identifyPackage(directory: string): { name: string; version: string } |
     if (identity !== undefined) return identity;
   }
   return undefined;
+}
+
+/**
+ * Returns the bundle with `REQUIRE_SHIM` inserted directly after `GENERATED_HEADER`.
+ *
+ * Throws when the bundle does not start with the header, since a shim placed anywhere else could follow code
+ * that already needs it.
+ */
+function insertRequireShim(bytes: Buffer): Buffer {
+  const text = bytes.toString('utf8');
+  if (!text.startsWith(GENERATED_HEADER)) {
+    throw new Error('Compiled bundle does not start with the generated header, so its require shim has no place');
+  }
+  return Buffer.from(GENERATED_HEADER + REQUIRE_SHIM + text.slice(GENERATED_HEADER.length));
 }
 
 /** Reports whether a path lies under a dependency directory, whose contents the closure does not record. */
