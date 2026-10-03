@@ -7,12 +7,12 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
-  '@williamthorsen/toolbelt.errors': 0.8.1
-  '@williamthorsen/toolbelt.filesystem': 0.9.1
-  '@williamthorsen/toolbelt.packaging': 0.6.1
-  '@williamthorsen/toolbelt.strings': 8.0.1
-  '@williamthorsen/toolbelt.testing': 0.6.1
-  '@williamthorsen/toolbelt.vitest': 0.10.1
+  '@williamthorsen/toolbelt.errors': 0.8.2
+  '@williamthorsen/toolbelt.filesystem': 0.9.2
+  '@williamthorsen/toolbelt.packaging': 0.6.2
+  '@williamthorsen/toolbelt.strings': 8.0.2
+  '@williamthorsen/toolbelt.testing': 0.6.2
+  '@williamthorsen/toolbelt.vitest': 0.10.2
   esbuild: 0.28.2
   zod: 4.6.5
 
