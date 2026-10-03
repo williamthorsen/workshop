@@ -36,7 +36,8 @@ export interface RunRdyOptions {
   provenance?: KitProvenance | undefined;
 
   /**
-   * The invocation's record of what its checks examined and suppressed, which the unused-pragma report reads.
+   * The invocation's record of what its checks examined and suppressed, which the unused-pragma and
+   * unmarked-generated reports read.
    *
    * One ledger spans every kit of an invocation, so a file examined by two kits is reported once. A run
    * passing none records nothing and reports nothing.

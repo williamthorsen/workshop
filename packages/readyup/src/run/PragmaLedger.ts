@@ -6,7 +6,8 @@ import process from 'node:process';
  * sites a pragma suppressed a finding on.
  *
  * Together they are the evidence on which the unused-pragma report rests. A path examined by no check yields
- * no report at all, and a site suppressed by some check is a pragma that did its work.
+ * no report at all, and a site suppressed by some check is a pragma that did its work. The examined paths are also
+ * the candidates that the unmarked-generated report judges.
  */
 export interface PragmaLedger {
   /** Reports whether a pragma suppressed a finding at a site. */

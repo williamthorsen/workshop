@@ -7,6 +7,7 @@ import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatJsonReport, type KitInput } from '../reporting/formatJsonReport.ts';
 import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
+import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
 import { loadKit } from './loadKit.ts';
 import { warnOnUnusedPragmas } from './pragma-report.ts';
@@ -97,7 +98,7 @@ export async function runJsonMode(
     }
   }
 
-  warnings.push(...warnOnUnusedPragmas(pragmaLedger));
+  warnings.push(...warnOnUnusedPragmas(pragmaLedger), ...(await warnOnUnmarkedGeneratedSources(pragmaLedger)));
 
   // The top-level thresholds say what the invocation asked for: An absent flag stays absent
   // rather than being reported as a default that nobody requested. What governed each kit, including

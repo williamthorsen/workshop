@@ -78,6 +78,7 @@ describe('generated JSON Schemas', () => {
           enum: [
             'bundle-unrecorded',
             'diagnosis-inconclusive',
+            'generated-unmarked',
             'input-stale',
             'json-inlined',
             'manifest-unreadable',
