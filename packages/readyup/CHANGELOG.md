@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.39.0 — 2026-10-03
+
+### 🎉 Features
+
+- Adds `rdy verify --recursive`, which verifies every kit project below the working directory against its own manifest, reports each project that cannot be verified as `Error in <dir>` while continuing the sweep, and exits 1 after naming every failed project. (#499)
+- Adds an optional `project` field to each kit entry and an optional `projects` list of `project`, `passed`, and `error` to the `rdy verify --json` payload, which `--recursive` emits and which leave the schema at version 1. (#499)
+- Adds the `generated-unmarked` warning to `rdy run`, which names each tracked JavaScript-family file that a check read, that looks minified or opens with a bundler header, and that `.gitattributes` does not mark as generated, together with the root-anchored `.gitattributes` line that stops kits from reading it. (#502)
+
+### 🐛 Bug fixes
+
+- Stops `rdy` from showing a check's `fix` inline, under "Fixes", and as `fix` in the JSON report when the check's `check()` or `skip()` throws or returns a value that the runner cannot interpret, which presented a crash in the kit as a remedy for the consumer's repo. (#490)
+- Replaces "ships" and "sits" in the `publishing` kit's description and in two of its check names, which now read `The "files" allowlist includes …` and `Every recorded kit is in …`. (#495)
+- Corrects the grammar of several messages printed by `rdy`: `Unresolvable fix:` messages now capitalize the sentence after the label, and the `rdy run --diagnose` skip remedies and the `rdy verify` compile-failure remedy now use "in which" and "so that" in place of "where" and "so". (#496)
+- Rewords the three errors that `readyup`'s workspace discovery throws for an unsupported `pnpm-workspace.yaml` construct or a workspace negation pattern, which addressed the reader as "you", to end with "To request ... support, please open an issue." (#497)
+- Stops `rdy init` from addressing the reader as "your" in a next step, which now reads "Customize .config/readyup.config.ts with the compile settings for this project." (#498)
+- Replaces the figurative "ships" in the `json-inlined` warning from `rdy compile`, which now says that every field of the imported JSON file "is included in" the kit. (#498)
+- Fixes the issue that `rdy compile` failed on a kit that inlines a CommonJS dependency, such as `yaml`, that calls `require()` on a Node built-in or with a computed specifier, or calls `require.resolve()`. (#501)
+
+### 📚 Documentation
+
+- Replaces figurative verbs and unclear `so` clauses in readyup's reference docs, README, `rdy help` output, and the `consult-readyup-kits` skill, which readyup publishes to kit authors. (#495)
+- Rewrites comments and test names in readyup's run, bin, reporting, layout, and verify modules to follow the plain-speech doctrine and writing conventions, and records the sweep in `.agents/revise-prose.yaml`. (#496)
+- Revises the doc comments and test titles in `readyup`'s `check-utils`, `portable`, `kits`, `kitImports`, `installed-packages`, and `projects` modules to the current writing rules, including the kit-authoring type descriptions in `kits/types.ts` that kit authors see in their editors. (#497)
+- Rewrites comments and test names across `readyup`'s `src` to align with the current plain-speech and writing conventions. (#498)
+
 ## 0.38.0 — 2026-09-17
 
 ### 🎉 Features
