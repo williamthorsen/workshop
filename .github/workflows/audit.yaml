@@ -7,7 +7,7 @@ on:
       - main
       - next
 
-  # Daily schedule — adjust cron expression per repo if a different cadence is desired.
+  # Run daily. Adjust the cron expression in a repo that needs a different cadence.
   schedule:
     - cron: '0 8 * * *'
 
@@ -16,7 +16,7 @@ on:
 # Permissions must be declared here. The GITHUB_TOKEN scope passed to the called
 # reusable workflow is bounded by this caller's permissions block; when omitted,
 # the repository's default workflow permissions apply (read-only here), which would
-# silently deny the issues/pull-requests writes the reusable workflow needs.
+# silently deny the issue and pull-request writes that the reusable workflow needs.
 permissions:
   contents: read
   issues: write
