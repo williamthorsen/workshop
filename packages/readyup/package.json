@@ -48,7 +48,9 @@
     "readyup": "bin/rdy.js"
   },
   "files": [
+    ".meta/changelog.json",
     ".readyup",
+    "CHANGELOG.md",
     "agents",
     "bin",
     "dist",
