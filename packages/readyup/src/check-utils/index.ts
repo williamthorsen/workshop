@@ -19,6 +19,7 @@ export { expandHome, runGit } from './git/run-git.ts';
 export { computeHash, fileMatchesHash, hashToRecordedLength, isRecordedHash } from './hashing.ts';
 export { hasJsonField, hasJsonFields, readJsonFile, readJsonValue } from './json.ts';
 export { getJsonValue, hasJsonValue } from './json-value.ts';
+export { loadRdyConfig } from './loadRdyConfig.ts';
 export { missingFrom } from './missingFrom.ts';
 export { hasDevDependency, hasMinDevDependencyVersion, hasPackageJsonField, readPackageJson } from './package-json.ts';
 export type { BuildFindingReportOptions, Finding } from './project/buildFindingReport.ts';
