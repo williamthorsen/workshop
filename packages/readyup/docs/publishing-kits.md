@@ -160,7 +160,16 @@ A listed package that does not publish the requested kit is skipped. `rdy run --
 
 An author uses that rule to keep a kit out of a routine `--packages` run: Publish it under a name other than `default`. It stays listed by `rdy list`, reachable by name both here and through `--from npm:<package>`, and run by `rdy run --packages --all`. Nothing is needed from the consumer's config, and nothing needs republishing.
 
-A listed package that is absent, or that publishes no kits at all, fails the run, and the run names it; `rdy list` warns instead and reports the rest, then names any installed dependency that publishes kits but is not in the list.
+A listed package that is absent, or that publishes no kits at all, fails the run, and the run names it; `rdy list` warns instead and reports the rest, then names any installed dependency that publishes kits but is in neither `packages` nor `omittedPackages`.
+
+`omittedPackages` names the installed dependencies whose kits the project does not run, on purpose. `rdy list` stops proposing them, and the `setup` checklist of [readyup's own `default` kit](#readyups-own-kits), which reports every kit-publishing dependency missing from `packages`, stops reporting them:
+
+```ts
+export default defineRdyConfig({
+  omittedPackages: ['@acme/experimental-kits'],
+  packages: ['@acme/eslint-config', '@acme/release-kit'],
+});
+```
 
 If `node_modules` contains no match, a configured name matching one of the project's own workspaces resolves to that workspace's directory, and its kits are read from there as for any installed package. A monorepo therefore runs its own packages' kits over itself without declaring a dependency on them purely to make them findable. The workspace matches by the `name` declared in its manifest, `private: true` included, and resolution is anchored to the directory whose config named the package, so a `--recursive` sweep reads each project's own workspaces.
 
@@ -177,7 +186,7 @@ rdy run --url https://unpkg.com/@acme/eslint-config@2.1.0/.readyup/kits/drift.js
 ReadyUp publishes two kits of its own, about readyup projects themselves. Any project with readyup as a direct dependency can access them:
 
 ```bash
-rdy run --from npm:readyup            # default: authoring hygiene, advisory
+rdy run --from npm:readyup            # default: setup hygiene, advisory
 rdy run --from npm:readyup publishing # publication readiness, blocking
 rdy list --from npm:readyup           # both, with the checklists that each one has
 ```
@@ -186,10 +195,10 @@ rdy list --from npm:readyup           # both, with the checklists that each one 
 
 | Checklist   | What it asserts                                                                                                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup`     | A config file is present (at `recommend`), and a manifest records what has been compiled.                                                                                       |
+| `setup`     | A config file is present (at `recommend`), a manifest records what has been compiled, and `packages` lists every installed dependency that publishes kits.                      |
 | `freshness` | Every kit that the manifest records still matches what was recorded for it (its source, its bundle, and everything the compile inlined), and the manifest records every bundle. |
 
-Both `setup` checks skip for a project that defines no kits of its own: A monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
+The config and manifest checks skip for a project that defines no kits of its own: A monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The `packages` check skips instead when the config lists no packages, because that monorepo root is the project for which it exists. It reads the declared dependencies of the working directory and `.config/readyup.config.ts`, which `--config` does not replace, and it does not report a package that `omittedPackages` names. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
 
 `publishing` reports at `error`, for a package that distributes its kits:
 

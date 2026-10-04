@@ -128,13 +128,17 @@ A kit test that needs a `Workspace` value builds one with `makeWorkspace`; see [
 
 ## Kit packages
 
-| Function                        | Returns                                                 |
-| ------------------------------- | ------------------------------------------------------- |
-| `discoverKitPackages(fromDir?)` | Installed direct dependencies that publish kits, sorted |
+| Function                        | Returns                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------ |
+| `discoverKitPackages(fromDir?)` | Installed direct dependencies that publish kits, sorted                        |
+| `loadRdyConfig(fromDir?)`       | The project's readyup config, with every key that it leaves out at its default |
 
 ```ts
-const missing = discoverKitPackages().filter((name) => !configuredPackages.includes(name));
+const { omittedPackages, packages } = await loadRdyConfig();
+const missing = discoverKitPackages().filter((name) => !packages.includes(name) && !omittedPackages.includes(name));
 ```
+
+`loadRdyConfig` reads `.config/readyup.config.ts` under `fromDir`, which defaults to the working directory, and returns the defaults when that file does not exist. A run's `--config` flag does not reach it. A config file that cannot be evaluated makes it throw.
 
 ## Project sources
 

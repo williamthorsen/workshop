@@ -22,13 +22,14 @@ Repo-level settings live in `.config/readyup.config.ts`.
 | `compile.exclude` | none            | Glob, or list of globs, removing sources from a sweep, even ones that `include` selects |
 | `internal.dir`    | `.`             | Directory containing internal sources, relative to `compile.srcDir`                     |
 | `internal.infix`  | none            | Filename segment marking a file as internal                                             |
+| `omittedPackages` | none            | Installed packages that publish kits and that `packages` leaves out on purpose          |
 | `packages`        | none            | Packages from which `rdy run --packages` runs a published kit                           |
 
 `compile.include` and `compile.exclude` match paths relative to `compile.srcDir`, and `exclude` also matches hidden files, so `exclude: 'lib/**'` removes every source below `lib/`.
 
 A sweep reads `compile.srcDir` recursively, and a source below it compiles to the matching subdirectory of `compile.outDir`. Its kit takes the whole path as its name: `team-a/deploy.ts` becomes the kit `team-a/deploy`, which [Compiling](publishing-kits.md#compiling) covers. A module that the kits share is not a kit. Keep it out of the sweep with `exclude`, or with an `include` that selects the kits alone.
 
-See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages`.
+See [internal kits](publishing-kits.md#internal-kits) for what the `internal` keys select, and [package-hosted kits](publishing-kits.md#package-hosted-kits) for `packages` and `omittedPackages`.
 
 `rdy run`, `rdy compile`, and `rdy list` accept `--config <path>`, which reads the named file in place of `.config/readyup.config.ts`. The path resolves against the working directory, and the directories that the file names resolve as they would in the default file, not against the named file's own directory. A named file that is missing or cannot be loaded stops `run` and `compile` with a config error, while `list` warns and lists with the default settings. [Run options](running-checks.md#run-options), [Listing kits](running-checks.md#listing-kits), and [Compiling](publishing-kits.md#compiling) list the modes that reject it, each of which reads no config or reads each project's own.
 
