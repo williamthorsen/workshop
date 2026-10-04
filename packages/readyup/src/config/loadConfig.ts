@@ -19,6 +19,7 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
     dir: '.',
     infix: undefined,
   },
+  omittedPackages: [],
   packages: [],
 };
 
@@ -45,6 +46,7 @@ const RdyConfigSchema = z.looseObject({
       infix: z.string().optional(),
     })
     .optional(),
+  omittedPackages: z.array(z.string()).optional(),
   packages: z.array(z.string()).optional(),
 });
 
@@ -131,8 +133,14 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
       infix: typeof internal?.infix === 'string' ? internal.infix : DEFAULT_CONFIG.internal.infix,
     },
-    packages: Array.isArray(raw.packages) ? raw.packages.filter((name) => typeof name === 'string') : [],
+    omittedPackages: toNames(raw.omittedPackages),
+    packages: toNames(raw.packages),
   };
+}
+
+/** Returns a package-name list's string entries, or `[]` when the config did not declare the key. */
+function toNames(value: readonly string[] | undefined): string[] {
+  return Array.isArray(value) ? value.filter((name) => typeof name === 'string') : [];
 }
 
 /** Returns a glob key's patterns as a list, or `undefined` when the config did not declare the key. */

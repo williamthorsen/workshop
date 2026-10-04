@@ -329,7 +329,7 @@ Because the sections name invocations rather than files, one file can appear in 
 
 Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Sources** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
-Kits from configured packages get their own section, each named package-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config omits is named as a candidate:
+Kits from configured packages get their own section, each named package-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `packages` nor `omittedPackages` is named as a candidate:
 
 ```
 ── Packages
@@ -392,7 +392,7 @@ A plain `rdy list` and `rdy list --packages` read the settings from the file nam
 
 ━━ 📁 packages/readyup/
    To run: rdy run --from packages/readyup [<kit>[:<checklist>,...]]
-📓 default · Authoring hygiene for a project that defines readyup kits
+📓 default · Setup hygiene for a project that defines readyup kits or runs those of its dependencies
    📋 setup
    📋 freshness
 📓 publishing · Publication readiness for a package that publishes readyup kits

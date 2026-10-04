@@ -33,6 +33,7 @@ describe(loadConfig, () => {
     expect(config).toStrictEqual({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
+      omittedPackages: [],
       packages: [],
     });
   });
@@ -301,6 +302,31 @@ describe(loadConfig, () => {
   it('throws when a packages entry is not a string', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ default: { packages: ['readyup', 42] } });
+
+    await expect(loadConfig({ overridePath: 'config.ts' })).rejects.toThrow(ZodError);
+  });
+
+  it('resolves the omittedPackages list from config', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { omittedPackages: ['@williamthorsen/toolbelt.testing'] } });
+
+    const config = await loadConfig({ overridePath: 'config.ts' });
+
+    expect(config.omittedPackages).toStrictEqual(['@williamthorsen/toolbelt.testing']);
+  });
+
+  it('resolves omittedPackages to an empty list when the key is absent', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: {} });
+
+    const config = await loadConfig({ overridePath: 'config.ts' });
+
+    expect(config.omittedPackages).toStrictEqual([]);
+  });
+
+  it('throws when omittedPackages is not an array', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { omittedPackages: '@williamthorsen/toolbelt.testing' } });
 
     await expect(loadConfig({ overridePath: 'config.ts' })).rejects.toThrow(ZodError);
   });

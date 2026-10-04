@@ -440,6 +440,8 @@ export interface RdyConfig {
         infix?: string | undefined;
       }
     | undefined;
+  /** Installed packages that publish kits and that `packages` leaves out on purpose. */
+  omittedPackages?: readonly string[] | undefined;
   packages?: readonly string[] | undefined;
 }
 
@@ -456,5 +458,6 @@ export interface ResolvedRdyConfig {
     dir: string;
     infix: string | undefined;
   };
+  omittedPackages: string[];
   packages: string[];
 }
