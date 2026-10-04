@@ -226,7 +226,9 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   }
 
   const packageKits = collectConfiguredPackageKits(config.packages);
-  const availablePackages = discoverKitPackages(cwd).filter((name) => !config.packages.includes(name));
+  const availablePackages = discoverKitPackages(cwd).filter(
+    (name) => !config.packages.includes(name) && !config.omittedPackages.includes(name),
+  );
 
   const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
   writeHuman(

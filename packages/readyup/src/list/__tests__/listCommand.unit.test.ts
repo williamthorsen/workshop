@@ -49,6 +49,7 @@ describe(listCommand, () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
+      omittedPackages: [],
       packages: [],
     });
     mockCollectSourceKitNames.mockReturnValue([]);
@@ -69,11 +70,12 @@ describe(listCommand, () => {
   });
 
   describe('owner mode, package sections', () => {
-    /** Configures one package and the kit that it publishes. */
-    function configureOnePackage(): void {
+    /** Configures one package and the kit that it publishes, alongside the packages that the config omits. */
+    function configureOnePackage({ omittedPackages = [] }: { omittedPackages?: string[] } = {}): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
+        omittedPackages,
         packages: ['@acme/kits'],
       });
       mockExpandConfiguredPackages.mockReturnValue([
@@ -124,6 +126,16 @@ describe(listCommand, () => {
       expect(stdout).toContain('plain-kit');
       // Already configured, so it belongs under Packages rather than as a candidate to add.
       expect(stdout.slice(stdout.indexOf('Available'))).not.toContain('@acme/kits');
+    });
+
+    it('does not propose a package that the config omits on purpose', async () => {
+      mockDiscoverKitPackages.mockReturnValue(['omitted-kit', 'plain-kit']);
+      configureOnePackage({ omittedPackages: ['omitted-kit'] });
+
+      const { stdout } = await list(['--json']);
+
+      const payload: unknown = JSON.parse(stdout);
+      expect(payload).toMatchObject({ availablePackages: ['plain-kit'] });
     });
 
     it('passes package provenance into the JSON payload, apart from the kits that it lists', async () => {
@@ -196,6 +208,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: 'int' },
+        omittedPackages: [],
         packages: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
@@ -221,6 +234,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
+        omittedPackages: [],
         packages: [],
       });
       mockReadManifest.mockReturnValue({
@@ -293,6 +307,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: 'internal', infix: undefined },
+        omittedPackages: [],
         packages: [],
       });
       mockEnumerateKits.mockImplementation(() => {
@@ -381,6 +396,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal,
+        omittedPackages: [],
         packages: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
@@ -551,6 +567,7 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] },
         internal: { dir: 'internal', infix: undefined },
+        omittedPackages: [],
         packages: [],
       });
       mockCollectSourceKitNames.mockReturnValue(['draft']);

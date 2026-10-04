@@ -92,9 +92,10 @@ export const ListKitEntrySchema = z
  * consumer that executes every row executes that file twice; one that wants files rather than invocations
  * groups on `path`.
  *
- * `availablePackages` names installed dependencies that publish kits but are absent from the config, so
- * they are candidates to add rather than kits. It accompanies the owner listing, which names them without
- * their kits; every `--packages` listing reports those kits as rows and emits no candidate list.
+ * `availablePackages` names installed dependencies that publish kits but that the config names in neither
+ * `packages` nor `omittedPackages`, so they are candidates to add rather than kits. It accompanies the owner
+ * listing, which names them without their kits; every `--packages` listing reports those kits as rows and emits
+ * no candidate list.
  */
 export const ListOutputSchema = z
   .object({
