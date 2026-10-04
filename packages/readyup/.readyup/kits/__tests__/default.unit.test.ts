@@ -16,6 +16,7 @@ import {
   SELF_CONTAINED_BUNDLE,
   withInputs,
   writeInlineInput,
+  writeInstalledKitPackage,
   writeKit,
   writeKitManifest,
   writeModuleInput,
@@ -29,6 +30,9 @@ import {
  * `../package.json` is.
  */
 const PROJECTED_JSON_PATH = path.join('..', 'package.json');
+
+/** Substring of the name of the check that compares installed kit-publishing dependencies against `packages`. */
+const PACKAGES_CHECK = 'is listed in "packages"';
 
 /**
  * Covers the `default` kit that readyup publishes, against fixture projects in a temp directory.
@@ -59,16 +63,73 @@ describe('default kit', () => {
 
       const results = await runSetup();
 
-      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed']);
+      expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'skipped']);
     });
 
     // A monorepo root that lists `packages` authors no kits of its own, and is not defective for it.
-    it('skips every check for a project that defines no kits', async () => {
+    it('skips every authoring check for a project that defines no kits', async () => {
       const results = await runSetup();
 
-      expect(results).toHaveLength(2);
-      expect(results.every((result) => result.status === 'skipped')).toBe(true);
-      expect(results.every((result) => result.detail === 'This project defines no kits')).toBe(true);
+      const authoringResults = [pickResult(results, 'readyup.config.ts'), pickResult(results, 'manifest.json')];
+      expect(authoringResults.every((result) => result.status === 'skipped')).toBe(true);
+      expect(authoringResults.every((result) => result.detail === 'This project defines no kits')).toBe(true);
+    });
+
+    it('reports an installed kit-publishing dependency that "packages" does not list', async () => {
+      writeConsumerProject({ packages: ['listed-kit'] });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({
+        status: 'failed',
+        detail: 'missing from "packages": unlisted-kit',
+      });
+    });
+
+    it('passes once every kit-publishing dependency is listed', async () => {
+      writeConsumerProject({ packages: ['listed-kit', 'unlisted-kit'] });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+    });
+
+    it('passes when "omittedPackages" names the unlisted dependency', async () => {
+      writeConsumerProject({ packages: ['listed-kit'], omittedPackages: ['unlisted-kit'] });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+    });
+
+    it('does not report a dependency that publishes no kits', async () => {
+      writeConsumerProject({ packages: ['listed-kit', 'unlisted-kit'] });
+      writeInstalledKitPackage(projectRoot, 'kitless', []);
+      writePackageJson(projectRoot, { devDependencies: { kitless: '1.0.0', 'listed-kit': '1.0.0' } });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+    });
+
+    it('skips the package check when the config lists no packages', async () => {
+      writeConsumerProject({ packages: [] });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({
+        status: 'skipped',
+        detail: 'The readyup config lists no packages',
+      });
+    });
+
+    it('skips the package check when the project has no config', async () => {
+      writeInstalledKitPackage(projectRoot, 'unlisted-kit', ['default']);
+      writePackageJson(projectRoot, { devDependencies: { 'unlisted-kit': '1.0.0' } });
+
+      const results = await runSetup();
+
+      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'skipped' });
     });
 
     // A project compiling to a non-default `outDir` declares in the manifest that it has kits.
@@ -400,6 +461,17 @@ async function runFreshness(): Promise<RdyResult[]> {
 /** Runs the `setup` checklist against the fixture as it now stands. */
 async function runSetup(): Promise<RdyResult[]> {
   return runChecklist(await loadOwnKit('default'), 'setup');
+}
+
+/**
+ * Writes a project that defines no kits and depends on two kit-publishing packages, `listed-kit` and `unlisted-kit`,
+ * under the given config.
+ */
+function writeConsumerProject(config: Record<string, unknown>): void {
+  writeInstalledKitPackage(process.cwd(), 'listed-kit', ['default']);
+  writeInstalledKitPackage(process.cwd(), 'unlisted-kit', ['default']);
+  writePackageJson(process.cwd(), { devDependencies: { 'listed-kit': '1.0.0', 'unlisted-kit': '1.0.0' } });
+  writeRdyConfig(process.cwd(), config);
 }
 
 // endregion | Helpers

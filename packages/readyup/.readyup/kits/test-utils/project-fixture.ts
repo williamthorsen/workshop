@@ -61,6 +61,22 @@ export function writeInlineInput(
 }
 
 /**
+ * Installs a package under the fixture's `node_modules`, publishing one compiled kit per name in `kits`.
+ *
+ * Installing does not declare the package: Discovery reads the declared dependencies, so a test that wants it
+ * discovered also names it in `writePackageJson`.
+ */
+export function writeInstalledKitPackage(projectRoot: string, packageName: string, kits: string[]): void {
+  const packageRoot = path.join(projectRoot, 'node_modules', packageName);
+  const kitsDir = path.join(packageRoot, FIXTURE_KITS_DIR);
+  mkdirSync(kitsDir, { recursive: true });
+  writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({ name: packageName, version: '1.0.0' }));
+  for (const kit of kits) {
+    writeFileSync(path.join(kitsDir, `${kit}.js`), SELF_CONTAINED_BUNDLE);
+  }
+}
+
+/**
  * Writes a kit source and the bundle compiled from it, and returns the entry recording both.
  *
  * A fixture written this way is fresh by construction, because the hashes come from the same helper
@@ -124,14 +140,17 @@ export function writeReadme(projectRoot: string, content: string, name = 'README
   writeFileSync(path.join(projectRoot, name), content);
 }
 
-/** Writes a readyup config at the one path in which `loadConfig` looks. */
-export function writeRdyConfig(projectRoot: string): void {
+/** Writes a readyup config at the one path in which `loadConfig` looks, exporting the given settings. */
+export function writeRdyConfig(projectRoot: string, config: Record<string, unknown> = DEFAULT_RDY_CONFIG): void {
   const configPath = path.join(projectRoot, '.config', 'readyup.config.ts');
   mkdirSync(path.dirname(configPath), { recursive: true });
-  writeFileSync(configPath, `export default { compile: { include: '*.ts' } };\n`);
+  writeFileSync(configPath, `export default ${JSON.stringify(config)};\n`);
 }
 
 // region | Helpers
+
+/** Settings written by `writeRdyConfig` when a test does not care what the config says. */
+const DEFAULT_RDY_CONFIG = { compile: { include: '*.ts' } };
 
 /** Kit source written by a fixture when a test does not care what the source says. */
 const DEFAULT_SOURCE = [

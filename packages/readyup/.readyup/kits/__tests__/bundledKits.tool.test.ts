@@ -118,7 +118,7 @@ describe('kits that readyup publishes', () => {
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     const setup = kit.checklists.find((checklist) => checklist.name === 'setup');
-    expect(setup?.counts).toMatchObject({ passed: 0, warnings: 0, optional: 2 });
+    expect(setup?.counts).toMatchObject({ passed: 0, warnings: 0, optional: 3 });
     expect(exitCode).toBe(0);
   });
 });
