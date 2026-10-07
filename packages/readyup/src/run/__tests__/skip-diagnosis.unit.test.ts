@@ -104,7 +104,12 @@ function packagedKit(): ResolvedKitEntry {
     name: 'default',
     source: { path: 'node_modules/@williamthorsen/nmr/.readyup/kits/default.js' },
     checklists: [],
-    provenance: { kind: 'package', packageName: '@williamthorsen/nmr', version: '1.2.3' },
+    provenance: {
+      kind: 'package',
+      packageName: '@williamthorsen/nmr',
+      version: '1.2.3',
+      source: 'npm:@williamthorsen/nmr',
+    },
   };
 }
 

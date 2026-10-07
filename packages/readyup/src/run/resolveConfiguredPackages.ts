@@ -30,7 +30,12 @@ export function resolveConfiguredPackages(
     name: kit.kitName,
     source: { path: kit.path },
     checklists: [],
-    provenance: { kind: 'package', packageName: kit.packageName, version: kit.version },
+    provenance: {
+      kind: 'package',
+      packageName: kit.packageName,
+      version: kit.version,
+      source: `npm:${kit.packageName}`,
+    },
   }));
 }
 

@@ -277,6 +277,19 @@ describe(runHumanMode, () => {
       );
     });
 
+    it('names a repository kit by its source with the ref resolved', async () => {
+      const heading = headingFor({
+        kind: 'repository',
+        host: 'github',
+        owner: 'org',
+        repo: 'repo',
+        ref: 'main',
+        source: 'github:org/repo',
+      });
+
+      await expect(heading).resolves.toContain('\u{1F310} github:org/repo@main / \u{1F4D3} deploy');
+    });
+
     it('names a kit resolved from another directory by that directory', async () => {
       await expect(headingFor({ kind: 'directory', label: '../sibling-repo/.readyup/kits' })).resolves.toContain(
         '\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy',
@@ -293,13 +306,18 @@ describe(runHumanMode, () => {
     });
 
     it('names a package kit by its package and version', async () => {
-      await expect(headingFor({ kind: 'package', packageName: '@acme/kits', version: '2.1.0' })).resolves.toContain(
-        '\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} deploy',
-      );
+      await expect(
+        headingFor({ kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' }),
+      ).resolves.toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} deploy');
     });
 
     it('names a package kit by its package alone when it declares no version', async () => {
-      const allOutput = await headingFor({ kind: 'package', packageName: '@acme/kits', version: undefined });
+      const allOutput = await headingFor({
+        kind: 'package',
+        packageName: '@acme/kits',
+        version: undefined,
+        source: 'npm:@acme/kits',
+      });
 
       expect(allOutput).toContain('\u{1F4E6} @acme/kits / \u{1F4D3} deploy');
       expect(allOutput).not.toContain('@acme/kits@');

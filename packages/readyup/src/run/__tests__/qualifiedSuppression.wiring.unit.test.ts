@@ -6,7 +6,21 @@ import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyChecklist, RdyResult } from '../../kits/types.ts';
 import { runRdy } from '../runRdy.ts';
 
-const PACKAGE: KitProvenance = { kind: 'package', packageName: '@williamthorsen/toolbelt.errors', version: '0.5.0' };
+const PACKAGE: KitProvenance = {
+  kind: 'package',
+  packageName: '@williamthorsen/toolbelt.errors',
+  version: '0.5.0',
+  source: 'npm:@williamthorsen/toolbelt.errors',
+};
+
+const REPOSITORY: KitProvenance = {
+  kind: 'repository',
+  host: 'github',
+  owner: 'acme',
+  repo: '.github',
+  ref: 'main',
+  source: 'github:acme/.github',
+};
 
 const SOURCE_PATH = 'src/errors.ts';
 
@@ -57,6 +71,25 @@ describe('a pragma matched against the check ids resolved by the runner', () => 
     const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
 
     expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['passed', 'passed']);
+  });
+
+  it('suppresses a repository kit check named under its owner and repository', async ({ temp }) => {
+    temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore acme/.github/no-instanceof-error\n');
+
+    const report = await runRdy(twoChecksOverOneLine(), { provenance: REPOSITORY });
+
+    expect(verdicts(report.results)).toStrictEqual([
+      { detail: null, id: 'acme/.github/no-instanceof-error', status: 'passed' },
+      { detail: 'src/errors.ts:1', id: 'acme/.github/no-hand-rolled-describe-error', status: 'failed' },
+    ]);
+  });
+
+  it('suppresses no repository kit check named by its bare id', async ({ temp }) => {
+    temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore no-instanceof-error\n');
+
+    const report = await runRdy(twoChecksOverOneLine(), { provenance: REPOSITORY });
+
+    expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
   });
 
   it('suppresses neither when the kit has no publishing package to namespace under', async ({ temp }) => {

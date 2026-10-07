@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { KitProvenance } from '../../kits/KitProvenance.ts';
+import type { KitProvenance, RepositoryProvenance } from '../../kits/KitProvenance.ts';
 import { resolveCheckIds } from '../resolveCheckIds.ts';
 
 describe(resolveCheckIds, () => {
@@ -27,7 +27,24 @@ describe(resolveCheckIds, () => {
     });
   });
 
-  describe('given a kit with no publishing package', () => {
+  describe('given a kit fetched from a repository', () => {
+    it('namespaces it under owner and repository, accepting only that form', () => {
+      const ids = resolveCheckIds('no-instanceof-error', repositoryProvenance('acme', '.github'));
+
+      expect(ids).toStrictEqual({
+        accepted: ['acme/.github/no-instanceof-error'],
+        printed: 'acme/.github/no-instanceof-error',
+      });
+    });
+
+    it('leaves the ref out of the namespace', () => {
+      const ids = resolveCheckIds('no-instanceof-error', { ...repositoryProvenance('acme', 'standards'), ref: 'v2' });
+
+      expect(ids?.printed).toBe('acme/standards/no-instanceof-error');
+    });
+  });
+
+  describe('given a kit with no publishing package or repository', () => {
     it('keeps the bare id for a directory kit', () => {
       const ids = resolveCheckIds('no-instanceof-error', { kind: 'directory', label: '.readyup/kits' });
 
@@ -56,7 +73,12 @@ describe(resolveCheckIds, () => {
 
 /** Returns the provenance of a kit published by the named package. */
 function packageProvenance(packageName: string): KitProvenance {
-  return { kind: 'package', packageName, version: '1.0.0' };
+  return { kind: 'package', packageName, version: '1.0.0', source: `npm:${packageName}` };
+}
+
+/** Returns the provenance of a kit fetched from the named GitHub repository at `main`. */
+function repositoryProvenance(owner: string, repo: string): RepositoryProvenance {
+  return { kind: 'repository', host: 'github', owner, repo, ref: 'main', source: `github:${owner}/${repo}` };
 }
 
 // endregion | Helpers

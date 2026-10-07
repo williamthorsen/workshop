@@ -12,6 +12,7 @@ import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import { buildRepositoryManifestUrl } from '../remote/kitSourceUrls.ts';
 import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
 import { resolveRemoteProvider } from '../remote/remote-provider.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
@@ -29,14 +30,8 @@ type LocalFromSource = DirectorySource | GlobalSource | LocalSource;
 
 /** Returns the kits that a `--from` source contains, as the rows that `rdy list --from` reports. */
 export async function collectSourceKits(source: FromSource, remote: RemoteFetchContext): Promise<SourceKits> {
-  if (source.type === 'github') {
-    const url = `https://raw.githubusercontent.com/${source.org}/${source.repo}/${source.ref}/.readyup/manifest.json`;
-    return collectRemoteKits(url, remote);
-  }
-
-  if (source.type === 'bitbucket') {
-    const url = `https://api.bitbucket.org/2.0/repositories/${source.workspace}/${source.repo}/src/${source.ref}/.readyup/manifest.json`;
-    return collectRemoteKits(url, remote);
+  if (source.type === 'github' || source.type === 'bitbucket') {
+    return collectRemoteKits(buildRepositoryManifestUrl(source), remote);
   }
 
   if (source.type === 'npm') {

@@ -6,28 +6,24 @@ import { readPackageVersion, resolvePackageRoot } from '../installed-packages/re
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
 import type { FromSource, NpmSource } from '../kits/parseFromValue.ts';
+import { buildRepositoryKitUrl, type RepositorySource } from '../remote/kitSourceUrls.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 
-/** Resolves kit entries from a parsed `--from` source. */
-export function resolveFromSource(source: FromSource, specs: KitSpecifier[], extension: string): ResolvedKitEntry[] {
+/** Resolves kit entries from a parsed `--from` source, whose `spelling` is the value as the reader wrote it. */
+export function resolveFromSource(
+  source: FromSource,
+  spelling: string,
+  specs: KitSpecifier[],
+  extension: string,
+): ResolvedKitEntry[] {
   switch (source.type) {
+    case 'bitbucket':
     case 'github': {
-      const provenance: KitProvenance = { kind: 'remote', label: `github:${source.org}/${source.repo}@${source.ref}` };
+      const provenance = buildRepositoryProvenance(source, spelling);
       return specs.map((spec) => ({
         name: spec.kitName,
-        source: { url: buildGitHubKitUrl(source.org, source.repo, source.ref, spec.kitName, extension) },
-        checklists: spec.checklists,
-        provenance,
-      }));
-    }
-
-    case 'bitbucket': {
-      const label = `bitbucket:${source.workspace}/${source.repo}@${source.ref}`;
-      const provenance: KitProvenance = { kind: 'remote', label };
-      return specs.map((spec) => ({
-        name: spec.kitName,
-        source: { url: buildBitbucketKitUrl(source.workspace, source.repo, source.ref, spec.kitName, extension) },
+        source: { url: buildRepositoryKitUrl(source, spec.kitName, extension) },
         checklists: spec.checklists,
         provenance,
       }));
@@ -39,6 +35,7 @@ export function resolveFromSource(source: FromSource, specs: KitSpecifier[], ext
         kind: 'package',
         packageName: source.name,
         version: readPackageVersion(root),
+        source: spelling,
       };
       return specs.map((spec) => ({
         name: spec.kitName,
@@ -84,14 +81,10 @@ export function resolveFromSource(source: FromSource, specs: KitSpecifier[], ext
 
 // region | Helpers
 
-/** Builds the Bitbucket Cloud API source URL for a kit. */
-function buildBitbucketKitUrl(workspace: string, repo: string, ref: string, kit: string, extension: string): string {
-  return `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/src/${ref}/${KITS_DIR}/${kit}${extension}`;
-}
-
-/** Builds the GitHub raw content URL for a kit. */
-function buildGitHubKitUrl(org: string, repo: string, ref: string, kit: string, extension: string): string {
-  return `https://raw.githubusercontent.com/${org}/${repo}/${ref}/${KITS_DIR}/${kit}${extension}`;
+/** Records where a repository kit came from, in the structured form that check-ID namespacing reads. */
+function buildRepositoryProvenance(source: RepositorySource, spelling: string): KitProvenance {
+  const owner = source.type === 'github' ? source.org : source.workspace;
+  return { kind: 'repository', host: source.type, owner, repo: source.repo, ref: source.ref, source: spelling };
 }
 
 /**

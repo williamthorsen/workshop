@@ -79,7 +79,7 @@ export function resolveKitSources({
     } catch (error: unknown) {
       throw usageError(describeError(error), { cause: error });
     }
-    return resolveFromSource(source, specs, extension);
+    return resolveFromSource(source, fromValue, specs, extension);
   }
 
   // Default/internal case: Resolve from the current repo.

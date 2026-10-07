@@ -43,7 +43,7 @@ describe('--packages run path wiring', () => {
         name: 'default',
         source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
         checklists: [],
-        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
     ]);
   });
@@ -68,8 +68,8 @@ describe('--packages run path wiring', () => {
     });
 
     expect(entries.map((entry) => entry.provenance)).toStrictEqual([
-      { kind: 'package', packageName: 'plain-kit', version: undefined },
-      { kind: 'package', packageName: '@acme/kits', version: undefined },
+      { kind: 'package', packageName: 'plain-kit', version: undefined, source: 'npm:plain-kit' },
+      { kind: 'package', packageName: '@acme/kits', version: undefined, source: 'npm:@acme/kits' },
     ]);
   });
 

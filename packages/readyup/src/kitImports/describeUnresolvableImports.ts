@@ -1,5 +1,5 @@
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
-import type { KitProvenance } from '../kits/KitProvenance.ts';
+import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance.ts';
 import { VERSION } from '../version.ts';
 import type { UnresolvableImports } from './UnresolvableKitImportsError.ts';
 
@@ -49,6 +49,9 @@ function describeRemedy(provenance: KitProvenance | undefined): string {
   }
   if (provenance.kind === 'remote') {
     return `Ask the publisher of ${provenance.label} to recompile it against readyup ${VERSION}.`;
+  }
+  if (provenance.kind === 'repository') {
+    return `Ask the publisher of ${formatRepositoryLabel(provenance)} to recompile it against readyup ${VERSION}.`;
   }
   return `Run 'rdy compile' in the project that owns ${provenance.label}.`;
 }

@@ -14,9 +14,16 @@ export interface CheckIds {
  * same-named checks apart, and accepting the bare form would undo that. Every other provenance, and a
  * kit reached with none, keeps the bare id, so the id printed beside a finding is always the id
  * written by a pragma.
+ *
+ * A kit fetched from a repository namespaces its checks under `owner/repo`, and only that form is accepted:
+ * Every organization's `.github` repository shares a name, and an ID led by `.` does not parse as a pragma's.
  */
 export function resolveCheckIds(id: string | undefined, provenance: KitProvenance | undefined): CheckIds | undefined {
   if (id === undefined) return undefined;
+  if (provenance?.kind === 'repository') {
+    const printed = `${provenance.owner}/${provenance.repo}/${id}`;
+    return { accepted: [printed], printed };
+  }
   if (provenance?.kind !== 'package') return { accepted: [id], printed: id };
 
   const printed = `${stripScope(provenance.packageName)}/${id}`;

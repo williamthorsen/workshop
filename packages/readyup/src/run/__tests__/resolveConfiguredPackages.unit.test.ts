@@ -29,7 +29,7 @@ describe(resolveConfiguredPackages, () => {
         name: 'default',
         source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
         checklists: [],
-        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
     ]);
   });
@@ -112,7 +112,7 @@ describe(resolveConfiguredPackages, () => {
         name: 'default',
         source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.ts') },
         checklists: [],
-        provenance: { kind: 'package', packageName: '@acme/kits', version: undefined },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: undefined, source: 'npm:@acme/kits' },
       },
     ]);
   });

@@ -234,7 +234,14 @@ describe(resolveKitSources, () => {
         name: 'deploy',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/deploy.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: {
+          kind: 'repository',
+          host: 'github',
+          owner: 'org',
+          repo: 'repo',
+          ref: 'main',
+          source: 'github:org/repo',
+        },
       },
     ]);
   });
@@ -245,7 +252,14 @@ describe(resolveKitSources, () => {
         name: 'default',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/default.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: {
+          kind: 'repository',
+          host: 'github',
+          owner: 'org',
+          repo: 'repo',
+          ref: 'main',
+          source: 'github:org/repo',
+        },
       },
     ]);
   });
@@ -297,7 +311,14 @@ describe(resolveKitSources, () => {
         name: 'default',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/default.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: {
+          kind: 'repository',
+          host: 'github',
+          owner: 'org',
+          repo: 'repo',
+          ref: 'main',
+          source: 'github:org/repo',
+        },
       },
     ]);
   });

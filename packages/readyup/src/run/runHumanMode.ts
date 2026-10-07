@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { toRdyError } from '../errors/RdyError.ts';
-import type { KitProvenance } from '../kits/KitProvenance.ts';
+import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance.ts';
 import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
@@ -152,6 +152,7 @@ function createBlockWriter(): BlockWriter {
 function describeKitProvenance(provenance: KitProvenance | undefined): BreadcrumbSegment | undefined {
   if (provenance === undefined) return undefined;
   if (provenance.kind === 'remote') return { role: 'sourceRemote', text: provenance.label };
+  if (provenance.kind === 'repository') return { role: 'sourceRemote', text: formatRepositoryLabel(provenance) };
   if (provenance.kind === 'directory') {
     return path.normalize(provenance.label) === '.' ? undefined : { role: 'sourceDirectory', text: provenance.label };
   }
