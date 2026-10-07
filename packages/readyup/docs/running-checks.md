@@ -28,7 +28,7 @@ A name is relative to the directory that roots it. One containing a `..` segment
 rdy run --all                 # every compiled kit in the project
 rdy run --all --jit           # every kit source that the compile settings select
 rdy run --all --from dir:kits # every kit in a directory
-rdy run --all --packages      # every kit that each listed package publishes
+rdy run --all --sources       # every kit that each listed source publishes
 ```
 
 The project's compiled kits are the ones that its manifest records, at the paths recorded there, or the bundles in `compile.outDir` when there is no manifest. Under `--jit` the sources are the ones that `compile.include` and `compile.exclude` select, the same set that `rdy compile` builds, so the two forms cover the same kits and a module that the kits share is read as a kit by neither. A `--from` source runs the kits that `rdy list --from` shows for it, and `--internal` runs every kit in the internal directory whose filename has the configured infix. `--all` cannot be combined with a kit name, `--checklists`, `--file`, or `--url`, each of which names or selects within a single kit. A source that contains no kits fails with exit `2` rather than passing.
@@ -66,7 +66,7 @@ A check's own [`quiet`](authoring-kits.md#checks) is this flag narrowed to that 
 
 `@ref` defaults to `main`. For a local repo path, readyup looks for kits in `<path>/.readyup/kits/`; a `dir:` path is used directly.
 
-`npm:` resolves an installed dependency, so the kit that runs is the one published with the version that the project has. See [package-hosted kits](publishing-kits.md#package-hosted-kits).
+`npm:` resolves an installed dependency, so the kit that runs is the one published with the version that the project has. See [package-hosted kits](publishing-kits.md#package-hosted-kits). The config's `sources` list names `npm:`, `github:`, and `bitbucket:` sources in these same spellings, and `rdy run --sources` runs them together; see [configured kit sources](publishing-kits.md#configured-kit-sources).
 
 Private repositories use ambient tokens: `GITHUB_TOKEN` (falling back to `gh auth token`) and `BITBUCKET_TOKEN`. Without a token, requests are sent anonymously and succeed only for public repositories.
 
@@ -192,7 +192,7 @@ A failed check prints its id bracketed ahead of its fraction, and a pragma uses 
    src/a.ts:4, src/b.ts:9
 ```
 
-A kit published by an installed package namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace keeps two kits' same-named checks apart. A kit loaded any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id is accepted. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all.
+A kit published by an installed package namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace keeps two kits' same-named checks apart. A kit fetched from a repository, through `--from` or the config's `sources`, namespaces its checks under the repository's owner and name, so `github:acme/.github@v2` yields `acme/.github/<id>`, and only that form is accepted: Every organization's `.github` repository shares its name, so the owner stays in. A kit loaded any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id is accepted. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all.
 
 The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason after `--`. Under `--json`, each check entry includes its `id` in both detail projections.
 
@@ -231,7 +231,7 @@ Two more come from [`--diagnose`](#run-options), and are raised only when that f
 | `diagnosis-inconclusive` | A diagnosed check threw, or returned a value expressing no verdict |
 | `skip-masks-pass`        | A check turned off by its own `skip` would have passed had it run  |
 
-These read the checks rather than the manifest, so none of the silencing conditions above affects them: They apply wherever the kit came from, `--url`, `--from`, `--packages`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
+These read the checks rather than the manifest, so none of the silencing conditions above affects them: They apply wherever the kit came from, `--url`, `--from`, `--sources`, and `--jit` alike. A check blocked by a failed precondition declared nothing and is not diagnosed.
 
 One compares the readyup that compiled a bundle against the one running it.
 
@@ -278,7 +278,7 @@ The evidence is the same as for `pragma-unused`: A file not examined by any chec
 
 A compiled kit leaves its `readyup` imports unbundled, so it binds whichever readyup runs it rather than the one that built it. Before running a bundle, `rdy run` reads the `readyup` symbols that it imports and compares them against what the running readyup exports.
 
-A kit does not run if it imports a symbol, or a `readyup` subpath, that the runner does not export: The failure is a `kit-load` error naming every missing symbol, the kit, and the publishing package if the kit has one, and it exits `2`. Unlike the staleness advisories above, this check is not manifest-derived and applies wherever the kit came from, `--url`, `--from`, and `--packages` included. `--jit` runs load TypeScript source rather than a bundle, and are unaffected.
+A kit does not run if it imports a symbol, or a `readyup` subpath, that the runner does not export: The failure is a `kit-load` error naming every missing symbol, the kit, and the publishing package if the kit has one, and it exits `2`. Unlike the staleness advisories above, this check is not manifest-derived and applies wherever the kit came from, `--url`, `--from`, and `--sources` included. `--jit` runs load TypeScript source rather than a bundle, and are unaffected.
 
 The remedy depends on where the kit is maintained:
 
@@ -329,24 +329,25 @@ Because the sections name invocations rather than files, one file can appear in 
 
 Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Sources** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
-Kits from configured packages get their own section, each named package-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `packages` nor `omittedPackages` is named as a candidate:
+Kits from the config's `sources` get their own section, each named source-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `sources` nor `omittedSources` is named as a candidate, in the spelling that would add it:
 
 ```
-── Packages
-   To run: rdy run --packages [<kit>]
+── Configured sources
+   To run: rdy run --sources [<kit>]
 📦 @acme/eslint-config@2.1.0 / 📓 drift
    📋 lockfile
+🌐 github:acme/.github@v2 / 📓 callers
 
 ── Available
-   Add to "packages" in the readyup config
-📦 @acme/release-kit
+   Add to "sources" in the readyup config
+📦 npm:@acme/release-kit
 ```
 
-`--packages` covers the dependency question on its own, and covers it for both groups at once. `rdy list --packages` reports every installed direct dependency that publishes kits, plus every package named in the config, one block apiece with the kits that it publishes and the descriptions recorded in their manifests:
+`--sources` covers the dependency question on its own, and covers it for both groups at once. `rdy list --sources` reports every installed direct dependency that publishes kits, plus every source named in the config, one block apiece with the kits that it publishes and the descriptions recorded in their manifests. Packages come first, alphabetically, and repositories follow in configured order:
 
 ```
 ━━ 📦 @acme/eslint-config@2.1.0
-   To run: rdy run --packages <kit>
+   To run: rdy run --sources <kit>
 📓 drift · Dependency drift
    📋 lockfile
 
@@ -357,11 +358,15 @@ Kits from configured packages get their own section, each named package-first so
 📓 npm-auto-publish
    📋 repo
    📋 packages
+
+━━ 🌐 github:acme/.github@v2
+   To run: rdy run --sources <kit>
+📓 callers · Callers of the reusable workflow
 ```
 
-The hint above each block marks the package. A package named in the config is headed by `rdy run --packages`, which is exactly the run that would include it; one omitted from the config is headed by the source that names it directly, and reads `not listed in the readyup config`. Every kit listed is therefore runnable by the command above it, and learning what an unconfigured package contains no longer requires a `--from npm:` listing per package. A `--packages` command names a kit alone, because `rdy run --packages` rejects checklist selection: Several packages may publish the kit that it names.
+The hint above each block marks the source. A source named in the config is headed by `rdy run --sources`, which is exactly the run that would include it; a package omitted from the config is headed by the `--from` source that names it directly, and reads `not listed in the readyup config`. Every kit listed is therefore runnable by the command above it, and learning what an unconfigured package contains does not require a `--from npm:` listing per package. A `--sources` command names a kit alone, because `rdy run --sources` rejects checklist selection: Several sources may publish the kit that it names.
 
-Configured packages are resolved through `node_modules` rather than through the project's declared dependencies, so one that is installed without being declared is reported here as it is under a plain `rdy list`; when that lookup fails, a name matching one of the project's own workspaces resolves to that workspace, and a name matching neither produces a warning and is omitted. On its own, `--packages` reads the working directory, and it is not combinable with `--from` or `--manifest`. Pairing it with `--recursive` sweeps the whole repository, which [Listing a repository's dependencies](#listing-a-repositorys-dependencies) covers.
+Configured packages are resolved through `node_modules` rather than through the project's declared dependencies, so one that is installed without being declared is reported here as it is under a plain `rdy list`; when that lookup fails, a name matching one of the project's own workspaces resolves to that workspace. A configured repository is read through its published manifest. A source that cannot be read produces a warning naming it and is omitted. On its own, `--sources` reads the working directory, and it is not combinable with `--from` or `--manifest`. Pairing it with `--recursive` sweeps the whole repository, which [Listing a repository's dependencies](#listing-a-repositorys-dependencies) covers.
 
 `--manifest` reports each kit's compile-time ReadyUp version, description, and checklists:
 
@@ -378,7 +383,7 @@ It names no command, since `rdy run` cannot take a manifest file as its source. 
 
 A plain `rdy list` or a local `--from` source with no manifest falls back to listing the compiled kits on disk; those rows have a name and path only. A plain `rdy list` does the same past a manifest that it cannot read, after warning about it. A remote source still requires a manifest, which is read from the cache while it is fresh; see [Cached remote kits](#cached-remote-kits).
 
-A plain `rdy list` and `rdy list --packages` read the settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with `--from` or `--manifest`, which read no config, or with `--recursive`, which reads each project's own.
+A plain `rdy list` and `rdy list --sources` read the settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with `--from` or `--manifest`, which read no config, or with `--recursive`, which reads each project's own.
 
 ### Listing a whole repository
 
@@ -410,18 +415,18 @@ Every listed kit is runnable by the command above it, from wherever the sweep wa
    📋 lint
 ```
 
-Internal kits and configured-package kits are absent: No invocation runs another project's uncompiled sources, and packages are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
+Internal kits and configured-source kits are absent: No invocation runs another project's uncompiled sources, and configured sources are the other axis of discovery rather than this one. A project with nothing compiled is not rendered at all, so a sweep of a repository whose kits are all uncompiled prints `No kit projects found.`
 
 The sweep considers every directory containing a `package.json`, the working directory included, and skips `node_modules` and dot-directories. Each project that it finds is read under its own `.config/readyup.config.ts`. Because topology comes from the filesystem rather than a workspace file, the sweep works the same whatever package manager the repository uses -- but a kit directory with no `package.json` beside it is not a candidate. `--recursive` cannot be combined with `--from` or `--manifest`, which name a single foreign source, or with `--config`.
 
 ### Listing a repository's dependencies
 
-`--recursive --packages` combines the two axes: the locality of the sweep and the provenance of the dependency view. It reports each project's kit-publishing dependencies under the directory that declares them, with the command that runs each package's kits:
+`--recursive --sources` combines the two axes: the locality of the sweep and the provenance of the dependency view. It reports each project's kit sources under the directory whose config or dependencies name them, with the command that runs each source's kits:
 
 ```
 📁 ./
    📦 @acme/eslint-config@2.1.0
-      To run: rdy run --packages <kit>
+      To run: rdy run --sources <kit>
       📓 drift · Dependency drift
          📋 lockfile
 
@@ -435,12 +440,12 @@ The sweep considers every directory containing a `package.json`, the working dir
          📋 packages
 ```
 
-Every project's dependencies and configured packages are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed. Because a workspace's own dependency resolves from no other directory, its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
+Every project's dependencies and configured sources are read from its own `package.json` and its own `.config/readyup.config.ts`, so a package that one workspace names and another does not reads `not listed in the readyup config` only where it is unnamed, and a repository that cannot be fetched is warned of once for each project naming it. Because a workspace's own dependency resolves from no other directory, its command includes the `cd` into that workspace: `rdy run` takes no directory, and `--from` names a kit source rather than a working directory.
 
-This sweep is wider than the one that `--recursive` makes alone. It considers every directory containing a `package.json`, whether or not that directory has readyup configuration or kits, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one that the question is about. A project with no kit-publishing dependency is not rendered at all, its directory line included, and a sweep that finds nothing prints `No dependency of any project below this directory publishes kits.`
+This sweep is wider than the one that `--recursive` makes alone. It considers every directory containing a `package.json`, whether or not that directory has readyup configuration or kits, because a workspace authoring no kits of its own still declares dependencies that publish them -- and that workspace is the one that the question is about. A project with no kit source is not rendered at all, its directory line included, and a sweep that finds nothing prints `No dependency or configured source of any project below this directory publishes kits.`
 
 Unlike every other listing, this view has no heading rules. The two rule weights that it would otherwise need are one step of stroke width apart, and the roles that they would mark are already distinguished by their glyphs; under `--style plain`, which leaves the role glyphs empty, the indentation marks all three levels on its own. That is also why each command is labelled `To run:`: It shares a column with the kits beneath it, and the label keeps it from reading as one more kit.
 
-Rows are keyed by `name`, `kind`, `project`, **and** `origin.package` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A package's kit is `compiled` like any other bundle, distinguished by the package that it records rather than by a kind of its own, so `name` and `kind` alone collide between a project's own kit and a package's kit of the same name; under `--recursive` they collide again between two projects that each have a `default`, and under `--recursive --packages` between two workspaces depending on the same package. A consumer indexing on less than the full key silently drops a row.
+Rows are keyed by `name`, `kind`, `project`, **and** `origin.source` together. Under the default configuration a compiled source appears twice -- once as `internal` and once as `compiled`. A kit from a configured source is `compiled` like any other bundle, distinguished by the source that it records rather than by a kind of its own, so `name` and `kind` alone collide between a project's own kit and a source's kit of the same name; under `--recursive` they collide again between two projects that each have a `default`, and under `--recursive --sources` between two workspaces depending on the same package. A consumer indexing on less than the full key silently drops a row.
 
-Every kit published by a package has `origin.configured`, reporting whether the config names that package, which decides whether `rdy run --packages` would include it. Because it is emitted under `--packages`, under `--recursive --packages`, and under a plain `rdy list` alike, a consumer never has to know which invocation wrote the payload; it is absent only from a payload written before the field existed. Candidates from the **Available** section are not kits and appear separately in `availablePackages`, which appears only in the owner listing: Under `--packages` those packages' kits are rows of their own, so there is nothing left to name separately.
+`origin.source` is the kit source as the config spells it, `npm:<name>` for a package that the config omits, and `origin.version` is present for a package that declares one. A repository's kit has no `path`, because it is not on this machine. Every such kit has `origin.configured`, reporting whether the config names that source, which decides whether `rdy run --sources` would include it. Because it is emitted under `--sources`, under `--recursive --sources`, and under a plain `rdy list` alike, a consumer never has to know which invocation wrote the payload. Candidates from the **Available** section are not kits and appear separately in `availableSources`, each as its `npm:<name>` entry, which appears only in the owner listing: Under `--sources` those packages' kits are rows of their own, so there is nothing left to name separately.

@@ -10,8 +10,8 @@ Each payload is specified by a JSON Schema published with the package and includ
 | -------------- | ---------------------------------------- |
 | `compile`      | `readyup/schemas/compile.v1.json`        |
 | error envelope | `readyup/schemas/error-envelope.v1.json` |
-| `list`         | `readyup/schemas/list.v1.json`           |
-| `run` report   | `readyup/schemas/report.v1.json`         |
+| `list`         | `readyup/schemas/list.v2.json`           |
+| `run` report   | `readyup/schemas/report.v2.json`         |
 | `verify`       | `readyup/schemas/verify.v1.json`         |
 
 Each `$id` is the same path under `https://unpkg.com/readyup/`. The schemas are generated from the definitions from which the exported `Json*` types derive, so the published contract and the types cannot drift apart.
@@ -65,7 +65,7 @@ An error body may also include `hint`, one action that would clear the failure:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "readyupVersion": "0.22.0",
   "passed": false,
   "counts": { "passed": 4, "errors": 1, "warnings": 0, "recommendations": 0, "blocked": 2, "optional": 1 },
@@ -76,6 +76,7 @@ An error body may also include `hint`, one action that would clear the failure:
     {
       "name": "deploy",
       "compiledWith": "0.21.0",
+      "origin": { "source": "npm:@acme/kits", "version": "2.1.0" },
       "passed": false,
       "counts": {},
       "worstSeverity": "error",
@@ -92,6 +93,7 @@ An error body may also include `hint`, one action that would clear the failure:
 - **`counts`** contains the six tallies at report, kit, and checklist level, nested so that count names and verdict names share no namespace.
 - **`worstSeverity`** is derived verdict data, omitted when nothing failed.
 - **`failOn`** and **`reportOn`** appear at the top level only when the corresponding flag was passed, and on every kit that ran as the value that governed it. See [thresholds](concepts.md#thresholds) for how each resolves.
+- **`origin`** names the kit source from which a kit came, for a kit reached through an `npm:`, `github:`, or `bitbucket:` source, whether named by `--from` or by the config's `sources` list: `source` is the source as written there, and `version` is the installed version of a package that declares one. Two sources may each publish a kit of the same name, so `name` alone does not identify what ran.
 - **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit whose bundle records one, including when that version matches the report's own `readyupVersion`, and is absent for a bundle compiled before readyup recorded it and for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](publishing-kits.md#verifying-by-recompiling) reports the same value under a narrower rule, appearing only when it disagrees with the running readyup: That field explains a mismatch, this one records what ran.
 - **`warnings`** lists any advisory as `{ code, message, remedy? }`, absent when none was raised.
 
@@ -101,4 +103,4 @@ Payloads are slim by construction: An empty field is omitted rather than emitted
 
 `--detail summary` keeps counts, verdicts, and worst severity but reduces the detail tree to failed checks and their fixes -- the shape that an agent needs, at a fraction of the tokens. `--detail full` is the default.
 
-Both projections are described by `report.v1.json`, and the report's own `detail` field names which one was received. Passing `--detail` without `--json`, or to any command other than `run`, is a usage error.
+Both projections are described by `report.v2.json`, and the report's own `detail` field names which one was received. Passing `--detail` without `--json`, or to any command other than `run`, is a usage error.

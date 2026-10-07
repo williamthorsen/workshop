@@ -138,48 +138,58 @@ rdy run --from npm:@acme/eslint-config drift # a kit that it publishes, by name
 rdy list --from npm:@acme/eslint-config      # what it publishes
 ```
 
-Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named, or `--all`, which runs every kit that it publishes. `--packages` below is the same selection, made across several packages at once.
+Like every other `--from` source, a bare invocation runs the kit named `default`; a package publishing under other names needs one of them named, or `--all`, which runs every kit that it publishes. [Configured kit sources](#configured-kit-sources) makes the same selection across several packages at once.
 
-To name several packages once, list them in the config, because running code that a dependency publishes is an opt-in worth writing down:
-
-```ts
-export default defineRdyConfig({
-  packages: ['@acme/eslint-config', '@acme/release-kit'],
-});
-```
-
-```bash
-rdy run --packages       # the kit named `default`, from every listed package
-rdy run --packages drift # the kit named `drift`, from every listed package publishing it
-rdy run --packages --all # every kit, from every listed package
-```
-
-The kit name is the selector, exactly as it is for every other source, and each result names the package and version from which it came. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed packages may publish the named kit, which leaves no single kit within which to select checklists.
-
-A listed package that does not publish the requested kit is skipped. `rdy run --packages` checks whether this project satisfies what its listed packages require of it, and a package publishing no `default` requires nothing of it: That package contributes no kit, and a run that selects nothing says so and passes. The named form differs in one respect, because naming a kit asks for something specific: A name published by no listed package is a usage error rather than an empty run.
-
-An author uses that rule to keep a kit out of a routine `--packages` run: Publish it under a name other than `default`. It stays listed by `rdy list`, reachable by name both here and through `--from npm:<package>`, and run by `rdy run --packages --all`. Nothing is needed from the consumer's config, and nothing needs republishing.
-
-A listed package that is absent, or that publishes no kits at all, fails the run, and the run names it; `rdy list` warns instead and reports the rest, then names any installed dependency that publishes kits but is in neither `packages` nor `omittedPackages`.
-
-`omittedPackages` names the installed dependencies whose kits the project does not run, on purpose. `rdy list` stops proposing them, and the `setup` checklist of [readyup's own `default` kit](#readyups-own-kits), which reports every kit-publishing dependency missing from `packages`, stops reporting them:
-
-```ts
-export default defineRdyConfig({
-  omittedPackages: ['@acme/experimental-kits'],
-  packages: ['@acme/eslint-config', '@acme/release-kit'],
-});
-```
-
-If `node_modules` contains no match, a configured name matching one of the project's own workspaces resolves to that workspace's directory, and its kits are read from there as for any installed package. A monorepo therefore runs its own packages' kits over itself without declaring a dependency on them purely to make them findable. The workspace matches by the `name` declared in its manifest, `private: true` included, and resolution is anchored to the directory whose config named the package, so a `--recursive` sweep reads each project's own workspaces.
-
-Two limitations follow from resolving through `node_modules`, and neither applies to a workspace, because a configured package that `node_modules` does not contain is still resolved through the workspace fallback. A package that is not a workspace must be a **direct** dependency: A transitive package is genuinely unreachable, because a strict pnpm layout links nothing else into the project. And package sources do not resolve under Yarn Plug'n'Play, because it keeps no `node_modules` on disk.
+An `npm:` source resolves through `node_modules`, which sets two limitations. The package must be a **direct** dependency: A transitive package is genuinely unreachable, because a strict pnpm layout links nothing else into the project. And package sources do not resolve under Yarn Plug'n'Play, because it keeps no `node_modules` on disk. A configured `npm:` source that `node_modules` does not contain falls back to the project's own workspaces, as [Packages](#packages) describes.
 
 A published version other than the installed one is not yet reachable through `npm:`, and `rdy` says so when one is named. Use `--url` with the published address in the meantime:
 
 ```bash
 rdy run --url https://unpkg.com/@acme/eslint-config@2.1.0/.readyup/kits/drift.js
 ```
+
+## Configured kit sources
+
+To run the kits of several sources together, name them in the config's `sources` list, because running code that someone else publishes is an opt-in worth writing down. Each entry is a kit source spelled as `--from` takes it, limited to the schemes that name a publisher: `npm:` for an installed package, and `github:` or `bitbucket:` for a repository, with an optional `@ref`.
+
+```ts
+export default defineRdyConfig({
+  sources: ['npm:@acme/eslint-config', 'npm:@acme/release-kit', 'github:acme/.github@v2'],
+});
+```
+
+```bash
+rdy run --sources       # the kit named `default`, from every listed source
+rdy run --sources drift # the kit named `drift`, from every listed source publishing it
+rdy run --sources --all # every kit, from every listed source
+```
+
+The kit name is the selector, exactly as it is for every other source, and each result names the source from which it came, a package with its installed version. A checklist filter is rejected in both spellings -- `--checklists` and inline `kit:checklist` -- because several listed sources may publish the named kit, which leaves no single kit within which to select checklists.
+
+A listed source that does not publish the requested kit is skipped. `rdy run --sources` checks whether this project satisfies what its listed sources require of it, and a source publishing no `default` requires nothing of it: That source contributes no kit, and a run that selects nothing says so and passes. The named form differs in one respect, because naming a kit asks for something specific: A name published by no listed source is a usage error rather than an empty run.
+
+An author uses that rule to keep a kit out of a routine `--sources` run: Publish it under a name other than `default`. It stays listed by `rdy list`, reachable by name both here and through `--from`, and run by `rdy run --sources --all`. Nothing is needed from the consumer's config, and nothing needs republishing.
+
+A listed source that cannot be read, or that publishes no kits at all, fails the run, and the error names the entry as the config spells it; `rdy list` warns instead and reports the rest, then names, as `npm:<name>`, any installed dependency that publishes kits but is in neither `sources` nor `omittedSources`. An entry without a scheme, or with a scheme other than these three, is a config error naming the entry, and so is a config that still contains the `packages` key that `sources` replaced.
+
+`omittedSources` names the installed dependencies whose kits the project does not run, on purpose, each as `npm:<name>`. `rdy list` stops proposing them, and the `setup` checklist of [readyup's own `default` kit](#readyups-own-kits), which reports every kit-publishing dependency missing from `sources`, stops reporting them. An entry naming anything but a package is a config error:
+
+```ts
+export default defineRdyConfig({
+  omittedSources: ['npm:@acme/experimental-kits'],
+  sources: ['npm:@acme/eslint-config', 'npm:@acme/release-kit'],
+});
+```
+
+### Packages
+
+An `npm:` entry resolves through `node_modules`, under the limitations that [package-hosted kits](#package-hosted-kits) states. If `node_modules` contains no match, an entry naming one of the project's own workspaces resolves to that workspace's directory, and its kits are read from there as for any installed package. A monorepo therefore runs its own packages' kits over itself without declaring a dependency on them purely to make them findable. The workspace matches by the `name` declared in its manifest, `private: true` included, and resolution is anchored to the directory whose config named the package, so a `--recursive` sweep reads each project's own workspaces.
+
+### Repositories
+
+A `github:` or `bitbucket:` entry reads the kits that the repository has committed under `.readyup/` at the named ref, or at `main` when the entry names none. An unpinned entry therefore runs whatever `main` holds when the run starts, while a tag or a commit SHA keeps every run on the same kits. The repository must commit its `.readyup/manifest.json`, because the hosts' file endpoints cannot list a directory: The manifest is how readyup learns which kits the repository publishes. Fetches use the cache and the credentials that `--from` uses, and `--no-cache` fetches again.
+
+A repository kit namespaces its check IDs under the repository's owner and name, so a pragma suppressing one of its checks writes the full form, as [Suppressing a finding](running-checks.md#suppressing-a-finding) describes.
 
 ## ReadyUp's own kits
 
@@ -198,7 +208,7 @@ rdy list --from npm:readyup           # both, with the checklists that each one 
 | `setup`     | A config file is present (at `recommend`), a manifest records what has been compiled, and `packages` lists every installed dependency that publishes kits.                      |
 | `freshness` | Every kit that the manifest records still matches what was recorded for it (its source, its bundle, and everything the compile inlined), and the manifest records every bundle. |
 
-The config and manifest checks skip for a project that defines no kits of its own: A monorepo root that lists `packages` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The `packages` check skips instead when the config lists no packages, because that monorepo root is the project for which it exists. It reads the declared dependencies of the working directory and `.config/readyup.config.ts`, which `--config` does not replace, and it does not report a package that `omittedPackages` names. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
+The config and manifest checks skip for a project that defines no kits of its own: A monorepo root that lists `sources` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The `sources` check skips instead when the config lists no sources, because that monorepo root is the project for which it exists. It reads the declared dependencies of the working directory and `.config/readyup.config.ts`, which `--config` does not replace, and it does not report a package that `omittedSources` names. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
 
 `publishing` reports at `error`, for a package that distributes its kits:
 
@@ -212,7 +222,7 @@ A package declaring no `files` field passes the first check, because everything 
 
 Both kits read the convention layout: `.readyup/manifest.json` and bundles directly under `.readyup/kits`. A project that compiles to a different `outDir` still gets its recorded kits checked for freshness, since those paths come from the manifest, but the checks that count compiled bundles report nothing to do. For a published package the layout is not a convention but a contract, and the `packaging` check over recorded paths enforces it: `--from npm:` composes a kit's path from its name, so a bundle recorded anywhere else is listed and then fails to load.
 
-Adding readyup to `packages` in the config makes `rdy run --packages` include readyup's `default` kit. `publishing` is not part of that run, under the rule that excludes every kit not named `default`; select it with `rdy run --packages publishing`, which runs it from each listed package publishing a kit by that name, or with `rdy run --packages --all`, which runs every kit of every listed package. Until readyup is listed, `rdy list` names it among the dependencies that publish kits, and `rdy list --packages` shows the kits that it contains.
+Adding `npm:readyup` to `sources` in the config makes `rdy run --sources` include readyup's `default` kit. `publishing` is not part of that run, under the rule that excludes every kit not named `default`; select it with `rdy run --sources publishing`, which runs it from each listed source publishing a kit by that name, or with `rdy run --sources --all`, which runs every kit of every listed source. Until readyup is listed, `rdy list` names it among the dependencies that publish kits, and `rdy list --sources` shows the kits that it contains.
 
 ## Internal kits
 
