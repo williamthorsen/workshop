@@ -14,7 +14,7 @@ Each payload is specified by a JSON Schema published with the package and includ
 | `run` report   | `readyup/schemas/report.v2.json`         |
 | `verify`       | `readyup/schemas/verify.v1.json`         |
 
-Each `$id` is the same path under `https://unpkg.com/readyup/`. The schemas are generated from the definitions from which the exported `Json*` types derive, so the published contract and the types cannot drift apart.
+Each `$id` names the release that publishes it, as `https://unpkg.com/readyup@<version>/schemas/<payload>.v<N>.json`. A release on npm never changes, so that URL keeps resolving; to validate without a network call, load the schema from the installed package instead, under the import path above. The schemas are generated from the definitions from which the exported `Json*` types derive, so the published contract and the types cannot drift apart.
 
 Each document names its payload under `$defs` and points at it from a root `$ref`: A document is shaped `{ $schema, $id, $ref, $defs }`, and the payload's own `required` and `properties` are under `$defs` rather than at the root. A validator resolves the `$ref` and needs nothing further; code reading the document directly has to follow it.
 
@@ -23,7 +23,8 @@ Each document names its payload under `$defs` and points at it from a root `$ref
 The five payloads are versioned independently.
 
 - **Adding an optional field does not bump `schemaVersion`.** A validator pinned to `v1` keeps accepting payloads from a later ReadyUp.
-- **Removing, renaming, or re-typing a field does bump it**, publishing a new `vN` beside the old. Widening a closed set counts as re-typing.
+- **Removing, renaming, or re-typing a field does bump it**, and the release that makes the change publishes `vN` in place of the earlier version. Widening a closed set counts as re-typing.
+- **An earlier version stays published in every release that emitted it**, at that release's version-pinned URL, so a consumer pinned to `v1` validates against the `v1` document of the readyup that produced the payload.
 - **A field is `required` only when every payload has it.** Omission is reserved for absent or empty data.
 - **`warnings[].code` is an open set**, exempt from the widening rule. Consumers must tolerate an unknown code, displaying its `message` and `remedy`. `error.code` stays closed.
 - **`schemaVersion` covers the payload's fields, not how the document expresses them.** The generator decides where a keyword appears, so resolve a `$ref` with a validator rather than reading a keyword from a fixed path.

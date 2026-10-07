@@ -6,7 +6,8 @@ import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { isRecord } from '../../portable/isRecord.ts';
-import { buildSchemaDocuments, SCHEMA_BASE_URL, writeSchemaFiles } from '../buildSchemas.ts';
+import { VERSION } from '../../version.ts';
+import { buildSchemaDocuments, buildSchemaUrl, writeSchemaFiles } from '../buildSchemas.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
@@ -39,10 +40,14 @@ describe('generated JSON Schemas', () => {
     ]);
   });
 
-  it('gives each document an $id matching its published location', () => {
+  it('gives each document an $id at the release of readyup that publishes it', () => {
     for (const [fileName, document] of documents) {
-      expect(document).toMatchObject({ $id: `${SCHEMA_BASE_URL}/${fileName}` });
+      expect(document).toMatchObject({ $id: `https://unpkg.com/readyup@${VERSION}/schemas/${fileName}` });
     }
+  });
+
+  it('builds a schema URL pinned to the version that it is given', () => {
+    expect(buildSchemaUrl('list.v1.json', '0.39.0')).toBe('https://unpkg.com/readyup@0.39.0/schemas/list.v1.json');
   });
 
   it('declares the draft against which each document is written', () => {
