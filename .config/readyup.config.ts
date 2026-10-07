@@ -9,6 +9,7 @@ export default defineRdyConfig({
   },
   // `rdy run --sources` runs the `default` kit of each of these sources.
   sources: [
+    'github:williamthorsen/.github',
     'npm:@williamthorsen/eslint-config-typescript',
     'npm:@williamthorsen/nmr',
     'npm:@williamthorsen/release-kit',
