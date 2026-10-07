@@ -9,6 +9,7 @@ vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
+import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { resolveAllKitSources } from '../resolveAllKitSources.ts';
@@ -19,7 +20,7 @@ const baseOptions = {
   fromValue: undefined,
   internal: false,
   jit: false,
-  packages: false,
+  sources: false,
   remote: createUncachedRemoteContext(),
 };
 
@@ -109,7 +110,7 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), jit: true }));
+      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), jit: true }));
     });
 
     it('resolves only the infixed kits of the internal directory under --internal', async ({ temp }) => {
@@ -122,7 +123,7 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
+      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
     });
 
     it('roots --internal on the configured source directory', async ({ temp }) => {
@@ -132,7 +133,9 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }));
+      expect(entries).toStrictEqual(
+        await resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }),
+      );
     });
 
     it('fails naming the directory when the kits directory contains no source', async () => {
@@ -147,7 +150,7 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
+      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
     });
 
     it('omits a source that compile.exclude removes', async ({ temp }) => {
@@ -156,7 +159,7 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
     });
 
     it('omits a source that compile.include does not select', async ({ temp }) => {
@@ -165,7 +168,7 @@ describe(resolveAllKitSources, () => {
 
       const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
 
-      expect(entries).toStrictEqual(resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
     });
 
     it('covers the same kits under --jit as a compiled --all', async ({ temp }) => {
@@ -188,7 +191,7 @@ describe(resolveAllKitSources, () => {
       const entries = await resolveAllKitSources({ ...baseOptions, fromValue: 'dir:shared' });
 
       expect(entries).toStrictEqual(
-        resolveKitSources({ ...buildNamedArgs(['alpha', 'beta']), fromValue: 'dir:shared' }),
+        await resolveKitSources({ ...buildNamedArgs(['alpha', 'beta']), fromValue: 'dir:shared' }),
       );
     });
 
@@ -199,7 +202,7 @@ describe(resolveAllKitSources, () => {
       const entries = await resolveAllKitSources({ ...baseOptions, fromValue: 'github:acme/checks' });
 
       expect(entries).toStrictEqual(
-        resolveKitSources({ ...buildNamedArgs(['default', 'deploy']), fromValue: 'github:acme/checks' }),
+        await resolveKitSources({ ...buildNamedArgs(['default', 'deploy']), fromValue: 'github:acme/checks' }),
       );
     });
 
@@ -215,7 +218,7 @@ describe(resolveAllKitSources, () => {
     });
   });
 
-  it('resolves every kit that a configured package publishes under --packages, not only its default', async ({
+  it('resolves every kit that a configured source publishes under --sources, not only its default', async ({
     temp,
   }) => {
     temp.writeJson('node_modules/@acme/kits/package.json', { name: '@acme/kits' });
@@ -224,7 +227,11 @@ describe(resolveAllKitSources, () => {
       kits: [{ name: 'default' }, { name: 'drift' }],
     });
 
-    const entries = await resolveAllKitSources({ ...baseOptions, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveAllKitSources({
+      ...baseOptions,
+      sources: true,
+      configuredSources: [parseConfiguredSource('npm:@acme/kits')],
+    });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default', 'drift']);
   });
@@ -235,6 +242,7 @@ describe(resolveAllKitSources, () => {
 /** Builds the `resolveKitSources` arguments of a run naming the given kits, every other flag inactive. */
 function buildNamedArgs(names: string[]) {
   return {
+    remote: createUncachedRemoteContext(),
     checklists: undefined,
     filePath: undefined,
     fromValue: undefined,

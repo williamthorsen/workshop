@@ -15,6 +15,7 @@ vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
 
 import { DEFAULT_CONFIG } from '../../config/loadConfig.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
+import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { listCommand } from '../listCommand.ts';
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
@@ -56,11 +57,11 @@ const it = baseIt.extend(
 it.aroundEach(async (runTest, { temp }) => {
   using _cwd = pointCwdAt(temp.dir);
 
-  configureProjects({ '.': ['@acme/kits'] });
+  configureProjects({ '.': ['npm:@acme/kits'] });
   await runTest();
 });
 
-describe('list --recursive --packages', () => {
+describe('list --recursive --sources', () => {
   describe('rendering', () => {
     it('reports each project as a directory heading over its kit-publishing dependencies', async () => {
       const { exitCode, stdout } = await list();
@@ -69,7 +70,7 @@ describe('list --recursive --packages', () => {
       expect(stdout.trimEnd().split('\n')).toStrictEqual([
         '\u{1F4C1} ./',
         '   \u{1F4E6} @acme/kits@2.1.0',
-        '      To run: rdy run --packages <kit>',
+        '      To run: rdy run --sources <kit>',
         '      \u{1F4D3} drift \u{00B7} Dependency drift',
         '',
         '   \u{1F4E6} plain-kit@0.4.0 \u{00B7} not listed in the readyup config',
@@ -107,11 +108,11 @@ describe('list --recursive --packages', () => {
     // Because configured membership is a fact about one project's config, two projects can report the same
     // package differently.
     it('marks a package against the config of the project reporting it', async () => {
-      configureProjects({ '.': ['@acme/kits'], 'packages/app': ['plain-kit'] });
+      configureProjects({ '.': ['npm:@acme/kits'], 'packages/app': ['npm:plain-kit'] });
 
       const { stdout } = await list();
 
-      expect(stdout).toContain('   \u{1F4E6} plain-kit@0.9.0\n      To run: cd packages/app && rdy run --packages');
+      expect(stdout).toContain('   \u{1F4E6} plain-kit@0.9.0\n      To run: cd packages/app && rdy run --sources');
       expect(stdout).toContain('plain-kit@0.4.0 \u{00B7} not listed in the readyup config');
     });
 
@@ -137,7 +138,9 @@ describe('list --recursive --packages', () => {
       const { exitCode, stdout } = await list();
 
       expect(exitCode).toBe(0);
-      expect(stdout.trimEnd()).toBe('No dependency of any project below this directory publishes kits.');
+      expect(stdout.trimEnd()).toBe(
+        'No dependency or configured source of any project below this directory publishes kits.',
+      );
     });
   });
 
@@ -146,11 +149,11 @@ describe('list --recursive --packages', () => {
       const payload = await runForPayload();
       const parsed = ListOutputSchema.parse(payload);
 
-      expect(parsed.schemaVersion).toBe(1);
-      expect(parsed.kits.map((kit) => [kit.project, kit.origin?.package, kit.origin?.configured])).toStrictEqual([
-        ['.', '@acme/kits', true],
-        ['.', 'plain-kit', false],
-        ['packages/app', 'plain-kit', false],
+      expect(parsed.schemaVersion).toBe(2);
+      expect(parsed.kits.map((kit) => [kit.project, kit.origin?.source, kit.origin?.configured])).toStrictEqual([
+        ['.', 'npm:@acme/kits', true],
+        ['.', 'npm:plain-kit', false],
+        ['packages/app', 'npm:plain-kit', false],
       ]);
     });
 
@@ -166,20 +169,23 @@ describe('list --recursive --packages', () => {
     it('emits no candidate list', async () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
 
-      expect(parsed.availablePackages).toBeUndefined();
+      expect(parsed.availableSources).toBeUndefined();
     });
   });
 });
 
 // region | Helpers
 
-/** Points the mocked config loader at a package list per project directory, defaulting the rest to none. */
+/** Points the mocked config loader at source entries per project directory, defaulting the rest to none. */
 function configureProjects(byDir: Record<string, string[]>): void {
   mockLoadConfig.mockImplementation((options: { fromDir?: string } = {}) => {
     const fromDir = options.fromDir ?? process.cwd();
     const dir = path.relative(process.cwd(), fromDir) || '.';
 
-    return Promise.resolve({ ...DEFAULT_CONFIG, packages: byDir[dir] ?? [] });
+    return Promise.resolve({
+      ...DEFAULT_CONFIG,
+      sources: (byDir[dir] ?? []).map((entry) => parseConfiguredSource(entry)),
+    });
   });
 }
 
@@ -187,7 +193,7 @@ function configureProjects(byDir: Record<string, string[]>): void {
 async function list(args: string[] = []) {
   using io = captureStdio();
 
-  const exitCode = await listCommand(['--recursive', '--packages', ...args]);
+  const exitCode = await listCommand(['--recursive', '--sources', ...args]);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

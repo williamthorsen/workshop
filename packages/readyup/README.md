@@ -85,10 +85,10 @@ With `NODE_ENV` unset:
 ```bash
 rdy run --from npm:@acme/eslint-config   # a kit published by an installed package
 rdy run --from github:acme/ops           # a kit published by a repository
-rdy run --packages                       # every package listed by the config, in one run
+rdy run --sources                        # every source listed by the config, in one run
 ```
 
-[Kit sources](docs/running-checks.md#kit-sources) covers each form, and [package-hosted kits](docs/publishing-kits.md#package-hosted-kits) covers the config list.
+[Kit sources](docs/running-checks.md#kit-sources) covers each form, and [configured kit sources](docs/publishing-kits.md#configured-kit-sources) covers the config list.
 
 ## Gating CI
 

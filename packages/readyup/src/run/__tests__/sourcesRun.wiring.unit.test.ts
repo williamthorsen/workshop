@@ -5,6 +5,7 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';
+import { type ConfiguredSource, parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
@@ -13,7 +14,7 @@ import { runCommand } from '../runCommand.ts';
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
-  makeFixture(() => createTempTree({}, { prefix: 'packages-run-' })),
+  makeFixture(() => createTempTree({}, { prefix: 'sources-run-' })),
 );
 
 it.aroundEach(async (runTest, { temp }) => {
@@ -23,74 +24,86 @@ it.aroundEach(async (runTest, { temp }) => {
 });
 
 /**
- * Joins `--packages` to the kits published by an installed package, against a real fixture project.
+ * Joins `--sources` to the kits published by a configured `npm:` source, against a real fixture project.
  * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
  * that a configured package becomes a run entry with the provenance rendered by the report and the headings,
  * and that the kit name selects which of its kits run.
  */
-describe('--packages run path wiring', () => {
+describe('--sources run path wiring', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('expands a configured package into entries with its name and version', ({ temp }) => {
+  it('expands a configured package into entries with its name and version', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
 
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     expect(entries).toStrictEqual([
       {
         name: 'default',
         source: { path: path.join(temp.dir, 'node_modules', '@acme/kits', '.readyup', 'kits', 'default.js') },
         checklists: [],
-        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
     ]);
   });
 
-  it('runs only the default kit when the invocation names none', ({ temp }) => {
+  it('runs only the default kit when the invocation names none', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight'], { version: '2.1.0' });
 
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
   });
 
-  it('runs a named kit from every configured package publishing it, in configured order', ({ temp }) => {
+  it('runs a named kit from every configured package publishing it, in configured order', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default', 'preflight']);
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
 
-    const entries = resolveKitSources({
+    const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
-      configuredPackages: ['plain-kit', '@acme/kits'],
+      sources: true,
+      configuredSources: npmSources('plain-kit', '@acme/kits'),
       kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
     });
 
     expect(entries.map((entry) => entry.provenance)).toStrictEqual([
-      { kind: 'package', packageName: 'plain-kit', version: undefined },
-      { kind: 'package', packageName: '@acme/kits', version: undefined },
+      { kind: 'package', packageName: 'plain-kit', version: undefined, source: 'npm:plain-kit' },
+      { kind: 'package', packageName: '@acme/kits', version: undefined, source: 'npm:@acme/kits' },
     ]);
   });
 
   // Selection reads names, so the manifest-less path needs no handling of its own -- but it has to resolve alike.
-  it('selects by name when a package includes no manifest', ({ temp }) => {
+  it('selects by name when a package includes no manifest', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default', 'preflight'], { hasManifest: false });
 
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['plain-kit'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('plain-kit'),
+    });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
   });
 
   // There is nothing to fail, because a package publishing no `default` requires nothing of this project.
-  it('skips a configured package publishing no default', ({ temp }) => {
+  it('skips a configured package publishing no default', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default']);
     installPackage(temp, '@acme/kits', ['drift', 'preflight']);
 
-    const entries = resolveKitSources({
+    const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
-      configuredPackages: ['plain-kit', '@acme/kits'],
+      sources: true,
+      configuredSources: npmSources('plain-kit', '@acme/kits'),
     });
 
     expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
@@ -98,7 +111,11 @@ describe('--packages run path wiring', () => {
 
   it('passes without running a kit when the selection is empty', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['drift']);
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     const { exitCode, stdout } = await run({ kitEntries: entries, json: false });
 
@@ -106,43 +123,59 @@ describe('--packages run path wiring', () => {
     expect(stdout).toBe('No kits to run.\n');
   });
 
-  it('passes the package and version into the JSON report', async ({ temp }) => {
+  it('passes the source and version into the JSON report', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     const { exitCode, stdout } = await run({ kitEntries: entries, json: true });
 
     expect(exitCode).toBe(0);
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ name: 'default', origin: { package: '@acme/kits', version: '2.1.0' } });
+    expect(report.kits[0]).toMatchObject({ name: 'default', origin: { source: 'npm:@acme/kits', version: '2.1.0' } });
   });
 
   it('omits the version from the report when the package declares none', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default']);
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ origin: { package: '@acme/kits' } });
+    expect(report.kits[0]).toMatchObject({ origin: { source: 'npm:@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('version');
   });
 
   it('names the readyup that compiled a package kit beside the package, not inside it', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { package: '@acme/kits' } });
+    expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { source: 'npm:@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('compiledWith');
   });
 
   // A lone dependency-provided kit is the common shape, and its package appears nowhere else on screen.
   it('heads a single package kit with the package and version in human output', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = resolveKitSources({ ...baseArgs, packages: true, configuredPackages: ['@acme/kits'] });
+    const entries = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('@acme/kits'),
+    });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
 
@@ -153,10 +186,10 @@ describe('--packages run path wiring', () => {
   it('ends a multi-package run with a table covering every checklist that ran', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = resolveKitSources({
+    const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
-      configuredPackages: ['plain-kit', '@acme/kits'],
+      sources: true,
+      configuredSources: npmSources('plain-kit', '@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -173,10 +206,10 @@ describe('--packages run path wiring', () => {
   it('names each row by the breadcrumb heading that its block has', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
-    const entries = resolveKitSources({
+    const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
-      configuredPackages: ['@acme/kits', 'plain-kit'],
+      sources: true,
+      configuredSources: npmSources('@acme/kits', 'plain-kit'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -200,10 +233,10 @@ describe('--packages run path wiring', () => {
       path.join('node_modules', 'broken-kit', '.readyup', 'kits', 'default.js'),
       'export default { nope: true };\n',
     );
-    const entries = resolveKitSources({
+    const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
-      configuredPackages: ['@acme/kits', 'broken-kit', 'plain-kit'],
+      sources: true,
+      configuredSources: npmSources('@acme/kits', 'broken-kit', 'plain-kit'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -218,7 +251,7 @@ describe('--packages run path wiring', () => {
 
 // region | Helpers
 
-/** Flags left at their defaults by a `--packages` invocation. */
+/** Flags left at their defaults by a `--sources` invocation. */
 const baseArgs = {
   filePath: undefined,
   fromValue: undefined,
@@ -227,6 +260,7 @@ const baseArgs = {
   checklists: undefined,
   jit: false,
   internal: false,
+  remote: createUncachedRemoteContext(),
 };
 
 /**
@@ -270,6 +304,11 @@ async function run(options: Omit<Parameters<typeof runCommand>[0], 'remote'>) {
   const exitCode = await runCommand({ ...options, remote: createUncachedRemoteContext() });
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
+}
+
+/** Returns the configured sources naming each installed package. */
+function npmSources(...names: string[]): ConfiguredSource[] {
+  return names.map((name) => parseConfiguredSource(`npm:${name}`));
 }
 
 // endregion | Helpers

@@ -3,14 +3,22 @@ import path from 'node:path';
 
 import { z } from 'zod';
 
+import { VERSION } from '../version.ts';
 import { CompileOutputSchema, SCHEMA_VERSION as COMPILE_VERSION } from './compileOutputSchema.ts';
 import { ErrorEnvelopeSchema, SCHEMA_VERSION as ENVELOPE_VERSION } from './errorEnvelopeSchema.ts';
 import { ListOutputSchema, SCHEMA_VERSION as LIST_VERSION } from './listOutputSchema.ts';
 import { ReportSchema, SCHEMA_VERSION as REPORT_VERSION } from './reportSchema.ts';
 import { SCHEMA_VERSION as VERIFY_VERSION, VerifyOutputSchema } from './verifyOutputSchema.ts';
 
-/** Where a published schema is served from once the package is on npm. */
-export const SCHEMA_BASE_URL = 'https://unpkg.com/readyup/schemas';
+/**
+ * Returns the URL at which a schema file is served from the npm release that publishes it.
+ *
+ * The URL names the package version because a release on npm never changes: An earlier payload version stays
+ * reachable at the address of every release that emitted it, while the latest release ships only current versions.
+ */
+export function buildSchemaUrl(fileName: string, version: string = VERSION): string {
+  return `https://unpkg.com/readyup@${version}/schemas/${fileName}`;
+}
 
 /** One payload's published schema: what to call the file and what to put in it. */
 export interface SchemaDocument {
@@ -53,7 +61,7 @@ export function buildSchemaDocuments(): SchemaDocument[] {
     const fileName = `${name}.v${version}.json`;
     const { $schema, ...body } = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' });
 
-    return { fileName, document: { $schema, $id: `${SCHEMA_BASE_URL}/${fileName}`, ...body } };
+    return { fileName, document: { $schema, $id: buildSchemaUrl(fileName), ...body } };
   });
 }
 

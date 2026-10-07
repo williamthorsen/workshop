@@ -1,5 +1,5 @@
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
-import type { KitProvenance } from '../kits/KitProvenance.ts';
+import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance.ts';
 import { VERSION } from '../version.ts';
 import type { UnresolvableImports } from './UnresolvableKitImportsError.ts';
 
@@ -18,8 +18,8 @@ export interface UnresolvableImportsDiagnosis {
 /**
  * Composes the failure produced by a kit's unresolvable readyup imports.
  *
- * The message names the kit, and the publishing package when the kit has one, because a `--packages` run loads
- * several kits that share the name `default` and a message read on its own has to say which one failed.
+ * The message names the kit, and the publishing package or repository when the kit has one, because a `--sources`
+ * run loads several kits that share the name `default` and a message read on its own has to say which one failed.
  *
  * The remedy follows the kit's source, since the action that clears the failure differs by where the bundle is
  * maintained: A kit in the project can be recompiled, a kit inside an installed package cannot.
@@ -49,6 +49,9 @@ function describeRemedy(provenance: KitProvenance | undefined): string {
   }
   if (provenance.kind === 'remote') {
     return `Ask the publisher of ${provenance.label} to recompile it against readyup ${VERSION}.`;
+  }
+  if (provenance.kind === 'repository') {
+    return `Ask the publisher of ${formatRepositoryLabel(provenance)} to recompile it against readyup ${VERSION}.`;
   }
   return `Run 'rdy compile' in the project that owns ${provenance.label}.`;
 }

@@ -64,7 +64,7 @@ Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<kit>]                 Run a kit published by the config's "packages" list (default: "default")
+  --sources [<kit>]                  Run a kit published by the config's "sources" list (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --all                              Run every kit in the selected source instead of naming kits
@@ -122,9 +122,9 @@ List available kits without running them.
 
 Modes:
   rdy list                                  List internal and compiled kits (owner view)
-  rdy list --packages                       List the kits published by this project's dependencies
+  rdy list --sources                        List the kits of this project's dependencies and configured sources
   rdy list --recursive                      List compiled kits in every project below this directory
-  rdy list --recursive --packages           List each project's kit-publishing dependencies
+  rdy list --recursive --sources            List each project's dependencies and configured sources
   rdy list --from <path>                    List compiled kits at a local path (consumer view)
   rdy list --from npm:package               List the kits published by an installed package
   rdy list --from global                    List compiled kits in the global directory
@@ -138,24 +138,25 @@ Options:
   --from <source>            Kit source (github:org/repo[@ref], bitbucket:ws/repo[@ref], npm:package,
                              global, dir:path, or local path)
   --manifest <path>          List the kits declared by a manifest file
-  --no-cache                 Fetch a remote manifest again, ignoring a cached copy; the fresh
-                             copy still replaces the cached one
-  --packages                 List every installed dependency that publishes kits, with the kits
-                             that each publishes and the command that runs them; combines with
-                             --recursive, not with --from or --manifest
+  --no-cache                 Fetch remote manifests again, ignoring cached copies; the fresh
+                             copies still replace the cached ones
   --recursive                List compiled kits in every project below the working directory,
-                             grouped by project; with --packages, lists each project's
-                             kit-publishing dependencies instead; not combinable with --from,
-                             --manifest, or --config
+                             grouped by project; with --sources, lists each project's
+                             kit sources instead; not combinable with --from, --manifest,
+                             or --config
+  --sources                  List every installed dependency that publishes kits and every source
+                             that the config's "sources" list names, with the kits that each
+                             publishes and the command that runs them; combines with
+                             --recursive, not with --from or --manifest
   --json                     Output the kit list as JSON
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 
 Examples:
   rdy list                                         Show kits in the current project
-  rdy list --packages                              Show what this project's dependencies publish
+  rdy list --sources                               Show what this project's kit sources publish
   rdy list --recursive                             Show compiled kits across the whole repository
-  rdy list --recursive --packages                  Show every project's kit-publishing dependencies
+  rdy list --recursive --sources                   Show every project's kit sources
   rdy list --from .                                Show compiled kits in the current directory
   rdy list --from global                           Show kits in the global directory
   rdy list --from github:williamthorsen/workshop   Show kits in a remote GitHub repository
@@ -177,11 +178,12 @@ Kit source (mutually exclusive):
                                      npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<kit>]                 Run a kit from every package that the config's "packages"
-                                     list names, skipping those that do not publish it;
-                                     without a kit, the kit named "default"
+  --sources [<kit>]                  Run a kit from every source (npm:package, github:org/repo[@ref],
+                                     bitbucket:ws/repo[@ref]) that the config's "sources" list
+                                     names, skipping those that do not publish it; without a
+                                     kit, the kit named "default"
 
-Mode flags (incompatible with --from, --file, --url, --packages):
+Mode flags (incompatible with --from, --file, --url, --sources):
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
 
@@ -221,7 +223,7 @@ Examples:
   rdy run deploy                         Run the compiled deploy kit
   rdy run deploy:build,test              Run two checklists from the deploy kit
   rdy run --all                          Run every compiled kit in the project
-  rdy run --all --packages               Run every kit that the configured packages publish
+  rdy run --all --sources                Run every kit that the configured sources publish
   rdy run --jit deploy                   Run the deploy kit from its TypeScript source
   rdy run --from global deploy           Run the deploy kit from the global directory
   rdy run --fail-on warn                 Fail the run on warnings as well as errors

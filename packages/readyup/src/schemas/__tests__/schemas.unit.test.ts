@@ -44,8 +44,8 @@ describe('JSON payload schemas', () => {
 
     it('accepts a listing that names no project, at the same schema version', () => {
       expect(listPayload.kits[0]).not.toHaveProperty('project');
-      expect(ListOutputSchema.parse(listPayload).schemaVersion).toBe(1);
-      expect(ListOutputSchema.parse(recursiveListPayload).schemaVersion).toBe(1);
+      expect(ListOutputSchema.parse(listPayload).schemaVersion).toBe(2);
+      expect(ListOutputSchema.parse(recursiveListPayload).schemaVersion).toBe(2);
     });
 
     it('keeps a kit\u{2019}s project apart from the package that published it', () => {
@@ -60,8 +60,8 @@ describe('JSON payload schemas', () => {
       const stripped = Object.fromEntries(Object.entries(kit ?? {}).filter(([key]) => key !== 'compiledWith'));
 
       expect(kit).toHaveProperty('compiledWith');
-      expect(ReportSchema.parse(reportPayload).schemaVersion).toBe(1);
-      expect(ReportSchema.parse({ ...reportPayload, kits: [stripped] }).schemaVersion).toBe(1);
+      expect(ReportSchema.parse(reportPayload).schemaVersion).toBe(2);
+      expect(ReportSchema.parse({ ...reportPayload, kits: [stripped] }).schemaVersion).toBe(2);
     });
   });
 
@@ -108,7 +108,7 @@ describe('JSON payload schemas', () => {
     it('rejects a non-string hint', () => {
       const error = { code: 'config', message: 'boom', hint: 42 };
 
-      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 1, error })).toThrow(ZodError);
+      expect(() => ErrorEnvelopeSchema.parse({ schemaVersion: 2, error })).toThrow(ZodError);
     });
   });
 
@@ -169,19 +169,19 @@ describe('JSON payload schemas', () => {
     it('rejects a source verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'drift' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).toThrow(ZodError);
     });
 
     it('keeps the source vocabulary distinct from the target vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'stale', sourceStatus: 'ok' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).toThrow(ZodError);
     });
 
     it('accepts a payload from a readyup that predates the rebuild verdict', () => {
       const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).not.toThrow();
     });
 
     it('accepts a rebuild mismatch with both hashes', () => {
@@ -196,32 +196,32 @@ describe('JSON payload schemas', () => {
         },
       ];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).not.toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: false, kits })).not.toThrow();
     });
 
     it('accepts a payload from a readyup that predates the inputs verdict', () => {
       const kits = [{ name: 'deploy', status: 'ok', sourceStatus: 'ok' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).not.toThrow();
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).not.toThrow();
     });
 
     it('rejects an inputs verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'missing' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).toThrow(ZodError);
     });
 
     it('rejects an input failure that names no cause known to the vocabulary', () => {
       const inputFailures = [{ kind: 'module', path: 'kits/shared.ts', reason: 'drifted' }];
       const kits = [{ name: 'deploy', status: 'ok', inputsStatus: 'stale', inputFailures }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: false, kits })).toThrow(ZodError);
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: false, kits })).toThrow(ZodError);
     });
 
     it('rejects a rebuild verdict outside the vocabulary', () => {
       const kits = [{ name: 'deploy', status: 'ok', rebuildStatus: 'unverified' }];
 
-      expect(() => VerifyOutputSchema.parse({ schemaVersion: 1, passed: true, kits })).toThrow(ZodError);
+      expect(() => VerifyOutputSchema.parse({ schemaVersion: 2, passed: true, kits })).toThrow(ZodError);
     });
   });
 

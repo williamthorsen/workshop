@@ -103,7 +103,7 @@ describe(formatJsonReport, () => {
     const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
 
     expect(parsed).toStrictEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       readyupVersion: VERSION,
       passed: true,
       counts,
@@ -135,7 +135,7 @@ describe(formatJsonReport, () => {
     const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
 
     expect(parsed).toStrictEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       readyupVersion: VERSION,
       passed: true,
       counts: NO_COUNTS,
@@ -159,7 +159,7 @@ describe(formatJsonReport, () => {
     it('stamps the schema version and the runner version', () => {
       const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
 
-      expect(parsed).toMatchObject({ schemaVersion: 1, readyupVersion: VERSION });
+      expect(parsed).toMatchObject({ schemaVersion: 2, readyupVersion: VERSION });
     });
 
     it('echoes the requested thresholds and detail projection', () => {
@@ -784,7 +784,7 @@ describe(formatJsonReport, () => {
       const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail: 'summary' }));
 
       expect(parsed).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         readyupVersion: VERSION,
         passed: false,
         counts,

@@ -54,7 +54,7 @@ describe('listCommand wiring', () => {
 
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout)).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [{ name: 'alpha', kind: 'compiled', path: path.join('kits', 'alpha.js') }],
       });
     });
@@ -107,7 +107,7 @@ describe('listCommand wiring', () => {
 
       expect(stderr).toContain('\u{1F4D3} deploy\n   \u{1F4CB} preflight\n   \u{1F4CB} release');
       expect(JSON.parse(stdout)).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [
           {
             name: 'deploy',

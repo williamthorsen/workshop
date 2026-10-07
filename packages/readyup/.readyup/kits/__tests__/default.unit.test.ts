@@ -31,8 +31,8 @@ import {
  */
 const PROJECTED_JSON_PATH = path.join('..', 'package.json');
 
-/** Substring of the name of the check that compares installed kit-publishing dependencies against `packages`. */
-const PACKAGES_CHECK = 'is listed in "packages"';
+/** Substring of the name of the check that compares installed kit-publishing dependencies against `sources`. */
+const SOURCES_CHECK = 'is listed in "sources"';
 
 /**
  * Covers the `default` kit that readyup publishes, against fixture projects in a temp directory.
@@ -66,7 +66,7 @@ describe('default kit', () => {
       expect(results.map((result) => result.status)).toStrictEqual(['passed', 'passed', 'skipped']);
     });
 
-    // A monorepo root that lists `packages` authors no kits of its own, and is not defective for it.
+    // A monorepo root that lists `sources` authors no kits of its own, and is not defective for it.
     it('skips every authoring check for a project that defines no kits', async () => {
       const results = await runSetup();
 
@@ -75,61 +75,61 @@ describe('default kit', () => {
       expect(authoringResults.every((result) => result.detail === 'This project defines no kits')).toBe(true);
     });
 
-    it('reports an installed kit-publishing dependency that "packages" does not list', async () => {
-      writeConsumerProject({ packages: ['listed-kit'] });
+    it('reports an installed kit-publishing dependency that "sources" does not list', async () => {
+      writeConsumerProject({ sources: ['npm:listed-kit'] });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({
         status: 'failed',
-        detail: 'missing from "packages": unlisted-kit',
+        detail: 'missing from "sources": npm:unlisted-kit',
       });
     });
 
     it('passes once every kit-publishing dependency is listed', async () => {
-      writeConsumerProject({ packages: ['listed-kit', 'unlisted-kit'] });
+      writeConsumerProject({ sources: ['npm:listed-kit', 'npm:unlisted-kit'] });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
-    it('passes when "omittedPackages" names the unlisted dependency', async () => {
-      writeConsumerProject({ packages: ['listed-kit'], omittedPackages: ['unlisted-kit'] });
+    it('passes when "omittedSources" names the unlisted dependency', async () => {
+      writeConsumerProject({ sources: ['npm:listed-kit'], omittedSources: ['npm:unlisted-kit'] });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
     it('does not report a dependency that publishes no kits', async () => {
-      writeConsumerProject({ packages: ['listed-kit', 'unlisted-kit'] });
+      writeConsumerProject({ sources: ['npm:listed-kit', 'npm:unlisted-kit'] });
       writeInstalledKitPackage(projectRoot, 'kitless', []);
       writePackageJson(projectRoot, { devDependencies: { kitless: '1.0.0', 'listed-kit': '1.0.0' } });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
-    it('skips the package check when the config lists no packages', async () => {
-      writeConsumerProject({ packages: [] });
+    it('skips the source check when the config lists no sources', async () => {
+      writeConsumerProject({ sources: [] });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({
         status: 'skipped',
-        detail: 'The readyup config lists no packages',
+        detail: 'The readyup config lists no sources',
       });
     });
 
-    it('skips the package check when the project has no config', async () => {
+    it('skips the source check when the project has no config', async () => {
       writeInstalledKitPackage(projectRoot, 'unlisted-kit', ['default']);
       writePackageJson(projectRoot, { devDependencies: { 'unlisted-kit': '1.0.0' } });
 
       const results = await runSetup();
 
-      expect(pickResult(results, PACKAGES_CHECK)).toMatchObject({ status: 'skipped' });
+      expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'skipped' });
     });
 
     // A project compiling to a non-default `outDir` declares in the manifest that it has kits.

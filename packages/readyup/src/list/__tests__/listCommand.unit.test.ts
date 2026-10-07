@@ -5,11 +5,12 @@ const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockCollectSourceKitNames = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
-const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
+const mockExpandConfiguredSource = vi.hoisted(() => vi.fn());
 const mockDiscoverKitPackages = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../installed-packages/expandConfiguredPackages.ts'), () => ({
-  expandConfiguredPackages: mockExpandConfiguredPackages,
+vi.mock(import('../../sources/expandConfiguredSources.ts'), () => ({
+  expandConfiguredSource: mockExpandConfiguredSource,
+  expandConfiguredSources: vi.fn(),
 }));
 
 vi.mock(import('../../check-utils/discoverKitPackages.ts'), () => ({
@@ -42,6 +43,8 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
+import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
+import type { SourceKit } from '../../sources/expandConfiguredSources.ts';
 import { listCommand } from '../listCommand.ts';
 
 describe(listCommand, () => {
@@ -49,13 +52,13 @@ describe(listCommand, () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
-      omittedPackages: [],
-      packages: [],
+      omittedSources: [],
+      sources: [],
     });
     mockCollectSourceKitNames.mockReturnValue([]);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
-    mockExpandConfiguredPackages.mockReturnValue([]);
+    mockExpandConfiguredSource.mockResolvedValue([]);
     mockDiscoverKitPackages.mockReturnValue([]);
   });
 
@@ -65,26 +68,24 @@ describe(listCommand, () => {
     mockCollectSourceKitNames.mockReset();
     mockEnumerateKits.mockReset();
     mockReadManifest.mockReset();
-    mockExpandConfiguredPackages.mockReset();
+    mockExpandConfiguredSource.mockReset();
     mockDiscoverKitPackages.mockReset();
   });
 
   describe('owner mode, package sections', () => {
     /** Configures one package and the kit that it publishes, alongside the packages that the config omits. */
-    function configureOnePackage({ omittedPackages = [] }: { omittedPackages?: string[] } = {}): void {
+    function configureOnePackage({ omittedSources = [] }: { omittedSources?: string[] } = {}): void {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
-        omittedPackages,
-        packages: ['@acme/kits'],
+        omittedSources,
+        sources: [{ spelling: 'npm:@acme/kits', source: { type: 'npm', name: '@acme/kits', versionSpec: undefined } }],
       });
-      mockExpandConfiguredPackages.mockReturnValue([
-        { packageName: '@acme/kits', version: '2.1.0', kitName: 'drift', path: '/pkg/.readyup/kits/drift.js' },
-      ]);
+      mockExpandConfiguredSource.mockResolvedValue([buildPackageKit({ kitName: 'drift' })]);
     }
 
     // A project with no kits of its own still runs its dependencies' kits, so reporting "no kits found"
-    // and stopping would hide everything `rdy run --packages` would execute.
+    // and stopping would hide everything `rdy run --sources` would execute.
     it('reports package kits when the project has no manifest and no internal kits of its own', async () => {
       configureOnePackage();
       mockReadManifest.mockImplementation(() => {
@@ -94,21 +95,15 @@ describe(listCommand, () => {
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('Packages');
+      expect(stdout).toContain('Configured sources');
       expect(stdout).toContain('@acme/kits@2.1.0 / \u{1F4D3} drift');
       expect(stdout).not.toContain('No kits found');
     });
 
     it('nests the checklists recorded by a package kit\u{2019}s manifest beneath it', async () => {
       configureOnePackage();
-      mockExpandConfiguredPackages.mockReturnValue([
-        {
-          packageName: '@acme/kits',
-          version: '2.1.0',
-          kitName: 'drift',
-          checklists: ['lockfile', 'ranges'],
-          path: '/pkg/.readyup/kits/drift.js',
-        },
+      mockExpandConfiguredSource.mockResolvedValue([
+        buildPackageKit({ kitName: 'drift', checklists: ['lockfile', 'ranges'] }),
       ]);
 
       const { stdout } = await list([]);
@@ -124,18 +119,18 @@ describe(listCommand, () => {
 
       expect(stdout).toContain('Available');
       expect(stdout).toContain('plain-kit');
-      // Already configured, so it belongs under Packages rather than as a candidate to add.
+      // Already configured, so it belongs under Configured sources rather than as a candidate to add.
       expect(stdout.slice(stdout.indexOf('Available'))).not.toContain('@acme/kits');
     });
 
     it('does not propose a package that the config omits on purpose', async () => {
       mockDiscoverKitPackages.mockReturnValue(['omitted-kit', 'plain-kit']);
-      configureOnePackage({ omittedPackages: ['omitted-kit'] });
+      configureOnePackage({ omittedSources: ['npm:omitted-kit'] });
 
       const { stdout } = await list(['--json']);
 
       const payload: unknown = JSON.parse(stdout);
-      expect(payload).toMatchObject({ availablePackages: ['plain-kit'] });
+      expect(payload).toMatchObject({ availableSources: ['npm:plain-kit'] });
     });
 
     it('passes package provenance into the JSON payload, apart from the kits that it lists', async () => {
@@ -146,8 +141,39 @@ describe(listCommand, () => {
 
       const payload: unknown = JSON.parse(stdout);
       expect(payload).toMatchObject({
-        kits: [{ name: 'drift', kind: 'compiled', origin: { package: '@acme/kits', version: '2.1.0' } }],
-        availablePackages: ['plain-kit'],
+        kits: [{ name: 'drift', kind: 'compiled', origin: { source: 'npm:@acme/kits', version: '2.1.0' } }],
+        availableSources: ['npm:plain-kit'],
+      });
+    });
+
+    it('lists a configured repository\u{2019}s kits under its spelling, with no path', async () => {
+      configureOnePackage();
+      mockExpandConfiguredSource.mockResolvedValue([
+        buildPackageKit({
+          source: 'github:acme/.github',
+          version: undefined,
+          kitName: 'callers',
+          location: { url: 'https://raw.githubusercontent.com/acme/.github/main/.readyup/kits/callers.js' },
+          provenance: {
+            kind: 'repository',
+            host: 'github',
+            owner: 'acme',
+            repo: '.github',
+            ref: 'main',
+            source: 'github:acme/.github',
+          },
+        }),
+      ]);
+
+      const human = await list([]);
+      const json = await list(['--json']);
+
+      expect(human.stdout).toContain('\u{1F310} github:acme/.github / \u{1F4D3} callers');
+      const [row] = ListOutputSchema.parse(JSON.parse(json.stdout)).kits;
+      expect(row).toStrictEqual({
+        name: 'callers',
+        kind: 'compiled',
+        origin: { source: 'github:acme/.github', configured: true },
       });
     });
 
@@ -208,8 +234,8 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: 'int' },
-        omittedPackages: [],
-        packages: [],
+        omittedSources: [],
+        sources: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
 
@@ -234,8 +260,8 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'src/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
-        omittedPackages: [],
-        packages: [],
+        omittedSources: [],
+        sources: [],
       });
       mockReadManifest.mockReturnValue({
         version: 1,
@@ -307,8 +333,8 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal: { dir: 'internal', infix: undefined },
-        omittedPackages: [],
-        packages: [],
+        omittedSources: [],
+        sources: [],
       });
       mockEnumerateKits.mockImplementation(() => {
         throw permError;
@@ -357,7 +383,7 @@ describe(listCommand, () => {
         expect.objectContaining({ dir: expect.stringMatching(/\.readyup\/kits$/), extension: '.js', recursive: true }),
       );
       expect(JSON.parse(stdout)).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [{ name: 'deploy', kind: 'compiled', path: '.readyup/kits/deploy.js' }],
       });
     });
@@ -371,7 +397,7 @@ describe(listCommand, () => {
       const { stdout } = await list(['--json']);
 
       expect(JSON.parse(stdout)).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [{ name: 'ops/deploy', kind: 'compiled', path: '.readyup/kits/ops/deploy.js' }],
       });
     });
@@ -396,8 +422,8 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
         internal,
-        omittedPackages: [],
-        packages: [],
+        omittedSources: [],
+        sources: [],
       });
       mockEnumerateKits.mockReturnValue(['default']);
 
@@ -516,7 +542,7 @@ describe(listCommand, () => {
   describe('--config', () => {
     it.each([
       { mode: 'owner mode', args: [] },
-      { mode: 'packages mode', args: ['--packages'] },
+      { mode: 'sources mode', args: ['--sources'] },
     ])('loads the config named by --config in $mode', async ({ args }) => {
       const { exitCode } = await list([...args, '--config', 'custom/readyup.config.ts']);
 
@@ -555,7 +581,7 @@ describe(listCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout)).toMatchObject({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [
           { name: 'draft', kind: 'internal', internal: false, path: expect.stringContaining('draft.ts') },
           { name: 'deploy', kind: 'compiled', checklists: ['preflight'] },
@@ -567,8 +593,8 @@ describe(listCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] },
         internal: { dir: 'internal', infix: undefined },
-        omittedPackages: [],
-        packages: [],
+        omittedSources: [],
+        sources: [],
       });
       mockCollectSourceKitNames.mockReturnValue(['draft']);
       mockEnumerateKits.mockReturnValue(['audit']);
@@ -601,7 +627,7 @@ describe(listCommand, () => {
 
       const { stdout, stderr } = await list(['--json']);
 
-      expect(JSON.parse(stdout)).toStrictEqual({ schemaVersion: 1, kits: [] });
+      expect(JSON.parse(stdout)).toStrictEqual({ schemaVersion: 2, kits: [] });
       expect(stderr).toContain('No kits found.');
     });
 
@@ -614,7 +640,7 @@ describe(listCommand, () => {
       const { stdout } = await list(['--manifest', '.readyup/manifest.json', '--json']);
 
       expect(JSON.parse(stdout)).toStrictEqual({
-        schemaVersion: 1,
+        schemaVersion: 2,
         kits: [{ name: 'deploy', kind: 'compiled', description: 'Deploy checks', readyupVersion: '0.21.2' }],
       });
     });
@@ -637,6 +663,20 @@ describe(listCommand, () => {
 });
 
 // region | Helpers
+
+/** Returns a kit published by the installed `@acme/kits@2.1.0`, with the fields that the case overrides. */
+function buildPackageKit(overrides: Partial<SourceKit>): SourceKit {
+  return {
+    source: 'npm:@acme/kits',
+    version: '2.1.0',
+    kitName: 'default',
+    description: undefined,
+    checklists: undefined,
+    location: { path: '/pkg/.readyup/kits/default.js' },
+    provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
+    ...overrides,
+  };
+}
 
 /** Returns an `enumerateKits` stand-in that yields the names listed for each extension, and none for any other. */
 function enumerateByExtension(namesByExtension: Record<string, string[]>) {

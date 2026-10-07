@@ -168,7 +168,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const parsed = parseRunArgs(flags);
 
   // Skip config when an external source flag is active -- external modes don't use config values.
-  // `--packages` is not one of them: The config names the packages that it runs.
+  // `--sources` is not one of them: The config names the sources that it runs.
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
@@ -180,7 +180,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
           compile: config.compile,
           internalDir: config.internal.dir,
           internalInfix: config.internal.infix,
-          configuredPackages: config.packages,
+          configuredSources: config.sources,
         };
   const remote = createRemoteFetchContext({ reload: parsed.noCache });
 
@@ -189,11 +189,11 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         fromValue: parsed.fromValue,
         jit: parsed.jit,
         internal: parsed.internal,
-        packages: parsed.packages,
+        sources: parsed.sources,
         remote,
         ...configFields,
       })
-    : resolveKitSources({
+    : await resolveKitSources({
         filePath: parsed.filePath,
         fromValue: parsed.fromValue,
         urlValue: parsed.urlValue,
@@ -201,7 +201,8 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         checklists: parsed.checklists,
         jit: parsed.jit,
         internal: parsed.internal,
-        packages: parsed.packages,
+        sources: parsed.sources,
+        remote,
         ...configFields,
       });
 

@@ -12,14 +12,14 @@ export interface RunFlagConstraints {
   internal: boolean;
   jit: boolean;
   json: boolean;
-  packages: boolean;
   quiet: boolean;
+  sources: boolean;
   url: string | undefined;
 }
 
-/** Why checklist selection is rejected under `--packages`, whichever spelling expressed it. */
-const PACKAGES_CHECKLISTS_REASON =
-  'several configured packages may publish the named kit, so the checklists select within no single one';
+/** Why checklist selection is rejected under `--sources`, whichever spelling expressed it. */
+const SOURCES_CHECKLISTS_REASON =
+  'several configured sources may publish the named kit, so the checklists select within no single one';
 
 /** Enforces output, exclusivity, mode-flag, and selection constraints. */
 export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitSpecifier[]): void {
@@ -35,17 +35,17 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
     validateAllSelection(parsed, kitSpecifiers);
   }
 
-  // A positional narrows the run: It names the kit to select in every configured package. Checklist
-  // selection cannot: It names checklists within one kit, and `--packages` may select that kit in several
-  // packages. Both spellings of that selection are rejected for the same reason.
-  if (parsed.packages && parsed.checklists !== undefined) {
-    throw usageError(`--packages cannot be combined with --checklists; ${PACKAGES_CHECKLISTS_REASON}`);
+  // A positional narrows the run: It names the kit to select in every configured source. Checklist
+  // selection cannot: It names checklists within one kit, and `--sources` may select that kit in several
+  // sources. Both spellings of that selection are rejected for the same reason.
+  if (parsed.sources && parsed.checklists !== undefined) {
+    throw usageError(`--sources cannot be combined with --checklists; ${SOURCES_CHECKLISTS_REASON}`);
   }
   const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
-  if (parsed.packages && filteredSpec !== undefined) {
+  if (parsed.sources && filteredSpec !== undefined) {
     throw usageError(
-      `--packages cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
-        PACKAGES_CHECKLISTS_REASON,
+      `--sources cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
+        SOURCES_CHECKLISTS_REASON,
     );
   }
 
@@ -58,8 +58,8 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError(`--internal cannot be combined with ${sourceType}`);
   }
 
-  // `--packages` is the one source that reads config: The config names the packages that it runs.
-  if (parsed.config !== undefined && sourceType !== undefined && sourceType !== '--packages') {
+  // `--sources` is the one source flag that reads config: The config names the sources that it runs.
+  if (parsed.config !== undefined && sourceType !== undefined && sourceType !== '--sources') {
     throw usageError(`--config cannot be combined with ${sourceType}, which reads no config`);
   }
 
@@ -79,7 +79,7 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
   if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.packages) sourceFlags.push('--packages');
+  if (parsed.sources) sourceFlags.push('--sources');
   if (parsed.url !== undefined) sourceFlags.push('--url');
   return sourceFlags;
 }

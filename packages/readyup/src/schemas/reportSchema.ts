@@ -7,7 +7,7 @@ import { CountsSchema, ErrorBodySchema, SeveritySchema, WarningSchema } from './
  *
  * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** How much of the detail tree a report includes. */
 export const DetailSchema = z.enum(['summary', 'full']).meta({ id: 'Detail' });
@@ -67,15 +67,16 @@ export const ChecklistEntrySchema = z
   .meta({ id: 'ChecklistEntry' });
 
 /**
- * The installed package from which a kit was resolved.
+ * The kit source, an installed package or a repository, from which a kit was resolved.
  *
- * Present only for a kit reached through a package source: Two packages may each publish a kit of the
- * same name, so `name` alone does not identify what ran. `version` is what the project has installed,
- * and is omitted when the package declares none readably.
+ * Present only for a kit reached through an `npm:`, `github:`, or `bitbucket:` source: Two sources may each
+ * publish a kit of the same name, so `name` alone does not identify what ran. `source` is the kit source as
+ * written in the config or on the command line. `version` is what the project has installed, present only for a
+ * package, and omitted when the package declares none readably.
  */
 export const KitOriginSchema = z
   .object({
-    package: z.string(),
+    source: z.string(),
     version: z.string().optional(),
   })
   .meta({ id: 'KitOrigin' });

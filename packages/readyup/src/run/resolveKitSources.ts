@@ -6,14 +6,16 @@ import { usageError } from '../errors/RdyError.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
 import { type CompileDirectories, resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
-import { resolveConfiguredPackages } from './resolveConfiguredPackages.ts';
+import { resolveConfiguredSources } from './resolveConfiguredSources.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveFromSource } from './resolveFromSource.ts';
 
 /** Resolves parsed flags into an array of kit entries to execute. */
-export function resolveKitSources({
+export async function resolveKitSources({
   filePath,
   fromValue,
   urlValue,
@@ -23,9 +25,10 @@ export function resolveKitSources({
   internal,
   internalDir,
   internalInfix,
-  packages,
-  configuredPackages,
+  sources,
+  configuredSources,
   compile,
+  remote,
 }: {
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -36,11 +39,12 @@ export function resolveKitSources({
   internal: boolean;
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
-  packages?: boolean;
-  configuredPackages?: string[] | undefined;
+  sources?: boolean;
+  configuredSources?: readonly ConfiguredSource[] | undefined;
   /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
-}): ResolvedKitEntry[] {
+  remote: RemoteFetchContext;
+}): Promise<ResolvedKitEntry[]> {
   if (filePath !== undefined) {
     return [
       {
@@ -59,13 +63,13 @@ export function resolveKitSources({
   // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
-  // Fill the default before the `--packages` branch reads it, so that a bare invocation is structurally
-  // `--packages default` and the two forms cannot select different kits.
+  // Fill the default before the `--sources` branch reads it, so that a bare invocation is structurally
+  // `--sources default` and the two forms cannot select different kits.
   const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
 
-  if (packages === true) {
+  if (sources === true) {
     const requestedNames = declaredSpecs.map((spec) => spec.kitName);
-    return resolveConfiguredPackages(configuredPackages ?? [], requestedNames, extension);
+    return resolveConfiguredSources(configuredSources ?? [], requestedNames, extension, remote);
   }
 
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every
@@ -79,7 +83,7 @@ export function resolveKitSources({
     } catch (error: unknown) {
       throw usageError(describeError(error), { cause: error });
     }
-    return resolveFromSource(source, specs, extension);
+    return resolveFromSource(source, fromValue, specs, extension);
   }
 
   // Default/internal case: Resolve from the current repo.

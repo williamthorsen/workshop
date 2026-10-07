@@ -235,7 +235,7 @@ describe(loadKit, () => {
         name: 'drift',
         source: { path: 'node_modules/@acme/kits/.readyup/kits/drift.js' },
         checklists: [],
-        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       };
 
       const error = await captureError(RdyError, () => loadKit(entry, false, createUncachedRemoteContext()));

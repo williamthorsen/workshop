@@ -59,6 +59,7 @@ describe(routeCommand, () => {
     mockLoadConfig.mockResolvedValue({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
+      sources: [],
     });
     mockResolveKitSources.mockReturnValue([
       { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] },
@@ -857,7 +858,7 @@ describe(routeCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
-        packages: [],
+        sources: [],
       });
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
@@ -873,7 +874,7 @@ describe(routeCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
-        packages: [],
+        sources: [],
       });
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
@@ -897,7 +898,7 @@ describe(routeCommand, () => {
             exclude: [],
           },
           internal: { dir: '.', infix: undefined },
-          packages: [],
+          sources: [],
         }),
       );
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'lst', checklists: [] }] }));
@@ -928,7 +929,7 @@ describe(routeCommand, () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] },
         internal: { dir: '.', infix: undefined },
-        packages: [],
+        sources: [],
       });
 
       const { exitCode, stderr } = await routeCli(['lst']);

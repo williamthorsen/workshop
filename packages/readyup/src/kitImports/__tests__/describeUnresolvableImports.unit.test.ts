@@ -21,7 +21,7 @@ describe(describeUnresolvableImports, () => {
   it('names the publishing package when the kit has one', () => {
     const { message } = describeUnresolvableImports(MISSING_ONE, {
       kitName: 'drift',
-      provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+      provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
     });
 
     expect(message).toContain('kit "drift" from @acme/kits cannot run against');
@@ -49,7 +49,7 @@ describe(describeUnresolvableImports, () => {
   it('advises upgrading the package that publishes a bundled kit', () => {
     const { hint } = describeUnresolvableImports(MISSING_ONE, {
       kitName: 'default',
-      provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0' },
+      provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
     });
 
     expect(hint).toBe(`Upgrade @acme/kits to a release compiled against readyup ${VERSION}.`);

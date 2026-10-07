@@ -11,7 +11,7 @@ describe(validateRunFlags, () => {
   it.each([
     { flag: '--file', overrides: { file: 'path.ts' } },
     { flag: '--from', overrides: { from: '/path' } },
-    { flag: '--packages', overrides: { packages: true } },
+    { flag: '--sources', overrides: { sources: true } },
     { flag: '--url', overrides: { url: 'https://example.com/kit.js' } },
   ])('accepts $flag on its own', ({ overrides }) => {
     expect(() => validateRunFlags(buildConstraints(overrides), [])).not.toThrow();
@@ -46,7 +46,7 @@ describe(validateRunFlags, () => {
         overrides: { from: '/path', url: 'https://example.com/config.js' },
         message: '--from, --url',
       },
-      { label: '--from and --packages', overrides: { from: '/path', packages: true }, message: '--from, --packages' },
+      { label: '--from and --sources', overrides: { from: '/path', sources: true }, message: '--from, --sources' },
     ])('throws when $label are combined', ({ overrides, message }) => {
       expect(() => validateRunFlags(buildConstraints(overrides), [])).toThrow(`Cannot combine ${message} flags`);
     });
@@ -56,7 +56,7 @@ describe(validateRunFlags, () => {
     it.each([
       { flag: '--file', overrides: { file: 'path.ts' } },
       { flag: '--from', overrides: { from: '/path' } },
-      { flag: '--packages', overrides: { packages: true } },
+      { flag: '--sources', overrides: { sources: true } },
       { flag: '--url', overrides: { url: 'https://example.com' } },
     ])('throws when --jit is combined with $flag', ({ flag, overrides }) => {
       expect(() => validateRunFlags(buildConstraints({ ...overrides, jit: true }), [])).toThrow(
@@ -67,7 +67,7 @@ describe(validateRunFlags, () => {
     it.each([
       { flag: '--file', overrides: { file: 'path.ts' } },
       { flag: '--from', overrides: { from: '/path' } },
-      { flag: '--packages', overrides: { packages: true } },
+      { flag: '--sources', overrides: { sources: true } },
       { flag: '--url', overrides: { url: 'https://example.com' } },
     ])('throws when --internal is combined with $flag', ({ flag, overrides }) => {
       expect(() => validateRunFlags(buildConstraints({ ...overrides, internal: true }), [])).toThrow(
@@ -93,7 +93,7 @@ describe(validateRunFlags, () => {
 
     it.each([
       { label: 'on its own', overrides: {} },
-      { label: 'with --packages', overrides: { packages: true } },
+      { label: 'with --sources', overrides: { sources: true } },
       { label: 'with --internal', overrides: { internal: true } },
       { label: 'with --all', overrides: { all: true } },
     ])('accepts --config $label', ({ overrides }) => {
@@ -112,23 +112,23 @@ describe(validateRunFlags, () => {
     });
 
     // The positional selects which kit runs in every configured package, so it narrows rather than competes.
-    it('accepts a positional kit name alongside --packages', () => {
-      expect(() => validateRunFlags(buildConstraints({ packages: true }), [buildSpec('deploy')])).not.toThrow();
+    it('accepts a positional kit name alongside --sources', () => {
+      expect(() => validateRunFlags(buildConstraints({ sources: true }), [buildSpec('deploy')])).not.toThrow();
     });
   });
 
-  describe('--packages checklist selection', () => {
-    it('throws when --packages is combined with --checklists', () => {
-      expect(() => validateRunFlags(buildConstraints({ checklists: 'build', packages: true }), [])).toThrow(
-        '--packages cannot be combined with --checklists; several configured packages may publish the named kit',
+  describe('--sources checklist selection', () => {
+    it('throws when --sources is combined with --checklists', () => {
+      expect(() => validateRunFlags(buildConstraints({ checklists: 'build', sources: true }), [])).toThrow(
+        '--sources cannot be combined with --checklists; several configured sources may publish the named kit',
       );
     });
 
     // Unreachable while positionals were banned outright, and silently dropped if left unrejected.
-    it('throws when --packages is combined with an inline checklist filter', () => {
-      expect(() => validateRunFlags(buildConstraints({ packages: true }), [buildSpec('deploy', ['build'])])).toThrow(
-        '--packages cannot be combined with the ":" checklist filter on "deploy"; ' +
-          'several configured packages may publish the named kit',
+    it('throws when --sources is combined with an inline checklist filter', () => {
+      expect(() => validateRunFlags(buildConstraints({ sources: true }), [buildSpec('deploy', ['build'])])).toThrow(
+        '--sources cannot be combined with the ":" checklist filter on "deploy"; ' +
+          'several configured sources may publish the named kit',
       );
     });
   });
@@ -138,7 +138,7 @@ describe(validateRunFlags, () => {
       { flag: '--from', overrides: { from: '/path' } },
       { flag: '--internal', overrides: { internal: true } },
       { flag: '--jit', overrides: { jit: true } },
-      { flag: '--packages', overrides: { packages: true } },
+      { flag: '--sources', overrides: { sources: true } },
     ])('accepts --all with $flag', ({ overrides }) => {
       expect(() => validateRunFlags(buildConstraints({ ...overrides, all: true }), [])).not.toThrow();
     });
@@ -215,7 +215,7 @@ function buildConstraints(overrides: Partial<RunFlagConstraints> = {}): RunFlagC
     internal: false,
     jit: false,
     json: false,
-    packages: false,
+    sources: false,
     quiet: false,
     url: undefined,
     ...overrides,

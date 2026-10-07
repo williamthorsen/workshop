@@ -19,49 +19,52 @@ describe(resolveFromSource, () => {
 
   it('builds a GitHub raw content URL for the named kit', () => {
     const source: FromSource = { type: 'github', org: 'org', repo: 'repo', ref: 'main' };
+    const spelling = 'github:org/repo';
 
-    expect(resolveFromSource(source, [{ kitName: 'nmr', checklists: [] }], '.js')).toStrictEqual([
+    expect(resolveFromSource(source, spelling, [{ kitName: 'nmr', checklists: [] }], '.js')).toStrictEqual([
       {
         name: 'nmr',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/nmr.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: { kind: 'repository', host: 'github', owner: 'org', repo: 'repo', ref: 'main', source: spelling },
       },
     ]);
   });
 
-  it('passes the GitHub ref into both the URL and the label', () => {
+  it('passes the GitHub ref into both the URL and the provenance', () => {
     const source: FromSource = { type: 'github', org: 'org', repo: 'repo', ref: 'v1' };
+    const spelling = 'github:org/repo@v1';
 
-    expect(resolveFromSource(source, [{ kitName: 'nmr', checklists: [] }], '.js')).toStrictEqual([
+    expect(resolveFromSource(source, spelling, [{ kitName: 'nmr', checklists: [] }], '.js')).toStrictEqual([
       {
         name: 'nmr',
         source: { url: 'https://raw.githubusercontent.com/org/repo/v1/.readyup/kits/nmr.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@v1' },
+        provenance: { kind: 'repository', host: 'github', owner: 'org', repo: 'repo', ref: 'v1', source: spelling },
       },
     ]);
   });
 
   it('resolves multiple kits against one GitHub source', () => {
     const source: FromSource = { type: 'github', org: 'org', repo: 'repo', ref: 'main' };
+    const spelling = 'github:org/repo';
     const specs: KitSpecifier[] = [
       { kitName: 'deploy', checklists: [] },
       { kitName: 'infra', checklists: ['c1'] },
     ];
 
-    expect(resolveFromSource(source, specs, '.js')).toStrictEqual([
+    expect(resolveFromSource(source, spelling, specs, '.js')).toStrictEqual([
       {
         name: 'deploy',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/deploy.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: { kind: 'repository', host: 'github', owner: 'org', repo: 'repo', ref: 'main', source: spelling },
       },
       {
         name: 'infra',
         source: { url: 'https://raw.githubusercontent.com/org/repo/main/.readyup/kits/infra.js' },
         checklists: ['c1'],
-        provenance: { kind: 'remote', label: 'github:org/repo@main' },
+        provenance: { kind: 'repository', host: 'github', owner: 'org', repo: 'repo', ref: 'main', source: spelling },
       },
     ]);
   });
@@ -70,28 +73,44 @@ describe(resolveFromSource, () => {
 
   it('builds a Bitbucket Cloud API source URL for the named kit', () => {
     const source: FromSource = { type: 'bitbucket', workspace: 'myteam', repo: 'deploy-checks', ref: 'main' };
+    const spelling = 'bitbucket:myteam/deploy-checks';
 
-    expect(resolveFromSource(source, [{ kitName: 'deploy', checklists: [] }], '.js')).toStrictEqual([
+    expect(resolveFromSource(source, spelling, [{ kitName: 'deploy', checklists: [] }], '.js')).toStrictEqual([
       {
         name: 'deploy',
         source: {
           url: 'https://api.bitbucket.org/2.0/repositories/myteam/deploy-checks/src/main/.readyup/kits/deploy.js',
         },
         checklists: [],
-        provenance: { kind: 'remote', label: 'bitbucket:myteam/deploy-checks@main' },
+        provenance: {
+          kind: 'repository',
+          host: 'bitbucket',
+          owner: 'myteam',
+          repo: 'deploy-checks',
+          ref: 'main',
+          source: spelling,
+        },
       },
     ]);
   });
 
-  it('passes the Bitbucket ref into both the URL and the label', () => {
+  it('passes the Bitbucket ref into both the URL and the provenance', () => {
     const source: FromSource = { type: 'bitbucket', workspace: 'myteam', repo: 'repo', ref: 'v2' };
+    const spelling = 'bitbucket:myteam/repo@v2';
 
-    expect(resolveFromSource(source, DEFAULT_SPECS, '.js')).toStrictEqual([
+    expect(resolveFromSource(source, spelling, DEFAULT_SPECS, '.js')).toStrictEqual([
       {
         name: 'default',
         source: { url: 'https://api.bitbucket.org/2.0/repositories/myteam/repo/src/v2/.readyup/kits/default.js' },
         checklists: [],
-        provenance: { kind: 'remote', label: 'bitbucket:myteam/repo@v2' },
+        provenance: {
+          kind: 'repository',
+          host: 'bitbucket',
+          owner: 'myteam',
+          repo: 'repo',
+          ref: 'v2',
+          source: spelling,
+        },
       },
     ]);
   });
@@ -102,7 +121,8 @@ describe(resolveFromSource, () => {
   // installed dependency without needing a fixture.
   it('resolves a kit inside an installed package', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
-    const [entry] = resolveFromSource(source, DEFAULT_SPECS, '.js');
+    const spelling = 'npm:readyup';
+    const [entry] = resolveFromSource(source, spelling, DEFAULT_SPECS, '.js');
 
     expect(entry?.name).toBe('default');
     expect(entry?.source).toStrictEqual({
@@ -112,7 +132,8 @@ describe(resolveFromSource, () => {
 
   it('resolves a named kit inside an installed package', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
-    const [entry] = resolveFromSource(source, [{ kitName: 'drift', checklists: [] }], '.js');
+    const spelling = 'npm:readyup';
+    const [entry] = resolveFromSource(source, spelling, [{ kitName: 'drift', checklists: [] }], '.js');
 
     expect(entry?.source).toStrictEqual({
       path: path.join(REPO_ROOT, 'packages', 'readyup', '.readyup', 'kits', 'drift.js'),
@@ -124,25 +145,29 @@ describe(resolveFromSource, () => {
   // version bump requires no change here.
   it('reports the package and its installed version as the kit provenance', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: undefined };
-    const [entry] = resolveFromSource(source, DEFAULT_SPECS, '.js');
+    const spelling = 'npm:readyup';
+    const [entry] = resolveFromSource(source, spelling, DEFAULT_SPECS, '.js');
 
     expect(entry?.provenance).toStrictEqual({
       kind: 'package',
       packageName: 'readyup',
       version: packageJson.version,
+      source: 'npm:readyup',
     });
   });
 
   it('rejects a version spec by naming the flag that fetches a published kit', () => {
     const source: FromSource = { type: 'npm', name: 'readyup', versionSpec: '0.22.0' };
+    const spelling = 'npm:readyup@0.22.0';
 
-    expect(() => resolveFromSource(source, DEFAULT_SPECS, '.js')).toThrow(/not supported yet[\s\S]*--url/);
+    expect(() => resolveFromSource(source, spelling, DEFAULT_SPECS, '.js')).toThrow(/not supported yet[\s\S]*--url/);
   });
 
   it('rejects an uninstalled package by naming the direct-dependency requirement', () => {
     const source: FromSource = { type: 'npm', name: 'readyup-package-that-does-not-exist', versionSpec: undefined };
+    const spelling = 'npm:readyup-package-that-does-not-exist';
 
-    expect(() => resolveFromSource(source, DEFAULT_SPECS, '.js')).toThrow(
+    expect(() => resolveFromSource(source, spelling, DEFAULT_SPECS, '.js')).toThrow(
       /is not installed; it must be a direct dependency/,
     );
   });
@@ -152,7 +177,7 @@ describe(resolveFromSource, () => {
   it('resolves global to the home directory', () => {
     const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '~';
 
-    expect(resolveFromSource({ type: 'global' }, DEFAULT_SPECS, '.js')).toStrictEqual([
+    expect(resolveFromSource({ type: 'global' }, 'global', DEFAULT_SPECS, '.js')).toStrictEqual([
       {
         name: 'default',
         source: { path: `${homeDir}/.readyup/kits/default.js` },
@@ -167,7 +192,9 @@ describe(resolveFromSource, () => {
   it('resolves a directory source to the kits that it contains directly', () => {
     const resolved = path.resolve(process.cwd(), 'custom/kits');
 
-    expect(resolveFromSource({ type: 'directory', path: 'custom/kits' }, DEFAULT_SPECS, '.js')).toStrictEqual([
+    expect(
+      resolveFromSource({ type: 'directory', path: 'custom/kits' }, 'dir:custom/kits', DEFAULT_SPECS, '.js'),
+    ).toStrictEqual([
       {
         name: 'default',
         source: { path: `${resolved}/default.js` },
@@ -180,7 +207,9 @@ describe(resolveFromSource, () => {
   // -- local source --
 
   it('resolves a local path to a .js path under .readyup/kits/', () => {
-    expect(resolveFromSource({ type: 'local', path: '/path/to/repo' }, DEFAULT_SPECS, '.js')).toStrictEqual([
+    expect(
+      resolveFromSource({ type: 'local', path: '/path/to/repo' }, '/path/to/repo', DEFAULT_SPECS, '.js'),
+    ).toStrictEqual([
       {
         name: 'default',
         source: { path: '/path/to/repo/.readyup/kits/default.js' },
@@ -193,7 +222,9 @@ describe(resolveFromSource, () => {
   it('resolves a relative local path against cwd', () => {
     const expected = path.resolve(process.cwd(), '../sibling-repo');
 
-    expect(resolveFromSource({ type: 'local', path: '../sibling-repo' }, DEFAULT_SPECS, '.js')).toStrictEqual([
+    expect(
+      resolveFromSource({ type: 'local', path: '../sibling-repo' }, '../sibling-repo', DEFAULT_SPECS, '.js'),
+    ).toStrictEqual([
       {
         name: 'default',
         source: { path: `${expected}/.readyup/kits/default.js` },
@@ -209,7 +240,7 @@ describe(resolveFromSource, () => {
       { kitName: 'infra', checklists: [] },
     ];
 
-    expect(resolveFromSource({ type: 'local', path: '/path/to/repo' }, specs, '.js')).toStrictEqual([
+    expect(resolveFromSource({ type: 'local', path: '/path/to/repo' }, '/path/to/repo', specs, '.js')).toStrictEqual([
       {
         name: 'deploy',
         source: { path: '/path/to/repo/.readyup/kits/deploy.js' },
@@ -228,7 +259,9 @@ describe(resolveFromSource, () => {
   // -- extension --
 
   it('applies the extension that it is given to every kit path', () => {
-    expect(resolveFromSource({ type: 'local', path: '/path/to/repo' }, DEFAULT_SPECS, '.ts')).toStrictEqual([
+    expect(
+      resolveFromSource({ type: 'local', path: '/path/to/repo' }, '/path/to/repo', DEFAULT_SPECS, '.ts'),
+    ).toStrictEqual([
       {
         name: 'default',
         source: { path: '/path/to/repo/.readyup/kits/default.ts' },

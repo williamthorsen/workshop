@@ -71,7 +71,7 @@ describe(warnOnMaskedSkips, () => {
   });
 
   describe('kit identity', () => {
-    // Every kit resolved by `--packages` has the same name, so the package is the only thing that
+    // Every kit resolved by `--sources` has the same name, so the package is the only thing that
     // tells one run entry's warnings from another's.
     it('names the publishing package beside the kit', () => {
       const { warnings } = warn([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
@@ -104,7 +104,12 @@ function packagedKit(): ResolvedKitEntry {
     name: 'default',
     source: { path: 'node_modules/@williamthorsen/nmr/.readyup/kits/default.js' },
     checklists: [],
-    provenance: { kind: 'package', packageName: '@williamthorsen/nmr', version: '1.2.3' },
+    provenance: {
+      kind: 'package',
+      packageName: '@williamthorsen/nmr',
+      version: '1.2.3',
+      source: 'npm:@williamthorsen/nmr',
+    },
   };
 }
 

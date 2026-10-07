@@ -1932,7 +1932,12 @@ describe(runRdy, () => {
       };
 
       const report = await runRdy(checklist, {
-        provenance: { kind: 'package', packageName: '@williamthorsen/toolbelt.errors', version: '1.0.0' },
+        provenance: {
+          kind: 'package',
+          packageName: '@williamthorsen/toolbelt.errors',
+          version: '1.0.0',
+          source: 'npm:@williamthorsen/toolbelt.errors',
+        },
       });
 
       expect(report.results[0]?.id).toBe('toolbelt.errors/no-instanceof-error');

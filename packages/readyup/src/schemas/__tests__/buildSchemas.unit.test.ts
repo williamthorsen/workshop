@@ -6,7 +6,8 @@ import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { isRecord } from '../../portable/isRecord.ts';
-import { buildSchemaDocuments, SCHEMA_BASE_URL, writeSchemaFiles } from '../buildSchemas.ts';
+import { VERSION } from '../../version.ts';
+import { buildSchemaDocuments, buildSchemaUrl, writeSchemaFiles } from '../buildSchemas.ts';
 import {
   compilePayload,
   errorEnvelopePayload,
@@ -33,16 +34,20 @@ describe('generated JSON Schemas', () => {
     expect(documents.keys().toArray()).toStrictEqual([
       'compile.v1.json',
       'error-envelope.v1.json',
-      'list.v1.json',
-      'report.v1.json',
+      'list.v2.json',
+      'report.v2.json',
       'verify.v1.json',
     ]);
   });
 
-  it('gives each document an $id matching its published location', () => {
+  it('gives each document an $id at the release of readyup that publishes it', () => {
     for (const [fileName, document] of documents) {
-      expect(document).toMatchObject({ $id: `${SCHEMA_BASE_URL}/${fileName}` });
+      expect(document).toMatchObject({ $id: `https://unpkg.com/readyup@${VERSION}/schemas/${fileName}` });
     }
+  });
+
+  it('builds a schema URL pinned to the version that it is given', () => {
+    expect(buildSchemaUrl('list.v1.json', '0.39.0')).toBe('https://unpkg.com/readyup@0.39.0/schemas/list.v1.json');
   });
 
   it('declares the draft against which each document is written', () => {
@@ -52,7 +57,7 @@ describe('generated JSON Schemas', () => {
   });
 
   describe('report document', () => {
-    const report = documentFor('report.v1.json');
+    const report = documentFor('report.v2.json');
 
     it('requires exactly the fields that every report has', () => {
       expect(valueAt(report, '$defs', 'Report', 'required')).toStrictEqual([
@@ -134,14 +139,14 @@ describe('generated JSON Schemas', () => {
 
   describe('validating real payloads', () => {
     it.each([
-      ['report.v1.json', reportPayload],
-      ['report.v1.json', minimalReportPayload],
+      ['report.v2.json', reportPayload],
+      ['report.v2.json', minimalReportPayload],
       // The forward-compatibility promise is made to a consumer running a JSON Schema validator, so
       // it has to be checked through one rather than through zod alone.
-      ['report.v1.json', unknownWarningReportPayload],
+      ['report.v2.json', unknownWarningReportPayload],
       ['error-envelope.v1.json', errorEnvelopePayload],
       ['error-envelope.v1.json', hintedErrorEnvelopePayload],
-      ['list.v1.json', listPayload],
+      ['list.v2.json', listPayload],
       ['verify.v1.json', verifyPayload],
       ['verify.v1.json', recursiveVerifyPayload],
       ['compile.v1.json', compilePayload],
@@ -155,15 +160,15 @@ describe('generated JSON Schemas', () => {
     it('rejects a report whose counts are still flat', () => {
       const { counts, ...withoutCounts } = minimalReportPayload;
 
-      expect(validatorFor('report.v1.json')({ ...withoutCounts, ...counts })).toBe(false);
+      expect(validatorFor('report.v2.json')({ ...withoutCounts, ...counts })).toBe(false);
     });
 
     it('rejects a report with the old numeric warnings field', () => {
-      expect(validatorFor('report.v1.json')({ ...minimalReportPayload, warnings: 2 })).toBe(false);
+      expect(validatorFor('report.v2.json')({ ...minimalReportPayload, warnings: 2 })).toBe(false);
     });
 
     it('accepts a report with a field that the schema does not declare', () => {
-      expect(validatorFor('report.v1.json')({ ...minimalReportPayload, addedLater: 'ok' })).toBe(true);
+      expect(validatorFor('report.v2.json')({ ...minimalReportPayload, addedLater: 'ok' })).toBe(true);
     });
   });
 

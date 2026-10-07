@@ -15,7 +15,7 @@ Packages live under `packages/`:
 Key files:
 
 - `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest and what validate readyup's agent content root, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
-- `.config/readyup.config.ts`: Readyup compile settings, plus the `packages` list whose kits audit this repo.
+- `.config/readyup.config.ts`: Readyup compile settings, plus the `sources` list whose kits audit this repo.
 - `.readyup/kits/`: Kit files (TypeScript sources compiled to self-contained ESM bundles).
 - `packages/readyup/vitest.config.ts`: Retained per-package config, holding the kit tree's coverage include. A package config replaces the root one rather than extending it, so this one passes `vitest.shared.ts` alongside its own setting, and anything a root-collected run needs belongs in that layer instead.
 - `pnpm-workspace.yaml`: Its `catalog` block is the single declaration site for every version shared across manifests, so a package it names is declared as `catalog:` rather than a literal version. Nothing enforces this yet; node-monorepo-tools#654 tracks the check.
@@ -23,7 +23,7 @@ Key files:
 
 ## Commands
 
-From the repo root, `pnpm exec rdy run --packages` runs the default kit of every package `.config/readyup.config.ts` names, auditing this repo against the conventions those packages own, including `codeassembly`'s `guidance` checklist over the agent-guidance wiring. Nothing in CI runs it; run it by hand after a dependency upgrade.
+From the repo root, `pnpm exec rdy run --sources` runs the default kit of every source that `.config/readyup.config.ts` names, auditing this repo against the conventions that those sources own, including `codeassembly`'s `guidance` checklist over the agent-guidance wiring. Nothing in CI runs it; run it by hand after a dependency upgrade.
 
 ## Architecture
 
