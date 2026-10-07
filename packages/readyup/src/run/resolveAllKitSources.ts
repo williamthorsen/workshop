@@ -13,14 +13,15 @@ import { collectSourceKits } from '../list/collectSourceKits.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
-import { resolveConfiguredPackages } from './resolveConfiguredPackages.ts';
+import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
+import { resolveConfiguredSources } from './resolveConfiguredSources.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
 
 interface ResolveAllKitSourcesOptions {
   /** The config's `compile` block; absent when no config was loaded. */
   compile?: ResolvedRdyConfig['compile'] | undefined;
-  configuredPackages?: string[] | undefined;
+  configuredSources?: readonly ConfiguredSource[] | undefined;
   fromValue: string | undefined;
   internal: boolean;
   internalDir?: string | undefined;
@@ -47,9 +48,9 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
   const { fromValue, internal, jit, packages } = options;
   const extension = jit ? '.ts' : '.js';
 
-  // A configured package publishing no kits is already a config error, so this selection is never empty.
+  // A configured source publishing no kits is already a config error, so this selection is never empty.
   if (packages) {
-    return resolveConfiguredPackages(options.configuredPackages ?? [], 'all', extension);
+    return resolveConfiguredSources(options.configuredSources ?? [], 'all', extension, options.remote);
   }
 
   if (fromValue !== undefined) {
@@ -142,7 +143,7 @@ function resolveNamedKits(
   options: ResolveAllKitSourcesOptions,
   names: string[],
   emptyMessage: string,
-): ResolvedKitEntry[] {
+): Promise<ResolvedKitEntry[]> {
   // `resolveKitSources` reads an empty selection as the default kit, so emptiness is settled here.
   if (names.length === 0) {
     throw kitLoadError(emptyMessage);
@@ -158,6 +159,7 @@ function resolveNamedKits(
     internalInfix: options.internalInfix,
     jit: options.jit,
     kitSpecifiers: names.map((kitName) => ({ kitName, checklists: [] })),
+    remote: options.remote,
     urlValue: undefined,
   });
 }

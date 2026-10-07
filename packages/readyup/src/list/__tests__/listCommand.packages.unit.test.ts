@@ -124,13 +124,13 @@ describe('list --packages', () => {
       expect(stdout).not.toContain('Available');
     });
 
-    it('warns and omits a configured package that cannot be resolved', async () => {
+    it('warns and omits a configured source that cannot be resolved', async () => {
       configurePackages(['npm:absent-package']);
 
       const { exitCode, stdout, stderr } = await list(['--packages']);
 
       expect(exitCode).toBe(0);
-      expect(stderr).toContain('Configured package "absent-package" was not found');
+      expect(stderr).toContain('Configured source "npm:absent-package" was not found');
       expect(stdout).not.toContain('absent-package');
     });
   });

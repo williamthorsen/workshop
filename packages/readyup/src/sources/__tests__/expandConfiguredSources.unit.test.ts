@@ -2,7 +2,9 @@ import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
-import { expandConfiguredPackages } from '../expandConfiguredPackages.ts';
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import { expandConfiguredSources, type SourceKit } from '../expandConfiguredSources.ts';
+import { parseConfiguredSource } from '../parseConfiguredSource.ts';
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
@@ -36,71 +38,83 @@ const it = baseIt.extend(
         'node_modules/plain-kit/package.json': JSON.stringify({ name: 'plain-kit', version: '0.4.0' }),
         'node_modules/plain-kit/.readyup/kits/smoke.js': 'export default {};\n',
       },
-      { prefix: 'expand-packages-' },
+      { prefix: 'expand-sources-' },
     ),
   ),
 );
 
-describe(expandConfiguredPackages, () => {
-  it('expands a scoped package into the kits declared by its manifest', ({ temp }) => {
-    expect(expandConfiguredPackages(['@acme/kits'], '.js', temp.dir)).toStrictEqual([
+describe(expandConfiguredSources, () => {
+  it('expands a scoped package into the kits declared by its manifest', async ({ temp }) => {
+    await expect(expand(['@acme/kits'], temp.dir)).resolves.toStrictEqual([
       {
-        packageName: '@acme/kits',
+        source: 'npm:@acme/kits',
         version: '2.1.0',
         kitName: 'drift',
         description: 'Dependency drift',
         checklists: ['lockfile', 'ranges'],
-        path: temp.resolve('node_modules/@acme/kits/.readyup/kits/drift.js'),
+        location: { path: temp.resolve('node_modules/@acme/kits/.readyup/kits/drift.js') },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
       {
-        packageName: '@acme/kits',
+        source: 'npm:@acme/kits',
         version: '2.1.0',
         kitName: 'preflight',
         description: undefined,
         checklists: undefined,
-        path: temp.resolve('node_modules/@acme/kits/.readyup/kits/preflight.js'),
+        location: { path: temp.resolve('node_modules/@acme/kits/.readyup/kits/preflight.js') },
+        provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
     ]);
   });
 
   // The same precedence that a local `--from` source follows, so that a package and a directory resolve alike.
-  it('falls back to the kit directory when a package has no manifest', ({ temp }) => {
-    const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
+  it('falls back to the kit directory when a package has no manifest', async ({ temp }) => {
+    const [kit] = await expand(['plain-kit'], temp.dir);
 
     expect(kit?.kitName).toBe('smoke');
     expect(kit?.version).toBe('0.4.0');
   });
 
   // Descriptions and checklist names live in the manifest, so the directory fallback has neither to report.
-  it('leaves a kit without a description or checklists when it comes from the directory fallback', ({ temp }) => {
-    const [kit] = expandConfiguredPackages(['plain-kit'], '.js', temp.dir);
+  it('leaves a kit without a description or checklists when it comes from the directory fallback', async ({ temp }) => {
+    const [kit] = await expand(['plain-kit'], temp.dir);
 
     expect(kit?.description).toBeUndefined();
     expect(kit?.checklists).toBeUndefined();
   });
 
-  it('expands every configured package, in configured order', ({ temp }) => {
-    const kits = expandConfiguredPackages(['plain-kit', '@acme/kits'], '.js', temp.dir);
+  it('expands every configured package, in configured order', async ({ temp }) => {
+    const kits = await expand(['plain-kit', '@acme/kits'], temp.dir);
 
-    expect(kits.map((kit) => `${kit.packageName}:${kit.kitName}`)).toStrictEqual([
-      'plain-kit:smoke',
-      '@acme/kits:drift',
-      '@acme/kits:preflight',
+    expect(kits.map((kit) => `${kit.source}:${kit.kitName}`)).toStrictEqual([
+      'npm:plain-kit:smoke',
+      'npm:@acme/kits:drift',
+      'npm:@acme/kits:preflight',
     ]);
   });
 
-  it('names the package when it is neither installed nor a workspace', ({ temp }) => {
-    expect(() => expandConfiguredPackages(['absent-package'], '.js', temp.dir)).toThrow(
-      /Configured package "absent-package" was not found/,
+  it('names the package when it is neither installed nor a workspace', async ({ temp }) => {
+    await expect(expand(['absent-package'], temp.dir)).rejects.toThrow(
+      /Configured source "npm:absent-package" was not found/,
     );
   });
 
-  it('names the package when it publishes no kits', ({ temp }) => {
-    expect(() => expandConfiguredPackages(['kitless'], '.js', temp.dir)).toThrow(/Package "kitless" publishes no kits/);
+  it('names the package when it publishes no kits', async ({ temp }) => {
+    await expect(expand(['kitless'], temp.dir)).rejects.toThrow(/Configured source "npm:kitless" publishes no kits/);
   });
 
   // Falling back here would report a kit list that the publisher never declared.
-  it('rejects a malformed manifest instead of reading around it', ({ temp }) => {
-    expect(() => expandConfiguredPackages(['broken-manifest'], '.js', temp.dir)).toThrow(/invalid JSON/);
+  it('rejects a malformed manifest instead of reading around it', async ({ temp }) => {
+    await expect(expand(['broken-manifest'], temp.dir)).rejects.toThrow(/invalid JSON/);
   });
 });
+
+// region | Helpers
+
+/** Expands installed packages, each named as a config's `npm:` source names it. */
+async function expand(names: string[], fromDir: string): Promise<SourceKit[]> {
+  const sources = names.map((name) => parseConfiguredSource(`npm:${name}`));
+  return expandConfiguredSources(sources, '.js', createUncachedRemoteContext(), fromDir);
+}
+
+// endregion | Helpers

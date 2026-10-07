@@ -3,10 +3,10 @@ import process from 'node:process';
 
 import { kitLoadError, usageError } from '../errors/RdyError.ts';
 import { readPackageVersion, resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
-import type { KitProvenance } from '../kits/KitProvenance.ts';
+import { buildRepositoryProvenance, type KitProvenance } from '../kits/KitProvenance.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
 import type { FromSource, NpmSource } from '../kits/parseFromValue.ts';
-import { buildRepositoryKitUrl, type RepositorySource } from '../remote/kitSourceUrls.ts';
+import { buildRepositoryKitUrl } from '../remote/kitSourceUrls.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 
@@ -80,12 +80,6 @@ export function resolveFromSource(
 }
 
 // region | Helpers
-
-/** Records where a repository kit came from, in the structured form that check-ID namespacing reads. */
-function buildRepositoryProvenance(source: RepositorySource, spelling: string): KitProvenance {
-  const owner = source.type === 'github' ? source.org : source.workspace;
-  return { kind: 'repository', host: source.type, owner, repo: source.repo, ref: source.ref, source: spelling };
-}
 
 /**
  * Locates the root of a package named by `npm:`, rejecting the forms that are reserved but not yet supported.

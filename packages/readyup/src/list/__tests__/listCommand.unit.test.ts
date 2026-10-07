@@ -5,11 +5,12 @@ const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockCollectSourceKitNames = vi.hoisted(() => vi.fn());
 const mockEnumerateKits = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
-const mockExpandConfiguredPackages = vi.hoisted(() => vi.fn());
+const mockExpandConfiguredSource = vi.hoisted(() => vi.fn());
 const mockDiscoverKitPackages = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../../installed-packages/expandConfiguredPackages.ts'), () => ({
-  expandConfiguredPackages: mockExpandConfiguredPackages,
+vi.mock(import('../../sources/expandConfiguredSources.ts'), () => ({
+  expandConfiguredSource: mockExpandConfiguredSource,
+  expandConfiguredSources: vi.fn(),
 }));
 
 vi.mock(import('../../check-utils/discoverKitPackages.ts'), () => ({
@@ -42,6 +43,7 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
+import type { SourceKit } from '../../sources/expandConfiguredSources.ts';
 import { listCommand } from '../listCommand.ts';
 
 describe(listCommand, () => {
@@ -55,7 +57,7 @@ describe(listCommand, () => {
     mockCollectSourceKitNames.mockReturnValue([]);
     mockEnumerateKits.mockReturnValue([]);
     mockReadManifest.mockReturnValue({ version: 1, kits: [] });
-    mockExpandConfiguredPackages.mockReturnValue([]);
+    mockExpandConfiguredSource.mockResolvedValue([]);
     mockDiscoverKitPackages.mockReturnValue([]);
   });
 
@@ -65,7 +67,7 @@ describe(listCommand, () => {
     mockCollectSourceKitNames.mockReset();
     mockEnumerateKits.mockReset();
     mockReadManifest.mockReset();
-    mockExpandConfiguredPackages.mockReset();
+    mockExpandConfiguredSource.mockReset();
     mockDiscoverKitPackages.mockReset();
   });
 
@@ -78,9 +80,7 @@ describe(listCommand, () => {
         omittedSources,
         sources: [{ spelling: 'npm:@acme/kits', source: { type: 'npm', name: '@acme/kits', versionSpec: undefined } }],
       });
-      mockExpandConfiguredPackages.mockReturnValue([
-        { packageName: '@acme/kits', version: '2.1.0', kitName: 'drift', path: '/pkg/.readyup/kits/drift.js' },
-      ]);
+      mockExpandConfiguredSource.mockResolvedValue([buildPackageKit({ kitName: 'drift' })]);
     }
 
     // A project with no kits of its own still runs its dependencies' kits, so reporting "no kits found"
@@ -101,14 +101,8 @@ describe(listCommand, () => {
 
     it('nests the checklists recorded by a package kit\u{2019}s manifest beneath it', async () => {
       configureOnePackage();
-      mockExpandConfiguredPackages.mockReturnValue([
-        {
-          packageName: '@acme/kits',
-          version: '2.1.0',
-          kitName: 'drift',
-          checklists: ['lockfile', 'ranges'],
-          path: '/pkg/.readyup/kits/drift.js',
-        },
+      mockExpandConfiguredSource.mockResolvedValue([
+        buildPackageKit({ kitName: 'drift', checklists: ['lockfile', 'ranges'] }),
       ]);
 
       const { stdout } = await list([]);
@@ -637,6 +631,20 @@ describe(listCommand, () => {
 });
 
 // region | Helpers
+
+/** Returns a kit published by the installed `@acme/kits@2.1.0`, with the fields that the case overrides. */
+function buildPackageKit(overrides: Partial<SourceKit>): SourceKit {
+  return {
+    source: 'npm:@acme/kits',
+    version: '2.1.0',
+    kitName: 'default',
+    description: undefined,
+    checklists: undefined,
+    location: { path: '/pkg/.readyup/kits/default.js' },
+    provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
+    ...overrides,
+  };
+}
 
 /** Returns an `enumerateKits` stand-in that yields the names listed for each extension, and none for any other. */
 function enumerateByExtension(namesByExtension: Record<string, string[]>) {

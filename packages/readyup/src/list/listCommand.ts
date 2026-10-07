@@ -11,8 +11,6 @@ import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
-import { collectKitPackageGroups } from '../installed-packages/collectKitPackageGroups.ts';
-import { expandConfiguredPackages, type PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { parseFromValue } from '../kits/parseFromValue.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
@@ -23,9 +21,11 @@ import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
-import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import { createRemoteFetchContext, type RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
-import { listConfiguredPackageNames } from '../sources/parseConfiguredSource.ts';
+import { collectSourceGroups } from '../sources/collectSourceGroups.ts';
+import { expandConfiguredSource, type SourceKit } from '../sources/expandConfiguredSources.ts';
+import { type ConfiguredSource, listConfiguredPackageNames } from '../sources/parseConfiguredSource.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { collectCompiledKits } from './collectCompiledKits.ts';
 import { collectSourceKits } from './collectSourceKits.ts';
@@ -82,10 +82,11 @@ export async function listCommand(args: string[]): Promise<number> {
   const recursive = values.recursive === true;
 
   rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive });
+  const noCache = values['no-cache'] === true;
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
   if (packages && recursive) {
-    return runRecursivePackagesMode(json);
+    return runRecursivePackagesMode(json, createRemoteFetchContext({ reload: noCache }));
   }
 
   if (recursive) {
@@ -97,14 +98,14 @@ export async function listCommand(args: string[]): Promise<number> {
   }
 
   if (fromArg !== undefined) {
-    return runFromMode(fromArg, json, values['no-cache'] === true);
+    return runFromMode(fromArg, json, noCache);
   }
 
   if (packages) {
-    return runPackagesMode(json, configArg);
+    return runPackagesMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
   }
 
-  return runOwnerMode(json, configArg);
+  return runOwnerMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
 }
 
 /** The `list` flags whose combinations are constrained. */
@@ -196,7 +197,11 @@ async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Pr
 }
 
 /** Enumerates the kits named by the project config. */
-async function runOwnerMode(json: boolean, configPath: string | undefined): Promise<number> {
+async function runOwnerMode(
+  json: boolean,
+  configPath: string | undefined,
+  remote: RemoteFetchContext,
+): Promise<number> {
   const cwd = process.cwd();
   const config = await loadListingConfig(configPath);
 
@@ -227,7 +232,7 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
   }
 
   const configuredPackages = listConfiguredPackageNames(config.sources);
-  const packageKits = collectConfiguredPackageKits(configuredPackages);
+  const sourceKitRows = await collectConfiguredSourceKits(config.sources, remote);
   const availablePackages = discoverKitPackages(cwd).filter(
     (name) => !configuredPackages.includes(name) && !config.omittedSources.includes(`npm:${name}`),
   );
@@ -238,7 +243,7 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
       sourceKits,
       internalKits,
       compiledKits,
-      packageKits: packageKits.map((kit) => ({ name: describePackageKit(kit), checklists: kit.checklists })),
+      packageKits: sourceKitRows.map((kit) => ({ name: describeSourceKit(kit), checklists: kit.checklists })),
       availablePackages,
     }) + '\n',
     json,
@@ -248,7 +253,7 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
     ...sourceKits.map((name) => buildSourceEntry(name, srcDir, '.ts', false)),
     ...internalKits.map((name) => buildSourceEntry(name, internalDir, internalExtension, true)),
     ...compiledEntries,
-    ...packageKits.map((kit) => buildPackageEntry(kit, true)),
+    ...sourceKitRows.map((kit) => buildSourceKitEntry(kit, true)),
   ];
   return finishList(entries, json, availablePackages);
 }
@@ -260,17 +265,18 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
  * the project's dependencies offer rather than what it contains. Both the packages named by the config and the
  * ones that it omits are reported, since the question is what is available rather than what a run would select.
  */
-async function runPackagesMode(json: boolean, configPath: string | undefined): Promise<number> {
+async function runPackagesMode(
+  json: boolean,
+  configPath: string | undefined,
+  remote: RemoteFetchContext,
+): Promise<number> {
   const config = await loadListingConfig(configPath);
-  const groups = collectKitPackageGroups({
-    configuredPackages: listConfiguredPackageNames(config.sources),
-    fromDir: process.cwd(),
-  });
+  const groups = await collectSourceGroups({ configuredSources: config.sources, fromDir: process.cwd(), remote });
 
   writeHuman(formatPackagesView({ groups }) + '\n', json);
 
   return finishList(
-    groups.flatMap((group) => group.kits.map((kit) => buildPackageEntry(kit, group.configured))),
+    groups.flatMap((group) => group.kits.map((kit) => buildSourceKitEntry(kit, group.configured))),
     json,
   );
 }
@@ -285,7 +291,7 @@ async function runPackagesMode(json: boolean, configPath: string | undefined): P
  * Each project's dependencies are read under its own config, so a package that one workspace configures and
  * another does not is reported as configured only for the workspace that configures it.
  */
-async function runRecursivePackagesMode(json: boolean): Promise<number> {
+async function runRecursivePackagesMode(json: boolean, remote: RemoteFetchContext): Promise<number> {
   const projects = await discoverProjects({ root: process.cwd() });
   warnOfDefaultedConfigs(projects);
 
@@ -293,14 +299,15 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
   const entries: JsonListKitEntry[] = [];
 
   for (const project of projects) {
-    const groups = collectKitPackageGroups({
-      configuredPackages: listConfiguredPackageNames(project.config.sources),
+    const groups = await collectSourceGroups({
+      configuredSources: project.config.sources,
       fromDir: project.absolutePath,
+      remote,
     });
 
     views.push({ dir: project.dir, groups });
     entries.push(
-      ...groups.flatMap((group) => group.kits.map((kit) => buildPackageEntry(kit, group.configured, project.dir))),
+      ...groups.flatMap((group) => group.kits.map((kit) => buildSourceKitEntry(kit, group.configured, project.dir))),
     );
   }
 
@@ -363,51 +370,58 @@ function collectProjectKits(project: Project): JsonListKitEntry[] {
 }
 
 /**
- * Collects the kits published by the configured packages, tolerating one that cannot be expanded.
+ * Collects the kits published by the configured sources, tolerating one that cannot be expanded.
  *
- * `run` fails hard on the same configuration, because it would otherwise execute against a package set that
+ * `run` fails hard on the same configuration, because it would otherwise execute against a source set that
  * nobody chose. Listing is read-only, so it takes the warn-and-continue that the corrupt-manifest path above
  * already takes: A reader asking what exists is better served by the rest of the answer than by none.
  */
-function collectConfiguredPackageKits(packageNames: string[]): PackageKit[] {
-  return packageNames.flatMap((packageName) => {
-    try {
-      return expandConfiguredPackages([packageName], '.js');
-    } catch (error: unknown) {
-      process.stderr.write(`Warning: ${describeError(error)}\n`);
-      return [];
-    }
-  });
+async function collectConfiguredSourceKits(
+  sources: readonly ConfiguredSource[],
+  remote: RemoteFetchContext,
+): Promise<SourceKit[]> {
+  const expanded = await Promise.all(
+    sources.map(async (configured) => {
+      try {
+        return await expandConfiguredSource(configured, '.js', remote);
+      } catch (error: unknown) {
+        process.stderr.write(`Warning: ${describeError(error)}\n`);
+        return [];
+      }
+    }),
+  );
+  return expanded.flat();
 }
 
 /**
- * Labels a package kit, its package first, to match the heading that a run gives it.
+ * Labels a source kit, its source first, to match the heading that a run gives it.
  *
  * The row's own token supplies the package glyph; the label contains only what follows it.
  */
-function describePackageKit(kit: PackageKit): string {
+function describeSourceKit(kit: SourceKit): string {
   const version = kit.version === undefined ? '' : `@${kit.version}`;
-  return `${kit.packageName}${version}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
+  const label = kit.provenance.kind === 'package' ? `${kit.provenance.packageName}${version}` : kit.source;
+  return `${label}${SEGMENT_SEPARATOR}${getLayout().inlineGlyph('kit')}${kit.kitName}`;
 }
 
 /**
- * Builds the row for a kit published by an installed package, recording whether the config names it.
+ * Builds the row for a kit published by a source, recording whether the config names that source.
  *
- * `project` names the directory whose dependencies were read. Pass `undefined` for a listing that reads
- * one project, and the sweep-relative directory for a repo-wide one, in which two workspaces depending on
- * the same package each contribute a row.
+ * `project` names the directory whose sources were read. Pass `undefined` for a listing that reads one
+ * project, and the sweep-relative directory for a repo-wide one, in which two workspaces naming the same
+ * source each contribute a row. A repository kit has no path on this machine, so its row has none.
  */
-function buildPackageEntry(kit: PackageKit, configured: boolean, project?: string): JsonListKitEntry {
+function buildSourceKitEntry(kit: SourceKit, configured: boolean, project?: string): JsonListKitEntry {
   return {
     name: kit.kitName,
     kind: 'compiled',
     ...(project !== undefined && { project }),
     origin: {
-      package: kit.packageName,
+      package: kit.provenance.kind === 'package' ? kit.provenance.packageName : kit.source,
       ...(kit.version !== undefined && { version: kit.version }),
       configured,
     },
-    path: kit.path,
+    ...('path' in kit.location && { path: kit.location.path }),
     ...(kit.description !== undefined && { description: kit.description }),
     ...(kit.checklists !== undefined && { checklists: kit.checklists }),
   };

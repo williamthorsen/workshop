@@ -25,7 +25,6 @@ import { parseRunArgs } from '../run/parseRunArgs.ts';
 import { resolveAllKitSources } from '../run/resolveAllKitSources.ts';
 import { resolveKitSources } from '../run/resolveKitSources.ts';
 import { runCommand } from '../run/runCommand.ts';
-import { listConfiguredPackageNames } from '../sources/parseConfiguredSource.ts';
 import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
@@ -181,7 +180,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
           compile: config.compile,
           internalDir: config.internal.dir,
           internalInfix: config.internal.infix,
-          configuredPackages: listConfiguredPackageNames(config.sources),
+          configuredSources: config.sources,
         };
   const remote = createRemoteFetchContext({ reload: parsed.noCache });
 
@@ -194,7 +193,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         remote,
         ...configFields,
       })
-    : resolveKitSources({
+    : await resolveKitSources({
         filePath: parsed.filePath,
         fromValue: parsed.fromValue,
         urlValue: parsed.urlValue,
@@ -203,6 +202,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         jit: parsed.jit,
         internal: parsed.internal,
         packages: parsed.packages,
+        remote,
         ...configFields,
       });
 

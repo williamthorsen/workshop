@@ -1,10 +1,10 @@
 import path from 'node:path';
 
-import type { KitPackageGroup } from '../installed-packages/collectKitPackageGroups.ts';
-import type { PackageKit } from '../installed-packages/expandConfiguredPackages.ts';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
+import type { SourceGroup } from '../sources/collectSourceGroups.ts';
+import type { SourceKit } from '../sources/expandConfiguredSources.ts';
 
 /** Blank line separating one listed section from the next. A section supplies none of its own. */
 const SECTION_SEPARATOR = '\n\n';
@@ -159,7 +159,7 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
 // -- Packages view --
 
 interface PackagesViewOptions {
-  groups: KitPackageGroup[];
+  groups: SourceGroup[];
 }
 
 /**
@@ -208,7 +208,7 @@ export function formatRecursiveView({ projects }: RecursiveViewOptions): string 
 export interface ProjectPackagesView {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
-  groups: KitPackageGroup[];
+  groups: SourceGroup[];
 }
 
 interface RecursivePackagesViewOptions {
@@ -325,16 +325,16 @@ function buildKitSelectionHint(kits: readonly string[]): string {
  * by the source naming it directly. So one hint covers both what to run and whether a `--packages` run
  * would include it, and every kit listed stays reachable by the command above it.
  */
-function buildPackageHint(group: KitPackageGroup): string {
+function buildPackageHint(group: SourceGroup): string {
   const kitNames = group.kits.map((kit) => kit.kitName);
   return group.configured
     ? `rdy run --packages ${buildKitHint(kitNames)}`
-    : `rdy run --from npm:${group.packageName} ${buildKitSelectionHint(kitNames)}`;
+    : `rdy run --from ${group.source} ${buildKitSelectionHint(kitNames)}`;
 }
 
 /** Returns a package's name with the version that its own manifest records, if it records one. */
-function buildPackageLabel(group: KitPackageGroup): string {
-  return group.version === undefined ? group.packageName : `${group.packageName}@${group.version}`;
+function buildPackageLabel(group: SourceGroup): string {
+  return group.version === undefined ? group.name : `${group.name}@${group.version}`;
 }
 
 /** Returns the command that runs a project's kits from the reader's working directory. */
@@ -399,7 +399,7 @@ function formatKitRows(kit: KitView, token: TokenName, depth = 0): string[] {
 }
 
 /** Returns one package's line under a project's directory, the command running its kits, and a line per kit. */
-function formatNestedPackageBlock(group: KitPackageGroup, runPrefix: string): string {
+function formatNestedPackageBlock(group: SourceGroup, runPrefix: string): string {
   const packageLine = getLayout().formatCheckLine({
     token: 'sourcePackage',
     name: buildPackageLabel(group),
@@ -412,7 +412,7 @@ function formatNestedPackageBlock(group: KitPackageGroup, runPrefix: string): st
 }
 
 /** Returns one package's heading, the command running its kits, and a line per kit. */
-function formatPackageBlock(group: KitPackageGroup): string {
+function formatPackageBlock(group: SourceGroup): string {
   const heading = getLayout().formatBreadcrumb(
     [{ role: 'sourcePackage', text: buildPackageLabel(group) }],
     'kit',
@@ -466,7 +466,7 @@ function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
 }
 
 /** Returns the row that a package's kit is listed as, named by the kit alone. */
-function toKitView(kit: PackageKit): KitView {
+function toKitView(kit: SourceKit): KitView {
   return { name: kit.kitName, description: kit.description, checklists: kit.checklists };
 }
 

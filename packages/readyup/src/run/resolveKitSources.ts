@@ -6,14 +6,16 @@ import { usageError } from '../errors/RdyError.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
 import { type CompileDirectories, resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
-import { resolveConfiguredPackages } from './resolveConfiguredPackages.ts';
+import { resolveConfiguredSources } from './resolveConfiguredSources.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveFromSource } from './resolveFromSource.ts';
 
 /** Resolves parsed flags into an array of kit entries to execute. */
-export function resolveKitSources({
+export async function resolveKitSources({
   filePath,
   fromValue,
   urlValue,
@@ -24,8 +26,9 @@ export function resolveKitSources({
   internalDir,
   internalInfix,
   packages,
-  configuredPackages,
+  configuredSources,
   compile,
+  remote,
 }: {
   filePath: string | undefined;
   fromValue: string | undefined;
@@ -37,10 +40,11 @@ export function resolveKitSources({
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
   packages?: boolean;
-  configuredPackages?: string[] | undefined;
+  configuredSources?: readonly ConfiguredSource[] | undefined;
   /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
-}): ResolvedKitEntry[] {
+  remote: RemoteFetchContext;
+}): Promise<ResolvedKitEntry[]> {
   if (filePath !== undefined) {
     return [
       {
@@ -65,7 +69,7 @@ export function resolveKitSources({
 
   if (packages === true) {
     const requestedNames = declaredSpecs.map((spec) => spec.kitName);
-    return resolveConfiguredPackages(configuredPackages ?? [], requestedNames, extension);
+    return resolveConfiguredSources(configuredSources ?? [], requestedNames, extension, remote);
   }
 
   // `--checklists` names checklists within one kit, and `parseRunArgs` has already rejected every

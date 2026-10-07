@@ -1,3 +1,5 @@
+import type { BitbucketSource, GitHubSource } from './parseFromValue.ts';
+
 /**
  * Where a kit came from, absent only for a kit resolved from the local kits directory.
  *
@@ -22,6 +24,15 @@ export interface RepositoryProvenance {
   repo: string;
   ref: string;
   source: string;
+}
+
+/** Records where a repository kit came from, in the structured form that check-ID namespacing reads. */
+export function buildRepositoryProvenance(
+  source: BitbucketSource | GitHubSource,
+  spelling: string,
+): RepositoryProvenance {
+  const owner = source.type === 'github' ? source.org : source.workspace;
+  return { kind: 'repository', host: source.type, owner, repo: source.repo, ref: source.ref, source: spelling };
 }
 
 /** Returns a repository kit's source with its ref resolved, as a heading names it: `github:org/repo@ref`. */

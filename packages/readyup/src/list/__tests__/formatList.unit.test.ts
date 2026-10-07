@@ -2,10 +2,10 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { KitPackageGroup } from '../../installed-packages/collectKitPackageGroups.ts';
-import type { PackageKit } from '../../installed-packages/expandConfiguredPackages.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { richFormatter } from '../../layout/formatter.ts';
+import type { SourceGroup } from '../../sources/collectSourceGroups.ts';
+import type { SourceKit } from '../../sources/expandConfiguredSources.ts';
 import {
   formatConsumerView,
   formatEmpty,
@@ -477,7 +477,9 @@ describe(formatPackagesView, () => {
     const result = formatPackagesView({
       groups: [
         {
-          packageName: 'plain-kit',
+          kind: 'package',
+          source: 'npm:plain-kit',
+          name: 'plain-kit',
           version: undefined,
           configured: true,
           kits: [buildKit('plain-kit', 'smoke', undefined)],
@@ -529,7 +531,9 @@ describe(formatPackagesView, () => {
     const result = formatPackagesView({
       groups: [
         {
-          packageName: '@acme/kits',
+          kind: 'package',
+          source: 'npm:@acme/kits',
+          name: '@acme/kits',
           version: '2.1.0',
           configured: true,
           kits: [buildKit('@acme/kits', 'drift', 'Dependency drift'), buildKit('@acme/kits', 'preflight', undefined)],
@@ -546,7 +550,9 @@ describe(formatPackagesView, () => {
     const result = formatPackagesView({
       groups: [
         {
-          packageName: '@acme/kits',
+          kind: 'package',
+          source: 'npm:@acme/kits',
+          name: '@acme/kits',
           version: '2.1.0',
           configured: true,
           kits: [buildKit('@acme/kits', 'drift', 'Dependency drift', ['lockfile', 'ranges'])],
@@ -780,7 +786,9 @@ describe(formatRecursivePackagesView, () => {
           dir: '.',
           groups: [
             {
-              packageName: '@acme/kits',
+              kind: 'package',
+              source: 'npm:@acme/kits',
+              name: '@acme/kits',
               version: '2.1.0',
               configured: true,
               kits: [buildKit('@acme/kits', 'drift', 'Dependency drift')],
@@ -800,7 +808,9 @@ describe(formatRecursivePackagesView, () => {
           dir: '.',
           groups: [
             {
-              packageName: '@acme/kits',
+              kind: 'package',
+              source: 'npm:@acme/kits',
+              name: '@acme/kits',
               version: '2.1.0',
               configured: true,
               kits: [buildKit('@acme/kits', 'drift', undefined, ['lockfile'])],
@@ -877,7 +887,9 @@ describe(formatRecursivePackagesView, () => {
           dir: '.',
           groups: [
             {
-              packageName: 'plain-kit',
+              kind: 'package',
+              source: 'npm:plain-kit',
+              name: 'plain-kit',
               version: '2.1.0',
               configured: true,
               kits: [buildKit('plain-kit', 'smoke', undefined, ['boot'])],
@@ -964,9 +976,11 @@ function buildGroup({
   version?: string | undefined;
   configured?: boolean;
   kits: string[];
-}): KitPackageGroup {
+}): SourceGroup {
   return {
-    packageName,
+    kind: 'package',
+    source: `npm:${packageName}`,
+    name: packageName,
     version,
     configured,
     kits: kits.map((kitName) => buildKit(packageName, kitName, undefined)),
@@ -979,14 +993,15 @@ function buildKit(
   kitName: string,
   description: string | undefined,
   checklists?: string[],
-): PackageKit {
+): SourceKit {
   return {
-    packageName,
+    source: `npm:${packageName}`,
     version: '2.1.0',
     kitName,
     description,
     checklists,
-    path: `node_modules/${packageName}/.readyup/kits/${kitName}.js`,
+    location: { path: `node_modules/${packageName}/.readyup/kits/${kitName}.js` },
+    provenance: { kind: 'package', packageName, version: '2.1.0', source: `npm:${packageName}` },
   };
 }
 
@@ -1000,7 +1015,7 @@ function buildProject({ dir, kits }: { dir: string; kits: string[] }): Recursive
 }
 
 /** Builds one project's contribution to a repo-wide dependency listing. */
-function buildProjectPackages({ dir, groups }: { dir: string; groups: KitPackageGroup[] }): ProjectPackagesView {
+function buildProjectPackages({ dir, groups }: { dir: string; groups: SourceGroup[] }): ProjectPackagesView {
   return { dir, groups };
 }
 
