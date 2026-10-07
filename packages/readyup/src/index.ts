@@ -31,6 +31,10 @@ export type {
 // Error taxonomy
 export type { RdyErrorCode } from './errors/RdyError.ts';
 
+// Config
+export type { BitbucketSource, GitHubSource, NpmSource } from './kits/parseFromValue.ts';
+export type { ConfiguredSource } from './sources/parseConfiguredSource.ts';
+
 // JSON payload types, derived from the zod schemas that also generate the published JSON Schemas
 export type { JsonCounts, JsonErrorBody, JsonWarning, JsonWarningCode } from './schemas/common.ts';
 export type {

@@ -197,7 +197,7 @@ describe('public authoring helpers with and without as const', () => {
   });
 
   it('accepts a config asserted as const', () => {
-    const config = { packages: ['readyup'] } as const;
+    const config = { sources: ['npm:readyup'] } as const;
 
     expectTypeOf(defineRdyConfig).toBeCallableWith(config);
   });
@@ -227,6 +227,6 @@ describe('public authoring helpers with and without as const', () => {
       checklists: [{ name: 'flat', checks: [{ name: 'Check holds', check: () => true }] }],
       suites: { all: ['flat'] },
     });
-    expectTypeOf(defineRdyConfig).toBeCallableWith({ packages: ['readyup'] });
+    expectTypeOf(defineRdyConfig).toBeCallableWith({ sources: ['npm:readyup'] });
   });
 });

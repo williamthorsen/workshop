@@ -7,16 +7,16 @@ export default defineRdyConfig({
   internal: {
     dir: 'internal',
   },
-  // `rdy run --packages` runs the `default` kit of each of these packages.
-  packages: [
-    '@williamthorsen/eslint-config-typescript',
-    '@williamthorsen/nmr',
-    '@williamthorsen/release-kit',
-    '@williamthorsen/toolbelt.errors',
-    '@williamthorsen/toolbelt.vitest',
-    '@williamthorsen/tsconfig',
-    'codeassembly',
-    'readyup',
-    'v11y-check',
+  // `rdy run --sources` runs the `default` kit of each of these sources.
+  sources: [
+    'npm:@williamthorsen/eslint-config-typescript',
+    'npm:@williamthorsen/nmr',
+    'npm:@williamthorsen/release-kit',
+    'npm:@williamthorsen/toolbelt.errors',
+    'npm:@williamthorsen/toolbelt.vitest',
+    'npm:@williamthorsen/tsconfig',
+    'npm:codeassembly',
+    'npm:readyup',
+    'npm:v11y-check',
   ],
 });

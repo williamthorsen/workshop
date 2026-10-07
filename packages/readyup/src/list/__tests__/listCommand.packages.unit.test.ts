@@ -12,6 +12,7 @@ vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
+import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { listCommand } from '../listCommand.ts';
 import { findPackageCommand } from '../test-utils/findPackageCommand.ts';
 
@@ -71,7 +72,7 @@ describe('list --packages', () => {
 
     // Discovery reads the declared dependencies, so only the config names this one.
     it('reports a configured package declared by no dependency field', async () => {
-      configurePackages(['hidden-kit']);
+      configurePackages(['npm:hidden-kit']);
 
       const { stdout } = await list(['--packages']);
 
@@ -94,7 +95,7 @@ describe('list --packages', () => {
 
     // The hint tells the reader whether a `--packages` run would include the package.
     it('hints a configured package with the run that includes it and an unconfigured one with its source', async () => {
-      configurePackages(['@acme/kits']);
+      configurePackages(['npm:@acme/kits']);
 
       const { stdout } = await list(['--packages']);
 
@@ -105,7 +106,7 @@ describe('list --packages', () => {
     });
 
     it('marks an unconfigured package and leaves a configured one unmarked', async () => {
-      configurePackages(['@acme/kits']);
+      configurePackages(['npm:@acme/kits']);
 
       const { stdout } = await list(['--packages']);
 
@@ -124,7 +125,7 @@ describe('list --packages', () => {
     });
 
     it('warns and omits a configured package that cannot be resolved', async () => {
-      configurePackages(['absent-package']);
+      configurePackages(['npm:absent-package']);
 
       const { exitCode, stdout, stderr } = await list(['--packages']);
 
@@ -136,7 +137,7 @@ describe('list --packages', () => {
 
   describe('JSON payload', () => {
     it('emits a row per published kit, marked with whether the config names its package', async () => {
-      configurePackages(['@acme/kits']);
+      configurePackages(['npm:@acme/kits']);
 
       const payload = await runForPayload();
 
@@ -209,12 +210,12 @@ describe('list --packages', () => {
 
 // region | Helpers
 
-/** Points the mocked config loader at the given package list, leaving every other setting at its default. */
-function configurePackages(packages: string[]): void {
+/** Points the mocked config loader at the given source entries, leaving every other setting at its default. */
+function configurePackages(entries: string[]): void {
   mockLoadConfig.mockResolvedValue({
     compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
     internal: { dir: '.', infix: undefined },
-    packages,
+    sources: entries.map((entry) => parseConfiguredSource(entry)),
   });
 }
 

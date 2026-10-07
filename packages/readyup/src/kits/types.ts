@@ -1,3 +1,5 @@
+import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
+
 // -- Ahead/behind --
 
 /** Directional commit counts between two refs. */
@@ -440,9 +442,10 @@ export interface RdyConfig {
         infix?: string | undefined;
       }
     | undefined;
-  /** Installed packages that publish kits and that `packages` leaves out on purpose. */
-  omittedPackages?: readonly string[] | undefined;
-  packages?: readonly string[] | undefined;
+  /** Installed packages that publish kits and that `sources` leaves out on purpose, each spelled `npm:<name>`. */
+  omittedSources?: readonly string[] | undefined;
+  /** Kit sources, spelled as `--from` takes them (`npm:`, `github:`, or `bitbucket:`), whose kits `rdy run --sources` runs. */
+  sources?: readonly string[] | undefined;
 }
 
 /** Fully-resolved config with defaults applied, returned by `loadConfig`. */
@@ -458,6 +461,6 @@ export interface ResolvedRdyConfig {
     dir: string;
     infix: string | undefined;
   };
-  omittedPackages: string[];
-  packages: string[];
+  omittedSources: string[];
+  sources: ConfiguredSource[];
 }

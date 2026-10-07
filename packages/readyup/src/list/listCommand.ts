@@ -25,6 +25,7 @@ import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemErr
 import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
 import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
+import { listConfiguredPackageNames } from '../sources/parseConfiguredSource.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { collectCompiledKits } from './collectCompiledKits.ts';
 import { collectSourceKits } from './collectSourceKits.ts';
@@ -225,9 +226,10 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
     throw configError(describeError(error), { cause: error });
   }
 
-  const packageKits = collectConfiguredPackageKits(config.packages);
+  const configuredPackages = listConfiguredPackageNames(config.sources);
+  const packageKits = collectConfiguredPackageKits(configuredPackages);
   const availablePackages = discoverKitPackages(cwd).filter(
-    (name) => !config.packages.includes(name) && !config.omittedPackages.includes(name),
+    (name) => !configuredPackages.includes(name) && !config.omittedSources.includes(`npm:${name}`),
   );
 
   const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
@@ -260,7 +262,10 @@ async function runOwnerMode(json: boolean, configPath: string | undefined): Prom
  */
 async function runPackagesMode(json: boolean, configPath: string | undefined): Promise<number> {
   const config = await loadListingConfig(configPath);
-  const groups = collectKitPackageGroups({ configuredPackages: config.packages, fromDir: process.cwd() });
+  const groups = collectKitPackageGroups({
+    configuredPackages: listConfiguredPackageNames(config.sources),
+    fromDir: process.cwd(),
+  });
 
   writeHuman(formatPackagesView({ groups }) + '\n', json);
 
@@ -289,7 +294,7 @@ async function runRecursivePackagesMode(json: boolean): Promise<number> {
 
   for (const project of projects) {
     const groups = collectKitPackageGroups({
-      configuredPackages: project.config.packages,
+      configuredPackages: listConfiguredPackageNames(project.config.sources),
       fromDir: project.absolutePath,
     });
 

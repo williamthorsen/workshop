@@ -15,6 +15,7 @@ vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
 
 import { DEFAULT_CONFIG } from '../../config/loadConfig.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
+import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { listCommand } from '../listCommand.ts';
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
@@ -56,7 +57,7 @@ const it = baseIt.extend(
 it.aroundEach(async (runTest, { temp }) => {
   using _cwd = pointCwdAt(temp.dir);
 
-  configureProjects({ '.': ['@acme/kits'] });
+  configureProjects({ '.': ['npm:@acme/kits'] });
   await runTest();
 });
 
@@ -107,7 +108,7 @@ describe('list --recursive --packages', () => {
     // Because configured membership is a fact about one project's config, two projects can report the same
     // package differently.
     it('marks a package against the config of the project reporting it', async () => {
-      configureProjects({ '.': ['@acme/kits'], 'packages/app': ['plain-kit'] });
+      configureProjects({ '.': ['npm:@acme/kits'], 'packages/app': ['npm:plain-kit'] });
 
       const { stdout } = await list();
 
@@ -173,13 +174,16 @@ describe('list --recursive --packages', () => {
 
 // region | Helpers
 
-/** Points the mocked config loader at a package list per project directory, defaulting the rest to none. */
+/** Points the mocked config loader at source entries per project directory, defaulting the rest to none. */
 function configureProjects(byDir: Record<string, string[]>): void {
   mockLoadConfig.mockImplementation((options: { fromDir?: string } = {}) => {
     const fromDir = options.fromDir ?? process.cwd();
     const dir = path.relative(process.cwd(), fromDir) || '.';
 
-    return Promise.resolve({ ...DEFAULT_CONFIG, packages: byDir[dir] ?? [] });
+    return Promise.resolve({
+      ...DEFAULT_CONFIG,
+      sources: (byDir[dir] ?? []).map((entry) => parseConfiguredSource(entry)),
+    });
   });
 }
 

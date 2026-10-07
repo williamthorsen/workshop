@@ -17,6 +17,7 @@ vi.mock('jiti', () => ({
 }));
 
 import { extractHint } from '../../errors/error-handling.ts';
+import { RdyError } from '../../errors/RdyError.ts';
 import { loadConfig } from '../loadConfig.ts';
 
 describe(loadConfig, () => {
@@ -33,8 +34,8 @@ describe(loadConfig, () => {
     expect(config).toStrictEqual({
       compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
       internal: { dir: '.', infix: undefined },
-      omittedPackages: [],
-      packages: [],
+      omittedSources: [],
+      sources: [],
     });
   });
 
@@ -274,61 +275,98 @@ describe(loadConfig, () => {
     expect(config.internal.infix).toBe('int');
   });
 
-  it('resolves the packages list from config', async () => {
+  it('resolves the sources list from config, keeping each spelling', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { packages: ['@williamthorsen/nmr', 'readyup'] } });
+    mockJitiImport.mockResolvedValue({ default: { sources: ['npm:readyup', 'github:acme/standards@v2'] } });
 
     const config = await loadConfig({ overridePath: 'config.ts' });
 
-    expect(config.packages).toStrictEqual(['@williamthorsen/nmr', 'readyup']);
+    expect(config.sources).toStrictEqual([
+      { spelling: 'npm:readyup', source: { type: 'npm', name: 'readyup', versionSpec: undefined } },
+      {
+        spelling: 'github:acme/standards@v2',
+        source: { type: 'github', org: 'acme', repo: 'standards', ref: 'v2' },
+      },
+    ]);
   });
 
-  it('resolves packages to an empty list when the key is absent', async () => {
+  it('resolves sources to an empty list when the key is absent', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ default: {} });
 
     const config = await loadConfig({ overridePath: 'config.ts' });
 
-    expect(config.packages).toStrictEqual([]);
+    expect(config.sources).toStrictEqual([]);
   });
 
-  it('throws when packages is not an array', async () => {
+  it('throws when sources is not an array', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { packages: '@williamthorsen/nmr' } });
+    mockJitiImport.mockResolvedValue({ default: { sources: 'npm:readyup' } });
 
     await expect(loadConfig({ overridePath: 'config.ts' })).rejects.toThrow(ZodError);
   });
 
-  it('throws when a packages entry is not a string', async () => {
+  it('throws when a sources entry is not a string', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { packages: ['readyup', 42] } });
+    mockJitiImport.mockResolvedValue({ default: { sources: ['npm:readyup', 42] } });
 
     await expect(loadConfig({ overridePath: 'config.ts' })).rejects.toThrow(ZodError);
   });
 
-  it('resolves the omittedPackages list from config', async () => {
+  it('resolves the omittedSources list from config', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { omittedPackages: ['@williamthorsen/toolbelt.testing'] } });
+    mockJitiImport.mockResolvedValue({ default: { omittedSources: ['npm:@williamthorsen/toolbelt.testing'] } });
 
     const config = await loadConfig({ overridePath: 'config.ts' });
 
-    expect(config.omittedPackages).toStrictEqual(['@williamthorsen/toolbelt.testing']);
+    expect(config.omittedSources).toStrictEqual(['npm:@williamthorsen/toolbelt.testing']);
   });
 
-  it('resolves omittedPackages to an empty list when the key is absent', async () => {
+  it('resolves omittedSources to an empty list when the key is absent', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ default: {} });
 
     const config = await loadConfig({ overridePath: 'config.ts' });
 
-    expect(config.omittedPackages).toStrictEqual([]);
+    expect(config.omittedSources).toStrictEqual([]);
   });
 
-  it('throws when omittedPackages is not an array', async () => {
+  it('throws when omittedSources is not an array', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockResolvedValue({ default: { omittedPackages: '@williamthorsen/toolbelt.testing' } });
+    mockJitiImport.mockResolvedValue({ default: { omittedSources: 'npm:@williamthorsen/toolbelt.testing' } });
 
     await expect(loadConfig({ overridePath: 'config.ts' })).rejects.toThrow(ZodError);
+  });
+
+  it('rejects an omittedSources entry that names no package with a config error naming it', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { omittedSources: ['github:acme/kits'] } });
+
+    const error = await captureError(RdyError, () => loadConfig({ overridePath: 'config.ts' }));
+
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('"github:acme/kits"');
+  });
+
+  it('rejects the retired packages key with a config error naming sources', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { packages: ['readyup'] } });
+
+    const error = await captureError(RdyError, () => loadConfig({ overridePath: 'config.ts' }));
+
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('"sources"');
+    expect(error.message).toContain('npm:<name>');
+  });
+
+  it('rejects an unsupported sources entry with a config error naming it', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ default: { sources: ['dir:kits'] } });
+
+    const error = await captureError(RdyError, () => loadConfig({ overridePath: 'config.ts' }));
+
+    expect(error.code).toBe('config');
+    expect(error.message).toContain('"dir:kits"');
   });
 
   it('applies internal defaults when internal block is absent', async () => {

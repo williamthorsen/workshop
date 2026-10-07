@@ -3,9 +3,11 @@ import path from 'node:path';
 
 import { z } from 'zod';
 
+import { configError } from '../errors/RdyError.ts';
 import type { RdyConfig, ResolvedRdyConfig } from '../kits/types.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import { jitiImport } from '../portable/jitiImport.ts';
+import { parseConfiguredSource } from '../sources/parseConfiguredSource.ts';
 
 /** Default config values when no config file is found, or when one cannot be evaluated. */
 export const DEFAULT_CONFIG: ResolvedRdyConfig = {
@@ -19,8 +21,8 @@ export const DEFAULT_CONFIG: ResolvedRdyConfig = {
     dir: '.',
     infix: undefined,
   },
-  omittedPackages: [],
-  packages: [],
+  omittedSources: [],
+  sources: [],
 };
 
 /** Ordered lookup paths for the config file, resolved relative to the directory being read. */
@@ -46,8 +48,8 @@ const RdyConfigSchema = z.looseObject({
       infix: z.string().optional(),
     })
     .optional(),
-  omittedPackages: z.array(z.string()).optional(),
-  packages: z.array(z.string()).optional(),
+  omittedSources: z.array(z.string()).optional(),
+  sources: z.array(z.string()).optional(),
 });
 
 /** Validates that a raw value has the expected RdyConfig shape. */
@@ -87,6 +89,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Resol
   const raw = imported['default'] !== undefined && isRecord(imported['default']) ? imported['default'] : imported;
 
   assertIsRdyConfig(raw);
+  rejectRetiredKeys(raw);
 
   return applyDefaults(raw);
 }
@@ -133,14 +136,31 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
       dir: typeof internal?.dir === 'string' ? internal.dir : DEFAULT_CONFIG.internal.dir,
       infix: typeof internal?.infix === 'string' ? internal.infix : DEFAULT_CONFIG.internal.infix,
     },
-    omittedPackages: toNames(raw.omittedPackages),
-    packages: toNames(raw.packages),
+    omittedSources: (raw.omittedSources ?? []).map((entry) => parseOmittedSource(entry)),
+    sources: (raw.sources ?? []).map((entry) => parseConfiguredSource(entry)),
   };
 }
 
-/** Returns a package-name list's string entries, or `[]` when the config did not declare the key. */
-function toNames(value: readonly string[] | undefined): string[] {
-  return Array.isArray(value) ? value.filter((name) => typeof name === 'string') : [];
+/**
+ * Validates one `omittedSources` entry, returning it as written.
+ *
+ * Only an installed package can be proposed for `sources`, so an omission names one as `npm:<name>`, the spelling
+ * that `availableSources` proposes and that a `sources` entry takes.
+ */
+function parseOmittedSource(entry: string): string {
+  if (parseConfiguredSource(entry).source.type !== 'npm') {
+    throw configError(`Omitted source "${entry}" is not a package; write an installed package as "npm:<name>".`);
+  }
+  return entry;
+}
+
+/** Rejects a key that the config no longer reads, naming its replacement so that the author can migrate. */
+function rejectRetiredKeys(raw: Record<string, unknown>): void {
+  if (raw['packages'] !== undefined) {
+    throw configError(
+      '"packages" was replaced by "sources"; write each package as "npm:<name>", for example "npm:readyup".',
+    );
+  }
 }
 
 /** Returns a glob key's patterns as a list, or `undefined` when the config did not declare the key. */

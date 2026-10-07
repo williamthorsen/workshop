@@ -39,17 +39,20 @@ export default defineRdyKit({
           fix: `Run 'rdy compile' to record every compiled kit and its hashes`,
         },
         {
-          // A monorepo root that lists `packages` usually defines no kits of its own, and it is the project that
-          // this check is for. The claim applies once the config lists any package.
-          name: 'Every installed dependency that publishes kits is listed in "packages"',
+          // A monorepo root that lists `sources` usually defines no kits of its own, and it is the project that
+          // this check is for. The claim applies once the config lists any source.
+          name: 'Every installed dependency that publishes kits is listed in "sources"',
           skip: async () =>
-            (await loadRdyConfig()).packages.length === 0 ? 'The readyup config lists no packages' : false,
+            (await loadRdyConfig()).sources.length === 0 ? 'The readyup config lists no sources' : false,
           check: async () => {
-            const { omittedPackages, packages } = await loadRdyConfig();
-            const expected = discoverKitPackages().filter((name) => !omittedPackages.includes(name));
-            return missingFrom('from "packages"', expected, packages);
+            const { omittedSources, sources } = await loadRdyConfig();
+            const expected = discoverKitPackages()
+              .map((name) => `npm:${name}`)
+              .filter((spelling) => !omittedSources.includes(spelling));
+            const listed = sources.map((configured) => configured.spelling);
+            return missingFrom('from "sources"', expected, listed);
           },
-          fix: `Add each package to "packages" in ${CONFIG_PATH} so that 'rdy run --packages' runs its kits, or to "omittedPackages" to leave it out on purpose`,
+          fix: `Add each package to "sources" in ${CONFIG_PATH} so that 'rdy run --sources' runs its kits, or to "omittedSources" to leave it out on purpose`,
         },
       ],
     },
