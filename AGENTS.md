@@ -37,6 +37,8 @@ From the repo root, `pnpm exec rdy run --sources` runs the default kit of every 
 
 Lefthook's pre-commit hook formats staged files with Prettier and restages them, so a commit can contain bytes you did not write.
 
+The code-quality workflow does not run `nmr ci`; it runs that command's steps as the parallel legs listed in `.github/workflows/code-quality.yaml`, each naming the hooks it needs. A hook added to `ci`, `check:strict`, or one of their constituents does not run in CI until a leg names it.
+
 ## Commit conventions
 
 The scope values this repo uses are `compositor`, `overlay`, `readyup`, and `root`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
