@@ -400,7 +400,11 @@ async function collectConfiguredSourceKits(
 }
 
 /**
- * Labels a source kit, its source first, to match the heading that a run gives it.
+ * Labels a source kit, its source first.
+ *
+ * A package kit is labelled as a run heads it. A repository kit is labelled by its source as the config spells
+ * it, without the resolved ref that a run's heading adds, because that spelling is what the row's "To run" hint
+ * passes to `--from`.
  *
  * The row's own token supplies the package or repository glyph; the label contains only what follows it.
  */
