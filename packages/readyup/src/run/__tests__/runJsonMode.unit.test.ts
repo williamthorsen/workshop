@@ -1,9 +1,10 @@
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
-import type { JsonDetail } from '../../schemas/reportSchema.ts';
+import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
@@ -188,6 +189,36 @@ describe(runJsonMode, () => {
       { detail: 'full' },
     );
   });
+
+  it.each([
+    {
+      label: 'a package kit by its source and version',
+      provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
+      origin: { source: 'npm:@acme/kits', version: '2.1.0' },
+    },
+    {
+      label: 'a repository kit by its source as written, without a version',
+      provenance: {
+        kind: 'repository',
+        host: 'github',
+        owner: 'acme',
+        repo: '.github',
+        ref: 'main',
+        source: 'github:acme/.github',
+      },
+      origin: { source: 'github:acme/.github' },
+    },
+  ] satisfies Array<{ label: string; provenance: KitProvenance; origin: JsonKitOrigin }>)(
+    'names the origin of $label',
+    async ({ provenance, origin }) => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      await runJson(singleKitEntry().map((entry) => ({ ...entry, provenance })));
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith([expect.objectContaining({ origin })], expect.anything());
+    },
+  );
 
   it('sends a kit its own declared thresholds while the run level stays silent', async () => {
     const kit = makeKit({ failOn: 'warn', reportOn: 'error' });

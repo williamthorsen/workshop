@@ -18,8 +18,8 @@ export interface UnresolvableImportsDiagnosis {
 /**
  * Composes the failure produced by a kit's unresolvable readyup imports.
  *
- * The message names the kit, and the publishing package when the kit has one, because a `--packages` run loads
- * several kits that share the name `default` and a message read on its own has to say which one failed.
+ * The message names the kit, and the publishing package or repository when the kit has one, because a `--sources`
+ * run loads several kits that share the name `default` and a message read on its own has to say which one failed.
  *
  * The remedy follows the kit's source, since the action that clears the failure differs by where the bundle is
  * maintained: A kit in the project can be recompiled, a kit inside an installed package cannot.

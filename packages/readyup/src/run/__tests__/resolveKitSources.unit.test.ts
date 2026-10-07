@@ -287,12 +287,12 @@ describe(resolveKitSources, () => {
     expect(error.message).toMatch(/URLs are not accepted by --from/);
   });
 
-  // -- --packages flag --
+  // -- --sources flag --
 
   // The flag names a config key, so a call that passes no value for the key is the same case as one that passes an
   // empty list.
-  it('reports --packages against a config that declares no sources as a usage error', async () => {
-    const error = await captureError(RdyError, () => resolve({ packages: true }));
+  it('reports --sources against a config that declares no sources as a usage error', async () => {
+    const error = await captureError(RdyError, () => resolve({ sources: true }));
 
     expect(error.code).toBe('usage');
     expect(error.message).toMatch(/requires a "sources" list/);

@@ -25,9 +25,9 @@ export interface ParsedRunArgs {
   json: boolean;
   kitSpecifiers: KitSpecifier[];
   noCache: boolean;
-  packages: boolean;
   quiet: boolean;
   reportOn?: Severity;
+  sources: boolean;
   urlValue: string | undefined;
 }
 
@@ -55,9 +55,9 @@ const runOptions = {
   jit: { type: 'boolean' },
   json: { type: 'boolean' },
   'no-cache': { type: 'boolean' },
-  packages: { type: 'boolean' },
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
+  sources: { type: 'boolean' },
   // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
   url: { type: 'string' },
@@ -102,8 +102,8 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     jit: values.jit === true,
     json: values.json === true,
     noCache: values['no-cache'] === true,
-    packages: values.packages === true,
     quiet: values.quiet === true,
+    sources: values.sources === true,
     url: values.url,
     failOn: values['fail-on'],
     reportOn: values['report-on'],
@@ -145,8 +145,8 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     json: parsed.json,
     kitSpecifiers,
     noCache: parsed.noCache,
-    packages: parsed.packages,
     quiet: parsed.quiet,
+    sources: parsed.sources,
     urlValue: parsed.url,
   };
   if (detail !== undefined) parsedArgs.detail = detail;

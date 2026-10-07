@@ -64,7 +64,7 @@ Run options:
   --from <source>                    Kit source (github:org/repo, bitbucket:ws/repo, npm:package, global, dir:path, or local path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<kit>]                 Run a kit published by the config's "packages" list (default: "default")
+  --sources [<kit>]                  Run a kit published by the config's "sources" list (default: "default")
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
   --all                              Run every kit in the selected source instead of naming kits
@@ -177,11 +177,12 @@ Kit source (mutually exclusive):
                                      npm:package, global, dir:path, or local repo path)
   --file, -f <path>                  Path to a local kit file
   --url <url>                        Fetch kit from a URL
-  --packages [<kit>]                 Run a kit from every package that the config's "packages"
-                                     list names, skipping those that do not publish it;
-                                     without a kit, the kit named "default"
+  --sources [<kit>]                  Run a kit from every source (npm:package, github:org/repo[@ref],
+                                     bitbucket:ws/repo[@ref]) that the config's "sources" list
+                                     names, skipping those that do not publish it; without a
+                                     kit, the kit named "default"
 
-Mode flags (incompatible with --from, --file, --url, --packages):
+Mode flags (incompatible with --from, --file, --url, --sources):
   --jit                              Run from TypeScript source instead of compiled JS
   --internal                         Use internal kit directory and infix from config
 
@@ -221,7 +222,7 @@ Examples:
   rdy run deploy                         Run the compiled deploy kit
   rdy run deploy:build,test              Run two checklists from the deploy kit
   rdy run --all                          Run every compiled kit in the project
-  rdy run --all --packages               Run every kit that the configured packages publish
+  rdy run --all --sources                Run every kit that the configured sources publish
   rdy run --jit deploy                   Run the deploy kit from its TypeScript source
   rdy run --from global deploy           Run the deploy kit from the global directory
   rdy run --fail-on warn                 Fail the run on warnings as well as errors

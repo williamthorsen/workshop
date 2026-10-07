@@ -24,12 +24,12 @@ it.aroundEach(async (runTest, { temp }) => {
 });
 
 /**
- * Joins `--packages` to the kits published by a configured `npm:` source, against a real fixture project.
+ * Joins `--sources` to the kits published by a configured `npm:` source, against a real fixture project.
  * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
  * that a configured package becomes a run entry with the provenance rendered by the report and the headings,
  * and that the kit name selects which of its kits run.
  */
-describe('--packages run path wiring', () => {
+describe('--sources run path wiring', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -39,7 +39,7 @@ describe('--packages run path wiring', () => {
 
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
@@ -58,7 +58,7 @@ describe('--packages run path wiring', () => {
 
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
@@ -71,7 +71,7 @@ describe('--packages run path wiring', () => {
 
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
       kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
     });
@@ -88,7 +88,7 @@ describe('--packages run path wiring', () => {
 
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('plain-kit'),
     });
 
@@ -102,7 +102,7 @@ describe('--packages run path wiring', () => {
 
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
     });
 
@@ -113,7 +113,7 @@ describe('--packages run path wiring', () => {
     installPackage(temp, '@acme/kits', ['drift']);
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
@@ -123,11 +123,11 @@ describe('--packages run path wiring', () => {
     expect(stdout).toBe('No kits to run.\n');
   });
 
-  it('passes the package and version into the JSON report', async ({ temp }) => {
+  it('passes the source and version into the JSON report', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
@@ -135,21 +135,21 @@ describe('--packages run path wiring', () => {
 
     expect(exitCode).toBe(0);
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ name: 'default', origin: { package: '@acme/kits', version: '2.1.0' } });
+    expect(report.kits[0]).toMatchObject({ name: 'default', origin: { source: 'npm:@acme/kits', version: '2.1.0' } });
   });
 
   it('omits the version from the report when the package declares none', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default']);
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ origin: { package: '@acme/kits' } });
+    expect(report.kits[0]).toMatchObject({ origin: { source: 'npm:@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('version');
   });
 
@@ -157,14 +157,14 @@ describe('--packages run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
-    expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { package: '@acme/kits' } });
+    expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { source: 'npm:@acme/kits' } });
     expect(report.kits[0]?.origin).not.toHaveProperty('compiledWith');
   });
 
@@ -173,7 +173,7 @@ describe('--packages run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
@@ -188,7 +188,7 @@ describe('--packages run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
     });
 
@@ -208,7 +208,7 @@ describe('--packages run path wiring', () => {
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits', 'plain-kit'),
     });
 
@@ -235,7 +235,7 @@ describe('--packages run path wiring', () => {
     );
     const entries = await resolveKitSources({
       ...baseArgs,
-      packages: true,
+      sources: true,
       configuredSources: npmSources('@acme/kits', 'broken-kit', 'plain-kit'),
     });
 
@@ -251,7 +251,7 @@ describe('--packages run path wiring', () => {
 
 // region | Helpers
 
-/** Flags left at their defaults by a `--packages` invocation. */
+/** Flags left at their defaults by a `--sources` invocation. */
 const baseArgs = {
   filePath: undefined,
   fromValue: undefined,

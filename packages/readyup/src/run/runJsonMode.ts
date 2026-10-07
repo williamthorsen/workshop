@@ -117,20 +117,20 @@ export async function runJsonMode(
 // region | Helpers
 
 /**
- * Returns the `origin` field for a kit's JSON entry, empty for a kit published by no package.
+ * Returns the `origin` field for a kit's JSON entry, empty for a kit published by no package or repository.
  *
- * The wire shape names the publishing package and nothing else, so every other provenance contributes no
- * field at all -- which is the shape that a consumer has always seen for a kit resolved from anywhere but
- * a package. A version that the package did not declare readably is omitted.
+ * The wire shape names the kit source as the reader wrote it, so every other provenance contributes no field at
+ * all. A version, which only an installed package has, is omitted when the package did not declare one readably.
  */
 function toJsonOriginField(provenance: KitProvenance | undefined): { origin?: JsonKitOrigin } {
+  if (provenance?.kind === 'repository') return { origin: { source: provenance.source } };
   if (provenance?.kind !== 'package') return {};
 
   return {
     origin:
       provenance.version === undefined
-        ? { package: provenance.packageName }
-        : { package: provenance.packageName, version: provenance.version },
+        ? { source: provenance.source }
+        : { source: provenance.source, version: provenance.version },
   };
 }
 

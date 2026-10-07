@@ -25,7 +25,7 @@ export async function resolveKitSources({
   internal,
   internalDir,
   internalInfix,
-  packages,
+  sources,
   configuredSources,
   compile,
   remote,
@@ -39,7 +39,7 @@ export async function resolveKitSources({
   internal: boolean;
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
-  packages?: boolean;
+  sources?: boolean;
   configuredSources?: readonly ConfiguredSource[] | undefined;
   /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
@@ -63,11 +63,11 @@ export async function resolveKitSources({
   // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
   const extension = jit ? '.ts' : '.js';
 
-  // Fill the default before the `--packages` branch reads it, so that a bare invocation is structurally
-  // `--packages default` and the two forms cannot select different kits.
+  // Fill the default before the `--sources` branch reads it, so that a bare invocation is structurally
+  // `--sources default` and the two forms cannot select different kits.
   const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
 
-  if (packages === true) {
+  if (sources === true) {
     const requestedNames = declaredSpecs.map((spec) => spec.kitName);
     return resolveConfiguredSources(configuredSources ?? [], requestedNames, extension, remote);
   }

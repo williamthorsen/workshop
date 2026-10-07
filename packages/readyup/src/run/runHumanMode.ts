@@ -43,7 +43,7 @@ export async function runHumanMode(
   settings: HumanRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  // Say so when a run selected nothing, which happens under `--packages` when no configured package
+  // Say so when a run selected nothing, which happens under `--sources` when no configured source
   // publishes the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
   if (kitEntries.length === 0) {
     process.stdout.write('No kits to run.\n');

@@ -27,7 +27,7 @@ interface ResolveAllKitSourcesOptions {
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
   jit: boolean;
-  packages: boolean;
+  sources: boolean;
   remote: RemoteFetchContext;
 }
 
@@ -45,11 +45,11 @@ interface ResolveAllKitSourcesOptions {
  * run from the wrong directory.
  */
 export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions): Promise<ResolvedKitEntry[]> {
-  const { fromValue, internal, jit, packages } = options;
+  const { fromValue, internal, jit, sources } = options;
   const extension = jit ? '.ts' : '.js';
 
   // A configured source publishing no kits is already a config error, so this selection is never empty.
-  if (packages) {
+  if (sources) {
     return resolveConfiguredSources(options.configuredSources ?? [], 'all', extension, options.remote);
   }
 

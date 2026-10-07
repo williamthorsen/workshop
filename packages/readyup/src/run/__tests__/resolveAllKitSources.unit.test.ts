@@ -20,7 +20,7 @@ const baseOptions = {
   fromValue: undefined,
   internal: false,
   jit: false,
-  packages: false,
+  sources: false,
   remote: createUncachedRemoteContext(),
 };
 
@@ -218,7 +218,7 @@ describe(resolveAllKitSources, () => {
     });
   });
 
-  it('resolves every kit that a configured source publishes under --packages, not only its default', async ({
+  it('resolves every kit that a configured source publishes under --sources, not only its default', async ({
     temp,
   }) => {
     temp.writeJson('node_modules/@acme/kits/package.json', { name: '@acme/kits' });
@@ -229,7 +229,7 @@ describe(resolveAllKitSources, () => {
 
     const entries = await resolveAllKitSources({
       ...baseOptions,
-      packages: true,
+      sources: true,
       configuredSources: [parseConfiguredSource('npm:@acme/kits')],
     });
 

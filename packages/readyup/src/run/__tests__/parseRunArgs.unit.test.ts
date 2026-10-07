@@ -361,7 +361,7 @@ describe(parseRunArgs, () => {
     });
 
     it.each([
-      ['--packages', ['--no-cache', '--packages']],
+      ['--sources', ['--no-cache', '--sources']],
       ['--from', ['--no-cache', '--from', 'global']],
       ['--file', ['--no-cache', '--file', 'kit.js']],
       ['--jit', ['--no-cache', '--jit']],
@@ -383,7 +383,7 @@ describe(parseRunArgs, () => {
     it.each([
       ['--json', ['--diagnose', '--json']],
       ['--jit', ['--diagnose', '--jit']],
-      ['--packages', ['--diagnose', '--packages']],
+      ['--sources', ['--diagnose', '--sources']],
       ['--from', ['--diagnose', '--from', 'global']],
       ['--file', ['--diagnose', '--file', 'kit.js']],
       ['--url', ['--diagnose', '--url', 'https://example.com/kit.js']],

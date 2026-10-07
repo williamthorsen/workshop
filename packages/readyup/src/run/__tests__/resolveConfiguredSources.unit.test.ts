@@ -88,7 +88,7 @@ describe(resolveConfiguredSources, () => {
     expect(entries.map(describeEntry)).toStrictEqual(['@acme/kits:preflight']);
   });
 
-  // Because a bare `--packages` fills the name in, a name that no package publishes is the "requires nothing" case.
+  // Because a bare `--sources` fills the name in, a name that no package publishes is the "requires nothing" case.
   it('resolves to an empty list when no configured package publishes the default kit', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['preflight']);
 
