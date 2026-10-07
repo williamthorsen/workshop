@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.4 — 2026-10-07
+
+### 📚 Documentation
+
+- Adds `CHANGELOG.md` and `.meta/changelog.json` to the `files` field of `overlay` and `readyup`, so that each published npm package includes its release history in readable and machine-readable form. (#504)
+
 ## 0.4.3 — 2026-09-17
 
 ### 🧪 Tests

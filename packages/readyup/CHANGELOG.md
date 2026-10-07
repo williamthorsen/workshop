@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.40.0 — 2026-10-07
+
+### 🎉 Features
+
+- Adds to the `setup` checklist of readyup's `default` kit a check that names each installed direct dependency that publishes kits and that `.config/readyup.config.ts` lists in neither `packages` nor `omittedPackages`, which `rdy run --packages` therefore does not run; the check skips when the config lists no packages. (#506)
+- Adds the `omittedPackages` config key, which lists installed kit-publishing packages that the project leaves out of `packages` on purpose, so that the owner listing of `rdy list` no longer proposes them as available and the `default` kit's new check does not report them. (#506)
+- Exports `loadRdyConfig(fromDir?)` from `readyup/check-utils`, which returns a project's resolved readyup config from `.config/readyup.config.ts`, or the defaults when that file does not exist, regardless of a run's `--config` flag. (#506)
+- 🚨 **Breaking:** Replaces the config's `packages` and `omittedPackages` lists with `sources` and `omittedSources`, and the `--packages` option of `rdy run` and `rdy list` with `--sources`, so that a config entry is spelled as `--from` takes it: `npm:<name>`, `github:`, or `bitbucket:`. (#508)
+- Adds `github:` and `bitbucket:` repository entries, optionally pinned with `@ref`, to the `sources` list, which `rdy run --sources` and `rdy list` expand through the kit manifest that each repository publishes, so that a repository's kits run with the installed packages' kits rather than through a separate `rdy run --from` invocation. (#508)
+- 🚨 **Breaking:** Namespaces the check IDs of a kit loaded from a `github:` or `bitbucket:` source as `owner/repo/<id>`, in the output and in pragmas, because every organization's `.github` repository has the same name. (#508)
+- 🚨 **Breaking:** Changes the JSON output of `rdy run` and `rdy list` to identify a kit by its source as the config or the command line spells it, renaming `origin.package` to `origin.source` and `availablePackages` to `availableSources`, adding `origin` for repository kits, and bumping the report and list schemas to version 2. (#508)
+- Pins the `$id` of each published JSON Schema to the readyup release that publishes it, as `https://unpkg.com/readyup@<version>/schemas/<file>`, so that a schema version stays reachable after a later release replaces it. (#508)
+
+### 📚 Documentation
+
+- Adds `CHANGELOG.md` and `.meta/changelog.json` to the `files` field of `overlay` and `readyup`, so that each published npm package includes its release history in readable and machine-readable form. (#504)
+
 ## 0.39.0 — 2026-10-03
 
 ### 🎉 Features

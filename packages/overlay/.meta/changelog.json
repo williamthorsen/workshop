@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.4.4",
+    "date": "2026-10-07",
+    "sections": [
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `CHANGELOG.md` and `.meta/changelog.json` to the `files` field of `overlay` and `readyup`, so that each published npm package includes its release history in readable and machine-readable form. (#504)",
+            "hash": "0d80b26f00ebf40b3f4b10e1009689f36e1dad95",
+            "entry": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.3",
     "date": "2026-09-17",
     "sections": [

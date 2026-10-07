@@ -1,5 +1,74 @@
 [
   {
+    "version": "0.40.0",
+    "date": "2026-10-07",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds to the `setup` checklist of readyup's `default` kit a check that names each installed direct dependency that publishes kits and that `.config/readyup.config.ts` lists in neither `packages` nor `omittedPackages`, which `rdy run --packages` therefore does not run; the check skips when the config lists no packages. (#506)",
+            "hash": "1c90845dd9ae10e4aa8b669400aa8395229677f2",
+            "entry": 1
+          },
+          {
+            "description": "Adds the `omittedPackages` config key, which lists installed kit-publishing packages that the project leaves out of `packages` on purpose, so that the owner listing of `rdy list` no longer proposes them as available and the `default` kit's new check does not report them. (#506)",
+            "hash": "1c90845dd9ae10e4aa8b669400aa8395229677f2",
+            "entry": 2
+          },
+          {
+            "description": "Exports `loadRdyConfig(fromDir?)` from `readyup/check-utils`, which returns a project's resolved readyup config from `.config/readyup.config.ts`, or the defaults when that file does not exist, regardless of a run's `--config` flag. (#506)",
+            "hash": "1c90845dd9ae10e4aa8b669400aa8395229677f2",
+            "entry": 3
+          },
+          {
+            "description": "Replaces the config's `packages` and `omittedPackages` lists with `sources` and `omittedSources`, and the `--packages` option of `rdy run` and `rdy list` with `--sources`, so that a config entry is spelled as `--from` takes it: `npm:<name>`, `github:`, or `bitbucket:`. (#508)",
+            "breaking": true,
+            "migration": "In `.config/readyup.config.ts`, rename `packages` to `sources` and `omittedPackages` to `omittedSources`, prefix each package name in both lists with `npm:` (for example `npm:readyup`), and replace `--packages` with `--sources` on every command line; a leftover `packages` key fails the config, but a leftover `omittedPackages` key is ignored without an error, and an `npm:` entry may not name a version.",
+            "hash": "d3e8a2f787b4da1d55cc2b5aeb86928c320e5765",
+            "entry": 1
+          },
+          {
+            "description": "Adds `github:` and `bitbucket:` repository entries, optionally pinned with `@ref`, to the `sources` list, which `rdy run --sources` and `rdy list` expand through the kit manifest that each repository publishes, so that a repository's kits run with the installed packages' kits rather than through a separate `rdy run --from` invocation. (#508)",
+            "hash": "d3e8a2f787b4da1d55cc2b5aeb86928c320e5765",
+            "entry": 2
+          },
+          {
+            "description": "Namespaces the check IDs of a kit loaded from a `github:` or `bitbucket:` source as `owner/repo/<id>`, in the output and in pragmas, because every organization's `.github` repository has the same name. (#508)",
+            "breaking": true,
+            "migration": "Rewrite each pragma that names a check of a repository kit by its bare ID in the form `owner/repo/<id>`, because a bare ID no longer suppresses that check.",
+            "hash": "d3e8a2f787b4da1d55cc2b5aeb86928c320e5765",
+            "entry": 3
+          },
+          {
+            "description": "Changes the JSON output of `rdy run` and `rdy list` to identify a kit by its source as the config or the command line spells it, renaming `origin.package` to `origin.source` and `availablePackages` to `availableSources`, adding `origin` for repository kits, and bumping the report and list schemas to version 2. (#508)",
+            "breaking": true,
+            "migration": "Read `origin.source` in place of `origin.package` and `availableSources` in place of `availablePackages`, and strip the `npm:` prefix from a value that names a package, which these fields previously reported as a bare name.",
+            "hash": "d3e8a2f787b4da1d55cc2b5aeb86928c320e5765",
+            "entry": 4
+          },
+          {
+            "description": "Pins the `$id` of each published JSON Schema to the readyup release that publishes it, as `https://unpkg.com/readyup@<version>/schemas/<file>`, so that a schema version stays reachable after a later release replaces it. (#508)",
+            "hash": "d3e8a2f787b4da1d55cc2b5aeb86928c320e5765",
+            "entry": 5
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `CHANGELOG.md` and `.meta/changelog.json` to the `files` field of `overlay` and `readyup`, so that each published npm package includes its release history in readable and machine-readable form. (#504)",
+            "hash": "0d80b26f00ebf40b3f4b10e1009689f36e1dad95",
+            "entry": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.39.0",
     "date": "2026-10-03",
     "sections": [
