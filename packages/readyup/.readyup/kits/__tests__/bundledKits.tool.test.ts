@@ -88,7 +88,7 @@ describe('kits that readyup publishes', () => {
     await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
-    expect(kit).toMatchObject({ origin: { package: 'readyup' } });
+    expect(kit).toMatchObject({ origin: { source: 'npm:readyup' } });
     expect(kit.checklists.map((checklist) => checklist.name)).toStrictEqual(['setup', 'freshness']);
   });
 

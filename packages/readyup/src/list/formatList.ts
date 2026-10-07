@@ -9,7 +9,7 @@ import type { SourceKit } from '../sources/expandConfiguredSources.ts';
 /** Blank line separating one listed section from the next. A section supplies none of its own. */
 const SECTION_SEPARATOR = '\n\n';
 
-/** Detail marking a package that the readyup config does not name. */
+/** Detail marking a package that the readyup config's `sources` list does not name. */
 const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
 
 /**
@@ -68,8 +68,13 @@ interface OwnerViewOptions {
   sourceKits?: string[];
   internalKits: string[];
   compiledKits: KitView[];
-  packageKits?: KitView[];
-  availablePackages?: string[];
+  configuredKits?: ConfiguredKitView[];
+  availableSources?: string[];
+}
+
+/** A kit published by a configured source, headed by the glyph of the kind of source that publishes it. */
+export interface ConfiguredKitView extends KitView {
+  sourceKind: 'package' | 'repository';
 }
 
 /**
@@ -91,15 +96,20 @@ export function formatOwnerView({
   sourceKits = [],
   internalKits,
   compiledKits,
-  packageKits = [],
-  availablePackages = [],
+  configuredKits = [],
+  availableSources = [],
 }: OwnerViewOptions): string {
-  if (sourceKits.length === 0 && internalKits.length === 0 && compiledKits.length === 0 && packageKits.length === 0) {
+  if (
+    sourceKits.length === 0 &&
+    internalKits.length === 0 &&
+    compiledKits.length === 0 &&
+    configuredKits.length === 0
+  ) {
     // The listing for a project with no kits of its own still shows what its dependencies offer, which is the
     // one next step that an empty listing can give.
-    return availablePackages.length === 0
+    return availableSources.length === 0
       ? formatEmpty('owner')
-      : [formatEmpty('owner'), formatAvailableSection(availablePackages)].join(SECTION_SEPARATOR);
+      : [formatEmpty('owner'), formatAvailableSection(availableSources)].join(SECTION_SEPARATOR);
   }
 
   const sections: string[] = [];
@@ -121,14 +131,16 @@ export function formatOwnerView({
     sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
   }
 
-  if (packageKits.length > 0) {
+  if (configuredKits.length > 0) {
     // The rows list every published kit -- discovery is not run selection -- so the bracketed optional name
     // ensures that the command above the rows can run every kit listed.
-    sections.push(formatSection('Packages', buildRunLine('rdy run --packages [<kit>]'), packageKits, 'sourcePackage'));
+    const items = configuredKits.flatMap((kit) => formatKitRows(kit, resolveSourceToken(kit.sourceKind)));
+    const heading = getLayout().formatHeading('Configured sources', 'section');
+    sections.push([heading, buildRunLine('rdy run --sources [<kit>]'), ...items].join('\n'));
   }
 
-  if (availablePackages.length > 0) {
-    sections.push(formatAvailableSection(availablePackages));
+  if (availableSources.length > 0) {
+    sections.push(formatAvailableSection(availableSources));
   }
 
   return sections.join(SECTION_SEPARATOR);
@@ -156,23 +168,23 @@ export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerV
   return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
 }
 
-// -- Packages view --
+// -- Sources view --
 
-interface PackagesViewOptions {
+interface SourcesViewOptions {
   groups: SourceGroup[];
 }
 
 /**
- * Formats the dependency-axis output: one block per kit-publishing package, headed by the package.
+ * Formats the dependency-axis output: one block per kit source, headed by the package or repository.
  *
  * Configured and unconfigured packages interleave in one alphabetical list rather than splitting into
  * sections, so a reader asking what their dependencies publish reads one answer. The hint shown by each
- * block separates them: It names the command that runs that package's kits.
+ * block separates them: It names the command that runs that source's kits.
  *
- * A sweep with no groups returns the empty-packages message.
+ * A sweep with no groups returns the empty-sources message.
  */
-export function formatPackagesView({ groups }: PackagesViewOptions): string {
-  return groups.length === 0 ? formatEmpty('packages') : groups.map(formatPackageBlock).join(SECTION_SEPARATOR);
+export function formatSourcesView({ groups }: SourcesViewOptions): string {
+  return groups.length === 0 ? formatEmpty('sources') : groups.map(formatSourceBlock).join(SECTION_SEPARATOR);
 }
 
 // -- Recursive view --
@@ -205,14 +217,14 @@ export function formatRecursiveView({ projects }: RecursiveViewOptions): string 
 // -- Repo-wide dependency view --
 
 /** One discovered project's contribution to a repo-wide dependency listing. */
-export interface ProjectPackagesView {
+export interface ProjectSourcesView {
   /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
   dir: string;
   groups: SourceGroup[];
 }
 
-interface RecursivePackagesViewOptions {
-  projects: ProjectPackagesView[];
+interface RecursiveSourcesViewOptions {
+  projects: ProjectSourcesView[];
 }
 
 /**
@@ -227,30 +239,30 @@ interface RecursivePackagesViewOptions {
  * a caller may hand over every project found by discovery. A sweep left with no block returns the empty
  * message.
  */
-export function formatRecursivePackagesView({ projects }: RecursivePackagesViewOptions): string {
-  const blocks = projects.filter((project) => project.groups.length > 0).map(formatProjectPackagesBlock);
+export function formatRecursiveSourcesView({ projects }: RecursiveSourcesViewOptions): string {
+  const blocks = projects.filter((project) => project.groups.length > 0).map(formatProjectSourcesBlock);
 
-  return blocks.length === 0 ? formatEmpty('recursive-packages') : blocks.join(SECTION_SEPARATOR);
+  return blocks.length === 0 ? formatEmpty('recursive-sources') : blocks.join(SECTION_SEPARATOR);
 }
 
 // -- Empty messages --
 
 /** Returns the "no kits found" message that suits the given mode. */
 export function formatEmpty(
-  mode: 'owner' | 'consumer' | 'packages' | 'recursive' | 'recursive-packages',
+  mode: 'owner' | 'consumer' | 'recursive' | 'recursive-sources' | 'sources',
   kitsDir?: string,
 ): string {
   if (mode === 'consumer') {
     return `No compiled kits found at ${kitsDir ?? '.readyup/kits'}.`;
   }
-  if (mode === 'packages') {
-    return 'No installed dependency publishes kits.';
+  if (mode === 'sources') {
+    return 'No installed dependency or configured source publishes kits.';
   }
   if (mode === 'recursive') {
     return 'No kit projects found.';
   }
-  if (mode === 'recursive-packages') {
-    return 'No dependency of any project below this directory publishes kits.';
+  if (mode === 'recursive-sources') {
+    return 'No dependency or configured source of any project below this directory publishes kits.';
   }
   return 'No kits found.\nRun `rdy init` to scaffold an internal kit or `rdy compile` to compile a kit from source.';
 }
@@ -302,8 +314,8 @@ function bracketIfDefault(hint: string, kits: readonly string[]): string {
 /**
  * Returns the kit placeholder for a source that selects kits by name alone, bracketed when `kits` contains a default.
  *
- * `--packages` is that source: It rejects a checklist filter, since the kit that it names may be published by
- * several packages.
+ * `--sources` is that source: It rejects a checklist filter, since the kit that it names may be published by
+ * several configured sources.
  */
 function buildKitHint(kits: readonly string[]): string {
   return bracketIfDefault('<kit>', kits);
@@ -316,25 +328,6 @@ function buildKitHint(kits: readonly string[]): string {
  */
 function buildKitSelectionHint(kits: readonly string[]): string {
   return bracketIfDefault('<kit>[:<checklist>,...]', kits);
-}
-
-/**
- * Returns the command that runs a package's kits, which also marks the package as configured.
- *
- * `rdy run --packages` includes only the packages named by the config, and every other package is reachable
- * by the source naming it directly. So one hint covers both what to run and whether a `--packages` run
- * would include it, and every kit listed stays reachable by the command above it.
- */
-function buildPackageHint(group: SourceGroup): string {
-  const kitNames = group.kits.map((kit) => kit.kitName);
-  return group.configured
-    ? `rdy run --packages ${buildKitHint(kitNames)}`
-    : `rdy run --from ${group.source} ${buildKitSelectionHint(kitNames)}`;
-}
-
-/** Returns a package's name with the version that its own manifest records, if it records one. */
-function buildPackageLabel(group: SourceGroup): string {
-  return group.version === undefined ? group.name : `${group.name}@${group.version}`;
 }
 
 /** Returns the command that runs a project's kits from the reader's working directory. */
@@ -368,14 +361,33 @@ function buildRunLine(command: string, depth = 1): string {
 }
 
 /**
+ * Returns the command that runs a source's kits, which also marks the source as configured.
+ *
+ * `rdy run --sources` includes only the sources named by the config, and every other package is reachable
+ * by the `--from` source naming it directly. So one hint covers both what to run and whether a `--sources` run
+ * would include it, and every kit listed stays reachable by the command above it.
+ */
+function buildSourceHint(group: SourceGroup): string {
+  const kitNames = group.kits.map((kit) => kit.kitName);
+  return group.configured
+    ? `rdy run --sources ${buildKitHint(kitNames)}`
+    : `rdy run --from ${group.source} ${buildKitSelectionHint(kitNames)}`;
+}
+
+/** Returns a package's name with the version that its own manifest records, if it records one, or a repository's spelling. */
+function buildSourceLabel(group: SourceGroup): string {
+  return group.version === undefined ? group.name : `${group.name}@${group.version}`;
+}
+
+/**
  * Returns the section naming installed packages that publish kits not listed in the config.
  *
  * It has no `To run:` label, because its line heads the section with what to do about those packages
  * rather than a command to run.
  */
-function formatAvailableSection(availablePackages: string[]): string {
-  const instruction = `${getLayout().indent(1)}Add to "packages" in the readyup config`;
-  const items = availablePackages.map((name) => ({ name }));
+function formatAvailableSection(availableSources: string[]): string {
+  const instruction = `${getLayout().indent(1)}Add to "sources" in the readyup config`;
+  const items = availableSources.map((name) => ({ name }));
   return formatSection('Available', instruction, items, 'sourcePackage');
 }
 
@@ -398,29 +410,17 @@ function formatKitRows(kit: KitView, token: TokenName, depth = 0): string[] {
   return [kitLine, ...checklistLines];
 }
 
-/** Returns one package's line under a project's directory, the command running its kits, and a line per kit. */
-function formatNestedPackageBlock(group: SourceGroup, runPrefix: string): string {
-  const packageLine = getLayout().formatCheckLine({
-    token: 'sourcePackage',
-    name: buildPackageLabel(group),
+/** Returns one source's line under a project's directory, the command running its kits, and a line per kit. */
+function formatNestedSourceBlock(group: SourceGroup, runPrefix: string): string {
+  const sourceLine = getLayout().formatCheckLine({
+    token: resolveSourceToken(group.kind),
+    name: buildSourceLabel(group),
     depth: 1,
     ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
   });
   const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', 2));
 
-  return [packageLine, buildRunLine(`${runPrefix}${buildPackageHint(group)}`, 2), ...items].join('\n');
-}
-
-/** Returns one package's heading, the command running its kits, and a line per kit. */
-function formatPackageBlock(group: SourceGroup): string {
-  const heading = getLayout().formatBreadcrumb(
-    [{ role: 'sourcePackage', text: buildPackageLabel(group) }],
-    'kit',
-    group.configured ? undefined : UNCONFIGURED_DETAIL,
-  );
-  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit'));
-
-  return [heading, buildRunLine(buildPackageHint(group)), ...items].join('\n');
+  return [sourceLine, buildRunLine(`${runPrefix}${buildSourceHint(group)}`, 2), ...items].join('\n');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
@@ -436,13 +436,13 @@ function formatProjectBlock(project: RecursiveProjectView): string {
 /**
  * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
  *
- * The directory line is directly above its first package, so a reader takes the blank lines within the
- * block as separating one package from the next rather than the directory from what it heads.
+ * The directory line is directly above its first source, so a reader takes the blank lines within the
+ * block as separating one source from the next rather than the directory from what it heads.
  */
-function formatProjectPackagesBlock(project: ProjectPackagesView): string {
+function formatProjectSourcesBlock(project: ProjectSourcesView): string {
   const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
   const runPrefix = buildProjectPrefix(project.dir);
-  const blocks = project.groups.map((group) => formatNestedPackageBlock(group, runPrefix));
+  const blocks = project.groups.map((group) => formatNestedSourceBlock(group, runPrefix));
 
   return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
 }
@@ -460,12 +460,31 @@ function formatSection(title: string, hintLine: string, kits: KitView[], token: 
   return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
+/** Returns one source's heading, the command running its kits, and a line per kit. */
+function formatSourceBlock(group: SourceGroup): string {
+  const heading = getLayout().formatBreadcrumb(
+    [{ role: resolveSourceToken(group.kind), text: buildSourceLabel(group) }],
+    'kit',
+    group.configured ? undefined : UNCONFIGURED_DETAIL,
+  );
+  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit'));
+
+  return [heading, buildRunLine(buildSourceHint(group)), ...items].join('\n');
+}
+
 /** Returns what a kit's row is named: its bare name, or the path needed by a `--file` invocation. */
 function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
   return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
 }
 
-/** Returns the row that a package's kit is listed as, named by the kit alone. */
+/**
+ * Returns the glyph token that heads a source of the given kind: a package's, or a remote location's for a repository.
+ */
+function resolveSourceToken(kind: SourceGroup['kind']): 'sourcePackage' | 'sourceRemote' {
+  return kind === 'repository' ? 'sourceRemote' : 'sourcePackage';
+}
+
+/** Returns the row that a source's kit is listed as, named by the kit alone. */
 function toKitView(kit: SourceKit): KitView {
   return { name: kit.kitName, description: kit.description, checklists: kit.checklists };
 }

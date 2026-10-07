@@ -13,7 +13,7 @@
  * split exists: A kit declaring its own threshold cannot be described by the run-level value.
  */
 export const reportPayload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   readyupVersion: '0.21.2',
   passed: false,
   counts: { passed: 2, errors: 1, warnings: 0, recommendations: 0, blocked: 1, optional: 0 },
@@ -27,6 +27,7 @@ export const reportPayload = {
     {
       name: 'deploy',
       compiledWith: '0.19.2',
+      origin: { source: 'github:acme/.github@v2' },
       passed: false,
       counts: { passed: 2, errors: 1, warnings: 0, recommendations: 0, blocked: 1, optional: 0 },
       worstSeverity: 'error',
@@ -77,7 +78,7 @@ export const reportPayload = {
  * The thresholds are among them, since a bare invocation requests neither.
  */
 export const minimalReportPayload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   readyupVersion: '0.21.2',
   passed: true,
   counts: { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0 },
@@ -112,16 +113,19 @@ export const hintedErrorEnvelopePayload = {
 };
 
 export const listPayload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kits: [
     { name: 'deploy', kind: 'compiled', path: 'deploy.js', readyupVersion: '0.21.2', checklists: ['preflight'] },
     { name: 'draft', kind: 'internal' },
+    { name: 'audit', kind: 'compiled', origin: { source: 'npm:@acme/kits', version: '2.1.0', configured: true } },
+    { name: 'callers', kind: 'compiled', origin: { source: 'github:acme/.github@v2', configured: true } },
   ],
+  availableSources: ['npm:plain-kit'],
 };
 
 /** A repo-wide listing in which two projects each have a kit of the same name. */
 export const recursiveListPayload = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kits: [
     { name: 'default', kind: 'compiled', project: '.', path: '.readyup/kits/default.js' },
     {

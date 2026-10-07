@@ -1,8 +1,12 @@
 import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, it as baseIt, vi } from 'vitest';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());
+
+vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
+  resolveGitHubToken: () => undefined,
+}));
 
 // Only the config is mocked; discovery, resolution, and kit expansion all read the temporary tree.
 vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
@@ -13,6 +17,7 @@ vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
 import { RdyError } from '../../errors/RdyError.ts';
 import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
+import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { listCommand } from '../listCommand.ts';
 import { findPackageCommand } from '../test-utils/findPackageCommand.ts';
 
@@ -46,7 +51,7 @@ const it = baseIt.extend(
         'node_modules/plain-kit/package.json': JSON.stringify({ name: 'plain-kit', version: '0.4.0' }),
         'node_modules/plain-kit/.readyup/kits/smoke.js': 'export default {};',
       },
-      { prefix: 'rdy-packages-' },
+      { prefix: 'rdy-sources-' },
     ),
   ),
 );
@@ -58,10 +63,10 @@ it.aroundEach(async (runTest, { temp }) => {
   await runTest();
 });
 
-describe('list --packages', () => {
+describe('list --sources', () => {
   describe('rendering', () => {
     it('heads one block per kit-publishing dependency, alphabetically', async () => {
-      const { exitCode, stdout } = await list(['--packages']);
+      const { exitCode, stdout } = await list(['--sources']);
 
       expect(exitCode).toBe(0);
       expect(headings(stdout)).toStrictEqual([
@@ -74,32 +79,32 @@ describe('list --packages', () => {
     it('reports a configured package declared by no dependency field', async () => {
       configurePackages(['npm:hidden-kit']);
 
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
       expect(headings(stdout)).toContain('hidden-kit@3.0.0');
       expect(stdout).toContain('\u{1F4D3} audit');
     });
 
     it('shows the kits of a package omitted by the config, not only its name', async () => {
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
       expect(stdout).toContain('\u{1F4D3} default \u{00B7} Dependency drift');
       expect(stdout).toContain('\u{1F4D3} drift');
     });
 
     it('nests the checklists recorded by a publisher beneath their kit', async () => {
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
       expect(stdout).toContain('Dependency drift\n   \u{1F4CB} lockfile\n   \u{1F4CB} ranges\n\u{1F4D3} drift');
     });
 
-    // The hint tells the reader whether a `--packages` run would include the package.
+    // The hint tells the reader whether a `--sources` run would include the package.
     it('hints a configured package with the run that includes it and an unconfigured one with its source', async () => {
       configurePackages(['npm:@acme/kits']);
 
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
-      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<kit>]');
+      expect(findPackageCommand(stdout, '@acme/kits@2.1.0')).toBe('   To run: rdy run --sources [<kit>]');
       expect(findPackageCommand(stdout, 'plain-kit@0.4.0')).toBe(
         '   To run: rdy run --from npm:plain-kit <kit>[:<checklist>,...]',
       );
@@ -108,7 +113,7 @@ describe('list --packages', () => {
     it('marks an unconfigured package and leaves a configured one unmarked', async () => {
       configurePackages(['npm:@acme/kits']);
 
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
       expect(headings(stdout)).toStrictEqual([
         '@acme/kits@2.1.0',
@@ -117,7 +122,7 @@ describe('list --packages', () => {
     });
 
     it('omits the project\u{2019}s own kits, which belong to the plain listing', async () => {
-      const { stdout } = await list(['--packages']);
+      const { stdout } = await list(['--sources']);
 
       expect(stdout).not.toContain('Internal');
       expect(stdout).not.toContain('Compiled');
@@ -127,11 +132,53 @@ describe('list --packages', () => {
     it('warns and omits a configured source that cannot be resolved', async () => {
       configurePackages(['npm:absent-package']);
 
-      const { exitCode, stdout, stderr } = await list(['--packages']);
+      const { exitCode, stdout, stderr } = await list(['--sources']);
 
       expect(exitCode).toBe(0);
       expect(stderr).toContain('Configured source "npm:absent-package" was not found');
       expect(stdout).not.toContain('absent-package');
+    });
+  });
+
+  describe('a configured repository', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const MANIFEST_URL = 'https://raw.githubusercontent.com/acme/.github/main/.readyup/manifest.json';
+
+    it('heads its block with its spelling and the run that includes it', async () => {
+      configurePackages(['github:acme/.github']);
+      serveManifest(MANIFEST_URL, [{ name: 'callers', description: 'Callers of the reusable workflow' }]);
+
+      const { stdout } = await list(['--sources']);
+
+      expect(stdout).toContain('\u{2501}\u{2501} \u{1F310} github:acme/.github\n   To run: rdy run --sources <kit>');
+      expect(stdout).toContain('callers \u{00B7} Callers of the reusable workflow');
+    });
+
+    it('emits a row with its source and no path, since the kit is not on this machine', async () => {
+      configurePackages(['github:acme/.github']);
+      serveManifest(MANIFEST_URL, [{ name: 'callers' }]);
+
+      const payload = await runForPayload();
+
+      expect(findKit(payload, 'callers')).toStrictEqual({
+        name: 'callers',
+        kind: 'compiled',
+        origin: { source: 'github:acme/.github', configured: true },
+      });
+    });
+
+    it('warns naming the source when its manifest cannot be fetched, and lists the rest', async () => {
+      configurePackages(['github:acme/.github']);
+      serveManifest('https://example.invalid/', []);
+
+      const { exitCode, stdout, stderr } = await list(['--sources']);
+
+      expect(exitCode).toBe(0);
+      expect(stderr).toContain('Configured source "github:acme/.github"');
+      expect(stdout).toContain('@acme/kits@2.1.0');
     });
   });
 
@@ -143,9 +190,13 @@ describe('list --packages', () => {
 
       expect(payload).toMatchObject({
         kits: [
-          { name: 'default', kind: 'compiled', origin: { package: '@acme/kits', version: '2.1.0', configured: true } },
-          { name: 'drift', kind: 'compiled', origin: { package: '@acme/kits', configured: true } },
-          { name: 'smoke', kind: 'compiled', origin: { package: 'plain-kit', configured: false } },
+          {
+            name: 'default',
+            kind: 'compiled',
+            origin: { source: 'npm:@acme/kits', version: '2.1.0', configured: true },
+          },
+          { name: 'drift', kind: 'compiled', origin: { source: 'npm:@acme/kits', configured: true } },
+          { name: 'smoke', kind: 'compiled', origin: { source: 'npm:plain-kit', configured: false } },
         ],
       });
     });
@@ -168,7 +219,7 @@ describe('list --packages', () => {
     it('emits no candidate list, since nothing is left to name separately', async () => {
       const payload = await runForPayload();
 
-      expect(payload).not.toHaveProperty('availablePackages');
+      expect(payload).not.toHaveProperty('availableSources');
     });
 
     it('validates against the published list schema', async () => {
@@ -186,29 +237,43 @@ describe('list --packages', () => {
       );
       using _cwd = pointCwdAt(emptyTree.dir);
 
-      const { exitCode, stdout } = await list(['--packages']);
+      const { exitCode, stdout } = await list(['--sources']);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('No installed dependency publishes kits.');
+      expect(stdout).toContain('No installed dependency or configured source publishes kits.');
     });
   });
 
   describe('flag conflicts', () => {
-    it('rejects --packages with --from', async () => {
-      const error = await captureError(RdyError, () => listCommand(['--packages', '--from', '.']));
+    it('rejects --sources with --from', async () => {
+      const error = await captureError(RdyError, () => listCommand(['--sources', '--from', '.']));
 
-      expect(error.message).toBe('--packages and --from are mutually exclusive');
+      expect(error.message).toBe('--sources and --from are mutually exclusive');
     });
 
-    it('rejects --packages with --manifest', async () => {
-      const error = await captureError(RdyError, () => listCommand(['--packages', '--manifest', 'x.json']));
+    it('rejects --sources with --manifest', async () => {
+      const error = await captureError(RdyError, () => listCommand(['--sources', '--manifest', 'x.json']));
 
-      expect(error.message).toBe('--packages and --manifest are mutually exclusive');
+      expect(error.message).toBe('--sources and --manifest are mutually exclusive');
     });
   });
 });
 
 // region | Helpers
+
+/** Serves one manifest URL a manifest listing the given kits, and every other URL as absent. */
+function serveManifest(manifestUrl: string, kits: Array<{ name: string; description?: string }>): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url === manifestUrl
+          ? mockResponse(JSON.stringify({ version: 1, kits }))
+          : mockResponse('', { status: 404, statusText: 'Not Found' }),
+      ),
+    ),
+  );
+}
 
 /** Points the mocked config loader at the given source entries, leaving every other setting at its default. */
 function configurePackages(entries: string[]): void {
@@ -244,7 +309,7 @@ async function list(args: string[]) {
 
 /** Runs a packages listing under `--json` and returns the payload that it emitted. */
 async function runForPayload(): Promise<unknown> {
-  const { stdout } = await list(['--packages', '--json']);
+  const { stdout } = await list(['--sources', '--json']);
   return JSON.parse(stdout);
 }
 

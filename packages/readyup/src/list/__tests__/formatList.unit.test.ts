@@ -11,10 +11,10 @@ import {
   formatEmpty,
   formatManifestView,
   formatOwnerView,
-  formatPackagesView,
-  formatRecursivePackagesView,
+  formatRecursiveSourcesView,
   formatRecursiveView,
-  type ProjectPackagesView,
+  formatSourcesView,
+  type ProjectSourcesView,
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from '../formatList.ts';
@@ -24,6 +24,7 @@ const COMPILED = richFormatter.tokens.kit.text;
 const INTERNAL = richFormatter.tokens.kitSource.text;
 const DIRECTORY = richFormatter.tokens.sourceDirectory.text;
 const PACKAGE = richFormatter.tokens.sourcePackage.text;
+const REMOTE = richFormatter.tokens.sourceRemote.text;
 const CHECKLIST = richFormatter.tokens.checklist.text;
 
 describe(formatOwnerView, () => {
@@ -168,14 +169,17 @@ describe(formatOwnerView, () => {
   });
 
   // Discovery is not run selection, so the rows list every published kit and the optional name can select each.
-  it('heads the Packages section with the optional-name form of the run command', () => {
+  it('heads the Configured sources section with the optional-name form of the run command', () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      packageKits: [{ name: 'default' }, { name: 'npm-auto-publish' }],
+      configuredKits: [
+        { name: 'default', sourceKind: 'package' },
+        { name: 'npm-auto-publish', sourceKind: 'package' },
+      ],
     });
 
-    expect(findSectionCommand(result, 'Packages')).toBe('   To run: rdy run --packages [<kit>]');
+    expect(findSectionCommand(result, 'Configured sources')).toBe('   To run: rdy run --sources [<kit>]');
     expect(result).toContain('default');
     expect(result).toContain('npm-auto-publish');
   });
@@ -185,10 +189,10 @@ describe(formatOwnerView, () => {
     const result = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      availablePackages: ['@acme/release-kit'],
+      availableSources: ['npm:@acme/release-kit'],
     });
 
-    expect(findSectionCommand(result, 'Available')).toBe('   Add to "packages" in the readyup config');
+    expect(findSectionCommand(result, 'Available')).toBe('   Add to "sources" in the readyup config');
   });
 
   it('nests each compiled kit\u{2019}s checklists beneath it, in the order given', () => {
@@ -209,7 +213,7 @@ describe(formatOwnerView, () => {
     const lines = formatOwnerView({
       internalKits: [],
       compiledKits: [],
-      packageKits: [{ name: 'readyup@0.36.0 / default', checklists: ['setup', 'freshness'] }],
+      configuredKits: [{ name: 'readyup@0.36.0 / default', checklists: ['setup', 'freshness'], sourceKind: 'package' }],
     }).split('\n');
 
     expect(lines.slice(2)).toStrictEqual([
@@ -217,6 +221,16 @@ describe(formatOwnerView, () => {
       `   ${CHECKLIST} setup`,
       `   ${CHECKLIST} freshness`,
     ]);
+  });
+
+  it('heads a repository kit with the remote glyph', () => {
+    const lines = formatOwnerView({
+      internalKits: [],
+      compiledKits: [],
+      configuredKits: [{ name: 'github:acme/.github / callers', sourceKind: 'repository' }],
+    }).split('\n');
+
+    expect(lines.slice(2)).toStrictEqual([`${REMOTE} github:acme/.github / callers`]);
   });
 
   it('returns empty-owner message when both lists are empty', () => {
@@ -463,9 +477,9 @@ describe(formatManifestView, () => {
   });
 });
 
-describe(formatPackagesView, () => {
+describe(formatSourcesView, () => {
   it('heads each package with its name and version', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [buildGroup({ packageName: '@acme/kits', version: '2.1.0', kits: ['drift'] })],
     });
 
@@ -474,7 +488,7 @@ describe(formatPackagesView, () => {
 
   // Built inline rather than through the helper, whose default would fill the version back in.
   it('heads a package that declares no version with its name alone', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [
         {
           kind: 'package',
@@ -491,14 +505,14 @@ describe(formatPackagesView, () => {
   });
 
   it('hints a configured package with the run that includes it', () => {
-    const result = formatPackagesView({ groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] });
+    const result = formatSourcesView({ groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] });
 
-    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages <kit>');
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --sources <kit>');
   });
 
-  // The hint tells the reader that a `--packages` run would skip this package.
+  // The hint tells the reader that a `--sources` run would skip this package.
   it('hints an unconfigured package with the source that names it directly', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
     });
 
@@ -508,15 +522,15 @@ describe(formatPackagesView, () => {
   });
 
   it('brackets the positional name when the package publishes a default kit', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [buildGroup({ packageName: '@acme/kits', kits: ['default', 'drift'] })],
     });
 
-    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --packages [<kit>]');
+    expect(findPackageCommand(result, '@acme/kits@2.1.0')).toBe('   To run: rdy run --sources [<kit>]');
   });
 
   it('marks an unconfigured package and leaves a configured one unmarked', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [
         buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] }),
         buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
@@ -528,7 +542,7 @@ describe(formatPackagesView, () => {
   });
 
   it('renders a description as inline detail, and a kit without one as the bare name', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [
         {
           kind: 'package',
@@ -547,7 +561,7 @@ describe(formatPackagesView, () => {
   });
 
   it('nests a kit\u{2019}s checklists beneath it', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [
         {
           kind: 'package',
@@ -566,7 +580,7 @@ describe(formatPackagesView, () => {
   });
 
   it('separates one package block from the next with a blank line', () => {
-    const result = formatPackagesView({
+    const result = formatSourcesView({
       groups: [
         buildGroup({ packageName: '@acme/kits', kits: ['drift'] }),
         buildGroup({ packageName: 'plain-kit', kits: ['smoke'] }),
@@ -576,8 +590,8 @@ describe(formatPackagesView, () => {
     expect(result).toContain(`${COMPILED} drift\n\n\u{2501}\u{2501} ${PACKAGE} plain-kit@2.1.0`);
   });
 
-  it('reports the empty-packages message when nothing publishes kits', () => {
-    expect(formatPackagesView({ groups: [] })).toBe('No installed dependency publishes kits.');
+  it('reports the empty-sources message when nothing publishes kits', () => {
+    expect(formatSourcesView({ groups: [] })).toBe('No installed dependency or configured source publishes kits.');
   });
 });
 
@@ -719,16 +733,16 @@ describe(formatRecursiveView, () => {
   });
 });
 
-describe(formatRecursivePackagesView, () => {
+describe(formatRecursiveSourcesView, () => {
   afterEach(() => {
     setStyle('rich');
   });
 
   it('heads each project with its directory and nests a line per publishing dependency', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
-        buildProjectPackages({
+        buildProjectSources({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
+        buildProjectSources({
           dir: 'packages/tooling',
           groups: [buildGroup({ packageName: 'plain-kit', kits: ['smoke'] })],
         }),
@@ -738,21 +752,21 @@ describe(formatRecursivePackagesView, () => {
     expect(result.split('\n')).toStrictEqual([
       `${DIRECTORY} ./`,
       `   ${PACKAGE} @acme/kits@2.1.0`,
-      '      To run: rdy run --packages <kit>',
+      '      To run: rdy run --sources <kit>',
       `      ${COMPILED} drift`,
       '',
       `${DIRECTORY} packages/tooling/`,
       `   ${PACKAGE} plain-kit@2.1.0`,
-      '      To run: cd packages/tooling && rdy run --packages <kit>',
+      '      To run: cd packages/tooling && rdy run --sources <kit>',
       `      ${COMPILED} smoke`,
     ]);
   });
 
   // The command has to run the kits beneath it from wherever the sweep was run.
   it('runs the kits of a workspace dependency by changing into the workspace that declares it', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: 'packages/tooling',
           groups: [buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] })],
         }),
@@ -763,9 +777,9 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('marks a package omitted by the project config', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: '.',
           groups: [
             buildGroup({ packageName: '@acme/kits', configured: false, kits: ['drift'] }),
@@ -780,9 +794,9 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('renders a kit description as inline detail', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: '.',
           groups: [
             {
@@ -802,9 +816,9 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('nests a kit\u{2019}s checklists one level beneath the kit', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: '.',
           groups: [
             {
@@ -824,9 +838,9 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('separates one package from the next with a blank line, and keeps the directory against its first', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: '.',
           groups: [
             buildGroup({ packageName: '@acme/kits', kits: ['drift'] }),
@@ -841,10 +855,10 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('omits a project whose sweep found no publishing dependency, its directory included', () => {
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
-        buildProjectPackages({ dir: 'packages/plain', groups: [] }),
+        buildProjectSources({ dir: '.', groups: [buildGroup({ packageName: '@acme/kits', kits: ['drift'] })] }),
+        buildProjectSources({ dir: 'packages/plain', groups: [] }),
       ],
     });
 
@@ -852,18 +866,18 @@ describe(formatRecursivePackagesView, () => {
   });
 
   it('returns the empty message for a sweep that found no publishing dependency anywhere', () => {
-    const result = formatRecursivePackagesView({ projects: [buildProjectPackages({ dir: '.', groups: [] })] });
+    const result = formatRecursiveSourcesView({ projects: [buildProjectSources({ dir: '.', groups: [] })] });
 
-    expect(result).toBe('No dependency of any project below this directory publishes kits.');
+    expect(result).toBe('No dependency or configured source of any project below this directory publishes kits.');
   });
 
   // Plain style gives the role tokens no glyph, so the indent is all that separates the three levels.
   it('separates directory, package, and kit by indentation alone in plain style', () => {
     setStyle('plain');
 
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: 'packages/tooling',
           groups: [buildGroup({ packageName: 'plain-kit', kits: ['smoke'] })],
         }),
@@ -873,7 +887,7 @@ describe(formatRecursivePackagesView, () => {
     expect(result.split('\n')).toStrictEqual([
       '      packages/tooling/',
       '            plain-kit@2.1.0',
-      '            To run: cd packages/tooling && rdy run --packages <kit>',
+      '            To run: cd packages/tooling && rdy run --sources <kit>',
       '                  smoke',
     ]);
   });
@@ -881,9 +895,9 @@ describe(formatRecursivePackagesView, () => {
   it('indents a checklist one level beneath its kit in plain style', () => {
     setStyle('plain');
 
-    const result = formatRecursivePackagesView({
+    const result = formatRecursiveSourcesView({
       projects: [
-        buildProjectPackages({
+        buildProjectSources({
           dir: '.',
           groups: [
             {
@@ -942,7 +956,9 @@ describe(formatEmpty, () => {
   });
 
   it('returns the empty-sweep message for repo-wide dependency mode', () => {
-    expect(formatEmpty('recursive-packages')).toBe('No dependency of any project below this directory publishes kits.');
+    expect(formatEmpty('recursive-sources')).toBe(
+      'No dependency or configured source of any project below this directory publishes kits.',
+    );
   });
 
   it('returns consumer message with the provided kitsDir', () => {
@@ -1015,7 +1031,7 @@ function buildProject({ dir, kits }: { dir: string; kits: string[] }): Recursive
 }
 
 /** Builds one project's contribution to a repo-wide dependency listing. */
-function buildProjectPackages({ dir, groups }: { dir: string; groups: SourceGroup[] }): ProjectPackagesView {
+function buildProjectSources({ dir, groups }: { dir: string; groups: SourceGroup[] }): ProjectSourcesView {
   return { dir, groups };
 }
 

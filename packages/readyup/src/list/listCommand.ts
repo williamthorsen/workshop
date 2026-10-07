@@ -25,7 +25,7 @@ import { createRemoteFetchContext, type RemoteFetchContext } from '../remote/cre
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 import { collectSourceGroups } from '../sources/collectSourceGroups.ts';
 import { expandConfiguredSource, type SourceKit } from '../sources/expandConfiguredSources.ts';
-import { type ConfiguredSource, listConfiguredPackageNames } from '../sources/parseConfiguredSource.ts';
+import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { collectCompiledKits } from './collectCompiledKits.ts';
 import { collectSourceKits } from './collectSourceKits.ts';
@@ -34,10 +34,10 @@ import {
   formatConsumerView,
   formatManifestView,
   formatOwnerView,
-  formatPackagesView,
-  formatRecursivePackagesView,
+  formatRecursiveSourcesView,
   formatRecursiveView,
-  type ProjectPackagesView,
+  formatSourcesView,
+  type ProjectSourcesView,
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from './formatList.ts';
@@ -48,8 +48,8 @@ const listOptions = {
   json: { type: 'boolean' },
   manifest: { type: 'string' },
   'no-cache': { type: 'boolean' },
-  packages: { type: 'boolean' },
   recursive: { type: 'boolean' },
+  sources: { type: 'boolean' },
   // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
   style: { type: 'string' },
 } as const;
@@ -78,15 +78,15 @@ export async function listCommand(args: string[]): Promise<number> {
   const fromArg = values.from;
   const json = values.json === true;
   const manifestArg = values.manifest;
-  const packages = values.packages === true;
+  const sources = values.sources === true;
   const recursive = values.recursive === true;
 
-  rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive });
+  rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, sources });
   const noCache = values['no-cache'] === true;
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
-  if (packages && recursive) {
-    return runRecursivePackagesMode(json, createRemoteFetchContext({ reload: noCache }));
+  if (sources && recursive) {
+    return runRecursiveSourcesMode(json, createRemoteFetchContext({ reload: noCache }));
   }
 
   if (recursive) {
@@ -101,8 +101,8 @@ export async function listCommand(args: string[]): Promise<number> {
     return runFromMode(fromArg, json, noCache);
   }
 
-  if (packages) {
-    return runPackagesMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
+  if (sources) {
+    return runSourcesMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
   }
 
   return runOwnerMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
@@ -113,7 +113,7 @@ interface ListFlagConstraints {
   configArg: string | undefined;
   fromArg: string | undefined;
   manifestArg: string | undefined;
-  packages: boolean;
+  sources: boolean;
   recursive: boolean;
 }
 
@@ -121,7 +121,7 @@ interface ListFlagConstraints {
  * Rejects a combination of flags naming listings that cannot be produced together, or naming a config that the
  * listing would not read.
  */
-function rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, recursive }: ListFlagConstraints): void {
+function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, sources }: ListFlagConstraints): void {
   if (fromArg !== undefined && manifestArg !== undefined) {
     throw usageError('--from and --manifest are mutually exclusive');
   }
@@ -135,13 +135,13 @@ function rejectConflictingFlags({ configArg, fromArg, manifestArg, packages, rec
     throw usageError('--recursive and --manifest are mutually exclusive');
   }
 
-  // `--packages` reports this directory's dependencies, which no foreign source has.
-  if (packages && fromArg !== undefined) {
-    throw usageError('--packages and --from are mutually exclusive');
+  // `--sources` reports this directory's dependencies and configured sources, which no foreign source has.
+  if (sources && fromArg !== undefined) {
+    throw usageError('--sources and --from are mutually exclusive');
   }
 
-  if (packages && manifestArg !== undefined) {
-    throw usageError('--packages and --manifest are mutually exclusive');
+  if (sources && manifestArg !== undefined) {
+    throw usageError('--sources and --manifest are mutually exclusive');
   }
 
   // A sweep reads each project's own config and a foreign source reads none, so neither has a use for `--config`.
@@ -231,11 +231,11 @@ async function runOwnerMode(
     throw configError(describeError(error), { cause: error });
   }
 
-  const configuredPackages = listConfiguredPackageNames(config.sources);
-  const sourceKitRows = await collectConfiguredSourceKits(config.sources, remote);
-  const availablePackages = discoverKitPackages(cwd).filter(
-    (name) => !configuredPackages.includes(name) && !config.omittedSources.includes(`npm:${name}`),
-  );
+  const configuredKits = await collectConfiguredSourceKits(config.sources, remote);
+  const configuredSpellings = new Set(config.sources.map((configured) => configured.spelling));
+  const availableSources = discoverKitPackages(cwd)
+    .map((name) => `npm:${name}`)
+    .filter((spelling) => !configuredSpellings.has(spelling) && !config.omittedSources.includes(spelling));
 
   const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
   writeHuman(
@@ -243,8 +243,12 @@ async function runOwnerMode(
       sourceKits,
       internalKits,
       compiledKits,
-      packageKits: sourceKitRows.map((kit) => ({ name: describeSourceKit(kit), checklists: kit.checklists })),
-      availablePackages,
+      configuredKits: configuredKits.map((kit) => ({
+        name: describeSourceKit(kit),
+        checklists: kit.checklists,
+        sourceKind: kit.provenance.kind === 'repository' ? 'repository' : 'package',
+      })),
+      availableSources,
     }) + '\n',
     json,
   );
@@ -253,19 +257,20 @@ async function runOwnerMode(
     ...sourceKits.map((name) => buildSourceEntry(name, srcDir, '.ts', false)),
     ...internalKits.map((name) => buildSourceEntry(name, internalDir, internalExtension, true)),
     ...compiledEntries,
-    ...sourceKitRows.map((kit) => buildSourceKitEntry(kit, true)),
+    ...configuredKits.map((kit) => buildSourceKitEntry(kit, true)),
   ];
-  return finishList(entries, json, availablePackages);
+  return finishList(entries, json, availableSources);
 }
 
 /**
- * Enumerates every kit-publishing dependency of the working directory, with the kits that each publishes.
+ * Enumerates every kit source available to the working directory, with the kits that each publishes.
  *
  * The dependency axis alone: A project's own kits belong to the owner listing, and this view reports what
- * the project's dependencies offer rather than what it contains. Both the packages named by the config and the
- * ones that it omits are reported, since the question is what is available rather than what a run would select.
+ * the project's sources offer rather than what it contains. Both the packages named by the config and the
+ * ones that it omits are reported, since the question is what is available rather than what a run would select,
+ * and so is every repository that the config names.
  */
-async function runPackagesMode(
+async function runSourcesMode(
   json: boolean,
   configPath: string | undefined,
   remote: RemoteFetchContext,
@@ -273,7 +278,7 @@ async function runPackagesMode(
   const config = await loadListingConfig(configPath);
   const groups = await collectSourceGroups({ configuredSources: config.sources, fromDir: process.cwd(), remote });
 
-  writeHuman(formatPackagesView({ groups }) + '\n', json);
+  writeHuman(formatSourcesView({ groups }) + '\n', json);
 
   return finishList(
     groups.flatMap((group) => group.kits.map((kit) => buildSourceKitEntry(kit, group.configured))),
@@ -282,20 +287,21 @@ async function runPackagesMode(
 }
 
 /**
- * Enumerates the kit-publishing dependencies of every project below the working directory.
+ * Enumerates the kit sources of every project below the working directory.
  *
- * Both axes at once: The locality named by `--recursive` and the provenance named by `--packages`. The sweep
+ * Both axes at once: The locality named by `--recursive` and the provenance named by `--sources`. The sweep
  * is every project rather than every kit project, because a workspace authoring no kits of its own still
  * declares dependencies that publish them, and that workspace is the one that the question is about.
  *
- * Each project's dependencies are read under its own config, so a package that one workspace configures and
- * another does not is reported as configured only for the workspace that configures it.
+ * Each project's sources are read under its own config, so a source that one workspace configures and
+ * another does not is reported as configured only for the workspace that configures it. A repository that several
+ * projects name, and that cannot be fetched, is warned of once per project naming it.
  */
-async function runRecursivePackagesMode(json: boolean, remote: RemoteFetchContext): Promise<number> {
+async function runRecursiveSourcesMode(json: boolean, remote: RemoteFetchContext): Promise<number> {
   const projects = await discoverProjects({ root: process.cwd() });
   warnOfDefaultedConfigs(projects);
 
-  const views: ProjectPackagesView[] = [];
+  const views: ProjectSourcesView[] = [];
   const entries: JsonListKitEntry[] = [];
 
   for (const project of projects) {
@@ -311,7 +317,7 @@ async function runRecursivePackagesMode(json: boolean, remote: RemoteFetchContex
     );
   }
 
-  writeHuman(formatRecursivePackagesView({ projects: views }) + '\n', json);
+  writeHuman(formatRecursiveSourcesView({ projects: views }) + '\n', json);
 
   return finishList(entries, json);
 }
@@ -396,7 +402,7 @@ async function collectConfiguredSourceKits(
 /**
  * Labels a source kit, its source first, to match the heading that a run gives it.
  *
- * The row's own token supplies the package glyph; the label contains only what follows it.
+ * The row's own token supplies the package or repository glyph; the label contains only what follows it.
  */
 function describeSourceKit(kit: SourceKit): string {
   const version = kit.version === undefined ? '' : `@${kit.version}`;
@@ -417,7 +423,7 @@ function buildSourceKitEntry(kit: SourceKit, configured: boolean, project?: stri
     kind: 'compiled',
     ...(project !== undefined && { project }),
     origin: {
-      package: kit.provenance.kind === 'package' ? kit.provenance.packageName : kit.source,
+      source: kit.source,
       ...(kit.version !== undefined && { version: kit.version }),
       configured,
     },
@@ -466,12 +472,12 @@ function warnOfUnreadableManifest(error: unknown): void {
 }
 
 /** Emits the list payload under `--json`, succeeding whenever the listing's source could be read. */
-function finishList(kits: JsonListKitEntry[], json: boolean, availablePackages: string[] = []): number {
+function finishList(kits: JsonListKitEntry[], json: boolean, availableSources: string[] = []): number {
   if (json) {
     const output: JsonListOutput = {
       schemaVersion: SCHEMA_VERSION,
       kits,
-      ...(availablePackages.length > 0 && { availablePackages }),
+      ...(availableSources.length > 0 && { availableSources }),
     };
     process.stdout.write(JSON.stringify(output) + '\n');
   }

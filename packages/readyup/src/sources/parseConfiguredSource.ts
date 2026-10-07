@@ -42,8 +42,3 @@ export function parseConfiguredSource(entry: string): ConfiguredSource {
       throw configError(`Source "${entry}" is not supported; a source is "npm:", "github:", or "bitbucket:".`);
   }
 }
-
-/** Returns the package names of the configured `npm:` sources, in configured order. */
-export function listConfiguredPackageNames(sources: readonly ConfiguredSource[]): string[] {
-  return sources.flatMap(({ source }) => (source.type === 'npm' ? [source.name] : []));
-}

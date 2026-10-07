@@ -7,7 +7,7 @@ import { CountsSchema, ErrorBodySchema, SeveritySchema, WarningSchema } from './
  *
  * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** How much of the detail tree a report includes. */
 export const DetailSchema = z.enum(['summary', 'full']).meta({ id: 'Detail' });

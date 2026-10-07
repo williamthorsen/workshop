@@ -5,29 +5,30 @@ import { z } from 'zod';
  *
  * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** Whether a listed kit is TypeScript source awaiting compilation or a compiled bundle. */
 export const KitKindSchema = z.enum(['compiled', 'internal']).meta({ id: 'KitKind' });
 
 /**
- * The installed package by which a listed kit was published.
+ * The kit source, an installed package or a repository, by which a listed kit was published.
  *
- * Present only for a kit reached through a package source. Such a kit keeps `kind: 'compiled'`, because
- * that is what it is -- a compiled bundle -- and only its provenance is new. Recording provenance here
- * rather than as a third `kind` also keeps the payload additive: Widening a closed set would bump
- * `schemaVersion`, while an optional field leaves a `v1` validator accepting these rows.
+ * Present only for a kit reached through a kit source. Such a kit keeps `kind: 'compiled'`, because that is
+ * what it is -- a compiled bundle -- and only its provenance is new. Recording provenance here rather than as
+ * a third `kind` also keeps a closed set from widening.
  *
- * `configured` reports whether the readyup config names the package, which decides whether
- * `rdy run --packages` would reach the kit. Under a repo-wide sweep the config is the one belonging to
- * the row's own `project`, so the same package reports differently across workspaces. It is absent only
- * from a payload written before the field existed, never as a way of saying `false`.
+ * `source` is the kit source as the config writes it, `npm:<name>` for a package that the config omits. `version`
+ * is present only for a package that declares one.
+ *
+ * `configured` reports whether the readyup config's `sources` list names the source, which decides whether
+ * `rdy run --sources` would reach the kit. Under a repo-wide sweep the config is the one belonging to
+ * the row's own `project`, so the same package reports differently across workspaces.
  */
 export const ListKitOriginSchema = z
   .object({
-    package: z.string(),
+    source: z.string(),
     version: z.string().optional(),
-    configured: z.boolean().optional(),
+    configured: z.boolean(),
   })
   .meta({ id: 'ListKitOrigin' });
 
@@ -46,7 +47,7 @@ export const ListKitEntrySchema = z
      * The project in which a kit was authored, relative to the sweep root, present only for a repo-wide listing.
      *
      * Orthogonal to `origin` rather than an alternative to it: One names where a kit lives in this tree,
-     * the other which installed package published it, and a kit can have both.
+     * the other which kit source published it, and a kit can have both.
      */
     project: z.string().optional(),
     origin: ListKitOriginSchema.optional(),
@@ -71,7 +72,7 @@ export const ListKitEntrySchema = z
 /**
  * Top-level shape of `rdy list --json`.
  *
- * Rows are keyed by `name`, `kind`, `project`, and `origin.package` together, never by any subset. Under the
+ * Rows are keyed by `name`, `kind`, `project`, and `origin.source` together, never by any subset. Under the
  * default configuration `internal.dir` and `compile.outDir` both resolve to `.readyup/kits`, so a
  * compiled source appears twice: once as `internal`, which `rdy run --jit <kit>` runs, and once as
  * `compiled`, which `rdy run <kit>` runs. Because a package's kit is `compiled` as well, `name` and `kind`
@@ -81,7 +82,7 @@ export const ListKitEntrySchema = z
  * meaningful, and a consumer indexing on less than the full key silently drops one of them.
  *
  * Every row is a kit that some invocation would execute, which is the invariant on which a consumer
- * iterating `kits` relies. A kit published by an unconfigured package satisfies it: `rdy run --packages`
+ * iterating `kits` relies. A kit published by an unconfigured package satisfies it: `rdy run --sources`
  * will not reach it, but `rdy run --from npm:<package>` will, and `origin.configured` tells the two
  * apart.
  *
@@ -92,16 +93,16 @@ export const ListKitEntrySchema = z
  * consumer that executes every row executes that file twice; one that wants files rather than invocations
  * groups on `path`.
  *
- * `availablePackages` names installed dependencies that publish kits but that the config names in neither
- * `packages` nor `omittedPackages`, so they are candidates to add rather than kits. It accompanies the owner
- * listing, which names them without their kits; every `--packages` listing reports those kits as rows and emits
- * no candidate list.
+ * `availableSources` names installed dependencies that publish kits but that the config names in neither `sources`
+ * nor `omittedSources`, each as the `npm:<name>` entry that would add it, so they are candidates to add rather than
+ * kits. It accompanies the owner listing, which names them without their kits; every `--sources` listing reports
+ * those kits as rows and emits no candidate list.
  */
 export const ListOutputSchema = z
   .object({
     schemaVersion: z.int().min(1),
     kits: z.array(ListKitEntrySchema),
-    availablePackages: z.array(z.string()).optional(),
+    availableSources: z.array(z.string()).optional(),
   })
   .meta({ id: 'ListOutput' });
 

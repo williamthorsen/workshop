@@ -164,11 +164,11 @@ describe('list --recursive', () => {
   });
 
   describe('JSON payload', () => {
-    it('names the project from which each kit came, and validates at schema version 1', async () => {
+    it('names the project from which each kit came, and validates at schema version 2', async () => {
       const payload = await runForPayload();
       const parsed = ListOutputSchema.parse(payload);
 
-      expect(parsed.schemaVersion).toBe(1);
+      expect(parsed.schemaVersion).toBe(2);
       expect(parsed.kits).toContainEqual({
         name: 'demo',
         kind: 'compiled',
@@ -201,7 +201,7 @@ describe('list --recursive', () => {
       const parsed = ListOutputSchema.parse(await runForPayload());
 
       expect(parsed.kits.every((kit) => kit.kind === 'compiled')).toBe(true);
-      expect(parsed.availablePackages).toBeUndefined();
+      expect(parsed.availableSources).toBeUndefined();
     });
 
     it('distinguishes two projects that each contain a kit of the same name', async () => {
@@ -219,7 +219,7 @@ describe('list --recursive', () => {
       const { stdout } = await list(['--recursive', '--json']);
       const payload = JSON.parse(stdout);
 
-      expect(payload).toStrictEqual({ schemaVersion: 1, kits: [] });
+      expect(payload).toStrictEqual({ schemaVersion: 2, kits: [] });
     });
 
     it('prints the empty-sweep message for a tree whose projects have nothing compiled', async ({ temp }) => {
