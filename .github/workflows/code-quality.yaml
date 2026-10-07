@@ -25,9 +25,9 @@ jobs:
   code-quality:
     uses: williamthorsen/.github/.github/workflows/code-quality-pnpm-workflow.yaml@v8
     # The legs together run every step of `nmr ci`. A leg invokes neither `ci` nor `check:strict`,
-    # so it names their hooks (`ci:pre`, `ci:post`, `check:content`) itself. `ci:pre` shares the
-    # build leg because it must verify the kit bundles before `build:post` recompiles them on the
-    # same runner. Lint runs alone as the longest check.
+    # so it runs their hooks itself: `ci:pre`, `ci:post`, and `check:content` for
+    # `check:strict:post`. `ci:pre` shares the build leg because it must verify the kit bundles
+    # before `build:post` recompiles them on the same runner. Lint runs alone as the longest check.
     with:
       check-commands: >-
         [
