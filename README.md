@@ -1,3 +1,5 @@
+<!-- readme-type: monorepo-root -->
+
 # Workshop
 
 Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
@@ -8,6 +10,7 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 | ----------------------------- | ------------------------------------------------------------------------- |
 | [`overlay`](packages/overlay) | Idempotent overlay of a canonical scaffolding file set, backed by chezmoi |
 | [`readyup`](packages/readyup) | Pre-deployment verification checks with TypeScript kits                   |
+| [`repos`](packages/repos)     | Act on the repositories indexed by a machine-local repo registry          |
 
 ## Development
 
