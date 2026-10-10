@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry, scaffolded and awaiting its commands; `git-tools`, a CLI of git utilities, likewise scaffolded and awaiting its commands; `secret-tools`, a CLI for secrets in the OS credential store, likewise scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; `atlassian-tools`, a CLI for Jira Cloud, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI of git utilities, scaffolded and awaiting its commands; `secret-tools`, a CLI for secrets in the OS credential store, likewise scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; `atlassian-tools`, a CLI for Jira Cloud, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -14,7 +14,7 @@ Packages live under `packages/`:
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories. Scaffolded only: The binary prints its help, and #519 ports the commands. Binary: `thor-node`.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
 - **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its reference documentation lives in `docs/`, because npm truncates a registry README at 65,536 code points; `rdy help <topic>` prints those files and `src/__tests__/doc-links.app.unit.test.ts` keeps them linked. Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it.
-- **`repo-tools`**: CLI that acts on the repositories indexed by a machine-local repo registry. Scaffolded only: The binary prints its help, and #511 ports the commands. Binary: `thor-repo`.
+- **`repo-tools`**: CLI that lists, scans, and registers the repositories indexed by a machine-local repo registry. Binary: `thor-repo`.
 - **`secret-tools`**: CLI that manages secrets in the OS credential store. Scaffolded only: The binary prints its help, and #518 ports the commands. Binary: `thor-secret`.
 
 Key files:
