@@ -182,6 +182,21 @@ const config = defineConfig([
     },
   },
   {
+    // secrets-tools's source is grouped by role on the same terms; no module belongs at its root yet.
+    files: ['packages/secrets-tools/src/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. No module belongs at the root of secrets-tools/src.',
+        },
+      ],
+    },
+  },
+  {
     // compositor's root follows on the same terms; its exceptions are the entry point and the version accessor.
     files: ['packages/compositor/src/*.ts'],
     ignores: ['packages/compositor/src/getEngineVersion.ts', 'packages/compositor/src/index.ts'],
