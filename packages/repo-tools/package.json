@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@williamthorsen/toolbelt.cli": "catalog:",
+    "@williamthorsen/toolbelt.errors": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {
