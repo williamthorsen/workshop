@@ -11,6 +11,8 @@ catalog:
   '@williamthorsen/toolbelt.errors': 0.8.3
   '@williamthorsen/toolbelt.filesystem': 0.9.3
   '@williamthorsen/toolbelt.git': 0.5.2
+  '@williamthorsen/toolbelt.nodejs': 3.4.1
+  '@williamthorsen/toolbelt.numbers': 7.2.3
   '@williamthorsen/toolbelt.packaging': 0.6.3
   '@williamthorsen/toolbelt.secrets': 0.4.2
   '@williamthorsen/toolbelt.strings': 8.0.3
