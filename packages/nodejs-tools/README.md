@@ -42,7 +42,8 @@ A directory is kept when the protect-list matches it or when its project was act
 Each check exits 1 when it finds something to fix and 3 when it does not apply, so a script can act on the status:
 
 ```bash
-if ! thor-node asdf-shims >/dev/null; then
+thor-node asdf-shims >/dev/null
+if [ $? -eq 1 ]; then
   echo 'Stranded shims: run `thor-node asdf-shims` for the remedies.' >&2
 fi
 ```
