@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@williamthorsen/toolbelt.cli": "catalog:",
+    "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.nodejs": "catalog:",
     "@williamthorsen/toolbelt.numbers": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:"
