@@ -8,6 +8,7 @@ const config = defineConfig({
     extends: ['common'],
     labels: {
       'scope:root': { color: '00ff96', description: '' },
+      'scope:atlassian-tools': { color: '00ff96', description: '' },
       'scope:compositor': { color: '00ff96', description: '' },
       'scope:git-tools': { color: '00ff96', description: '' },
       'scope:nodejs-tools': { color: '00ff96', description: '' },
