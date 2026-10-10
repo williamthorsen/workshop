@@ -164,6 +164,9 @@ settings:
 
 catalogs:
   default:
+    '@williamthorsen/toolbelt.cli':
+      specifier: 0.4.0
+      version: 0.4.0
     '@williamthorsen/toolbelt.errors':
       specifier: 0.8.3
       version: 0.8.3
@@ -185,6 +188,9 @@ catalogs:
     esbuild:
       specifier: 0.28.2
       version: 0.28.2
+    yaml:
+      specifier: 2.9.1
+      version: 2.9.1
     zod:
       specifier: 4.6.5
       version: 4.6.5
@@ -278,7 +284,7 @@ importers:
         specifier: 'catalog:'
         version: 0.6.3
       yaml:
-        specifier: 2.9.1
+        specifier: 'catalog:'
         version: 2.9.1
       zod:
         specifier: 'catalog:'
@@ -372,6 +378,13 @@ importers:
         version: 0.28.2
 
   packages/repo-tools:
+    dependencies:
+      '@williamthorsen/toolbelt.cli':
+        specifier: 'catalog:'
+        version: 0.4.0
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.1
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -1279,6 +1292,10 @@ packages:
 
   '@williamthorsen/toolbelt.arrays@6.3.3':
     resolution: {integrity: sha512-3sAB5SRUqAxIAYsk8p1tnIL3EkyMyUtcOyyz0nz3Dn3IPgVjAo9vZf4ON/VbWjobtVEfosydZNeg7bwnEVIJzQ==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.cli@0.4.0':
+    resolution: {integrity: sha512-p6iAuRXBDcqLzdWSQblz0L+/lKYDzl00FhvJ4Tm0aerb827O3TWxetVUkQnAbMmrh45wjgg7D91QQ6kxUebihA==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.errors@0.8.1':
@@ -3525,6 +3542,8 @@ snapshots:
     dependencies:
       '@williamthorsen/toolbelt.guards': 4.1.3
       '@williamthorsen/toolbelt.numbers': 7.2.3
+
+  '@williamthorsen/toolbelt.cli@0.4.0': {}
 
   '@williamthorsen/toolbelt.errors@0.8.1': {}
 

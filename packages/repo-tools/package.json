@@ -39,6 +39,10 @@
   "scripts": {
     "prepare": "nmr-compile"
   },
+  "dependencies": {
+    "@williamthorsen/toolbelt.cli": "catalog:",
+    "yaml": "catalog:"
+  },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:"
   },
