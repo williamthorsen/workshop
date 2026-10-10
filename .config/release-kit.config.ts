@@ -13,6 +13,7 @@ const config = defineConfig({
       'scope:overlay': { color: '00ff96', description: '' },
       'scope:readyup': { color: '00ff96', description: '' },
       'scope:repo-tools': { color: '00ff96', description: '' },
+      'scope:secret-tools': { color: '00ff96', description: '' },
     },
   },
 });

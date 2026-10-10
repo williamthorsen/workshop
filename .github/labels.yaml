@@ -88,6 +88,9 @@
 - name: scope:root
   color: 00ff96
   description: ''
+- name: scope:secret-tools
+  color: 00ff96
+  description: ''
 - name: security
   color: b60205
   description: Security vulnerability or hardening
