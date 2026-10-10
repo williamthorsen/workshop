@@ -9,6 +9,7 @@ const config = defineConfig({
     labels: {
       'scope:root': { color: '00ff96', description: '' },
       'scope:compositor': { color: '00ff96', description: '' },
+      'scope:git-tools': { color: '00ff96', description: '' },
       'scope:overlay': { color: '00ff96', description: '' },
       'scope:readyup': { color: '00ff96', description: '' },
       'scope:repo-tools': { color: '00ff96', description: '' },

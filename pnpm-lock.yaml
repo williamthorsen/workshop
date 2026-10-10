@@ -288,6 +288,12 @@ importers:
         specifier: 'catalog:'
         version: 0.10.2(vitest@4.1.11)
 
+  packages/git-tools:
+    devDependencies:
+      '@williamthorsen/toolbelt.testing':
+        specifier: 'catalog:'
+        version: 0.6.2
+
   packages/overlay:
     dependencies:
       '@williamthorsen/toolbelt.errors':
