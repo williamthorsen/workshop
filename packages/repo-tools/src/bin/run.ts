@@ -1,9 +1,9 @@
 import process from 'node:process';
 
-export const HELP = `repos: act on the repositories indexed by a machine-local repo registry
+export const HELP = `thor-repo: act on the repositories indexed by a machine-local repo registry
 
 Usage:
-  repos [--help]
+  thor-repo [--help]
 
 Subcommands are not implemented yet.
 
@@ -16,7 +16,7 @@ Exit codes:
 `;
 
 /**
- * Runs the repos CLI for the given argv and returns the process exit code.
+ * Runs the thor-repo CLI for the given argv and returns the process exit code.
  *
  * Writes the help to stdout for `--help`, `-h`, or an empty argv, and reports any other argument to stderr as not
  * implemented. Never calls `process.exit`: The bin entrypoint owns that, keeping this function testable.
@@ -27,6 +27,6 @@ export function run(argv: string[]): number {
     process.stdout.write(HELP);
     return 0;
   }
-  process.stderr.write(`repos: not implemented yet: ${argv.join(' ')}\n`);
+  process.stderr.write(`thor-repo: not implemented yet: ${argv.join(' ')}\n`);
   return 2;
 }

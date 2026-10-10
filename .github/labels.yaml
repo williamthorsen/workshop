@@ -79,6 +79,9 @@
 - name: scope:readyup
   color: 00ff96
   description: ''
+- name: scope:repo-tools
+  color: 00ff96
+  description: ''
 - name: scope:root
   color: 00ff96
   description: ''

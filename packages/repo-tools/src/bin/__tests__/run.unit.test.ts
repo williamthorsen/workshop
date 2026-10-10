@@ -20,7 +20,7 @@ describe(run, () => {
     const code = run(['list']);
 
     expect(io.stdout).toBe('');
-    expect(io.stderr).toBe('repos: not implemented yet: list\n');
+    expect(io.stderr).toBe('thor-repo: not implemented yet: list\n');
     expect(code).toBe(2);
   });
 
