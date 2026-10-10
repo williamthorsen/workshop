@@ -294,6 +294,12 @@ importers:
         specifier: 'catalog:'
         version: 0.6.2
 
+  packages/nodejs-tools:
+    devDependencies:
+      '@williamthorsen/toolbelt.testing':
+        specifier: 'catalog:'
+        version: 0.6.2
+
   packages/overlay:
     dependencies:
       '@williamthorsen/toolbelt.errors':
