@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI of git utilities, scaffolded and awaiting its commands; `secret-tools`, a CLI for secrets in the OS credential store, likewise scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; `atlassian-tools`, a CLI for Jira Cloud, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `secret-tools`, a CLI for secrets in the OS credential store, scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; `atlassian-tools`, a CLI for Jira Cloud, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -10,7 +10,7 @@ Packages live under `packages/`:
 
 - **`atlassian-tools`**: CLI for working with Jira Cloud. Scaffolded only: The binary prints its help, and #520 ports the commands. Binary: `thor-jira`.
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
-- **`git-tools`**: CLI of utilities for working with git. Scaffolded only: The binary prints its help, and #517 ports the commands. Binary: `thor-git`.
+- **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories. Scaffolded only: The binary prints its help, and #519 ports the commands. Binary: `thor-node`.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
 - **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its reference documentation lives in `docs/`, because npm truncates a registry README at 65,536 code points; `rdy help <topic>` prints those files and `src/__tests__/doc-links.app.unit.test.ts` keeps them linked. Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it.

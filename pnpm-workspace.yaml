@@ -10,6 +10,7 @@ catalog:
   '@williamthorsen/toolbelt.cli': 0.4.0
   '@williamthorsen/toolbelt.errors': 0.8.3
   '@williamthorsen/toolbelt.filesystem': 0.9.3
+  '@williamthorsen/toolbelt.git': 0.5.2
   '@williamthorsen/toolbelt.packaging': 0.6.3
   '@williamthorsen/toolbelt.strings': 8.0.3
   '@williamthorsen/toolbelt.testing': 0.6.3
