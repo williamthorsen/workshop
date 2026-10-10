@@ -353,6 +353,12 @@ importers:
         specifier: 'catalog:'
         version: 0.28.2
 
+  packages/repos:
+    devDependencies:
+      '@williamthorsen/toolbelt.testing':
+        specifier: 'catalog:'
+        version: 0.6.2
+
 packages:
 
   '@altano/repository-tools@2.1.1':
