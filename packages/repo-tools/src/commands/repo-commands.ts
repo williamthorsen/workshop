@@ -19,7 +19,10 @@ import {
 import { detectStack } from '../stacks/stack-detection.ts';
 import { STACK_DETECTORS } from '../stacks/stack-detectors.ts';
 
-/** The git and filesystem operations that the commands perform on a clone, injected so that unit tests supply their own. */
+/**
+ * The git and filesystem operations that the commands perform on a clone, injected so that unit tests supply their
+ * own.
+ */
 export interface CloneAdapters {
   listTrackedFiles: (cloneDir: string) => string[] | undefined;
   readCurrentBranch: (dir: string) => string | undefined;

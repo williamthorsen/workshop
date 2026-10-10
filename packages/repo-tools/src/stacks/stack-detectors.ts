@@ -5,8 +5,8 @@ export interface StackDetector {
 }
 
 /**
- * The stack vocabulary that `thor-repo scan` detects and `thor-repo list --stack` accepts, one detector per name. A path glob
- * matches a tracked path at the repository root or at any depth.
+ * The stack vocabulary that `thor-repo scan` detects and `thor-repo list --stack` accepts, one detector per name. A
+ * path glob matches a tracked path at the repository root or at any depth.
  */
 export const STACK_DETECTORS: Readonly<Record<string, StackDetector>> = {
   astro: { dependencies: ['astro'] },
