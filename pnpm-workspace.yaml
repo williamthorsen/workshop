@@ -12,6 +12,7 @@ catalog:
   '@williamthorsen/toolbelt.filesystem': 0.9.3
   '@williamthorsen/toolbelt.git': 0.5.2
   '@williamthorsen/toolbelt.packaging': 0.6.3
+  '@williamthorsen/toolbelt.secrets': 0.4.2
   '@williamthorsen/toolbelt.strings': 8.0.3
   '@williamthorsen/toolbelt.testing': 0.6.3
   '@williamthorsen/toolbelt.vitest': 0.10.3

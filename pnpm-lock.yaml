@@ -179,6 +179,9 @@ catalogs:
     '@williamthorsen/toolbelt.packaging':
       specifier: 0.6.3
       version: 0.6.3
+    '@williamthorsen/toolbelt.secrets':
+      specifier: 0.4.2
+      version: 0.4.2
     '@williamthorsen/toolbelt.strings':
       specifier: 8.0.3
       version: 8.0.3
@@ -410,6 +413,19 @@ importers:
         version: 0.6.3
 
   packages/secret-tools:
+    dependencies:
+      '@williamthorsen/toolbelt.cli':
+        specifier: 'catalog:'
+        version: 0.4.0
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.8.3
+      '@williamthorsen/toolbelt.packaging':
+        specifier: 'catalog:'
+        version: 0.6.3
+      '@williamthorsen/toolbelt.secrets':
+        specifier: 'catalog:'
+        version: 0.4.2
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -1361,6 +1377,11 @@ packages:
   '@williamthorsen/toolbelt.packaging@0.6.3':
     resolution: {integrity: sha512-ISVA+lV4MQUdr60a1/PEOM/4Pl8c7WCGEZLwYUs/4bwYVtOLikMZJjR+wuGy4USrZi8tBCxyTpjwPl4yVKJH5Q==}
     engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.secrets@0.4.2':
+    resolution: {integrity: sha512-TJNk80aE6V03a/UEIKvzgt7wiX74xrQ+z5IfA43VVwqDFoND4uIWEPDqtPx77kUeH8WysjDpM9aUNCwYQloH9w==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
 
   '@williamthorsen/toolbelt.sets@3.0.14':
     resolution: {integrity: sha512-9nCy5AdkGdhgt/kJLxAqVH6V+lvx0aOM1yzjsGZM9+QyzcbaRvFVRVN1E3VUMhNhZFa8fPA8du97w6v7XUWNVA==}
@@ -3603,6 +3624,10 @@ snapshots:
   '@williamthorsen/toolbelt.packaging@0.6.3':
     dependencies:
       '@williamthorsen/toolbelt.filesystem': 0.9.3
+
+  '@williamthorsen/toolbelt.secrets@0.4.2':
+    dependencies:
+      '@williamthorsen/toolbelt.cli': 0.4.0
 
   '@williamthorsen/toolbelt.sets@3.0.14': {}
 

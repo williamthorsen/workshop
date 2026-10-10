@@ -40,6 +40,12 @@
   "scripts": {
     "prepare": "nmr-compile"
   },
+  "dependencies": {
+    "@williamthorsen/toolbelt.cli": "catalog:",
+    "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.secrets": "catalog:"
+  },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:"
   },
