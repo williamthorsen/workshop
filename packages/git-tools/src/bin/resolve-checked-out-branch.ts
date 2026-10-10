@@ -4,11 +4,12 @@ const FAILURE_PREFIX = 'Could not resolve the checked-out branch with `git branc
 const FAILURE_SUFFIX = 'Pass a branch name explicitly.';
 
 /**
- * Resolves the branch checked out in the current directory. Throws when git is absent, the directory is not a
- * repository, or HEAD names no branch, since each leaves the caller without the name that it asked to derive from.
+ * Resolves the branch checked out in `cwd`, defaulting to the current directory. Throws when git is absent, the
+ * directory is not a repository, or HEAD names no branch, since each leaves the caller without the name that it asked
+ * to derive from.
  */
-export function resolveCheckedOutBranch(): string {
-  const { error, status, stderr, stdout } = spawnSync('git', ['branch', '--show-current'], { encoding: 'utf8' });
+export function resolveCheckedOutBranch(cwd?: string): string {
+  const { error, status, stderr, stdout } = spawnSync('git', ['branch', '--show-current'], { cwd, encoding: 'utf8' });
 
   if (error !== undefined) throw failToResolve(error.message);
   if (status !== 0) throw failToResolve(stderr.trim());
