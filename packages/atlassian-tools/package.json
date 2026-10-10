@@ -1,0 +1,51 @@
+{
+  "name": "@williamthorsen/atlassian-tools",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Work with Jira Cloud from the command line",
+  "keywords": [
+    "atlassian",
+    "atlassian-tools",
+    "cli",
+    "jira"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/atlassian-tools#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/atlassian-tools"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/thor-jira.js"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "thor-jira": "bin/thor-jira.js"
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

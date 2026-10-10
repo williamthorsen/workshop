@@ -70,6 +70,9 @@
 - name: removal
   color: d93f0b
   description: Removes functionality that consumers depend on
+- name: scope:atlassian-tools
+  color: 00ff96
+  description: ''
 - name: scope:compositor
   color: 00ff96
   description: ''

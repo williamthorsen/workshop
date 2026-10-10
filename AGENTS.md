@@ -2,12 +2,13 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry, scaffolded and awaiting its commands; `git-tools`, a CLI of git utilities, likewise scaffolded and awaiting its commands; `secret-tools`, a CLI for secrets in the OS credential store, likewise scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry, scaffolded and awaiting its commands; `git-tools`, a CLI of git utilities, likewise scaffolded and awaiting its commands; `secret-tools`, a CLI for secrets in the OS credential store, likewise scaffolded and awaiting its commands; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories, likewise scaffolded and awaiting its commands; `atlassian-tools`, a CLI for Jira Cloud, likewise scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
 Packages live under `packages/`:
 
+- **`atlassian-tools`**: CLI for working with Jira Cloud. Scaffolded only: The binary prints its help, and #520 ports the commands. Binary: `thor-jira`.
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`git-tools`**: CLI of utilities for working with git. Scaffolded only: The binary prints its help, and #517 ports the commands. Binary: `thor-git`.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories. Scaffolded only: The binary prints its help, and #519 ports the commands. Binary: `thor-node`.
@@ -45,7 +46,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `compositor`, `git-tools`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, and `secret-tools`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, and `secret-tools`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 
