@@ -88,7 +88,7 @@
 - name: scope:root
   color: 00ff96
   description: ''
-- name: scope:secrets-tools
+- name: scope:secret-tools
   color: 00ff96
   description: ''
 - name: security

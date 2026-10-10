@@ -1,5 +1,5 @@
 {
-  "name": "@williamthorsen/secrets-tools",
+  "name": "@williamthorsen/secret-tools",
   "version": "0.0.0",
   "private": false,
   "description": "Manage secrets in the OS credential store",
@@ -8,16 +8,16 @@
     "credentials",
     "keychain",
     "secrets",
-    "secrets-tools"
+    "secret-tools"
   ],
-  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/secrets-tools#readme",
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/secret-tools#readme",
   "bugs": {
     "url": "https://github.com/williamthorsen/workshop/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/williamthorsen/workshop.git",
-    "directory": "packages/secrets-tools"
+    "directory": "packages/secret-tools"
   },
   "license": "ISC",
   "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",

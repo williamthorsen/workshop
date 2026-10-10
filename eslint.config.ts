@@ -182,8 +182,8 @@ const config = defineConfig([
     },
   },
   {
-    // secrets-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/secrets-tools/src/*.ts'],
+    // secret-tools's source is grouped by role on the same terms; no module belongs at its root yet.
+    files: ['packages/secret-tools/src/*.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -191,7 +191,7 @@ const config = defineConfig([
         {
           selector: 'Program',
           message:
-            'Group this module into a directory named for its role. No module belongs at the root of secrets-tools/src.',
+            'Group this module into a directory named for its role. No module belongs at the root of secret-tools/src.',
         },
       ],
     },
