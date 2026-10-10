@@ -1,0 +1,53 @@
+{
+  "name": "@williamthorsen/nodejs-tools",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Inspect Node.js runtimes and toolchains, and prune node_modules directories",
+  "keywords": [
+    "asdf",
+    "cli",
+    "node_modules",
+    "nodejs",
+    "nodejs-tools",
+    "pnpm"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/nodejs-tools#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/nodejs-tools"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/thor-node.js"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "thor-node": "bin/thor-node.js"
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
