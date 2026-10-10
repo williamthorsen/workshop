@@ -353,7 +353,7 @@ importers:
         specifier: 'catalog:'
         version: 0.28.2
 
-  packages/repos:
+  packages/repo-tools:
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'

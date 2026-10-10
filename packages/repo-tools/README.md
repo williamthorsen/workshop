@@ -1,6 +1,6 @@
 <!-- readme-type: cli -->
 
-# @williamthorsen/repos
+# @williamthorsen/repo-tools
 
 A CLI that acts on the repositories indexed by a machine-local repo registry. Its commands are not implemented yet; the binary prints only its help.
 
@@ -9,7 +9,7 @@ A CLI that acts on the repositories indexed by a machine-local repo registry. It
 ## Installation
 
 ```bash
-pnpm add -g @williamthorsen/repos
+pnpm add -g @williamthorsen/repo-tools
 ```
 
 Node 24 or later is required.
@@ -17,5 +17,5 @@ Node 24 or later is required.
 ## Usage
 
 ```bash
-repos --help
+thor-repo --help
 ```
