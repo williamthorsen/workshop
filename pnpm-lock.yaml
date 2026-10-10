@@ -176,6 +176,12 @@ catalogs:
     '@williamthorsen/toolbelt.git':
       specifier: 0.5.2
       version: 0.5.2
+    '@williamthorsen/toolbelt.nodejs':
+      specifier: 3.4.1
+      version: 3.4.1
+    '@williamthorsen/toolbelt.numbers':
+      specifier: 7.2.3
+      version: 7.2.3
     '@williamthorsen/toolbelt.packaging':
       specifier: 0.6.3
       version: 0.6.3
@@ -326,6 +332,22 @@ importers:
         version: 0.6.3
 
   packages/nodejs-tools:
+    dependencies:
+      '@williamthorsen/toolbelt.cli':
+        specifier: 'catalog:'
+        version: 0.4.0
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.8.3
+      '@williamthorsen/toolbelt.nodejs':
+        specifier: 'catalog:'
+        version: 3.4.1
+      '@williamthorsen/toolbelt.numbers':
+        specifier: 'catalog:'
+        version: 7.2.3
+      '@williamthorsen/toolbelt.packaging':
+        specifier: 'catalog:'
+        version: 0.6.3
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -1360,6 +1382,11 @@ packages:
   '@williamthorsen/toolbelt.guards@4.1.3':
     resolution: {integrity: sha512-EhcIZ51aR/QRAWZCCHqcBOKiWRTlRf2OssaJUu5c6Pr4vQ83ewzmblOgtiDRN09+1uW3O5tAlU2Y+VwkcNOJXQ==}
     engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.nodejs@3.4.1':
+    resolution: {integrity: sha512-W/pKDqz3Ve93NtOkXXFbc8SjJTsBm9Wy/2gxYsirG883ZrFf5dmGahT2VoQmbI8hw4OO/QOe39SQga29eIvDkA==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
 
   '@williamthorsen/toolbelt.numbers@7.2.3':
     resolution: {integrity: sha512-p0RAxE0jMf0YrbuL1+q0BQcMabFL1pgfOk8DhoUhnsK1YufFtswB2anlNCalRpcYn6kuTJ5Kc8LajSpj/liy9w==}
@@ -3591,6 +3618,11 @@ snapshots:
       '@williamthorsen/toolbelt.strings': 8.0.3
 
   '@williamthorsen/toolbelt.guards@4.1.3': {}
+
+  '@williamthorsen/toolbelt.nodejs@3.4.1':
+    dependencies:
+      '@williamthorsen/toolbelt.cli': 0.4.0
+      '@williamthorsen/toolbelt.numbers': 7.2.3
 
   '@williamthorsen/toolbelt.numbers@7.2.3': {}
 
