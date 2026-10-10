@@ -7,6 +7,7 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
+  '@williamthorsen/toolbelt.cli': 0.4.0
   '@williamthorsen/toolbelt.errors': 0.8.3
   '@williamthorsen/toolbelt.filesystem': 0.9.3
   '@williamthorsen/toolbelt.packaging': 0.6.3
@@ -14,6 +15,7 @@ catalog:
   '@williamthorsen/toolbelt.testing': 0.6.3
   '@williamthorsen/toolbelt.vitest': 0.10.3
   esbuild: 0.28.2
+  yaml: 2.9.1
   zod: 4.6.5
 
 savePrefix: ''
