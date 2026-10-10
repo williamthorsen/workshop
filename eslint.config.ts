@@ -152,6 +152,21 @@ const config = defineConfig([
     },
   },
   {
+    // git-tools's source is grouped by role on the same terms; no module belongs at its root yet.
+    files: ['packages/git-tools/src/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. No module belongs at the root of git-tools/src.',
+        },
+      ],
+    },
+  },
+  {
     // repo-tools's source is grouped by role on the same terms; no module belongs at its root yet.
     files: ['packages/repo-tools/src/*.ts'],
     rules: {

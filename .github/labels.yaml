@@ -73,6 +73,9 @@
 - name: scope:compositor
   color: 00ff96
   description: ''
+- name: scope:git-tools
+  color: 00ff96
+  description: ''
 - name: scope:overlay
   color: 00ff96
   description: ''
