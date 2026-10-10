@@ -1,0 +1,52 @@
+{
+  "name": "@williamthorsen/secrets-tools",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Manage secrets in the OS credential store",
+  "keywords": [
+    "cli",
+    "credentials",
+    "keychain",
+    "secrets",
+    "secrets-tools"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/secrets-tools#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/secrets-tools"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/thor-secret.js"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "thor-secret": "bin/thor-secret.js"
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
