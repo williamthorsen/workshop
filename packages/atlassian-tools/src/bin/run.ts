@@ -1,32 +1,58 @@
-import process from 'node:process';
+import { createCli, runCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
-export const HELP = `thor-jira: work with Jira Cloud from the command line
+import { authCommand } from './authCommand.ts';
+import { configureProjectCommand } from './configureProjectCommand.ts';
+import { issueGroup } from './issueGroup.ts';
+import { describeError, type RunEffects } from './subcommand-support.ts';
 
-Usage:
-  thor-jira [--help]
+const { defineGroup } = createCli<RunEffects>();
 
-Subcommands are not implemented yet.
+const ROOT = defineGroup({
+  summary:
+    'Reconcile a Jira Cloud project against a declarative spec, list its work items, and manage the API token with which it authenticates.',
+  epilog: `Exit codes:
+  0  The command succeeded
+  1  No token is stored, or nothing was there to remove
+  2  Usage or validation error
+  3  The keychain could not be reached
+  4  A Jira request failed, or its response could not be read
+  5  The run wrote, but the project does not match the spec
+  6  Jira could not be reached
 
-Options:
-  -h, --help Show this help.
-
-Exit codes:
-  0  Help shown.
-  2  Invalid arguments.
-`;
+Jira Cloud and team-managed projects only.`,
+  commands: {
+    auth: authCommand,
+    'configure-project': configureProjectCommand,
+    issue: issueGroup,
+  },
+});
 
 /**
- * Runs the thor-jira CLI for the given argv and returns the process exit code.
+ * Runs the `thor-jira` command line, writing through the effects that it is given and returning the code to exit
+ * with. Output streams as the run proceeds, so a process killed partway still leaves a record of what it did.
+ * Every failure is reported through the effects: Nothing throws.
  *
- * Writes the help to stdout for `--help`, `-h`, or an empty argv, and reports any other argument to stderr as not
- * implemented. Never calls `process.exit`: The bin entrypoint owns that, keeping this function testable.
+ * @internal
  */
-export function run(argv: string[]): number {
-  const [first] = argv;
-  if (first === undefined || ((first === '--help' || first === '-h') && argv.length === 1)) {
-    process.stdout.write(HELP);
-    return 0;
-  }
-  process.stderr.write(`thor-jira: not implemented yet: ${argv.join(' ')}\n`);
-  return 2;
+export async function run(args: string[], effects: RunEffects): Promise<number> {
+  return await runCli(args, ROOT, {
+    name: 'thor-jira',
+    context: effects,
+    version: () => resolveVersion(effects),
+    stdout: { write: effects.write },
+    stderr: { write: effects.writeError },
+  });
 }
+
+// region | Helpers
+
+/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
+function resolveVersion(effects: { readonly resolveVersion: () => string }): string {
+  try {
+    return effects.resolveVersion();
+  } catch (error) {
+    throw new UsageError(describeError(error), { cause: error });
+  }
+}
+
+// endregion | Helpers
