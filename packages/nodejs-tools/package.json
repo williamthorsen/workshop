@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/nodejs-tools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Inspect Node.js runtimes and toolchains, and prune node_modules directories",
   "keywords": [

@@ -1,0 +1,35 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `thor-node` commands `asdf-shims`, which lists asdf shims stranded by a nodejs version switch, `pnpm`, which checks the running pnpm against the nearest `packageManager` pin, and `prune-modules`, which deletes the `node_modules` directories that the protect-list and the last 30 days of activity do not keep. (#531)",
+            "hash": "a4db25a3cde5a75a622ae960c5c97f50d3bb2649",
+            "entry": 1
+          },
+          {
+            "description": "Moves the default protect-list from `~/.config/tb-node/` to `~/.config/thor-node/protected-node-modules.txt`, which `thor-node prune-modules` reads in place of the `tb-node` file. (#531)",
+            "hash": "a4db25a3cde5a75a622ae960c5c97f50d3bb2649",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/nodejs-tools` package with a `thor-node` binary, which prints its help for `--help`, `-h`, or no arguments and exits with code 2 on any other argument, to hold the `tb-node` port in #519. (#526)",
+            "hash": "eb8d3ecc4efa9d5faac5607231c4be47f48970d1",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

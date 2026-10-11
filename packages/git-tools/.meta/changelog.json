@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `branch-number` and `ticket-ref` commands to `thor-git`, ported from `tb-git` in `@williamthorsen/toolbelt.git` with the same flags, output, and exit codes, which derive a stable number from a branch name and print the ticket that a branch name encodes, reading the checked-out branch when no branch is given. (#529)",
+            "hash": "45bea9a07684d185730ce43ef5fd0a04df34e02a",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/git-tools` package with a `thor-git` binary, which prints its help for `--help`, `-h`, or no arguments and exits with code 2 on any other argument, to hold the `tb-git` port in #517. (#524)",
+            "hash": "e39e260a442350486a5a5b9dd1909f8b2c04b8c0",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

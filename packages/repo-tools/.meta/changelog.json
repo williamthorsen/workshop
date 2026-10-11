@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `thor-repo` commands `list`, `scan`, and `add`, which print the repos selected from `~/.config/repos.yaml` by tag or stack, report each entry whose stack differs from what its clone's tracked files signal, and print the entry that registers a clone, writing to the registry only under `--write`. (#528)",
+            "hash": "8fe969cbc8002eaa590dbaab0ea381d1251b5a62",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Renames the unreleased `repos` package to `@williamthorsen/repo-tools` and its binary from `repos` to `thor-repo`, without changing what the scaffolded binary does. (#523)",
+            "hash": "43d5258b2502e0f9d9fea2893476d5edddeec524",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

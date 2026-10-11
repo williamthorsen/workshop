@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `tb-jira` commands to `thor-jira`: `auth` stores, removes, and reports the Jira API token in the macOS keychain, `issue list` lists a project's work items, and `configure-project` reconciles a Jira Cloud project's statuses, workflow transitions, and board features against `jira-project-spec.json`, with a `--dry-run` preview. (#532)",
+            "hash": "3ecd7aae246cb7516fac1c06c3cfba605441f94a",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/atlassian-tools` package with a `thor-jira` binary, which prints its help for `--help`, `-h`, or no arguments and exits with code 2 on any other argument, to hold the `tb-jira` port in #520. (#527)",
+            "hash": "b6554fe2709c6672e958b6f004244e31a7fe74bf",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

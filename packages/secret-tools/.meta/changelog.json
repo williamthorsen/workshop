@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-11",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `set`, `get`, `has`, and `delete` subcommands to `thor-secret`, which act on a keychain secret named by a service and an optional `--account`, and exit 1 when the secret is not stored, 2 on a usage error, and 3 when the keychain cannot be reached, as `tb-secret` does. (#530)",
+            "hash": "b72b18172833b5b04f4bcbd65d2e703beddc40a6",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/secret-tools` package with a `thor-secret` binary, which prints its help for `--help`, `-h`, or no arguments and exits with code 2 on any other argument, to hold the `tb-secret` port in #518. (#525)",
+            "hash": "0fcc8791d0f7281d615666d71e3bbbfdd92e698e",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]
