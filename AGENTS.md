@@ -2,13 +2,13 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud, scaffolded and awaiting its commands; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
 Packages live under `packages/`:
 
-- **`atlassian-tools`**: CLI for working with Jira Cloud. Scaffolded only: The binary prints its help, and #520 ports the commands. Binary: `thor-jira`.
+- **`atlassian-tools`**: CLI that reconciles a Jira Cloud project against a declarative spec, lists its work items, and manages the API token in the macOS keychain. Binary: `thor-jira`.
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories. Binary: `thor-node`.

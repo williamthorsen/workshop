@@ -7,6 +7,7 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
+  '@williamthorsen/toolbelt.atlassian': 0.6.0
   '@williamthorsen/toolbelt.cli': 0.4.0
   '@williamthorsen/toolbelt.errors': 0.8.3
   '@williamthorsen/toolbelt.filesystem': 0.9.3
