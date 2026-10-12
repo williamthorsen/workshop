@@ -1,4 +1,7 @@
 # yaml-language-server: $schema=https://github.com/williamthorsen/codeassembly/raw/main/packages/agents/schemas/preferences.json
 project:
+  audience: public
+  maturity: early
+  sensitivity: low
   slug: workshop
   ticket_ref_prefix: '#'
