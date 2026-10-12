@@ -9,7 +9,7 @@ on:
     paths:
       - .github/labels.yaml
 
-  # Preview on review: The check's log has a full computed diff, including deletions of labels not declared by the file.
+  # Preview on review: The check's log has the computed diff, and the check warns about each label not declared by the file.
   pull_request:
     paths:
       - .github/labels.yaml
