@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
@@ -7,7 +7,7 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { isRecord } from '../../portable/isRecord.ts';
-import { compileConfig } from '../compileConfig.ts';
+import { buildBundle } from '../buildBundle.ts';
 
 const FIXTURE_PATH = path.resolve(import.meta.dirname, 'fixtures/pick-json-fixture.ts');
 
@@ -20,7 +20,9 @@ const it = baseIt
   .extend('built', { scope: 'file' }, async ({ temp }): Promise<BuiltFixture> => {
     const outputPath = temp.resolve('pick-json-fixture.js');
 
-    await compileConfig(FIXTURE_PATH, outputPath);
+    // Bundled without `compileConfig`, which would reject the fixture for not being a kit.
+    const { bytes } = await buildBundle(FIXTURE_PATH);
+    await writeFile(outputPath, bytes);
 
     return { compiledSource: await readFile(outputPath, 'utf8'), outputPath };
   });
