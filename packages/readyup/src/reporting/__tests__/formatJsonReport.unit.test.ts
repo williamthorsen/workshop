@@ -556,6 +556,24 @@ describe(formatJsonReport, () => {
         kits: [{ checklists: [{ checks: [{ progress: { type: 'percent', percent: 75 } }] }] }],
       });
     });
+
+    it('serializes the count of files examined by a finding check', () => {
+      const report = makeReport({
+        results: [makePassedResult({ name: 'a', examinedCount: 12 })],
+        passed: true,
+        durationMs: 10,
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+
+      expect(parsed).toMatchObject({ kits: [{ checklists: [{ checks: [{ examinedCount: 12 }] }] }] });
+    });
+
+    it('omits the examined count for a check that did not return findings', () => {
+      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+
+      expect(output).not.toContain('"examinedCount"');
+    });
   });
 
   describe('kits that produced no results', () => {
