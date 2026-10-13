@@ -1,4 +1,6 @@
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import path from 'node:path';
+
+import { captureError, captureStdio, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockReadManifest = vi.hoisted(() => vi.fn());
@@ -7,6 +9,7 @@ const mockCheckInputDrift = vi.hoisted(() => vi.fn());
 const mockCheckSourceDrift = vi.hoisted(() => vi.fn());
 const mockCheckRebuild = vi.hoisted(() => vi.fn());
 const mockLoadEsbuild = vi.hoisted(() => vi.fn());
+const mockLoadConfig = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../manifest/readManifest.ts')>();
@@ -14,6 +17,11 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
     ManifestNotFoundError: actual.ManifestNotFoundError,
     readManifest: mockReadManifest,
   };
+});
+
+vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../config/loadConfig.ts')>();
+  return { ...actual, loadConfig: mockLoadConfig };
 });
 
 vi.mock(import('../checkDrift.ts'), () => ({
@@ -40,8 +48,11 @@ vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
   buildInstallCommand: (moduleName: string) => `npm install --save-dev ${moduleName}`,
 }));
 
+import { DEFAULT_CONFIG } from '../../config/loadConfig.ts';
 import { RdyError } from '../../errors/RdyError.ts';
+import type { ResolvedRdyConfig } from '../../kits/types.ts';
 import { richFormatter } from '../../layout/formatter.ts';
+import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
 import { VERSION } from '../../version.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
@@ -50,11 +61,15 @@ const FAILED = richFormatter.tokens.failedError.text;
 const UNVERIFIED = richFormatter.tokens.skippedOptional.text;
 const FIX = richFormatter.tokens.fix.text;
 
+/** A source directory that does not exist, so that a test which writes no sources selects none. */
+const ABSENT_SRC_DIR = '/nonexistent/readyup-verify-sources';
+
 describe(verifyCommand, () => {
   beforeEach(() => {
     mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
     mockCheckSourceDrift.mockReturnValue({ kind: 'unverified' });
     mockLoadEsbuild.mockResolvedValue({ build: vi.fn() });
+    mockLoadConfig.mockResolvedValue(buildConfig(ABSENT_SRC_DIR));
   });
 
   afterEach(() => {
@@ -65,6 +80,7 @@ describe(verifyCommand, () => {
     mockCheckSourceDrift.mockReset();
     mockCheckRebuild.mockReset();
     mockLoadEsbuild.mockReset();
+    mockLoadConfig.mockReset();
   });
 
   it('returns 0 when every kit is ok', async () => {
@@ -144,6 +160,102 @@ describe(verifyCommand, () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain('(no kits in manifest)');
     expect(mockCheckDrift).not.toHaveBeenCalled();
+  });
+
+  describe('uncompiled sources', () => {
+    beforeEach(() => {
+      mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
+    });
+
+    it('fails a selected source that the manifest does not record, naming it and the remedy', async () => {
+      using tree = createTempTree({ 'kits/alpha.ts': '', 'kits/beta.ts': '' });
+      mockLoadConfig.mockResolvedValue(buildConfig(tree.resolve('kits')));
+      mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'alpha', path: 'kits/alpha.js' }] });
+
+      const { exitCode, stdout } = await verify(['--manifest', tree.resolve('manifest.json')]);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(
+        `${FAILED} beta\n   source not compiled (kits/beta.ts)\n   ${FIX} Run \`rdy compile\` to compile it.`,
+      );
+      expect(stdout).not.toContain(`${FAILED} alpha`);
+      expect(stdout).toContain('1 of 2 kits failed verification');
+    });
+
+    it('fails an empty manifest beside a selected source, as a first compile that failed every kit leaves it', async () => {
+      using tree = createTempTree({ 'kits/alpha.ts': '' });
+      mockLoadConfig.mockResolvedValue(buildConfig(tree.resolve('kits')));
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      const { exitCode, stdout } = await verify(['--manifest', tree.resolve('manifest.json')]);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(`(no kits in manifest)\n${FAILED} alpha\n`);
+      expect(stdout).toContain('1 of 1 kits failed verification');
+    });
+
+    it('fails an uncompiled source under --rebuild as well', async () => {
+      using tree = createTempTree({ 'kits/alpha.ts': '' });
+      mockLoadConfig.mockResolvedValue(buildConfig(tree.resolve('kits')));
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      const { exitCode, stdout } = await verify(['--rebuild', '--manifest', tree.resolve('manifest.json')]);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(`${FAILED} alpha\n   source not compiled`);
+    });
+
+    it('ignores a source that the compile settings leave out', async () => {
+      using tree = createTempTree({ 'kits/alpha.ts': '', 'kits/shared/util.ts': '', 'kits/draft.ts': '' });
+      mockLoadConfig.mockResolvedValue(
+        buildConfig(tree.resolve('kits'), { include: ['alpha.ts', 'shared/**'], exclude: ['shared/**'] }),
+      );
+      mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'alpha', path: 'kits/alpha.js' }] });
+
+      const { exitCode, stdout } = await verify(['--manifest', tree.resolve('manifest.json')]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).not.toContain('source not compiled');
+    });
+
+    it('reports each uncompiled source under --json, failing the payload', async () => {
+      using tree = createTempTree({ 'kits/alpha.ts': '', 'kits/ops/deploy.ts': '' });
+      mockLoadConfig.mockResolvedValue(buildConfig(tree.resolve('kits')));
+      mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'alpha', path: 'kits/alpha.js' }] });
+
+      const { exitCode, stdout } = await verify(['--json', '--manifest', tree.resolve('manifest.json')]);
+
+      expect(exitCode).toBe(1);
+      const payload = VerifyOutputSchema.parse(JSON.parse(stdout));
+      expect(payload.passed).toBe(false);
+      expect(payload.uncompiled).toStrictEqual([{ name: 'ops/deploy', source: path.join('kits', 'ops', 'deploy.ts') }]);
+    });
+
+    it('omits the uncompiled list from the JSON payload when every source is recorded', async () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'alpha', path: 'alpha.js' }] });
+
+      const { stdout } = await verify(['--json']);
+
+      expect(JSON.parse(stdout)).not.toHaveProperty('uncompiled');
+    });
+
+    it('selects sources under the config named by --config', async () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+
+      await verify(['--config', 'custom/readyup.config.ts']);
+
+      expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+    });
+
+    it('reports a config error when the config cannot be evaluated', async () => {
+      mockReadManifest.mockReturnValue({ version: 1, kits: [] });
+      mockLoadConfig.mockRejectedValue(new Error('Unexpected token in readyup.config.ts'));
+
+      const { error } = await verifyRaising([]);
+
+      expect(error.code).toBe('config');
+      expect(error.message).toContain('Unexpected token');
+    });
   });
 
   describe('source verdict', () => {
@@ -836,6 +948,11 @@ describe(verifyCommand, () => {
 });
 
 // region | Helpers
+
+/** Returns the default config with its compile selection pointed at `srcDir` and adjusted by `overrides`. */
+function buildConfig(srcDir: string, overrides: Partial<ResolvedRdyConfig['compile']> = {}): ResolvedRdyConfig {
+  return { ...DEFAULT_CONFIG, compile: { ...DEFAULT_CONFIG.compile, srcDir, ...overrides } };
+}
 
 /** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
 async function verify(args: string[]) {

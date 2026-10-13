@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
@@ -51,6 +53,12 @@ const FIXTURE_TREE = {
   'faulty/packages/invalid/package.json': JSON.stringify({ name: 'invalid' }),
   'faulty/packages/invalid/.readyup/kits/demo.js': BUNDLE,
   'faulty/packages/invalid/.readyup/manifest.json': '{ not json',
+
+  // A kit source added beside a manifest that does not record it.
+  'faulty/packages/partial/package.json': JSON.stringify({ name: 'partial' }),
+  'faulty/packages/partial/.readyup/kits/demo.js': BUNDLE,
+  'faulty/packages/partial/.readyup/kits/extra.ts': 'export default {};',
+  'faulty/packages/partial/.readyup/manifest.json': CLEAN_MANIFEST,
 
   // Sorts after the broken, drifted, and invalid projects, so the sweep reaching it shows that they did not end the run.
   'faulty/packages/sound/package.json': JSON.stringify({ name: 'sound' }),
@@ -123,7 +131,7 @@ describe('verify --recursive', () => {
 
       expect(exitCode).toBe(1);
       expect(stdout).toMatch(
-        /Problems in 4 of 6 projects: packages\/broken, packages\/drifted, packages\/invalid, packages\/uncompiled\n$/,
+        /Problems in 5 of 7 projects: packages\/broken, packages\/drifted, packages\/invalid, packages\/partial, packages\/uncompiled\n$/,
       );
     });
 
@@ -153,6 +161,14 @@ describe('verify --recursive', () => {
       expect(stdout).toContain('Verifying kits against packages/sound/.readyup/manifest.json');
     });
 
+    it('reports a kit source that the manifest does not record within its project', async () => {
+      const { stdout } = await verify(['--recursive']);
+
+      expect(stdout).toMatch(
+        /Verifying kits against packages\/partial\/\.readyup\/manifest\.json[\s\S]*extra\n {3}source not compiled \(kits\/extra\.ts\)[\s\S]*1 of 2 kits failed verification/,
+      );
+    });
+
     it('reports each failure against its project under --json', async () => {
       const { exitCode, stdout } = await verify(['--recursive', '--json']);
 
@@ -162,6 +178,7 @@ describe('verify --recursive', () => {
       expect(payload.kits.map((kit) => [kit.project, kit.status])).toStrictEqual([
         ['.', 'ok'],
         ['packages/drifted', 'drift'],
+        ['packages/partial', 'ok'],
         ['packages/sound', 'ok'],
       ]);
       expect(payload.projects).toStrictEqual([
@@ -169,6 +186,7 @@ describe('verify --recursive', () => {
         { project: 'packages/broken', passed: false, error: expect.any(String) },
         { project: 'packages/drifted', passed: false },
         { project: 'packages/invalid', passed: false, error: expect.any(String) },
+        { project: 'packages/partial', passed: false },
         { project: 'packages/sound', passed: true },
         {
           project: 'packages/uncompiled',
@@ -176,6 +194,9 @@ describe('verify --recursive', () => {
           error:
             'No manifest at packages/uncompiled/.readyup/manifest.json. Run `rdy compile` in packages/uncompiled to create it.',
         },
+      ]);
+      expect(payload.uncompiled).toStrictEqual([
+        { name: 'extra', project: 'packages/partial', source: path.join('kits', 'extra.ts') },
       ]);
     });
   });
@@ -198,6 +219,15 @@ describe('verify --recursive', () => {
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout)).toStrictEqual({ schemaVersion: 1, passed: true, kits: [], projects: [] });
     });
+  });
+
+  it('rejects --recursive combined with --config', async () => {
+    const error = await captureError(RdyError, () =>
+      verifyCommand(['--recursive', '--config', '.config/readyup.config.ts']),
+    );
+
+    expect(error.code).toBe('usage');
+    expect(error.message).toBe('--recursive and --config are mutually exclusive');
   });
 
   it('rejects --recursive combined with --manifest', async () => {
