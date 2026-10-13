@@ -42,8 +42,7 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
   const build = context.code === 'config' ? configError : kitLoadError;
 
   if (error instanceof RemoteManifestNotFoundError) {
-    // GitHub serves a private repository's manifest as absent, so this is the same failure as a 404.
-    return build(`No manifest found at ${context.url}.`, { cause: error, hint: resolveHint(context, 404) });
+    return build(`No manifest found at ${context.url}.`, { cause: error, hint: buildMissingManifestHint(context) });
   }
 
   if (error instanceof RemoteFetchError) {
@@ -57,10 +56,25 @@ export function toRemoteRdyError(error: unknown, context: RemoteFailureContext):
   return build(detail, { cause: error });
 }
 
+/**
+ * Returns the remediation for a repository that does not publish a manifest.
+ *
+ * A missing repository, a mistyped ref, and a private repository fetched anonymously all look the same from the
+ * raw-content endpoint, so the hint names the spelling check always and the credential only when none was sent.
+ */
+export function buildMissingManifestHint(context: Pick<RemoteFailureContext, 'provider' | 'tokenForwarded'>): string {
+  const spellingHint = 'Check that the repository exists and that the ref names a branch, tag, or commit.';
+  const credentialHint = resolveHint(context, 404);
+  return credentialHint === undefined ? spellingHint : `${spellingHint} ${credentialHint}`;
+}
+
 // region | Helpers
 
 /** Names the credential that the reader is missing, or `undefined` when a credential is not what failed. */
-function resolveHint(context: RemoteFailureContext, status: number): string | undefined {
+function resolveHint(
+  context: Pick<RemoteFailureContext, 'provider' | 'tokenForwarded'>,
+  status: number,
+): string | undefined {
   if (context.provider === undefined || context.tokenForwarded) return undefined;
   return CREDENTIAL_STATUSES.has(status) ? CREDENTIAL_HINTS[context.provider] : undefined;
 }

@@ -55,7 +55,7 @@ An error body may also include `hint`, one action that would clear the failure:
   "error": {
     "code": "config",
     "message": "No manifest found at https://raw.githubusercontent.com/acme/private/HEAD/.readyup/manifest.json.",
-    "hint": "If the repository is private, set GITHUB_TOKEN or run `gh auth login`."
+    "hint": "Check that the repository exists and that the ref names a branch, tag, or commit. If the repository is private, set GITHUB_TOKEN or run `gh auth login`."
   }
 }
 ```

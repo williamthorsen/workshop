@@ -297,13 +297,22 @@ describe(listCommand, () => {
   describe('credential hints', () => {
     const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
     const BITBUCKET_HINT = 'If the repository is private, set BITBUCKET_TOKEN.';
+    const SPELLING_HINT = 'Check that the repository exists and that the ref names a branch, tag, or commit.';
 
-    it.each([401, 403, 404])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
+    it.each([401, 403])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
       expect(error.hint).toBe(GITHUB_HINT);
+    });
+
+    it('hints at the spelling and at GITHUB_TOKEN on an unauthenticated 404 from GitHub', async () => {
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status: 404, statusText: 'Not Found' }));
+
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBe(`${SPELLING_HINT} ${GITHUB_HINT}`);
     });
 
     it('hints on the HTML soft-404 that GitHub serves for a private repository', async () => {
@@ -311,15 +320,23 @@ describe(listCommand, () => {
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
-      expect(error.hint).toBe(GITHUB_HINT);
+      expect(error.hint).toBe(`${SPELLING_HINT} ${GITHUB_HINT}`);
     });
 
-    it.each([401, 403, 404])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
+    it.each([401, 403])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
       mockFetch.mockResolvedValue(mockResponse('Nope', { status, statusText: 'Nope' }));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:acme/private']));
 
       expect(error.hint).toBe(BITBUCKET_HINT);
+    });
+
+    it('hints at the spelling and at BITBUCKET_TOKEN on an unauthenticated 404 from Bitbucket', async () => {
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status: 404, statusText: 'Not Found' }));
+
+      const error = await captureError(RdyError, () => listCommand(['--from', 'bitbucket:acme/private']));
+
+      expect(error.hint).toBe(`${SPELLING_HINT} ${BITBUCKET_HINT}`);
     });
 
     it('leaves the message untouched, with the hint beside it', async () => {
@@ -332,9 +349,18 @@ describe(listCommand, () => {
       );
     });
 
-    it('stays silent when a token was forwarded', async () => {
+    it('hints at the spelling alone on a missing manifest when a token was forwarded', async () => {
       mockResolveGitHubToken.mockReturnValue('my-token');
       mockFetch.mockResolvedValue(mockResponse('Nope', { status: 404, statusText: 'Not Found' }));
+
+      const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
+
+      expect(error.hint).toBe(SPELLING_HINT);
+    });
+
+    it('stays silent on a refused request when a token was forwarded', async () => {
+      mockResolveGitHubToken.mockReturnValue('my-token');
+      mockFetch.mockResolvedValue(mockResponse('Nope', { status: 403, statusText: 'Forbidden' }));
 
       const error = await captureError(RdyError, () => listCommand(['--from', 'github:acme/private']));
 
