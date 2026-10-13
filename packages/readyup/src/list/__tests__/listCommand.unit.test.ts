@@ -493,10 +493,10 @@ describe(listCommand, () => {
 
     it('reports a config error when the manifest is not found at the --from path', async () => {
       mockReadManifest.mockImplementation(() => {
-        throw new Error('Manifest file not found: /nonexistent/.readyup/manifest.json');
+        throw new Error('Manifest file not found: .readyup/manifest.json');
       });
 
-      const { error } = await listRaising(['--from', '/nonexistent']);
+      const { error } = await listRaising(['--from', import.meta.dirname]);
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('Manifest file not found');

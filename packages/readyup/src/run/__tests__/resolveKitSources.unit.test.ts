@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
@@ -286,6 +287,31 @@ describe(resolveKitSources, () => {
 
     expect(error.code).toBe('usage');
     expect(error.message).toMatch(/URLs are not accepted by --from/);
+  });
+
+  it.each(['./does-not-exist', 'dir:./does-not-exist'])(
+    'reports a missing --from %s path as a usage error',
+    async (fromValue) => {
+      const error = await captureError(RdyError, () => resolve({ fromValue }));
+
+      expect(error.code).toBe('usage');
+      expect(error.message).toBe('Source path "./does-not-exist" does not exist.');
+      expect(error.hint).toBe(
+        `A relative path is resolved against ${process.cwd()}; run from the directory that contains it, or give an absolute path.`,
+      );
+    },
+  );
+
+  it('asks for a spelling check of a missing absolute --from path', async () => {
+    const missingPath = path.join(import.meta.dirname, 'does-not-exist');
+
+    const error = await captureError(RdyError, () => resolve({ fromValue: missingPath }));
+
+    expect(error.hint).toBe('Check that the path is spelled correctly.');
+  });
+
+  it('accepts a --from path that exists', async () => {
+    await expect(resolve({ fromValue: import.meta.dirname })).resolves.toHaveLength(1);
   });
 
   // -- --sources flag --

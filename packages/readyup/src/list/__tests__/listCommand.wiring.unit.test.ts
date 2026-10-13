@@ -79,11 +79,21 @@ describe('listCommand wiring', () => {
       expect(JSON.parse(stdout)).toMatchObject({ kits: [{ name: 'alpha' }] });
     });
 
-    it('reports a source with neither a manifest nor a kit directory as a config error', async () => {
-      const error = await captureError(RdyError, () => listCommand(['--from', 'dir:absent']));
+    it('reports a source with neither a manifest nor a kit directory as a config error', async ({ temp }) => {
+      temp.write('bare/README.md', '');
+
+      const error = await captureError(RdyError, () => listCommand(['--from', 'bare']));
 
       expect(error.code).toBe('config');
       expect(error.message).toContain('no kit directory');
+    });
+
+    it.each(['absent', 'dir:absent'])('reports a missing path named by --from %s as a usage error', async (from) => {
+      const error = await captureError(RdyError, () => listCommand(['--from', from]));
+
+      expect(error.code).toBe('usage');
+      expect(error.message).toBe('Source path "absent" does not exist.');
+      expect(error.hint).toMatch(/^A relative path is resolved against /);
     });
   });
 

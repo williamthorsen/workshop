@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { usageError } from '../errors/RdyError.ts';
+import { assertFromPathExists } from '../kits/assertFromPathExists.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
 import { type CompileDirectories, resolveKitRoot } from '../kits/kitsDir.ts';
 import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
@@ -86,6 +87,7 @@ export async function resolveKitSources({
     } catch (error: unknown) {
       throw usageError(describeError(error), { cause: error });
     }
+    assertFromPathExists(source);
     return selectEntries(resolveFromSource(source, fromValue, specs, extension));
   }
 

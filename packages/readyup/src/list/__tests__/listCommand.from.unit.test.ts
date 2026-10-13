@@ -45,6 +45,9 @@ import { RdyError } from '../../errors/RdyError.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { listCommand } from '../listCommand.ts';
 
+/** A directory that exists, as a local `--from` source must, while the reads beneath it are mocked. */
+const EXISTING_DIR = import.meta.dirname;
+
 const validRemoteManifestBody = JSON.stringify({
   version: 1,
   kits: [{ name: 'default', description: 'General project health checks' }, { name: 'deploy' }],
@@ -90,19 +93,19 @@ describe(listCommand, () => {
     expect(stdoutChunks).toHaveLength(1);
   });
 
-  it('with --from dir:/some/path, reads manifest from the resolved directory', async () => {
+  it('with --from dir:<path>, reads manifest from the resolved directory', async () => {
     mockReadManifest.mockReturnValue({
       version: 1,
       kits: [{ name: 'my-kit' }],
     });
 
-    const { exitCode } = await list(['--from', 'dir:/some/path']);
+    const { exitCode } = await list(['--from', `dir:${EXISTING_DIR}`]);
 
     expect(exitCode).toBe(0);
     const firstCall = mockReadManifest.mock.calls[0];
     assert.ok(firstCall, 'expected readManifest to have been called');
     const calledPath = String(firstCall[0]);
-    expect(calledPath).toBe(path.join(path.resolve('/some/path'), 'manifest.json'));
+    expect(calledPath).toBe(path.join(path.resolve(EXISTING_DIR), 'manifest.json'));
     // Directory source does not append .readyup.
     expect(calledPath).not.toContain('.readyup');
   });
@@ -113,13 +116,13 @@ describe(listCommand, () => {
       kits: [{ name: 'default' }],
     });
 
-    const { exitCode } = await list(['--from', '/some/repo']);
+    const { exitCode } = await list(['--from', EXISTING_DIR]);
 
     expect(exitCode).toBe(0);
     const firstCall = mockReadManifest.mock.calls[0];
     assert.ok(firstCall, 'expected readManifest to have been called');
     const calledPath = String(firstCall[0]);
-    expect(calledPath).toBe(path.join(path.resolve('/some/repo'), '.readyup/manifest.json'));
+    expect(calledPath).toBe(path.join(path.resolve(EXISTING_DIR), '.readyup/manifest.json'));
   });
 
   it('reports a usage error for malformed --from values', async () => {
@@ -194,7 +197,7 @@ describe(listCommand, () => {
   it('with --no-cache and a local source, lists the kits as it would without the flag', async () => {
     mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'my-kit' }] });
 
-    const { exitCode } = await list(['--no-cache', '--from', 'dir:/some/path']);
+    const { exitCode } = await list(['--no-cache', '--from', `dir:${EXISTING_DIR}`]);
 
     expect(exitCode).toBe(0);
     expect(mockFetch).not.toHaveBeenCalled();
