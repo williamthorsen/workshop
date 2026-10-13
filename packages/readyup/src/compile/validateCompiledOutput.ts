@@ -1,13 +1,12 @@
 import { rmSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 
 import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
+import { importKitModule } from '../kits/importKitModule.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import type { RdyKit } from '../kits/types.ts';
 import { validateKit } from '../kits/validateKit.ts';
-import { isRecord } from '../portable/isRecord.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
@@ -22,16 +21,13 @@ export interface KitMetadata {
  * Deletes the output file when validation fails, so no invalid bundle is left on disk.
  */
 export async function validateCompiledOutput(outputPath: string): Promise<KitMetadata> {
-  const fileUrl = `${pathToFileURL(outputPath).href}?t=${Date.now()}`;
-  let imported: unknown;
+  let moduleRecord: Record<string, unknown>;
   try {
-    imported = await import(fileUrl);
+    moduleRecord = await importKitModule(outputPath);
   } catch (error: unknown) {
     rmSync(outputPath, { force: true });
     throw chainError('Failed to load compiled output for validation', error);
   }
-
-  const moduleRecord = isRecord(imported) ? imported : {};
 
   let kit: RdyKit;
   try {

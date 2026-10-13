@@ -1,15 +1,14 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
+import { importKitModule } from '../kits/importKitModule.ts';
 import type { LoadedRdyKit } from '../kits/loadRdyKit.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
 import { validateKit } from '../kits/validateKit.ts';
 import { isHtmlBody } from '../portable/isHtmlBody.ts';
-import { isRecord } from '../portable/isRecord.ts';
 import { fetchWithCache, type FetchWithCacheOptions } from './fetchWithCache.ts';
 import { RemoteFetchError } from './RemoteFetchError.ts';
 
@@ -54,11 +53,7 @@ export async function loadRemoteKit({ url, ...fetchOptions }: LoadRemoteKitOptio
   try {
     writeFileSync(tempFile, body, 'utf8');
 
-    const fileUrl = `${pathToFileURL(tempFile).href}?t=${Date.now()}`;
-    const imported: unknown = await import(fileUrl);
-    // Narrow the module namespace to access exports. `import()` always returns an object,
-    // but TypeScript types it as `any`; narrowing avoids unsafe-member-access lint errors.
-    const moduleRecord = isRecord(imported) ? imported : {};
+    const moduleRecord = await importKitModule(tempFile);
     // Read __readyupVersion from the raw namespace before resolveKitExports drops unknown fields.
     const versionValue = moduleRecord['__readyupVersion'];
     const compileTimeVersion = typeof versionValue === 'string' ? versionValue : undefined;
