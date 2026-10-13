@@ -119,7 +119,7 @@ describe(`${initCommand.name} error handling`, () => {
 describe(`${initCommand.name} next steps`, () => {
   beforeEach(() => {
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
-    mockBuildInstallCommand.mockImplementation((names: string) => `pnpm add --save-dev ${names}`);
+    mockBuildInstallCommand.mockImplementation((...names: string[]) => `pnpm add --save-dev ${names.join(' ')}`);
     mockIsPackageInstalled.mockReturnValue(true);
   });
 

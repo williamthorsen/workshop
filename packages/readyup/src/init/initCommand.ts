@@ -80,7 +80,7 @@ function buildNextSteps(): string {
 function describeInstallStep(missing: string[]): string {
   const noun = missing.length === 1 ? 'a dev dependency' : 'dev dependencies';
   const reason = missing.includes('esbuild') ? ' (rdy compile needs esbuild)' : '';
-  return `Install ${missing.join(' and ')} as ${noun}${reason}: ${buildInstallCommand(missing.join(' '))}`;
+  return `Install ${missing.join(' and ')} as ${noun}${reason}: ${buildInstallCommand(...missing)}`;
 }
 
 // endregion | Helpers

@@ -35,13 +35,11 @@ const LOCKFILE_MANAGERS = [
 /**
  * Returns the command that installs packages as dev dependencies of the current project.
  *
- * `moduleName` may name several packages, separated by spaces.
- *
  * The package manager comes from the nearest directory that names one, falling back to npm when
  * none does.
  */
-export function buildInstallCommand(moduleName: string): string {
-  return `${findInstallCommand() ?? DEFAULT_COMMAND} ${moduleName}`;
+export function buildInstallCommand(...packageNames: string[]): string {
+  return `${findInstallCommand() ?? DEFAULT_COMMAND} ${packageNames.join(' ')}`;
 }
 
 /**
