@@ -9,6 +9,7 @@ import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
 import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
+import type { UnrunSource } from './KitSelection.ts';
 import { loadKit } from './loadKit.ts';
 import { warnOnUnusedPragmas } from './pragma-report.ts';
 import { createPragmaLedger } from './PragmaLedger.ts';
@@ -18,6 +19,7 @@ import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
 import { warnOnMaskedSkips } from './skip-diagnosis.ts';
+import { warnOnUnrunSources } from './source-report.ts';
 import { warnOnVersionSkew } from './version-skew.ts';
 
 interface JsonRunSettings {
@@ -26,6 +28,7 @@ interface JsonRunSettings {
   failOn: Severity | undefined;
   remote: RemoteFetchContext;
   reportOn: Severity | undefined;
+  unrunSources: readonly UnrunSource[];
 }
 
 /**
@@ -41,7 +44,7 @@ export async function runJsonMode(
   settings: JsonRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const { detail, diagnose, failOn, remote, reportOn } = settings;
+  const { detail, diagnose, failOn, remote, reportOn, unrunSources } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
   const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
@@ -98,7 +101,11 @@ export async function runJsonMode(
     }
   }
 
-  warnings.push(...warnOnUnusedPragmas(pragmaLedger), ...(await warnOnUnmarkedGeneratedSources(pragmaLedger)));
+  warnings.push(
+    ...warnOnUnusedPragmas(pragmaLedger),
+    ...(await warnOnUnmarkedGeneratedSources(pragmaLedger)),
+    ...warnOnUnrunSources(unrunSources),
+  );
 
   // The top-level thresholds say what the invocation asked for: An absent flag stays absent
   // rather than being reported as a default that nobody requested. What governed each kit, including

@@ -5,6 +5,7 @@ import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
+import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
@@ -411,6 +412,35 @@ describe(runJsonMode, () => {
     });
   });
 
+  describe('unrun-source advisories', () => {
+    it('reports each configured source that contributed no kit in the warnings field', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      mockFormatJsonReport.mockReturnValue('{}');
+      const unrunSources = [
+        { spelling: 'github:acme/standards', requestedNames: ['default'], publishedNames: ['demo', 'drift'] },
+      ];
+
+      const { stderr } = await runJson(singleKitEntry(), { unrunSources });
+
+      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          warnings: [
+            {
+              code: 'source-not-run',
+              message:
+                'configured source "github:acme/standards" publishes no kit named "default", so the run ran none of its kits.',
+              remedy:
+                'Run its kits by name with `rdy run --sources demo`, or every kit with `rdy run --sources --all`. Its other kits: drift.',
+            },
+          ],
+        }),
+      );
+      expect(stderr).toContain('Warning: configured source "github:acme/standards"');
+    });
+  });
+
   describe('unused-pragma advisories', () => {
     const PRAGMA_UNUSED = {
       code: 'pragma-unused',
@@ -491,6 +521,7 @@ interface JsonRunOptions {
   failOn?: Severity;
   isJit?: boolean;
   reportOn?: Severity;
+  unrunSources?: UnrunSource[];
 }
 
 /**
@@ -499,12 +530,12 @@ interface JsonRunOptions {
  */
 async function runJson(
   kitEntries: ResolvedKitEntry[],
-  { detail = 'full', diagnose = false, failOn, isJit = false, reportOn }: JsonRunOptions = {},
+  { detail = 'full', diagnose = false, failOn, isJit = false, reportOn, unrunSources = [] }: JsonRunOptions = {},
 ) {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
-  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn }, isJit);
+  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn, unrunSources }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

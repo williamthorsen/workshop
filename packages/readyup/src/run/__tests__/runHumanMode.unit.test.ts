@@ -5,6 +5,7 @@ import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { FailedResult, PassedResult, RdyReport, Severity } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
+import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
@@ -117,6 +118,30 @@ describe(runHumanMode, () => {
     expect(exitCode).toBe(0);
     expect(stdout).toBe('No kits to run.\n');
     expect(mockLoadRdyKit).not.toHaveBeenCalled();
+  });
+
+  it('names the cause and the alternatives when every configured source lacks the requested kit', async () => {
+    const unrunSources = [{ spelling: 'github:acme/standards', requestedNames: ['default'], publishedNames: ['demo'] }];
+
+    const { exitCode, stderr, stdout } = await runHuman([], { unrunSources });
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toMatch(/^No kits to run: no configured source publishes a kit named "default"\.\n/);
+    expect(stdout).toContain('`rdy run --sources <kit>`');
+    expect(stdout).toContain('`rdy run --sources --all`');
+    expect(stdout).toContain('`rdy list --sources`');
+    expect(stderr).toContain('Warning: configured source "github:acme/standards" publishes no kit named "default"');
+  });
+
+  it('warns after the run about each configured source that contributed no kit', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    const unrunSources = [{ spelling: 'npm:@acme/kits', requestedNames: ['default'], publishedNames: ['drift'] }];
+
+    const { exitCode, stderr } = await runHuman(singleKitEntry(), { unrunSources });
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toContain('Warning: configured source "npm:@acme/kits" publishes no kit named "default"');
   });
 
   it('runs all checklists when no checklist filter is given', async () => {
@@ -727,6 +752,7 @@ interface HumanRunOptions {
   isJit?: boolean;
   quiet?: boolean;
   reportOn?: Severity;
+  unrunSources?: UnrunSource[];
 }
 
 /**
@@ -735,12 +761,12 @@ interface HumanRunOptions {
  */
 async function runHuman(
   kitEntries: ResolvedKitEntry[],
-  { diagnose = false, failOn, isJit = false, quiet = false, reportOn }: HumanRunOptions = {},
+  { diagnose = false, failOn, isJit = false, quiet = false, reportOn, unrunSources = [] }: HumanRunOptions = {},
 ) {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
-  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, remote, reportOn }, isJit);
+  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, remote, reportOn, unrunSources }, isJit);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

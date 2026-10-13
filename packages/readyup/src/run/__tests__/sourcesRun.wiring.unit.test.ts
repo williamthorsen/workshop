@@ -109,18 +109,37 @@ describe('--sources run path wiring', () => {
     expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
   });
 
-  it('passes without running a kit when the selection is empty', async ({ temp }) => {
+  it('passes without running a kit when the selection is empty, naming the source that it left out', async ({
+    temp,
+  }) => {
     installPackage(temp, '@acme/kits', ['drift']);
-    const { entries } = await resolveKitSources({
+    const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
     });
 
-    const { exitCode, stdout } = await run({ kitEntries: entries, json: false });
+    const { exitCode, stderr, stdout } = await run({ kitEntries: entries, json: false, unrunSources });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toBe('No kits to run.\n');
+    expect(stdout).toMatch(/^No kits to run: no configured source publishes a kit named "default"\./);
+    expect(stderr).toContain('Warning: configured source "npm:@acme/kits" publishes no kit named "default"');
+    expect(stderr).toContain('`rdy run --sources drift`');
+  });
+
+  it('reports a configured package publishing no default in the JSON warnings', async ({ temp }) => {
+    installPackage(temp, 'plain-kit', ['default']);
+    installPackage(temp, '@acme/kits', ['drift']);
+    const { entries, unrunSources } = await resolveKitSources({
+      ...baseArgs,
+      sources: true,
+      configuredSources: npmSources('plain-kit', '@acme/kits'),
+    });
+
+    const { stdout } = await run({ kitEntries: entries, json: true, unrunSources });
+
+    const report = ReportSchema.parse(JSON.parse(stdout));
+    expect(report.warnings).toStrictEqual([expect.objectContaining({ code: 'source-not-run' })]);
   });
 
   it('passes the source and version into the JSON report', async ({ temp }) => {
