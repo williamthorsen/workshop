@@ -35,6 +35,14 @@ export function buildRepositoryProvenance(
   return { kind: 'repository', host: source.type, owner, repo: source.repo, ref: source.ref, source: spelling };
 }
 
+/** Rebuilds the parsed source that a repository kit's provenance records. */
+export function toRepositorySource(provenance: RepositoryProvenance): BitbucketSource | GitHubSource {
+  const { host, owner, ref, repo } = provenance;
+  return host === 'github'
+    ? { type: 'github', org: owner, repo, ref }
+    : { type: 'bitbucket', workspace: owner, repo, ref };
+}
+
 /** Returns a repository kit's source with its ref resolved, as a heading names it: `github:org/repo@ref`. */
 export function formatRepositoryLabel(provenance: RepositoryProvenance): string {
   return `${provenance.host}:${provenance.owner}/${provenance.repo}@${provenance.ref}`;
