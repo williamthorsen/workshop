@@ -313,7 +313,7 @@ The distinction is "fix the repo" (`1`) versus "fix the invocation" (`2`). `rdy 
 Each section names the command that runs the kits beneath it:
 
 ```
-── Sources
+── Uncompiled
    To run: rdy run --jit <kit>[:<checklist>,...]
 📄 deploy
 📄 smoke
@@ -331,13 +331,13 @@ Each section names the command that runs the kits beneath it:
    📋 health
 ```
 
-**Sources** lists the sources that `compile.include` and `compile.exclude` select under `compile.srcDir`, which are the kits that `rdy compile` builds and `rdy run --jit` runs. **Internal** lists the bucket that `internal.dir` and `internal.infix` declare, and it appears only when one of those keys is set; without them, `--internal` resolves a name exactly as plain `--jit` does, so the section would restate **Sources**.
+**Uncompiled** lists the kit sources that `compile.include` and `compile.exclude` select under `compile.srcDir`, which are the kits that `rdy compile` builds and `rdy run --jit` runs. **Internal** lists the bucket that `internal.dir` and `internal.infix` declare, and it appears only when one of those keys is set; without them, `--internal` resolves a name exactly as plain `--jit` does, so the section would restate **Uncompiled**.
 
-Because the sections name invocations rather than files, one file can appear in both. An internal source that `compile.include` and `compile.exclude` also select is listed under **Sources** by its path below `compile.srcDir` and under **Internal** by its name within the bucket, because it is available to both commands and `rdy run --all --jit` runs it. To keep the internal bucket out of **Sources**, and out of the compile sweep with it, exclude it: `include: '*.ts'` selects the top level alone, and `exclude: 'internal/**'` names the directory.
+Because the sections name invocations rather than files, one file can appear in both. An internal source that `compile.include` and `compile.exclude` also select is listed under **Uncompiled** by its path below `compile.srcDir` and under **Internal** by its name within the bucket, because it is available to both commands and `rdy run --all --jit` runs it. To keep the internal bucket out of the compile sweep, and out of **Uncompiled** with it, exclude it: `include: '*.ts'` selects the top level alone, and `exclude: 'internal/**'` names the directory.
 
-Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Sources** or **Internal** lists none, and neither does a kit read from disk without a manifest.
+Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Uncompiled** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
-Kits from the config's `sources` get their own section, each named source-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `sources` nor `omittedSources` is named as a candidate, in the spelling that would add it:
+Kits from the config's `sources` get their own section, each named source-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `sources` nor `omittedSources` is named as a candidate, in the spelling that would add it, and the first candidate shows the config syntax:
 
 ```
 ── Configured sources
@@ -347,7 +347,7 @@ Kits from the config's `sources` get their own section, each named source-first 
 🌐 github:acme/.github@v2 / 📓 callers
 
 ── Available
-   Add to "sources" in the readyup config
+   Add to "sources" in the readyup config, e.g. sources: ['npm:@acme/release-kit']
 📦 npm:@acme/release-kit
 ```
 
