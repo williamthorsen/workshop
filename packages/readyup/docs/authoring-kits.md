@@ -369,5 +369,3 @@ Kits are bundled by esbuild, and its defaults apply, with two settings declared:
 | `useDefineForClassFields` | `true`  |
 
 One consequence applies to every kit: `paths` aliases do not resolve. Import by relative path or package specifier. A kit that uses an alias fails to compile with an error that says why, rather than compiling into something that breaks when it runs.
-
-With the default layout, in which `compile.srcDir` and `compile.outDir` are one directory, the `package.json` that `rdy compile` writes there (see [Compiling](publishing-kits.md#compiling)) also places the kit sources and their tests in an ES-module scope. The project's own `tsc`, ESLint, and Vitest then treat them as ES modules, as their `readyup` imports require, even in a CommonJS project.

@@ -1,15 +1,12 @@
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-import { isScopeMarker } from './ensureModuleScope.ts';
-
 /** Marker naming the directory to which a kit belongs, and the unit in which a package is published. */
 const PACKAGE_MANIFEST = 'package.json';
 
 /**
  * Returns the directory under which a kit compiles: the nearest ancestor containing a `package.json`, or
- * the source's own directory when no ancestor contains one. A module-scope marker that `rdy compile` writes
- * beside its bundles is not a package, so it does not anchor the compile.
+ * the source's own directory when no ancestor contains one.
  *
  * esbuild renders every bundled module's path against the working directory and writes it into the
  * output, so this decides what a kit compiles to. Anchoring on the package root makes a bundle
@@ -24,8 +21,7 @@ export function resolveCompileRoot(inputPath: string): string {
   const sourceDir = path.dirname(path.resolve(inputPath));
 
   for (let directory = sourceDir; ; directory = path.dirname(directory)) {
-    const manifestPath = path.join(directory, PACKAGE_MANIFEST);
-    if (existsSync(manifestPath) && !isScopeMarker(manifestPath)) return toRealPath(directory);
+    if (existsSync(path.join(directory, PACKAGE_MANIFEST))) return toRealPath(directory);
     if (path.dirname(directory) === directory) return toRealPath(sourceDir);
   }
 }

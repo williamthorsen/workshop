@@ -22,8 +22,6 @@ Because the directory is named relative to the enclosing workspace root, a works
 
 `rdy compile` reads its `compile` settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `rdy compile <file>` reads `compile.outDir` alone, which gives the kit its name; `compile.include` and `compile.exclude` select a sweep's sources and affect nothing else. `--config` cannot be combined with `--recursive`, which compiles each project under its own config.
 
-A bundle is an ES module in a `.js` file, so `rdy compile` writes a `package.json` declaring `"type": "module"` at the root of `compile.outDir`, and the bundles load as ES modules whatever `type` the project's own `package.json` declares. A single-file compile whose output is outside `compile.outDir` writes the file beside the bundle instead. Commit it with the bundles. `rdy compile` never overwrites an existing `package.json`: When one between a bundle and `compile.outDir` does not declare `"type": "module"`, as the project's own does when `compile.outDir` is `.` in a CommonJS project, that kit fails with a message that names the file. Declare `"type": "module"` there, or give `compile.outDir` a directory of its own.
-
 A sweep runs to completion: A kit that fails is reported, the next is tried, and the run exits 1. A failed kit is never recorded as though it had compiled, and one compiled previously keeps its existing manifest entry.
 
 A sweep names each kit after its source's path below [`compile.srcDir`](authoring-kits.md#config), extension stripped, so `deploy.ts` is named `deploy` and `ops/deploy.ts` is named `ops/deploy`. The separator is `/` on every platform, and a nested kit is run under the whole name: `rdy run ops/deploy`. Two sources therefore cannot claim one name, and organizing kits into subdirectories needs nothing from the config.
@@ -131,8 +129,6 @@ Publishing takes one line. Compile as usual, then add the kit directory to the p
 ```
 
 `.readyup/manifest.json` is published alongside the bundles, and `rdy list` reads it, so publishing the whole directory makes a package's kits discoverable without running them.
-
-The `package.json` that `rdy compile` writes into `.readyup/kits` is published with the bundles, so a consumer loads them as ES modules whatever `type` the publishing package declares.
 
 Consumers select a single package directly:
 
