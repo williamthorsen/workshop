@@ -37,7 +37,7 @@ describe('--sources run path wiring', () => {
   it('expands a configured package into entries with its name and version', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
 
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -56,7 +56,7 @@ describe('--sources run path wiring', () => {
   it('runs only the default kit when the invocation names none', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default', 'preflight'], { version: '2.1.0' });
 
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -69,7 +69,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, 'plain-kit', ['default', 'preflight']);
     installPackage(temp, '@acme/kits', ['default', 'preflight']);
 
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
@@ -86,7 +86,7 @@ describe('--sources run path wiring', () => {
   it('selects by name when a package includes no manifest', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default', 'preflight'], { hasManifest: false });
 
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('plain-kit'),
@@ -100,7 +100,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, 'plain-kit', ['default']);
     installPackage(temp, '@acme/kits', ['drift', 'preflight']);
 
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
@@ -111,7 +111,7 @@ describe('--sources run path wiring', () => {
 
   it('passes without running a kit when the selection is empty', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['drift']);
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -125,7 +125,7 @@ describe('--sources run path wiring', () => {
 
   it('passes the source and version into the JSON report', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -140,7 +140,7 @@ describe('--sources run path wiring', () => {
 
   it('omits the version from the report when the package declares none', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default']);
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -155,7 +155,7 @@ describe('--sources run path wiring', () => {
 
   it('names the readyup that compiled a package kit beside the package, not inside it', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -171,7 +171,7 @@ describe('--sources run path wiring', () => {
   // A lone dependency-provided kit is the common shape, and its package appears nowhere else on screen.
   it('heads a single package kit with the package and version in human output', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits'),
@@ -186,7 +186,7 @@ describe('--sources run path wiring', () => {
   it('ends a multi-package run with a table covering every checklist that ran', async ({ temp }) => {
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('plain-kit', '@acme/kits'),
@@ -206,7 +206,7 @@ describe('--sources run path wiring', () => {
   it('names each row by the breadcrumb heading that its block has', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits', 'plain-kit'),
@@ -233,7 +233,7 @@ describe('--sources run path wiring', () => {
       path.join('node_modules', 'broken-kit', '.readyup', 'kits', 'default.js'),
       'export default { nope: true };\n',
     );
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
       configuredSources: npmSources('@acme/kits', 'broken-kit', 'plain-kit'),

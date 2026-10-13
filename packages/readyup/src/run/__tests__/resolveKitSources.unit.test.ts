@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 
 /** Compile directories that share no segment with the convention layout, so that a fallback cannot pass as a read. */
@@ -152,7 +153,7 @@ describe(resolveKitSources, () => {
 
   it('resolves --file without internalDir/internalInfix', async () => {
     await expect(
-      resolveKitSources({
+      resolveEntries({
         remote: createUncachedRemoteContext(),
         filePath: 'custom/path.ts',
         fromValue: undefined,
@@ -200,7 +201,7 @@ describe(resolveKitSources, () => {
 
   it('resolves --url without internalDir/internalInfix', async () => {
     await expect(
-      resolveKitSources({
+      resolveEntries({
         remote: createUncachedRemoteContext(),
         filePath: undefined,
         fromValue: undefined,
@@ -235,7 +236,7 @@ describe(resolveKitSources, () => {
 
   it('resolves --from without internalDir/internalInfix', async () => {
     await expect(
-      resolveKitSources({
+      resolveEntries({
         remote: createUncachedRemoteContext(),
         filePath: undefined,
         fromValue: 'github:org/repo',
@@ -354,11 +355,9 @@ describe(resolveKitSources, () => {
 
 // region | Helpers
 
-/** Builds args with defaults for internal config. */
-function resolve(
-  overrides: Partial<Parameters<typeof resolveKitSources>[0]> = {},
-): ReturnType<typeof resolveKitSources> {
-  return resolveKitSources({
+/** Resolves the entries of a run whose flags take the defaults for internal config, unless overridden. */
+async function resolve(overrides: Partial<Parameters<typeof resolveKitSources>[0]> = {}): Promise<ResolvedKitEntry[]> {
+  return resolveEntries({
     filePath: undefined,
     fromValue: undefined,
     urlValue: undefined,
@@ -371,6 +370,12 @@ function resolve(
     remote: createUncachedRemoteContext(),
     ...overrides,
   });
+}
+
+/** Resolves the entries of a run. */
+async function resolveEntries(args: Parameters<typeof resolveKitSources>[0]): Promise<ResolvedKitEntry[]> {
+  const { entries } = await resolveKitSources(args);
+  return entries;
 }
 
 // endregion | Helpers

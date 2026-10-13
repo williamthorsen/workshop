@@ -14,8 +14,8 @@ import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
+import type { KitSelection } from './KitSelection.ts';
 import { resolveConfiguredSources } from './resolveConfiguredSources.ts';
-import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveKitSources } from './resolveKitSources.ts';
 
 interface ResolveAllKitSourcesOptions {
@@ -44,11 +44,12 @@ interface ResolveAllKitSourcesOptions {
  * A source containing no kits is a kit-load error: A run that passes with no kits hides a missing compile or a
  * run from the wrong directory.
  */
-export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions): Promise<ResolvedKitEntry[]> {
+export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions): Promise<KitSelection> {
   const { fromValue, internal, jit, sources } = options;
   const extension = jit ? '.ts' : '.js';
 
-  // A configured source publishing no kits is already a config error, so this selection is never empty.
+  // A configured source publishing no kits is already a config error, so this selection is never empty and leaves
+  // no source unrun.
   if (sources) {
     return resolveConfiguredSources(options.configuredSources ?? [], 'all', extension, options.remote);
   }
@@ -112,7 +113,7 @@ function readSourceKitNames(dir: string, compile: ResolvedRdyConfig['compile'] |
 }
 
 /** Resolves the project's compiled kits from the paths that its listing reports. */
-function resolveCompiledKits(outDir: string): ResolvedKitEntry[] {
+function resolveCompiledKits(outDir: string): KitSelection {
   let rows;
   try {
     rows = collectCompiledKits({
@@ -131,11 +132,12 @@ function resolveCompiledKits(outDir: string): ResolvedKitEntry[] {
     });
   }
 
-  return rows.map((row) => ({
+  const entries = rows.map((row) => ({
     name: row.name,
     source: { path: row.path ?? path.relative(process.cwd(), path.join(outDir, `${row.name}.js`)) },
     checklists: [],
   }));
+  return { entries, unrunSources: [] };
 }
 
 /** Resolves enumerated kit names as a named invocation with the same flags would, failing when there are none. */
@@ -143,7 +145,7 @@ function resolveNamedKits(
   options: ResolveAllKitSourcesOptions,
   names: string[],
   emptyMessage: string,
-): Promise<ResolvedKitEntry[]> {
+): Promise<KitSelection> {
   // `resolveKitSources` reads an empty selection as the default kit, so emptiness is settled here.
   if (names.length === 0) {
     throw kitLoadError(emptyMessage);
