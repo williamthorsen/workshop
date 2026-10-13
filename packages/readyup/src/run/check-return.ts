@@ -53,5 +53,5 @@ export function resolveCheckReturn(
 ): unknown {
   if (!isFindingOutcome(raw)) return raw;
 
-  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger, recorder ?? ledger);
+  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger, recorder);
 }
