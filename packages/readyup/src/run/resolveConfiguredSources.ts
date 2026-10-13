@@ -3,7 +3,7 @@ import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { expandConfiguredSources, type SourceKit } from '../sources/expandConfiguredSources.ts';
 import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
-import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
+import type { KitSelection, UnrunSource } from './KitSelection.ts';
 
 /**
  * Resolves the requested kits, drawn from what the configured sources publish, into run entries.
@@ -14,14 +14,15 @@ import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
  * An empty `sources` list is a usage error: The flag names a config key that the config does not have, so
  * the invocation asks for something that cannot be answered. Configured sources that publish no
  * requested kit are a different case and run nothing, which is the honest answer to "does this project
- * satisfy what these sources require of it" when they require nothing.
+ * satisfy what these sources require of it" when they require nothing. The selection names them, so that the
+ * run can say which sources it left out.
  */
 export async function resolveConfiguredSources(
   configuredSources: readonly ConfiguredSource[],
   requestedNames: string[] | 'all',
   extension: string,
   remote: RemoteFetchContext,
-): Promise<ResolvedKitEntry[]> {
+): Promise<KitSelection> {
   if (configuredSources.length === 0) {
     throw usageError('--sources requires a "sources" list in the readyup config; none is configured.');
   }
@@ -29,20 +30,33 @@ export async function resolveConfiguredSources(
   const published = await expandConfiguredSources(configuredSources, extension, remote);
   const selected = requestedNames === 'all' ? published : selectRequestedKits(published, requestedNames);
 
-  return selected.map((kit) => ({
-    name: kit.kitName,
-    source: kit.location,
-    checklists: [],
-    provenance: kit.provenance,
-  }));
+  return {
+    entries: selected.map((kit) => ({
+      name: kit.kitName,
+      source: kit.location,
+      checklists: [],
+      provenance: kit.provenance,
+    })),
+    unrunSources: requestedNames === 'all' ? [] : listUnrunSources(published, selected, requestedNames),
+  };
 }
 
 // region | Helpers
 
+/** Lists, once each and in configured order, the sources that published kits but contributed none to the selection. */
+function listUnrunSources(published: SourceKit[], selected: SourceKit[], requestedNames: string[]): UnrunSource[] {
+  const contributing = new Set(selected.map((kit) => kit.source));
+  const publishedBySource = Map.groupBy(published, (kit) => kit.source);
+
+  return [...publishedBySource]
+    .filter(([spelling]) => !contributing.has(spelling))
+    .map(([spelling, kits]) => ({ spelling, requestedNames, publishedNames: kits.map((kit) => kit.kitName) }));
+}
+
 /**
  * Narrows what the configured sources publish to the requested kits, name-major.
  *
- * A configured source not publishing a requested kit is skipped rather than reported: `--sources`
+ * A configured source not publishing a requested kit is skipped rather than failed: `--sources`
  * asks whether this project satisfies what its configured sources require of it, and a source
  * requiring nothing under that name asks nothing of it.
  *

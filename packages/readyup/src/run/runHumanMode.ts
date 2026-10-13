@@ -12,6 +12,7 @@ import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
 import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
+import type { UnrunSource } from './KitSelection.ts';
 import { loadKit } from './loadKit.ts';
 import { warnOnUnusedPragmas } from './pragma-report.ts';
 import { createPragmaLedger, type PragmaLedger } from './PragmaLedger.ts';
@@ -21,6 +22,7 @@ import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
 import { warnOnMaskedSkips } from './skip-diagnosis.ts';
+import { formatEmptySelection, warnOnUnrunSources } from './source-report.ts';
 import { warnOnVersionSkew } from './version-skew.ts';
 
 interface HumanRunSettings {
@@ -29,6 +31,7 @@ interface HumanRunSettings {
   quiet: boolean;
   remote: RemoteFetchContext;
   reportOn: Severity | undefined;
+  unrunSources: readonly UnrunSource[];
 }
 
 /**
@@ -46,7 +49,8 @@ export async function runHumanMode(
   // Say so when a run selected nothing, which happens under `--sources` when no configured source
   // publishes the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
   if (kitEntries.length === 0) {
-    process.stdout.write('No kits to run.\n');
+    process.stdout.write(`${formatEmptySelection(settings.unrunSources)}\n`);
+    warnOnUnrunSources(settings.unrunSources);
     return EXIT_OK;
   }
 
@@ -101,6 +105,7 @@ export async function runHumanMode(
   // Warn after the summary table, the last block in which a reported file may have been named.
   warnOnUnusedPragmas(pragmaLedger);
   await warnOnUnmarkedGeneratedSources(pragmaLedger);
+  warnOnUnrunSources(settings.unrunSources);
 
   return resolveRunExitCode(anyKitFailed, allPassed);
 }

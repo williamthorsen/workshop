@@ -1,5 +1,7 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { RdyError } from '../../errors/RdyError.ts';
 import type { KitSpecifier } from '../parseKitSpecifiers.ts';
 import { type RunFlagConstraints, validateRunFlags } from '../validateRunFlags.ts';
 
@@ -35,20 +37,20 @@ describe(validateRunFlags, () => {
 
   describe('source-flag exclusivity', () => {
     it.each([
-      { label: '--file and --from', overrides: { file: 'path.ts', from: '/other/repo' }, message: '--file, --from' },
+      { label: '--file and --from', overrides: { file: 'path.ts', from: '/other/repo' }, message: '--file and --from' },
       {
         label: '--file and --url',
         overrides: { file: 'path.ts', url: 'https://example.com/config.js' },
-        message: '--file, --url',
+        message: '--file and --url',
       },
       {
         label: '--from and --url',
         overrides: { from: '/path', url: 'https://example.com/config.js' },
-        message: '--from, --url',
+        message: '--from and --url',
       },
-      { label: '--from and --sources', overrides: { from: '/path', sources: true }, message: '--from, --sources' },
+      { label: '--from and --sources', overrides: { from: '/path', sources: true }, message: '--from and --sources' },
     ])('throws when $label are combined', ({ overrides, message }) => {
-      expect(() => validateRunFlags(buildConstraints(overrides), [])).toThrow(`Cannot combine ${message} flags`);
+      expect(() => validateRunFlags(buildConstraints(overrides), [])).toThrow(`Cannot combine ${message}: `);
     });
   });
 
@@ -118,6 +120,43 @@ describe(validateRunFlags, () => {
   });
 
   describe('--sources checklist selection', () => {
+    it('names the --from invocation that selects checklists of the named kit', async () => {
+      const error = await captureError(RdyError, () =>
+        validateRunFlags(buildConstraints({ checklists: 'build,test', sources: true }), [buildSpec('deploy')]),
+      );
+
+      expect(error.hint).toBe(
+        "To select checklists of one source's kit, name the source: `rdy run --from <source> deploy --checklists build,test`.",
+      );
+    });
+
+    it('names the default kit in the --from invocation when the run names no kit', async () => {
+      const error = await captureError(RdyError, () =>
+        validateRunFlags(buildConstraints({ checklists: 'build', sources: true }), []),
+      );
+
+      expect(error.hint).toContain('`rdy run --from <source> default --checklists build`');
+    });
+
+    it('names the --from invocation that keeps an inline checklist filter', async () => {
+      const error = await captureError(RdyError, () =>
+        validateRunFlags(buildConstraints({ sources: true }), [buildSpec('deploy', ['build', 'test'])]),
+      );
+
+      expect(error.hint).toContain('`rdy run --from <source> deploy:build,test`');
+    });
+
+    it('names what each combined source flag selects, and asks for one', async () => {
+      const error = await captureError(RdyError, () =>
+        validateRunFlags(buildConstraints({ file: 'path.ts', from: '/path', sources: true }), []),
+      );
+
+      expect(error.message).toBe(
+        'Cannot combine --file, --from, and --sources: --file runs one kit file; --from runs kits from one source; ' +
+          '--sources runs every source in the config. Keep one and drop the others.',
+      );
+    });
+
     it('throws when --sources is combined with --checklists', () => {
       expect(() => validateRunFlags(buildConstraints({ checklists: 'build', sources: true }), [])).toThrow(
         '--sources cannot be combined with --checklists; several configured sources may publish the named kit',

@@ -83,7 +83,7 @@ describe('kits that readyup publishes', () => {
   });
 
   it('runs the default kit on a bare invocation', async () => {
-    const entries = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
+    const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
     await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 
@@ -93,7 +93,7 @@ describe('kits that readyup publishes', () => {
   });
 
   it('runs the publishing kit when it is named', async () => {
-    const entries = await resolveKitSources({
+    const { entries } = await resolveKitSources({
       ...baseArgs,
       fromValue: 'npm:readyup',
       kitSpecifiers: [{ kitName: 'publishing', checklists: [] }],
@@ -113,7 +113,7 @@ describe('kits that readyup publishes', () => {
   // The test therefore expects every setup check to skip: A pass would mean they had judged readyup's own
   // kit directory, which was installed with the package.
   it('judges the consuming project rather than the package from which it came', async () => {
-    const entries = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
+    const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
     const exitCode = await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
 

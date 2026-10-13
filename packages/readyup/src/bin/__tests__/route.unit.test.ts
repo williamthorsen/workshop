@@ -61,9 +61,10 @@ describe(routeCommand, () => {
       internal: { dir: '.', infix: undefined },
       sources: [],
     });
-    mockResolveKitSources.mockReturnValue([
-      { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] },
-    ]);
+    mockResolveKitSources.mockReturnValue({
+      entries: [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] }],
+      unrunSources: [],
+    });
   });
 
   afterEach(() => {
@@ -473,7 +474,10 @@ describe(routeCommand, () => {
       internal: false,
       json: false,
     });
-    mockResolveKitSources.mockReturnValue([{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }]);
+    mockResolveKitSources.mockReturnValue({
+      entries: [{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }],
+      unrunSources: [],
+    });
     mockRunCommand.mockResolvedValue(0);
 
     await routeCli(['run', '--file', 'kit.ts']);
@@ -492,9 +496,10 @@ describe(routeCommand, () => {
       internal: false,
       json: false,
     });
-    mockResolveKitSources.mockReturnValue([
-      { name: 'deploy', source: { url: 'https://example.com/deploy.js' }, checklists: [] },
-    ]);
+    mockResolveKitSources.mockReturnValue({
+      entries: [{ name: 'deploy', source: { url: 'https://example.com/deploy.js' }, checklists: [] }],
+      unrunSources: [],
+    });
     mockRunCommand.mockResolvedValue(0);
 
     await routeCli(['run', '--from', 'github:org/repo', 'deploy']);
@@ -513,9 +518,10 @@ describe(routeCommand, () => {
       internal: false,
       json: false,
     });
-    mockResolveKitSources.mockReturnValue([
-      { name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] },
-    ]);
+    mockResolveKitSources.mockReturnValue({
+      entries: [{ name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] }],
+      unrunSources: [],
+    });
     mockRunCommand.mockResolvedValue(0);
 
     await routeCli(['run', '--url', 'https://example.com/kit.js']);

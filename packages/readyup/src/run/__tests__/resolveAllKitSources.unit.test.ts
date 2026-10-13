@@ -51,7 +51,7 @@ describe(resolveAllKitSources, () => {
         ],
       });
 
-      const entries = await resolveAllKitSources(baseOptions);
+      const { entries } = await resolveAllKitSources(baseOptions);
 
       expect(entries).toStrictEqual([
         { name: 'deploy', source: { path: path.join('.readyup', 'kits', 'deploy.js') }, checklists: [] },
@@ -62,7 +62,7 @@ describe(resolveAllKitSources, () => {
     it('resolves the bundles in the output directory when there is no manifest', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/deploy.js': '', '.readyup/kits/deploy.ts': '' });
 
-      const entries = await resolveAllKitSources(baseOptions);
+      const { entries } = await resolveAllKitSources(baseOptions);
 
       expect(entries).toStrictEqual([
         { name: 'deploy', source: { path: path.join('.readyup', 'kits', 'deploy.js') }, checklists: [] },
@@ -72,7 +72,7 @@ describe(resolveAllKitSources, () => {
     it('resolves a nested bundle when there is no manifest', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/ops/deploy.js': '', '.readyup/kits/top.js': '' });
 
-      const entries = await resolveAllKitSources(baseOptions);
+      const { entries } = await resolveAllKitSources(baseOptions);
 
       expect(entries).toStrictEqual([
         { name: 'ops/deploy', source: { path: path.join('.readyup', 'kits', 'ops', 'deploy.js') }, checklists: [] },
@@ -83,7 +83,7 @@ describe(resolveAllKitSources, () => {
     it('reaches a relocated output directory through the paths that the manifest records', async ({ temp }) => {
       temp.writeJson('.readyup/manifest.json', { version: 1, kits: [{ name: 'lint', path: '../dist/kits/lint.js' }] });
 
-      const entries = await resolveAllKitSources({
+      const { entries } = await resolveAllKitSources({
         ...baseOptions,
         compile: { srcDir: '.readyup/kits', outDir: 'dist/kits', include: undefined, exclude: [] },
       });
@@ -108,9 +108,9 @@ describe(resolveAllKitSources, () => {
     it('resolves every TypeScript source under --jit, as naming each would', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/smoke.ts': '', '.readyup/kits/deploy.ts': '', '.readyup/kits/deploy.js': '' });
 
-      const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const selection = await resolveAllKitSources({ ...baseOptions, jit: true });
 
-      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), jit: true }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), jit: true }));
     });
 
     it('resolves only the infixed kits of the internal directory under --internal', async ({ temp }) => {
@@ -121,9 +121,9 @@ describe(resolveAllKitSources, () => {
       });
       const internalFlags = { internal: true, internalDir: 'internal', internalInfix: 'int', jit: true };
 
-      const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags });
+      const selection = await resolveAllKitSources({ ...baseOptions, ...internalFlags });
 
-      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags }));
     });
 
     it('roots --internal on the configured source directory', async ({ temp }) => {
@@ -131,9 +131,9 @@ describe(resolveAllKitSources, () => {
       const compile = { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] };
       const internalFlags = { internal: true, internalDir: 'internal', jit: true };
 
-      const entries = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
+      const selection = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
 
-      expect(entries).toStrictEqual(
+      expect(selection).toStrictEqual(
         await resolveKitSources({ ...buildNamedArgs(['audit']), ...internalFlags, compile }),
       );
     });
@@ -148,27 +148,27 @@ describe(resolveAllKitSources, () => {
     it('resolves a nested source under --jit, as naming it would', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/ops/deploy.ts': '', '.readyup/kits/top.ts': '' });
 
-      const entries = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const selection = await resolveAllKitSources({ ...baseOptions, jit: true });
 
-      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
     });
 
     it('omits a source that compile.exclude removes', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
       const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: ['helpers/**'] };
 
-      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+      const selection = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
 
-      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
     });
 
     it('omits a source that compile.include does not select', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
       const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] };
 
-      const entries = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+      const selection = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
 
-      expect(entries).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
     });
 
     it('covers the same kits under --jit as a compiled --all', async ({ temp }) => {
@@ -179,8 +179,8 @@ describe(resolveAllKitSources, () => {
         '.readyup/kits/smoke.ts': '',
       });
 
-      const compiled = await resolveAllKitSources(baseOptions);
-      const sources = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const { entries: compiled } = await resolveAllKitSources(baseOptions);
+      const { entries: sources } = await resolveAllKitSources({ ...baseOptions, jit: true });
 
       expect(sources.map((entry) => entry.name)).toStrictEqual(compiled.map((entry) => entry.name));
     });
@@ -188,9 +188,9 @@ describe(resolveAllKitSources, () => {
     it('resolves every kit that a --from directory contains, as naming each would', async ({ temp }) => {
       temp.writeAll({ 'shared/beta.js': '', 'shared/alpha.js': '' });
 
-      const entries = await resolveAllKitSources({ ...baseOptions, fromValue: 'dir:shared' });
+      const selection = await resolveAllKitSources({ ...baseOptions, fromValue: 'dir:shared' });
 
-      expect(entries).toStrictEqual(
+      expect(selection).toStrictEqual(
         await resolveKitSources({ ...buildNamedArgs(['alpha', 'beta']), fromValue: 'dir:shared' }),
       );
     });
@@ -199,9 +199,9 @@ describe(resolveAllKitSources, () => {
       const manifest = { version: 1, kits: [{ name: 'default' }, { name: 'deploy' }] };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(JSON.stringify(manifest))));
 
-      const entries = await resolveAllKitSources({ ...baseOptions, fromValue: 'github:acme/checks' });
+      const selection = await resolveAllKitSources({ ...baseOptions, fromValue: 'github:acme/checks' });
 
-      expect(entries).toStrictEqual(
+      expect(selection).toStrictEqual(
         await resolveKitSources({ ...buildNamedArgs(['default', 'deploy']), fromValue: 'github:acme/checks' }),
       );
     });
@@ -227,7 +227,7 @@ describe(resolveAllKitSources, () => {
       kits: [{ name: 'default' }, { name: 'drift' }],
     });
 
-    const entries = await resolveAllKitSources({
+    const { entries } = await resolveAllKitSources({
       ...baseOptions,
       sources: true,
       configuredSources: [parseConfiguredSource('npm:@acme/kits')],

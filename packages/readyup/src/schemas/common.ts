@@ -59,6 +59,7 @@ export const WarningCodeSchema = z.enum([
   'manifest-unreadable',
   'pragma-unused',
   'skip-masks-pass',
+  'source-not-run',
   'source-stale',
   'target-drift',
   'version-skew',

@@ -1,4 +1,5 @@
 import { usageError } from '../errors/RdyError.ts';
+import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
 
 /** The subset of parsed run flags whose combinations are constrained. */
@@ -17,6 +18,14 @@ export interface RunFlagConstraints {
   url: string | undefined;
 }
 
+/** What each source flag selects, as the exclusivity error states it. */
+const SOURCE_FLAG_SELECTIONS: Record<string, string> = {
+  '--file': 'runs one kit file',
+  '--from': 'runs kits from one source',
+  '--sources': 'runs every source in the config',
+  '--url': 'runs one kit fetched from a URL',
+};
+
 /** Why checklist selection is rejected under `--sources`, whichever spelling expressed it. */
 const SOURCES_CHECKLISTS_REASON =
   'several configured sources may publish the named kit, so the checklists select within no single one';
@@ -28,7 +37,7 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
   const sourceFlags = collectSourceFlags(parsed);
 
   if (sourceFlags.length > 1) {
-    throw usageError(`Cannot combine ${sourceFlags.join(', ')} flags`);
+    throw usageError(describeSourceFlagConflict(sourceFlags));
   }
 
   if (parsed.all) {
@@ -39,13 +48,17 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
   // selection cannot: It names checklists within one kit, and `--sources` may select that kit in several
   // sources. Both spellings of that selection are rejected for the same reason.
   if (parsed.sources && parsed.checklists !== undefined) {
-    throw usageError(`--sources cannot be combined with --checklists; ${SOURCES_CHECKLISTS_REASON}`);
+    const kitName = kitSpecifiers[0]?.kitName ?? DEFAULT_KIT_NAME;
+    throw usageError(`--sources cannot be combined with --checklists; ${SOURCES_CHECKLISTS_REASON}`, {
+      hint: buildFromHint(`${kitName} --checklists ${parsed.checklists}`),
+    });
   }
   const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
   if (parsed.sources && filteredSpec !== undefined) {
     throw usageError(
       `--sources cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
         SOURCES_CHECKLISTS_REASON,
+      { hint: buildFromHint(`${filteredSpec.kitName}:${filteredSpec.checklists.join(',')}`) },
     );
   }
 
@@ -74,6 +87,11 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
 
 // region | Helpers
 
+/** Returns the hint naming the `--from` invocation that selects checklists within one source's kit. */
+function buildFromHint(selection: string): string {
+  return `To select checklists of one source's kit, name the source: \`rdy run --from <source> ${selection}\`.`;
+}
+
 /** Names the source flags present in this invocation, alphabetically, as the exclusivity error lists them. */
 function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   const sourceFlags: string[] = [];
@@ -82,6 +100,13 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   if (parsed.sources) sourceFlags.push('--sources');
   if (parsed.url !== undefined) sourceFlags.push('--url');
   return sourceFlags;
+}
+
+/** Describes a conflict between source flags by saying what each selects, so that the reader knows which to keep. */
+function describeSourceFlagConflict(sourceFlags: string[]): string {
+  const flagList = new Intl.ListFormat('en', { type: 'conjunction' }).format(sourceFlags);
+  const selections = sourceFlags.map((flag) => `${flag} ${SOURCE_FLAG_SELECTIONS[flag] ?? 'selects a source'}`);
+  return `Cannot combine ${flagList}: ${selections.join('; ')}. Keep one and drop the others.`;
 }
 
 /** Rejects a selection that contradicts `--all`, which selects every kit in the source rather than a single kit. */

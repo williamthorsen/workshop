@@ -17,6 +17,7 @@ import { formatRepositoryLabel } from '../../kits/KitProvenance.ts';
 import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { mockResponse } from '../../test-utils/mockResponse.ts';
+import type { KitSelection } from '../KitSelection.ts';
 import { resolveConfiguredSources } from '../resolveConfiguredSources.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 
@@ -93,6 +94,46 @@ describe(resolveConfiguredSources, () => {
     installPackage(temp, '@acme/kits', ['preflight']);
 
     await expect(resolve(['npm:@acme/kits'], ['default'], '.js')).resolves.toStrictEqual([]);
+  });
+
+  it('names each configured source that contributed no kit, with the kits that it publishes', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['default']);
+    installPackage(temp, '@beta/kits', ['preflight', 'drift']);
+    serveManifests({ 'https://raw.githubusercontent.com/acme/standards/main/.readyup/manifest.json': ['demo'] });
+
+    const { unrunSources } = await resolveSelection(
+      ['github:acme/standards', 'npm:@acme/kits', 'npm:@beta/kits'],
+      ['default'],
+      '.js',
+    );
+
+    expect(unrunSources).toStrictEqual([
+      { spelling: 'github:acme/standards', requestedNames: ['default'], publishedNames: ['demo'] },
+      { spelling: 'npm:@beta/kits', requestedNames: ['default'], publishedNames: ['preflight', 'drift'] },
+    ]);
+  });
+
+  it('does not name a source that contributed one of several requested kits', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['preflight']);
+    installPackage(temp, '@beta/kits', ['drift']);
+
+    const { unrunSources } = await resolveSelection(
+      ['npm:@acme/kits', 'npm:@beta/kits'],
+      ['preflight', 'default'],
+      '.js',
+    );
+
+    expect(unrunSources).toStrictEqual([
+      { spelling: 'npm:@beta/kits', requestedNames: ['preflight', 'default'], publishedNames: ['drift'] },
+    ]);
+  });
+
+  it('names no unrun source under "all"', async ({ temp }) => {
+    installPackage(temp, '@acme/kits', ['preflight']);
+
+    const { unrunSources } = await resolveSelection(['npm:@acme/kits'], 'all', '.js');
+
+    expect(unrunSources).toStrictEqual([]);
   });
 
   // Returning an empty pass would be the clean report of nothing checked.
@@ -198,12 +239,22 @@ describe(resolveConfiguredSources, () => {
 
 // region | Helpers
 
-/** Resolves the requested kits from sources spelled as a config writes them. */
+/** Resolves the requested kits from sources spelled as a config writes them, returning the run entries. */
 async function resolve(
   entries: string[],
   requestedNames: string[] | 'all',
   extension: string,
 ): Promise<ResolvedKitEntry[]> {
+  const selection = await resolveSelection(entries, requestedNames, extension);
+  return selection.entries;
+}
+
+/** Resolves the requested kits from sources spelled as a config writes them. */
+async function resolveSelection(
+  entries: string[],
+  requestedNames: string[] | 'all',
+  extension: string,
+): Promise<KitSelection> {
   return resolveConfiguredSources(
     entries.map((entry) => parseConfiguredSource(entry)),
     requestedNames,

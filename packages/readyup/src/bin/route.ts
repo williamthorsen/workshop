@@ -184,7 +184,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
         };
   const remote = createRemoteFetchContext({ reload: parsed.noCache });
 
-  const kitEntries = parsed.all
+  const { entries: kitEntries, unrunSources } = parsed.all
     ? await resolveAllKitSources({
         fromValue: parsed.fromValue,
         jit: parsed.jit,
@@ -209,6 +209,7 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   return runCommand(
     {
       kitEntries,
+      unrunSources,
       json: parsed.json,
       diagnose: parsed.diagnose,
       quiet: parsed.quiet,

@@ -89,6 +89,7 @@ describe('generated JSON Schemas', () => {
             'manifest-unreadable',
             'pragma-unused',
             'skip-masks-pass',
+            'source-not-run',
             'source-stale',
             'target-drift',
             'version-skew',

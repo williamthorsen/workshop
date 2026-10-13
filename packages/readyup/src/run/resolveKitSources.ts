@@ -9,12 +9,13 @@ import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
+import type { KitSelection } from './KitSelection.ts';
 import type { KitSpecifier } from './parseKitSpecifiers.ts';
 import { resolveConfiguredSources } from './resolveConfiguredSources.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveFromSource } from './resolveFromSource.ts';
 
-/** Resolves parsed flags into an array of kit entries to execute. */
+/** Resolves parsed flags into the kit entries to execute and the configured sources that contribute none. */
 export async function resolveKitSources({
   filePath,
   fromValue,
@@ -44,20 +45,22 @@ export async function resolveKitSources({
   /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
   remote: RemoteFetchContext;
-}): Promise<ResolvedKitEntry[]> {
+}): Promise<KitSelection> {
   if (filePath !== undefined) {
-    return [
+    return selectEntries([
       {
         name: path.basename(filePath, path.extname(filePath)),
         source: { path: filePath },
         checklists: checklists ?? [],
         provenance: { kind: 'directory', label: path.dirname(filePath) },
       },
-    ];
+    ]);
   }
   if (urlValue !== undefined) {
     const { label, name } = describeUrlSource(urlValue);
-    return [{ name, source: { url: urlValue }, checklists: checklists ?? [], provenance: { kind: 'remote', label } }];
+    return selectEntries([
+      { name, source: { url: urlValue }, checklists: checklists ?? [], provenance: { kind: 'remote', label } },
+    ]);
   }
 
   // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
@@ -83,27 +86,31 @@ export async function resolveKitSources({
     } catch (error: unknown) {
       throw usageError(describeError(error), { cause: error });
     }
-    return resolveFromSource(source, fromValue, specs, extension);
+    return selectEntries(resolveFromSource(source, fromValue, specs, extension));
   }
 
   // Default/internal case: Resolve from the current repo.
   const root = resolveKitRoot(compile, jit);
 
   if (internal) {
-    return specs.map((spec) => ({
-      name: spec.kitName,
-      source: {
-        path: path.join(root, internalDir ?? '.', buildKitFilename(spec.kitName, internalInfix, extension)),
-      },
-      checklists: spec.checklists,
-    }));
+    return selectEntries(
+      specs.map((spec) => ({
+        name: spec.kitName,
+        source: {
+          path: path.join(root, internalDir ?? '.', buildKitFilename(spec.kitName, internalInfix, extension)),
+        },
+        checklists: spec.checklists,
+      })),
+    );
   }
 
-  return specs.map((spec) => ({
-    name: spec.kitName,
-    source: { path: path.join(root, `${spec.kitName}${extension}`) },
-    checklists: spec.checklists,
-  }));
+  return selectEntries(
+    specs.map((spec) => ({
+      name: spec.kitName,
+      source: { path: path.join(root, `${spec.kitName}${extension}`) },
+      checklists: spec.checklists,
+    })),
+  );
 }
 
 // region | Helpers
@@ -120,6 +127,11 @@ function describeUrlSource(urlValue: string): { label: string; name: string } {
 
   const { host, pathname } = new URL(urlValue);
   return { label: `${host}${pathname}`, name: path.basename(pathname, path.extname(pathname)) };
+}
+
+/** Returns a selection of the given entries from a source other than the configured ones, which leaves none unrun. */
+function selectEntries(entries: ResolvedKitEntry[]): KitSelection {
+  return { entries, unrunSources: [] };
 }
 
 // endregion | Helpers
