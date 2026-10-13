@@ -33,7 +33,9 @@ const LOCKFILE_MANAGERS = [
 ] as const;
 
 /**
- * Returns the command that installs a package as a dev dependency of the current project.
+ * Returns the command that installs packages as dev dependencies of the current project.
+ *
+ * `moduleName` may name several packages, separated by spaces.
  *
  * The package manager comes from the nearest directory that names one, falling back to npm when
  * none does.
