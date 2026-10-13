@@ -7,15 +7,10 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
-const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
 
 // The bundler and the import of its output are mocked; discovery, configs, manifests, and the drift gate read the tree.
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
-}));
-
-vi.mock(import('../validateCompiledOutput.ts'), () => ({
-  validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
@@ -92,12 +87,10 @@ describe('compile --recursive', () => {
 
   beforeEach(() => {
     mockCompileConfig.mockImplementation(compileResult);
-    mockValidateCompiledOutput.mockResolvedValue({ checklists: [] });
   });
 
   afterEach(() => {
     mockCompileConfig.mockReset();
-    mockValidateCompiledOutput.mockReset();
     setStyle('rich');
   });
 
@@ -398,6 +391,7 @@ function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/
     esbuildVersion: '0.99.0-test',
     inlinedJson: [],
     inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
+    metadata: { checklists: [] },
     outputPath: path.resolve(outputPath),
     targetHash: 'aaaa1111',
   });
