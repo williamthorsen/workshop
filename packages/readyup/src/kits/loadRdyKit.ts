@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { inlinePickJsonCalls } from '../compile/inlinePickJsonCalls.ts';
+import { projectJsonFile } from '../compile/projectJsonFile.ts';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { jitiImport } from '../portable/jitiImport.ts';
@@ -100,6 +102,9 @@ async function importBundle(resolvedPath: string): Promise<Record<string, unknow
 /**
  * Imports a kit source through jiti. Source binds readyup through the project's own installation, which resolves or
  * fails on its own terms, so its imports are not checked first.
+ *
+ * Replaces each module's `pickJson` calls with the literals that `rdy compile` would inline, reading the JSON afresh
+ * on every load.
  */
 async function importSource(resolvedPath: string): Promise<Record<string, unknown>> {
   return jitiImport(
@@ -107,6 +112,7 @@ async function importSource(resolvedPath: string): Promise<Record<string, unknow
     'Uncompiled kits require the package to be installed as a project dependency. ' +
       "Alternatively, run 'rdy compile' to produce a self-contained bundle that does not need a local install.",
     'Kit file',
+    { transformSource: (source, filename) => inlinePickJsonCalls(source, filename, projectJsonFile) },
   );
 }
 
