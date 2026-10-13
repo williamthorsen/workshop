@@ -34,6 +34,7 @@ import { collectSourceFiles } from './collectSourceFiles.ts';
 import { compileConfig } from './compileConfig.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
+import { ensureModuleScope } from './ensureModuleScope.ts';
 import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
 import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
 import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
@@ -168,6 +169,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   let result;
   let metadata: KitMetadata;
   try {
+    ensureModuleScope(resolvedOutputPath, config.compile.outDir);
     result = await compileConfig(inputPath, outputPath);
     metadata = await validateCompiledOutput(result.outputPath);
   } catch (error: unknown) {
@@ -567,6 +569,7 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
   }
 
   try {
+    ensureModuleScope(outFile, outDir);
     const result = await compileConfig(srcFile, outFile);
     const metadata = await validateCompiledOutput(result.outputPath);
     writeHuman(formatResultLine(fileName, outName, result.changed), json);

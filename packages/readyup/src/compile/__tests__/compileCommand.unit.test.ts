@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RdyManifest } from '../../manifest/manifestSchema.ts';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn());
+const mockEnsureModuleScope = vi.hoisted(() => vi.fn());
 const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
 const mockLoadConfig = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
@@ -21,6 +22,10 @@ const mockWarnOnUnrecordedBundles = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
+}));
+
+vi.mock(import('../ensureModuleScope.ts'), () => ({
+  ensureModuleScope: mockEnsureModuleScope,
 }));
 
 vi.mock(import('../validateCompiledOutput.ts'), () => ({
@@ -142,6 +147,7 @@ describe(compileCommand, () => {
   afterEach(() => {
     vi.restoreAllMocks();
     mockCompileConfig.mockReset();
+    mockEnsureModuleScope.mockReset();
     mockValidateCompiledOutput.mockReset();
     mockLoadConfig.mockReset();
     mockExistsSync.mockReset();
@@ -783,7 +789,45 @@ describe(compileCommand, () => {
     });
   });
 
+  it('fails a single-file compile without building it when the output is outside an ES-module scope', async () => {
+    mockEnsureModuleScope.mockImplementation(() => {
+      throw new Error('Compiled kits are ES modules, but package.json does not declare "type": "module".');
+    });
+
+    const { exitCode, stderr } = await compile(['input.ts']);
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('package.json does not declare "type": "module"');
+    expect(mockCompileConfig).not.toHaveBeenCalled();
+  });
+
   describe('--json', () => {
+    it('reports only the kit whose output is outside an ES-module scope as failed', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
+      const scopeError = 'Compiled kits are ES modules, but package.json does not declare "type": "module".';
+      mockEnsureModuleScope.mockImplementationOnce(() => {
+        throw new Error(scopeError);
+      });
+      mockCompileConfig.mockResolvedValue(
+        compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+      );
+
+      const { exitCode, stdout } = await compile(['--json']);
+
+      expect(exitCode).toBe(1);
+      expect(JSON.parse(stdout)).toMatchObject({
+        passed: false,
+        kits: [
+          { name: 'alpha', status: 'failed', error: scopeError },
+          { name: 'beta', status: 'compiled' },
+        ],
+      });
+    });
+
     it('reports every kit status on stdout and keeps prose on stderr', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
