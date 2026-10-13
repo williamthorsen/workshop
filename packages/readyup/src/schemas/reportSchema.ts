@@ -48,6 +48,7 @@ export const CheckEntrySchema = z
     fix: z.string().optional(),
     error: z.string().optional(),
     progress: ProgressSchema.optional(),
+    examinedCount: z.int().min(0).optional(),
     get checks() {
       return z.array(CheckEntrySchema).optional();
     },

@@ -251,6 +251,9 @@ interface RdyResultBase {
   /** Progress data, if the check reported it. */
   progress: Progress | null;
 
+  /** The number of distinct files examined by a check that returned findings, or `null` for any other result. */
+  examinedCount: number | null;
+
   /** Wall-clock time to execute the check, in milliseconds. */
   durationMs: number;
 

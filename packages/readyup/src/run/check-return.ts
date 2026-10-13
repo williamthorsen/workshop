@@ -1,3 +1,4 @@
+import type { SweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { CheckOutcome, FindingOutcome, RdyCheck } from '../kits/types.ts';
 import { describeValue } from '../portable/describe-value.ts';
@@ -41,14 +42,16 @@ export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
  *
  * When the caller keeps a ledger, it passes the ledger to the resolution; that is how a run records what its
  * checks examined and suppressed, while a diagnosis, passing none, leaves no trace of a check that did not run.
+ * A `recorder` receives the check's `scanned` paths in place of the ledger.
  */
 export function resolveCheckReturn(
   raw: unknown,
   check: RdyCheck,
   provenance: KitProvenance | undefined,
   ledger?: PragmaLedger,
+  recorder?: SweepRecorder,
 ): unknown {
   if (!isFindingOutcome(raw)) return raw;
 
-  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger);
+  return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger, recorder);
 }

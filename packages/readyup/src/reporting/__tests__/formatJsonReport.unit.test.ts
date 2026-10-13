@@ -17,6 +17,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
     detail: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 10,
     depth: 0,
     ...overrides,
@@ -35,6 +36,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
     fix: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 5,
     depth: 0,
     ...overrides,
@@ -53,6 +55,7 @@ function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
     detail: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 0,
     depth: 0,
     ...overrides,
@@ -552,6 +555,24 @@ describe(formatJsonReport, () => {
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ progress: { type: 'percent', percent: 75 } }] }] }],
       });
+    });
+
+    it('serializes the count of files examined by a finding check', () => {
+      const report = makeReport({
+        results: [makePassedResult({ name: 'a', examinedCount: 12 })],
+        passed: true,
+        durationMs: 10,
+      });
+
+      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+
+      expect(parsed).toMatchObject({ kits: [{ checklists: [{ checks: [{ examinedCount: 12 }] }] }] });
+    });
+
+    it('omits the examined count for a check that did not return findings', () => {
+      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+
+      expect(output).not.toContain('"examinedCount"');
     });
   });
 

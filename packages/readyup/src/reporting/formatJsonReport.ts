@@ -251,6 +251,7 @@ function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[]): JsonChe
   if (result.status === 'failed' && result.fix !== null) entry.fix = result.fix;
   if (result.error !== null) entry.error = result.error.message;
   if (result.progress !== null) entry.progress = result.progress;
+  if (result.examinedCount !== null) entry.examinedCount = result.examinedCount;
   if (children.length > 0) entry.checks = children;
 
   return entry;

@@ -33,6 +33,7 @@ function makePassedResult(overrides?: Partial<PassedResult>): PassedResult {
     detail: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 10,
     depth: 0,
     ...overrides,
@@ -51,6 +52,7 @@ function makeFailedResult(overrides?: Partial<FailedResult>): FailedResult {
     fix: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 5,
     depth: 0,
     ...overrides,
@@ -69,6 +71,7 @@ function makeSkippedResult(overrides?: Partial<SkippedResult>): SkippedResult {
     detail: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 0,
     depth: 0,
     ...overrides,
@@ -164,6 +167,52 @@ describe(reportRdy, () => {
       ).body;
 
       expect(lineNaming(output, 'target')).toBe(`${PASSED} target [85%]`);
+    });
+
+    it.each([
+      [12, '12 files examined'],
+      [1, '1 file examined'],
+      [0, '0 files examined'],
+    ])('renders an empty fraction over %i examined files as the count examined', (examinedCount, expected) => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({
+              name: 'target',
+              progress: { type: 'fraction', passedCount: 0, count: 0 },
+              examinedCount,
+            }),
+          ],
+        }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target [${expected}]`);
+    });
+
+    it('renders a non-empty fraction as a fraction whatever the examined count', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({
+              name: 'target',
+              progress: { type: 'fraction', passedCount: 3, count: 5 },
+              examinedCount: 9,
+            }),
+          ],
+        }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target [3 of 5]`);
+    });
+
+    it('renders an empty fraction without an examined count as a fraction', () => {
+      const output = reportRdy(
+        makeReport({
+          results: [makePassedResult({ name: 'target', progress: { type: 'fraction', passedCount: 0, count: 0 } })],
+        }),
+      ).body;
+
+      expect(lineNaming(output, 'target')).toBe(`${PASSED} target [0 of 0]`);
     });
 
     it('renders detail and progress together with one separator', () => {

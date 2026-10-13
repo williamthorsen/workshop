@@ -49,6 +49,7 @@ export const reportPayload = {
               severity: 'error',
               durationMs: 3,
               progress: { type: 'fraction', passedCount: 3, count: 5 },
+              examinedCount: 12,
               checks: [
                 {
                   name: 'child',

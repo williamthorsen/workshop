@@ -2,6 +2,7 @@ import assert from 'node:assert';
 
 import { describe, expect, it } from 'vitest';
 
+import { recordSweep } from '../../check-utils/project/sweepRecorder.ts';
 import type { CheckReturnValue, RdyCheck, RdyChecklist, RdyStagedChecklist, SkipResult } from '../../kits/types.ts';
 import { asSeverity } from '../../test-utils/asSeverity.ts';
 import { runRdy } from '../runRdy.ts';
@@ -1921,6 +1922,59 @@ describe(runRdy, () => {
       expect(result.status).toBe('failed');
       expect(result.detail).toBe('describeError (fixture/errors.ts:12)');
       expect(result.progress).toStrictEqual({ count: 4, passedCount: 2, type: 'fraction' });
+    });
+
+    it('counts each file examined by the check once, across its skip, its check, and its scanned', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [
+          {
+            name: 'no source hand-rolls the idiom',
+            skip: () => {
+              recordSweep(['src/a.ts', 'src/b.ts']);
+              return false;
+            },
+            check: () => {
+              recordSweep(['src/b.ts', 'src/c.ts']);
+              return { adoptedCount: 0, findings: [], scanned: ['src/c.ts', 'src/d.ts'] };
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.examinedCount).toBe(4);
+    });
+
+    it('counts zero files for a finding check that examined none', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [{ name: 'no source hand-rolls the idiom', check: () => ({ adoptedCount: 0, findings: [] }) }],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.examinedCount).toBe(0);
+    });
+
+    it('reports no examined count for a check that does not return findings', async () => {
+      const checklist: RdyChecklist = {
+        name: 'adoption',
+        checks: [
+          {
+            name: 'claim',
+            check: () => {
+              recordSweep(['src/a.ts']);
+              return { ok: true };
+            },
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.examinedCount).toBeNull();
     });
   });
 

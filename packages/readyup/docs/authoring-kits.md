@@ -94,7 +94,7 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 
 `reported` marks the sites named by this check; the rest count toward the fraction and have no other effect. The runner drops the sites that a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, derives `ok` from whether any survived, and counts every survivor into the fraction. A failure's remediation is the check's `fix`. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
 
-`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded automatically, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` when the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or using `fs` directly -- because nothing else can detect what those read.
+`scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded automatically, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` when the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or using `fs` directly -- because nothing else can detect what those read. The same record supplies the count of files examined that a `0 of 0` fraction prints, so an undeclared read also leaves that count short.
 
 ## Naming checks
 
@@ -190,7 +190,7 @@ It produces:
 🔴 Total: 1 error, 3 passed, 1 skipped (0ms)
 ```
 
-A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence.
+A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence. A check returning findings whose fraction is `0 of 0` prints the number of files that it examined in its place, such as `[12 files examined]`, because that is the evidence on which an empty sweep's pass rests.
 
 ## When a check skips
 

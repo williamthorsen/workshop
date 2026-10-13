@@ -1,3 +1,5 @@
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
+
 import {
   type FailedResult,
   type FixLocation,
@@ -156,7 +158,7 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
     ...(!isFailed && result.detail !== null && { detail: result.detail }),
     // Only a failure gives the reader a pragma to write, because only a failure names findings.
     ...(isFailed && result.id !== null && { checkId: result.id }),
-    ...(result.progress !== null && { progress: formatProgress(result.progress) }),
+    ...(result.progress !== null && { progress: formatProgress(result.progress, result.examinedCount) }),
   });
 
   if (!isFailed) return [checkLine];
@@ -209,10 +211,16 @@ function resolveResultToken(result: RdyResult): TokenName {
   return resolveWorstToken(result.severity);
 }
 
-/** Returns a progress value as a percentage or a passed-of-total fraction. */
-function formatProgress(progress: Progress): string {
+/**
+ * Returns a progress value as a percentage or a passed-of-total fraction, or, for an empty fraction with a known
+ * examined count, as the number of files examined, which is what such a pass rests on.
+ */
+function formatProgress(progress: Progress, examinedCount: number | null): string {
   if (isPercentProgress(progress)) {
     return `${progress.percent}%`;
+  }
+  if (progress.count === 0 && examinedCount !== null) {
+    return `${pluralizeWithCount(examinedCount, 'file')} examined`;
   }
   return `${progress.passedCount} of ${progress.count}`;
 }
