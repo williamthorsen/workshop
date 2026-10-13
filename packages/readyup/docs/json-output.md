@@ -97,6 +97,7 @@ An error body may also include `hint`, one action that would clear the failure:
 - **`origin`** names the kit source from which a kit came, for a kit reached through an `npm:`, `github:`, or `bitbucket:` source, whether named by `--from` or by the config's `sources` list: `source` is the source as written there, and `version` is the installed version of a package that declares one. Two sources may each publish a kit of the same name, so `name` alone does not identify what ran.
 - **`compiledWith`** names the readyup that built a kit's bundle. It appears on every kit whose bundle records one, including when that version matches the report's own `readyupVersion`, and is absent for a bundle compiled before readyup recorded it and for a kit run from source under `--jit`. `rdy verify`'s [`rebuildCompiledWith`](publishing-kits.md#verifying-by-recompiling) reports the same value under a narrower rule, appearing only when it disagrees with the running readyup: That field explains a mismatch, this one records what ran.
 - **`warnings`** lists any advisory as `{ code, message, remedy? }`, absent when none was raised.
+- **`examinedCount`** appears on the entry of a check that returned findings, and counts the distinct files that the check examined, whether swept through `readTrackedSources` or declared in `scanned`. It is absent from every other entry.
 
 Payloads are slim by construction: An empty field is omitted rather than emitted as `null`, empty `checks` arrays are dropped, and `fix` appears only on failed checks that report no `error`.
 
