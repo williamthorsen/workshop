@@ -60,7 +60,7 @@ An error body may also include `hint`, one action that would clear the failure:
 }
 ```
 
-`hint` is optional and absent when nothing useful can be suggested. It never duplicates text already in `message`, so a consumer can present the two separately. Human output renders it on a line of its own, prefixed `💡 Hint:` under the rich style and `Hint:` under plain.
+`hint` is optional and absent when nothing useful can be suggested. It never duplicates text already in `message`, so a consumer can present the two separately. Human output renders it on a line of its own, prefixed `Hint:`, which the rich style leads with a light-bulb emoji.
 
 ## The run report
 

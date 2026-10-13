@@ -88,3 +88,14 @@ export const richFormatter: Formatter = {
   },
   tokens: GLYPHS.rich,
 };
+
+/**
+ * Each emoji that rich output prints, mapped to what plain output prints in its place.
+ *
+ * Text that quotes rich output, such as a doc's sample, reads as plain output once each key is replaced by its value.
+ * An empty value marks a glyph that plain output omits.
+ */
+export const PLAIN_BY_RICH_GLYPH: ReadonlyMap<string, string> = new Map([
+  ...TOKEN_NAMES.map((name): [string, string] => [GLYPHS.rich[name].text, GLYPHS.plain[name].text]),
+  ['\u{1F4A1}', ''],
+]);

@@ -32,9 +32,9 @@ describe('rdy help', () => {
   );
 
   it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ file, topic })))(
-    'prints $file for topic $topic',
+    'prints $file, rendered, for topic $topic',
     async ({ file, topic }) => {
-      const { exitCode, stdout } = await route(['help', topic]);
+      const { exitCode, stdout } = await route(['--style', 'rich', 'help', topic]);
 
       expect(exitCode).toBe(0);
       expect(stdout.trimEnd()).toBe(
@@ -62,6 +62,23 @@ describe('rdy help', () => {
       expect(viaStem.stdout).toBe(viaTopic.stdout);
     },
   );
+
+  it.each(Object.keys(TOPICS).map((topic) => ({ topic })))(
+    'prints topic $topic without emoji under --style plain',
+    async ({ topic }) => {
+      const { exitCode, stdout } = await route(['--style', 'plain', 'help', topic]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).not.toMatch(/\p{Extended_Pictographic}/u);
+    },
+  );
+
+  it('prints the concepts legends under --style plain without the rich glyphs that they key', async () => {
+    const { stdout } = await route(['--style', 'plain', 'help', 'concepts']);
+
+    expect(stdout).toMatch(/^\| Plain +\| Status +\| Derived from +\|$/m);
+    expect(stdout).not.toContain('| Names');
+  });
 
   it('suggests the nearest file stem for a near-miss of one', async () => {
     const { stderr } = await route(['help', 'publishing-kit']);

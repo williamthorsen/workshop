@@ -33,8 +33,7 @@ A check result has one of three statuses -- `passed`, `failed`, or `skipped`. Th
 | 🟡   | `RECO`  | `failed`  | severity `recommend`                         |
 | ⚪   | `SKIP`  | `skipped` | `skip` returned a reason; counts as optional |
 | 🚫   | `BLOCK` | `skipped` | a precondition failed; counts as blocked     |
-
-💊 `FIX` marks a remediation hint rather than a result.
+| 💊   | `FIX`   | --        | a remediation hint, not a result             |
 
 Role glyphs are nouns rather than statuses. They name what something is, in a heading segment or beside a listed row, and plain style renders none of them: Position shows the meaning instead.
 

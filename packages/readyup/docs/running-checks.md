@@ -188,7 +188,7 @@ error instanceof Error ? error.message : String(error);
 A failed check prints its id bracketed ahead of its fraction, and a pragma uses that printed form:
 
 ```
-❌ No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
+🔴 No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
    src/a.ts:4, src/b.ts:9
 ```
 
