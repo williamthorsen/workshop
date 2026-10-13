@@ -1,4 +1,5 @@
 import { isError } from '@williamthorsen/toolbelt.errors';
+import type { createJiti, Jiti } from 'jiti';
 
 import { buildInstallCommand } from './buildInstallCommand.ts';
 import { isRecord } from './isRecord.ts';
@@ -14,14 +15,20 @@ const NON_PACKAGE_PREFIXES = ['.', '/', '#', 'node:'];
  * and `moduleErrorDetail`, with the install command on a `hint` property beside the message. The hint
  * is set on the error rather than a typed failure, because the same failure is classified under two
  * different codes. When the imported value is not a plain object, the function throws an error naming `exportNoun`.
+ * An error thrown by `options.transformSource` propagates with its message unchanged.
  */
 export async function jitiImport(
   resolvedPath: string,
   moduleErrorDetail: string,
   exportNoun: string,
+  options: JitiImportOptions = {},
 ): Promise<Record<string, unknown>> {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(resolvedPath);
+  const { transformSource } = options;
+  const jiti =
+    transformSource === undefined
+      ? createJiti(resolvedPath)
+      : createTransformingJiti(createJiti, resolvedPath, transformSource);
 
   let imported: unknown;
   try {
@@ -45,6 +52,37 @@ export async function jitiImport(
   }
 
   return imported;
+}
+
+/** Optional behavior of `jitiImport`. */
+export interface JitiImportOptions {
+  /**
+   * Rewrites each module's source before jiti transforms it. Setting it turns off jiti's filesystem and module
+   * caches, which key on the source alone and would return a stale result when the rewrite depends on another file.
+   */
+  transformSource?: (source: string, filename: string) => string;
+}
+
+/**
+ * Returns a jiti instance that applies `transformSource` to each module's source and then jiti's own transform.
+ *
+ * A custom transform replaces jiti's, so a second instance supplies the default transform.
+ */
+function createTransformingJiti(
+  create: typeof createJiti,
+  resolvedPath: string,
+  transformSource: (source: string, filename: string) => string,
+): Jiti {
+  const base = create(resolvedPath, { fsCache: false });
+  return create(resolvedPath, {
+    fsCache: false,
+    moduleCache: false,
+    transform: (transformOptions) => {
+      const { filename, source } = transformOptions;
+      const rewritten = filename === undefined ? source : transformSource(source, filename);
+      return { code: base.transform({ ...transformOptions, source: rewritten }) };
+    },
+  });
 }
 
 /** What a reader is told about a specifier that jiti could not resolve. */
