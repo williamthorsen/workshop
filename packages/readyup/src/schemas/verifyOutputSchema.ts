@@ -165,9 +165,9 @@ export const VerifyUncompiledEntrySchema = z
 /**
  * Top-level shape of `rdy verify --json`.
  *
- * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified`, no kit source is
- * uncompiled, and, under `--recursive`, every project passed, agreeing with exit code 0. An unreadable manifest produces the error envelope instead
- * of this payload, except under `--recursive`, which reports it as a failed project.
+ * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified`, no kit source is uncompiled,
+ * and, under `--recursive`, every project passed, agreeing with exit code 0. An unreadable manifest produces the
+ * error envelope instead of this payload, except under `--recursive`, which reports it as a failed project.
  *
  * `projects` is emitted under `--recursive` alone and lists every project that the sweep visited, including
  * a project that contributed no kit entry.

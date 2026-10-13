@@ -244,7 +244,23 @@ describe(verifyCommand, () => {
 
       await verify(['--config', 'custom/readyup.config.ts']);
 
-      expect(mockLoadConfig).toHaveBeenCalledWith({ overridePath: 'custom/readyup.config.ts' });
+      expect(mockLoadConfig).toHaveBeenCalledWith({
+        fromDir: process.cwd(),
+        overridePath: path.resolve('custom/readyup.config.ts'),
+      });
+    });
+
+    it("selects sources from the manifest's own project when the manifest sits at the default path", async () => {
+      using tree = createTempTree({ 'pkg/.readyup/kits/alpha.ts': '', 'pkg/.readyup/kits/beta.ts': '' });
+      mockLoadConfig.mockResolvedValue(buildConfig('.readyup/kits'));
+      mockReadManifest.mockReturnValue({ version: 1, kits: [{ name: 'alpha', path: 'kits/alpha.js' }] });
+
+      const { exitCode, stdout } = await verify(['--manifest', tree.resolve('pkg/.readyup/manifest.json')]);
+
+      expect(mockLoadConfig).toHaveBeenCalledWith({ fromDir: tree.resolve('pkg') });
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(`${FAILED} beta\n   source not compiled (kits/beta.ts)`);
+      expect(stdout).not.toContain(`${FAILED} alpha`);
     });
 
     it('reports a config error when the config cannot be evaluated', async () => {

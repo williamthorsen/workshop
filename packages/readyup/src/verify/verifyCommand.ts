@@ -104,11 +104,12 @@ export async function verifyCommand(args: string[]): Promise<number> {
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
   const manifest = loadManifest(manifestPath);
-  const config = await loadVerifyConfig(values.config);
+  const projectDir = resolveManifestProjectDir(manifestPath);
+  const config = await loadVerifyConfig(projectDir, values.config);
   const uncompiled = findUncompiledKits({
     manifest,
     manifestDir: path.dirname(manifestPath),
-    srcDir: path.resolve(process.cwd(), config.compile.srcDir),
+    srcDir: path.resolve(projectDir, config.compile.srcDir),
     selection: config.compile,
   });
   return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json, uncompiled }), json);
@@ -218,10 +219,27 @@ function reportProjectFailure(dir: string, message: string): JsonVerifyProjectEn
   return { project: dir, passed: false, error: message };
 }
 
-/** Loads the working directory's config, or the one named by `--config`, raising a config error when it cannot be evaluated. */
-async function loadVerifyConfig(configPath: string | undefined): Promise<ResolvedRdyConfig> {
+/**
+ * Returns the directory of the project to which a manifest belongs: the one containing it at the default manifest
+ * path, or the working directory for a manifest elsewhere.
+ */
+function resolveManifestProjectDir(manifestPath: string): string {
+  const candidateDir = path.dirname(path.dirname(manifestPath));
+  return path.relative(candidateDir, manifestPath) === path.normalize(DEFAULT_MANIFEST_PATH)
+    ? candidateDir
+    : process.cwd();
+}
+
+/**
+ * Loads the project's config, or the one named by `--config` relative to the working directory, raising a config
+ * error when it cannot be evaluated.
+ */
+async function loadVerifyConfig(projectDir: string, configPath: string | undefined): Promise<ResolvedRdyConfig> {
   try {
-    return await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
+    return await loadConfig({
+      fromDir: projectDir,
+      ...(configPath !== undefined && { overridePath: path.resolve(process.cwd(), configPath) }),
+    });
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
