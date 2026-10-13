@@ -25,9 +25,8 @@ export interface LoadedRdyKit {
  * Loads and validates a rdy kit file.
  *
  * Loads a compiled `.js` kit natively as an ES module, and a `.ts` kit through jiti. Returns the validated kit and the
- * embedded `__readyupVersion` from the imported module namespace when present, or `undefined`
- * for kits compiled before that field was introduced (and for `.ts` sources, which have no
- * generated banner).
+ * embedded `__readyupVersion` from the imported module namespace when present, or `undefined` for kits compiled before
+ * that field was introduced (and for `.ts` sources, which have no generated banner).
  *
  * A compiled kit binding readyup symbols not exported by this runner is never evaluated, so the failure
  * names them rather than appearing as an `undefined` binding once a check calls one.
@@ -90,7 +89,9 @@ function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefi
   return `Kit "${name}" not found at ${toDisplayPath(resolvedPath)}. ${availability}`;
 }
 
-/** Imports a compiled kit as an ES module, after checking that the runner exports every readyup symbol it binds. */
+/**
+ * Imports a compiled kit as an ES module, after checking that the runner exports every readyup symbol that it binds.
+ */
 async function importBundle(resolvedPath: string): Promise<Record<string, unknown>> {
   await assertKitImportsResolve(readFileSync(resolvedPath, 'utf8'), toDisplayPath(resolvedPath));
   return importKitModule(resolvedPath);
