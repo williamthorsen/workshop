@@ -35,16 +35,18 @@ export function ensureModuleScope(outputPath: string, outDir: string): void {
   writeFileSync(path.join(scopeRoot, 'package.json'), MODULE_SCOPE_MARKER, 'utf8');
 }
 
+/** Reports whether a `package.json` declares nothing but a `type`, marking a module scope rather than a package. */
+export function isScopeMarker(manifestPath: string): boolean {
+  const manifest = readManifest(manifestPath);
+  return isRecord(manifest) && Object.keys(manifest).length === 1 && 'type' in manifest;
+}
+
 // region | Helpers
 
 /** Reports whether a `package.json` parses and declares `"type": "module"`. */
 function declaresModuleType(manifestPath: string): boolean {
-  try {
-    const manifest: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    return isRecord(manifest) && manifest['type'] === 'module';
-  } catch {
-    return false;
-  }
+  const manifest = readManifest(manifestPath);
+  return isRecord(manifest) && manifest['type'] === 'module';
 }
 
 /** Returns the error message for a `package.json` that puts a bundle outside an ES-module scope. */
@@ -53,6 +55,15 @@ function describeBlockingManifest(manifestPath: string): string {
     `Compiled kits are ES modules, but ${toDisplayPath(manifestPath)} does not declare "type": "module". ` +
     'Declare it there, or set compile.outDir to a directory of its own.'
   );
+}
+
+/** Returns a `package.json` parsed, or `undefined` when it cannot be read or parsed. */
+function readManifest(manifestPath: string): unknown {
+  try {
+    return JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return undefined;
+  }
 }
 
 // endregion | Helpers

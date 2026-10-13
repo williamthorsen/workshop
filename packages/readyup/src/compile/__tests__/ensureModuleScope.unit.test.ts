@@ -2,7 +2,7 @@ import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
-import { ensureModuleScope } from '../ensureModuleScope.ts';
+import { ensureModuleScope, isScopeMarker } from '../ensureModuleScope.ts';
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
@@ -55,5 +55,16 @@ describe(ensureModuleScope, () => {
 
     expect(() => ensureModuleScope(temp.resolve('kit.js'), temp.dir)).toThrow(manifestPath);
     expect(temp.read('package.json')).toBe(contents);
+  });
+});
+
+describe(isScopeMarker, () => {
+  it.for([
+    { label: 'the marker that ensureModuleScope writes', contents: MARKER, expected: true },
+    { label: 'a package.json declaring a name', contents: '{"name":"project","type":"module"}', expected: false },
+    { label: 'a package.json declaring no type', contents: '{"name":"project"}', expected: false },
+    { label: 'a package.json that does not parse', contents: '{ not json', expected: false },
+  ])('returns $expected for $label', ({ contents, expected }, { temp }) => {
+    expect(isScopeMarker(temp.write('package.json', contents))).toBe(expected);
   });
 });

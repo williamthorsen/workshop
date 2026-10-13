@@ -20,6 +20,7 @@ const it = baseIt.extend(
         'outer/deep/kits/': '',
         'outer/inner/kits/': '',
         'outer/inner/package.json': MANIFEST,
+        'outer/marked/kits/package.json': JSON.stringify({ type: 'module' }),
         'outer/package.json': MANIFEST,
         'unpackaged/kits/': '',
       },
@@ -49,6 +50,12 @@ describe(resolveCompileRoot, () => {
 
   it('walks past ancestors containing none', ({ temp }) => {
     const root = resolveCompileRoot(temp.resolve('outer/deep/kits/kit.ts'));
+
+    expect(root).toBe(temp.resolve('outer'));
+  });
+
+  it('walks past a module-scope marker, which is not a package', ({ temp }) => {
+    const root = resolveCompileRoot(temp.resolve('outer/marked/kits/kit.ts'));
 
     expect(root).toBe(temp.resolve('outer'));
   });
