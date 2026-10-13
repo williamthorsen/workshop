@@ -350,10 +350,12 @@ The path resolves relative to the source file. Each entry in the second argument
 
 Both arguments must be literals written in place. They are read out of the source text before it is parsed, so a variable, a template literal, or a concatenation is a compile error -- and a call inside a comment or a string is still processed, since that reader cannot tell the difference.
 
-Two consequences follow from the value being resolved at compile time:
+`rdy run --jit` makes the same substitution when it loads the source, so a kit that calls `pickJson` runs from source with the result that its bundle would give. It reads the JSON file on every run: An edit to a picked field takes effect without a compile. A call that `rdy compile` rejects fails the load with the same message.
 
-- `pickJson` throws if it is ever reached at runtime. A kit that calls it was not compiled.
-- Editing a picked field afterward leaves the bundle stale. Neither recorded hash changes -- the source did not change, and neither did the bundle -- but the compile records the projection that it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
+Two consequences follow from the value being resolved before the kit runs:
+
+- `pickJson` throws if it is ever reached at runtime. A kit that calls it was loaded neither by `rdy compile` nor by `rdy run --jit`.
+- Editing a picked field after a compile leaves the bundle stale. Neither recorded hash changes -- the source did not change, and neither did the bundle -- but the compile records the projection that it inlined, so [`rdy verify`](publishing-kits.md#verifying) names the file and [`rdy run`](running-checks.md#advisory-warnings) warns on it. [`rdy verify --rebuild`](publishing-kits.md#verifying-by-recompiling) is the exact check, reading the file rather than a record of it.
 
 Importing a JSON file directly, with or without `with { type: 'json' }`, bundles the whole file instead. Every field is bundled into the kit. Because the compile records the file whole, any edit to it, a version bump included, leaves the kit stale. `rdy compile` reports each such file outside `node_modules` as a [`json-inlined`](publishing-kits.md#compile-warnings) warning.
 

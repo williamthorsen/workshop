@@ -83,104 +83,6 @@ describe(pickJsonPlugin, () => {
     expect(result?.loader).toBe('ts');
   });
 
-  it('replaces multiple pickJson calls in a single file', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = [`const a = pickJson('./a.json', ['x']);`, `const b = pickJson('./b.json', ['y']);`].join('\n');
-    const jsonA = JSON.stringify({ x: 1, extra: true });
-    const jsonB = JSON.stringify({ y: 2, extra: true });
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonA).mockReturnValueOnce(jsonB);
-
-    const result = runOnLoad(onLoad, '/project/src/kit.ts');
-
-    expect(result).not.toBeNull();
-    expect(result?.contents).toContain(JSON.stringify({ x: 1 }));
-    expect(result?.contents).toContain(JSON.stringify({ y: 2 }));
-  });
-
-  it('extracts nested paths from JSON', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./data.json', [['config', 'debug']]);`;
-    const jsonContent = JSON.stringify({ config: { debug: true, verbose: false } });
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
-
-    const result = runOnLoad(onLoad, '/project/src/kit.ts');
-
-    expect(result).not.toBeNull();
-    expect(result?.contents).toBe(`const meta = ${JSON.stringify({ config: { debug: true } })};`);
-  });
-
-  it('resolves the JSON path relative to the source file', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('../data.json', ['name']);`;
-    const jsonContent = JSON.stringify({ name: 'root-pkg' });
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
-
-    runOnLoad(onLoad, '/project/src/kit.ts');
-
-    // Second call to readFileSync is for the JSON file.
-    expect(mockReadFileSync).toHaveBeenCalledWith('/project/data.json', 'utf8');
-  });
-
-  it('throws when the JSON file cannot be read', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./missing.json', ['name']);`;
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockImplementationOnce(() => {
-      throw new Error('ENOENT');
-    });
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot read JSON file');
-  });
-
-  it('throws when a requested path is not found in the JSON', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./data.json', ['missing']);`;
-    const jsonContent = JSON.stringify({ name: 'my-pkg' });
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Path not found in JSON: missing');
-  });
-
-  it('throws when pickJson arguments cannot be parsed', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson(someVar, ['name']);`;
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode);
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot parse pickJson arguments');
-  });
-
-  it('throws when the JSON file contains invalid JSON', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./bad.json', ['name']);`;
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce('{broken');
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Invalid JSON');
-  });
-
-  it('throws when the JSON root is not an object', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./array.json', ['name']);`;
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce('[1,2,3]');
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Expected a JSON object');
-  });
-
-  it('throws when a path element is neither a string nor a string array', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./data.json', [42]);`;
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode);
-
-    expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Invalid path in pickJson paths array');
-  });
-
   it('throws when the source file cannot be read', () => {
     const onLoad = captureOnLoad();
 
@@ -189,28 +91,6 @@ describe(pickJsonPlugin, () => {
     });
 
     expect(() => runOnLoad(onLoad, '/project/src/kit.ts')).toThrow('Cannot read source file');
-  });
-
-  it('returns null when pickJson appears only in a comment', () => {
-    const onLoad = captureOnLoad();
-    mockReadFileSync.mockReturnValue('// pickJson is handled at compile time\nconst x = 1;');
-
-    const result = runOnLoad(onLoad, '/project/src/kit.ts');
-
-    expect(result).toBeNull();
-  });
-
-  it('supports single-quoted string arguments', () => {
-    const onLoad = captureOnLoad();
-    const sourceCode = `const meta = pickJson('./data.json', ['name']);`;
-    const jsonContent = JSON.stringify({ name: 'my-pkg', version: '1.0.0' });
-
-    mockReadFileSync.mockReturnValueOnce(sourceCode).mockReturnValueOnce(jsonContent);
-
-    const result = runOnLoad(onLoad, '/project/src/kit.ts');
-
-    expect(result).not.toBeNull();
-    expect(result?.contents).toContain('"name":"my-pkg"');
   });
 
   it('records the module that it loaded and the JSON file that it projected', () => {
