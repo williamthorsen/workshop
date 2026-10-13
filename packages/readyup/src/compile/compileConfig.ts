@@ -1,6 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
 import { hashBytes } from '../verify/targetHash.ts';
 import { buildBundle, type InlinedJsonFile } from './buildBundle.ts';
@@ -73,11 +73,12 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
 // region | Helpers
 
 /**
- * Returns the path at which a bundle is staged for validation: a hidden sibling of the destination, unique to the
- * process, that keeps the `.js` extension so that the bundle loads as it will at its destination.
+ * Returns a fresh path at which a bundle is staged for validation: a hidden sibling of the destination that keeps the
+ * `.js` extension, so that the bundle loads as it will at its destination. The path is unique to each compile, so that
+ * an import of one staged bundle is never served from the module cache entry of another.
  */
 function deriveStagedPath(outputPath: string): string {
-  return path.join(path.dirname(outputPath), `.${path.basename(outputPath, '.js')}.${process.pid}.tmp.js`);
+  return path.join(path.dirname(outputPath), `.${path.basename(outputPath, '.js')}.${randomUUID()}.tmp.js`);
 }
 
 // endregion | Helpers

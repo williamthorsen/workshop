@@ -1,6 +1,5 @@
 import { realpathSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,7 +43,7 @@ const CONFIG_PATH = path.join(import.meta.dirname, 'readyup.config.ts');
 const KIT_METADATA = { checklists: ['default'], description: undefined };
 
 const OUTPUT_PATH = path.resolve('input.js');
-const STAGED_PATH = path.resolve(`.input.${process.pid}.tmp.js`);
+const STAGED_PATH = expect.stringMatching(/\/\.input\.[\da-f-]{36}\.tmp\.js$/);
 
 describe(compileConfig, () => {
   beforeEach(() => {
