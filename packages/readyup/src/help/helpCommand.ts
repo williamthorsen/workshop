@@ -3,10 +3,12 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
+import { getStyle } from '../layout/engine.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
 import { readDoc } from './readDoc.ts';
+import { renderTopic } from './renderTopic.ts';
 import { findTopic, TOPIC_NAMES_BY_STEM, TOPICS } from './topics.ts';
 
 /** Flags that request help, whether given as the command itself or among a subcommand's flags. */
@@ -41,7 +43,9 @@ export function helpCommand(flags: string[], json: boolean): number {
   if (commandHelp !== undefined) return writeHelp(commandHelp, json);
 
   const topic = findTopic(subject);
-  if (topic !== undefined) return writeHelp(readDoc(topic.file), json);
+  if (topic !== undefined) {
+    return writeHelp(renderTopic(readDoc(topic.file), { style: getStyle(), topicByStem: TOPIC_NAMES_BY_STEM }), json);
+  }
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
 }

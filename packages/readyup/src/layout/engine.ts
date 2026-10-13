@@ -18,13 +18,23 @@ const engines: Record<OutputStyle, LayoutEngine> = {
  */
 let active: LayoutEngine = engines.rich;
 
+/** The style to which `active` is bound. */
+let activeStyle: OutputStyle = 'rich';
+
 /** Returns the engine bound to the selected style. */
 export function getLayout(): LayoutEngine {
   return active;
+}
+
+/** Returns the selected style. */
+export function getStyle(): OutputStyle {
+  return activeStyle;
 }
 
 /** Binds every later render to `style`. */
 export function setStyle(style: OutputStyle): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The engine is a process singleton.
   active = engines[style];
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The style is a process singleton.
+  activeStyle = style;
 }

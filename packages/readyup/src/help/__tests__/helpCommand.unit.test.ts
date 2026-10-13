@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { COMMAND_NAMES, routeCommand } from '../../bin/route.ts';
 import { COMMAND_HELP } from '../helpText.ts';
 import { readDoc } from '../readDoc.ts';
-import { TOPICS } from '../topics.ts';
+import { renderTopic } from '../renderTopic.ts';
+import { TOPIC_NAMES_BY_STEM, TOPICS } from '../topics.ts';
 
 describe('rdy help', () => {
   it.each([
@@ -36,7 +37,18 @@ describe('rdy help', () => {
       const { exitCode, stdout } = await route(['help', topic]);
 
       expect(exitCode).toBe(0);
-      expect(stdout.trimEnd()).toBe(readDoc(file).trimEnd());
+      expect(stdout.trimEnd()).toBe(
+        renderTopic(readDoc(file), { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM }).trimEnd(),
+      );
+    },
+  );
+
+  it.each(Object.keys(TOPICS).map((topic) => ({ topic })))(
+    'prints topic $topic with no Markdown link outside code',
+    async ({ topic }) => {
+      const { stdout } = await route(['help', topic]);
+
+      expect(listProseLines(stdout).filter((line) => line.replaceAll(/`[^`]*`/g, '').includes(']('))).toStrictEqual([]);
     },
   );
 
@@ -125,6 +137,16 @@ describe('rdy help', () => {
 });
 
 // region | Helpers
+
+/** Lines of printed Markdown that are outside a fenced code block. */
+function listProseLines(text: string): string[] {
+  let fenced = false;
+
+  return text.split('\n').filter((line) => {
+    if (line.startsWith('```')) fenced = !fenced;
+    return !fenced && !line.startsWith('```');
+  });
+}
 
 /** Runs the router with stdio captured, returning the exit code alongside what each stream received. */
 async function route(args: string[]) {

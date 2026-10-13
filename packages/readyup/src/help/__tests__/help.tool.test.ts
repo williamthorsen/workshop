@@ -7,7 +7,8 @@ import process from 'node:process';
 
 import { describe, expect, it } from 'vitest';
 
-import { TOPICS } from '../topics.ts';
+import { renderTopic } from '../renderTopic.ts';
+import { TOPIC_NAMES_BY_STEM, TOPICS } from '../topics.ts';
 
 const packageDir = path.resolve(import.meta.dirname, '../../..');
 const sourceCli = path.join(packageDir, 'src/bin/rdy.ts');
@@ -47,17 +48,20 @@ describe('rdy help, spawned', () => {
 
 // region | Helpers
 
-/** Reads the doc file that a topic prints, out of the package rather than through readyup's own reader. */
+/**
+ * Renders the doc file that a topic prints, read out of the package rather than through readyup's own reader.
+ */
 function readTopicDoc(topic: string): string {
   const declared = TOPICS[topic];
   assert.ok(declared !== undefined, `TOPICS declares no "${topic}" topic`);
 
-  return readFileSync(path.join(packageDir, 'docs', declared.file), 'utf8');
+  const markdown = readFileSync(path.join(packageDir, 'docs', declared.file), 'utf8');
+  return renderTopic(markdown, { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM });
 }
 
-/** Runs `rdy help <topic>` through one entry point and returns what it wrote to stdout. */
+/** Runs `rdy help <topic>` under the rich style through one entry point and returns what it wrote to stdout. */
 function runHelp(entryPath: string, topic: string, cwd: string): string {
-  return execFileSync(process.execPath, [entryPath, 'help', topic], {
+  return execFileSync(process.execPath, [entryPath, '--style', 'rich', 'help', topic], {
     cwd,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'],
