@@ -9,10 +9,10 @@ Run pre-deployment verification checks from checklists authored in TypeScript, l
 ## Installation
 
 ```bash
-pnpm add --save-dev readyup
+pnpm add --save-dev readyup esbuild
 ```
 
-Node 24 or later is required, for the runner and for the kits that it compiles.
+Node 24 or later is required, for the runner and for the kits that it compiles. esbuild is an optional peer dependency, needed by `rdy compile` and `rdy verify --rebuild` and not by running compiled kits.
 
 ## Quick start
 

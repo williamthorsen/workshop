@@ -19,7 +19,7 @@ Authoring kits: the consult-readyup-kits skill`;
 export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
 
-Bundle TypeScript kit(s) into self-contained ESM bundle(s).
+Bundle TypeScript kit(s) into self-contained ESM bundle(s). Requires esbuild.
 If no file is given, the sources in the config's srcDir that compile.include and compile.exclude
 select are compiled, and the bundles of kits that no source compiles to are removed.
 
