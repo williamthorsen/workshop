@@ -12,6 +12,9 @@ const mockLoadEsbuild = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockReadFileSync = vi.hoisted(() => vi.fn());
+const mockRenameSync = vi.hoisted(() => vi.fn());
+const mockRmSync = vi.hoisted(() => vi.fn());
+const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
 const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../loadEsbuild.ts'), () => ({
@@ -24,18 +27,30 @@ vi.mock(import('node:fs'), async (importOriginal) => ({
   existsSync: mockExistsSync,
   mkdirSync: mockMkdirSync,
   readFileSync: mockReadFileSync,
+  renameSync: mockRenameSync,
+  rmSync: mockRmSync,
   writeFileSync: mockWriteFileSync,
+}));
+
+vi.mock(import('../validateCompiledOutput.ts'), () => ({
+  validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
 // Names a directory that exists whatever the working directory is, because the compile root is resolved
 // through `realpathSync` of the entry's own directory once `existsSync` reports no `package.json` above it.
 const CONFIG_PATH = path.join(import.meta.dirname, 'readyup.config.ts');
 
+const KIT_METADATA = { checklists: ['default'], description: undefined };
+
+const OUTPUT_PATH = path.resolve('input.js');
+const STAGED_PATH = expect.stringMatching(/\/\.input\.[\da-f-]{36}\.tmp\.js$/);
+
 describe(compileConfig, () => {
   beforeEach(() => {
     // Default: The esbuild import succeeds and exposes the mocked `build`.
     // Failure-path tests override this with `mockRejectedValue`.
     mockLoadEsbuild.mockResolvedValue({ build: mockBuild, version: '0.99.0-test' });
+    mockValidateCompiledOutput.mockResolvedValue(KIT_METADATA);
   });
 
   afterEach(() => {
@@ -44,6 +59,9 @@ describe(compileConfig, () => {
     mockExistsSync.mockReset();
     mockMkdirSync.mockReset();
     mockReadFileSync.mockReset();
+    mockRenameSync.mockReset();
+    mockRmSync.mockReset();
+    mockValidateCompiledOutput.mockReset();
     mockWriteFileSync.mockReset();
   });
 
@@ -136,18 +154,21 @@ describe(compileConfig, () => {
     expect(result.outputPath).toBe(path.resolve(expectedSuffix));
   });
 
-  it('writes the output and returns changed: true when no existing file exists', async () => {
+  it('stages, validates, and renames the bundle onto the output when no existing file exists', async () => {
     mockBuild.mockResolvedValue(buildResult('compiled'));
     mockExistsSync.mockReturnValue(false);
 
     const result = await compileConfig('input.ts');
 
     expect(result.changed).toBe(true);
-    expect(mockMkdirSync).toHaveBeenCalledWith(path.dirname(path.resolve('input.js')), { recursive: true });
-    expect(mockWriteFileSync).toHaveBeenCalledWith(path.resolve('input.js'), expect.any(Buffer));
+    expect(result.metadata).toBe(KIT_METADATA);
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.dirname(OUTPUT_PATH), { recursive: true });
+    expect(mockWriteFileSync).toHaveBeenCalledWith(STAGED_PATH, expect.any(Buffer));
+    expect(mockValidateCompiledOutput).toHaveBeenCalledWith(STAGED_PATH, OUTPUT_PATH);
+    expect(mockRenameSync).toHaveBeenCalledWith(STAGED_PATH, OUTPUT_PATH);
   });
 
-  it('writes the output and returns changed: true when existing file differs', async () => {
+  it('renames the staged bundle onto the output and returns changed: true when the existing file differs', async () => {
     mockBuild.mockResolvedValue(buildResult('new content'));
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(Buffer.from('old content'));
@@ -155,10 +176,10 @@ describe(compileConfig, () => {
     const result = await compileConfig('input.ts');
 
     expect(result.changed).toBe(true);
-    expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+    expect(mockRenameSync).toHaveBeenCalledWith(STAGED_PATH, OUTPUT_PATH);
   });
 
-  it('skips writing and returns changed: false when existing file is identical', async () => {
+  it('validates but leaves the output alone and returns changed: false when the existing file is identical', async () => {
     const content = 'identical content';
     mockBuild.mockResolvedValue(buildResult(content));
     mockExistsSync.mockReturnValue(true);
@@ -167,7 +188,23 @@ describe(compileConfig, () => {
     const result = await compileConfig('input.ts');
 
     expect(result.changed).toBe(false);
-    expect(mockWriteFileSync).not.toHaveBeenCalled();
+    expect(mockValidateCompiledOutput).toHaveBeenCalledWith(STAGED_PATH, OUTPUT_PATH);
+    expect(mockRenameSync).not.toHaveBeenCalled();
+    expect(mockRmSync).toHaveBeenCalledWith(STAGED_PATH, { force: true });
+  });
+
+  it('leaves the existing output untouched and removes the staged bundle when validation fails', async () => {
+    mockBuild.mockResolvedValue(buildResult('invalid kit'));
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(Buffer.from('previous kit'));
+    mockValidateCompiledOutput.mockRejectedValue(new Error('Kit file must export checklists'));
+
+    await expect(compileConfig('input.ts')).rejects.toThrow('Kit file must export checklists');
+
+    expect(mockWriteFileSync).not.toHaveBeenCalledWith(OUTPUT_PATH, expect.anything());
+    expect(mockRenameSync).not.toHaveBeenCalled();
+    expect(mockRmSync).toHaveBeenCalledTimes(1);
+    expect(mockRmSync).toHaveBeenCalledWith(STAGED_PATH, { force: true });
   });
 
   it('propagates a build failure that names no unresolved import, unchanged', async () => {

@@ -5,15 +5,10 @@ import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@willia
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
-const mockValidateCompiledOutput = vi.hoisted(() => vi.fn());
 
 // The bundler and the import of its output are mocked; configs, manifests, the drift gate, and deletion use the tree.
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
-}));
-
-vi.mock(import('../validateCompiledOutput.ts'), () => ({
-  validateCompiledOutput: mockValidateCompiledOutput,
 }));
 
 import { richFormatter } from '../../layout/formatter.ts';
@@ -45,12 +40,10 @@ const PROJECT_TREE = {
 describe('compile handling bundles that no source compiles to', () => {
   beforeEach(() => {
     mockCompileConfig.mockImplementation(compileResult);
-    mockValidateCompiledOutput.mockResolvedValue({ checklists: [] });
   });
 
   afterEach(() => {
     mockCompileConfig.mockReset();
-    mockValidateCompiledOutput.mockReset();
   });
 
   describe('a batch compile', () => {
@@ -327,6 +320,7 @@ function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/
     esbuildVersion: '0.99.0-test',
     inlinedJson: [],
     inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
+    metadata: { checklists: [] },
     outputPath: path.resolve(outputPath),
     targetHash: hashOf(COMPILED),
   });

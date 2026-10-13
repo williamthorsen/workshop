@@ -48,7 +48,7 @@ describe(validateCompiledOutput, () => {
     expect(metadata.checklists).toStrictEqual(['preflight', 'deploy']);
   });
 
-  it('deletes the output file and throws when the bundle fails to load', async ({ temp }) => {
+  it('leaves the file in place and throws when the bundle fails to load', async ({ temp }) => {
     const filePath = temp.write('bad-bundle.mjs', 'throw new Error("parse error");\n');
 
     const error = await captureError(() => validateCompiledOutput(filePath));
@@ -57,15 +57,16 @@ describe(validateCompiledOutput, () => {
     assert.ok(cause instanceof Error);
     expect(cause.message).toContain('parse error');
     expect(error.message).toBe(`Failed to load compiled output for validation: ${cause.message}`);
+    expect(existsSync(filePath)).toBe(true);
   });
 
-  it('deletes the output file and throws when the kit is structurally invalid', async ({ temp }) => {
+  it('leaves the file in place and throws when the kit is structurally invalid', async ({ temp }) => {
     const outputPath = writeTempKit(temp, 'bad-kit.mjs', {
       notAKit: true,
     });
 
     await expect(validateCompiledOutput(outputPath)).rejects.toThrow('Kit file must export checklists');
-    expect(existsSync(outputPath)).toBe(false);
+    expect(existsSync(outputPath)).toBe(true);
   });
 
   // A check is serialized to JSON here, so `check` is a string rather than a function: the
@@ -78,7 +79,6 @@ describe(validateCompiledOutput, () => {
     await expect(validateCompiledOutput(outputPath)).rejects.toThrow(
       'checklists[0].checks[0].check: expected a function, got string',
     );
-    expect(existsSync(outputPath)).toBe(false);
   });
 
   it('rejects a kit whose check declares an unknown severity', async ({ temp }) => {
@@ -97,6 +97,18 @@ describe(validateCompiledOutput, () => {
     });
 
     await expect(validateCompiledOutput(outputPath)).rejects.toThrow(`Invalid kit at ${outputPath}:`);
+  });
+
+  it('names the bundle path rather than the imported path when the two differ', async ({ temp }) => {
+    const stagedPath = writeTempKit(temp, '.unnamed-check.staged.mjs', {
+      checklists: [{ name: 'test', checks: [{ check: 'nope' }] }],
+    });
+    const bundlePath = temp.resolve('unnamed-check.mjs');
+
+    const error = await captureError(() => validateCompiledOutput(stagedPath, bundlePath));
+
+    expect(error.message).toContain(`Invalid kit at ${bundlePath}:`);
+    expect(error.message).not.toContain(stagedPath);
   });
 
   // Written as source rather than through `writeTempKit`, because JSON expresses neither a getter

@@ -1,11 +1,8 @@
-import { rmSync } from 'node:fs';
-
 import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import { importKitModule } from '../kits/importKitModule.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
-import type { RdyKit } from '../kits/types.ts';
 import { validateKit } from '../kits/validateKit.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 
@@ -18,27 +15,23 @@ export interface KitMetadata {
 /**
  * Imports a compiled kit bundle, validates it semantically, and returns the metadata that it yields.
  *
- * Deletes the output file when validation fails, so no invalid bundle is left on disk.
+ * Leaves the imported file on disk whatever the outcome. A failure names `bundlePath`, the path at which the bundle
+ * is published, which differs from `modulePath` while the bundle is staged under another name.
  */
-export async function validateCompiledOutput(outputPath: string): Promise<KitMetadata> {
+export async function validateCompiledOutput(
+  modulePath: string,
+  bundlePath: string = modulePath,
+): Promise<KitMetadata> {
   let moduleRecord: Record<string, unknown>;
   try {
-    moduleRecord = await importKitModule(outputPath);
+    moduleRecord = await importKitModule(modulePath);
   } catch (error: unknown) {
-    rmSync(outputPath, { force: true });
     throw chainError('Failed to load compiled output for validation', error);
   }
 
-  let kit: RdyKit;
-  try {
-    const resolved = resolveKitExports(moduleRecord);
-    assertIsRdyKit(resolved, toDisplayPath(outputPath));
-    validateKit(resolved);
-    kit = resolved;
-  } catch (error: unknown) {
-    rmSync(outputPath, { force: true });
-    throw error;
-  }
+  const kit: unknown = resolveKitExports(moduleRecord);
+  assertIsRdyKit(kit, toDisplayPath(bundlePath));
+  validateKit(kit);
 
   return {
     checklists: kit.checklists.map((checklist) => checklist.name),

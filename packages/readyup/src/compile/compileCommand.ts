@@ -35,7 +35,7 @@ import { compileConfig } from './compileConfig.ts';
 import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
-import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
+import type { KitMetadata } from './validateCompiledOutput.ts';
 import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
 import { warnOnUnrecordedBundles, type WarnOnUnrecordedBundlesArgs } from './warnOnUnrecordedBundles.ts';
 
@@ -166,10 +166,8 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   }
 
   let result;
-  let metadata: KitMetadata;
   try {
     result = await compileConfig(inputPath, outputPath);
-    metadata = await validateCompiledOutput(result.outputPath);
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
     const message = describeError(error);
@@ -189,7 +187,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
       const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
       const relSourcePath = path.relative(manifestDir, resolvedInputPath);
       const closure = deriveClosureFields(result.inputs, resolvedInputPath, manifestDir);
-      upsertManifest(manifestPath, kitName, metadata, {
+      upsertManifest(manifestPath, kitName, result.metadata, {
         bundledDependencies: result.bundledDependencies,
         esbuildVersion: result.esbuildVersion,
         inputs: closure.inputs,
@@ -568,12 +566,11 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
 
   try {
     const result = await compileConfig(srcFile, outFile);
-    const metadata = await validateCompiledOutput(result.outputPath);
     writeHuman(formatResultLine(fileName, outName, result.changed), json);
 
     const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
     return {
-      entry: buildManifestKit(kitName, metadata, {
+      entry: buildManifestKit(kitName, result.metadata, {
         bundledDependencies: result.bundledDependencies,
         esbuildVersion: result.esbuildVersion,
         inputs: closure.inputs,
@@ -588,8 +585,7 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
     // goes on. Because the sweep replaces the whole manifest, this returns the kit's prior record to keep it
-    // there. That record still describes the tree: An esbuild failure leaves the previous output and its hash intact, and a
-    // validation failure deletes the output for `verify` to report missing.
+    // there. That record still describes the tree, because a failed compile leaves the previous output in place.
     const message = describeError(error);
     process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
     return {
