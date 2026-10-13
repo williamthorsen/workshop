@@ -6,8 +6,10 @@ import { describeUnresolvableImports } from '../kitImports/describeUnresolvableI
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import { type LoadedRdyKit, loadRdyKit } from '../kits/loadRdyKit.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
+import { diagnoseMissingRemoteKit } from '../remote/diagnoseMissingRemoteKit.ts';
 import { loadRemoteKit } from '../remote/loadRemoteKit.ts';
 import { resolveRemoteProvider } from '../remote/remote-provider.ts';
+import { RemoteFetchError } from '../remote/RemoteFetchError.ts';
 import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { assertSatisfiesVersionFloor } from './version-skew.ts';
@@ -63,12 +65,21 @@ async function loadFromSource(
       // Catch ahead of the remote wrapper: A kit that fetched cleanly and binds symbols that the runner lacks
       // is a diagnosis about the kit, and reshaping it as a fetch failure would name the wrong thing.
       if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
-      throw toRemoteRdyError(error, {
-        code: 'kit-load',
-        provider,
-        tokenForwarded: remote.resolveAuthHeaders(provider) !== undefined,
-        url: source.url,
-      });
+
+      const tokenForwarded = remote.resolveAuthHeaders(provider) !== undefined;
+      if (error instanceof RemoteFetchError && error.status === 404 && entry.provenance?.kind === 'repository') {
+        const diagnosis = await diagnoseMissingRemoteKit({
+          error,
+          kitName: entry.name,
+          kitUrl: source.url,
+          provenance: entry.provenance,
+          provider,
+          remote,
+          tokenForwarded,
+        });
+        if (diagnosis !== undefined) throw diagnosis;
+      }
+      throw toRemoteRdyError(error, { code: 'kit-load', provider, tokenForwarded, url: source.url });
     }
   }
 

@@ -8,6 +8,7 @@ import { type RemoteFailureContext, toRemoteRdyError } from '../toRemoteRdyError
 const GITHUB_URL = 'https://raw.githubusercontent.com/acme/kits/HEAD/.readyup/manifest.json';
 const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
 const BITBUCKET_HINT = 'If the repository is private, set BITBUCKET_TOKEN.';
+const SPELLING_HINT = 'Check that the repository exists and that the ref names a branch, tag, or commit.';
 
 const PROVIDER_HINTS: Array<{ hint: string; provider: RemoteProvider }> = [
   { provider: 'bitbucket', hint: BITBUCKET_HINT },
@@ -69,7 +70,19 @@ describe(toRemoteRdyError, () => {
     it('hints on a missing manifest, which is how GitHub reports a private repository', () => {
       const error = toRemoteRdyError(new RemoteManifestNotFoundError(GITHUB_URL), context());
 
-      expect(error.hint).toBe(GITHUB_HINT);
+      expect(error.hint).toBe(`${SPELLING_HINT} ${GITHUB_HINT}`);
+    });
+
+    it('names the spelling check alone on a missing manifest when a credential was forwarded', () => {
+      const error = toRemoteRdyError(new RemoteManifestNotFoundError(GITHUB_URL), context({ tokenForwarded: true }));
+
+      expect(error.hint).toBe(SPELLING_HINT);
+    });
+
+    it('names the spelling check alone on a missing manifest at a host that readyup does not authenticate', () => {
+      const error = toRemoteRdyError(new RemoteManifestNotFoundError(GITHUB_URL), context({ provider: undefined }));
+
+      expect(error.hint).toBe(SPELLING_HINT);
     });
 
     it.each([400, 418, 500, 502])('stays silent on %i, which no credential would fix', (status) => {

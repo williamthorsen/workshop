@@ -6,6 +6,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
+import { assertFromPathExists } from '../kits/assertFromPathExists.ts';
 import { KITS_DIR, resolveHomeDir } from '../kits/kitsDir.ts';
 import type { DirectorySource, FromSource, GlobalSource, LocalSource, NpmSource } from '../kits/parseFromValue.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -39,6 +40,7 @@ export async function collectSourceKits(source: FromSource, remote: RemoteFetchC
     return collectLocalKits(path.join(root, DEFAULT_MANIFEST_PATH), path.join(root, KITS_DIR));
   }
 
+  assertFromPathExists(source);
   return collectLocalKits(resolveFromManifestPath(source), resolveFromKitsDir(source));
 }
 

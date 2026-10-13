@@ -1,8 +1,11 @@
-import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, it as baseIt } from 'vitest';
+import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
+import { RdyError } from '../../errors/RdyError.ts';
+import type { RemoteFetchContext } from '../../remote/createRemoteFetchContext.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import { mockResponse } from '../../test-utils/mockResponse.ts';
 import { expandConfiguredSources, type SourceKit } from '../expandConfiguredSources.ts';
 import { parseConfiguredSource } from '../parseConfiguredSource.ts';
 
@@ -107,6 +110,32 @@ describe(expandConfiguredSources, () => {
   it('rejects a malformed manifest instead of reading around it', async ({ temp }) => {
     await expect(expand(['broken-manifest'], temp.dir)).rejects.toThrow(/invalid JSON/);
   });
+
+  describe('a repository without a manifest', () => {
+    const SPELLING_HINT = 'Check that the repository exists and that the ref names a branch, tag, or commit.';
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('hints at the spelling and the credential when no token was sent', async () => {
+      const error = await expandMissingRepository({ cache: undefined, resolveAuthHeaders: () => undefined });
+
+      expect(error.message).toMatch(/^Configured source "github:acme\/kits@nope": No manifest found at /);
+      expect(error.hint).toBe(
+        `${SPELLING_HINT} If the repository is private, set GITHUB_TOKEN or run \`gh auth login\`.`,
+      );
+    });
+
+    it('hints at the spelling alone when a token was sent', async () => {
+      const error = await expandMissingRepository({
+        cache: undefined,
+        resolveAuthHeaders: () => ({ Authorization: 'Bearer token' }),
+      });
+
+      expect(error.hint).toBe(SPELLING_HINT);
+    });
+  });
 });
 
 // region | Helpers
@@ -115,6 +144,18 @@ describe(expandConfiguredSources, () => {
 async function expand(names: string[], fromDir: string): Promise<SourceKit[]> {
   const sources = names.map((name) => parseConfiguredSource(`npm:${name}`));
   return expandConfiguredSources(sources, '.js', createUncachedRemoteContext(), fromDir);
+}
+
+/** Expands a GitHub source whose manifest the host reports as absent, returning the error that it throws. */
+async function expandMissingRepository(remote: RemoteFetchContext): Promise<RdyError> {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve(mockResponse('', { status: 404, statusText: 'Not Found' }))),
+  );
+
+  return captureError(RdyError, () =>
+    expandConfiguredSources([parseConfiguredSource('github:acme/kits@nope')], '.js', remote, process.cwd()),
+  );
 }
 
 // endregion | Helpers

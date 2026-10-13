@@ -3,14 +3,21 @@ import assert from 'node:assert';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { RepositoryProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyKit } from '../../kits/types.ts';
+import type { diagnoseMissingRemoteKit } from '../../remote/diagnoseMissingRemoteKit.ts';
 import type { loadRemoteKit } from '../../remote/loadRemoteKit.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 
+const mockDiagnoseMissingRemoteKit = vi.hoisted(() => vi.fn<typeof diagnoseMissingRemoteKit>());
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn<typeof loadRemoteKit>());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockResolveBitbucketToken = vi.hoisted(() => vi.fn());
+
+vi.mock(import('../../remote/diagnoseMissingRemoteKit.ts'), () => ({
+  diagnoseMissingRemoteKit: mockDiagnoseMissingRemoteKit,
+}));
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -28,7 +35,7 @@ vi.mock(import('../../remote/resolveBitbucketToken.ts'), () => ({
   resolveBitbucketToken: mockResolveBitbucketToken,
 }));
 
-import { RdyError } from '../../errors/RdyError.ts';
+import { kitLoadError, RdyError } from '../../errors/RdyError.ts';
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { VERSION } from '../../version.ts';
@@ -41,6 +48,7 @@ const THIRD_PARTY_URL = 'https://example.com/kits/deploy.js';
 
 describe(loadKit, () => {
   afterEach(() => {
+    mockDiagnoseMissingRemoteKit.mockReset();
     mockLoadRdyKit.mockReset();
     mockLoadRemoteKit.mockReset();
     mockResolveGitHubToken.mockReset();
@@ -259,6 +267,72 @@ describe(loadKit, () => {
         `Ask the publisher of example.com/kits/deploy.js to recompile it against readyup ${VERSION}.`,
       );
     });
+  });
+
+  describe('repository kit not found', () => {
+    const PROVENANCE: RepositoryProvenance = {
+      kind: 'repository',
+      host: 'github',
+      owner: 'acme',
+      repo: 'private',
+      ref: 'main',
+      source: 'github:acme/private',
+    };
+
+    it('reports the diagnosis drawn from the repository manifest', async () => {
+      const diagnosis = kitLoadError('Kit "deploy" is not published by github:acme/private@main.');
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
+      mockDiagnoseMissingRemoteKit.mockResolvedValue(diagnosis);
+
+      const error = await captureError(RdyError, () =>
+        loadKit(repositoryEntry(), false, createUncachedRemoteContext()),
+      );
+
+      expect(error).toBe(diagnosis);
+      expect(mockDiagnoseMissingRemoteKit).toHaveBeenCalledWith(
+        expect.objectContaining({ kitName: 'deploy', kitUrl: GITHUB_URL, provenance: PROVENANCE }),
+      );
+    });
+
+    it('reports the fetch failure when the manifest yields no diagnosis', async () => {
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
+      mockDiagnoseMissingRemoteKit.mockResolvedValue(undefined);
+
+      const error = await captureError(RdyError, () =>
+        loadKit(repositoryEntry(), false, createUncachedRemoteContext()),
+      );
+
+      expect(error.message).toBe('Failed to fetch remote kit');
+    });
+
+    it.each([401, 403, 500])('does not read the manifest on a %i', async (status) => {
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', status));
+
+      await captureError(RdyError, () => loadKit(repositoryEntry(), false, createUncachedRemoteContext()));
+
+      expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
+    });
+
+    it('does not read a manifest for a kit named by URL alone', async () => {
+      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
+
+      await captureError(RdyError, () => loadKit(remoteEntry(GITHUB_URL), false, createUncachedRemoteContext()));
+
+      expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
+    });
+
+    it('does not read the manifest when the kit loads', async () => {
+      mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: VERSION });
+
+      await loadKit(repositoryEntry(), false, createUncachedRemoteContext());
+
+      expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
+    });
+
+    /** Builds an entry for kit `deploy` resolved from `github:acme/private`. */
+    function repositoryEntry(): ResolvedKitEntry {
+      return { name: 'deploy', source: { url: GITHUB_URL }, checklists: [], provenance: PROVENANCE };
+    }
   });
 
   describe('credential hints', () => {
