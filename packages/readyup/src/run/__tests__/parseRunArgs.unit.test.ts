@@ -249,7 +249,7 @@ describe(parseRunArgs, () => {
   // Covers the delegation to `validateRunFlags`; the constraint matrix is covered against that module.
   it('throws when --file and --from are combined', () => {
     expect(() => parseRunArgs(['--file', 'path.ts', '--from', '/other/repo'])).toThrow(
-      'Cannot combine --file, --from flags',
+      'Cannot combine --file and --from: ',
     );
   });
 
