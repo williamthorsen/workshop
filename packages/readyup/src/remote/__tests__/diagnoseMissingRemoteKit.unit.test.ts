@@ -97,7 +97,7 @@ describe(diagnoseMissingRemoteKit, () => {
   });
 
   it('reads the manifest at the source’s ref', async () => {
-    const fetch = serveManifest({ version: 1, kits: [] });
+    serveManifest({ version: 1, kits: [] });
 
     await diagnoseMissingRemoteKit(missing());
 
@@ -121,16 +121,17 @@ function missing(overrides: Partial<MissingRemoteKit> = {}): MissingRemoteKit {
   };
 }
 
-/** Serves the given manifest body at every URL, returning the stubbed fetch. */
-function serveManifest(manifest: unknown): ReturnType<typeof vi.fn> {
-  return stubFetch(mockResponse(JSON.stringify(manifest)));
+/** Serves the given manifest body at every URL. */
+function serveManifest(manifest: unknown): void {
+  stubFetch(mockResponse(JSON.stringify(manifest)));
 }
 
-/** Stubs the global fetch with one response, returning the stub. */
-function stubFetch(response: ReturnType<typeof mockResponse>): ReturnType<typeof vi.fn> {
-  const fetch = vi.fn(() => Promise.resolve(response));
-  vi.stubGlobal('fetch', fetch);
-  return fetch;
+/** Stubs the global fetch with one response. */
+function stubFetch(response: ReturnType<typeof mockResponse>): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve(response)),
+  );
 }
 
 // endregion | Helpers
