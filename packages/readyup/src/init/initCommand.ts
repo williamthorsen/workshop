@@ -7,6 +7,9 @@ import { printStep, reportWriteResult } from '../output/terminal.ts';
 import { buildInstallCommand } from '../portable/buildInstallCommand.ts';
 import { scaffoldConfig } from './scaffold.ts';
 
+/** Packages that the next steps need from the project, in the order in which the install step names them. */
+const PREREQUISITE_PACKAGES = ['readyup', 'esbuild'];
+
 /** Steps that follow scaffolding regardless of whether readyup is already installed. */
 const STANDARD_NEXT_STEPS = [
   'Customize .config/readyup.config.ts with the compile settings for this project.',
@@ -60,14 +63,24 @@ export function initCommand({ dryRun, force }: InitOptions): number {
 /**
  * Returns the numbered next steps printed after scaffolding.
  *
- * The install step leads when readyup does not resolve from the project, because every later step
- * depends on it: compiling a kit resolves the kit's readyup import, and running one loads the CLI.
- * Numbering is computed so that the conditional step leaves no gap.
+ * The install step leads when readyup or esbuild does not resolve from the project, because every later step
+ * depends on them: compiling a kit takes esbuild and resolves the kit's readyup import, and running one loads the
+ * CLI. One command installs every missing package. Numbering is computed so that the conditional step leaves no gap.
  */
 function buildNextSteps(): string {
-  const steps = isPackageInstalled('readyup')
-    ? STANDARD_NEXT_STEPS
-    : [`Install readyup as a dev dependency: ${buildInstallCommand('readyup')}`, ...STANDARD_NEXT_STEPS];
+  const missing = PREREQUISITE_PACKAGES.filter((packageName) => !isPackageInstalled(packageName));
+  const steps = missing.length === 0 ? STANDARD_NEXT_STEPS : [describeInstallStep(missing), ...STANDARD_NEXT_STEPS];
 
   return steps.map((step, index) => `  ${index + 1}. ${step}`).join('\n');
 }
+
+// region | Helpers
+
+/** Returns the step that installs the missing packages, naming why esbuild is among them. */
+function describeInstallStep(missing: string[]): string {
+  const noun = missing.length === 1 ? 'a dev dependency' : 'dev dependencies';
+  const reason = missing.includes('esbuild') ? ' (rdy compile needs esbuild)' : '';
+  return `Install ${missing.join(' and ')} as ${noun}${reason}: ${buildInstallCommand(...missing)}`;
+}
+
+// endregion | Helpers

@@ -36,6 +36,10 @@ vi.mock(import('../../compile/loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
 }));
 
+vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
+  buildInstallCommand: (moduleName: string) => `npm install --save-dev ${moduleName}`,
+}));
+
 import { RdyError } from '../../errors/RdyError.ts';
 import { richFormatter } from '../../layout/formatter.ts';
 import { VERSION } from '../../version.ts';
@@ -751,14 +755,14 @@ describe(verifyCommand, () => {
       expect(stdout).not.toContain('rebuild');
     });
 
-    it('reports a config error naming the install command when esbuild is absent', async () => {
+    it("reports a config error naming the project's install command when esbuild is absent", async () => {
       arrangeSingleKit();
       mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
       const { error } = await verifyRaising(['--rebuild']);
 
       expect(error.code).toBe('config');
-      expect(error.message).toContain('pnpm add --save-dev esbuild');
+      expect(error.message).toContain('Install it with: npm install --save-dev esbuild');
     });
 
     it('raises the absent-esbuild error before any kit is reported', async () => {

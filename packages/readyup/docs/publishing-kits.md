@@ -12,6 +12,8 @@ A published package can include its kits instead, so consumers access them throu
 
 ## Compiling
 
+Compiling bundles each kit with esbuild, which readyup does not install: Add it as a dev dependency of the project that compiles kits, and `rdy compile` names the install command for the project's package manager when esbuild is missing.
+
 ```
 ── Compiling kits in packages/api/.readyup/kits
 🟢 deploy.ts -> 📓 deploy.js

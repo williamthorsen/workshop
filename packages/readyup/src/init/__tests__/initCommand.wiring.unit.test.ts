@@ -119,7 +119,7 @@ describe(`${initCommand.name} error handling`, () => {
 describe(`${initCommand.name} next steps`, () => {
   beforeEach(() => {
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
-    mockBuildInstallCommand.mockReturnValue('pnpm add --save-dev readyup');
+    mockBuildInstallCommand.mockImplementation((...names: string[]) => `pnpm add --save-dev ${names.join(' ')}`);
     mockIsPackageInstalled.mockReturnValue(true);
   });
 
@@ -153,12 +153,41 @@ describe(`${initCommand.name} next steps`, () => {
   it('leads with the install step when readyup is not installed', () => {
     using silent = silenceConsole(['info']);
 
+    mockIsPackageInstalled.mockImplementation((name: string) => name !== 'readyup');
+
+    initCommand({ dryRun: false, force: false });
+
+    const steps = printedSteps(silent.info);
+    expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup\n');
+    expect(steps).toContain('2. Customize .config/readyup.config.ts');
+    expect(steps).toContain('6. Commit the generated files.');
+  });
+
+  it('leads with an install step naming why esbuild is needed when only esbuild is not installed', () => {
+    using silent = silenceConsole(['info']);
+
+    mockIsPackageInstalled.mockImplementation((name: string) => name !== 'esbuild');
+
+    initCommand({ dryRun: false, force: false });
+
+    const steps = printedSteps(silent.info);
+    expect(steps).toContain(
+      '1. Install esbuild as a dev dependency (rdy compile needs esbuild): pnpm add --save-dev esbuild\n',
+    );
+    expect(steps).toContain('4. Compile the kits: rdy compile');
+  });
+
+  it('installs readyup and esbuild in one step when neither is installed', () => {
+    using silent = silenceConsole(['info']);
+
     mockIsPackageInstalled.mockReturnValue(false);
 
     initCommand({ dryRun: false, force: false });
 
     const steps = printedSteps(silent.info);
-    expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup');
+    expect(steps).toContain(
+      '1. Install readyup and esbuild as dev dependencies (rdy compile needs esbuild): pnpm add --save-dev readyup esbuild\n',
+    );
     expect(steps).toContain('2. Customize .config/readyup.config.ts');
     expect(steps).toContain('6. Commit the generated files.');
   });

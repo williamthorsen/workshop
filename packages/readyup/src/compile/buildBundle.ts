@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import type { Metafile } from 'esbuild';
 
+import { buildInstallCommand } from '../portable/buildInstallCommand.ts';
 import { isRecord } from '../portable/isRecord.ts';
 import { hashFile } from '../verify/targetHash.ts';
 import { VERSION } from '../version.ts';
@@ -43,9 +44,6 @@ export const KIT_COMPILE_TARGET = 'es2025';
 export const KIT_TSCONFIG = {
   compilerOptions: { experimentalDecorators: false, useDefineForClassFields: true },
 };
-
-/** How to obtain esbuild, named wherever its absence is reported so that every code path reports the same remedy. */
-export const ESBUILD_INSTALL_HINT = 'Install it with: pnpm add --save-dev esbuild';
 
 /**
  * Why an import that a kit resolved under the host repo's configuration no longer resolves.
@@ -153,7 +151,7 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
   try {
     esbuild = await loadEsbuild();
   } catch (error: unknown) {
-    throw new Error(`esbuild is required to compile kits but is not installed. ${ESBUILD_INSTALL_HINT}`, {
+    throw new Error(`esbuild is required to compile kits but is not installed. ${buildEsbuildInstallHint()}`, {
       cause: error,
     });
   }
@@ -199,6 +197,14 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
     inlinedJson: collectInlinedJson(metafileInputs, workingDir),
     inputs: collectInputs(recorder.inputs, metafileInputs, workingDir),
   };
+}
+
+/**
+ * Returns how to obtain esbuild, named wherever its absence is reported so that every code path reports the same
+ * remedy. Built when the absence is reported, because the command names the working directory's package manager.
+ */
+export function buildEsbuildInstallHint(): string {
+  return `Install it with: ${buildInstallCommand('esbuild')}`;
 }
 
 // region | Helpers

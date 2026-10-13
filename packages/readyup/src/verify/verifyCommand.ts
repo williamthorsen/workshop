@@ -7,7 +7,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
-import { ESBUILD_INSTALL_HINT } from '../compile/buildBundle.ts';
+import { buildEsbuildInstallHint } from '../compile/buildBundle.ts';
 import { loadEsbuild } from '../compile/loadEsbuild.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, RdyError, usageError } from '../errors/RdyError.ts';
@@ -256,7 +256,7 @@ async function requireEsbuild(): Promise<void> {
   try {
     await loadEsbuild();
   } catch (error: unknown) {
-    throw configError(`rdy verify --rebuild requires esbuild, which is not installed. ${ESBUILD_INSTALL_HINT}`, {
+    throw configError(`rdy verify --rebuild requires esbuild, which is not installed. ${buildEsbuildInstallHint()}`, {
       cause: error,
     });
   }
