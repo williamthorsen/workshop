@@ -40,6 +40,23 @@ describe('rdy help', () => {
     },
   );
 
+  it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ stem: file.replace(/\.md$/, ''), topic })))(
+    'prints for "help $stem" what "help $topic" prints',
+    async ({ stem, topic }) => {
+      const viaTopic = await route(['help', topic]);
+      const viaStem = await route(['help', stem]);
+
+      expect(viaStem.exitCode).toBe(0);
+      expect(viaStem.stdout).toBe(viaTopic.stdout);
+    },
+  );
+
+  it('suggests the nearest file stem for a near-miss of one', async () => {
+    const { stderr } = await route(['help', 'publishing-kit']);
+
+    expect(stderr).toContain("Did you mean 'rdy help publishing-kits'?");
+  });
+
   it('suggests the nearest subject for a near-miss', async () => {
     const { exitCode, stderr } = await route(['help', 'authorng']);
 
