@@ -224,6 +224,14 @@ A manifest that is present and cannot be read is the one case with its own advis
 
 An absent manifest is not reported: It is the normal state of a project that never compiled, and indicates nothing about any kit.
 
+One reads the config rather than the kits, and is raised only under [`--sources`](publishing-kits.md#configured-kit-sources).
+
+| Code             | Raised when                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `source-not-run` | A listed source publishes none of the requested kits, so none of its kits ran |
+
+The warning names the source as the config spells it and the kits that it does publish, and its remedy names the runs that would include them: `rdy run --sources <kit>` and `rdy run --sources --all`. A run left with nothing to run prints `No kits to run:` with the kit that no listed source publishes, followed by the same alternatives and `rdy list --sources`.
+
 Two more come from [`--diagnose`](#run-options), and are raised only when that flag is passed.
 
 | Code                     | Raised when                                                        |
