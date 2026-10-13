@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { initialize, resolve } from '../readyupResolverHook.ts';
+import { buildKitImportUrl } from '../kits/importKitModule.ts';
+import { initialize, load, resolve } from '../readyupResolverHook.ts';
 
 const READYUP_PARENT_URL = 'file:///runner/node_modules/readyup/dist/esm/bin/rdy.js';
 const KIT_PARENT_URL = 'file:///tmp/rdy-XYZ/kit.js';
@@ -22,6 +23,28 @@ function buildNextResolve() {
 describe('readyupResolverHook', () => {
   beforeEach(() => {
     initialize({ readyupParentURL: READYUP_PARENT_URL });
+  });
+
+  describe(load, () => {
+    const loadContext = { conditions: ['node', 'import'], importAttributes: {} };
+
+    it('loads a URL built for a kit import as an ES module', () => {
+      const nextLoad = vi.fn().mockReturnValue({ format: 'module' });
+      const url = buildKitImportUrl('/project/.readyup/kits/default.js');
+
+      void load(url, loadContext, nextLoad);
+
+      expect(nextLoad).toHaveBeenCalledWith(url, { ...loadContext, format: 'module' });
+    });
+
+    it('passes an unmarked URL through with its context unchanged', () => {
+      const nextLoad = vi.fn().mockReturnValue({ format: 'commonjs' });
+      const context = { ...loadContext, format: 'commonjs' };
+
+      void load('file:///project/lib/helper.js', context, nextLoad);
+
+      expect(nextLoad).toHaveBeenCalledWith('file:///project/lib/helper.js', context);
+    });
   });
 
   describe(resolve, () => {

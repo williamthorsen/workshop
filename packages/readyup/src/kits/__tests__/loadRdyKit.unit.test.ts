@@ -4,6 +4,7 @@ import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockExistsSync = vi.hoisted(() => vi.fn());
+const mockImportKitModule = vi.hoisted(() => vi.fn());
 const mockJitiImport = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 const mockReadFileSync = vi.hoisted(() => vi.fn());
@@ -12,6 +13,10 @@ vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   readdirSync: mockReaddirSync,
   readFileSync: mockReadFileSync,
+}));
+
+vi.mock(import('../importKitModule.ts'), () => ({
+  importKitModule: mockImportKitModule,
 }));
 
 vi.mock('jiti', () => ({
@@ -27,6 +32,7 @@ const COMPILED_KIT_PATH = '.readyup/kits/default.js';
 describe(loadRdyKit, () => {
   afterEach(() => {
     mockExistsSync.mockReset();
+    mockImportKitModule.mockReset();
     mockJitiImport.mockReset();
     mockReaddirSync.mockReset();
     mockReadFileSync.mockReset();
@@ -300,11 +306,13 @@ describe(loadRdyKit, () => {
     const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('import { defineRdyKit } from "readyup";');
-    mockJitiImport.mockResolvedValue({ checklists: validChecklists });
+    mockImportKitModule.mockResolvedValue({ checklists: validChecklists });
 
     const { kit } = await loadRdyKit(COMPILED_KIT_PATH);
 
     expect(kit.checklists).toHaveLength(1);
+    expect(mockImportKitModule).toHaveBeenCalledWith(path.resolve(COMPILED_KIT_PATH));
+    expect(mockJitiImport).not.toHaveBeenCalled();
   });
 
   it('leaves a TypeScript source unscanned, since it is not a bundle', async () => {
@@ -315,6 +323,17 @@ describe(loadRdyKit, () => {
     await loadRdyKit(KIT_PATH);
 
     expect(mockReadFileSync).not.toHaveBeenCalled();
+  });
+
+  it('loads a TypeScript source through jiti rather than as a native module', async () => {
+    const validChecklists = [{ name: 'test', checks: [{ name: 'a', check: () => true }] }];
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({ checklists: validChecklists });
+
+    await loadRdyKit(KIT_PATH);
+
+    expect(mockJitiImport).toHaveBeenCalledTimes(1);
+    expect(mockImportKitModule).not.toHaveBeenCalled();
   });
 });
 

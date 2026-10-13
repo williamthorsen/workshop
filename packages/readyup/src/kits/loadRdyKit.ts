@@ -6,6 +6,7 @@ import { enumerateKits } from '../list/enumerateKits.ts';
 import { jitiImport } from '../portable/jitiImport.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import { assertIsRdyKit } from './assertIsRdyKit.ts';
+import { importKitModule } from './importKitModule.ts';
 import { KITS_DIR } from './kitsDir.ts';
 import { resolveKitExports } from './resolveKitExports.ts';
 import type { RdyKit } from './types.ts';
@@ -23,10 +24,9 @@ export interface LoadedRdyKit {
 /**
  * Loads and validates a rdy kit file.
  *
- * Uses jiti to load TypeScript config files at runtime. Returns the validated kit and the
- * embedded `__readyupVersion` from the imported module namespace when present, or `undefined`
- * for kits compiled before that field was introduced (and for `.ts` sources, which have no
- * generated banner).
+ * Loads a compiled `.js` kit natively as an ES module, and a `.ts` kit through jiti. Returns the validated kit and the
+ * embedded `__readyupVersion` from the imported module namespace when present, or `undefined` for kits compiled before
+ * that field was introduced (and for `.ts` sources, which have no generated banner).
  *
  * A compiled kit binding readyup symbols not exported by this runner is never evaluated, so the failure
  * names them rather than appearing as an `undefined` binding once a check calls one.
@@ -38,18 +38,8 @@ export async function loadRdyKit(kitPath: string, requestedName?: string): Promi
     throw new Error(diagnoseMissingKit(resolvedPath, requestedName));
   }
 
-  // Check a bundle's readyup imports before evaluating it. A `.ts` kit is source rather than a bundle: It binds
-  // readyup through the project's own installation, which resolves or fails on its own terms.
-  if (path.extname(resolvedPath) === '.js') {
-    await assertKitImportsResolve(readFileSync(resolvedPath, 'utf8'), toDisplayPath(resolvedPath));
-  }
-
-  const imported = await jitiImport(
-    resolvedPath,
-    'Uncompiled kits require the package to be installed as a project dependency. ' +
-      "Alternatively, run 'rdy compile' to produce a self-contained bundle that does not need a local install.",
-    'Kit file',
-  );
+  const imported =
+    path.extname(resolvedPath) === '.js' ? await importBundle(resolvedPath) : await importSource(resolvedPath);
 
   // Extract __readyupVersion from the raw module namespace before `resolveKitExports` strips it.
   const compileTimeVersion = readCompileTimeVersion(imported);
@@ -97,6 +87,27 @@ function diagnoseMissingKit(resolvedPath: string, requestedName: string | undefi
   const availability =
     available.length > 0 ? `Available kits: ${available.join(', ')}.` : `No kits found in ${toDisplayPath(dir)}.`;
   return `Kit "${name}" not found at ${toDisplayPath(resolvedPath)}. ${availability}`;
+}
+
+/**
+ * Imports a compiled kit as an ES module, after checking that the runner exports every readyup symbol that it binds.
+ */
+async function importBundle(resolvedPath: string): Promise<Record<string, unknown>> {
+  await assertKitImportsResolve(readFileSync(resolvedPath, 'utf8'), toDisplayPath(resolvedPath));
+  return importKitModule(resolvedPath);
+}
+
+/**
+ * Imports a kit source through jiti. Source binds readyup through the project's own installation, which resolves or
+ * fails on its own terms, so its imports are not checked first.
+ */
+async function importSource(resolvedPath: string): Promise<Record<string, unknown>> {
+  return jitiImport(
+    resolvedPath,
+    'Uncompiled kits require the package to be installed as a project dependency. ' +
+      "Alternatively, run 'rdy compile' to produce a self-contained bundle that does not need a local install.",
+    'Kit file',
+  );
 }
 
 /** Returns the kit names beside a missing kit, treating an unreadable directory as containing none. */
