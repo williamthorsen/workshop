@@ -78,15 +78,16 @@ export interface ConfiguredKitView extends KitView {
 }
 
 /**
- * Returns the owner-mode output, showing the source, internal, and compiled kit sections.
+ * Returns the owner-mode output, showing the uncompiled, internal, and compiled kit sections.
  *
  * Empty sections are omitted. Returns the empty-owner message when every list is empty.
  *
- * The two source sections are separate axes rather than one section under two names: `sourceKits` lists
- * what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and `internalKits` lists
- * the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal` as well. A caller
- * whose config declares neither key passes no internal kits, because `--internal` would then resolve every
- * name exactly as plain `--jit` does and its rows would restate the source rows above them.
+ * The Uncompiled and Internal sections are separate axes rather than one section under two names:
+ * `sourceKits` lists what `compile.include` and `compile.exclude` select, which `rdy run --jit` runs, and
+ * `internalKits` lists the bucket that `internal.dir` and `internal.infix` declare, which needs `--internal`
+ * as well. A caller whose config declares neither key passes no internal kits, because `--internal` would
+ * then resolve every name exactly as plain `--jit` does and its rows would restate the Uncompiled rows above
+ * them.
  *
  * Every compiled kit is named rather than pathed, whatever `compile.outDir` is set to, because this view
  * reports the kits of the reader's working directory and `rdy run <kit>` reads that project's own
@@ -117,7 +118,7 @@ export function formatOwnerView({
   if (sourceKits.length > 0) {
     const command = `rdy run --jit ${buildKitSelectionHint(sourceKits)}`;
     const items = sourceKits.map((name) => ({ name }));
-    sections.push(formatSection('Sources', buildRunLine(command), items, 'kitSource'));
+    sections.push(formatSection('Uncompiled', buildRunLine(command), items, 'kitSource'));
   }
 
   if (internalKits.length > 0) {
@@ -383,10 +384,12 @@ function buildSourceLabel(group: SourceGroup): string {
  * Returns the section naming installed packages that publish kits not listed in the config.
  *
  * It has no `To run:` label, because its line heads the section with what to do about those packages
- * rather than a command to run.
+ * rather than a command to run. The example names the first candidate alone: An array of every candidate
+ * would read as the whole `sources` value, replacing the entries that the config already lists.
  */
 function formatAvailableSection(availableSources: string[]): string {
-  const instruction = `${getLayout().indent(1)}Add to "sources" in the readyup config`;
+  const example = `sources: ['${availableSources[0] ?? 'npm:<name>'}']`;
+  const instruction = `${getLayout().indent(1)}Add to "sources" in the readyup config, e.g. ${example}`;
   const items = availableSources.map((name) => ({ name }));
   return formatSection('Available', instruction, items, 'sourcePackage');
 }

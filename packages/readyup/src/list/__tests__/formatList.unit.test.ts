@@ -28,26 +28,26 @@ const REMOTE = richFormatter.tokens.sourceRemote.text;
 const CHECKLIST = richFormatter.tokens.checklist.text;
 
 describe(formatOwnerView, () => {
-  it('renders only the Sources section when compiled kits are empty', () => {
+  it('renders only the Uncompiled section when compiled kits are empty', () => {
     const result = formatOwnerView({
       sourceKits: ['default', 'deploy'],
       internalKits: [],
       compiledKits: [],
     });
 
-    expect(result).toContain('\u{2500}\u{2500} Sources');
+    expect(result).toContain('\u{2500}\u{2500} Uncompiled');
     expect(result).not.toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
   });
 
-  it('heads the Sources section with the plain --jit command', () => {
+  it('heads the Uncompiled section with the plain --jit command', () => {
     const result = formatOwnerView({
       sourceKits: ['default'],
       internalKits: [],
       compiledKits: [],
     });
 
-    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+    expect(findSectionCommand(result, 'Uncompiled')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
   });
 
   it('heads the Internal section with the --internal command', () => {
@@ -69,8 +69,8 @@ describe(formatOwnerView, () => {
       compiledKits: [],
     });
 
-    expect(result.indexOf('\u{2500}\u{2500} Sources')).toBeLessThan(result.indexOf('\u{2500}\u{2500} Internal'));
-    expect(findSectionCommand(result, 'Sources')).not.toContain('--internal');
+    expect(result.indexOf('\u{2500}\u{2500} Uncompiled')).toBeLessThan(result.indexOf('\u{2500}\u{2500} Internal'));
+    expect(findSectionCommand(result, 'Uncompiled')).not.toContain('--internal');
     expect(findSectionCommand(result, 'Internal')).toContain('--internal');
   });
 
@@ -80,7 +80,7 @@ describe(formatOwnerView, () => {
       compiledKits: [{ name: 'deploy' }],
     });
 
-    expect(result).not.toContain('\u{2500}\u{2500} Sources');
+    expect(result).not.toContain('\u{2500}\u{2500} Uncompiled');
     expect(result).not.toContain('\u{2500}\u{2500} Internal');
     expect(result).toContain('\u{2500}\u{2500} Compiled');
     expect(result).toContain('deploy');
@@ -94,7 +94,7 @@ describe(formatOwnerView, () => {
     });
     const lines = result.split('\n');
 
-    expect(lines[0]).toBe('\u{2500}\u{2500} Sources');
+    expect(lines[0]).toBe('\u{2500}\u{2500} Uncompiled');
     expect(lines[1]).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
     expect(lines[2]).toBe(`${INTERNAL} deploy`);
   });
@@ -121,7 +121,7 @@ describe(formatOwnerView, () => {
       compiledKits: [],
     });
 
-    expect(result).not.toContain('Sources: rdy run');
+    expect(result).not.toContain('Uncompiled: rdy run');
   });
 
   it('uses brackets around positional name in the source hint when default exists', () => {
@@ -131,7 +131,7 @@ describe(formatOwnerView, () => {
       compiledKits: [{ name: 'deploy' }],
     });
 
-    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+    expect(findSectionCommand(result, 'Uncompiled')).toBe('   To run: rdy run --jit [<kit>[:<checklist>,...]]');
     expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run <kit>[:<checklist>,...]');
   });
 
@@ -142,7 +142,7 @@ describe(formatOwnerView, () => {
       compiledKits: [{ name: 'default' }, { name: 'monitor' }],
     });
 
-    expect(findSectionCommand(result, 'Sources')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
+    expect(findSectionCommand(result, 'Uncompiled')).toBe('   To run: rdy run --jit <kit>[:<checklist>,...]');
     expect(findSectionCommand(result, 'Compiled')).toBe('   To run: rdy run [<kit>[:<checklist>,...]]');
   });
 
@@ -164,7 +164,7 @@ describe(formatOwnerView, () => {
       compiledKits: [{ name: 'deploy' }],
     });
 
-    expect(findSectionCommand(result, 'Sources')).toContain('--jit');
+    expect(findSectionCommand(result, 'Uncompiled')).toContain('--jit');
     expect(findSectionCommand(result, 'Compiled')).not.toContain('--jit');
   });
 
@@ -192,7 +192,21 @@ describe(formatOwnerView, () => {
       availableSources: ['npm:@acme/release-kit'],
     });
 
-    expect(findSectionCommand(result, 'Available')).toBe('   Add to "sources" in the readyup config');
+    expect(findSectionCommand(result, 'Available')).toBe(
+      `   Add to "sources" in the readyup config, e.g. sources: ['npm:@acme/release-kit']`,
+    );
+  });
+
+  it('shows the config syntax with the first candidate alone, so that it does not read as the whole list', () => {
+    const result = formatOwnerView({
+      internalKits: [],
+      compiledKits: [],
+      availableSources: ['npm:@acme/lint-kit', 'npm:@acme/release-kit'],
+    });
+
+    expect(findSectionCommand(result, 'Available')).toBe(
+      `   Add to "sources" in the readyup config, e.g. sources: ['npm:@acme/lint-kit']`,
+    );
   });
 
   it('nests each compiled kit\u{2019}s checklists beneath it, in the order given', () => {
@@ -251,7 +265,7 @@ describe(formatOwnerView, () => {
       compiledKits: [{ name: 'deploy' }],
     });
 
-    expect(result).toContain('\u{2500}\u{2500} Sources');
+    expect(result).toContain('\u{2500}\u{2500} Uncompiled');
     expect(result).toContain('\u{2500}\u{2500} Compiled');
   });
 });

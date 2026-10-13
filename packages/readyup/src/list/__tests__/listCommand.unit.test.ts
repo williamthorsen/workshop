@@ -206,7 +206,7 @@ describe(listCommand, () => {
         expect.stringContaining('.readyup/kits'),
         expect.objectContaining({ include: undefined, exclude: [] }),
       );
-      expect(stdout).toContain('\u{2500}\u{2500} Sources');
+      expect(stdout).toContain('\u{2500}\u{2500} Uncompiled');
       expect(stdout).toContain('\u{2500}\u{2500} Compiled');
     });
 
@@ -245,14 +245,14 @@ describe(listCommand, () => {
       expect(mockEnumerateKits).toHaveBeenCalledWith(expect.objectContaining({ extension: '.int.ts' }));
     });
 
-    it('renders only the Sources section when manifest has no compiled kits', async () => {
+    it('renders only the Uncompiled section when manifest has no compiled kits', async () => {
       mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockReturnValue({ version: 1, kits: [] });
 
       const { exitCode, stdout } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Sources');
+      expect(stdout).toContain('\u{2500}\u{2500} Uncompiled');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
     });
 
@@ -357,7 +357,7 @@ describe(listCommand, () => {
       expect(error.message).toContain('permission denied');
     });
 
-    it('renders Sources without Compiled when neither a manifest nor a bundle exists', async () => {
+    it('renders Uncompiled without Compiled when neither a manifest nor a bundle exists', async () => {
       mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockImplementation(() => {
         throw new ManifestNotFoundError('/fake/.readyup/manifest.json');
@@ -366,7 +366,7 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Sources');
+      expect(stdout).toContain('\u{2500}\u{2500} Uncompiled');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toBe('');
     });
@@ -434,12 +434,12 @@ describe(listCommand, () => {
       );
     });
 
-    it('heads the Sources section with the plain --jit hint', async () => {
+    it('heads the Uncompiled section with the plain --jit hint', async () => {
       mockCollectSourceKitNames.mockReturnValue(['default']);
 
       const { stdout } = await list([]);
 
-      expect(stdout).toContain('\u{2500}\u{2500} Sources\n   To run: rdy run --jit [<kit>[:<checklist>,...]]');
+      expect(stdout).toContain('\u{2500}\u{2500} Uncompiled\n   To run: rdy run --jit [<kit>[:<checklist>,...]]');
     });
 
     it('writes warning to stderr when manifest read fails with non-missing-file error and sources exist', async () => {
@@ -451,7 +451,7 @@ describe(listCommand, () => {
       const { exitCode, stdout, stderr } = await list([]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('\u{2500}\u{2500} Sources');
+      expect(stdout).toContain('\u{2500}\u{2500} Uncompiled');
       expect(stdout).not.toContain('\u{2500}\u{2500} Compiled');
       expect(stderr).toContain('Warning:');
       expect(stderr).toContain('invalid JSON');
@@ -616,7 +616,7 @@ describe(listCommand, () => {
       const { stdoutChunks, stderr } = await list(['--json']);
 
       expect(stdoutChunks).toHaveLength(1);
-      expect(stderr).toContain('\u{2500}\u{2500} Sources');
+      expect(stderr).toContain('\u{2500}\u{2500} Uncompiled');
     });
 
     it('reports an empty kit list rather than the empty-owner prose', async () => {
