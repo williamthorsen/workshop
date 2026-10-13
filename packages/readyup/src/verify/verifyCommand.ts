@@ -8,9 +8,13 @@ import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { buildEsbuildInstallHint } from '../compile/buildBundle.ts';
+import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { loadEsbuild } from '../compile/loadEsbuild.ts';
+import { loadConfig } from '../config/loadConfig.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, RdyError, usageError } from '../errors/RdyError.ts';
+import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -22,6 +26,7 @@ import {
   type JsonVerifyKitEntry,
   type JsonVerifyOutput,
   type JsonVerifyProjectEntry,
+  type JsonVerifyUncompiledEntry,
   SCHEMA_VERSION,
 } from '../schemas/verifyOutputSchema.ts';
 import { VERSION } from '../version.ts';
@@ -33,6 +38,7 @@ import { resolveRemedies } from './remedies.ts';
 import { hasSourceFailed, hasTargetFailed, type KitVerdicts } from './verdicts.ts';
 
 const verifyOptions = {
+  config: { type: 'string' },
   json: { type: 'boolean' },
   manifest: { type: 'string' },
   rebuild: { type: 'boolean' },
@@ -43,14 +49,16 @@ const verifyOptions = {
 
 /**
  * Handles the `verify` subcommand: reads the manifest, hashes each kit's source and compiled
- * output, and reports what no longer matches. Under `--recursive`, does so for every kit project
+ * output, and reports what no longer matches, along with each kit source selected by the compile
+ * settings that the manifest does not record. Under `--recursive`, does so for every kit project
  * below the working directory.
  *
  * Each kit has three independent verdicts, and a fourth under `--rebuild`. Returns 0 when every
- * verdict is `ok` or `unverified`; 1 when any kit has drifted, gone stale, lost a file, or failed
- * to reproduce, and under `--recursive` also when any project cannot be verified. An unreadable
- * manifest outside a sweep is a config failure and is thrown rather than reported as drift, as is a
- * `--rebuild` run with no esbuild to rebuild with.
+ * verdict is `ok` or `unverified` and every selected source is recorded; 1 when any kit has drifted,
+ * gone stale, lost a file, failed to reproduce, or was never compiled, and under `--recursive` also
+ * when any project cannot be verified. An unreadable manifest, config, or source directory outside a
+ * sweep is a config failure and is thrown rather than reported as drift, as is a `--rebuild` run with
+ * no esbuild to rebuild with.
  */
 export async function verifyCommand(args: string[]): Promise<number> {
   let parsed;
@@ -80,6 +88,11 @@ export async function verifyCommand(args: string[]): Promise<number> {
     throw usageError('--recursive and --manifest are mutually exclusive');
   }
 
+  // `--recursive` reads each project's own config, so there is no single config for `--config` to name.
+  if (recursive && values.config !== undefined) {
+    throw usageError('--recursive and --config are mutually exclusive');
+  }
+
   // Settle the bundler's availability before the run says anything. An exactness check that reports
   // kit after kit and then discovers it could never have run reads as a partial result; raised here,
   // the error reports an absent esbuild as a problem with the environment, not with any kit.
@@ -91,7 +104,15 @@ export async function verifyCommand(args: string[]): Promise<number> {
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
   const manifest = loadManifest(manifestPath);
-  return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json }), json);
+  const projectDir = resolveManifestProjectDir(manifestPath);
+  const config = await loadVerifyConfig(projectDir, values.config);
+  const uncompiled = findUncompiledKits({
+    manifest,
+    manifestDir: path.dirname(manifestPath),
+    srcDir: path.resolve(projectDir, config.compile.srcDir),
+    selection: config.compile,
+  });
+  return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json, uncompiled }), json);
 }
 
 /** Arguments for the recursive verify path. */
@@ -114,15 +135,16 @@ async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number> {
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', json);
-    return finishVerify({ kits: [], passed: true, projects: [] }, json);
+    return finishVerify({ kits: [], passed: true, projects: [], uncompiled: [] }, json);
   }
 
   const kits: JsonVerifyKitEntry[] = [];
   const projectEntries: JsonVerifyProjectEntry[] = [];
+  const uncompiled: JsonVerifyUncompiledEntry[] = [];
   let hasWrittenBlock = false;
 
   for (const project of projects) {
-    const loaded = loadSweptManifest(project, root);
+    const loaded = loadSweptProject(project, root);
     if ('failure' in loaded) {
       projectEntries.push(reportProjectFailure(project.dir, loaded.failure));
       continue;
@@ -138,8 +160,10 @@ async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number> {
       rebuild,
       json,
       project: project.dir,
+      uncompiled: loaded.uncompiled,
     });
     kits.push(...outcome.kits);
+    uncompiled.push(...outcome.uncompiled);
     projectEntries.push({ project: project.dir, passed: outcome.passed });
   }
 
@@ -151,15 +175,19 @@ async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number> {
     );
   }
 
-  return finishVerify({ kits, passed: failedDirs.length === 0, projects: projectEntries }, json);
+  return finishVerify({ kits, passed: failedDirs.length === 0, projects: projectEntries, uncompiled }, json);
 }
 
 /**
- * Reads a discovered project's manifest, or describes why the project cannot be verified.
+ * Reads a discovered project's manifest and finds its uncompiled kits, or describes why the project cannot be
+ * verified.
  *
  * Only an `RdyError` is a project failure. Anything else is a defect in rdy, and ends the run.
  */
-function loadSweptManifest(project: Project, root: string): { manifest: RdyManifest } | { failure: string } {
+function loadSweptProject(
+  project: Project,
+  root: string,
+): { manifest: RdyManifest; uncompiled: JsonVerifyUncompiledEntry[] } | { failure: string } {
   if (project.configError !== undefined) {
     return { failure: describeError(project.configError) };
   }
@@ -170,7 +198,15 @@ function loadSweptManifest(project: Project, root: string): { manifest: RdyManif
   }
 
   try {
-    return { manifest: loadManifest(project.manifestPath) };
+    const manifest = loadManifest(project.manifestPath);
+    const uncompiled = findUncompiledKits({
+      manifest,
+      manifestDir: path.dirname(project.manifestPath),
+      srcDir: path.resolve(project.absolutePath, project.config.compile.srcDir),
+      selection: project.config.compile,
+      project: project.dir,
+    });
+    return { manifest, uncompiled };
   } catch (error: unknown) {
     if (!(error instanceof RdyError)) throw error;
     return { failure: error.message };
@@ -181,6 +217,67 @@ function loadSweptManifest(project: Project, root: string): { manifest: RdyManif
 function reportProjectFailure(dir: string, message: string): JsonVerifyProjectEntry {
   process.stderr.write(`Error in ${dir}: ${message}\n`);
   return { project: dir, passed: false, error: message };
+}
+
+/**
+ * Returns the directory of the project to which a manifest belongs: the one containing it at the default manifest
+ * path, or the working directory for a manifest elsewhere.
+ */
+function resolveManifestProjectDir(manifestPath: string): string {
+  const candidateDir = path.dirname(path.dirname(manifestPath));
+  return path.relative(candidateDir, manifestPath) === path.normalize(DEFAULT_MANIFEST_PATH)
+    ? candidateDir
+    : process.cwd();
+}
+
+/**
+ * Loads the project's config, or the one named by `--config` relative to the working directory, raising a config
+ * error when it cannot be evaluated.
+ */
+async function loadVerifyConfig(projectDir: string, configPath: string | undefined): Promise<ResolvedRdyConfig> {
+  try {
+    return await loadConfig({
+      fromDir: projectDir,
+      ...(configPath !== undefined && { overridePath: path.resolve(process.cwd(), configPath) }),
+    });
+  } catch (error: unknown) {
+    throw configError(describeError(error), { cause: error, hint: extractHint(error) });
+  }
+}
+
+/** Arguments for finding the kit sources that a manifest does not record. */
+interface FindUncompiledKitsArgs {
+  manifest: RdyManifest;
+  manifestDir: string;
+  /** Absolute path of the directory from which the compile selects sources. */
+  srcDir: string;
+  selection: Pick<ResolvedRdyConfig['compile'], 'exclude' | 'include'>;
+  /** The project named on each entry, given by a recursive verify alone. */
+  project?: string;
+}
+
+/**
+ * Returns an entry for each kit that the compile settings select and the manifest does not record, sorted by name.
+ *
+ * Raises a config error when the source directory exists but cannot be read.
+ */
+function findUncompiledKits(args: FindUncompiledKitsArgs): JsonVerifyUncompiledEntry[] {
+  const { manifest, manifestDir, srcDir, selection, project } = args;
+  let names: string[];
+  try {
+    names = collectSourceKitNames(srcDir, selection);
+  } catch (error: unknown) {
+    throw configError(`Failed to read source directory: ${describeError(error)}`, { cause: error });
+  }
+
+  const recordedNames = new Set(manifest.kits.map((kit) => kit.name));
+  return names
+    .filter((name) => !recordedNames.has(name))
+    .map((name) => ({
+      name,
+      ...(project !== undefined && { project }),
+      source: path.relative(manifestDir, path.join(srcDir, `${name}.ts`)),
+    }));
 }
 
 /** Reads a manifest, raising a config error when it is missing, unreadable, or invalid. */
@@ -200,18 +297,21 @@ interface VerifyManifestArgs {
   json: boolean;
   /** The project named on each kit's JSON entry, given by a recursive verify alone. */
   project?: string;
+  /** The kits that the compile settings select and the manifest does not record. */
+  uncompiled: JsonVerifyUncompiledEntry[];
 }
 
 /** One manifest's contribution to a verify run. */
 interface ManifestVerification {
   kits: JsonVerifyKitEntry[];
-  /** `true` when every kit in the manifest passed, and so when the manifest lists none. */
+  /** `true` when every kit in the manifest passed and every selected source is recorded. */
   passed: boolean;
+  uncompiled: JsonVerifyUncompiledEntry[];
 }
 
-/** Verifies every kit that a manifest lists, writing a heading and one line per kit. */
+/** Verifies every kit that a manifest lists, writing a heading, one line per kit, and one per uncompiled kit. */
 async function verifyManifest(args: VerifyManifestArgs): Promise<ManifestVerification> {
-  const { manifest, manifestPath, rebuild, json, project } = args;
+  const { manifest, manifestPath, rebuild, json, project, uncompiled } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
@@ -219,7 +319,6 @@ async function verifyManifest(args: VerifyManifestArgs): Promise<ManifestVerific
 
   if (manifest.kits.length === 0) {
     writeHuman('(no kits in manifest)\n', json);
-    return { kits: [], passed: true };
   }
 
   const entries: JsonVerifyKitEntry[] = [];
@@ -238,11 +337,16 @@ async function verifyManifest(args: VerifyManifestArgs): Promise<ManifestVerific
     }
   }
 
+  for (const entry of uncompiled) {
+    writeHuman(formatUncompiledLine(entry), json);
+  }
+  failed += uncompiled.length;
+
   if (failed > 0) {
-    writeHuman(`\n${failed} of ${manifest.kits.length} kits failed verification.\n`, json);
+    writeHuman(`\n${failed} of ${manifest.kits.length + uncompiled.length} kits failed verification.\n`, json);
   }
 
-  return { kits: entries, passed: failed === 0 };
+  return { kits: entries, passed: failed === 0, uncompiled };
 }
 
 /**
@@ -269,13 +373,14 @@ interface VerifyOutcome extends ManifestVerification {
 }
 
 /** Emits the verify payload under `--json` and turns the run's verdict into an exit code. */
-function finishVerify({ kits, passed, projects }: VerifyOutcome, json: boolean): number {
+function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutcome, json: boolean): number {
   if (json) {
     const output: JsonVerifyOutput = {
       schemaVersion: SCHEMA_VERSION,
       passed,
       kits,
       ...(projects !== undefined && { projects }),
+      ...(uncompiled.length > 0 && { uncompiled }),
     };
     process.stdout.write(JSON.stringify(output) + '\n');
   }
@@ -360,6 +465,14 @@ function formatStatusLine(kit: RdyManifestKit, verdicts: KitVerdicts): string {
 
   const detail = clauses.join('; ');
   return getLayout().formatCheckLine({ token, name: kit.name, ...(detail !== '' && { detail }) }) + '\n';
+}
+
+/** Returns the failing line for a kit source that the manifest does not record, with the remedy. */
+function formatUncompiledLine(entry: JsonVerifyUncompiledEntry): string {
+  const layout = getLayout();
+  const claim = layout.formatCheckLine({ token: 'failedError', name: entry.name });
+  const reasons = [`source not compiled (${entry.source})`, layout.formatFix('Run `rdy compile` to compile it.')];
+  return [claim, ...layout.formatReasonBlock(reasons)].join('\n') + '\n';
 }
 
 /**

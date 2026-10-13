@@ -270,7 +270,21 @@ Recompiling resolves a changed input but not an unprojectable one, because the f
 
 Anything other than `ok` or `unverified` on any axis fails the run. `unverified` does not, since an entry with no recorded hash -- or one compiled before readyup recorded the input closure -- says nothing about whether the kit changed.
 
-Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict reports `expected` and `actual`; a stale source reports `sourceExpected` and `sourceActual`; stale inputs report `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has. The remedies are human output alone: A consumer reads the verdict and writes its own.
+A kit source that the manifest does not record also fails the run. `rdy verify` selects sources as `rdy compile` does, from [`compile.srcDir`](authoring-kits.md#config) under `compile.include` and `compile.exclude`, and names each selected kit that the manifest lacks after the manifest's own kits:
+
+```
+── Verifying kits against .readyup/manifest.json
+🟢 smoke
+🔴 deploy
+   source not compiled (kits/deploy.ts)
+   💊 Run `rdy compile` to compile it.
+
+1 of 2 kits failed verification.
+```
+
+This covers a source added without a compile, and a first compile that failed every kit, which writes a manifest that lists none. The settings are those of the project to which the manifest belongs: the directory containing it for a manifest at the default `.readyup/manifest.json`, so `rdy verify --manifest packages/api/.readyup/manifest.json` selects the sources of `packages/api` from any directory, and the working directory for a manifest anywhere else. `--config` names another config file, relative to the working directory; a project compiled under `rdy compile --config` passes the same file to `rdy verify`. A source directory that does not exist selects nothing.
+
+Under `--json`, each kit reports `status`, `sourceStatus`, and `inputsStatus`. A `drift` verdict reports `expected` and `actual`; a stale source reports `sourceExpected` and `sourceActual`; stale inputs report `inputFailures`, one entry per input naming its `kind`, `path`, and `reason`, plus whichever of `expected`, `actual`, and `detail` that reason has. An `uncompiled` list, present only when it is not empty, names each uncompiled kit with its `name` and its `source` relative to the manifest directory. The remedies are human output alone: A consumer reads the verdict and writes its own.
 
 In CI:
 
@@ -341,11 +355,11 @@ Problems in 2 of 3 projects: packages/api, packages/ui
 
 The sweep visits the same projects as [`rdy compile --recursive`](#compiling-a-whole-repository), which considers the directories that [`rdy list --recursive`](running-checks.md#listing-a-whole-repository) considers, so a package that starts authoring kits is verified without a change to the CI step. Each project is verified exactly as `rdy verify` run from its own directory would verify it.
 
-The sweep runs to completion across projects. A project that cannot be verified at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a manifest that cannot be read, and a project that contains kits but no manifest, whose remedy is to run `rdy compile` in its directory. A project whose config cannot be evaluated is not verified, rather than verified under default settings. When any project has a failed kit or a failure of its own, the run ends with a line naming those projects and exits 1.
+The sweep runs to completion across projects. A project that cannot be verified at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a manifest that cannot be read, and a project that contains kits but no manifest, whose remedy is to run `rdy compile` in its directory. A project whose config cannot be evaluated is not verified, rather than verified under default settings. When any project has a failed kit, an uncompiled kit source, or a failure of its own, the run ends with a line naming those projects and exits 1.
 
-A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` works with `--rebuild` and `--json`, and cannot be combined with `--manifest`, which names a single manifest.
+A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` works with `--rebuild` and `--json`, and cannot be combined with `--manifest` or `--config`, each of which names a single project's file: Each project is verified under its own config.
 
-Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be verified at all, `error`.
+Under `--json`, each kit also reports `project`, the directory of its project relative to the working directory (`.` for the working directory itself), so a kit is identified by `name` and `project` together. A `projects` list reports every project that the sweep visited, with `passed` and, for a project that could not be verified at all, `error`. Each `uncompiled` entry reports `project` as well.
 
 In a monorepo's CI, the sweep replaces one `rdy verify --manifest` step per package. With `--rebuild`, it must still run before any step that recompiles kits:
 

@@ -55,7 +55,7 @@ Commands:
   help [<topic>]                Show help for a command or a topic
   init                          Scaffold a starter config and kit
   list                          List available kits
-  verify                        Check compiled kits against manifest hashes
+  verify                        Check compiled kits and kit sources against the manifest
 
 Topics:
 ${TOPIC_LINES}
@@ -237,15 +237,18 @@ ${DOCS_POINTER}
 export const VERIFY_HELP = `
 Usage: rdy verify [options]
 
-Check compiled kits against the hashes recorded in the manifest.
+Check compiled kits against the hashes recorded in the manifest, and fail on a kit source that the
+manifest does not record.
 
 Options:
   --manifest <path>          Manifest file path (default: .readyup/manifest.json); not with --recursive
+  --config <path>            Config file path (default: .config/readyup.config.ts), whose compile
+                             settings select the kit sources; not with --recursive
   --json                     Report each kit's verification status as JSON
   --rebuild                  Also recompile each kit and compare it to the committed bundle;
                              requires esbuild
   --recursive                Verify every kit project below the working directory, each against its
-                             own manifest; not combinable with --manifest
+                             own manifest and config; not combinable with --manifest or --config
   --style <auto|plain|rich>  Output style (default: auto)
   --help, -h                 Show this help message
 

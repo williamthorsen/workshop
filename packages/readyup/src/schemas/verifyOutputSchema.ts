@@ -149,14 +149,31 @@ export const VerifyProjectEntrySchema = z
   .meta({ id: 'VerifyProjectEntry' });
 
 /**
+ * One kit source selected by the project's compile settings that the manifest does not record.
+ *
+ * `source` is the source file relative to the manifest directory, as a manifest entry records it. `project` is
+ * emitted under `--recursive` alone, as it is on a kit entry.
+ */
+export const VerifyUncompiledEntrySchema = z
+  .object({
+    name: z.string(),
+    project: z.string().optional(),
+    source: z.string(),
+  })
+  .meta({ id: 'VerifyUncompiledEntry' });
+
+/**
  * Top-level shape of `rdy verify --json`.
  *
- * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified` and, under `--recursive`,
- * every project passed, agreeing with exit code 0. An unreadable manifest produces the error envelope instead
- * of this payload, except under `--recursive`, which reports it as a failed project.
+ * `passed` is `true` when every one of every kit's verdicts is `ok` or `unverified`, no kit source is uncompiled,
+ * and, under `--recursive`, every project passed, agreeing with exit code 0. An unreadable manifest produces the
+ * error envelope instead of this payload, except under `--recursive`, which reports it as a failed project.
  *
  * `projects` is emitted under `--recursive` alone and lists every project that the sweep visited, including
  * a project that contributed no kit entry.
+ *
+ * `uncompiled` lists each kit source that the compile settings select and the manifest does not record. It is
+ * emitted only when there is at least one.
  */
 export const VerifyOutputSchema = z
   .object({
@@ -164,6 +181,7 @@ export const VerifyOutputSchema = z
     passed: z.boolean(),
     kits: z.array(VerifyKitEntrySchema),
     projects: z.array(VerifyProjectEntrySchema).optional(),
+    uncompiled: z.array(VerifyUncompiledEntrySchema).optional(),
   })
   .meta({ id: 'VerifyOutput' });
 
@@ -177,3 +195,4 @@ export type JsonSourceStatus = z.infer<typeof SourceStatusSchema>;
 export type JsonVerifyKitEntry = z.infer<typeof VerifyKitEntrySchema>;
 export type JsonVerifyOutput = z.infer<typeof VerifyOutputSchema>;
 export type JsonVerifyProjectEntry = z.infer<typeof VerifyProjectEntrySchema>;
+export type JsonVerifyUncompiledEntry = z.infer<typeof VerifyUncompiledEntrySchema>;
