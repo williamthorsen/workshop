@@ -723,6 +723,7 @@ function makeFailedResult(name: string, severity: Severity): FailedResult {
     fix: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 0,
     depth: 0,
   };
@@ -740,6 +741,7 @@ function makePassedResult(name: string, severity: Severity): PassedResult {
     detail: null,
     error: null,
     progress: null,
+    examinedCount: null,
     durationMs: 0,
     depth: 0,
   };

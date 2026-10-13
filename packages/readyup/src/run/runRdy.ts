@@ -19,7 +19,8 @@ import {
 import { describeValue } from '../portable/describe-value.ts';
 import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
-import { describeUninterpretableReturn, isCheckOutcome, resolveCheckReturn } from './check-return.ts';
+import { describeUninterpretableReturn, isCheckOutcome, isFindingOutcome, resolveCheckReturn } from './check-return.ts';
+import { createExaminedRecorder } from './createExaminedRecorder.ts';
 import type { PragmaLedger } from './PragmaLedger.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
 import { diagnoseSkips } from './skip-diagnosis.ts';
@@ -132,6 +133,14 @@ interface CheckContext {
   depth: number;
 }
 
+/** The fields of a result whose check ran and expressed a verdict. */
+interface RanFields {
+  detail: string | null;
+  durationMs: number;
+  progress: Progress | null;
+  examinedCount: number | null;
+}
+
 /** Returns the fields contributed by a check to every result that it can produce. */
 function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
   return {
@@ -144,22 +153,12 @@ function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): Che
 }
 
 /** Returns a passed result. */
-function buildPassedResult(
-  fields: CheckContext & { detail: string | null; durationMs: number; progress: Progress | null },
-): PassedResult {
+function buildPassedResult(fields: CheckContext & RanFields): PassedResult {
   return { ...fields, status: 'passed', ok: true, error: null };
 }
 
 /** Builds a failed result from the check's verdict, resolving its fix because only such a failure renders one. */
-function buildFailedResult(
-  check: RdyCheck,
-  fields: CheckContext & {
-    detail: string | null;
-    durationMs: number;
-    progress: Progress | null;
-  },
-  outcomeFix?: unknown,
-): FailedResult {
+function buildFailedResult(check: RdyCheck, fields: CheckContext & RanFields, outcomeFix?: unknown): FailedResult {
   return { ...fields, error: null, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
 }
 
@@ -167,7 +166,7 @@ function buildFailedResult(
 function buildSkippedResult(
   fields: CheckContext & { detail: string | null; skipReason: 'n/a' | 'precondition' },
 ): SkippedResult {
-  return { ...fields, status: 'skipped', ok: null, error: null, progress: null, durationMs: 0 };
+  return { ...fields, status: 'skipped', ok: null, error: null, progress: null, examinedCount: null, durationMs: 0 };
 }
 
 /**
@@ -184,6 +183,7 @@ function buildAuthoringErrorResult(context: CheckContext, durationMs: number, er
     durationMs,
     error,
     progress: null,
+    examinedCount: null,
     fix: null,
     status: 'failed',
     ok: false,
@@ -198,13 +198,16 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
   const context = buildCheckContext(check, run, depth);
   const children = check.checks ?? [];
 
+  // Opened before `skip`, because a check may read its sources there and reuse them in `check`.
+  const recorder = createExaminedRecorder(run.pragmaLedger);
+
   if (check.skip !== undefined) {
     const start = performance.now();
     try {
       // Widened to `unknown`: Because a kit runs as JavaScript, its functions return whatever their
       // author wrote, whatever the declared type promised. Called optionally because the guard above does not
       // narrow inside the closure, and called on `check` so that an accessor-backed `skip` keeps its receiver.
-      const skipResult: unknown = await withSweepRecorder(run.pragmaLedger, () => check.skip?.());
+      const skipResult: unknown = await withSweepRecorder(recorder, () => check.skip?.());
       if (typeof skipResult === 'string') {
         const result = buildSkippedResult({ ...context, skipReason: 'n/a', detail: skipResult });
         run.pendingDiagnoses.push({ check, result });
@@ -229,22 +232,23 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
 
   const start = performance.now();
   try {
-    const raw: unknown = await withSweepRecorder(run.pragmaLedger, () => check.check());
+    const raw: unknown = await withSweepRecorder(recorder, () => check.check());
     const durationMs = performance.now() - start;
     // `resolveCheckReturn` turns findings into an outcome before anything reads a verdict off them, so the
     // two structured arms are one branch below.
-    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance, run.pragmaLedger);
+    const outcome: unknown = resolveCheckReturn(raw, check, run.provenance, run.pragmaLedger, recorder);
+    const examinedCount = isFindingOutcome(raw) ? recorder.countExamined() : null;
     let result: PassedResult | FailedResult;
     if (typeof outcome === 'boolean') {
       result = outcome
-        ? buildPassedResult({ ...context, detail: null, durationMs, progress: null })
-        : buildFailedResult(check, { ...context, detail: null, durationMs, progress: null });
+        ? buildPassedResult({ ...context, detail: null, durationMs, progress: null, examinedCount })
+        : buildFailedResult(check, { ...context, detail: null, durationMs, progress: null, examinedCount });
     } else if (isCheckOutcome(outcome)) {
       const detail = outcome.detail ?? null;
       const progress = outcome.progress ?? null;
       result = outcome.ok
-        ? buildPassedResult({ ...context, detail, durationMs, progress })
-        : buildFailedResult(check, { ...context, detail, durationMs, progress }, outcome.fix);
+        ? buildPassedResult({ ...context, detail, durationMs, progress, examinedCount })
+        : buildFailedResult(check, { ...context, detail, durationMs, progress, examinedCount }, outcome.fix);
     } else {
       // Reported as a defect rather than as an ordinary failure: Because the check never expressed a
       // verdict, the severity that it declared for its subject says nothing about this outcome.

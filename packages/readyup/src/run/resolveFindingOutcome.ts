@@ -1,4 +1,5 @@
 import { readSourceText } from '../check-utils/project/readTrackedSources.ts';
+import type { SweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { CheckOutcome, FindingOutcome, OutcomeFinding } from '../kits/types.ts';
 import type { PragmaLedger } from './PragmaLedger.ts';
 import { suppressesFinding } from './suppressesFinding.ts';
@@ -10,17 +11,18 @@ import { suppressesFinding } from './suppressesFinding.ts';
  * that the reader can compare across them, and a suppressed site leaves both halves of it. `adoptedCount` is
  * the numerator; when it is omitted, the outcome has no progress at all.
  *
- * When a ledger is passed, the function records in it which sites the check's pragmas suppressed, and the paths
- * that the check declared in `scanned`. A sweep read through `readTrackedSources` reports itself. What is passed
- * here is the reading that a check did some other way. A caller passes none when the run should keep no record of
- * a check.
+ * When a ledger is passed, the function records in it which sites the check's pragmas suppressed. The paths that
+ * the check declared in `scanned` go to `recorder` when one is passed, and to the ledger otherwise. A sweep read
+ * through `readTrackedSources` reports itself. What is passed here is the reading that a check did some other way.
+ * A caller passes neither when the run should keep no record of a check.
  */
 export function resolveFindingOutcome(
   outcome: FindingOutcome,
   checkIds: readonly string[],
   ledger?: PragmaLedger,
+  recorder: SweepRecorder | undefined = ledger,
 ): CheckOutcome {
-  if (outcome.scanned !== undefined) ledger?.recordScanned(outcome.scanned);
+  if (outcome.scanned !== undefined) recorder?.recordScanned(outcome.scanned);
 
   const surviving = excludeSuppressed(outcome.findings, checkIds, ledger);
   const reported = surviving.filter((finding) => finding.reported);

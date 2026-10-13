@@ -3,6 +3,7 @@ import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import type { OutcomeFinding } from '../../kits/types.ts';
+import { createExaminedRecorder } from '../createExaminedRecorder.ts';
 import { createPragmaLedger } from '../PragmaLedger.ts';
 import { resolveFindingOutcome } from '../resolveFindingOutcome.ts';
 
@@ -131,6 +132,16 @@ describe(resolveFindingOutcome, () => {
       resolveFindingOutcome({ adoptedCount: 0, findings: [], scanned: ['src/quiet.ts'] }, [], ledger);
 
       expect(ledger.scannedPaths()).toStrictEqual([temp.resolve('src/quiet.ts')]);
+    });
+
+    it('records the declared paths to a recorder in place of the ledger', () => {
+      const ledger = createPragmaLedger();
+      const recorder = createExaminedRecorder();
+
+      resolveFindingOutcome({ adoptedCount: 0, findings: [], scanned: ['src/quiet.ts'] }, [], ledger, recorder);
+
+      expect(recorder.countExamined()).toBe(1);
+      expect(ledger.scannedPaths()).toStrictEqual([]);
     });
 
     it('records an examined path whose findings all survived', () => {
