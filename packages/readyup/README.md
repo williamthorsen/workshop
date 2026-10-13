@@ -108,7 +108,7 @@ rdy verify --rebuild # fails on a bundle that no longer reproduces from its sour
 - [Publishing kits](docs/publishing-kits.md): Compiling, packaging, and verifying kits
 - [Check utilities](docs/check-utils.md): Helpers that a kit imports from readyup
 
-`rdy help <topic>` prints the same files in a terminal, and `rdy help` lists the topic names. `rdy <command> --help` prints each command's own options.
+`rdy help <topic>` prints the same files in a terminal, and `rdy help` lists the topic names. A topic also answers to its file's name without `.md`, so `rdy help authoring-kits` prints what `rdy help authoring` prints. `rdy <command> --help` prints each command's own options.
 
 ## Compatibility
 

@@ -84,7 +84,7 @@ Global options:
   --version, -V              Show version number
 
 Run 'rdy <command> --help' for command-specific options.
-Run 'rdy help <topic>' to read a topic.
+Run 'rdy help <topic>' to read a topic; a topic also answers to its doc's file name.
 
 Examples:
   rdy                                              Run every checklist in the default kit

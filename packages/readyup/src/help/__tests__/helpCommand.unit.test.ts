@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { COMMAND_NAMES, routeCommand } from '../../bin/route.ts';
 import { COMMAND_HELP } from '../helpText.ts';
 import { readDoc } from '../readDoc.ts';
-import { TOPICS } from '../topics.ts';
+import { renderTopic } from '../renderTopic.ts';
+import { TOPIC_NAMES_BY_STEM, TOPICS } from '../topics.ts';
 
 describe('rdy help', () => {
   it.each([
@@ -31,14 +32,59 @@ describe('rdy help', () => {
   );
 
   it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ file, topic })))(
-    'prints $file for topic $topic',
+    'prints $file, rendered, for topic $topic',
     async ({ file, topic }) => {
-      const { exitCode, stdout } = await route(['help', topic]);
+      const { exitCode, stdout } = await route(['--style', 'rich', 'help', topic]);
 
       expect(exitCode).toBe(0);
-      expect(stdout.trimEnd()).toBe(readDoc(file).trimEnd());
+      expect(stdout.trimEnd()).toBe(
+        renderTopic(readDoc(file), { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM }).trimEnd(),
+      );
     },
   );
+
+  it.each(Object.keys(TOPICS).map((topic) => ({ topic })))(
+    'prints topic $topic with no Markdown link outside code',
+    async ({ topic }) => {
+      const { stdout } = await route(['help', topic]);
+
+      expect(listProseLines(stdout).filter((line) => line.replaceAll(/`[^`]*`/g, '').includes(']('))).toStrictEqual([]);
+    },
+  );
+
+  it.each(Object.entries(TOPICS).map(([topic, { file }]) => ({ stem: file.replace(/\.md$/, ''), topic })))(
+    'prints for "help $stem" what "help $topic" prints',
+    async ({ stem, topic }) => {
+      const viaTopic = await route(['help', topic]);
+      const viaStem = await route(['help', stem]);
+
+      expect(viaStem.exitCode).toBe(0);
+      expect(viaStem.stdout).toBe(viaTopic.stdout);
+    },
+  );
+
+  it.each(Object.keys(TOPICS).map((topic) => ({ topic })))(
+    'prints topic $topic without emoji under --style plain',
+    async ({ topic }) => {
+      const { exitCode, stdout } = await route(['--style', 'plain', 'help', topic]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).not.toMatch(/\p{Extended_Pictographic}/u);
+    },
+  );
+
+  it('prints the concepts legends under --style plain without the rich glyphs that they key', async () => {
+    const { stdout } = await route(['--style', 'plain', 'help', 'concepts']);
+
+    expect(stdout).toMatch(/^\| Plain +\| Status +\| Derived from +\|$/m);
+    expect(stdout).not.toContain('| Names');
+  });
+
+  it('suggests the nearest file stem for a near-miss of one', async () => {
+    const { stderr } = await route(['help', 'publishing-kit']);
+
+    expect(stderr).toContain("Did you mean 'rdy help publishing-kits'?");
+  });
 
   it('suggests the nearest subject for a near-miss', async () => {
     const { exitCode, stderr } = await route(['help', 'authorng']);
@@ -108,6 +154,16 @@ describe('rdy help', () => {
 });
 
 // region | Helpers
+
+/** Lines of printed Markdown that are outside a fenced code block. */
+function listProseLines(text: string): string[] {
+  let fenced = false;
+
+  return text.split('\n').filter((line) => {
+    if (line.startsWith('```')) fenced = !fenced;
+    return !fenced && !line.startsWith('```');
+  });
+}
 
 /** Runs the router with stdio captured, returning the exit code alongside what each stream received. */
 async function route(args: string[]) {

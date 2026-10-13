@@ -46,6 +46,17 @@ describe('documentation links', () => {
 
     expect(listDocFiles().filter((file) => !linked.has(file))).toStrictEqual([]);
   });
+
+  // `rdy help` renders a link between doc files as the command that prints the target topic, and has no
+  // command to offer for any other relative file.
+  it('links a doc file only to another doc file or to an absolute URL', () => {
+    const strays = listDocFiles()
+      .flatMap((source) => listLinks(source))
+      .filter((link) => !isDocFile(link.target))
+      .map((link) => `${link.source}: ${link.written} names ${link.target}, which is not a doc file`);
+
+    expect(strays).toStrictEqual([]);
+  });
 });
 
 // region | Helpers
@@ -62,6 +73,11 @@ function describeFailure(link: DocLink, anchorsByFile: Map<string, Set<string>>)
 
   if (anchors.has(link.anchor)) return undefined;
   return `${link.source}: ${link.written} names no heading in ${link.target}`;
+}
+
+/** Whether a path relative to the package root names a Markdown file directly under `docs/`. */
+function isDocFile(file: string): boolean {
+  return path.posix.dirname(file) === docsDir && file.endsWith('.md');
 }
 
 /** Whether a link destination is relative, and so one that this suite resolves. */

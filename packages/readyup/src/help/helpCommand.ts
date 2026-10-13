@@ -3,11 +3,13 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
+import { getStyle } from '../layout/engine.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
 import { readDoc } from './readDoc.ts';
-import { TOPICS } from './topics.ts';
+import { renderTopic } from './renderTopic.ts';
+import { findTopic, TOPIC_NAMES_BY_STEM, TOPICS } from './topics.ts';
 
 /** Flags that request help, whether given as the command itself or among a subcommand's flags. */
 export const HELP_FLAGS = new Set(['--help', '-h']);
@@ -40,8 +42,10 @@ export function helpCommand(flags: string[], json: boolean): number {
   const commandHelp = Object.hasOwn(COMMAND_HELP, subject) ? COMMAND_HELP[subject] : undefined;
   if (commandHelp !== undefined) return writeHelp(commandHelp, json);
 
-  const topic = Object.hasOwn(TOPICS, subject) ? TOPICS[subject] : undefined;
-  if (topic !== undefined) return writeHelp(readDoc(topic.file), json);
+  const topic = findTopic(subject);
+  if (topic !== undefined) {
+    return writeHelp(renderTopic(readDoc(topic.file), { style: getStyle(), topicByStem: TOPIC_NAMES_BY_STEM }), json);
+  }
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
 }
@@ -56,7 +60,11 @@ export function writeHelp(text: string, json: boolean): number {
 
 /** Builds the failure message for an argument naming neither a command nor a topic. */
 function describeUnknownSubject(subject: string): string {
-  const candidates = [...Object.keys(COMMAND_HELP), ...Object.keys(TOPICS)].toSorted();
+  const candidates = [
+    ...Object.keys(COMMAND_HELP),
+    ...Object.keys(TOPICS),
+    ...Object.keys(TOPIC_NAMES_BY_STEM),
+  ].toSorted();
   const match = findNearestWord(subject, candidates);
 
   return match === undefined
