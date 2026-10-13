@@ -8,6 +8,7 @@ import { KIT_COMPILE_TARGET, KIT_TSCONFIG } from '../buildBundle.ts';
 import { compileConfig } from '../compileConfig.ts';
 
 const mockBuild = vi.hoisted(() => vi.fn());
+const mockBuildInstallCommand = vi.hoisted(() => vi.fn());
 const mockLoadEsbuild = vi.hoisted(() => vi.fn());
 const mockExistsSync = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
@@ -19,6 +20,10 @@ const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../loadEsbuild.ts'), () => ({
   loadEsbuild: mockLoadEsbuild,
+}));
+
+vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
+  buildInstallCommand: mockBuildInstallCommand,
 }));
 
 // Spread the original so that `realpathSync`, which the compile root is resolved through, stays real.
@@ -55,6 +60,7 @@ describe(compileConfig, () => {
 
   afterEach(() => {
     mockBuild.mockReset();
+    mockBuildInstallCommand.mockReset();
     mockLoadEsbuild.mockReset();
     mockExistsSync.mockReset();
     mockMkdirSync.mockReset();
@@ -218,6 +224,14 @@ describe(compileConfig, () => {
     mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
 
     await expect(compileConfig('input.ts')).rejects.toThrow('esbuild is required');
+  });
+
+  it("names the project's package manager in the esbuild install hint", async () => {
+    mockBuildInstallCommand.mockReturnValue('npm install --save-dev esbuild');
+    mockLoadEsbuild.mockRejectedValue(new Error('Cannot find module esbuild'));
+
+    await expect(compileConfig('input.ts')).rejects.toThrow('Install it with: npm install --save-dev esbuild');
+    expect(mockBuildInstallCommand).toHaveBeenCalledWith('esbuild');
   });
 
   it('chains the original error as cause when esbuild import fails', async () => {
