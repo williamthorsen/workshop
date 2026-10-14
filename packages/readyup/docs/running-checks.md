@@ -214,11 +214,11 @@ Because a pragma that outlives the finding for which it was written is reported 
 
 Three compare the kits that it is about to run against `.readyup/manifest.json` and say so when they disagree.
 
-| Code           | Raised when                                                              |
-| -------------- | ------------------------------------------------------------------------ |
-| `input-stale`  | A file inlined by the compile changed since the bundle was built from it |
-| `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it |
-| `target-drift` | The compiled bundle no longer matches the manifest's recorded hash       |
+| Code           | Raised when                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| `input-stale`  | A file other than the kit's source, inlined by the compile, changed since the bundle was built from it |
+| `source-stale` | The kit's TypeScript changed since the compiled bundle was built from it                               |
+| `target-drift` | The compiled bundle no longer matches the manifest's recorded hash                                     |
 
 They are silent when the manifest is absent, when no entry describes the kit, when an entry records no hashes or no input closure, or when a file that they would compare is gone or cannot be read. Only the local manifest is consulted, so a kit loaded through `--from` is out of scope -- run `rdy verify` in that root instead. They also do not apply to `--url` or `--jit`.
 
