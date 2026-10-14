@@ -70,7 +70,7 @@ const CHECKLISTS_HINT = '--checklists requires a comma-separated list of checkli
 const flagErrorHints: Record<string, string> = {
   '--checklists': CHECKLISTS_HINT,
   '--config': '--config requires a path argument',
-  '--detail': '--detail requires a projection (summary, full)',
+  '--detail': '--detail requires a level of detail (summary, full)',
   '--fail-on': '--fail-on requires a severity level (error, warn, recommend)',
   '--file': '--file requires a path argument',
   '--from': '--from requires a source argument (path, github:org/repo, npm:package, global, dir:path)',
