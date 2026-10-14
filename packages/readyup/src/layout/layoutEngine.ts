@@ -98,6 +98,8 @@ export interface SummaryTableInput {
   rows: SummaryRow[];
   totalDurationMs: number;
   totals: SummaryCounts;
+  /** Columns that a line may take, `Infinity` (the default) meaning no limit. */
+  width?: number | undefined;
 }
 
 /** String builders that lay out a formatter's tokens. */
@@ -199,16 +201,19 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   }
 
   /**
-   * Returns the summary table's lines: a heading, a rule, one line per row, a closing rule, and a total.
+   * Returns the summary table's lines: a heading, a rule, the rows, a closing rule, and a total.
    *
-   * Every row's counts begin at the same column because names are padded and durations right-aligned. Both
-   * rules span the widest line that they enclose, the total included. A row names itself by its breadcrumb
-   * without the role glyphs added by the matching heading, because padding counts characters while the
-   * terminal lays out display width, and a glyph makes the two disagree.
+   * Each row takes one line when every row fits `width`, and otherwise every row takes two: its name, then
+   * its duration and counts beneath the name. Either way, every row's counts begin at the same column because
+   * names are padded and durations right-aligned. Both rules span the widest line that they enclose, the total
+   * included, up to `width`; a line wider than `width` on its own overflows rather than losing text.
+   *
+   * A row names itself by its breadcrumb without the role glyphs added by the matching heading, because padding
+   * counts characters while the terminal lays out display width, and a glyph makes the two disagree.
    *
    * A kit that did not load fails its row and the total, whatever the rows that loaded found.
    */
-  function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
+  function formatSummaryTable({ rows, totalDurationMs, totals, width = Infinity }: SummaryTableInput): string[] {
     const named = rows.map((row) => ({ ...row, name: formatBreadcrumbLabel(row.segments) }));
     const nameWidth = Math.max(...named.map((row) => row.name.length));
     const durationWidth = Math.max(
@@ -216,33 +221,39 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
       ...named.filter((row) => row.didNotLoad !== true).map((row) => formatDuration(row.durationMs).length),
     );
 
-    const entries: Array<{ body: string; token: TokenName }> = named.map((row) =>
-      row.didNotLoad === true
-        ? {
-            token: 'failedError',
-            body: [row.name.padEnd(nameWidth), DID_NOT_LOAD_LABEL].join(TABLE_CELL_GAP),
-          }
-        : {
-            token: resolveWorstToken(row.counts.worstSeverity),
-            body: [
-              row.name.padEnd(nameWidth),
-              formatDuration(row.durationMs).padStart(durationWidth),
-              formatCounts(row.counts),
-            ].join(TABLE_CELL_GAP),
-          },
-    );
+    const cells: Array<{ name: string; outcome: string; token: TokenName }> = named.map((row) => ({
+      name: row.name,
+      outcome:
+        row.didNotLoad === true
+          ? DID_NOT_LOAD_LABEL
+          : [formatDuration(row.durationMs).padStart(durationWidth), formatCounts(row.counts)].join(TABLE_CELL_GAP),
+      token: row.didNotLoad === true ? 'failedError' : resolveWorstToken(row.counts.worstSeverity),
+    }));
+
+    // Every line follows a gutter, either a token or an indent, so its width is the gutter plus its body.
+    const oneLine = cells.map((cell) => ({
+      lead: token(cell.token),
+      body: [cell.name.padEnd(nameWidth), cell.outcome].join(TABLE_CELL_GAP),
+    }));
+    const lines = oneLine.every((line) => gutter + line.body.length <= width)
+      ? oneLine
+      : cells.flatMap((cell) => [
+          { lead: token(cell.token), body: cell.name },
+          { lead: indent(1), body: cell.outcome },
+        ]);
+
     const totalToken = rows.some((row) => row.didNotLoad === true)
       ? 'failedError'
       : resolveWorstToken(totals.worstSeverity);
     const totalBody = buildCountBody(totals, totalDurationMs);
 
-    const bodyWidth = Math.max(...entries.map((entry) => entry.body.length), totalBody.length);
-    const rule = formatter.rules.section.repeat(gutter + bodyWidth);
+    const bodyWidth = Math.max(...lines.map((line) => line.body.length), totalBody.length);
+    const rule = formatter.rules.section.repeat(Math.min(gutter + bodyWidth, width));
 
     return [
       formatHeading(SUMMARY_HEADING, 'kit'),
       rule,
-      ...entries.map((entry) => `${token(entry.token)}${entry.body}`),
+      ...lines.map((line) => `${line.lead}${line.body}`),
       rule,
       `${token(totalToken)}${totalBody}`,
     ];
