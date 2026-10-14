@@ -15,10 +15,12 @@ describe('help topics', () => {
   it("lists every topic under the top-level help's Topics heading", () => {
     const [, afterHeading = ''] = HELP.split('Topics:\n', 2);
     const [topicsBlock = ''] = afterHeading.split('\n\n', 1);
+    // A summary may wrap onto continuation lines, so compare with every run of whitespace collapsed.
+    const collapsed = topicsBlock.replaceAll(/\s+/gu, ' ');
 
     for (const [topic, { summary }] of Object.entries(TOPICS)) {
       expect(topicsBlock).toContain(topic);
-      expect(topicsBlock).toContain(summary);
+      expect(collapsed).toContain(summary);
     }
   });
 });
