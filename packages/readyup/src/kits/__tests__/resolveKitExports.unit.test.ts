@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MissingChecklistsError } from '../MissingChecklistsError.ts';
 import { resolveKitExports } from '../resolveKitExports.ts';
 
 describe(resolveKitExports, () => {
@@ -85,6 +86,7 @@ describe(resolveKitExports, () => {
   });
 
   it('throws when checklists is missing', () => {
+    expect(() => resolveKitExports({ other: 'value' })).toThrow(MissingChecklistsError);
     expect(() => resolveKitExports({ other: 'value' })).toThrow('must export checklists');
   });
 });

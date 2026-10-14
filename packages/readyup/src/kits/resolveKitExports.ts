@@ -1,4 +1,5 @@
 import { isRecord } from '../portable/isRecord.ts';
+import { MissingChecklistsError } from './MissingChecklistsError.ts';
 
 /**
  * Returns every recognized kit field in an imported module namespace, as a plain record.
@@ -12,9 +13,7 @@ export function resolveKitExports(moduleRecord: Record<string, unknown>): Record
   const source = isRecord(moduleRecord['default']) ? moduleRecord['default'] : moduleRecord;
 
   if (source['checklists'] === undefined) {
-    throw new Error(
-      'Kit file must export checklists (e.g., `export default defineRdyKit({ checklists: [...] })` or `export const checklists = [...]`)',
-    );
+    throw new MissingChecklistsError();
   }
 
   return {
