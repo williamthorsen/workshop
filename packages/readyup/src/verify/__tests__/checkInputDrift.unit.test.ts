@@ -221,6 +221,14 @@ describe(checkInputDrift, () => {
 
       expect(checkInputDrift(kit, temp.dir)).toStrictEqual({ kind: 'ok' });
     });
+
+    it('leaves a deleted source to the source axis when the recorded source passes through a symlink', ({ temp }) => {
+      temp.mkdir('real/kits');
+      symlinkSync(path.join(temp.dir, 'real/kits'), path.join(temp.dir, 'kits'));
+      const kit = kitWithSource([{ ...RECORDED_SOURCE, path: 'real/kits/demo.ts' }]);
+
+      expect(checkInputDrift(kit, temp.dir)).toStrictEqual({ kind: 'ok' });
+    });
   });
 
   it('reports every input that failed, so one pass names everything to fix', ({ temp }) => {

@@ -77,13 +77,21 @@ function checkInput(input: RdyManifestInput, manifestDir: string): InputFailure 
 /**
  * Reports whether two resolved paths name the same file.
  *
- * Compares real paths when both files exist, because the compile records an input at the path to which
- * esbuild resolved it, which differs from the recorded `source` wherever a directory above it is a symlink.
+ * Compares real paths, because the compile records an input at the path to which esbuild resolved it,
+ * which differs from the recorded `source` wherever a directory above it is a symlink.
  */
 function isSameFile(firstPath: string, secondPath: string): boolean {
-  if (firstPath === secondPath) return true;
-  if (!existsSync(firstPath) || !existsSync(secondPath)) return false;
-  return realpathSync(firstPath) === realpathSync(secondPath);
+  return firstPath === secondPath || resolveRealPath(firstPath) === resolveRealPath(secondPath);
+}
+
+/**
+ * Returns the real path of a file, resolving its directory alone when the file is gone, so that a deleted
+ * file still matches its recorded counterpart. Returns the path unchanged when its directory is gone too.
+ */
+function resolveRealPath(filePath: string): string {
+  if (existsSync(filePath)) return realpathSync(filePath);
+  const directory = path.dirname(filePath);
+  return existsSync(directory) ? path.join(realpathSync(directory), path.basename(filePath)) : filePath;
 }
 
 // endregion | Helpers

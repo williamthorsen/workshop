@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -305,6 +305,26 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'passed',
+        detail: 'It inlines nothing past its source',
+      });
+    });
+
+    it('leaves a deleted source to the source check when the recorded source passes through a symlink', async () => {
+      const realKitsDir = path.join(projectRoot, '.readyup', 'real');
+      mkdirSync(realKitsDir, { recursive: true });
+      symlinkSync(realKitsDir, path.join(projectRoot, FIXTURE_KITS_DIR));
+      const entry = writeKit(projectRoot, 'default');
+      // A compile records each input at the path to which esbuild resolved it.
+      writeKitManifest(projectRoot, [
+        { ...entry, inputs: [{ hash: entry.sourceHash, kind: 'module', path: path.join('real', 'default.ts') }] },
+      ]);
+      rmSync(path.join(realKitsDir, 'default.ts'));
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed' });
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'passed',
         detail: 'It inlines nothing past its source',
