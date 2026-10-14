@@ -21,6 +21,14 @@ let active: LayoutEngine = engines.rich;
 /** The style to which `active` is bound. */
 let activeStyle: OutputStyle = 'rich';
 
+/**
+ * Width to which every render fits, unlimited until an invocation resolves one.
+ *
+ * Unlimited for the reason that the default style is fixed: Anything rendering without an invocation gets
+ * output that does not change with the terminal under which it happens to run.
+ */
+let activeWidth = Infinity;
+
 /** Returns the engine bound to the selected style. */
 export function getLayout(): LayoutEngine {
   return active;
@@ -31,10 +39,21 @@ export function getStyle(): OutputStyle {
   return activeStyle;
 }
 
+/** Returns the width to which output fits, `Infinity` meaning no limit. */
+export function getWidth(): number {
+  return activeWidth;
+}
+
 /** Binds every later render to `style`. */
 export function setStyle(style: OutputStyle): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The engine is a process singleton.
   active = engines[style];
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The style is a process singleton.
   activeStyle = style;
+}
+
+/** Fits every later render to `width`. */
+export function setWidth(width: number): void {
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- The width is a process singleton.
+  activeWidth = width;
 }

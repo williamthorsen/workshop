@@ -116,6 +116,8 @@ Blank lines separate blocks rather than decorate headings: None opens a command'
 ❌ Run failed (fail-on: error)
 ```
 
+**The summary table fits the terminal.** When a row is too wide for the terminal, every row takes two lines: its breadcrumb, then its duration and counts beneath it, so that the counts still share one column. Setting `COLUMNS` overrides the terminal's width, and piped output without `COLUMNS` keeps one line per row. A breadcrumb wider than the terminal on its own is printed whole.
+
 **Every run closes with its verdict.** The last line of a run that selected a kit states whether the run passed or failed, and the [failure threshold](concepts.md#thresholds) that decided it: `✅ Run passed (fail-on: error)`. When the kits that ran resolved different thresholds, the line names each threshold with its kits, as in `(fail-on: error for deploy; warn for audit)`. A run in which a kit could not run states `Run incomplete:` with the number of kits that did not run, since that outcome decides the exit code whatever the checks found. The verdict follows the advisory warnings on stderr, so it is also the last line of a log that merges the two streams.
 
 The heading of a kit from an installed package, a repository, or a URL names its source, so a long run shows which checks belong to which kit without the reader scrolling for it:

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { richFormatter } from '../formatter.ts';
+import { plainFormatter, richFormatter } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
 import { makeCounts, makeRow } from '../test-utils/summary-fixtures.ts';
 
@@ -188,5 +188,96 @@ describe('formatSummaryTable', () => {
     });
 
     expect(lines).toHaveLength(5);
+  });
+
+  describe('at a limited width', () => {
+    // Breadcrumbs as long as those of a real `--sources` run, too long for a one-line row at 80 columns.
+    const wideInput = {
+      rows: [
+        makeRow({
+          segments: [
+            { role: 'sourcePackage', text: '@williamthorsen/eslint-config-typescript@18.0.0' },
+            { role: 'kit', text: 'default' },
+            { role: 'checklist', text: 'projectservice' },
+          ],
+          counts: makeCounts({ passed: 2 }),
+          durationMs: 25,
+        }),
+        makeRow({
+          segments: [
+            { role: 'sourcePackage', text: '@williamthorsen/toolbelt.vitest@0.10.3' },
+            { role: 'kit', text: 'default' },
+          ],
+          counts: makeCounts({ passed: 7, recommendations: 1, worstSeverity: 'recommend' }),
+          durationMs: 1_363,
+        }),
+      ],
+      totals: makeCounts({ passed: 9, recommendations: 1, worstSeverity: 'recommend' }),
+      totalDurationMs: 1_388,
+    };
+
+    it('keeps one line per row when every row fits', () => {
+      expect(engine.formatSummaryTable({ ...input, width: 80 })).toStrictEqual(engine.formatSummaryTable(input));
+    });
+
+    it('keeps one line per row when the width has no limit', () => {
+      expect(engine.formatSummaryTable({ ...wideInput, width: Infinity })).toHaveLength(6);
+    });
+
+    it('stacks every row onto two lines when one does not fit', () => {
+      const lines = engine.formatSummaryTable({ ...wideInput, width: 80 });
+
+      expect(lines).toHaveLength(8);
+      expect(lines[2]).toBe(`${PASSED} @williamthorsen/eslint-config-typescript@18.0.0 / default / projectservice`);
+      expect(lines[3]).toBe('     25ms  2 passed');
+      expect(lines[5]).toBe('   1363ms  1 recommendation, 7 passed');
+    });
+
+    it.each([
+      ['rich', engine, measureWidth],
+      ['plain', createLayoutEngine(plainFormatter), (line: string) => line.length],
+    ])('fits every line within the width under the %s style', (_style, styleEngine, measure) => {
+      const lines = styleEngine.formatSummaryTable({ ...wideInput, width: 80 });
+
+      expect(Math.max(...lines.map((line) => measure(line)))).toBeLessThanOrEqual(80);
+    });
+
+    it('starts the counts of every stacked row at one column', () => {
+      const lines = engine.formatSummaryTable({ ...wideInput, width: 80 });
+
+      expect(lines[3]?.indexOf('2 passed')).toBe(lines[5]?.indexOf('1 recommendation'));
+    });
+
+    it('starts the second line of a stacked row at the name column', () => {
+      const plainEngine = createLayoutEngine(plainFormatter);
+      const lines = plainEngine.formatSummaryTable({ ...wideInput, width: 80 });
+      const nameColumn = lines[2]?.indexOf('@') ?? -1;
+
+      // The widest duration has no padding, so it starts where the column starts.
+      expect(lines[5]?.search(/\S/u)).toBe(nameColumn);
+    });
+
+    it('stacks the row of a kit that did not load', () => {
+      const lines = engine.formatSummaryTable({
+        ...wideInput,
+        rows: [...wideInput.rows, makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 })],
+        width: 80,
+      });
+
+      expect(lines[6]).toBe(`${FAILED_ERROR} broken`);
+      expect(lines[7]).toBe('   did not load');
+    });
+
+    it('caps the rules at the width when a name overflows it', () => {
+      const lines = engine.formatSummaryTable({
+        rows: [makeRow({ name: 'x'.repeat(100) })],
+        totals: makeCounts({ passed: 1 }),
+        totalDurationMs: 100,
+        width: 80,
+      });
+
+      expect(lines[1]).toHaveLength(80);
+      expect(lines[2]).toContain('x'.repeat(100));
+    });
   });
 });

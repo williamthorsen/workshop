@@ -1,5 +1,5 @@
 import type { SummaryCounts } from '../kits/types.ts';
-import { getLayout } from '../layout/engine.ts';
+import { getLayout, getWidth } from '../layout/engine.ts';
 import type { SummaryRow } from '../layout/layoutEngine.ts';
 import { emptyCounts, mergeCounts } from './reportRdy.ts';
 
@@ -10,6 +10,7 @@ export function formatCombinedSummary(rows: SummaryRow[]): string {
       rows,
       totals: aggregateCounts(rows),
       totalDurationMs: rows.reduce((sum, row) => sum + row.durationMs, 0),
+      width: getWidth(),
     })
     .join('\n');
 }
