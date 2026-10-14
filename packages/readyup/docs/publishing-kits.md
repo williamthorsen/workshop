@@ -16,7 +16,7 @@ Compiling bundles each kit with esbuild, which readyup does not install: Add it 
 
 ```
 ── Compiling kits in packages/api/.readyup/kits
-🟢 deploy.ts -> 📓 deploy.js
+✅ deploy.ts -> 📓 deploy.js
 ⚪ smoke.ts · no changes
 ```
 
@@ -31,8 +31,8 @@ A sweep names each kit after its source's path below [`compile.srcDir`](authorin
 A sweep also prunes the kits that no source compiles to any longer, because the source was deleted or `compile.include` and `compile.exclude` no longer select it. The sweep drops each such kit's manifest entry and deletes its bundle, provided the bundle still matches the recorded `targetHash` or the entry records no hash:
 
 ```
-🟢 deploy.ts -> 📓 deploy.js
-🟢 legacy.js · removed, no source compiles to it
+✅ deploy.ts -> 📓 deploy.js
+✅ legacy.js · removed, no source compiles to it
 ```
 
 A bundle edited since it was compiled is kept with its entry and counts against the run as a drifted kit does; `--force` deletes it. A bundle that cannot be deleted also keeps its entry and fails the run. An entry recording a bundle outside the output directory is dropped without deleting the file, since a sweep writes nothing there. A single-file compile deletes nothing, and neither does `--skip-manifest`, which reads no record of what was compiled. A bundle that the manifest does not record is reported rather than deleted; see [`bundle-unrecorded`](#compile-warnings).
@@ -42,7 +42,7 @@ A sweep that finds no kits writes a manifest only if one already exists, and pru
 `rdy compile` refuses to overwrite a compiled kit whose on-disk hash differs from the manifest's recorded `targetHash` -- someone edited the bundle directly:
 
 ```
-🟠 deploy.ts
+🔶 deploy.ts
    drift in deploy.js: expected 6f58905a, got eb104f57
 
 1 of 2 kits skipped due to drift. Re-run with --force to overwrite, or move edits into the source.
@@ -58,10 +58,10 @@ Under `--json`, each kit reports `name`, `status` (`compiled`, `skipped`, or `fa
 
 ```
 ── Compiling kits in .readyup/kits
-🟢 demo.ts -> 📓 demo.js
+✅ demo.ts -> 📓 demo.js
 
 ── Compiling kits in packages/api/.readyup/kits
-🟢 deploy.ts -> 📓 deploy.js
+✅ deploy.ts -> 📓 deploy.js
 ⚪ smoke.ts · no changes
 ```
 
@@ -246,10 +246,10 @@ export default defineRdyConfig({
 
 ```
 ── Verifying kits against .readyup/manifest.json
-🔴 deploy
+❌ deploy
    drift (expected 6f58905a, got eb104f57)
    💊 Move the edits into the source, then run `rdy compile --force`.
-🟢 smoke
+✅ smoke
 
 1 of 2 kits failed verification.
 ```
@@ -261,7 +261,7 @@ Each kit has three independent verdicts. The compiled output is `ok`, `drift`, `
 The inputs verdict names every input that failed rather than the first, each on its own line, separating a changed module from a changed inline projection. A projected file that is still present while the fields picked by the kit are gone is reported as `unprojectable`, which says something about the kit rather than about the file:
 
 ```
-🔴 deploy
+❌ deploy
    input stale: checks/shared.ts (module, expected 6f58905a, got eb104f57)
    input unprojectable: ../../package.json (Path not found in JSON: version)
    💊 Run `rdy compile` to rebuild it.
@@ -276,8 +276,8 @@ A kit source that the manifest does not record also fails the run. `rdy verify` 
 
 ```
 ── Verifying kits against .readyup/manifest.json
-🟢 smoke
-🔴 deploy
+✅ smoke
+❌ deploy
    source not compiled (kits/deploy.ts)
    💊 Run `rdy compile` to compile it.
 
@@ -305,10 +305,10 @@ The three verdicts cover what the compile read and recorded as hashes. A bundle 
 ```
 ── Verifying kits against .readyup/manifest.json
 
-🔴 deploy
+❌ deploy
    rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a; esbuild 0.28.1 -> 0.29.0; zod 3.24.1 -> 4.0.0)
    💊 Run `rdy compile` to rebuild it.
-🟢 smoke
+✅ smoke
 ```
 
 A mismatch names which recorded versions changed, read from what the manifest records: the readyup that compiled the bundle, the esbuild, and each bundled package whose version the rebuild does not reproduce. When every recorded version matches, the mismatch says so, which leaves an edited bundle, a changed input, or dependency content changed without a version bump. The comparison reads the rebuild's own record on both sides, so nothing is resolved from the installed tree, and a mismatch for an entry compiled before the version record shows the bare hashes.
@@ -316,7 +316,7 @@ A mismatch names which recorded versions changed, read from what the manifest re
 Because the comparison is against the bundle on disk, never the recorded hash, the verdict is independent of the manifest's bookkeeping and can contradict it. When a bundle reproduces exactly but its recorded hash does not match, the record is at fault, not the kit:
 
 ```
-🔴 deploy
+❌ deploy
    drift (expected 6f58905a, got eb104f57)
    rebuild ok
    💊 The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.
@@ -342,10 +342,10 @@ The directory in which the command runs is not one of them. `rdy verify --rebuil
 
 ```
 ── Verifying kits against .readyup/manifest.json
-🟢 demo
+✅ demo
 
 ── Verifying kits against packages/api/.readyup/manifest.json
-🔴 deploy
+❌ deploy
    drift (expected 6f58905a, got eb104f57)
    💊 Move the edits into the source, then run `rdy compile --force`.
 

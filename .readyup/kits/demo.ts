@@ -30,7 +30,7 @@ const projectFoundations = defineRdyChecklist({
     },
   ],
   checks: [
-    // The claim goes in the name, the evidence in the detail: `🔴 Project is ESM` says what
+    // The claim goes in the name, the evidence in the detail: `❌ Project is ESM` says what
     // is wrong on its own, and the "type" it found explains why.
     {
       name: 'Project is ESM',
