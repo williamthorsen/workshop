@@ -74,6 +74,7 @@ vi.mock(import('../generated-report.ts'), () => ({
   warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
 }));
 
+import { emptyCounts } from '../../reporting/reportRdy.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
@@ -505,6 +506,35 @@ describe(runHumanMode, () => {
 
     expect(exitCode).toBe(2);
     expect(mockRunRdy).toHaveBeenCalledTimes(1);
+  });
+
+  it('states under its heading that a kit did not load, and counts it in the summary', async () => {
+    mockLoadRdyKit
+      .mockRejectedValueOnce(new Error('Kit not found'))
+      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    const { stdout } = await runHuman([
+      { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
+      { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
+    ]);
+
+    expect(stdout).toMatch(/broken\n\S+ +Kit did not load; the error is on stderr\n/u);
+    expect(mockFormatCombinedSummary.mock.calls[0]?.[0][0]).toStrictEqual({
+      counts: emptyCounts(),
+      didNotLoad: true,
+      durationMs: 0,
+      segments: [{ role: 'kit', text: 'broken' }],
+    });
+  });
+
+  it('adds no summary row for a lone kit that did not load', async () => {
+    mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
+
+    const { stdout } = await runHuman(singleKitEntry());
+
+    expect(stdout).not.toContain('Kit did not load');
+    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
   });
 
   it('prints combined summary for a single kit with multiple checklists', async () => {

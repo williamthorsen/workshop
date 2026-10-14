@@ -245,7 +245,7 @@ describe('--sources run path wiring', () => {
   });
 
   // A kit that never loaded ran no checklist, and the ones that did are still worth tallying.
-  it('tallies the checklists that ran when a kit fails to load', async ({ temp }) => {
+  it('tallies the checklists that ran beside a kit that failed to load', async ({ temp }) => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     installPackage(temp, 'broken-kit', ['default'], { version: '3.0.0' });
@@ -264,7 +264,7 @@ describe('--sources run path wiring', () => {
 
     expect(table).toContain('@acme/kits@2.1.0 / default');
     expect(table).toContain('plain-kit@1.0.0 / default');
-    expect(table).not.toContain('broken-kit');
+    expect(table).toMatch(/broken-kit@3\.0\.0 \/ default +did not load/u);
     expect(table).toContain('Total: 2 passed');
   });
 });

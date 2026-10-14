@@ -400,6 +400,47 @@ describe('formatSummaryTable', () => {
     expect(lines[2]?.indexOf('2 passed')).toBe(lines[3]?.indexOf('1 error'));
   });
 
+  it('fails the row and the total of a kit that did not load', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({ name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 }),
+        makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+      ],
+      totals: makeCounts({ passed: 2 }),
+      totalDurationMs: 410,
+    });
+
+    expect(lines[3]).toMatch(new RegExp(`^${FAILED_ERROR} +broken {2}did not load$`, 'u'));
+    expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 2 passed (410ms)`);
+  });
+
+  it('starts the did-not-load text at the duration column', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({ name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 }),
+        makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+      ],
+      totals: makeCounts({ passed: 2 }),
+      totalDurationMs: 410,
+    });
+
+    expect(lines[3]?.indexOf('did not load')).toBe(lines[2]?.indexOf('410ms'));
+  });
+
+  it('renders a table in which no kit loaded', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({ name: 'a', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+        makeRow({ name: 'b', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+      ],
+      totals: makeCounts(),
+      totalDurationMs: 0,
+    });
+
+    expect(lines[2]).toMatch(new RegExp(`^${FAILED_ERROR} +a {2}did not load$`, 'u'));
+    expect(lines.at(-1)?.startsWith(FAILED_ERROR)).toBe(true);
+  });
+
   it('right-aligns durations', () => {
     const lines = engine.formatSummaryTable(input);
 
