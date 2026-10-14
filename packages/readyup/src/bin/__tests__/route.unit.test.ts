@@ -798,7 +798,9 @@ describe(routeCommand, () => {
       expect(exitCode).toBe(0);
     });
 
-    it('routes positional args to run as kit specifiers', async () => {
+    it('routes positional args to run as kit specifiers', async ({ temp }) => {
+      temp.write('.readyup/kits/onboarding.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
       mockParseRunArgs.mockReturnValue({
         kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }],
         checklists: undefined,
@@ -818,7 +820,7 @@ describe(routeCommand, () => {
     });
   });
 
-  describe('typo detection', () => {
+  describe('unknown-word detection', () => {
     it.each([
       ['co', 'compile'],
       ['comp', 'compile'],
@@ -836,7 +838,33 @@ describe(routeCommand, () => {
       expect(stderr).toContain(`Did you mean 'rdy ${expected}'?`);
     });
 
-    it('does not suggest for a word that no command is close to', async () => {
+    it('reports a word that is neither a command nor a kit, pointing at rdy --help', async () => {
+      const { exitCode, stderr } = await routeCli(['onboarding']);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Error: 'onboarding' is neither a command nor a kit.");
+      expect(stderr).toContain("Run 'rdy --help' to list commands, or 'rdy list' to list kits.");
+      expect(stderr).not.toContain('Did you mean');
+      expect(mockRunCommand).not.toHaveBeenCalled();
+    });
+
+    it('reports a word that is neither a command nor a kit as a usage error in JSON', async () => {
+      const { exitCode, stdout } = await routeCli(['onboarding', '--json']);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        error: {
+          code: 'usage',
+          message: "'onboarding' is neither a command nor a kit.",
+          hint: "Run 'rdy --help' to list commands, or 'rdy list' to list kits.",
+        },
+      });
+    });
+
+    it('runs a word that no command is close to when a kit by that name exists', async ({ temp }) => {
+      temp.write('.readyup/kits/onboarding.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);
 
@@ -844,6 +872,27 @@ describe(routeCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
+    });
+
+    it('loads the config once for a bare word that names a kit', async ({ temp }) => {
+      temp.write('.readyup/kits/onboarding.js', 'export const checklists = [];');
+      using _cwd = pointCwdAt(temp.dir);
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(0);
+
+      await routeCli(['onboarding']);
+
+      expect(mockLoadConfig).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports a missing kit as a kit rather than an unknown word after an explicit run subcommand', async () => {
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }] }));
+      mockRunCommand.mockResolvedValue(2);
+
+      const { stderr } = await routeCli(['run', 'onboarding']);
+
+      expect(stderr).not.toContain('neither a command nor a kit');
+      expect(mockRunCommand).toHaveBeenCalled();
     });
 
     it('runs a bare word as a kit when a kit by that name exists', async ({ temp }) => {
@@ -950,6 +999,8 @@ describe(routeCommand, () => {
       ['--file', ['lst', '--file', 'kit.js']],
       ['--url', ['lst', '--url', 'https://example.test/kit.js']],
       ['--internal', ['runn', '--internal']],
+      ['--sources', ['lst', '--sources']],
+      ['--sources and the word is near no command', ['onboarding', '--sources']],
     ])('runs the bare word as a kit when %s names its source', async (_label, args) => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: args[0], checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);

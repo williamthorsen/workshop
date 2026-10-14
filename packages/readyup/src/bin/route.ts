@@ -37,7 +37,7 @@ export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'
 const CONFIG_FLAG = '--config';
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
-const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
+const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--sources', '--url']);
 
 /** Environment variable holding a standing style preference. */
 export const STYLE_ENV_VAR = 'RDY_STYLE';
@@ -149,20 +149,28 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
     return wantsHelp(flags) ? writeHelp(VERIFY_HELP, json) : verifyCommand(flags);
   }
 
-  // A bare word that names a kit is always run as that kit; only one that names none can be a
-  // mistyped command. The check is here rather than in `handleRun` so that an explicit `rdy run <word>`
+  // Everything else is `run` arguments. A leading flag leaves no bare word to probe.
+  if (command.startsWith('-')) return handleRun(args, json);
+
+  // A bare word that names a kit is always run as that kit; one that names none is reported as a command
+  // that does not exist. The check is here rather than in `handleRun` so that an explicit `rdy run <word>`
   // never reaches it: Naming the subcommand says the word is a kit.
-  const typoMatch = findNearestWord(command, COMMAND_NAMES);
-  if (typoMatch !== undefined && !(await namesAKit(command, args))) {
-    throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
+  const probe = await probeBareWord(command, args);
+  if (!probe.namesAKit) {
+    const typoMatch = findNearestWord(command, COMMAND_NAMES);
+    if (typoMatch !== undefined) {
+      throw usageError(`Unknown command '${command}'. Did you mean 'rdy ${typoMatch}'?`);
+    }
+    throw usageError(`'${command}' is neither a command nor a kit.`, {
+      hint: "Run 'rdy --help' to list commands, or 'rdy list' to list kits.",
+    });
   }
 
-  // Default: treat all args as `run` arguments.
-  return handleRun(args, json);
+  return handleRun(args, json, probe.config);
 }
 
-/** Parses and executes the `run` subcommand. */
-async function handleRun(flags: string[], json: boolean): Promise<number> {
+/** Parses and executes the `run` subcommand, reading `config` when the caller already loaded it. */
+async function handleRun(flags: string[], json: boolean, config?: ResolvedRdyConfig): Promise<number> {
   if (wantsHelp(flags)) return writeHelp(RUN_HELP, json);
 
   const parsed = parseRunArgs(flags);
@@ -172,15 +180,15 @@ async function handleRun(flags: string[], json: boolean): Promise<number> {
   const hasExternalSource =
     parsed.filePath !== undefined || parsed.fromValue !== undefined || parsed.urlValue !== undefined;
 
-  const config = hasExternalSource ? undefined : await loadRunConfig(parsed.configPath);
+  const runConfig = hasExternalSource ? undefined : (config ?? (await loadRunConfig(parsed.configPath)));
   const configFields =
-    config === undefined
+    runConfig === undefined
       ? undefined
       : {
-          compile: config.compile,
-          internalDir: config.internal.dir,
-          internalInfix: config.internal.infix,
-          configuredSources: config.sources,
+          compile: runConfig.compile,
+          internalDir: runConfig.internal.dir,
+          internalInfix: runConfig.internal.infix,
+          configuredSources: runConfig.sources,
         };
   const remote = createRemoteFetchContext({ reload: parsed.noCache });
 
@@ -287,30 +295,36 @@ async function loadRunConfig(overridePath: string | undefined): Promise<Resolved
   }
 }
 
+/** Whether a bare word names a kit, with the config that was loaded to decide it, if any. */
+interface BareWordProbe {
+  config: ResolvedRdyConfig | undefined;
+  namesAKit: boolean;
+}
+
 /**
- * Reports whether a bare word is a kit rather than a candidate command typo.
+ * Determines whether a bare word is a kit rather than an unknown command.
  *
- * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
- * settles the question outright: Under them the word is a kit by construction, and the kit that it
- * names lives wherever that source resolves rather than on a path worth probing.
+ * A ':' checklist filter and a source flag, `--sources` among them, are both kit syntax that no command
+ * uses, so either settles the question outright: Under them the word is a kit by construction, and the
+ * kit that it names lives wherever that source resolves rather than on a path worth probing.
  *
  * Everything else is a bare word with no source, which `run` resolves against the project's configured
  * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. The probe reads the config
  * that the run would read, `--config` override included, because probing exactly those directories makes
- * the result match what would run.
- *
- * The config load runs only for a word that `findNearestWord` already matched. An ordinary invocation
- * never loads the config. A config that fails to load is reported as the config error that it is, rather
- * than appearing as a typo suggestion for a word that may well name a kit.
+ * the result match what would run, and the run then reuses that config. A config that fails to load is
+ * reported as the config error that it is, rather than as an unknown command for a word that may well
+ * name a kit.
  */
-async function namesAKit(word: string, args: string[]): Promise<boolean> {
-  if (word.includes(':') || hasSourceFlag(args)) return true;
+async function probeBareWord(word: string, args: string[]): Promise<BareWordProbe> {
+  if (word.includes(':') || hasSourceFlag(args)) return { config: undefined, namesAKit: true };
 
-  const { compile } = await loadRunConfig(readConfigFlag(args));
+  const config = await loadRunConfig(readConfigFlag(args));
+  const { compile } = config;
   const cwd = process.cwd();
-  return (
-    existsSync(path.join(cwd, compile.outDir, `${word}.js`)) || existsSync(path.join(cwd, compile.srcDir, `${word}.ts`))
-  );
+  const namesAKit =
+    existsSync(path.join(cwd, compile.outDir, `${word}.js`)) ||
+    existsSync(path.join(cwd, compile.srcDir, `${word}.ts`));
+  return { config, namesAKit };
 }
 
 /**
