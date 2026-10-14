@@ -2,7 +2,7 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
-import type { FailedResult, PassedResult, RdyReport, Severity } from '../../kits/types.ts';
+import type { FailedResult, PassedResult, RdyReport, Severity, SkippedResult } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 import type { UnrunSource } from '../KitSelection.ts';
@@ -643,6 +643,19 @@ describe(runHumanMode, () => {
       expect(stdout).toContain('Hint: 1 failing check is not shown; rerun with --report-on recommend to show it\n');
     });
 
+    it('does not count a failing check shown as the ancestor of a visible check', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({
+        results: [makeFailedResult('lint', 'recommend'), makeSkippedResult('format', 'error', 1)],
+        passed: false,
+        durationMs: 0,
+      });
+
+      const { stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend', reportOn: 'warn' });
+
+      expect(stdout).not.toContain('not shown');
+    });
+
     it('does not count a withheld failure that does not fail the run', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({
@@ -829,6 +842,25 @@ function makePassedResult(name: string, severity: Severity): PassedResult {
     examinedCount: null,
     durationMs: 0,
     depth: 0,
+  };
+}
+
+/** Builds a result skipped by a failed parent, at the given severity and depth. */
+function makeSkippedResult(name: string, severity: Severity, depth: number): SkippedResult {
+  return {
+    name,
+    id: null,
+    status: 'skipped',
+    ok: null,
+    skipReason: 'precondition',
+    severity,
+    quiet: false,
+    detail: null,
+    error: null,
+    progress: null,
+    examinedCount: null,
+    durationMs: 0,
+    depth,
   };
 }
 

@@ -10,7 +10,7 @@ import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
-import { countResults, reportRdy } from '../reporting/reportRdy.ts';
+import { countResults, reportRdy, selectVisibleResults } from '../reporting/reportRdy.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
@@ -147,13 +147,16 @@ function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): Breadcr
   return [source, { role: 'kit', text: entry.name }];
 }
 
-/** Returns how many of a report's failed checks meet `failOn` but not `reportOn`, which the report then omits. */
+/**
+ * Returns how many of a report's failed checks meet `failOn` but are left out of the tree by `reportOn`.
+ *
+ * Visibility comes from the rule that renders the tree, so a failed check retained as the ancestor of a visible
+ * result is not counted.
+ */
 function countWithheldFailures(report: RdyReport, failOn: Severity, reportOn: Severity): number {
+  const visible = new Set(selectVisibleResults(report.results, reportOn));
   return report.results.filter(
-    (result) =>
-      result.status === 'failed' &&
-      meetsThreshold(result.severity, failOn) &&
-      !meetsThreshold(result.severity, reportOn),
+    (result) => result.status === 'failed' && meetsThreshold(result.severity, failOn) && !visible.has(result),
   ).length;
 }
 
@@ -212,7 +215,10 @@ interface KitBlockContext {
   writeBlock: BlockWriter;
 }
 
-/** A kit's verdict and failure threshold, alongside the rows that its checklists contribute to the run's summary table. */
+/**
+ * A kit's verdict and failure threshold, alongside the rows that its checklists contribute to the run's summary
+ * table.
+ */
 interface KitRunResult {
   failOn: Severity;
   hasDroppedBlock: boolean;
