@@ -74,6 +74,9 @@ export const CompileRemovedEntrySchema = z
  *
  * `warnings` lists the advisories raised by the kits that compiled and by the bundles that nothing accounts for, and
  * is absent when none was raised. No warning affects `passed`.
+ *
+ * `hint` names the next step when a single-project compile finds neither kit sources nor a manifest, and is absent
+ * otherwise, as it is from every `--recursive` compile.
  */
 export const CompileOutputSchema = z
   .object({
@@ -83,6 +86,7 @@ export const CompileOutputSchema = z
     projects: z.array(CompileProjectEntrySchema).optional(),
     removed: z.array(CompileRemovedEntrySchema).optional(),
     warnings: z.array(WarningSchema).optional(),
+    hint: z.string().optional(),
   })
   .meta({ id: 'CompileOutput' });
 

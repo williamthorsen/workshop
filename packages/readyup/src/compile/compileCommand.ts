@@ -7,7 +7,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
-import { loadConfig } from '../config/loadConfig.ts';
+import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, internalError, RdyError, usageError } from '../errors/RdyError.ts';
@@ -220,7 +220,7 @@ interface CompileRunOutcome extends ProjectCompileOutcome {
  * A project that failed counts against the run whether or not it contributed a kit.
  */
 function finishCompile(outcome: CompileRunOutcome, json: boolean): number {
-  const { kits, projects, removed, warnings } = outcome;
+  const { hint, kits, projects, removed, warnings } = outcome;
   const passed = kits.every((kit) => kit.status === 'compiled') && (projects ?? []).every((project) => project.passed);
 
   if (json) {
@@ -231,6 +231,7 @@ function finishCompile(outcome: CompileRunOutcome, json: boolean): number {
       ...(projects !== undefined && { projects }),
       ...(removed.length > 0 && { removed }),
       ...(warnings.length > 0 && { warnings }),
+      ...(hint !== undefined && { hint }),
     };
     process.stdout.write(JSON.stringify(output) + '\n');
   }
@@ -396,8 +397,13 @@ interface CompileProjectArgs {
   sweep?: SweepContext;
 }
 
-/** Each kit's outcome in a project compile, the bundles that it removed, and the warnings that its kits raised. */
+/**
+ * Each kit's outcome in a project compile, the bundles that it removed, the warnings that its kits raised, and the next
+ * step that it names.
+ */
 interface ProjectCompileOutcome {
+  /** The next step for a project without kit sources or a manifest. */
+  hint?: string;
   kits: JsonCompileKitEntry[];
   removed: JsonCompileRemovedEntry[];
   warnings: RaisedWarning[];
@@ -485,13 +491,19 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
   kitEntries.push(...pruned.keptEntries);
   const writesManifest = !skipManifest && (!isEmptySweep || existsSync(manifestPath));
 
-  if (isEmptySweep) {
-    const manifestOutcome = formatManifestOutcome(skipManifest, writesManifest, kitEntries.length);
-    writeHuman(
-      formatEmptySweepLine({ displayRoot: sweep?.root ?? projectDir, manifestOutcome, srcDir, srcDirExists }),
-      json,
-    );
-  }
+  const hint = isEmptySweep
+    ? reportEmptySweep({
+        entryCount: kitEntries.length,
+        json,
+        manifestPath,
+        projectDir,
+        skipManifest,
+        srcDir,
+        srcDirExists,
+        sweep,
+        writesManifest,
+      })
+    : undefined;
 
   const orphanReport = reportOrphans(pruned.orphans, { json, outDir, project: sweep?.project });
   kitResults.push(...orphanReport.kits);
@@ -518,7 +530,7 @@ async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileO
     }
   }
 
-  return { kits: kitResults, removed: orphanReport.removed, warnings };
+  return { kits: kitResults, removed: orphanReport.removed, warnings, ...(hint !== undefined && { hint }) };
 }
 
 /** What a project sweep shares with each of its sources. */
@@ -681,6 +693,45 @@ function formatEmptySweepLine({ displayRoot, manifestOutcome, srcDir, srcDirExis
   const relSrc = path.relative(displayRoot, srcDir);
   const reason = srcDirExists ? `No .ts files found in ${relSrc}` : `Source directory not found: ${relSrc}`;
   return `${reason}${manifestOutcome}\n`;
+}
+
+/** Arguments for reporting a sweep that found no sources. */
+interface EmptySweepReportArgs {
+  /** How many kits the manifest lists after the sweep. */
+  entryCount: number;
+  json: boolean;
+  manifestPath: string;
+  projectDir: string;
+  skipManifest: boolean;
+  srcDir: string;
+  srcDirExists: boolean;
+  sweep: SweepContext | undefined;
+  writesManifest: boolean;
+}
+
+/** Reports a sweep that found no sources, returning the hint that it printed, if any. */
+function reportEmptySweep(args: EmptySweepReportArgs): string | undefined {
+  const { entryCount, json, manifestPath, projectDir, skipManifest, srcDir, srcDirExists, sweep, writesManifest } =
+    args;
+  const manifestOutcome = formatManifestOutcome(skipManifest, writesManifest, entryCount);
+  writeHuman(
+    formatEmptySweepLine({ displayRoot: sweep?.root ?? projectDir, manifestOutcome, srcDir, srcDirExists }),
+    json,
+  );
+
+  // A project with a manifest was emptied deliberately, and a recursive sweep found each project by its readyup
+  // footprint, so neither needs scaffolding.
+  if (sweep !== undefined || existsSync(manifestPath)) return undefined;
+
+  const hint = buildNoSourcesHint(projectDir, srcDir);
+  writeHuman(`${getLayout().formatHint(hint)}\n`, json);
+  return hint;
+}
+
+/** Returns the next step for a project without kit sources: `rdy init` when it can scaffold into `srcDir`. */
+function buildNoSourcesHint(projectDir: string, srcDir: string): string {
+  if (srcDir === path.resolve(projectDir, DEFAULT_CONFIG.compile.srcDir)) return 'Run `rdy init` to scaffold a kit.';
+  return `Add a kit source to ${path.relative(projectDir, srcDir)}.`;
 }
 
 /** Returns the label heading a sweep, naming its directories against `anchor`. */
