@@ -56,8 +56,8 @@ export function readManifestTracking(isJit: boolean): ManifestRead {
  * `target-drift` says the compiled bundle is not the one recorded by the manifest: Someone
  * edited it by hand. `source-stale` says the TypeScript from which it was built has changed: The
  * run is about to execute checks that no longer match their source. `input-stale` says the same of
- * a file read and inlined by the compile, which is the staleness that neither hash can see. All
- * three can hold at once.
+ * any other file read and inlined by the compile, which is the staleness that neither hash can see.
+ * All three can hold at once, and an edit to one file raises only one of them.
  *
  * Advisory by design: `rdy verify` is the enforcing gate, and this never touches the exit code.
  * Each axis raises a warning only when it compared a recorded hash against a file and the two differed. A

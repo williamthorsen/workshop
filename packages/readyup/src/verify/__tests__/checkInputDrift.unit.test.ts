@@ -1,3 +1,6 @@
+import { symlinkSync } from 'node:fs';
+import path from 'node:path';
+
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
@@ -7,6 +10,7 @@ import type { RdyManifestInput, RdyManifestKit } from '../../manifest/manifestSc
 import { checkInputDrift } from '../checkInputDrift.ts';
 import { hashBytes, hashProjection } from '../targetHash.ts';
 
+const KIT_SOURCE = 'export default { checklists: [] };\n';
 const MODULE_SOURCE = 'export const shared = 1;\n';
 const PACKAGE_JSON = { name: 'demo', private: true, version: '3.1.0' };
 
@@ -15,6 +19,13 @@ const RECORDED_MODULE: RdyManifestInput = {
   hash: hashBytes(Buffer.from(MODULE_SOURCE)),
   kind: 'module',
   path: 'kits/shared.ts',
+};
+
+/** The kit's own source as the compile recorded it among its inputs. */
+const RECORDED_SOURCE: RdyManifestInput = {
+  hash: hashBytes(Buffer.from(KIT_SOURCE)),
+  kind: 'module',
+  path: 'kits/demo.ts',
 };
 
 /** The package fixture as the compile recorded it, projected onto the one field that a kit picked. */
@@ -179,6 +190,39 @@ describe(checkInputDrift, () => {
     });
   });
 
+  describe("the kit's own source", () => {
+    it('leaves an edited source to the source axis', ({ temp }) => {
+      temp.write('kits/demo.ts', 'export default { checklists: [1] };\n');
+
+      expect(checkInputDrift(kitWithSource([RECORDED_SOURCE]), temp.dir)).toStrictEqual({ kind: 'ok' });
+    });
+
+    it('leaves a deleted source to the source axis', ({ temp }) => {
+      expect(checkInputDrift(kitWithSource([RECORDED_SOURCE]), temp.dir)).toStrictEqual({ kind: 'ok' });
+    });
+
+    it('still reports a changed module beside an edited source', ({ temp }) => {
+      temp.write('kits/demo.ts', 'export default { checklists: [1] };\n');
+      temp.write('kits/shared.ts', 'export const shared = 2;\n');
+
+      const status = checkInputDrift(kitWithSource([RECORDED_SOURCE, RECORDED_MODULE]), temp.dir);
+
+      expect(status.kind === 'stale' && status.failures.map((failure) => failure.path)).toStrictEqual([
+        'kits/shared.ts',
+      ]);
+    });
+
+    it('recognizes the source recorded at its real path when the recorded source passes through a symlink', ({
+      temp,
+    }) => {
+      temp.write('real/kits/demo.ts', 'export default { checklists: [1] };\n');
+      symlinkSync(path.join(temp.dir, 'real/kits'), path.join(temp.dir, 'kits'));
+      const kit = kitWithSource([{ ...RECORDED_SOURCE, path: 'real/kits/demo.ts' }]);
+
+      expect(checkInputDrift(kit, temp.dir)).toStrictEqual({ kind: 'ok' });
+    });
+  });
+
   it('reports every input that failed, so one pass names everything to fix', ({ temp }) => {
     temp.write('kits/shared.ts', 'export const shared = 2;\n');
     temp.write('package.json', JSON.stringify({ ...PACKAGE_JSON, version: '4.0.0' }));
@@ -205,6 +249,11 @@ describe(checkInputDrift, () => {
   /** Returns a manifest entry recording the given closure and nothing else this axis reads. */
   function kitWith(inputs: RdyManifestInput[]): RdyManifestKit {
     return { inputs, name: 'demo' };
+  }
+
+  /** Returns a manifest entry recording the given closure and the kit's own source. */
+  function kitWithSource(inputs: RdyManifestInput[]): RdyManifestKit {
+    return { ...kitWith(inputs), source: 'kits/demo.ts' };
   }
 
   // endregion | Helpers

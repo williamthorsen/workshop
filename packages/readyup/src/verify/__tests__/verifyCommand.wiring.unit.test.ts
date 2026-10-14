@@ -122,6 +122,39 @@ describe('verifyCommand wiring', () => {
       expect(stdout).toContain(`${OK} demo`);
     });
 
+    it('reports an edited source once, as a stale source', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.write('demo.ts', 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
+
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(`${FAILED} demo\n   source stale`);
+      expect(stdout).not.toContain('input stale');
+    });
+
+    it('reports an edited source in JSON with its inputs left ok', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.write('demo.ts', 'export default defineRdyKit({ checklists: [], failOn: "warn" });\n');
+
+      const { stdout } = await verify(['--manifest', 'manifest.json', '--json']);
+
+      expect(JSON.parse(stdout)).toMatchObject({
+        kits: [{ name: 'demo', sourceStatus: 'stale', inputsStatus: 'ok' }],
+      });
+    });
+
+    it('reports a deleted source once, as a missing source', async ({ temp }) => {
+      writeRecordedClosure(temp);
+      temp.rm('demo.ts');
+
+      const { exitCode, stdout } = await verify(['--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(1);
+      expect(stdout).toContain(`${FAILED} demo\n   source file missing`);
+      expect(stdout).not.toContain('input missing');
+    });
+
     it('returns 1 when a module inlined by the bundle was edited without a recompile', async ({ temp }) => {
       writeRecordedClosure(temp);
       temp.write('shared.ts', 'export const shared = 2;\n');
@@ -324,6 +357,7 @@ function writeRecordedClosure(tree: TempTree): void {
         sourceHash: hashBytes(source),
         targetHash: hashBytes(compiled),
         inputs: [
+          { hash: hashBytes(source), kind: 'module', path: 'demo.ts' },
           { hash: hashBytes(SHARED_MODULE), kind: 'module', path: 'shared.ts' },
           {
             hash: hashProjection(JSON.stringify({ version: PACKAGE_JSON.version })),
