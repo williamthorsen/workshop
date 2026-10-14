@@ -63,7 +63,8 @@ describe('exit codes', () => {
     { label: 'verify drift', args: ['verify'], expected: 1 },
     { label: 'a kit that fails to compile', args: ['compile', 'broken.ts'], expected: 1 },
     { label: 'a bad flag', args: ['--bogus'], expected: 2 },
-    { label: 'a missing kit', args: ['absent'], expected: 2 },
+    { label: 'a missing kit', args: ['run', 'absent'], expected: 2 },
+    { label: 'a word that is neither a command nor a kit', args: ['absent'], expected: 2 },
     { label: 'an unloadable kit', args: ['invalid'], expected: 2 },
     { label: 'an unreadable config', args: ['--config', 'invalid.config.ts'], expected: 2 },
     { label: 'a missing config', args: ['--config', 'absent.config.ts'], expected: 2 },
@@ -89,7 +90,7 @@ describe('exit codes', () => {
 
   it.for([
     { label: 'an unknown checklist', args: ['passing:absent'], kit: 'passing', code: 'usage' },
-    { label: 'a missing kit', args: ['absent'], kit: 'absent', code: 'kit-load' },
+    { label: 'a missing kit', args: ['run', 'absent'], kit: 'absent', code: 'kit-load' },
     { label: 'an unloadable kit', args: ['invalid'], kit: 'invalid', code: 'kit-load' },
   ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }) => {
     using io = captureStdio();
@@ -123,7 +124,8 @@ describe('stdout purity under --json', () => {
     { label: 'a passing run', args: ['passing', '--json'] },
     { label: 'a failing run', args: ['failing', '--json'] },
     { label: 'a bad flag', args: ['--bogus', '--json'] },
-    { label: 'a missing kit', args: ['absent', '--json'] },
+    { label: 'a missing kit', args: ['run', 'absent', '--json'] },
+    { label: 'a word that is neither a command nor a kit', args: ['absent', '--json'] },
     { label: 'an unknown command', args: ['compil', '--json'] },
     { label: 'a list failure', args: ['list', '--from', 'dir:/definitely/absent', '--json'] },
     { label: 'a verify failure', args: ['verify', '--manifest', 'absent.json', '--json'] },

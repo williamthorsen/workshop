@@ -59,7 +59,7 @@ describe('partial results when a kit fails after dispatch', () => {
     });
 
     it('emits a report rather than an envelope when the only kit fails', async () => {
-      const { exitCode, stdout } = await routeCli(['absent', '--json']);
+      const { exitCode, stdout } = await routeCli(['run', 'absent', '--json']);
 
       expect(exitCode).toBe(2);
       expect(JSON.parse(stdout)).toMatchObject({
@@ -76,7 +76,7 @@ describe('partial results when a kit fails after dispatch', () => {
 
   describe('human mode', () => {
     it('reports the failure on stderr and continues to the next kit', async () => {
-      const { exitCode, stderr, stdout } = await routeCli(['absent', 'passing']);
+      const { exitCode, stderr, stdout } = await routeCli(['run', 'absent', 'passing']);
 
       expect(exitCode).toBe(2);
       expect(stderr).toContain('Error [absent]:');
