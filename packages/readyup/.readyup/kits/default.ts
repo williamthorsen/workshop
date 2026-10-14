@@ -10,7 +10,7 @@ import { DEFAULT_MANIFEST_PATH, defineRdyKit } from 'readyup';
 import { discoverKitPackages, fileExists, loadRdyConfig, missingFrom } from 'readyup/check-utils';
 
 import { buildFreshnessChecks } from './checks/buildFreshnessChecks.ts';
-import { skipWithoutBundles, skipWithoutKits } from './checks/kit-layout.ts';
+import { skipWithoutCompiledKits, skipWithoutKits } from './checks/kit-layout.ts';
 
 /** The one path in which `loadConfig` looks; see `src/loadConfig.ts`. */
 const CONFIG_PATH = '.config/readyup.config.ts';
@@ -31,10 +31,9 @@ export default defineRdyKit({
         },
         {
           // A project running its kits with `--jit` compiles nothing and needs no manifest, so the
-          // claim only applies once a bundle exists to be recorded. The broader reason comes first:
-          // A project with no kits at all has not declined to compile them.
+          // claim only applies once a bundle exists to be recorded.
           name: `${DEFAULT_MANIFEST_PATH} exists`,
-          skip: () => skipWithoutKits() || skipWithoutBundles(),
+          skip: skipWithoutCompiledKits,
           check: () => fileExists(DEFAULT_MANIFEST_PATH),
           fix: `Run 'rdy compile' to record every compiled kit and its hashes`,
         },

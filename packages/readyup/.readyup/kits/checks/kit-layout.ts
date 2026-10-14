@@ -96,6 +96,15 @@ export function skipWithoutBundles(): SkipResult {
 }
 
 /**
+ * Skip reason for a check about a project's compiled kits, or `false` once the project has any.
+ *
+ * The broader reason comes first: A project with no kits at all has not declined to compile them.
+ */
+export function skipWithoutCompiledKits(): SkipResult {
+  return skipWithoutKits() || skipWithoutBundles();
+}
+
+/**
  * Skip reason for a check about a project that defines no kits, or `false` for one that does.
  *
  * A project defining none is outside these kits' subject rather than failing them: A monorepo root
