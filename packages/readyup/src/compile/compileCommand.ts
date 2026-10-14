@@ -12,6 +12,7 @@ import { extractHint } from '../errors/error-handling.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, internalError, RdyError, usageError } from '../errors/RdyError.ts';
 import { deriveKitName, deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
+import { MissingChecklistsError } from '../kits/MissingChecklistsError.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
@@ -598,7 +599,7 @@ async function compileSource(fileName: string, context: SourceSweepContext): Pro
     // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep
     // goes on. Because the sweep replaces the whole manifest, this returns the kit's prior record to keep it
     // there. That record still describes the tree, because a failed compile leaves the previous output in place.
-    const message = describeError(error);
+    const message = describeSweepFailure(error);
     process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
     return {
       entry: existingKit,
@@ -932,6 +933,16 @@ async function loadConfigForSingle(configPath: string | undefined): Promise<Reso
 /** Returns a source's path as a failure names it: against the sweep root in a recursive compile, else against `srcDir`. */
 function describeSource(fileName: string, srcDir: string, sweepRoot: string | undefined): string {
   return sweepRoot === undefined ? fileName : path.relative(sweepRoot, path.join(srcDir, fileName));
+}
+
+/**
+ * Returns why a source of a sweep failed to compile, naming `compile.exclude` when the source is not a kit, because a
+ * module that the kits share is swept with them unless the config excludes it.
+ */
+function describeSweepFailure(error: unknown): string {
+  const message = describeError(error);
+  if (!(error instanceof MissingChecklistsError)) return message;
+  return `${message}. A module that the kits share is not a kit: Keep it out of the sweep with \`compile.exclude\`.`;
 }
 
 /** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */

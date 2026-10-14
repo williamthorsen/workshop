@@ -59,6 +59,7 @@ vi.mock(import('../warnOnUnrecordedBundles.ts'), () => ({
 }));
 
 import { RdyError } from '../../errors/RdyError.ts';
+import { MissingChecklistsError } from '../../kits/MissingChecklistsError.ts';
 import { richFormatter } from '../../layout/formatter.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { VERSION } from '../../version.ts';
@@ -581,6 +582,50 @@ describe(compileCommand, () => {
 
     expect(exitCode).toBe(1);
     expect(stderr).toContain('references unknown checklist');
+  });
+
+  describe('source that is not a kit', () => {
+    it('names compile.exclude when a sweep finds a source that exports no checklists', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['shared.ts']);
+      mockCompileConfig.mockRejectedValue(new MissingChecklistsError());
+
+      const { stderr } = await compile([]);
+      const { stdout } = await compile(['--json']);
+
+      expect(stderr).toContain('`compile.exclude`');
+      expect(JSON.parse(stdout)).toMatchObject({
+        kits: [{ name: 'shared', status: 'failed', error: expect.stringContaining('`compile.exclude`') }],
+      });
+    });
+
+    it('omits compile.exclude when a named file exports no checklists', async () => {
+      mockCompileConfig.mockRejectedValue(new MissingChecklistsError());
+
+      const { stderr } = await compile(['input.ts']);
+      const { stdout } = await compile(['input.ts', '--json']);
+
+      expect(stderr).toContain('must export checklists');
+      expect(stderr).not.toContain('compile.exclude');
+      expect(stdout).not.toContain('compile.exclude');
+    });
+
+    it('omits compile.exclude from a sweep failure of another kind', async () => {
+      mockLoadConfig.mockResolvedValue({
+        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+      });
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['a.ts']);
+      mockCompileConfig.mockRejectedValue(new Error('a is not valid TypeScript'));
+
+      const { stderr } = await compile([]);
+
+      expect(stderr).toContain('a is not valid TypeScript');
+      expect(stderr).not.toContain('compile.exclude');
+    });
   });
 
   describe('sweep completion', () => {
