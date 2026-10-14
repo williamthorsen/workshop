@@ -255,6 +255,8 @@ One compares the readyup that compiled a bundle against the one running it.
 
 Only that direction is reported: The recorded version is fixed at publish time while runners are upgraded, so a bundle older than the runner is the ordinary state of a published kit. Because the advisory stands in for a floor that the author never declared, it is never raised for a kit declaring [`minReadyupVersion`](authoring-kits.md#kit) -- a runner below that floor has already failed to load the kit. A bundle recording no version is not reported, `--jit` runs from TypeScript source included.
 
+The warning names the package or repository that published the kit, so that two sources' `default` kits are told apart. For such a kit it recommends only upgrading readyup, because a consumer cannot recompile a bundle that it installed or fetched; a kit from a local directory or a `--url` is also offered the recompile.
+
 One more reads the sources that the run's checks examined and reports the pragmas among them that suppressed nothing.
 
 | Code            | Raised when                                                                        |
