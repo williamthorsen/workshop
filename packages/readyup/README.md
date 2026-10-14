@@ -76,6 +76,8 @@ With `NODE_ENV` unset:
 🔴 NODE_ENV is set
    💊 Set NODE_ENV before deploying
 🔴 Total: 1 error (0ms)
+
+🔴 Run failed (fail-on: error)
 ```
 
 `rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits remain the vetted artifact: `rdy verify` hashes them, and a consumer running `rdy run --from` gets them.

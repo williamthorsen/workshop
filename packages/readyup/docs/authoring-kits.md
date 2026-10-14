@@ -188,6 +188,8 @@ It produces:
 🔴 No dependency has duplicated majors
    💊 Run `pnpm dedupe`, then commit the lockfile
 🔴 Total: 1 error, 3 passed, 1 skipped (0ms)
+
+🔴 Run failed (fail-on: error)
 ```
 
 A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence. A check returning findings whose fraction is `0 of 0` prints the number of files that it examined in its place, such as `[12 files examined]`, because that is the evidence on which an empty sweep's pass rests.
