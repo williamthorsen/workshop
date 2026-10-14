@@ -168,9 +168,14 @@ describe('compile --recursive', () => {
       expect(existsSync(temp.resolve('clean/packages/compiled-only/.readyup/manifest.json'))).toBe(false);
       expect(existsSync(temp.resolve('clean/packages/compiled-only/.readyup/kits/thing.js'))).toBe(true);
       expect(stdout).toContain('No .ts files found in packages/compiled-only/.readyup/kits; manifest not written');
+      expect(stdout).not.toContain('Hint:');
       expect(stderr).toContain(
         'Warning: thing.js in packages/compiled-only/.readyup/kits is not recorded in the manifest, and no source compiles to it.',
       );
+    });
+
+    it('omits the next-step hint from the payload, though a project has neither kit sources nor a manifest', async () => {
+      await expect(compileForPayload()).resolves.not.toHaveProperty('hint');
     });
 
     it('prints no closing problems line when every project passed', async () => {

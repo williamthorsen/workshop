@@ -52,6 +52,7 @@ import { DEFAULT_CONFIG } from '../../config/loadConfig.ts';
 import { RdyError } from '../../errors/RdyError.ts';
 import type { ResolvedRdyConfig } from '../../kits/types.ts';
 import { richFormatter } from '../../layout/formatter.ts';
+import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
 import { VERSION } from '../../version.ts';
 import { verifyCommand } from '../verifyCommand.ts';
@@ -598,15 +599,37 @@ describe(verifyCommand, () => {
     });
   });
 
-  it('reports a config error when the manifest cannot be read', async () => {
+  it('reports a config error naming `rdy compile` when the manifest is missing', async () => {
     mockReadManifest.mockImplementation(() => {
-      throw new Error('Manifest file not found: /path/to/manifest.json');
+      throw new ManifestNotFoundError('/path/to/manifest.json');
     });
 
     const { error } = await verifyRaising([]);
 
     expect(error.code).toBe('config');
-    expect(error.message).toContain('Manifest file not found');
+    expect(error.message).toBe('Manifest file not found: /path/to/manifest.json');
+    expect(error.hint).toBe('Run `rdy compile` to create it.');
+  });
+
+  it('repeats the --manifest value in the hint for a missing manifest', async () => {
+    mockReadManifest.mockImplementation(() => {
+      throw new ManifestNotFoundError('/path/to/custom/manifest.json');
+    });
+
+    const { error } = await verifyRaising(['--manifest', 'custom/manifest.json']);
+
+    expect(error.hint).toBe('Run `rdy compile --manifest custom/manifest.json` to create it.');
+  });
+
+  it('reports an invalid manifest without a hint', async () => {
+    mockReadManifest.mockImplementation(() => {
+      throw new Error('Manifest file contains invalid JSON: /path/to/manifest.json');
+    });
+
+    const { error } = await verifyRaising([]);
+
+    expect(error.code).toBe('config');
+    expect(error.hint).toBeUndefined();
   });
 
   it('honors --manifest flag to resolve a custom path', async () => {

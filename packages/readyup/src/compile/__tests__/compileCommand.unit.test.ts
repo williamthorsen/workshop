@@ -22,9 +22,10 @@ vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-vi.mock(import('../../config/loadConfig.ts'), () => ({
-  loadConfig: mockLoadConfig,
-}));
+vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../config/loadConfig.ts')>();
+  return { ...actual, loadConfig: mockLoadConfig };
+});
 
 vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
@@ -440,6 +441,7 @@ describe(compileCommand, () => {
       expect(mockReaddirSync).not.toHaveBeenCalled();
       expect(mockWriteManifest).not.toHaveBeenCalled();
       expect(stdout).toContain('Source directory not found: .readyup/kits; manifest not written');
+      expect(stdout).toContain('Hint: Run `rdy init` to scaffold a kit.');
     });
 
     it('writes no manifest when the source directory holds no .ts files and no manifest exists', async () => {
@@ -451,6 +453,38 @@ describe(compileCommand, () => {
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).not.toHaveBeenCalled();
       expect(stdout).toContain('No .ts files found in .readyup/kits; manifest not written');
+      expect(stdout).toContain('Hint: Run `rdy init` to scaffold a kit.');
+    });
+
+    it('names the configured source directory when `rdy init` would not scaffold into it', async () => {
+      arrangeEmptySweep({ srcDirExists: false, manifestExists: false, srcDir: 'kits/src' });
+
+      const { exitCode, stdout } = await compile([]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Hint: Add a kit source to kits/src.');
+    });
+
+    it('carries the next step as the payload hint under --json', async () => {
+      arrangeEmptySweep({ srcDirExists: false, manifestExists: false });
+
+      const { exitCode, stdout } = await compile(['--json']);
+
+      expect(exitCode).toBe(0);
+      expect(JSON.parse(stdout)).toStrictEqual({
+        schemaVersion: 1,
+        passed: true,
+        kits: [],
+        hint: 'Run `rdy init` to scaffold a kit.',
+      });
+    });
+
+    it('omits the hint from the payload when a manifest exists', async () => {
+      arrangeEmptySweep({ srcDirExists: false, manifestExists: true });
+
+      const { stdout } = await compile(['--json']);
+
+      expect(JSON.parse(stdout)).not.toHaveProperty('hint');
     });
 
     it('empties an existing manifest when the source directory is absent', async () => {
@@ -460,7 +494,7 @@ describe(compileCommand, () => {
 
       expect(exitCode).toBe(0);
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), { version: 1, kits: [] });
-      expect(stdout).toContain('manifest now lists no kits');
+      expect(stdout).toBe('Source directory not found: .readyup/kits; manifest now lists no kits\n');
     });
 
     it('empties an existing manifest when the source directory holds no .ts files', async () => {
@@ -507,9 +541,12 @@ describe(compileCommand, () => {
     // region | Helpers
 
     /** Arranges a config-driven sweep that finds no kits, over a manifest that, if it exists, records none. */
-    function arrangeEmptySweep(existence: ArrangeExistenceArgs): void {
+    function arrangeEmptySweep({
+      srcDir = '.readyup/kits',
+      ...existence
+    }: ArrangeExistenceArgs & { srcDir?: string }): void {
       mockLoadConfig.mockResolvedValue({
-        compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
+        compile: { srcDir, outDir: srcDir, include: undefined, exclude: [] },
       });
       arrangeExistence(existence);
       mockReadManifest.mockImplementation((manifestPath: string) => {

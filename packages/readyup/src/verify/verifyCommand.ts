@@ -19,7 +19,7 @@ import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest, RdyManifestKit } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
+import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import {
@@ -103,7 +103,7 @@ export async function verifyCommand(args: string[]): Promise<number> {
   }
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
-  const manifest = loadManifest(manifestPath);
+  const manifest = loadManifest(manifestPath, values.manifest);
   const projectDir = resolveManifestProjectDir(manifestPath);
   const config = await loadVerifyConfig(projectDir, values.config);
   const uncompiled = findUncompiledKits({
@@ -280,12 +280,20 @@ function findUncompiledKits(args: FindUncompiledKitsArgs): JsonVerifyUncompiledE
     }));
 }
 
-/** Reads a manifest, raising a config error when it is missing, unreadable, or invalid. */
-function loadManifest(manifestPath: string): RdyManifest {
+/**
+ * Reads a manifest, raising a config error when it is missing, unreadable, or invalid.
+ *
+ * A missing manifest's hint repeats `manifestFlag`, the `--manifest` value as typed, so that the user can rerun it.
+ */
+function loadManifest(manifestPath: string, manifestFlag?: string): RdyManifest {
   try {
     return readManifest(manifestPath);
   } catch (error: unknown) {
-    throw configError(describeError(error), { cause: error });
+    const hint =
+      error instanceof ManifestNotFoundError
+        ? `Run \`rdy compile${manifestFlag === undefined ? '' : ` --manifest ${manifestFlag}`}\` to create it.`
+        : undefined;
+    throw configError(describeError(error), { cause: error, hint });
   }
 }
 
