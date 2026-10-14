@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { resolveOutputWidth } from '../resolveOutputWidth.ts';
 
-describe('resolveOutputWidth', () => {
+describe(resolveOutputWidth, () => {
   it('prefers COLUMNS over the terminal width', () => {
     expect(resolveOutputWidth({ columns: 200, env: { COLUMNS: '80' }, isTty: true })).toBe(80);
   });
