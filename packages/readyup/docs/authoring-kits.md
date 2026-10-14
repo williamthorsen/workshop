@@ -102,7 +102,7 @@ Three fields, three questions:
 
 > **`name` states what must be true. `detail` explains why this status. `fix` says what to do about it.**
 
-A name is a claim that reads true on a pass and false on a fail. `🔴 Node >= 24` fails that test: The operator leaves the reader to infer which direction is the violation.
+A name is a claim that reads true on a pass and false on a fail. `❌ Node >= 24` fails that test: The operator leaves the reader to infer which direction is the violation.
 
 State the claim in the third person indicative and capitalize it like a sentence, so that a column of names reads as a column of assertions rather than labels.
 
@@ -178,18 +178,18 @@ export default defineRdyKit({
 It produces:
 
 ```
-🟢 Working tree is clean · There are no uncommitted changes
-🟢 Dependencies are installed
-   🟢 Lockfile is current [4 of 4]
-      🔴 No dependency has duplicated majors
+✅ Working tree is clean · There are no uncommitted changes
+✅ Dependencies are installed
+   ✅ Lockfile is current [4 of 4]
+      ❌ No dependency has duplicated majors
          react resolves to both 18.3.1 and 19.0.0
    ⚪ Native modules are rebuilt · This workspace has no native dependencies
 ── Fixes
-🔴 No dependency has duplicated majors
+❌ No dependency has duplicated majors
    💊 Run `pnpm dedupe`, then commit the lockfile
-🔴 Total: 1 error, 3 passed, 1 skipped (0ms)
+❌ Total: 1 error, 3 passed, 1 skipped (0ms)
 
-🔴 Run failed (fail-on: error)
+❌ Run failed (fail-on: error)
 ```
 
 A failing descendant turns the tail line red while every ancestor stays green. `progress` needs no `detail`: `[4 of 4]` is already the evidence. A check returning findings whose fraction is `0 of 0` prints the number of files that it examined in its place, such as `[12 files examined]`, because that is the evidence on which an empty sweep's pass rests.

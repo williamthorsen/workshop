@@ -240,7 +240,7 @@ describe('--sources run path wiring', () => {
 
     expect(headings).toStrictEqual(['@acme/kits@2.1.0 / default', 'plain-kit@1.0.0 / default']);
     for (const heading of headings) {
-      expect(stdout).toContain(`\u{1F7E2} ${heading}`);
+      expect(stdout).toContain(`\u{2705} ${heading}`);
     }
   });
 

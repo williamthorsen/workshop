@@ -92,31 +92,31 @@ Blank lines separate blocks rather than decorate headings: None opens a command'
 
 ```
 ━━ 📋 build
-🟢 Types check cleanly (343ms)
-🟢 Bundle is within budget · 42kB of a 50kB budget [84%]
-🟢 Total: 2 passed (343ms)
+✅ Types check cleanly (343ms)
+✅ Bundle is within budget · 42kB of a 50kB budget [84%]
+✅ Total: 2 passed (343ms)
 
 ━━ 📋 integration
-🟢 Database is reachable
-🔴 Migrations are applied (151ms)
+✅ Database is reachable
+❌ Migrations are applied (151ms)
    2 migrations pending: add_users, add_index
 ⚪ Seed data is loaded · seeding is disabled outside CI
 ── Fixes
-🔴 Migrations are applied
+❌ Migrations are applied
    💊 Run `pnpm migrate` against the target database
-🔴 Total: 1 error, 1 passed, 1 skipped (151ms)
+❌ Total: 1 error, 1 passed, 1 skipped (151ms)
 
 ━━ Summary
 ───────────────────────────────────────────────────
-🟢 build        343ms  2 passed
-🔴 integration  151ms  1 error, 1 passed, 1 skipped
+✅ build        343ms  2 passed
+❌ integration  151ms  1 error, 1 passed, 1 skipped
 ───────────────────────────────────────────────────
-🔴 Total: 1 error, 3 passed, 1 skipped (494ms)
+❌ Total: 1 error, 3 passed, 1 skipped (494ms)
 
-🔴 Run failed (fail-on: error)
+❌ Run failed (fail-on: error)
 ```
 
-**Every run closes with its verdict.** The last line of a run that selected a kit states whether the run passed or failed, and the [failure threshold](concepts.md#thresholds) that decided it: `🟢 Run passed (fail-on: error)`. When the kits that ran resolved different thresholds, the line names each threshold with its kits, as in `(fail-on: error for deploy; warn for audit)`. A run in which a kit could not run states `Run incomplete:` with the number of kits that did not run, since that outcome decides the exit code whatever the checks found. The verdict follows the advisory warnings on stderr, so it is also the last line of a log that merges the two streams.
+**Every run closes with its verdict.** The last line of a run that selected a kit states whether the run passed or failed, and the [failure threshold](concepts.md#thresholds) that decided it: `✅ Run passed (fail-on: error)`. When the kits that ran resolved different thresholds, the line names each threshold with its kits, as in `(fail-on: error for deploy; warn for audit)`. A run in which a kit could not run states `Run incomplete:` with the number of kits that did not run, since that outcome decides the exit code whatever the checks found. The verdict follows the advisory warnings on stderr, so it is also the last line of a log that merges the two streams.
 
 The heading of a kit from an installed package, a repository, or a URL names its source, so a long run shows which checks belong to which kit without the reader scrolling for it:
 
@@ -131,12 +131,12 @@ A run spanning several kits tallies them together, each row naming its source an
 ```
 ━━ Summary
 ─────────────────────────────────────────────────────────────────────────────────
-🟢 @acme/release-kit@2.1.0 / npm-auto-publish / repo      12ms  4 passed
-🟢 @acme/release-kit@2.1.0 / npm-auto-publish / secrets    9ms  2 passed
-🔴 github:acme/checks@main / default                     151ms  1 error, 1 passed
-🟢 ../shared-kits / default                                4ms  3 passed
+✅ @acme/release-kit@2.1.0 / npm-auto-publish / repo      12ms  4 passed
+✅ @acme/release-kit@2.1.0 / npm-auto-publish / secrets    9ms  2 passed
+❌ github:acme/checks@main / default                     151ms  1 error, 1 passed
+✅ ../shared-kits / default                                4ms  3 passed
 ─────────────────────────────────────────────────────────────────────────────────
-🔴 Total: 1 error, 10 passed (176ms)
+❌ Total: 1 error, 10 passed (176ms)
 ```
 
 A kit that could not load keeps its heading, under which a line states that it did not load, and its row reads `did not load` in place of a duration and counts. The row and the `Total:` line are marked failed, and the error itself is written to stderr.
@@ -196,7 +196,7 @@ error instanceof Error ? error.message : String(error);
 A failed check prints its id bracketed ahead of its fraction, and a pragma uses that printed form:
 
 ```
-🔴 No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
+❌ No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [2 of 5]
    src/a.ts:4, src/b.ts:9
 ```
 

@@ -1,17 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SummaryCounts } from '../../kits/types.ts';
-import { plainFormatter, richFormatter, TOKEN_NAMES } from '../formatter.ts';
+import { RETIRED_GLYPHS } from '../../test-utils/retiredGlyphs.ts';
+import { plainFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
 
 /** Every printable ASCII character, plus the newline that separates rendered lines. */
 const PRINTABLE_ASCII = /^[\u{20}-\u{7E}\n]*$/u;
 
-/** Glyphs that no token may use, each stripped of any variation selector. */
-const RETIRED_GLYPHS = ['\u{1F9F0}', '\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}'];
-
 /** Tokens that name what a thing is rather than reporting an outcome. */
 const ROLE_TOKENS = ['checklist', 'kit', 'kitSource', 'sourceDirectory', 'sourcePackage', 'sourceRemote'] as const;
+
+/**
+ * Emoji that differ from the others of their family only by colour, so two status tokens drawn from one family
+ * are told apart by colour alone.
+ */
+const SHAPE_FAMILIES = {
+  circle: ['\u{26AA}', '\u{26AB}', '\u{1F534}', '\u{1F535}', ...listCharacters('\u{1F7E0}', '\u{1F7E4}')],
+  diamond: listCharacters('\u{1F536}', '\u{1F539}'),
+  square: ['\u{2B1B}', '\u{2B1C}', ...listCharacters('\u{1F7E5}', '\u{1F7EB}')],
+};
+
+const STATUS_TOKENS: readonly TokenName[] = TOKEN_NAMES.filter((name) => !new Set<string>(ROLE_TOKENS).has(name));
 
 const plainEngine = createLayoutEngine(plainFormatter);
 
@@ -34,6 +44,12 @@ describe('richFormatter', () => {
     for (const retired of RETIRED_GLYPHS) {
       expect(glyphs).not.toContain(retired);
     }
+  });
+
+  it.each(Object.entries(SHAPE_FAMILIES))('gives at most one status token a %s', (_family, members) => {
+    const sharing = STATUS_TOKENS.filter((name) => members.includes(richFormatter.tokens[name].text));
+
+    expect(sharing.length, `share one shape: ${sharing.join(', ')}`).toBeLessThanOrEqual(1);
   });
 
   it('distinguishes the heading levels by rule weight', () => {
@@ -132,6 +148,13 @@ describe('plain alignment', () => {
 });
 
 // region | Helpers
+
+/** Lists the characters from one to another by code point, inclusive. */
+function listCharacters(first: string, last: string): string[] {
+  const start = first.codePointAt(0) ?? 0;
+  const end = last.codePointAt(0) ?? -1;
+  return Array.from({ length: end - start + 1 }, (_, offset) => String.fromCodePoint(start + offset));
+}
 
 function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
   return {

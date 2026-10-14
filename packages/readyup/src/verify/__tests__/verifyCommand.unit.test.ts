@@ -945,7 +945,7 @@ describe(verifyCommand, () => {
       { kind: 'unverified' },
     ];
 
-    it.each(['\u{2705}', '\u{26A0}', '\u{2753}', '\u{2796}', '\u{FE0F}', '\u{2014}'])(
+    it.each(['\u{26A0}', '\u{2753}', '\u{2796}', '\u{FE0F}', '\u{2014}'])(
       'renders no %s for any verdict',
       async (retired) => {
         const written: string[] = [];

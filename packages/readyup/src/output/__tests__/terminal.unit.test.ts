@@ -117,7 +117,7 @@ describe(reportWriteResult, () => {
     });
   });
 
-  it.each(['\u{2705}', '\u{26A0}', '\u{274C}', '\u{FE0F}'])('renders no %s for any outcome', (retired) => {
+  it.each(['\u{26A0}', '\u{FE0F}'])('renders no %s for any outcome', (retired) => {
     using silent = silenceConsole(['error', 'info']);
 
     const outcomes: WriteResult[] = [
