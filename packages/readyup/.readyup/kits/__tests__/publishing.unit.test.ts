@@ -120,14 +120,31 @@ describe('publishing kit', () => {
       expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed' });
     });
 
-    // `default` skips every check for a project that defines no kits; a package that runs `publishing` and has
-    // no kits is broken, so this kit keeps reading the absence as an error.
-    it('reports a package containing no kit directory at all', async () => {
-      writePackageJson(projectRoot, { files: ['.readyup'] });
+    // `rdy run --sources --all` runs this kit in every project, and one that defines no kits publishes none.
+    it('skips the kit-set checks for a project that defines no kits', async () => {
+      writePackageJson(projectRoot, { files: ['dist'] });
 
       const results = await runPackaging();
 
-      expect(pickResult(results, 'manifest.json')).toMatchObject({ status: 'failed', severity: 'error' });
+      expect(describeKitSetResults(results)).toStrictEqual(
+        Array.from({ length: 3 }, () => ({ status: 'skipped', detail: 'This project defines no kits' })),
+      );
+      expect(pickResult(results, 'recorded kit')).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, 'README')).toMatchObject({ status: 'passed' });
+    });
+
+    // A project running its kits with `--jit` has kit sources and publishes no bundle.
+    it('skips the kit-set checks for a project that compiles nothing', async () => {
+      writePackageJson(projectRoot, { files: ['dist'] });
+      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+
+      const results = await runPackaging();
+
+      expect(describeKitSetResults(results)).toStrictEqual(
+        Array.from({ length: 3 }, () => ({ status: 'skipped', detail: 'There are no compiled kits' })),
+      );
+      expect(pickResult(results, 'recorded kit')).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, 'README')).toMatchObject({ status: 'passed' });
     });
 
     // Publishing only named kits is legitimate, but a consumer's first invocation is a bare one.
@@ -313,6 +330,14 @@ describe('publishing kit', () => {
 });
 
 // region | Helpers
+
+/** Reduces the results of the checks about the kit set (allowlist, manifest, `default` bundle) to status and detail. */
+function describeKitSetResults(results: RdyResult[]): Array<Pick<RdyResult, 'detail' | 'status'>> {
+  return ['allowlist', 'manifest.json', 'default.js'].map((name) => {
+    const { detail, status } = pickResult(results, name);
+    return { status, detail };
+  });
+}
 
 /** Runs the `packaging` checklist against the fixture as it now stands. */
 async function runPackaging(): Promise<RdyResult[]> {

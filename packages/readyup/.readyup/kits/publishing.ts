@@ -6,6 +6,10 @@
  * registry truncates without reporting anything. `default` is the advisory counterpart, for a project
  * that authors kits without publishing them.
  *
+ * `rdy run --sources --all` also runs this kit in a project that publishes nothing. A project with no compiled
+ * kits publishes none, so the checks about the kit set skip there, on the condition and with the reason that
+ * `default` uses.
+ *
  *   rdy run --from npm:readyup publishing
  */
 import path from 'node:path';
@@ -18,7 +22,7 @@ import { buildSelfContainmentChecks } from './checks/buildSelfContainmentChecks.
 import { describeFilesCoverage } from './checks/describeFilesCoverage.ts';
 import { describeLoadablePaths } from './checks/describeLoadablePaths.ts';
 import { describeReadmeSize, README_CODE_POINT_LIMIT } from './checks/describeReadmeSize.ts';
-import { KITS_DIR, MANIFEST_DIR } from './checks/kit-layout.ts';
+import { KITS_DIR, MANIFEST_DIR, skipWithoutCompiledKits } from './checks/kit-layout.ts';
 
 /** Bundle to which a bare `rdy run --from npm:<package>` resolves. */
 const DEFAULT_BUNDLE_PATH = path.join(KITS_DIR, 'default.js');
@@ -32,6 +36,7 @@ export default defineRdyKit({
       checks: [
         {
           name: `The "files" allowlist includes ${MANIFEST_DIR}`,
+          skip: skipWithoutCompiledKits,
           check: describeFilesCoverage,
           fix: `Add "${MANIFEST_DIR}" to the "files" array in package.json`,
         },
@@ -39,6 +44,7 @@ export default defineRdyKit({
           // `rdy list --from npm:` reads the manifest, so a tarball without it publishes kits
           // that no consumer can discover without running them.
           name: `${DEFAULT_MANIFEST_PATH} exists`,
+          skip: skipWithoutCompiledKits,
           check: () => fileExists(DEFAULT_MANIFEST_PATH),
           fix: `Run 'rdy compile' to write ${DEFAULT_MANIFEST_PATH}`,
         },
@@ -46,6 +52,7 @@ export default defineRdyKit({
           // Advisory: Publishing only named kits is legitimate, but a consumer's first invocation is a
           // bare one, and it fails with no kit under this name.
           name: `${DEFAULT_BUNDLE_PATH} exists`,
+          skip: skipWithoutCompiledKits,
           severity: 'warn',
           check: () => fileExists(DEFAULT_BUNDLE_PATH),
           fix: `Name a kit "default" so that a bare 'rdy run --from npm:<package>' resolves to it`,
