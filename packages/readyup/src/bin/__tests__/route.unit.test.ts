@@ -999,6 +999,8 @@ describe(routeCommand, () => {
       ['--file', ['lst', '--file', 'kit.js']],
       ['--url', ['lst', '--url', 'https://example.test/kit.js']],
       ['--internal', ['runn', '--internal']],
+      ['--sources', ['lst', '--sources']],
+      ['--sources and the word is near no command', ['onboarding', '--sources']],
     ])('runs the bare word as a kit when %s names its source', async (_label, args) => {
       mockParseRunArgs.mockReturnValue(parsedRunArgs({ kitSpecifiers: [{ kitName: args[0], checklists: [] }] }));
       mockRunCommand.mockResolvedValue(0);

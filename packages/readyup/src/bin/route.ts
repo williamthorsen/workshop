@@ -37,7 +37,7 @@ export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'
 const CONFIG_FLAG = '--config';
 
 /** Flags naming where a kit comes from, each of which resolves it somewhere the local probe cannot see. */
-const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--url']);
+const SOURCE_FLAGS = new Set(['--file', '-f', '--from', '--internal', '--sources', '--url']);
 
 /** Environment variable holding a standing style preference. */
 export const STYLE_ENV_VAR = 'RDY_STYLE';
@@ -304,9 +304,9 @@ interface BareWordProbe {
 /**
  * Determines whether a bare word is a kit rather than an unknown command.
  *
- * A ':' checklist filter and a source flag are both kit syntax that no command uses, so either
- * settles the question outright: Under them the word is a kit by construction, and the kit that it
- * names lives wherever that source resolves rather than on a path worth probing.
+ * A ':' checklist filter and a source flag, `--sources` among them, are both kit syntax that no command
+ * uses, so either settles the question outright: Under them the word is a kit by construction, and the
+ * kit that it names lives wherever that source resolves rather than on a path worth probing.
  *
  * Everything else is a bare word with no source, which `run` resolves against the project's configured
  * directories: its bundles in `compile.outDir`, its sources in `compile.srcDir`. The probe reads the config
