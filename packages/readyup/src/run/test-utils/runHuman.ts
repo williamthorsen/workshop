@@ -16,6 +16,13 @@ export interface HumanRunOptions {
   unrunSources?: UnrunSource[];
 }
 
+/** The exit code of a run and everything that it wrote. */
+export interface HumanRunResult {
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}
+
 /**
  * Runs the mode over the given entries, filling in every setting that the test did not name, and returns its
  * exit code alongside everything it wrote.
@@ -23,7 +30,7 @@ export interface HumanRunOptions {
 export async function runHuman(
   kitEntries: ResolvedKitEntry[],
   { diagnose = false, failOn, isJit = false, quiet = false, reportOn, unrunSources = [] }: HumanRunOptions = {},
-) {
+): Promise<HumanRunResult> {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
