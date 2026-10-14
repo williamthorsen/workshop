@@ -166,9 +166,10 @@ describe(routeCommand, () => {
     expect(DOCS_POINTER).toContain(packageJson.homepage);
   });
 
-  it('points at the installed docs directory and the authoring skill', () => {
+  it('points at the installed docs directory, the authoring skill, and how to install it', () => {
     expect(DOCS_POINTER).toContain('node_modules/readyup/docs/');
     expect(DOCS_POINTER).toContain('consult-readyup-kits');
+    expect(DOCS_POINTER).toContain("'rdy help authoring'");
   });
 
   it.each([

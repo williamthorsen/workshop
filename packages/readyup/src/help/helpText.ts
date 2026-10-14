@@ -32,7 +32,8 @@ const TOPIC_LINES = Object.entries(TOPICS)
 export const DOCS_POINTER = `Full documentation: node_modules/readyup/docs/
 Online:
   https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
-Authoring kits: the consult-readyup-kits skill`;
+Authoring kits: the consult-readyup-kits skill; to install it, see "Agent
+guidance" in 'rdy help authoring'`;
 
 export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
