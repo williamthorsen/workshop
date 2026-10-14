@@ -10,7 +10,7 @@ import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
-import { countResults, reportRdy, selectVisibleResults } from '../reporting/reportRdy.ts';
+import { countResults, emptyCounts, reportRdy, selectVisibleResults } from '../reporting/reportRdy.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
@@ -26,6 +26,9 @@ import { selectChecklists } from './selectChecklists.ts';
 import { warnOnMaskedSkips } from './skip-diagnosis.ts';
 import { formatEmptySelection, warnOnUnrunSources } from './source-report.ts';
 import { warnOnVersionSkew } from './version-skew.ts';
+
+/** The line under the heading of a kit that did not load, whose error is written to stderr. */
+const DID_NOT_LOAD_STATUS = 'Kit did not load; the error is on stderr';
 
 interface HumanRunSettings {
   diagnose: boolean;
@@ -71,7 +74,7 @@ export async function runHumanMode(
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, isJit, settings.remote);
+      const { kit, compileTimeVersion } = await loadKit(entry, settings.remote);
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
       warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance);
@@ -89,8 +92,14 @@ export async function runHumanMode(
       if (!kitResult.passed) allPassed = false;
       if (kitResult.withheldCount > 0) withheld = addWithheld(withheld, kitResult.withheldCount, kitResult.failOn);
     } catch (error: unknown) {
-      // Head even a kit that never ran, so that stdout lists every kit that the invocation asked for.
-      if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'));
+      // Head even a kit that never ran, so that stdout alone lists every kit that the invocation asked for and
+      // states which of them did not load.
+      if (kitSegments.length > 0) {
+        const layout = getLayout();
+        const status = `${layout.token('failedError')}${DID_NOT_LOAD_STATUS}`;
+        writeBlock(`${layout.formatBreadcrumb(kitSegments, 'kit')}\n${status}`);
+        rows.push({ counts: emptyCounts(), didNotLoad: true, durationMs: 0, segments: kitSegments });
+      }
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
       const label = kitSegments.length > 0 ? ` [${getLayout().formatBreadcrumbLabel(kitSegments)}]` : '';

@@ -139,6 +139,8 @@ A run spanning several kits tallies them together, each row naming its source an
 🔴 Total: 1 error, 10 passed (176ms)
 ```
 
+A kit that could not load keeps its heading, under which a line states that it did not load, and its row reads `did not load` in place of a duration and counts. The row and the `Total:` line are marked failed, and the error itself is written to stderr.
+
 ## Output styles
 
 `--style` selects rendering; `RDY_STYLE` sets a standing preference. The flag outranks the environment variable, which outranks detection.

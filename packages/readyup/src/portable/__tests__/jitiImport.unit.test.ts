@@ -16,6 +16,7 @@ vi.mock('jiti', () => ({
 
 import { extractHint } from '../../errors/error-handling.ts';
 import { jitiImport } from '../jitiImport.ts';
+import { UnresolvedModuleError } from '../UnresolvedModuleError.ts';
 
 const KIT_PATH = path.resolve(process.cwd(), '.readyup/kits/default.ts');
 const DETAIL = 'Uncompiled kits require the package to be installed as a project dependency.';
@@ -49,7 +50,24 @@ describe(jitiImport, () => {
     expect(error.message).not.toContain('Install it with');
   });
 
-  it('omits the install command for a specifier that names a file rather than a package', async () => {
+  it('reports a relative specifier as a missing file, naming the file that imports it', async () => {
+    mockExistsSync.mockReturnValue(false);
+    const importer = path.resolve(process.cwd(), '.readyup/kits/lib/helper.ts');
+    mockImport.mockRejectedValue(
+      Object.assign(new Error(`Cannot find module './nope'\nRequire stack:\n- ${importer}\n- ${KIT_PATH}`), {
+        code: 'MODULE_NOT_FOUND',
+      }),
+    );
+
+    const error = await captureError(UnresolvedModuleError, () => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
+
+    expect(error.message).toBe(
+      "Cannot find './nope', imported by .readyup/kits/lib/helper.ts. Check the path and the file name.",
+    );
+    expect(extractHint(error)).toBeUndefined();
+  });
+
+  it('names the evaluated file as the importer when the error lists no require stack', async () => {
     mockExistsSync.mockReturnValue(false);
     mockImport.mockRejectedValue(
       Object.assign(new Error("Cannot find module './helpers.ts'"), { code: 'MODULE_NOT_FOUND' }),
@@ -57,7 +75,32 @@ describe(jitiImport, () => {
 
     const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
 
-    expect(String(error)).toContain("Cannot resolve './helpers.ts' while evaluating .readyup/kits/default.ts.");
+    expect(error.message).toBe(
+      "Cannot find './helpers.ts', imported by .readyup/kits/default.ts. Check the path and the file name.",
+    );
+  });
+
+  it('reports an absolute specifier as a missing file', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockImport.mockRejectedValue(
+      Object.assign(new Error("Cannot find module '/opt/kits/shared.ts'"), { code: 'MODULE_NOT_FOUND' }),
+    );
+
+    const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
+
+    expect(error.message).toContain("Cannot find '/opt/kits/shared.ts', imported by .readyup/kits/default.ts.");
+    expect(error.message).not.toContain(DETAIL);
+  });
+
+  it('omits the install command for a builtin specifier', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockImport.mockRejectedValue(
+      Object.assign(new Error("Cannot find module 'node:nope'"), { code: 'ERR_MODULE_NOT_FOUND' }),
+    );
+
+    const error = await captureError(() => jitiImport(KIT_PATH, DETAIL, 'Kit file'));
+
+    expect(error.message).toBe(`Cannot resolve 'node:nope' while evaluating .readyup/kits/default.ts. ${DETAIL}`);
     expect(extractHint(error)).toBeUndefined();
   });
 

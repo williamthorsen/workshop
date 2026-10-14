@@ -18,6 +18,9 @@ const HEADING_SIGIL_WIDTH = 2;
  */
 export const SEGMENT_SEPARATOR = ' / ';
 
+/** Text standing in a summary-table row for the duration and counts of a kit that did not load. */
+const DID_NOT_LOAD_LABEL = 'did not load';
+
 /** Columns between one summary-table cell and the next. */
 const TABLE_CELL_GAP = '  ';
 
@@ -84,6 +87,8 @@ export interface CheckLineInput {
 /** One checklist's row in the combined summary table. */
 export interface SummaryRow {
   counts: SummaryCounts;
+  /** Marks the row of a kit that failed to load, which has neither a duration nor counts to show. */
+  didNotLoad?: true;
   durationMs: number;
   segments: BreadcrumbSegment[];
 }
@@ -200,20 +205,35 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * rules span the widest line that they enclose, the total included. A row names itself by its breadcrumb
    * without the role glyphs added by the matching heading, because padding counts characters while the
    * terminal lays out display width, and a glyph makes the two disagree.
+   *
+   * A kit that did not load fails its row and the total, whatever the rows that loaded found.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals }: SummaryTableInput): string[] {
     const named = rows.map((row) => ({ ...row, name: formatBreadcrumbLabel(row.segments) }));
     const nameWidth = Math.max(...named.map((row) => row.name.length));
-    const durationWidth = Math.max(...named.map((row) => formatDuration(row.durationMs).length));
+    const durationWidth = Math.max(
+      0,
+      ...named.filter((row) => row.didNotLoad !== true).map((row) => formatDuration(row.durationMs).length),
+    );
 
-    const entries = named.map((row) => ({
-      token: resolveWorstToken(row.counts.worstSeverity),
-      body: [
-        row.name.padEnd(nameWidth),
-        formatDuration(row.durationMs).padStart(durationWidth),
-        formatCounts(row.counts),
-      ].join(TABLE_CELL_GAP),
-    }));
+    const entries: Array<{ body: string; token: TokenName }> = named.map((row) =>
+      row.didNotLoad === true
+        ? {
+            token: 'failedError',
+            body: [row.name.padEnd(nameWidth), DID_NOT_LOAD_LABEL].join(TABLE_CELL_GAP),
+          }
+        : {
+            token: resolveWorstToken(row.counts.worstSeverity),
+            body: [
+              row.name.padEnd(nameWidth),
+              formatDuration(row.durationMs).padStart(durationWidth),
+              formatCounts(row.counts),
+            ].join(TABLE_CELL_GAP),
+          },
+    );
+    const totalToken = rows.some((row) => row.didNotLoad === true)
+      ? 'failedError'
+      : resolveWorstToken(totals.worstSeverity);
     const totalBody = buildCountBody(totals, totalDurationMs);
 
     const bodyWidth = Math.max(...entries.map((entry) => entry.body.length), totalBody.length);
@@ -224,7 +244,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
       rule,
       ...entries.map((entry) => `${token(entry.token)}${entry.body}`),
       rule,
-      `${token(resolveWorstToken(totals.worstSeverity))}${totalBody}`,
+      `${token(totalToken)}${totalBody}`,
     ];
   }
 

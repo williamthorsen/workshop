@@ -55,7 +55,7 @@ export async function runJsonMode(
 
   for (const entry of kitEntries) {
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, isJit, remote);
+      const { kit, compileTimeVersion } = await loadKit(entry, remote);
 
       warnings.push(
         ...warnOnKitStaleness(entry.name, entry.source, tracking),

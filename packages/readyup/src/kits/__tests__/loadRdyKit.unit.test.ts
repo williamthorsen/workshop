@@ -23,7 +23,9 @@ vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockJitiImport }),
 }));
 
+import { extractHint } from '../../errors/error-handling.ts';
 import { UnresolvableKitImportsError } from '../../kitImports/UnresolvableKitImportsError.ts';
+import { UnresolvedModuleError } from '../../portable/UnresolvedModuleError.ts';
 import { loadRdyKit } from '../loadRdyKit.ts';
 
 const KIT_PATH = '.readyup/kits/default.ts';
@@ -146,11 +148,56 @@ describe(loadRdyKit, () => {
     );
   });
 
-  it('re-throws non-module-resolution errors from jiti', async () => {
+  it('leaves an unresolved module unprefixed, since its message names the evaluated file', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockJitiImport.mockRejectedValue(new SyntaxError('Unexpected token'));
+    mockJitiImport.mockRejectedValue(
+      Object.assign(new Error("Cannot find package 'readyup'"), { code: 'ERR_MODULE_NOT_FOUND' }),
+    );
 
-    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(SyntaxError);
+    const error = await captureError(UnresolvedModuleError, () => loadRdyKit(KIT_PATH));
+
+    expect(error.message).toMatch(/^Cannot resolve 'readyup' while evaluating \.readyup\/kits\/default\.ts\./);
+  });
+
+  it('names the kit and its file when a source throws while it is evaluated', async () => {
+    mockExistsSync.mockReturnValue(true);
+    const thrown = new SyntaxError("Expected property name or '}' in JSON at position 1");
+    mockJitiImport.mockRejectedValue(thrown);
+
+    const error = await captureError(() => loadRdyKit(KIT_PATH));
+
+    expect(error.message).toBe(
+      `Kit "default" failed to load from ${KIT_PATH}: Expected property name or '}' in JSON at position 1`,
+    );
+    expect(error.cause).toBe(thrown);
+  });
+
+  it('names the kit and its file when a compiled kit throws while it is evaluated', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue('');
+    mockImportKitModule.mockRejectedValue(new Error('Boom at import'));
+
+    await expect(loadRdyKit(COMPILED_KIT_PATH)).rejects.toThrow(
+      `Kit "default" failed to load from ${COMPILED_KIT_PATH}: Boom at import`,
+    );
+  });
+
+  it('names a nested kit by the requested name when it throws while it is evaluated', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockRejectedValue(new Error('Boom'));
+
+    await expect(loadRdyKit('.readyup/kits/team-a/deploy.ts', 'team-a/deploy')).rejects.toThrow(
+      'Kit "team-a/deploy" failed to load from .readyup/kits/team-a/deploy.ts: Boom',
+    );
+  });
+
+  it('keeps the hint of a failure that it names', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockRejectedValue(Object.assign(new Error('Boom'), { hint: 'Do the thing' }));
+
+    const error = await captureError(() => loadRdyKit(KIT_PATH));
+
+    expect(extractHint(error)).toBe('Do the thing');
   });
 
   it('resolves the kit path against process.cwd()', async () => {
@@ -183,11 +230,25 @@ describe(loadRdyKit, () => {
     await expect(loadRdyKit(KIT_PATH)).rejects.toThrow('Kit file must export an object, got string');
   });
 
-  it('throws when no checklists export exists', async () => {
+  it('names the kit and its file when no checklists export exists', async () => {
     mockExistsSync.mockReturnValue(true);
     mockJitiImport.mockResolvedValue({ unrelated: true });
 
-    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow('Kit file must export checklists');
+    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(
+      `Kit "default" failed to load from ${KIT_PATH}: Kit file must export checklists`,
+    );
+  });
+
+  it('names the kit and its file when a suite references an unknown checklist', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockJitiImport.mockResolvedValue({
+      checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true }] }],
+      suites: { all: ['missing'] },
+    });
+
+    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(
+      `Kit "default" failed to load from ${KIT_PATH}: Invalid suite references:`,
+    );
   });
 
   it('rejects a kit whose check declares an unknown severity', async () => {
@@ -207,7 +268,9 @@ describe(loadRdyKit, () => {
       checklists: [{ name: 'test', checks: [{ name: 'a', check: 'not-a-function' }] }],
     });
 
-    await expect(loadRdyKit(KIT_PATH)).rejects.toThrow(`Invalid kit at ${KIT_PATH}:`);
+    const error = await captureError(() => loadRdyKit(KIT_PATH));
+
+    expect(error.message).toMatch(new RegExp(`^Invalid kit at ${KIT_PATH}:`));
   });
 
   it('loads a kit from a default export', async () => {
