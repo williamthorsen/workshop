@@ -2,6 +2,8 @@ import process from 'node:process';
 
 import { compareVersions } from '../check-utils/semver.ts';
 import { kitLoadError } from '../errors/RdyError.ts';
+import { describeKitOwner } from '../kits/describeKitOwner.ts';
+import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyKit } from '../kits/types.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { VERSION } from '../version.ts';
@@ -32,20 +34,28 @@ export function warnOnVersionSkew(
   kitName: string,
   kit: RdyKit,
   compileTimeVersion: string | undefined,
+  provenance: KitProvenance | undefined,
 ): RaisedWarning[] {
   if (kit.minReadyupVersion !== undefined || compileTimeVersion === undefined) return [];
   if (compareVersions(toComparableVersion(compileTimeVersion), toComparableVersion(VERSION)) <= 0) return [];
 
   const warning: RaisedWarning = {
     code: 'version-skew',
-    message: `kit "${kitName}" was compiled by readyup ${compileTimeVersion}, ahead of the ${VERSION} running it.`,
-    remedy: `Upgrade readyup to ${compileTimeVersion} or later, or recompile the kit with this one.`,
+    message: `kit "${kitName}"${describeKitOwner(provenance)} was compiled by readyup ${compileTimeVersion}, ahead of the ${VERSION} running it.`,
+    remedy: isPublished(provenance)
+      ? `Upgrade readyup to ${compileTimeVersion} or later.`
+      : `Upgrade readyup to ${compileTimeVersion} or later, or recompile the kit with this one.`,
   };
   process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
   return [warning];
 }
 
 // region | Helpers
+
+/** Reports whether a package or a repository published the kit, whose bundle a consumer cannot recompile. */
+function isPublished(provenance: KitProvenance | undefined): boolean {
+  return provenance?.kind === 'package' || provenance?.kind === 'repository';
+}
 
 /** Matches the prerelease and build tails that semver appends to a numeric version. */
 const VERSION_TAIL = /[-+].*$/;

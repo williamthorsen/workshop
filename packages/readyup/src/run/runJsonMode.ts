@@ -59,7 +59,7 @@ export async function runJsonMode(
 
       warnings.push(
         ...warnOnKitStaleness(entry.name, entry.source, tracking),
-        ...warnOnVersionSkew(entry.name, kit, compileTimeVersion),
+        ...warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance),
       );
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
