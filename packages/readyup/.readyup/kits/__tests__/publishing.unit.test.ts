@@ -126,7 +126,11 @@ describe('publishing kit', () => {
 
       const results = await runPackaging();
 
-      expectKitSetSkipped(results, 'This project defines no kits');
+      expect(describeKitSetResults(results)).toStrictEqual(
+        Array.from({ length: 3 }, () => ({ status: 'skipped', detail: 'This project defines no kits' })),
+      );
+      expect(pickResult(results, 'recorded kit')).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, 'README')).toMatchObject({ status: 'passed' });
     });
 
     // A project running its kits with `--jit` has kit sources and publishes no bundle.
@@ -136,7 +140,11 @@ describe('publishing kit', () => {
 
       const results = await runPackaging();
 
-      expectKitSetSkipped(results, 'There are no compiled kits');
+      expect(describeKitSetResults(results)).toStrictEqual(
+        Array.from({ length: 3 }, () => ({ status: 'skipped', detail: 'There are no compiled kits' })),
+      );
+      expect(pickResult(results, 'recorded kit')).toMatchObject({ status: 'passed' });
+      expect(pickResult(results, 'README')).toMatchObject({ status: 'passed' });
     });
 
     // Publishing only named kits is legitimate, but a consumer's first invocation is a bare one.
@@ -323,13 +331,12 @@ describe('publishing kit', () => {
 
 // region | Helpers
 
-/** Asserts that the checks about the kit set skip with the reason given, and that the other checks pass. */
-function expectKitSetSkipped(results: RdyResult[], reason: string): void {
-  for (const name of ['allowlist', 'manifest.json', 'default.js']) {
-    expect(pickResult(results, name)).toMatchObject({ status: 'skipped', detail: reason });
-  }
-  expect(pickResult(results, 'recorded kit')).toMatchObject({ status: 'passed' });
-  expect(pickResult(results, 'README')).toMatchObject({ status: 'passed' });
+/** Reduces the results of the checks about the kit set (allowlist, manifest, `default` bundle) to status and detail. */
+function describeKitSetResults(results: RdyResult[]): Array<Pick<RdyResult, 'detail' | 'status'>> {
+  return ['allowlist', 'manifest.json', 'default.js'].map((name) => {
+    const { detail, status } = pickResult(results, name);
+    return { status, detail };
+  });
 }
 
 /** Runs the `packaging` checklist against the fixture as it now stands. */
