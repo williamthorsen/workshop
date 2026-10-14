@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashToRecordedLength } from '../check-utils/hashing.ts';
@@ -31,14 +31,17 @@ export type InputsStatus = { kind: 'ok' } | { kind: 'stale'; failures: InputFail
  * inlined and every JSON projection that `pickJson` substituted, none of which `sourceHash` or
  * `targetHash` describes.
  *
- * Reports every input that failed rather than the first, so one pass names everything to fix. Returns
- * `unverified` when the entry records no `inputs`, which means it predates the closure and says nothing
- * about whether the kit is stale.
+ * The closure records the kit's own source too, and that file is judged by the source axis alone, so an
+ * edit to it is reported once. Reports every input that failed rather than the first, so one pass names
+ * everything to fix. Returns `unverified` when the entry records no `inputs`, which means it predates the
+ * closure and says nothing about whether the kit is stale.
  */
 export function checkInputDrift(kit: RdyManifestKit, manifestDir: string): InputsStatus {
   if (kit.inputs === undefined) return { kind: 'unverified' };
 
+  const sourcePath = kit.source === undefined ? undefined : path.resolve(manifestDir, kit.source);
   const failures = kit.inputs
+    .filter((input) => sourcePath === undefined || !isSameFile(path.resolve(manifestDir, input.path), sourcePath))
     .map((input) => checkInput(input, manifestDir))
     .filter((failure): failure is InputFailure => failure !== undefined);
 
@@ -69,6 +72,26 @@ function checkInput(input: RdyManifestInput, manifestDir: string): InputFailure 
 
   if (actual === input.hash) return undefined;
   return { kind: 'inline', path: input.path, reason: 'changed', expected: input.hash, actual };
+}
+
+/**
+ * Reports whether two resolved paths name the same file.
+ *
+ * Compares real paths, because the compile records an input at the path to which esbuild resolved it,
+ * which differs from the recorded `source` wherever a directory above it is a symlink.
+ */
+function isSameFile(firstPath: string, secondPath: string): boolean {
+  return firstPath === secondPath || resolveRealPath(firstPath) === resolveRealPath(secondPath);
+}
+
+/**
+ * Returns the real path of a file, resolving its directory alone when the file is gone, so that a deleted
+ * file still matches its recorded counterpart. Returns the path unchanged when its directory is gone too.
+ */
+function resolveRealPath(filePath: string): string {
+  if (existsSync(filePath)) return realpathSync(filePath);
+  const directory = path.dirname(filePath);
+  return existsSync(directory) ? path.join(realpathSync(directory), path.basename(filePath)) : filePath;
 }
 
 // endregion | Helpers

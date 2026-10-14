@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -269,6 +269,65 @@ describe('default kit', () => {
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({
         status: 'failed',
         detail: expect.stringContaining(path.join('.readyup', FIXTURE_INLINED_MODULE_PATH)),
+      });
+    });
+
+    it('leaves an edited source to the source check alone', async () => {
+      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
+      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed' });
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'passed',
+        progress: { type: 'fraction', passedCount: 1, count: 1 },
+      });
+    });
+
+    it('counts only the inputs past the source when one has changed', async () => {
+      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
+      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+      inlineHelper(projectRoot, '2');
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'failed',
+        detail: expect.not.stringContaining('default.ts'),
+        progress: { type: 'fraction', passedCount: 0, count: 1 },
+      });
+    });
+
+    it('passes a kit that inlines nothing past its source', async () => {
+      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
+      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'passed',
+        detail: 'It inlines nothing past its source',
+      });
+    });
+
+    it('leaves a deleted source to the source check when the recorded source passes through a symlink', async () => {
+      const realKitsDir = path.join(projectRoot, '.readyup', 'real');
+      mkdirSync(realKitsDir, { recursive: true });
+      symlinkSync(realKitsDir, path.join(projectRoot, FIXTURE_KITS_DIR));
+      const entry = writeKit(projectRoot, 'default');
+      // A compile records each input at the path to which esbuild resolved it.
+      writeKitManifest(projectRoot, [
+        { ...entry, inputs: [{ hash: entry.sourceHash, kind: 'module', path: path.join('real', 'default.ts') }] },
+      ]);
+      rmSync(path.join(realKitsDir, 'default.ts'));
+
+      const results = await runFreshness();
+
+      expect(pickResult(results, 'Its source')).toMatchObject({ status: 'failed' });
+      expect(pickResult(results, 'Everything it inlined')).toMatchObject({
+        status: 'passed',
+        detail: 'It inlines nothing past its source',
       });
     });
 

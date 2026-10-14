@@ -1,3 +1,6 @@
+import { existsSync, realpathSync } from 'node:fs';
+import path from 'node:path';
+
 import { type CheckOutcome, DEFAULT_MANIFEST_PATH, type FractionProgress, type RdyCheck } from 'readyup';
 import {
   describeJsonProjectionFailure,
@@ -57,7 +60,7 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
         // inlined and every JSON projection substituted into it, and neither hash describes any of them.
         name: 'Everything it inlined is unchanged since it was compiled',
         skip: () => (entry.inputs === undefined ? NO_INPUTS_REASON : false),
-        check: () => compareToRecordedInputs(entry.inputs ?? []),
+        check: () => compareToRecordedInputs(entry),
         fix: `Run 'rdy compile' to rebuild ${entry.name} from the files that it now reads`,
       },
     ],
@@ -100,12 +103,20 @@ function compareToRecordedHash(recordedPath: string | undefined, expected: strin
 }
 
 /**
- * Compares everything a kit's compile read against what was recorded for it.
+ * Compares everything a kit's compile read, other than the kit's own source, against what was recorded for it.
  *
+ * The source is compared by the check beside this one, so an edit to it fails one check rather than two.
  * Names every input that no longer matches rather than the first, so one pass names everything to fix.
  * The count is the evidence on a pass, since a kit records one input per file read by its compile.
  */
-function compareToRecordedInputs(inputs: ManifestInput[]): CheckOutcome {
+function compareToRecordedInputs(entry: ManifestEntry): CheckOutcome {
+  const sourcePath = entry.source === undefined ? undefined : resolveRecordedPath(entry.source);
+  const inputs = (entry.inputs ?? []).filter(
+    (input) =>
+      sourcePath === undefined || input.path === undefined || !isSameFile(resolveRecordedPath(input.path), sourcePath),
+  );
+  if (inputs.length === 0) return { ok: true, detail: 'It inlines nothing past its source' };
+
   const failures = inputs.map(describeInputDrift).filter((failure) => failure !== undefined);
   const progress: FractionProgress = {
     type: 'fraction',
@@ -207,6 +218,26 @@ function describeUnrecordedBundles(entries: ManifestEntry[]): CheckOutcome {
 
   if (unrecorded.length === 0) return { ok: true, progress };
   return { ok: false, detail: `${DEFAULT_MANIFEST_PATH} records no entry for ${unrecorded.join(', ')}`, progress };
+}
+
+/**
+ * Reports whether two recorded paths name the same file.
+ *
+ * Compares real paths, because the compile records an input at the path to which esbuild resolved it,
+ * which differs from the recorded `source` wherever a directory above it is a symlink.
+ */
+function isSameFile(firstPath: string, secondPath: string): boolean {
+  return firstPath === secondPath || resolveRealPath(firstPath) === resolveRealPath(secondPath);
+}
+
+/**
+ * Returns the real path of a file, resolving its directory alone when the file is gone, so that a deleted
+ * file still matches its recorded counterpart. Returns the path unchanged when its directory is gone too.
+ */
+function resolveRealPath(filePath: string): string {
+  if (existsSync(filePath)) return realpathSync(filePath);
+  const directory = path.dirname(filePath);
+  return existsSync(directory) ? path.join(realpathSync(directory), path.basename(filePath)) : filePath;
 }
 
 // endregion | Helpers

@@ -45,8 +45,8 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  * separates a source edited without recompiling from a compiled bundle edited by hand. Both are
  * recorded hashes, compared at their own length rather than at a length fixed by the reader.
  *
- * `inputs` records everything else the compile read, which is every module inlined by the bundle past
- * the entry and every JSON file projected by `pickJson`. It is optional on the same terms that
+ * `inputs` records everything the compile read, which is every module inlined by the bundle, the entry
+ * included, and every JSON file projected by `pickJson`. It is optional on the same terms that
  * `checklists` is: An entry written before the closure was recorded has none.
  *
  * `esbuildVersion` and `bundledDependencies` record the toolchain half of the compile: the esbuild
