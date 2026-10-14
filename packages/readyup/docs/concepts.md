@@ -57,4 +57,4 @@ Two thresholds govern a run, each resolved as **CLI flag, then the kit's own fie
 
 A check with no `severity` takes the kit's `defaultSeverity`, which itself defaults to `error`.
 
-Reporting prunes the detail tree only. Summary counts, worst severity, and the exit code always reflect the whole run.
+Reporting prunes the detail tree only. Summary counts, worst severity, the exit code, and the closing verdict always reflect the whole run, and a human report states how many failing checks the reporting threshold withheld.

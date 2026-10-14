@@ -47,6 +47,8 @@ rdy run -- "--odd-kit-name"
 
 `--quiet` filters by status whereas `--report-on` filters by severity, so the two compose rather than override. Because both keep the parent checks of anything they show, a failure nested under passing parents still appears beneath them.
 
+A `--report-on` above `--fail-on` can withhold a check that fails the run. The run then states, above its [verdict](#reading-the-output), how many failing checks it withheld and the `--report-on` value that shows them all.
+
 A checklist emptied by either filter renders no block at all: Its summary-table row states the same counts in a column that the reader can compare across the run. Because a block is withheld only when a table will include its row, a run of one checklist reports its block even when the filters leave nothing in it, and a run that withholds one always ends with the table.
 
 `--diagnose` runs the `check` of every check turned off by its own `skip`, and reports the ones that would have passed: A `skip` exists to prevent a wrong failure, and one that suppresses a right pass instead renders as an ordinary white circle that nothing fails. [When a check skips](authoring-kits.md#when-a-check-skips) covers the judgment that this flag cannot make. It is opt-in because it executes exactly the work that a skip was written to avoid, which may access a network or a registry. What it finds is reported as [advisory warnings](#advisory-warnings), and the statuses, counts, durations, and exit code are those of an undiagnosed run.
@@ -110,7 +112,11 @@ Blank lines separate blocks rather than decorate headings: None opens a command'
 🔴 integration  151ms  1 error, 1 passed, 1 skipped
 ───────────────────────────────────────────────────
 🔴 Total: 1 error, 3 passed, 1 skipped (494ms)
+
+🔴 Run failed (fail-on: error)
 ```
+
+**Every run closes with its verdict.** The last line of a run that selected a kit states whether the run passed or failed, and the [failure threshold](concepts.md#thresholds) that decided it: `🟢 Run passed (fail-on: error)`. When the kits that ran resolved different thresholds, the line names each threshold with its kits, as in `(fail-on: error for deploy; warn for audit)`. A run in which a kit could not run states `Run incomplete:` with the number of kits that did not run, since that outcome decides the exit code whatever the checks found. The verdict follows the advisory warnings on stderr, so it is also the last line of a log that merges the two streams.
 
 The heading of a kit from an installed package, a repository, or a URL names its source, so a long run shows which checks belong to which kit without the reader scrolling for it:
 
