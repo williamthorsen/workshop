@@ -9,6 +9,7 @@ import type {
   SummaryCounts,
 } from '../../kits/types.ts';
 import { richFormatter } from '../../layout/formatter.ts';
+import { RETIRED_GLYPHS } from '../../test-utils/retiredGlyphs.ts';
 import { countResults, reportRdy, selectVisibleResults } from '../reportRdy.ts';
 
 const PASSED = richFormatter.tokens.passed.text;
@@ -114,24 +115,21 @@ describe(reportRdy, () => {
       expect(lineNaming(output, 'target')).toBe(`${token} target`);
     });
 
-    it.each(['\u{23ED}', '\u{2705}', '\u{26A0}', '\u{274C}', '\u{2753}', '\u{2796}', '\u{FE0F}'])(
-      'renders no %s anywhere in the report',
-      (retired) => {
-        const output = reportRdy(
-          makeReport({
-            results: [
-              makePassedResult({ name: 'a' }),
-              makeFailedResult({ name: 'b', detail: 'why', fix: 'do it' }),
-              makeSkippedResult({ name: 'c', skipReason: 'n/a' }),
-              makeSkippedResult({ name: 'd', skipReason: 'precondition' }),
-            ],
-            passed: false,
-          }),
-        ).body;
+    it.each([...RETIRED_GLYPHS, '\u{FE0F}'])('renders no %s anywhere in the report', (retired) => {
+      const output = reportRdy(
+        makeReport({
+          results: [
+            makePassedResult({ name: 'a' }),
+            makeFailedResult({ name: 'b', detail: 'why', fix: 'do it' }),
+            makeSkippedResult({ name: 'c', skipReason: 'n/a' }),
+            makeSkippedResult({ name: 'd', skipReason: 'precondition' }),
+          ],
+          passed: false,
+        }),
+      ).body;
 
-        expect(output).not.toContain(retired);
-      },
-    );
+      expect(output).not.toContain(retired);
+    });
   });
 
   describe('inline detail', () => {
@@ -542,7 +540,7 @@ describe(reportRdy, () => {
         }),
       ).body;
 
-      // The tree's own `   🔴 child` satisfies a substring match, so the recapped line is pinned by its
+      // The tree's own `   ❌ child` satisfies a substring match, so the recapped line is pinned by its
       // exact form: The recap flattens nesting rather than mirroring the tree's indent.
       expect(output.split('\n')).toContain(`${FAILED_ERROR} child`);
       expect(output.split('\n')).toContain(`   ${FIX} fix child`);

@@ -71,7 +71,7 @@ describe(renderTopic, () => {
   });
 
   it('replaces each emoji with its plain word under the plain style, inside code too', () => {
-    const markdown = ['A `🔴 Node >= 24` claim.', '```', '🟢 deploy.ts -> 📓 deploy.js', '⚪ smoke.ts', '```'].join(
+    const markdown = ['A `❌ Node >= 24` claim.', '```', '✅ deploy.ts -> 📓 deploy.js', '⚪ smoke.ts', '```'].join(
       '\n',
     );
 
@@ -89,13 +89,13 @@ describe(renderTopic, () => {
   });
 
   it('leaves emoji in place under the rich style', () => {
-    const line = '🟢 deploy.ts -> 📓 deploy.js';
+    const line = '✅ deploy.ts -> 📓 deploy.js';
 
     expect(renderTopic(line, { style: 'rich', topicByStem })).toBe(line);
   });
 
   it('drops the Rich column of a table under the plain style', () => {
-    const markdown = ['| Rich | Plain | Status |', '| ---- | ----- | ------ |', '| 🟢 | `PASS` | `a \\| b` |'].join(
+    const markdown = ['| Rich | Plain | Status |', '| ---- | ----- | ------ |', '| ✅ | `PASS` | `a \\| b` |'].join(
       '\n',
     );
 
