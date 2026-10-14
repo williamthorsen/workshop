@@ -1,12 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors';
+
 import { inlinePickJsonCalls } from '../compile/inlinePickJsonCalls.ts';
 import { projectJsonFile } from '../compile/projectJsonFile.ts';
+import { extractHint } from '../errors/error-handling.ts';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
+import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { jitiImport } from '../portable/jitiImport.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
+import { UnresolvedModuleError } from '../portable/UnresolvedModuleError.ts';
 import { assertIsRdyKit } from './assertIsRdyKit.ts';
 import { importKitModule } from './importKitModule.ts';
 import { KITS_DIR } from './kitsDir.ts';
@@ -32,6 +37,8 @@ export interface LoadedRdyKit {
  *
  * A compiled kit binding readyup symbols not exported by this runner is never evaluated, so the failure
  * names them rather than appearing as an `undefined` binding once a check calls one.
+ *
+ * A failure after the file is found names the kit and its file, unless its message already identifies them.
  */
 export async function loadRdyKit(kitPath: string, requestedName?: string): Promise<LoadedRdyKit> {
   const resolvedPath = path.resolve(process.cwd(), kitPath);
@@ -40,15 +47,19 @@ export async function loadRdyKit(kitPath: string, requestedName?: string): Promi
     throw new Error(diagnoseMissingKit(resolvedPath, requestedName));
   }
 
-  const imported =
-    path.extname(resolvedPath) === '.js' ? await importBundle(resolvedPath) : await importSource(resolvedPath);
+  const kitName = requestedName ?? path.basename(resolvedPath, path.extname(resolvedPath));
+  const failure = { kitName, resolvedPath };
+
+  const imported = await withKitContext(failure, () =>
+    path.extname(resolvedPath) === '.js' ? importBundle(resolvedPath) : importSource(resolvedPath),
+  );
 
   // Extract __readyupVersion from the raw module namespace before `resolveKitExports` strips it.
   const compileTimeVersion = readCompileTimeVersion(imported);
 
-  const resolved = resolveKitExports(imported);
+  const resolved = await withKitContext(failure, () => resolveKitExports(imported));
   assertIsRdyKit(resolved, toDisplayPath(resolvedPath));
-  validateKit(resolved);
+  await withKitContext(failure, () => validateKit(resolved));
   return { kit: resolved, compileTimeVersion };
 }
 
@@ -129,4 +140,30 @@ function listAvailableKits(dir: string, extension: string): string[] {
 function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string | undefined {
   const value = moduleRecord['__readyupVersion'];
   return typeof value === 'string' ? value : undefined;
+}
+
+/** The kit to which a load failure is attributed. */
+interface KitFailureContext {
+  kitName: string;
+  resolvedPath: string;
+}
+
+/**
+ * Runs one step of a kit's load, rethrowing its failure with the kit's name and file and keeping any `hint`.
+ *
+ * Passes through unchanged the failures whose messages already identify the kit: unresolvable readyup imports, which
+ * the caller words for the kit's provenance, and unresolved modules, which name the evaluated file.
+ */
+async function withKitContext<T>(context: KitFailureContext, step: () => T | Promise<T>): Promise<T> {
+  try {
+    return await step();
+  } catch (error: unknown) {
+    if (error instanceof UnresolvableKitImportsError || error instanceof UnresolvedModuleError) throw error;
+
+    const message = `Kit "${context.kitName}" failed to load from ${toDisplayPath(context.resolvedPath)}: ${describeError(error)}`;
+    const wrapped = new Error(message, { cause: error });
+    const hint = extractHint(error);
+    if (hint !== undefined) Object.assign(wrapped, { hint });
+    throw wrapped;
+  }
 }

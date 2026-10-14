@@ -1,4 +1,4 @@
-import { describeError, isError } from '@williamthorsen/toolbelt.errors';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { extractHint } from '../errors/error-handling.ts';
 import { kitLoadError, type RdyError } from '../errors/RdyError.ts';
@@ -20,12 +20,8 @@ import { assertSatisfiesVersionFloor } from './version-skew.ts';
  * Takes the whole entry rather than its source alone: A kit with readyup imports that the runner cannot satisfy
  * is reported with a remedy chosen from the kit's provenance, which the source by itself does not state.
  */
-export async function loadKit(
-  entry: ResolvedKitEntry,
-  isJit: boolean,
-  remote: RemoteFetchContext,
-): Promise<LoadedRdyKit> {
-  const loaded = await loadFromSource(entry, isJit, remote);
+export async function loadKit(entry: ResolvedKitEntry, remote: RemoteFetchContext): Promise<LoadedRdyKit> {
+  const loaded = await loadFromSource(entry, remote);
 
   // Check outside the load, whose catch blocks rewrap anything thrown inside them through
   // `describeError` and would drop the hint naming the upgrade.
@@ -36,20 +32,8 @@ export async function loadKit(
 
 // region | Helpers
 
-/** Detects module-not-found errors that mention a specific package name. */
-function isModuleNotFoundError(error: unknown, packageName: string): boolean {
-  if (!isError(error)) return false;
-  if (!('code' in error)) return false;
-  if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_MODULE_NOT_FOUND') return false;
-  return error.message.includes(packageName);
-}
-
 /** Fetches or reads a kit from its source, reporting every failure as the kit-load error that a reader sees. */
-async function loadFromSource(
-  entry: ResolvedKitEntry,
-  isJit: boolean,
-  remote: RemoteFetchContext,
-): Promise<LoadedRdyKit> {
+async function loadFromSource(entry: ResolvedKitEntry, remote: RemoteFetchContext): Promise<LoadedRdyKit> {
   const { source } = entry;
 
   if ('url' in source) {
@@ -87,11 +71,6 @@ async function loadFromSource(
     return await loadRdyKit(source.path, entry.name);
   } catch (error: unknown) {
     if (error instanceof UnresolvableKitImportsError) throw toUnresolvableImportsError(error, entry);
-    if (isJit && isModuleNotFoundError(error, 'readyup')) {
-      throw kitLoadError('Running from source requires readyup to be installed as a project dependency.', {
-        cause: error,
-      });
-    }
     throw kitLoadError(describeError(error), { cause: error, hint: extractHint(error) });
   }
 }
