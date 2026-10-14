@@ -214,11 +214,12 @@ describe('--sources run path wiring', () => {
     const { stdout } = await run({ kitEntries: entries, json: false });
     const lines = stdout.trimEnd().split('\n');
 
-    // Heading, rule, one row per checklist, rule, total.
-    expect(lines.at(-6)).toContain('Summary');
-    expect(lines.at(-4)).toContain('plain-kit@1.0.0 / default');
-    expect(lines.at(-3)).toContain('@acme/kits@2.1.0 / default');
-    expect(lines.at(-1)).toContain('Total: 2 passed');
+    // Heading, rule, one row per checklist, rule, total, then a blank and the verdict.
+    expect(lines.at(-8)).toContain('Summary');
+    expect(lines.at(-6)).toContain('plain-kit@1.0.0 / default');
+    expect(lines.at(-5)).toContain('@acme/kits@2.1.0 / default');
+    expect(lines.at(-3)).toContain('Total: 2 passed');
+    expect(lines.at(-1)).toContain('Run passed (fail-on: error)');
   });
 
   // Because a row is an index into the blocks above it, it repeats its heading rather than naming its own scheme.

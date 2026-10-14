@@ -9,7 +9,9 @@ import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
+import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
 import { countResults, reportRdy } from '../reporting/reportRdy.ts';
+import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
 import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
 import type { UnrunSource } from './KitSelection.ts';
@@ -59,9 +61,11 @@ export async function runHumanMode(
   const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
+  const kitThresholds: KitThreshold[] = [];
   let allPassed = true;
   let anyBlockDropped = false;
-  let anyKitFailed = false;
+  let missingKitCount = 0;
+  let withheld: WithheldFailures | undefined;
 
   for (const entry of kitEntries) {
     const kitSegments = buildKitSegments(entry, isMultiKit);
@@ -80,8 +84,10 @@ export async function runHumanMode(
         writeBlock,
       });
       rows.push(...kitResult.rows);
+      kitThresholds.push({ kitName: entry.name, failOn: kitResult.failOn });
       if (kitResult.hasDroppedBlock) anyBlockDropped = true;
       if (!kitResult.passed) allPassed = false;
+      if (kitResult.withheldCount > 0) withheld = addWithheld(withheld, kitResult.withheldCount, kitResult.failOn);
     } catch (error: unknown) {
       // Head even a kit that never ran, so that stdout lists every kit that the invocation asked for.
       if (kitSegments.length > 0) writeBlock(getLayout().formatBreadcrumb(kitSegments, 'kit'));
@@ -93,7 +99,7 @@ export async function runHumanMode(
       if (rdyError.hint !== undefined) {
         process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
       }
-      anyKitFailed = true;
+      missingKitCount++;
     }
   }
 
@@ -107,10 +113,26 @@ export async function runHumanMode(
   await warnOnUnmarkedGeneratedSources(pragmaLedger);
   warnOnUnrunSources(settings.unrunSources);
 
-  return resolveRunExitCode(anyKitFailed, allPassed);
+  // Close with the verdict, after the warnings on stderr, so that it is the last line of a merged CI log.
+  writeBlock(formatRunVerdict({ kitThresholds, missingKitCount, passed: allPassed, withheld }));
+
+  return resolveRunExitCode(missingKitCount > 0, allPassed);
 }
 
 // region | Helpers
+
+/**
+ * Returns `withheld` with a kit's withheld failing checks added, showing them all at the least severe of the
+ * kits' failure thresholds.
+ */
+function addWithheld(withheld: WithheldFailures | undefined, count: number, failOn: Severity): WithheldFailures {
+  if (withheld === undefined) return { count, showAt: failOn };
+
+  return {
+    count: withheld.count + count,
+    showAt: meetsThreshold(failOn, withheld.showAt) ? withheld.showAt : failOn,
+  };
+}
 
 /**
  * Returns the segments heading every block produced by a kit: where the kit came from, then the kit itself.
@@ -123,6 +145,16 @@ function buildKitSegments(entry: ResolvedKitEntry, isMultiKit: boolean): Breadcr
   if (source === undefined) return isMultiKit ? [{ role: 'kit', text: entry.name }] : [];
 
   return [source, { role: 'kit', text: entry.name }];
+}
+
+/** Returns how many of a report's failed checks meet `failOn` but not `reportOn`, which the report then omits. */
+function countWithheldFailures(report: RdyReport, failOn: Severity, reportOn: Severity): number {
+  return report.results.filter(
+    (result) =>
+      result.status === 'failed' &&
+      meetsThreshold(result.severity, failOn) &&
+      !meetsThreshold(result.severity, reportOn),
+  ).length;
 }
 
 /** Writes one block of a run to stdout, separated from the block before it by a blank line. */
@@ -180,11 +212,14 @@ interface KitBlockContext {
   writeBlock: BlockWriter;
 }
 
-/** A kit's verdict alongside the rows that its checklists contribute to the run's summary table. */
+/** A kit's verdict and failure threshold, alongside the rows that its checklists contribute to the run's summary table. */
 interface KitRunResult {
+  failOn: Severity;
   hasDroppedBlock: boolean;
   passed: boolean;
   rows: SummaryRow[];
+  /** Failed checks that meet the failure threshold but not the reporting threshold. */
+  withheldCount: number;
 }
 
 /** Runs the checklists of a single kit in human-readable mode. */
@@ -203,6 +238,7 @@ async function runKit(
   const rows: SummaryRow[] = [];
   let allPassed = true;
   let hasDroppedBlock = false;
+  let withheldCount = 0;
 
   for (const checklist of checklists) {
     const report = await runRdy(checklist, {
@@ -237,10 +273,12 @@ async function runKit(
       allPassed = false;
     }
 
+    withheldCount += countWithheldFailures(report, thresholds.failOn, thresholds.reportOn);
+
     rows.push(toSummaryRow(segments, report));
   }
 
-  return { hasDroppedBlock, passed: allPassed, rows };
+  return { failOn: thresholds.failOn, hasDroppedBlock, passed: allPassed, rows, withheldCount };
 }
 
 /** Builds a summary row from a report, named by the breadcrumb heading of the block into which the report renders. */

@@ -577,6 +577,86 @@ describe(runHumanMode, () => {
     });
   });
 
+  describe('closing verdict', () => {
+    it('ends a passing run with the verdict and the threshold that governed it', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const { stdout } = await runHuman(singleKitEntry(['deploy']));
+
+      expect(stdout).toMatch(/report output\n\n.*Run passed \(fail-on: error\)\n$/);
+    });
+
+    // Under `--fail-on recommend`, the report of a run failing on a recommendation reads like one that passes.
+    it('ends a run that fails on a recommendation with a failed verdict', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({
+        results: [makeFailedResult('lint', 'recommend')],
+        passed: false,
+        durationMs: 0,
+      });
+
+      const { exitCode, stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend' });
+
+      expect(exitCode).toBe(1);
+      expect(lastLine(stdout)).toContain('Run failed (fail-on: recommend)');
+    });
+
+    it('names each kit with its threshold when the kits resolve different thresholds', async () => {
+      mockLoadRdyKit
+        .mockResolvedValueOnce({ kit: makeKit({ failOn: 'warn' }), compileTimeVersion: undefined })
+        .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const { stdout } = await runHuman([
+        { name: 'audit', source: { path: '.readyup/kits/audit.js' }, checklists: ['deploy'] },
+        { name: 'release', source: { path: '.readyup/kits/release.js' }, checklists: ['deploy'] },
+      ]);
+
+      expect(lastLine(stdout)).toContain('Run passed (fail-on: error for release; warn for audit)');
+    });
+
+    it('ends a run in which a kit did not load with an incomplete verdict', async () => {
+      mockLoadRdyKit
+        .mockRejectedValueOnce(new Error('Kit not found'))
+        .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+      const { stdout } = await runHuman([
+        { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
+        { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
+      ]);
+
+      expect(lastLine(stdout)).toContain('Run incomplete: 1 kit did not run');
+    });
+
+    it('says that a failing check is withheld when the reporting threshold is above the failure threshold', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({
+        results: [makePassedResult('build', 'error'), makeFailedResult('lint', 'recommend')],
+        passed: false,
+        durationMs: 0,
+      });
+
+      const { stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend', reportOn: 'warn' });
+
+      expect(stdout).toContain('Hint: 1 failing check is not shown; rerun with --report-on recommend to show it\n');
+    });
+
+    it('does not count a withheld failure that does not fail the run', async () => {
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      mockRunRdy.mockResolvedValue({
+        results: [makeFailedResult('lint', 'recommend')],
+        passed: true,
+        durationMs: 0,
+      });
+
+      const { stdout } = await runHuman(singleKitEntry(['deploy']), { reportOn: 'warn' });
+
+      expect(stdout).not.toContain('not shown');
+    });
+  });
+
   describe('staleness advisories', () => {
     const TARGET_DRIFT = {
       code: 'target-drift',
@@ -709,6 +789,11 @@ describe(runHumanMode, () => {
 });
 
 // region | Helpers
+
+/** Returns the last line of `stdout`, ignoring its trailing newline. */
+function lastLine(stdout: string): string | undefined {
+  return stdout.trimEnd().split('\n').at(-1);
+}
 
 /** Builds a failed result at the given severity. */
 function makeFailedResult(name: string, severity: Severity): FailedResult {
