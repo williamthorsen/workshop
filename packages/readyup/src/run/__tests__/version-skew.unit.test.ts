@@ -9,6 +9,7 @@ vi.mock(import('../../version.ts'), () => ({
   },
 }));
 
+import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyKit } from '../../kits/types.ts';
 import { assertSatisfiesVersionFloor, warnOnVersionSkew } from '../version-skew.ts';
 
@@ -55,7 +56,7 @@ describe(warnOnVersionSkew, () => {
   });
 
   it('reports a bundle compiled ahead of the runner', () => {
-    const [warning] = warnOnVersionSkew('sweep', buildKit(), '0.35.0');
+    const [warning] = warnOnVersionSkew('sweep', buildKit(), '0.35.0', undefined);
 
     expect(warning).toHaveProperty('code', 'version-skew');
     expect(warning?.message).toContain('compiled by readyup 0.35.0');
@@ -63,24 +64,58 @@ describe(warnOnVersionSkew, () => {
     expect(warning?.remedy).toContain('0.35.0');
   });
 
+  it('offers a local kit both the upgrade and the recompile', () => {
+    const [warning] = warnOnVersionSkew('sweep', buildKit(), '0.35.0', undefined);
+
+    expect(warning?.message).toBe('kit "sweep" was compiled by readyup 0.35.0, ahead of the 0.34.0 running it.');
+    expect(warning?.remedy).toBe('Upgrade readyup to 0.35.0 or later, or recompile the kit with this one.');
+  });
+
+  it.each<[string, KitProvenance, string]>([
+    [
+      'package',
+      { kind: 'package', packageName: '@acme/kits', version: '1.2.0', source: '@acme/kits' },
+      'kit "default" from @acme/kits was',
+    ],
+    [
+      'repository',
+      { kind: 'repository', host: 'github', owner: 'acme', repo: 'kits', ref: 'main', source: 'github:acme/kits' },
+      'kit "default" from github:acme/kits@main was',
+    ],
+  ])('names the %s that published the kit and offers only the upgrade', (_kind, provenance, subject) => {
+    const [warning] = warnOnVersionSkew('default', buildKit(), '0.35.0', provenance);
+
+    expect(warning?.message).toContain(subject);
+    expect(warning?.remedy).toBe('Upgrade readyup to 0.35.0 or later.');
+  });
+
+  it.each<[string, KitProvenance]>([
+    ['directory', { kind: 'directory', label: 'vendor/kits' }],
+    ['remote', { kind: 'remote', label: 'https://example.com/kits/sweep.js' }],
+  ])('keeps the recompile for a %s kit', (_kind, provenance) => {
+    const [warning] = warnOnVersionSkew('sweep', buildKit(), '0.35.0', provenance);
+
+    expect(warning?.remedy).toContain('or recompile the kit with this one');
+  });
+
   it.each([['0.32.0'], ['0.34.0']])('reports nothing for a bundle stamped %s', (stamp) => {
-    expect(warnOnVersionSkew('kit', buildKit(), stamp)).toStrictEqual([]);
+    expect(warnOnVersionSkew('kit', buildKit(), stamp, undefined)).toStrictEqual([]);
   });
 
   it('reports nothing for a bundle with no stamp', () => {
-    expect(warnOnVersionSkew('kit', buildKit(), undefined)).toStrictEqual([]);
+    expect(warnOnVersionSkew('kit', buildKit(), undefined, undefined)).toStrictEqual([]);
   });
 
   // The floor is the author's own statement of what the kit needs, and it has already been enforced.
   it('reports nothing for a kit that declares a floor', () => {
-    expect(warnOnVersionSkew('kit', buildKit('0.30.0'), '0.35.0')).toStrictEqual([]);
+    expect(warnOnVersionSkew('kit', buildKit('0.30.0'), '0.35.0', undefined)).toStrictEqual([]);
   });
 
   it('measures a prerelease runner by its numeric core', () => {
     runnerVersion.current = '0.35.0-rc.1';
 
-    expect(warnOnVersionSkew('kit', buildKit(), '0.35.0')).toStrictEqual([]);
-    expect(warnOnVersionSkew('kit', buildKit(), '0.36.0')).toHaveLength(1);
+    expect(warnOnVersionSkew('kit', buildKit(), '0.35.0', undefined)).toStrictEqual([]);
+    expect(warnOnVersionSkew('kit', buildKit(), '0.36.0', undefined)).toHaveLength(1);
   });
 });
 

@@ -74,7 +74,7 @@ export async function runHumanMode(
       const { kit, compileTimeVersion } = await loadKit(entry, isJit, settings.remote);
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
-      warnOnVersionSkew(entry.name, kit, compileTimeVersion);
+      warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance);
 
       const kitResult = await runKit(kit, entry.checklists, settings, {
         entry,
