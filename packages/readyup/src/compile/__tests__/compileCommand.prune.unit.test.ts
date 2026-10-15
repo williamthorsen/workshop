@@ -320,7 +320,7 @@ function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/
     esbuildVersion: '0.99.0-test',
     inlinedJson: [],
     inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
-    metadata: { checklists: [] },
+    metadata: { checklistChecks: [], checklists: [] },
     outputPath: path.resolve(outputPath),
     targetHash: hashOf(COMPILED),
   });

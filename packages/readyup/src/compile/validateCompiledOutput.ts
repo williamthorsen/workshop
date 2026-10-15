@@ -3,11 +3,14 @@ import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import { importKitModule } from '../kits/importKitModule.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
+import { isFlatChecklist, type RdyCheck, type RdyChecklist, type RdyStagedChecklist } from '../kits/types.ts';
 import { validateKit } from '../kits/validateKit.ts';
+import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 
 /** Lightweight metadata extracted from a validated kit. */
 export interface KitMetadata {
+  checklistChecks: RdyManifestChecklistChecks[];
   checklists: string[];
   description?: string | undefined;
 }
@@ -34,7 +37,29 @@ export async function validateCompiledOutput(
   validateKit(kit);
 
   return {
+    checklistChecks: kit.checklists.map((checklist) => ({
+      checklist: checklist.name,
+      checks: listCheckNames(checklist),
+    })),
     checklists: kit.checklists.map((checklist) => checklist.name),
     description: kit.description,
   };
 }
+
+// region | Helpers
+
+/**
+ * Returns the names of a checklist's checks in declaration order: preconditions, then the checks or each staged group,
+ * with each check followed by its dependents, depth-first.
+ */
+function listCheckNames(checklist: RdyChecklist | RdyStagedChecklist): string[] {
+  const checks = isFlatChecklist(checklist) ? checklist.checks : checklist.groups.flat();
+  return [...(checklist.preconditions ?? []), ...checks].flatMap(flattenCheckNames);
+}
+
+/** Returns a check's name followed by the names of its dependents, depth-first. */
+function flattenCheckNames(check: RdyCheck): string[] {
+  return [check.name, ...(check.checks ?? []).flatMap(flattenCheckNames)];
+}
+
+// endregion | Helpers

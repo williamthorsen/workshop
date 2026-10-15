@@ -45,7 +45,11 @@ vi.mock(import('../validateCompiledOutput.ts'), () => ({
 // through `realpathSync` of the entry's own directory once `existsSync` reports no `package.json` above it.
 const CONFIG_PATH = path.join(import.meta.dirname, 'readyup.config.ts');
 
-const KIT_METADATA = { checklists: ['default'], description: undefined };
+const KIT_METADATA = {
+  checklistChecks: [{ checklist: 'default', checks: [] }],
+  checklists: ['default'],
+  description: undefined,
+};
 
 const OUTPUT_PATH = path.resolve('input.js');
 const STAGED_PATH = expect.stringMatching(/\/\.input\.[\da-f-]{36}\.tmp\.js$/);

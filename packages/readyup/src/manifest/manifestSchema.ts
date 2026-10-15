@@ -32,6 +32,9 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
   z.object({ hash: RecordedHashSchema, kind: z.literal('module'), path: z.string(), paths: z.undefined().optional() }),
 ]);
 
+/** Schema for the check names that one checklist declares, in declaration order. */
+const ManifestChecklistChecksSchema = z.object({ checklist: z.string(), checks: z.array(z.string()) });
+
 /**
  * Schema for a single kit entry in the manifest.
  *
@@ -44,6 +47,10 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  * kit was built and the hash of the `.js` that it produced. Comparing each against the file on disk
  * separates a source edited without recompiling from a compiled bundle edited by hand. Both are
  * recorded hashes, compared at their own length rather than at a length fixed by the reader.
+ *
+ * `checklistChecks` records, for each checklist in `checklists` and at the same position, the names of its checks:
+ * preconditions first, then each check followed by its dependents, depth-first, with a staged checklist's groups in
+ * order. It is optional on the same terms that `checklists` is.
  *
  * `inputs` records everything the compile read, which is every module inlined by the bundle, the entry
  * included, and every JSON file projected by `pickJson`. It is optional on the same terms that
@@ -60,6 +67,7 @@ const ManifestInputSchema = z.discriminatedUnion('kind', [
  */
 const ManifestKitSchema = z.object({
   bundledDependencies: z.record(z.string(), z.string()).optional(),
+  checklistChecks: z.array(ManifestChecklistChecksSchema).optional(),
   checklists: z.array(z.string()).optional(),
   description: z.string().optional(),
   esbuildVersion: z.string().optional(),
@@ -80,6 +88,9 @@ export const ManifestSchema = z.object({
 
 /** Typed manifest produced by parsing with `ManifestSchema`. */
 export type RdyManifest = z.infer<typeof ManifestSchema>;
+
+/** Typed record of one checklist's check names. */
+export type RdyManifestChecklistChecks = z.infer<typeof ManifestChecklistChecksSchema>;
 
 /** Typed record of one file read by a kit's compile. */
 export type RdyManifestInput = z.infer<typeof ManifestInputSchema>;

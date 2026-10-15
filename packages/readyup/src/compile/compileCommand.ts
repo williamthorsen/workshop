@@ -840,7 +840,10 @@ function buildManifestKit(kitName: string, metadata: KitMetadata, compileFields:
     ...(Object.keys(compileFields.bundledDependencies).length > 0 && {
       bundledDependencies: compileFields.bundledDependencies,
     }),
-    ...(metadata.checklists.length > 0 && { checklists: metadata.checklists }),
+    ...(metadata.checklists.length > 0 && {
+      checklistChecks: metadata.checklistChecks,
+      checklists: metadata.checklists,
+    }),
     ...(metadata.description !== undefined && { description: metadata.description }),
   };
 }

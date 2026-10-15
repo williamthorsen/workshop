@@ -22,7 +22,11 @@ describe(validateCompiledOutput, () => {
 
     const metadata = await validateCompiledOutput(outputPath);
 
-    expect(metadata).toStrictEqual({ checklists: ['test'], description: 'A kit for testing' });
+    expect(metadata).toStrictEqual({
+      checklistChecks: [{ checklist: 'test', checks: [] }],
+      checklists: ['test'],
+      description: 'A kit for testing',
+    });
   });
 
   it('omits description key when the kit has none', async ({ temp }) => {
@@ -32,7 +36,11 @@ describe(validateCompiledOutput, () => {
 
     const metadata = await validateCompiledOutput(outputPath);
 
-    expect(metadata).toStrictEqual({ checklists: ['test'], description: undefined });
+    expect(metadata).toStrictEqual({
+      checklistChecks: [{ checklist: 'test', checks: [] }],
+      checklists: ['test'],
+      description: undefined,
+    });
   });
 
   it('records every checklist name in declaration order', async ({ temp }) => {
@@ -46,6 +54,38 @@ describe(validateCompiledOutput, () => {
     const metadata = await validateCompiledOutput(outputPath);
 
     expect(metadata.checklists).toStrictEqual(['preflight', 'deploy']);
+  });
+
+  // Written as source rather than through `writeTempKit`, because JSON cannot express the `check` functions that
+  // the kit needs to validate.
+  it('records check names with preconditions first and dependents depth-first, flattening staged groups', async ({
+    temp,
+  }) => {
+    const filePath = temp.write(
+      'nested-checks.mjs',
+      [
+        'const pass = () => true;',
+        'export default {',
+        '  checklists: [',
+        "    { name: 'flat', preconditions: [{ name: 'pre', check: pass }], checks: [",
+        "      { name: 'parent', check: pass, checks: [{ name: 'child', check: pass, checks: [{ name: 'grandchild', check: pass }] }] },",
+        "      { name: 'sibling', check: pass },",
+        '    ] },',
+        "    { name: 'staged', groups: [[{ name: 'first', check: pass }], [{ name: 'second', check: pass }]] },",
+        "    { name: 'empty', checks: [] },",
+        '  ],',
+        '};',
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata.checklistChecks).toStrictEqual([
+      { checklist: 'flat', checks: ['pre', 'parent', 'child', 'grandchild', 'sibling'] },
+      { checklist: 'staged', checks: ['first', 'second'] },
+      { checklist: 'empty', checks: [] },
+    ]);
   });
 
   it('leaves the file in place and throws when the bundle fails to load', async ({ temp }) => {
