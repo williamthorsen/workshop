@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-10-15
+
+### 🎉 Features
+
+- Adds `resolveNodePath(checkoutDir)` to `@williamthorsen/nodejs-tools`, which returns the real path of the node binary that asdf selects for the checkout, or of the running node when asdf cannot be run, exits non-zero, or prints nothing. (#592)
+
 ## 0.1.0 — 2026-10-11
 
 ### 🎉 Features

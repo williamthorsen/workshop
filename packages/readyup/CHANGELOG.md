@@ -2,6 +2,74 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.41.0 — 2026-10-15
+
+### 🎉 Features
+
+- Adds each doc file's name without `.md` as a name for its `rdy help` topic, so that `rdy help authoring-kits` prints the same topic as `rdy help authoring`. (#564)
+- Makes `rdy run --jit` resolve `pickJson` calls when it loads a kit source, reading the JSON file on every run so that an edit to a picked field takes effect without `rdy compile`. (#565)
+- Adds the `source-not-run` warning, which `rdy run --sources` writes to stderr and to the JSON report's `warnings` for each source in the config's `sources` list that does not publish any of the requested kits, naming the kits that the source does publish and the `rdy run --sources <kit>` and `rdy run --sources --all` runs that would include them. (#567)
+- Expands the `No kits to run.` message of an empty `rdy run --sources` run to name the requested kit that the listed sources do not publish, and to suggest `rdy run --sources <kit>`, `rdy run --sources --all`, and `rdy list --sources`. (#567)
+- Adds a hint naming `rdy run --from <source>` with the same kit and checklist selection to the error that `rdy run --sources` raises for a checklist selection, in both the `kit:checklist` and the `--checklists` form. (#567)
+- Rewrites the error for combining the source flags `--file`, `--from`, `--sources`, and `--url` to state what each given flag selects and to ask the user to keep one. (#567)
+- Replaces the `[0 of 0]` fraction that `rdy` printed for a check returning findings with the number of files that the check examined, such as `[12 files examined]`, counting the files read through `readTrackedSources` or declared in `scanned`. (#568)
+- Adds an optional `examinedCount` field to the JSON report entry of a check that returned findings, containing the number of distinct files that the check examined. (#568)
+- Renames the `rdy list` section that lists TypeScript kit files, the kits that `rdy run --jit` runs, from "Sources" to "Uncompiled", which separates it from the `sources` config key and the `--sources` flag, both of which name packages and repositories that publish kits. (#569)
+- Adds an example of the `sources` config syntax to the instruction line of the "Available" section in `rdy list`, naming only the first candidate package, as in `sources: ['npm:@acme/release-kit']`. (#569)
+- Makes `rdy run` read the repository's manifest when a repository kit returns 404, and report the kits that the repository publishes, a listed kit whose bundle is missing, or a missing manifest that suggests a wrong repository or ref. (#570)
+- Changes the hint for a missing remote manifest to ask the reader to check the repository and the ref, and adds the credential sentence only when a token was not sent, where the hint previously named only the credential. (#570)
+- Makes `rdy run` and `rdy list` fail with a `usage` error before any kit heading when a local or `dir:` `--from` path does not exist, naming the path and, for a relative path, the working directory against which it was resolved. (#570)
+- Adds a `--config` option to `rdy verify`, which names the config file whose compile settings select the kit sources to check and cannot be combined with `--recursive`. (#571)
+- Adds an `uncompiled` list to the `rdy verify --json` output, which names each uncompiled kit source by `name` and `source`, adds `project` under `--recursive`, and is present only when it is not empty. (#571)
+- Adds a hint to the error that `rdy verify` raises when the manifest file is missing, naming `rdy compile` and repeating any `--manifest` value so that the command can be rerun as written. (#572)
+- Adds a hint to a single-project `rdy compile` that finds neither kit sources nor a manifest, naming `rdy init` when the source directory is the default one and otherwise asking for a kit source in the configured directory, and adds the same text to the `--json` payload as an optional top-level `hint` field. (#572)
+- Ends every human `rdy run` report with a verdict line, such as `Run failed (fail-on: error)`, that names each kit's `--fail-on` threshold, or that reports the run as incomplete when a kit could not run, and writes it after the stderr warnings so that it is the last line of a merged CI log. (#573)
+- Adds a line above the verdict that counts the failing checks hidden by a `--report-on` threshold above `--fail-on`, and names the `--report-on` value that shows them. (#573)
+- Names the package or repository that published the kit in the `version-skew` warning, as in `kit "default" from @acme/kits`, and drops the recompile remedy for such a kit while keeping it for a kit from a local directory or a `--url`. (#574)
+- Makes `rdy` stop with a usage error that names the word and points to `rdy --help` and `rdy list` when a bare word names neither a command nor a kit, instead of running the word as a kit. (#579)
+- Makes `rdy` treat `--sources` as a source flag, so that `rdy <word> --sources` runs a kit published only by a configured source rather than rejecting the word as an unknown command. (#579)
+- Replaces the colored circles that marked statuses in `rdy`'s rich output with markers of distinct shapes: ❌ for an error, 🔶 for a warning, 💬 for a recommendation, and ✅ for a pass. (#580)
+- Makes the `rdy run` summary table put every row on two lines, with the breadcrumb on the first and the duration and counts aligned beneath it, when one row is wider than the terminal or than the width that `COLUMNS` sets. (#582)
+- Wraps the help text of `rdy --help`, each command's `--help`, and the topic list to 80 columns, aligning continuation lines under each option's description. (#582)
+- Changes the starter kit written by `rdy init` to pass on its first run in a fresh project, by adding a `package.json exists` check and giving the `NODE_ENV is set` check the severity `warn`, which reports an unset `NODE_ENV` without failing the run. (#584)
+- Labels each file that `rdy init` creates or overwrites with a new `WRITE` token (💾 in rich style) instead of `PASS`, and labels a file that is already up to date `SKIP`. (#584)
+- Replaces the first two next steps printed by `rdy init` with one that names `.readyup/kits/default.ts` as the file in which to replace the starter checks, dropping the step to customize `.config/readyup.config.ts`, which already declares the compile settings at their defaults. (#584)
+- Makes `rdy compile` record each checklist's check names, in declaration order, in a new optional `checklistChecks` field of the kit's manifest entry, which manifests written by earlier versions can omit and still parse. (#586)
+- Adds the `--checks` flag to `rdy list`, which lists each checklist's check names one level below it in every listing view, adds `checklistChecks` to each `--json` row, and marks a kit whose manifest does not record the names with "(checks not recorded; recompile to record them)". (#586)
+- Extends the `pragma-unused` warning to name each id of an unused pragma that does not match any loaded check, with a remedy that gives the printed form of a loaded check that declares the same id, such as `toolbelt.errors/no-instanceof-error`, or the general `<package>/<id>` form otherwise. (#587)
+- Fits each `rdy help <topic>` topic to the terminal's width, wrapping prose at 80 columns or the terminal's width, whichever is narrower, and printing a table too wide for the terminal as a list with one item per row. (#588)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `rdy compile` failed with `Unexpected token 'export'` and `rdy run` failed with `Cannot resolve 'readyup'` in a project whose `package.json` declares `"type": "commonjs"` or no `type`, because Node loaded each compiled kit as CommonJS. (#561)
+- Fixes the issue that `rdy compile` deleted a kit's compiled bundle when the recompiled kit failed validation, which left the kit without its new bundle or the previous one. (#562)
+- Fixes the issue that `rdy compile` and `rdy verify --rebuild` told every project to run `pnpm add --save-dev esbuild` when esbuild was missing, whatever package manager the project uses. (#563)
+- Fixes the issue that the next steps printed by `rdy init` omitted esbuild, so a project without it failed at the `rdy compile` step; one install step now names every missing package, readyup and esbuild, in a single command. (#563)
+- Fixes the issue that `rdy help <topic>` printed each link as raw Markdown, such as `[text](file.md#anchor)`, naming a file that `rdy help` did not accept; a link to another topic now prints as its text followed by `(rdy help <topic>)`, and an absolute URL as its text followed by the URL. (#564)
+- Fixes the issue that `rdy help <topic>` printed emoji under `--style plain`; each emoji now prints as the word that plain output uses in its place, such as `PASS`, or is removed when plain output does not have a word for it. (#564)
+- Fixes the issue that `rdy verify` passed a kit source that was never compiled, including after a first compile that failed every kit and wrote a manifest that lists none. (#571)
+- Fixes the issue that the `publishing` kit failed `rdy run --sources --all` in a project with no compiled kits, by reporting a missing `.readyup/manifest.json` that the `default` kit skips in the same run, and now skips its `files` allowlist, manifest, and `default.js` checks there with the same reason. (#575)
+- Fixes the issue that `rdy verify` reported an edit to or deletion of a kit's own source twice, and `rdy run` an edit to it, as a stale source and again as a stale inlined input, which implied that a second file had changed. (#576)
+- Fixes the issue that one edit to a kit's source failed two of the publishing kit's freshness checks, "Its source is unchanged" and "Everything it inlined is unchanged", instead of only the first. (#576)
+- Fixes the issue that `rdy compile` failed a module shared by the kits with `Kit file must export checklists` and did not name `compile.exclude`, which keeps such a module out of the sweep; the hint now appears in the human report and in the kit's `--json` `error` string. (#577)
+- Fixes the issue that `rdy run` reported a kit that threw while loading only by the bare exception, which left the failing kit unnamed in a run of several kits; the error now names the kit and its file, under `--jit` and for a compiled kit alike. (#578)
+- Fixes the issue that a relative or absolute import that does not resolve was reported as an uninstalled package with an install remedy; readyup now reports it as a missing file and names the file that contains the import. (#578)
+- Fixes the issue that a human-mode `rdy run` left a kit that failed to load out of the summary table and the `Total:` line; the kit now has a failed row that reads `did not load`, the `Total:` line is marked failed, and the kit's stdout heading states that it did not load. (#578)
+- Fixes the issue that the `compile`, `init`, `list`, `run`, and `verify` help screens listed the `--style` values `auto`, `plain`, and `rich` without their meanings, and that the main help gave the meanings in a different order from the values. (#583)
+- Fixes the issue that the help footer and the kit scaffolded by `rdy init` named the `consult-readyup-kits` skill without saying how to obtain it; both now point to "Agent guidance" in `rdy help authoring`. (#583)
+- Fixes the issue that the `--detail` missing-value error said that the flag "requires a projection", a term that the help does not define; the error now asks for a level of detail (`summary` or `full`). (#583)
+- Fixes the issue that `rdy help publishing` described the `setup` checklist with the replaced `packages` key and said that `rdy list` always shows an **Internal** section, and adds the missing explanation to "Listing kits" of why `rdy list` brackets the kit placeholder when a `default` kit exists. (#583)
+- Fixes the issue that the failure detail of `missingFrom`, and therefore of `filesExist` and `hasJsonFields`, was a lowercase label such as `missing files: a.txt, b.txt` rather than a sentence such as `Of the files, a.txt and b.txt are missing`, with a verb that agrees with the number of missing items. (#585)
+- Fixes the issue that the default kit's sources check reported an unlisted kit as `missing from "sources": npm:unlisted-kit` rather than as the sentence `npm:unlisted-kit is not listed in "sources"`. (#585)
+
+### 🧪 Tests
+
+- Splits the `layoutEngine` and `runHumanMode` unit test files by aspect to keep each under the 500-line test-file ceiling, and moves their shared fixture builders and run helper into `test-utils` modules. (#578)
+
+### 📚 Documentation
+
+- States in the README's installation section, the publishing guide, and `rdy compile --help` that compiling kits needs esbuild, an optional peer dependency that running compiled kits does not need. (#563)
+
 ## 0.40.0 — 2026-10-07
 
 ### 🎉 Features

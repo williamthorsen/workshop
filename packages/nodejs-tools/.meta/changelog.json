@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-10-15",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds `resolveNodePath(checkoutDir)` to `@williamthorsen/nodejs-tools`, which returns the real path of the node binary that asdf selects for the checkout, or of the running node when asdf cannot be run, exits non-zero, or prints nothing. (#592)",
+            "hash": "5652ad5d810ed176dff46792fc1cd3a0cc55ed57",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-10-11",
     "sections": [
