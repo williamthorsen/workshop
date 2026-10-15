@@ -230,6 +230,23 @@ describe(listCommand, () => {
       expect(stdout).toContain('\u{1F4D3} deploy\n   \u{1F4CB} build\n   \u{1F4CB} release');
     });
 
+    it('nests each checklist\u{2019}s recorded check names beneath it under --checks', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [
+          {
+            name: 'deploy',
+            checklists: ['build'],
+            checklistChecks: [{ checklist: 'build', checks: ['Lockfile is current'] }],
+          },
+        ],
+      });
+
+      const { stdout } = await list(['--checks']);
+
+      expect(stdout).toContain('\u{1F4D3} deploy\n   \u{1F4CB} build\n      \u{1F9EA} Lockfile is current');
+    });
+
     it('uses infix-based extension for internal kits when configured', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
@@ -589,6 +606,30 @@ describe(listCommand, () => {
       });
     });
 
+    it('includes each row\u{2019}s recorded check names under --checks', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', checklists: ['build'], checklistChecks: [{ checklist: 'build', checks: ['A'] }] }],
+      });
+
+      const { stdout } = await list(['--json', '--checks']);
+
+      expect(JSON.parse(stdout)).toMatchObject({
+        kits: [{ name: 'deploy', checklistChecks: [{ checklist: 'build', checks: ['A'] }] }],
+      });
+    });
+
+    it('omits recorded check names without --checks', async () => {
+      mockReadManifest.mockReturnValue({
+        version: 1,
+        kits: [{ name: 'deploy', checklists: ['build'], checklistChecks: [{ checklist: 'build', checks: ['A'] }] }],
+      });
+
+      const { stdout } = await list(['--json']);
+
+      expect(stdout).not.toContain('checklistChecks');
+    });
+
     it('marks the internal bucket apart from the sources that share its kind', async () => {
       mockLoadConfig.mockResolvedValue({
         compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] },
@@ -672,6 +713,7 @@ function buildPackageKit(overrides: Partial<SourceKit>): SourceKit {
     kitName: 'default',
     description: undefined,
     checklists: undefined,
+    checklistChecks: undefined,
     location: { path: '/pkg/.readyup/kits/default.js' },
     provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
     ...overrides,

@@ -244,6 +244,7 @@ function buildNamedArgs(names: string[]) {
   return {
     remote: createUncachedRemoteContext(),
     checklists: undefined,
+    checklistChecks: undefined,
     filePath: undefined,
     fromValue: undefined,
     internal: false,

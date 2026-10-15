@@ -32,6 +32,14 @@ export const ListKitOriginSchema = z
   })
   .meta({ id: 'ListKitOrigin' });
 
+/** The check names that one checklist declares: preconditions first, then each check followed by its dependents. */
+export const ListChecklistChecksSchema = z
+  .object({
+    checklist: z.string(),
+    checks: z.array(z.string()),
+  })
+  .meta({ id: 'ListChecklistChecks' });
+
 /**
  * One kit row.
  *
@@ -66,6 +74,13 @@ export const ListKitEntrySchema = z
     description: z.string().optional(),
     readyupVersion: z.string().optional(),
     checklists: z.array(z.string()).optional(),
+    /**
+     * The check names of each checklist in `checklists`, at the same position, present only under `--checks`.
+     *
+     * Under `--checks`, a row that has `checklists` but not this field is a kit whose manifest does not record its
+     * check names, because an older readyup compiled it. A checklist that declares no checks has an empty `checks`.
+     */
+    checklistChecks: z.array(ListChecklistChecksSchema).optional(),
   })
   .meta({ id: 'ListKitEntry' });
 
@@ -106,6 +121,7 @@ export const ListOutputSchema = z
   })
   .meta({ id: 'ListOutput' });
 
+export type JsonListChecklistChecks = z.infer<typeof ListChecklistChecksSchema>;
 export type JsonKitKind = z.infer<typeof KitKindSchema>;
 export type JsonListKitOrigin = z.infer<typeof ListKitOriginSchema>;
 export type JsonListKitEntry = z.infer<typeof ListKitEntrySchema>;

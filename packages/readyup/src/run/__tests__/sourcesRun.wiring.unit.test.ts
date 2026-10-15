@@ -278,6 +278,7 @@ const baseArgs = {
   urlValue: undefined,
   kitSpecifiers: [],
   checklists: undefined,
+  checklistChecks: undefined,
   jit: false,
   internal: false,
   remote: createUncachedRemoteContext(),

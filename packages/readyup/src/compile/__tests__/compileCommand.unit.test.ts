@@ -123,7 +123,7 @@ function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
 
 /** Returns metadata as validating a compiled kit yields it, defaulting to a kit with no checklists to record. */
 function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
-  return { checklists: [], ...overrides };
+  return { checklistChecks: [], checklists: [], ...overrides };
 }
 
 describe(compileCommand, () => {
@@ -784,13 +784,19 @@ describe(compileCommand, () => {
   });
 
   describe('manifest checklist names', () => {
-    it('records the checklist names declared by the compiled kit', async () => {
+    it('records the checklist names and check names declared by the compiled kit', async () => {
       mockCompileConfig.mockResolvedValue(
         compileResult('deploy.ts', {
           outputPath: '/abs/deploy.js',
           changed: true,
           targetHash: 'aaaa1111',
-          metadata: kitMetadata({ checklists: ['preflight', 'deploy'] }),
+          metadata: kitMetadata({
+            checklistChecks: [
+              { checklist: 'preflight', checks: ['Node.js runtime is v24 or later'] },
+              { checklist: 'deploy', checks: [] },
+            ],
+            checklists: ['preflight', 'deploy'],
+          }),
         }),
       );
       mockReadManifest.mockImplementation(() => {
@@ -801,7 +807,16 @@ describe(compileCommand, () => {
 
       expect(mockWriteManifest).toHaveBeenCalledWith(expect.any(String), {
         version: 1,
-        kits: [expect.objectContaining({ name: 'deploy', checklists: ['preflight', 'deploy'] })],
+        kits: [
+          expect.objectContaining({
+            name: 'deploy',
+            checklistChecks: [
+              { checklist: 'preflight', checks: ['Node.js runtime is v24 or later'] },
+              { checklist: 'deploy', checks: [] },
+            ],
+            checklists: ['preflight', 'deploy'],
+          }),
+        ],
       });
     });
 
@@ -820,6 +835,7 @@ describe(compileCommand, () => {
       const manifest: RdyManifest = call[1];
 
       expect(manifest.kits[0]).not.toHaveProperty('checklists');
+      expect(manifest.kits[0]).not.toHaveProperty('checklistChecks');
     });
   });
 

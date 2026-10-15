@@ -43,6 +43,7 @@ import {
 } from './formatList.ts';
 
 const listOptions = {
+  checks: { type: 'boolean' },
   config: { type: 'string' },
   from: { type: 'string' },
   json: { type: 'boolean' },
@@ -80,32 +81,39 @@ export async function listCommand(args: string[]): Promise<number> {
   const manifestArg = values.manifest;
   const sources = values.sources === true;
   const recursive = values.recursive === true;
+  const showChecks = values.checks === true;
 
   rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, sources });
   const noCache = values['no-cache'] === true;
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
   if (sources && recursive) {
-    return runRecursiveSourcesMode(json, createRemoteFetchContext({ reload: noCache }));
+    return runRecursiveSourcesMode({ json, showChecks }, createRemoteFetchContext({ reload: noCache }));
   }
 
   if (recursive) {
-    return runRecursiveMode(json);
+    return runRecursiveMode({ json, showChecks });
   }
 
   if (manifestArg !== undefined) {
-    return runManifestMode(manifestArg, json);
+    return runManifestMode(manifestArg, { json, showChecks });
   }
 
   if (fromArg !== undefined) {
-    return runFromMode(fromArg, json, noCache);
+    return runFromMode(fromArg, { json, showChecks }, noCache);
   }
 
   if (sources) {
-    return runSourcesMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
+    return runSourcesMode({ json, showChecks }, configArg, createRemoteFetchContext({ reload: noCache }));
   }
 
-  return runOwnerMode(json, configArg, createRemoteFetchContext({ reload: noCache }));
+  return runOwnerMode({ json, showChecks }, configArg, createRemoteFetchContext({ reload: noCache }));
+}
+
+/** The `list` flags that decide what every listing mode emits. */
+interface ListOutputOptions {
+  json: boolean;
+  showChecks: boolean;
 }
 
 /** The `list` flags whose combinations are constrained. */
@@ -159,21 +167,24 @@ function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, so
 }
 
 /** Displays the kits declared by a manifest file. */
-function runManifestMode(manifestArg: string, json: boolean): number {
+function runManifestMode(manifestArg: string, output: ListOutputOptions): number {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
   const manifest = readManifestOrThrow(manifestPath);
 
   const relPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(formatManifestView({ kits: manifest.kits, manifestPath: relPath }) + '\n', json);
+  writeHuman(
+    formatManifestView({ kits: manifest.kits, manifestPath: relPath, showChecks: output.showChecks }) + '\n',
+    output.json,
+  );
 
   return finishList(
     manifest.kits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath))),
-    json,
+    output,
   );
 }
 
 /** Displays the kits in a `--from` source. */
-async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Promise<number> {
+async function runFromMode(fromArg: string, output: ListOutputOptions, noCache: boolean): Promise<number> {
   let source;
   try {
     source = parseFromValue(fromArg);
@@ -183,22 +194,32 @@ async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Pr
 
   const sourceKits = await collectSourceKits(source, createRemoteFetchContext({ reload: noCache }));
 
-  const output =
+  const view =
     sourceKits.kind === 'remote'
-      ? formatManifestView({ fromArg, kits: sourceKits.kits, manifestPath: sourceKits.manifestUrl })
+      ? formatManifestView({
+          fromArg,
+          kits: sourceKits.kits,
+          manifestPath: sourceKits.manifestUrl,
+          showChecks: output.showChecks,
+        })
       : formatConsumerView({
-          compiledKits: sourceKits.kits.map(({ name, checklists }) => ({ name, checklists })),
+          compiledKits: sourceKits.kits.map(({ name, checklists, checklistChecks }) => ({
+            name,
+            checklists,
+            checklistChecks,
+          })),
           fromArg,
           kitsDir: path.relative(process.cwd(), sourceKits.kitsDir) || '.',
+          showChecks: output.showChecks,
         });
-  writeHuman(output + '\n', json);
+  writeHuman(view + '\n', output.json);
 
-  return finishList(sourceKits.kits, json);
+  return finishList(sourceKits.kits, output);
 }
 
 /** Enumerates the kits named by the project config. */
 async function runOwnerMode(
-  json: boolean,
+  output: ListOutputOptions,
   configPath: string | undefined,
   remote: RemoteFetchContext,
 ): Promise<number> {
@@ -237,7 +258,11 @@ async function runOwnerMode(
     .map((name) => `npm:${name}`)
     .filter((spelling) => !configuredSpellings.has(spelling) && !config.omittedSources.includes(spelling));
 
-  const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
+  const compiledKits = compiledEntries.map(({ name, checklists, checklistChecks }) => ({
+    name,
+    checklists,
+    checklistChecks,
+  }));
   writeHuman(
     formatOwnerView({
       sourceKits,
@@ -246,11 +271,13 @@ async function runOwnerMode(
       configuredKits: configuredKits.map((kit) => ({
         name: describeSourceKit(kit),
         checklists: kit.checklists,
+        checklistChecks: kit.checklistChecks,
         sourceKind: kit.provenance.kind === 'repository' ? 'repository' : 'package',
       })),
       availableSources,
+      showChecks: output.showChecks,
     }) + '\n',
-    json,
+    output.json,
   );
 
   const entries: JsonListKitEntry[] = [
@@ -259,7 +286,7 @@ async function runOwnerMode(
     ...compiledEntries,
     ...configuredKits.map((kit) => buildSourceKitEntry(kit, true)),
   ];
-  return finishList(entries, json, availableSources);
+  return finishList(entries, output, availableSources);
 }
 
 /**
@@ -271,18 +298,18 @@ async function runOwnerMode(
  * and so is every repository that the config names.
  */
 async function runSourcesMode(
-  json: boolean,
+  output: ListOutputOptions,
   configPath: string | undefined,
   remote: RemoteFetchContext,
 ): Promise<number> {
   const config = await loadListingConfig(configPath);
   const groups = await collectSourceGroups({ configuredSources: config.sources, fromDir: process.cwd(), remote });
 
-  writeHuman(formatSourcesView({ groups }) + '\n', json);
+  writeHuman(formatSourcesView({ groups, showChecks: output.showChecks }) + '\n', output.json);
 
   return finishList(
     groups.flatMap((group) => group.kits.map((kit) => buildSourceKitEntry(kit, group.configured))),
-    json,
+    output,
   );
 }
 
@@ -297,7 +324,7 @@ async function runSourcesMode(
  * another does not is reported as configured only for the workspace that configures it. A repository that several
  * projects name, and that cannot be fetched, is warned of once per project naming it.
  */
-async function runRecursiveSourcesMode(json: boolean, remote: RemoteFetchContext): Promise<number> {
+async function runRecursiveSourcesMode(output: ListOutputOptions, remote: RemoteFetchContext): Promise<number> {
   const projects = await discoverProjects({ root: process.cwd() });
   warnOfDefaultedConfigs(projects);
 
@@ -317,9 +344,9 @@ async function runRecursiveSourcesMode(json: boolean, remote: RemoteFetchContext
     );
   }
 
-  writeHuman(formatRecursiveSourcesView({ projects: views }) + '\n', json);
+  writeHuman(formatRecursiveSourcesView({ projects: views, showChecks: output.showChecks }) + '\n', output.json);
 
-  return finishList(entries, json);
+  return finishList(entries, output);
 }
 
 /**
@@ -329,7 +356,7 @@ async function runRecursiveSourcesMode(json: boolean, remote: RemoteFetchContext
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
  * What is left is exactly the set that a reader can run from the working directory.
  */
-async function runRecursiveMode(json: boolean): Promise<number> {
+async function runRecursiveMode(output: ListOutputOptions): Promise<number> {
   const root = process.cwd();
   const projects = await discoverKitProjects({ root });
   warnOfDefaultedConfigs(projects);
@@ -341,15 +368,20 @@ async function runRecursiveMode(json: boolean): Promise<number> {
     const kits = collectProjectKits(project);
     views.push({
       dir: project.dir,
-      compiledKits: kits.map(({ name, description, checklists }) => ({ name, description, checklists })),
+      compiledKits: kits.map(({ name, description, checklists, checklistChecks }) => ({
+        name,
+        description,
+        checklists,
+        checklistChecks,
+      })),
       compiledStyle: resolveCompiledStyle(project.absolutePath, project.config.compile.outDir, root),
     });
     entries.push(...kits);
   }
 
-  writeHuman(formatRecursiveView({ projects: views }) + '\n', json);
+  writeHuman(formatRecursiveView({ projects: views, showChecks: output.showChecks }) + '\n', output.json);
 
-  return finishList(entries, json);
+  return finishList(entries, output);
 }
 
 /**
@@ -434,6 +466,7 @@ function buildSourceKitEntry(kit: SourceKit, configured: boolean, project?: stri
     ...('path' in kit.location && { path: kit.location.path }),
     ...(kit.description !== undefined && { description: kit.description }),
     ...(kit.checklists !== undefined && { checklists: kit.checklists }),
+    ...(kit.checklistChecks !== undefined && { checklistChecks: kit.checklistChecks }),
   };
 }
 
@@ -475,15 +508,23 @@ function warnOfUnreadableManifest(error: unknown): void {
   process.stderr.write(`Warning: ${describeError(error)}\n`);
 }
 
-/** Emits the list payload under `--json`, succeeding whenever the listing's source could be read. */
-function finishList(kits: JsonListKitEntry[], json: boolean, availableSources: string[] = []): number {
+/**
+ * Emits the list payload under `--json`, succeeding whenever the listing's source could be read.
+ *
+ * Each row keeps its check names only under `--checks`.
+ */
+function finishList(
+  kits: JsonListKitEntry[],
+  { json, showChecks }: ListOutputOptions,
+  availableSources: string[] = [],
+): number {
   if (json) {
-    const output: JsonListOutput = {
+    const payload: JsonListOutput = {
       schemaVersion: SCHEMA_VERSION,
-      kits,
+      kits: showChecks ? kits : kits.map(({ checklistChecks: _omitted, ...kit }) => kit),
       ...(availableSources.length > 0 && { availableSources }),
     };
-    process.stdout.write(JSON.stringify(output) + '\n');
+    process.stdout.write(JSON.stringify(payload) + '\n');
   }
   return EXIT_OK;
 }

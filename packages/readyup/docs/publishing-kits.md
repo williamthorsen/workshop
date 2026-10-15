@@ -84,6 +84,7 @@ Under `--json`, each kit and each removed bundle also reports `project`, the dir
 | Field                 | Meaning                                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `bundledDependencies` | Each package that the bundle inlined, by name, with the version declared by its `package.json`                |
+| `checklistChecks`     | The check names of each checklist, at the same position as in `checklists`, which `rdy list --checks` reports |
 | `checklists`          | The names of the checklists that the kit declares, so that `rdy list` reports them without running the bundle |
 | `description`         | The kit's own description, if it declares one                                                                 |
 | `esbuildVersion`      | The esbuild that produced the bundle                                                                          |

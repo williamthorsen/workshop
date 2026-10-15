@@ -3,6 +3,7 @@ import path from 'node:path';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
+import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import type { SourceGroup } from '../sources/collectSourceGroups.ts';
 import type { SourceKit } from '../sources/expandConfiguredSources.ts';
 
@@ -23,11 +24,15 @@ const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,.
 
 // -- Kit rows --
 
+/** The detail appended to a kit whose manifest records its checklists without their check names. */
+const UNRECORDED_CHECKS_DETAIL = '(checks not recorded; recompile to record them)';
+
 /** One listed kit, with the description and checklist names that its manifest records. */
 export interface KitView {
   name: string;
   description?: string | undefined;
   checklists?: readonly string[] | undefined;
+  checklistChecks?: readonly RdyManifestChecklistChecks[] | undefined;
 }
 
 // -- Compiled-section style discriminants --
@@ -70,6 +75,7 @@ interface OwnerViewOptions {
   compiledKits: KitView[];
   configuredKits?: ConfiguredKitView[];
   availableSources?: string[];
+  showChecks?: boolean;
 }
 
 /** A kit published by a configured source, headed by the glyph of the kind of source that publishes it. */
@@ -99,6 +105,7 @@ export function formatOwnerView({
   compiledKits,
   configuredKits = [],
   availableSources = [],
+  showChecks = false,
 }: OwnerViewOptions): string {
   if (
     sourceKits.length === 0 &&
@@ -129,13 +136,15 @@ export function formatOwnerView({
 
   if (compiledKits.length > 0) {
     const command = `rdy run ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
-    sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit'));
+    sections.push(formatSection('Compiled', buildRunLine(command), compiledKits, 'kit', showChecks));
   }
 
   if (configuredKits.length > 0) {
     // The rows list every published kit -- discovery is not run selection -- so the bracketed optional name
     // ensures that the command above the rows can run every kit listed.
-    const items = configuredKits.flatMap((kit) => formatKitRows(kit, resolveSourceToken(kit.sourceKind)));
+    const items = configuredKits.flatMap((kit) =>
+      formatKitRows(kit, resolveSourceToken(kit.sourceKind), { showChecks }),
+    );
     const heading = getLayout().formatHeading('Configured sources', 'section');
     sections.push([heading, buildRunLine('rdy run --sources [<kit>]'), ...items].join('\n'));
   }
@@ -153,6 +162,7 @@ interface ConsumerViewOptions {
   compiledKits: KitView[];
   fromArg: string;
   kitsDir: string;
+  showChecks?: boolean;
 }
 
 /**
@@ -160,19 +170,25 @@ interface ConsumerViewOptions {
  *
  * Returns the empty-consumer message when the kit list is empty.
  */
-export function formatConsumerView({ compiledKits, fromArg, kitsDir }: ConsumerViewOptions): string {
+export function formatConsumerView({
+  compiledKits,
+  fromArg,
+  kitsDir,
+  showChecks = false,
+}: ConsumerViewOptions): string {
   if (compiledKits.length === 0) {
     return formatEmpty('consumer', kitsDir);
   }
 
   const command = `rdy run --from ${fromArg} ${buildKitSelectionHint(compiledKits.map((kit) => kit.name))}`;
-  return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit');
+  return formatSection('Compiled', buildRunLine(command), compiledKits, 'kit', showChecks);
 }
 
 // -- Sources view --
 
 interface SourcesViewOptions {
   groups: SourceGroup[];
+  showChecks?: boolean;
 }
 
 /**
@@ -184,8 +200,10 @@ interface SourcesViewOptions {
  *
  * A sweep with no groups returns the empty-sources message.
  */
-export function formatSourcesView({ groups }: SourcesViewOptions): string {
-  return groups.length === 0 ? formatEmpty('sources') : groups.map(formatSourceBlock).join(SECTION_SEPARATOR);
+export function formatSourcesView({ groups, showChecks = false }: SourcesViewOptions): string {
+  return groups.length === 0
+    ? formatEmpty('sources')
+    : groups.map((group) => formatSourceBlock(group, showChecks)).join(SECTION_SEPARATOR);
 }
 
 // -- Recursive view --
@@ -201,6 +219,7 @@ export interface RecursiveProjectView {
 
 interface RecursiveViewOptions {
   projects: RecursiveProjectView[];
+  showChecks?: boolean;
 }
 
 /**
@@ -209,8 +228,10 @@ interface RecursiveViewOptions {
  * A caller may hand over every project found by discovery, because a project with nothing compiled
  * contributes no block at all, heading included. A sweep left with no block returns the empty-sweep message.
  */
-export function formatRecursiveView({ projects }: RecursiveViewOptions): string {
-  const blocks = projects.filter((project) => project.compiledKits.length > 0).map(formatProjectBlock);
+export function formatRecursiveView({ projects, showChecks = false }: RecursiveViewOptions): string {
+  const blocks = projects
+    .filter((project) => project.compiledKits.length > 0)
+    .map((project) => formatProjectBlock(project, showChecks));
 
   return blocks.length === 0 ? formatEmpty('recursive') : blocks.join(SECTION_SEPARATOR);
 }
@@ -226,6 +247,7 @@ export interface ProjectSourcesView {
 
 interface RecursiveSourcesViewOptions {
   projects: ProjectSourcesView[];
+  showChecks?: boolean;
 }
 
 /**
@@ -240,8 +262,10 @@ interface RecursiveSourcesViewOptions {
  * a caller may hand over every project found by discovery. A sweep left with no block returns the empty
  * message.
  */
-export function formatRecursiveSourcesView({ projects }: RecursiveSourcesViewOptions): string {
-  const blocks = projects.filter((project) => project.groups.length > 0).map(formatProjectSourcesBlock);
+export function formatRecursiveSourcesView({ projects, showChecks = false }: RecursiveSourcesViewOptions): string {
+  const blocks = projects
+    .filter((project) => project.groups.length > 0)
+    .map((project) => formatProjectSourcesBlock(project, showChecks));
 
   return blocks.length === 0 ? formatEmpty('recursive-sources') : blocks.join(SECTION_SEPARATOR);
 }
@@ -275,6 +299,7 @@ interface ManifestViewOptions {
   manifestPath: string;
   /** The `--from` value that names the manifest's source; a manifest file read directly has none. */
   fromArg?: string | undefined;
+  showChecks?: boolean;
 }
 
 /**
@@ -287,7 +312,7 @@ interface ManifestViewOptions {
  * `fromArg` adds the command that runs the kits beneath the heading. A manifest named by `--manifest` gets
  * none, since `rdy run` cannot take a manifest file as its source.
  */
-export function formatManifestView({ fromArg, kits, manifestPath }: ManifestViewOptions): string {
+export function formatManifestView({ fromArg, kits, manifestPath, showChecks = false }: ManifestViewOptions): string {
   if (kits.length === 0) {
     return `No kits found in manifest: ${manifestPath}`;
   }
@@ -299,7 +324,7 @@ export function formatManifestView({ fromArg, kits, manifestPath }: ManifestView
       : [buildRunLine(`rdy run --from ${fromArg} ${buildKitSelectionHint(kits.map((kit) => kit.name))}`)];
   const items = kits.flatMap((kit) => {
     const versionSegment = kit.readyupVersion !== undefined ? ` (readyup v${kit.readyupVersion})` : '';
-    return formatKitRows({ ...kit, name: `${kit.name}${versionSegment}` }, 'kit');
+    return formatKitRows({ ...kit, name: `${kit.name}${versionSegment}` }, 'kit', { showChecks });
   });
 
   return [heading, ...hintLines, ...items].join('\n');
@@ -397,40 +422,49 @@ function formatAvailableSection(availableSources: string[]): string {
 /**
  * Returns a kit's line, then a line one level deeper for each checklist that its manifest records.
  *
- * The checklists keep the manifest's order, which is the order in which the kit declares and runs them.
+ * The checklists keep the manifest's order, which is the order in which the kit declares and runs them. With
+ * `showChecks`, each checklist is followed by its check names one level deeper still, matched to it by position, and
+ * a kit whose manifest records checklists without check names says so in its line's detail.
  */
-function formatKitRows(kit: KitView, token: TokenName, depth = 0): string[] {
-  const kitLine = getLayout().formatCheckLine({
-    token,
-    name: kit.name,
-    depth,
-    ...(kit.description !== undefined && { detail: kit.description }),
-  });
-  const checklistLines = (kit.checklists ?? []).map((name) =>
+function formatKitRows(
+  kit: KitView,
+  token: TokenName,
+  { depth = 0, showChecks = false }: { depth?: number; showChecks?: boolean } = {},
+): string[] {
+  const checklists = kit.checklists ?? [];
+  const isUnrecorded = showChecks && checklists.length > 0 && kit.checklistChecks === undefined;
+  const detail = [kit.description, isUnrecorded ? UNRECORDED_CHECKS_DETAIL : undefined]
+    .filter((part) => part !== undefined)
+    .join(' ');
+  const kitLine = getLayout().formatCheckLine({ token, name: kit.name, depth, ...(detail !== '' && { detail }) });
+  const checklistLines = checklists.flatMap((name, index) => [
     getLayout().formatCheckLine({ token: 'checklist', name, depth: depth + 1 }),
-  );
+    ...(showChecks ? (kit.checklistChecks?.[index]?.checks ?? []) : []).map((checkName) =>
+      getLayout().formatCheckLine({ token: 'check', name: checkName, depth: depth + 2 }),
+    ),
+  ]);
 
   return [kitLine, ...checklistLines];
 }
 
 /** Returns one source's line under a project's directory, the command running its kits, and a line per kit. */
-function formatNestedSourceBlock(group: SourceGroup, runPrefix: string): string {
+function formatNestedSourceBlock(group: SourceGroup, runPrefix: string, showChecks: boolean): string {
   const sourceLine = getLayout().formatCheckLine({
     token: resolveSourceToken(group.kind),
     name: buildSourceLabel(group),
     depth: 1,
     ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
   });
-  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', 2));
+  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', { depth: 2, showChecks }));
 
   return [sourceLine, buildRunLine(`${runPrefix}${buildSourceHint(group)}`, 2), ...items].join('\n');
 }
 
 /** Returns one project's heading, the command running its kits, and a line per kit. */
-function formatProjectBlock(project: RecursiveProjectView): string {
+function formatProjectBlock(project: RecursiveProjectView, showChecks: boolean): string {
   const heading = getLayout().formatBreadcrumb([{ role: 'sourceDirectory', text: `${project.dir}/` }], 'kit');
   const items = project.compiledKits.flatMap((kit) =>
-    formatKitRows({ ...kit, name: resolveKitLabel(project.compiledStyle, kit.name) }, 'kit'),
+    formatKitRows({ ...kit, name: resolveKitLabel(project.compiledStyle, kit.name) }, 'kit', { showChecks }),
   );
 
   return [heading, buildRunLine(buildProjectHint(project)), ...items].join('\n');
@@ -442,10 +476,10 @@ function formatProjectBlock(project: RecursiveProjectView): string {
  * The directory line is directly above its first source, so a reader takes the blank lines within the
  * block as separating one source from the next rather than the directory from what it heads.
  */
-function formatProjectSourcesBlock(project: ProjectSourcesView): string {
+function formatProjectSourcesBlock(project: ProjectSourcesView, showChecks: boolean): string {
   const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
   const runPrefix = buildProjectPrefix(project.dir);
-  const blocks = project.groups.map((group) => formatNestedSourceBlock(group, runPrefix));
+  const blocks = project.groups.map((group) => formatNestedSourceBlock(group, runPrefix, showChecks));
 
   return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
 }
@@ -458,19 +492,19 @@ function formatProjectSourcesBlock(project: ProjectSourcesView): string {
  * The hint is directly beneath the title so that it reads as part of the heading, the kits are directly
  * beneath the hint, and the blank separating one section from the next is added by whoever assembles them.
  */
-function formatSection(title: string, hintLine: string, kits: KitView[], token: TokenName): string {
-  const items = kits.flatMap((kit) => formatKitRows(kit, token));
+function formatSection(title: string, hintLine: string, kits: KitView[], token: TokenName, showChecks = false): string {
+  const items = kits.flatMap((kit) => formatKitRows(kit, token, { showChecks }));
   return [getLayout().formatHeading(title, 'section'), hintLine, ...items].join('\n');
 }
 
 /** Returns one source's heading, the command running its kits, and a line per kit. */
-function formatSourceBlock(group: SourceGroup): string {
+function formatSourceBlock(group: SourceGroup, showChecks: boolean): string {
   const heading = getLayout().formatBreadcrumb(
     [{ role: resolveSourceToken(group.kind), text: buildSourceLabel(group) }],
     'kit',
     group.configured ? undefined : UNCONFIGURED_DETAIL,
   );
-  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit'));
+  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', { showChecks }));
 
   return [heading, buildRunLine(buildSourceHint(group)), ...items].join('\n');
 }
@@ -489,7 +523,12 @@ function resolveSourceToken(kind: SourceGroup['kind']): 'sourcePackage' | 'sourc
 
 /** Returns the row that a source's kit is listed as, named by the kit alone. */
 function toKitView(kit: SourceKit): KitView {
-  return { name: kit.kitName, description: kit.description, checklists: kit.checklists };
+  return {
+    name: kit.kitName,
+    description: kit.description,
+    checklists: kit.checklists,
+    checklistChecks: kit.checklistChecks,
+  };
 }
 
 // endregion | Helpers
