@@ -273,7 +273,7 @@ Recognition for the report is stricter than for suppression. A token is a site w
 
 Two limits follow from that. Because recognition reads JavaScript-family syntax, a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything. A pragma naming a check that was not loaded is also reported with that id named as matching nothing, because the run cannot tell an id from a kit that it did not run apart from a misspelt one.
 
-When an unused pragma names ids that no check loaded by the run accepts, the warning names those ids. Every check of every loaded kit counts, whether it ran, skipped, or was blocked. For an id that a loaded check declares unqualified, the remedy gives the form printed beside that check's findings:
+When an unused pragma names ids that no check loaded by the run accepts, the warning names those ids. Every check of every loaded kit counts, whether it ran, skipped, or was blocked, and whether or not the run selected its checklist. For an id that a loaded check declares unqualified, the remedy gives the form printed beside that check's findings:
 
 ```
 Warning: `rdy-ignore` pragma at src/a.ts:4 suppressed no finding in this run; it names `no-instanceof-error`, which matches no check in it. Write `no-instanceof-error` as `toolbelt.errors/no-instanceof-error`.

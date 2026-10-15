@@ -18,6 +18,7 @@ import type { UnrunSource } from './KitSelection.ts';
 import { loadKit } from './loadKit.ts';
 import { warnOnUnusedPragmas } from './pragma-report.ts';
 import { createPragmaLedger, type PragmaLedger } from './PragmaLedger.ts';
+import { recordKitCheckIds } from './recordKitCheckIds.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
@@ -75,6 +76,7 @@ export async function runHumanMode(
 
     try {
       const { kit, compileTimeVersion } = await loadKit(entry, settings.remote);
+      recordKitCheckIds(kit, pragmaLedger, entry.provenance);
 
       warnOnKitStaleness(entry.name, entry.source, tracking);
       warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance);
