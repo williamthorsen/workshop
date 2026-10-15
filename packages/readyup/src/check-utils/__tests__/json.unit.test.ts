@@ -127,7 +127,7 @@ describe(hasJsonFields, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing fields: version, type',
+      detail: 'Of the fields, version and type are missing',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
     });
   });
@@ -148,7 +148,7 @@ describe(hasJsonFields, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing fields: name, version',
+      detail: 'Of the fields, name and version are missing',
       progress: { type: 'fraction', passedCount: 0, count: 2 },
     });
   });
