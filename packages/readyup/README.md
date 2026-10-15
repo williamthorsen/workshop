@@ -118,7 +118,7 @@ rdy verify --rebuild # fails on a bundle that no longer reproduces from its sour
 - [Publishing kits](docs/publishing-kits.md): Compiling, packaging, and verifying kits
 - [Check utilities](docs/check-utils.md): Helpers that a kit imports from readyup
 
-`rdy help <topic>` prints the same files in a terminal, and `rdy help` lists the topic names. A topic also answers to its file's name without `.md`, so `rdy help authoring-kits` prints what `rdy help authoring` prints. `rdy <command> --help` prints each command's own options.
+`rdy help <topic>` prints the same files in a terminal, and `rdy help` lists the topic names. A topic also answers to its file's name without `.md`, so `rdy help authoring-kits` prints what `rdy help authoring` prints. A topic fits the terminal's width: Prose wraps at 80 columns or the terminal's width, whichever is narrower, and a table too wide for the terminal prints as a list of its rows. Setting `COLUMNS` overrides the terminal's width, and piped output without `COLUMNS` leaves every line unwrapped. `rdy <command> --help` prints each command's own options.
 
 ## Compatibility
 
