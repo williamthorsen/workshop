@@ -21,6 +21,7 @@ export const TOKEN_NAMES = [
   'sourceDirectory',
   'sourcePackage',
   'sourceRemote',
+  'written',
 ] as const;
 
 export type TokenName = (typeof TOKEN_NAMES)[number];
@@ -62,6 +63,7 @@ const GLYPHS = defineGlyphSet<TokenName>({
   sourceDirectory: { plain: '', rich: '\u{1F4C1}' },
   sourcePackage: { plain: '', rich: '\u{1F4E6}' },
   sourceRemote: { plain: '', rich: '\u{1F310}' },
+  written: { plain: 'WRITE', rich: '\u{1F4BE}' },
 });
 
 /**
