@@ -56,7 +56,7 @@ function readTopicDoc(topic: string): string {
   assert.ok(declared !== undefined, `TOPICS declares no "${topic}" topic`);
 
   const markdown = readFileSync(path.join(packageDir, 'docs', declared.file), 'utf8');
-  return renderTopic(markdown, { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM });
+  return renderTopic(markdown, { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM, width: Infinity });
 }
 
 /** Runs `rdy help <topic>` under the rich style through one entry point and returns what it wrote to stdout. */

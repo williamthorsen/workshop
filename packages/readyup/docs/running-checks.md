@@ -2,7 +2,7 @@
 
 ## Commands
 
-`rdy help <command>` prints what `rdy <command> --help` prints, and `rdy help <topic>` prints the doc file covering that topic, whose name without `.md` also selects it. Run `rdy help` for the available topics.
+`rdy help <command>` prints what `rdy <command> --help` prints, and `rdy help <topic>` prints the doc file covering that topic, whose name without `.md` also selects it. Run `rdy help` for the available topics. A topic fits the terminal's width: Prose wraps at 80 columns or the terminal's width, whichever is narrower, and a table too wide for the terminal prints as a list of its rows. Setting `COLUMNS` overrides the terminal's width, and piped output without `COLUMNS` leaves every line unwrapped.
 
 ## Selecting what runs
 

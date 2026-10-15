@@ -3,6 +3,8 @@ import path from 'node:path';
 import type { OutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
 
 import { PLAIN_BY_RICH_GLYPH } from '../layout/formatter.ts';
+import { fitTopic } from './fitTopic.ts';
+import { findTableEnd, isTableStart, splitCells } from './table-syntax.ts';
 
 /** What `renderTopic` needs to know beyond the Markdown itself. */
 export interface RenderTopicOptions {
@@ -11,6 +13,9 @@ export interface RenderTopicOptions {
 
   /** Topic names keyed by the stem of the doc file that each one prints. */
   topicByStem: Readonly<Record<string, string>>;
+
+  /** Width to which the topic fits, `Infinity` meaning no limit. */
+  width: number;
 }
 
 /**
@@ -27,12 +32,6 @@ const EMOJI = /(\p{Extended_Pictographic})\u{FE0F}?( ?)/gu;
 /** Header of the table column that shows rich glyphs, which has nothing to show under the plain style. */
 const RICH_COLUMN = 'Rich';
 
-/** Matches the separator row beneath a table's header. */
-const TABLE_SEPARATOR = /^\|(?: *:?-+:? *\|)+ *$/;
-
-/** Matches a cell boundary: a pipe that a backslash does not escape. */
-const CELL_BOUNDARY = /(?<!\\)\|/;
-
 /**
  * Renders a doc file for printing at a terminal.
  *
@@ -42,6 +41,8 @@ const CELL_BOUNDARY = /(?<!\\)\|/;
  * Under the plain style, every emoji gives way to the word that plain output prints in its place, or to
  * nothing, so a sample of rich output reads as plain output. A table column of rich glyphs is omitted, and
  * so is a table left with one column.
+ *
+ * The topic then fits `options.width`, measured on what prints once the style is applied.
  */
 export function renderTopic(markdown: string, options: RenderTopicOptions): string {
   let fenced = false;
@@ -54,7 +55,8 @@ export function renderTopic(markdown: string, options: RenderTopicOptions): stri
     return fenced ? line : renderLinks(line, options.topicByStem);
   });
 
-  return options.style === 'plain' ? dropRichColumns(lines).map(replaceEmoji).join('\n') : lines.join('\n');
+  const styled = options.style === 'plain' ? dropRichColumns(lines).map(replaceEmoji) : lines;
+  return fitTopic(styled.join('\n'), options.width);
 }
 
 // region | Helpers
@@ -73,14 +75,13 @@ function dropRichColumns(lines: string[]): string[] {
     const line = lines[index] ?? '';
     if (line.startsWith('```')) fenced = !fenced;
 
-    if (fenced || !line.startsWith('|') || !TABLE_SEPARATOR.test(lines[index + 1] ?? '')) {
+    if (fenced || !isTableStart(lines, index)) {
       kept.push(line);
       index += 1;
       continue;
     }
 
-    let end = index;
-    while (lines[end]?.startsWith('|') === true) end += 1;
+    let end = findTableEnd(lines, index);
     const rows = lines.slice(index, end).map(splitCells);
     const column = rows[0]?.findIndex((cell) => cell.trim() === RICH_COLUMN) ?? -1;
 
@@ -130,11 +131,6 @@ function renderLinks(line: string, topicByStem: Readonly<Record<string, string>>
     (match, _ticks: string | undefined, text: string | undefined, destination: string | undefined) =>
       text === undefined || destination === undefined ? match : renderLink(match, text, destination, topicByStem),
   );
-}
-
-/** Splits a table row into its cells, without the empty strings outside its outer pipes. */
-function splitCells(row: string): string[] {
-  return row.trim().split(CELL_BOUNDARY).slice(1, -1);
 }
 
 // endregion | Helpers
