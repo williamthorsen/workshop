@@ -10,6 +10,7 @@ describe(resolveCheckIds, () => {
 
       expect(ids).toStrictEqual({
         accepted: ['toolbelt.errors/no-instanceof-error', '@williamthorsen/toolbelt.errors/no-instanceof-error'],
+        bare: 'no-instanceof-error',
         printed: 'toolbelt.errors/no-instanceof-error',
       });
     });
@@ -17,7 +18,11 @@ describe(resolveCheckIds, () => {
     it('accepts one form for an unscoped package, whose two forms coincide', () => {
       const ids = resolveCheckIds('no-instanceof-error', packageProvenance('readyup'));
 
-      expect(ids).toStrictEqual({ accepted: ['readyup/no-instanceof-error'], printed: 'readyup/no-instanceof-error' });
+      expect(ids).toStrictEqual({
+        accepted: ['readyup/no-instanceof-error'],
+        bare: 'no-instanceof-error',
+        printed: 'readyup/no-instanceof-error',
+      });
     });
 
     it('does not accept the bare id', () => {
@@ -33,6 +38,7 @@ describe(resolveCheckIds, () => {
 
       expect(ids).toStrictEqual({
         accepted: ['acme/.github/no-instanceof-error'],
+        bare: 'no-instanceof-error',
         printed: 'acme/.github/no-instanceof-error',
       });
     });
@@ -48,19 +54,31 @@ describe(resolveCheckIds, () => {
     it('keeps the bare id for a directory kit', () => {
       const ids = resolveCheckIds('no-instanceof-error', { kind: 'directory', label: '.readyup/kits' });
 
-      expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
+      expect(ids).toStrictEqual({
+        accepted: ['no-instanceof-error'],
+        bare: 'no-instanceof-error',
+        printed: 'no-instanceof-error',
+      });
     });
 
     it('keeps the bare id for a remote kit', () => {
       const ids = resolveCheckIds('no-instanceof-error', { kind: 'remote', label: 'github:org/repo@main' });
 
-      expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
+      expect(ids).toStrictEqual({
+        accepted: ['no-instanceof-error'],
+        bare: 'no-instanceof-error',
+        printed: 'no-instanceof-error',
+      });
     });
 
     it('keeps the bare id when the kit has no provenance', () => {
       const ids = resolveCheckIds('no-instanceof-error', undefined);
 
-      expect(ids).toStrictEqual({ accepted: ['no-instanceof-error'], printed: 'no-instanceof-error' });
+      expect(ids).toStrictEqual({
+        accepted: ['no-instanceof-error'],
+        bare: 'no-instanceof-error',
+        printed: 'no-instanceof-error',
+      });
     });
   });
 

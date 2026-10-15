@@ -37,11 +37,11 @@ export interface RunRdyOptions {
   provenance?: KitProvenance | undefined;
 
   /**
-   * The invocation's record of what its checks examined and suppressed, which the unused-pragma and
-   * unmarked-generated reports read.
+   * The invocation's record of what its checks examined and suppressed, and of the ids of every check in the
+   * checklist, which the unused-pragma and unmarked-generated reports read.
    *
-   * One ledger spans every kit of an invocation, so a file examined by two kits is reported once. A run
-   * passing none records nothing and reports nothing.
+   * One ledger spans every kit of an invocation, so a file examined by two kits is reported once, and an id is
+   * matched against the checks of every kit. A run passing none records nothing and reports nothing.
    *
    * Because it is in scope around each check's `skip` and `check` alike, a sweep read through
    * `readTrackedSources` is recorded wherever the check makes it. A kit memoizing one sweep across its checks
@@ -429,6 +429,9 @@ export async function runRdy(
     provenance: options.provenance,
   };
 
+  // Record before anything runs, so that a check that never executes still names a valid id.
+  if (options.pragmaLedger !== undefined) recordChecklistIds(checklist, options.pragmaLedger, options.provenance);
+
   const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
 
   await (isFlatChecklist(checklist)
@@ -447,3 +450,26 @@ export async function runRdy(
 
   return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }
+
+// region | Helpers
+
+/** Records the ids of a check and of its dependents, depth-first. */
+function recordCheckIds(check: RdyCheck, ledger: PragmaLedger, provenance: KitProvenance | undefined): void {
+  const ids = resolveCheckIds(check.id, provenance);
+  if (ids !== undefined) ledger.recordCheckIds(ids);
+
+  const children = check.checks ?? [];
+  for (const child of children) recordCheckIds(child, ledger, provenance);
+}
+
+/** Records the ids of every check in a checklist: its preconditions, then its checks or every staged group. */
+function recordChecklistIds(
+  checklist: RdyChecklist | RdyStagedChecklist,
+  ledger: PragmaLedger,
+  provenance: KitProvenance | undefined,
+): void {
+  const checks = isFlatChecklist(checklist) ? checklist.checks : checklist.groups.flat();
+  for (const check of [...(checklist.preconditions ?? []), ...checks]) recordCheckIds(check, ledger, provenance);
+}
+
+// endregion | Helpers

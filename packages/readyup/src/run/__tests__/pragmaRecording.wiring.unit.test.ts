@@ -17,8 +17,9 @@ vi.mock('node:child_process', async () => {
 });
 
 import { readTrackedSources } from '../../check-utils/project/readTrackedSources.ts';
-import type { RdyCheck, RdyChecklist, SkipResult } from '../../kits/types.ts';
+import type { RdyCheck, RdyChecklist, RdyStagedChecklist, SkipResult } from '../../kits/types.ts';
 import { createPragmaLedger } from '../PragmaLedger.ts';
+import type { CheckIds } from '../resolveCheckIds.ts';
 import { runRdy } from '../runRdy.ts';
 
 const SOURCE_PATH = 'src/a.ts';
@@ -118,11 +119,72 @@ describe('a run recording what its checks examined and suppressed', () => {
   });
 });
 
+describe('a run recording the ids of its checks', () => {
+  it('records a check that ran, one that skipped, and a nested dependent', async () => {
+    const ledger = createPragmaLedger();
+    const checklist = adoptionChecklist(
+      { name: 'ran', id: 'ran', check: () => true },
+      { name: 'skipped', id: 'skipped', skip: () => 'not applicable', check: () => true },
+      { name: 'parent', id: 'parent', check: () => true, checks: [{ name: 'child', id: 'child', check: () => true }] },
+    );
+
+    await runRdy(checklist, { pragmaLedger: ledger });
+
+    expect(bareIds(ledger.checkIds())).toStrictEqual(['ran', 'skipped', 'parent', 'child']);
+  });
+
+  it('records the checks of a stage abandoned after a failure, and those blocked by a precondition', async () => {
+    const ledger = createPragmaLedger();
+    const checklist: RdyStagedChecklist = {
+      name: 'staged',
+      preconditions: [{ name: 'gate', id: 'gate', check: () => true }],
+      groups: [
+        [{ name: 'fails', id: 'fails', check: () => false }],
+        [{ name: 'abandoned', id: 'abandoned', check: () => true }],
+      ],
+    };
+
+    await runRdy(checklist, { pragmaLedger: ledger });
+
+    expect(bareIds(ledger.checkIds())).toStrictEqual(['gate', 'fails', 'abandoned']);
+  });
+
+  it('records the ids in the namespace of the kit that loaded them', async () => {
+    const ledger = createPragmaLedger();
+    const provenance = {
+      kind: 'package',
+      packageName: '@acme/kit',
+      source: 'npm:@acme/kit',
+      version: '1.0.0',
+    } as const;
+
+    await runRdy(adoptionChecklist({ name: 'ran', id: 'ran', check: () => true }), {
+      pragmaLedger: ledger,
+      provenance,
+    });
+
+    expect(ledger.checkIds().map((ids) => ids.printed)).toStrictEqual(['kit/ran']);
+  });
+
+  it('records nothing for a check declaring no id', async () => {
+    const ledger = createPragmaLedger();
+
+    await runRdy(adoptionChecklist({ name: 'anonymous', check: () => true }), { pragmaLedger: ledger });
+
+    expect(ledger.checkIds()).toStrictEqual([]);
+  });
+});
+
 // region | Helpers
 
 /** Wraps checks as the one adoption checklist that a test runs. */
 function adoptionChecklist(...checks: RdyCheck[]): RdyChecklist {
   return { name: 'adoption', checks };
+}
+
+/** Returns the declared id of each recorded check. */
+function bareIds(checkIds: readonly CheckIds[]): string[] {
+  return checkIds.map((ids) => ids.bare);
 }
 
 /**
