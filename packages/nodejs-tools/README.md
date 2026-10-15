@@ -2,7 +2,7 @@
 
 # @williamthorsen/nodejs-tools
 
-A CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories: It finds asdf shims stranded by a nodejs version switch, checks the pnpm that runs against a project's `packageManager` pin, and deletes the `node_modules` directories that a protect-list and recent activity do not keep.
+A CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories: It finds asdf shims stranded by a nodejs version switch, checks the pnpm that runs against a project's `packageManager` pin, and deletes the `node_modules` directories that a protect-list and recent activity do not keep. The package also exports a function that resolves the node binary that asdf selects for a checkout.
 
 <!-- section:release-notes --><!-- /section:release-notes -->
 
@@ -49,3 +49,15 @@ fi
 ```
 
 `thor-node --help` and each subcommand's `--help` list the flags, the protect-list format, and the exit codes.
+
+## Library
+
+`resolveNodePath` returns the real path of the node binary that asdf selects for a checkout. A launchd agent can run that path directly, whereas an asdf shim needs an initialized shell:
+
+```ts
+import { resolveNodePath } from '@williamthorsen/nodejs-tools';
+
+const programArguments = [resolveNodePath(checkoutDir), 'dist/server.js'];
+```
+
+When asdf is unavailable or does not name a node, the function returns the real path of the running node.

@@ -1,25 +1,32 @@
 {
-  "$schema": "https://github.com/williamthorsen/codeassembly/raw/main/packages/agents/schemas/label-map.json",
+  "$schema": "https://github.com/williamthorsen/node-monorepo-tools/raw/change-grammar-v0.2.1/packages/change-grammar/schemas/label-map.json",
   "types": {
-    "ai": "ai",
-    "ci": "ci",
-    "deprecate": "deprecate",
-    "deps": "dependencies",
-    "docs": "documentation",
     "feat": "feature",
+    "drop": "removal",
+    "deprecate": "deprecation",
     "fix": "fix",
-    "fmt": "formatting",
-    "internal": "internal",
-    "perf": "performance",
-    "refactor": "refactoring",
     "sec": "security",
+    "perf": "performance",
+    "internal": "internal",
+    "refactor": "refactoring",
     "tests": "tests",
-    "tooling": "tooling"
+    "tooling": "tooling",
+    "ci": "ci",
+    "deps": "dependencies",
+    "ai": "ai",
+    "docs": "documentation",
+    "fmt": "formatting"
   },
   "scopes": {
+    "atlassian-tools": "scope:atlassian-tools",
     "compositor": "scope:compositor",
+    "git-tools": "scope:git-tools",
+    "launchd-agent": "scope:launchd-agent",
+    "nodejs-tools": "scope:nodejs-tools",
     "overlay": "scope:overlay",
     "readyup": "scope:readyup",
+    "repo-tools": "scope:repo-tools",
+    "secret-tools": "scope:secret-tools",
     "root": "scope:root"
   }
 }

@@ -197,8 +197,9 @@ const config = defineConfig([
     },
   },
   {
-    // nodejs-tools's source is grouped by role on the same terms; no module belongs at its root yet.
+    // nodejs-tools's source is grouped by role on the same terms; its one exception is the entry point.
     files: ['packages/nodejs-tools/src/*.ts'],
+    ignores: ['packages/nodejs-tools/src/index.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -206,7 +207,7 @@ const config = defineConfig([
         {
           selector: 'Program',
           message:
-            'Group this module into a directory named for its role. No module belongs at the root of nodejs-tools/src.',
+            'Group this module into a directory named for its role. Only index.ts belongs at the root of nodejs-tools/src.',
         },
       ],
     },
