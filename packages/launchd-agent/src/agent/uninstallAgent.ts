@@ -8,10 +8,18 @@ export interface UninstallOutcome {
   wasLoaded: boolean;
 }
 
-/** Boots the agent out and removes its plist, leaving nothing for launchd to load at the next login. */
+/**
+ * Boots the agent out and removes its plist, leaving nothing for launchd to load at the next login. Rejects, keeping
+ * the plist, when the bootout fails while launchd still holds the agent.
+ */
 export async function uninstallAgent(label: string): Promise<UninstallOutcome> {
-  const { exitCode } = await runLaunchctl(['bootout', buildServiceTarget(label)]);
+  const serviceTarget = buildServiceTarget(label);
+  const bootout = await runLaunchctl(['bootout', serviceTarget]);
+  if (bootout.exitCode !== 0 && (await runLaunchctl(['print', serviceTarget])).exitCode === 0) {
+    throw new Error(`launchctl bootout failed while launchd still holds ${label}: ${bootout.output.trim()}`);
+  }
+
   await rm(findPlistPath(label), { force: true });
 
-  return { wasLoaded: exitCode === 0 };
+  return { wasLoaded: bootout.exitCode === 0 };
 }

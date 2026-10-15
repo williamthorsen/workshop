@@ -6,7 +6,7 @@ export interface AgentSpec {
   label: string;
   /** Directory holding the agent's stdout and stderr logs. */
   logDir: string;
-  /** The command that launchd runs, as absolute paths: launchd has no working directory or shell. */
+  /** The command that launchd runs. Its first element, the program, must be an absolute path: launchd has no shell. */
   programArguments: readonly string[];
   trigger: AgentTrigger;
 }

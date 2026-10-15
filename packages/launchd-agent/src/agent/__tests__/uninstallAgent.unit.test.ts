@@ -43,6 +43,20 @@ describe(uninstallAgent, () => {
     await expect(stat(plistPath)).rejects.toThrow('ENOENT');
   });
 
+  it('rejects and keeps the plist when the bootout fails while launchd still holds the agent', async () => {
+    const plistPath = await writePlist();
+    vi.mocked(runLaunchctl).mockImplementation(([subcommand]) =>
+      Promise.resolve(
+        subcommand === 'bootout'
+          ? buildLaunchctlRun(5, 'Boot-out failed: 5: Input/output error\n')
+          : buildLaunchctlRun(0, 'state = running'),
+      ),
+    );
+
+    await expect(uninstallAgent(label)).rejects.toThrow('Boot-out failed: 5: Input/output error');
+    await expect(stat(plistPath)).resolves.toBeDefined();
+  });
+
   it('succeeds when the plist is already gone', async () => {
     vi.mocked(runLaunchctl).mockResolvedValue(buildLaunchctlRun(113));
 

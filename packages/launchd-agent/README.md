@@ -36,7 +36,7 @@ Every function addresses the agent by its label, in the current user's `gui` dom
 - `installAgent(spec)`: Writes `~/Library/LaunchAgents/<label>.plist` and bootstraps it, replacing any agent loaded under the label. Resolves with the plist's path.
 - `readAgentState(label)`: Resolves with `{ loaded: false }`, or `{ loaded: true, pid, lastExitCode }`. `pid` is set while the agent's process runs, and `lastExitCode` once it has exited.
 - `restartAgent(label)`: Kills the agent's process and starts it again, which a keep-alive agent needs to load new code. Rejects when launchctl refuses.
-- `uninstallAgent(label)`: Boots the agent out and removes its plist. Resolves with `{ wasLoaded }`, which reports whether launchd held it.
+- `uninstallAgent(label)`: Boots the agent out and removes its plist. Resolves with `{ wasLoaded }`, which reports whether launchd held it. Rejects, keeping the plist, when the bootout fails and launchd still holds the agent.
 - `renderPlist(spec, { homebrewBin })`: Returns the plist that `installAgent` writes, without touching the machine.
 
 An `AgentSpec` has these fields:
