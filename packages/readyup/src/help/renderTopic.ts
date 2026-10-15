@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { OutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
 
 import { PLAIN_BY_RICH_GLYPH } from '../layout/formatter.ts';
+import { fitTopic } from './fitTopic.ts';
 import { findTableEnd, isTableStart, splitCells } from './table-syntax.ts';
 
 /** What `renderTopic` needs to know beyond the Markdown itself. */
@@ -12,6 +13,9 @@ export interface RenderTopicOptions {
 
   /** Topic names keyed by the stem of the doc file that each one prints. */
   topicByStem: Readonly<Record<string, string>>;
+
+  /** Width to which the topic fits, `Infinity` meaning no limit. */
+  width: number;
 }
 
 /**
@@ -37,6 +41,8 @@ const RICH_COLUMN = 'Rich';
  * Under the plain style, every emoji gives way to the word that plain output prints in its place, or to
  * nothing, so a sample of rich output reads as plain output. A table column of rich glyphs is omitted, and
  * so is a table left with one column.
+ *
+ * The topic then fits `options.width`, measured on what prints once the style is applied.
  */
 export function renderTopic(markdown: string, options: RenderTopicOptions): string {
   let fenced = false;
@@ -49,7 +55,8 @@ export function renderTopic(markdown: string, options: RenderTopicOptions): stri
     return fenced ? line : renderLinks(line, options.topicByStem);
   });
 
-  return options.style === 'plain' ? dropRichColumns(lines).map(replaceEmoji).join('\n') : lines.join('\n');
+  const styled = options.style === 'plain' ? dropRichColumns(lines).map(replaceEmoji) : lines;
+  return fitTopic(styled.join('\n'), options.width);
 }
 
 // region | Helpers

@@ -3,7 +3,7 @@ import { parseArgs as nodeParseArgs } from 'node:util';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
-import { getStyle } from '../layout/engine.ts';
+import { getStyle, getWidth } from '../layout/engine.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { COMMAND_HELP, HELP } from './helpText.ts';
@@ -44,7 +44,8 @@ export function helpCommand(flags: string[], json: boolean): number {
 
   const topic = findTopic(subject);
   if (topic !== undefined) {
-    return writeHelp(renderTopic(readDoc(topic.file), { style: getStyle(), topicByStem: TOPIC_NAMES_BY_STEM }), json);
+    const options = { style: getStyle(), topicByStem: TOPIC_NAMES_BY_STEM, width: getWidth() };
+    return writeHelp(renderTopic(readDoc(topic.file), options), json);
   }
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });

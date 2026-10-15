@@ -42,19 +42,19 @@ describe(renderTopic, () => {
       expected: 'a and b (rdy help authoring)',
     },
   ])('renders $label', ({ input, expected }) => {
-    expect(renderTopic(input, { style: 'rich', topicByStem })).toBe(expected);
+    expect(renderTopic(input, { style: 'rich', topicByStem, width: Infinity })).toBe(expected);
   });
 
   it('leaves a link to a file that is not a topic as written', () => {
     const line = 'See [the README](../README.md).';
 
-    expect(renderTopic(line, { style: 'rich', topicByStem })).toBe(line);
+    expect(renderTopic(line, { style: 'rich', topicByStem, width: Infinity })).toBe(line);
   });
 
   it('leaves a link inside a code span as written', () => {
     const line = 'Write `[Config](authoring-kits.md#config)` to link it.';
 
-    expect(renderTopic(line, { style: 'rich', topicByStem })).toBe(line);
+    expect(renderTopic(line, { style: 'rich', topicByStem, width: Infinity })).toBe(line);
   });
 
   it('leaves a link inside a fenced block as written', () => {
@@ -62,7 +62,7 @@ describe(renderTopic, () => {
       '\n',
     );
 
-    expect(renderTopic(markdown, { style: 'rich', topicByStem }).split('\n')).toStrictEqual([
+    expect(renderTopic(markdown, { style: 'rich', topicByStem, width: Infinity }).split('\n')).toStrictEqual([
       '```',
       '[Config](authoring-kits.md#config)',
       '```',
@@ -75,7 +75,7 @@ describe(renderTopic, () => {
       '\n',
     );
 
-    expect(renderTopic(markdown, { style: 'plain', topicByStem }).split('\n')).toStrictEqual([
+    expect(renderTopic(markdown, { style: 'plain', topicByStem, width: Infinity }).split('\n')).toStrictEqual([
       'A `FAIL Node >= 24` claim.',
       '```',
       'PASS deploy.ts -> deploy.js',
@@ -85,13 +85,15 @@ describe(renderTopic, () => {
   });
 
   it('removes an emoji outside the vocabulary under the plain style', () => {
-    expect(renderTopic('🎉 Done 💡 Hint: rerun', { style: 'plain', topicByStem })).toBe('Done Hint: rerun');
+    expect(renderTopic('🎉 Done 💡 Hint: rerun', { style: 'plain', topicByStem, width: Infinity })).toBe(
+      'Done Hint: rerun',
+    );
   });
 
   it('leaves emoji in place under the rich style', () => {
     const line = '✅ deploy.ts -> 📓 deploy.js';
 
-    expect(renderTopic(line, { style: 'rich', topicByStem })).toBe(line);
+    expect(renderTopic(line, { style: 'rich', topicByStem, width: Infinity })).toBe(line);
   });
 
   it('drops the Rich column of a table under the plain style', () => {
@@ -99,7 +101,7 @@ describe(renderTopic, () => {
       '\n',
     );
 
-    expect(renderTopic(markdown, { style: 'plain', topicByStem }).split('\n')).toStrictEqual([
+    expect(renderTopic(markdown, { style: 'plain', topicByStem, width: Infinity }).split('\n')).toStrictEqual([
       '| Plain | Status |',
       '| ----- | ------ |',
       '| `PASS` | `a \\| b` |',
@@ -109,12 +111,30 @@ describe(renderTopic, () => {
   it('omits a table that dropping its Rich column leaves with one column, with the blank line after it', () => {
     const markdown = ['Before.', '', '| Rich | Names |', '| ---- | ----- |', '| 📓 | a kit |', '', 'After.'].join('\n');
 
-    expect(renderTopic(markdown, { style: 'plain', topicByStem }).split('\n')).toStrictEqual(['Before.', '', 'After.']);
+    expect(renderTopic(markdown, { style: 'plain', topicByStem, width: Infinity }).split('\n')).toStrictEqual([
+      'Before.',
+      '',
+      'After.',
+    ]);
+  });
+
+  it('measures a table for fitting after the plain style drops its Rich column', () => {
+    // The table measures 26 columns with its Rich column and 21 without it.
+    const markdown = ['| Rich | Plain | Status |', '| ---- | ----- | ------ |', '| ✅ | `PASS` | `a \\| b` |'].join(
+      '\n',
+    );
+
+    expect(renderTopic(markdown, { style: 'plain', topicByStem, width: 22 }).split('\n')).toStrictEqual([
+      '| Plain | Status |',
+      '| ----- | ------ |',
+      '| `PASS` | `a \\| b` |',
+    ]);
+    expect(renderTopic(markdown, { style: 'rich', topicByStem, width: 22 }).split('\n', 1)[0]).toBe('- ✅');
   });
 
   it('keeps a table inside a fenced block under the plain style', () => {
     const markdown = ['```', '| Rich | Names |', '| ---- | ----- |', '```'].join('\n');
 
-    expect(renderTopic(markdown, { style: 'plain', topicByStem })).toBe(markdown);
+    expect(renderTopic(markdown, { style: 'plain', topicByStem, width: Infinity })).toBe(markdown);
   });
 });

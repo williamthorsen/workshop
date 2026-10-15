@@ -38,7 +38,7 @@ describe('rdy help', () => {
 
       expect(exitCode).toBe(0);
       expect(stdout.trimEnd()).toBe(
-        renderTopic(readDoc(file), { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM }).trimEnd(),
+        renderTopic(readDoc(file), { style: 'rich', topicByStem: TOPIC_NAMES_BY_STEM, width: Infinity }).trimEnd(),
       );
     },
   );
