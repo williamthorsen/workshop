@@ -243,6 +243,22 @@ const config = defineConfig([
     },
   },
   {
+    // launchd-agent's root follows on the same terms; its one exception is the entry point.
+    files: ['packages/launchd-agent/src/*.ts'],
+    ignores: ['packages/launchd-agent/src/index.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. Only index.ts belongs at the root of launchd-agent/src.',
+        },
+      ],
+    },
+  },
+  {
     // `utils` names no role, so a directory of that name under any package's source is the same defect one level
     // down. The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
     files: ['packages/*/src/**/utils/**'],

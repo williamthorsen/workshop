@@ -347,6 +347,12 @@ importers:
         specifier: 'catalog:'
         version: 0.6.3
 
+  packages/launchd-agent:
+    dependencies:
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.8.3
+
   packages/nodejs-tools:
     dependencies:
       '@williamthorsen/toolbelt.cli':
