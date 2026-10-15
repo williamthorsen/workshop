@@ -2,6 +2,50 @@
   "version": 1,
   "kits": [
     {
+      "checklistChecks": [
+        {
+          "checklist": "project-foundations",
+          "checks": [
+            "package.json exists",
+            "Project is ESM",
+            "packageManager field is set",
+            "pnpm-workspace.yaml exists",
+            "Workspace includes packages/*"
+          ]
+        },
+        {
+          "checklist": "optional-integrations",
+          "checks": [
+            "Docker is configured",
+            "docker-compose.yaml exists",
+            "Renovate is configured",
+            "renovate.json extends config:recommended",
+            "lefthook is a devDependency",
+            "lefthook.yml exists"
+          ]
+        },
+        {
+          "checklist": "code-quality",
+          "checks": [
+            ".editorconfig exists",
+            "Root configs are present",
+            "bitbucket-pipelines.yml exists",
+            "Pipeline runs pnpm run check",
+            "actionlint is installed",
+            "jq is installed"
+          ]
+        },
+        {
+          "checklist": "publishing-pipeline",
+          "checks": [
+            "Build config exists",
+            "Shared Vitest config exists",
+            "LICENSE file exists",
+            ".npmrc configures save-exact",
+            "Release workflow exists"
+          ]
+        }
+      ],
       "checklists": [
         "project-foundations",
         "optional-integrations",
