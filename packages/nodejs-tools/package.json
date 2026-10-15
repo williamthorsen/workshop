@@ -2,10 +2,11 @@
   "name": "@williamthorsen/nodejs-tools",
   "version": "0.1.0",
   "private": false,
-  "description": "Inspect Node.js runtimes and toolchains, and prune node_modules directories",
+  "description": "Inspect Node.js runtimes and toolchains, prune node_modules directories, and resolve the node that asdf selects for a checkout",
   "keywords": [
     "asdf",
     "cli",
+    "launchd",
     "node_modules",
     "nodejs",
     "nodejs-tools",
@@ -27,6 +28,10 @@
   ],
   "type": "module",
   "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
