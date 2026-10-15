@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -11,6 +11,7 @@ Packages live under `packages/`:
 - **`atlassian-tools`**: CLI that reconciles a Jira Cloud project against a declarative spec, lists its work items, and manages the API token in the macOS keychain. Binary: `thor-jira`.
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
+- **`launchd-agent`**: Library that installs, replaces, restarts, inspects, and removes per-user launchd agents on macOS. No binary.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories. Binary: `thor-node`.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
 - **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its reference documentation lives in `docs/`, because npm truncates a registry README at 65,536 code points; `rdy help <topic>` prints those files and `src/__tests__/doc-links.app.unit.test.ts` keeps them linked. Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it.
@@ -46,7 +47,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, and `secret-tools`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, and `secret-tools`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 

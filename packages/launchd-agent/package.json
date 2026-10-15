@@ -1,0 +1,45 @@
+{
+  "name": "@williamthorsen/launchd-agent",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Install, replace, restart, inspect, and remove per-user launchd agents on macOS",
+  "keywords": [
+    "agent",
+    "launchctl",
+    "launchd",
+    "macos"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/launchd-agent#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/launchd-agent"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
