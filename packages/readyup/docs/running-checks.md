@@ -407,6 +407,23 @@ A plain `rdy list` or a local `--from` source with no manifest falls back to lis
 
 A plain `rdy list` and `rdy list --sources` read the settings from the file named by `--config` in place of `.config/readyup.config.ts`, as [Config](authoring-kits.md#config) describes. `--config` cannot be combined with `--from` or `--manifest`, which read no config, or with `--recursive`, which reads each project's own.
 
+### Listing check names
+
+`--checks` adds each checklist's check names beneath it, in the order that the checklist runs them: preconditions first, then each check followed by the checks that depend on it, and a staged checklist's groups in order. It applies to every listing that shows checklists, and under `--json` it adds `checklistChecks` to each row:
+
+```
+── Compiled
+   To run: rdy run <kit>[:<checklist>,...]
+📓 deploy
+   📋 build
+      🧪 Lockfile is current
+      🧪 Node.js runtime is v24 or later
+   📋 release
+      🧪 Changelog names the release
+```
+
+The check names come from the manifest, which `rdy compile` writes, so a source learns what a kit requires without running it. A kit compiled by a readyup that did not record them lists its checklists with `(checks not recorded; recompile to record them)` beside its name, and its publisher has to recompile it before its checks can be listed.
+
 ### Listing a whole repository
 
 `--recursive` sweeps down from the working directory and reports each project's compiled kits under a heading naming the directory that contains them, with the descriptions recorded in that project's manifest:

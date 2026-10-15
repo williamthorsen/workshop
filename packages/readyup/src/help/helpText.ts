@@ -181,6 +181,7 @@ Modes:
                                   List kits in a remote Bitbucket repository
 
 Options:
+  --checks                   List each checklist's check names beneath it
   --config <path>            Config file path (default:
                              .config/readyup.config.ts); not combinable with
                              --from, --manifest, or --recursive
@@ -208,6 +209,7 @@ ${formatStyleOption(OPTION_COLUMN)}
 Examples:
   rdy list                        Show kits in the current project
   rdy list --sources              Show what this project's kit sources publish
+  rdy list --sources --checks     Show the checks that those kits contain
   rdy list --recursive            Show compiled kits across the whole repository
   rdy list --recursive --sources  Show every project's kit sources
   rdy list --from .               Show compiled kits in the current directory

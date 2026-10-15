@@ -64,6 +64,10 @@ An error body may also include `hint`, one action that would clear the failure:
 
 The `compile` payload contains a top-level `hint` of the same kind when a compile of one project finds neither kit sources nor a manifest: It names `rdy init`, or the configured source directory when `rdy init` would not scaffold into it. A consumer reads it as it reads the envelope's `hint`. The field is absent from every other compile, `--recursive` included.
 
+## The list payload
+
+Each row of `rdy list --json` is one kit, with the checklists that its manifest records. Under `--checks`, a row also includes `checklistChecks`: one entry per checklist, at the same position as in `checklists`, each naming the checklist and its checks in run order. A row that has `checklists` but not `checklistChecks` is a kit whose manifest does not record its check names, and a checklist that declares no checks has an empty `checks` array.
+
 ## The run report
 
 ```json

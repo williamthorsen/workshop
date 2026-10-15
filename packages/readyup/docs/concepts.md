@@ -43,6 +43,7 @@ Role glyphs are nouns rather than statuses. They name what something is, in a he
 | 📄   | a kit's TypeScript source                              |
 | 📓   | a kit                                                  |
 | 📋   | a checklist                                            |
+| 🧪   | a check, listed by `rdy list --checks`                 |
 | 📦   | the npm package in which a kit was published           |
 | 🌐   | a kit fetched from `github:`, `bitbucket:`, or `--url` |
 | 📁   | a directory from which a kit was read                  |
