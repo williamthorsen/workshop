@@ -328,7 +328,7 @@ describe(parseRunArgs, () => {
   });
 
   it('throws when --detail has no value', () => {
-    expect(() => parseRunArgs(['--json', '--detail'])).toThrow('--detail requires a projection');
+    expect(() => parseRunArgs(['--json', '--detail'])).toThrow('--detail requires a level of detail (summary, full)');
   });
 
   it('omits detail when not specified', () => {

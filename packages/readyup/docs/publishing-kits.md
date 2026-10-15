@@ -205,10 +205,10 @@ rdy list --from npm:readyup           # both, with the checklists that each one 
 
 `default` reports at `warn` and below, so it is safe to run mid-edit:
 
-| Checklist   | What it asserts                                                                                                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup`     | A config file is present (at `recommend`), a manifest records what has been compiled, and `packages` lists every installed dependency that publishes kits.                      |
-| `freshness` | Every kit that the manifest records still matches what was recorded for it (its source, its bundle, and everything the compile inlined), and the manifest records every bundle. |
+| Checklist   | What it asserts                                                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `setup`     | A config file is present (at `recommend`), a manifest records what has been compiled, and every installed dependency that publishes kits is listed in `sources` or `omittedSources`. |
+| `freshness` | Every kit that the manifest records still matches what was recorded for it (its source, its bundle, and everything the compile inlined), and the manifest records every bundle.      |
 
 The config and manifest checks skip for a project that defines no kits of its own: A monorepo root that lists `sources` rather than authoring kits is not expected to keep any at its root, and a project is judged to define kits once it contains either `.readyup/kits` or `.readyup/manifest.json`. The `sources` check skips instead when the config lists no sources, because that monorepo root is the project for which it exists. It reads the declared dependencies of the working directory and `.config/readyup.config.ts`, which `--config` does not replace, and it does not report a package that `omittedSources` names. The manifest check skips for a second reason, when nothing is compiled, since a project running its kits with `--jit` has nothing to record. So does `freshness`, which otherwise names one check per recorded kit, followed by one naming every bundle in `.readyup/kits` that no entry records. `rdy compile` deletes only the bundles that the manifest records, so an unrecorded one stays loadable by name until someone deletes it. Beneath each kit, the comparison over what it inlined skips for an entry compiled before readyup [recorded its inputs](#what-a-manifest-entry-records); an inlined JSON file is judged by the projection that was substituted rather than by the file containing it, through the same `projectJsonFile` that the compile used to record it.
 
@@ -240,7 +240,7 @@ export default defineRdyConfig({
 });
 ```
 
-`rdy run --internal <kit>` resolves through these settings, and `rdy list` groups sources under **Internal** and bundles under **Compiled**.
+`rdy run --internal <kit>` resolves through these settings. `rdy list` lists these sources under **Internal** when `internal.dir` or `internal.infix` is set, as [Listing kits](running-checks.md#listing-kits) describes.
 
 ## Verifying
 

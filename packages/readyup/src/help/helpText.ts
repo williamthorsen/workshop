@@ -8,6 +8,12 @@ export const HELP_WIDTH = 80;
 /** Column at which a topic's summary starts, shared with the descriptions in the command list. */
 const TOPIC_SUMMARY_COLUMN = 33;
 
+/** Column at which an option's description starts on most help screens. */
+const OPTION_COLUMN = 29;
+
+/** Column at which an option's description starts on the run help, whose flags are wider. */
+const RUN_OPTION_COLUMN = 36;
+
 /** The topic list that help output prints, rendered from the table so that the two cannot diverge. */
 const TOPIC_LINES = Object.entries(TOPICS)
   .map(([topic, { summary }]) => {
@@ -26,7 +32,8 @@ const TOPIC_LINES = Object.entries(TOPICS)
 export const DOCS_POINTER = `Full documentation: node_modules/readyup/docs/
 Online:
   https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme
-Authoring kits: the consult-readyup-kits skill`;
+Authoring kits: the consult-readyup-kits skill; to install it, see "Agent
+guidance" in 'rdy help authoring'`;
 
 export const COMPILE_HELP = `
 Usage: rdy compile [<file>] [options]
@@ -58,7 +65,7 @@ Options:
   --json                     Report each kit's status, any removed bundles, and
                              any warnings, as JSON
   --skip-manifest            Do not read or write the manifest
-  --style <auto|plain|rich>  Output style (default: auto)
+${formatStyleOption(OPTION_COLUMN)}
   --help, -h                 Show this help message
 
 ${DOCS_POINTER}
@@ -112,8 +119,7 @@ Run options:
                                     recommend)
 
 Global options:
-  --style <auto|plain|rich>  Output style: emoji, ASCII words, or detected
-                             (default: auto)
+${formatStyleOption(OPTION_COLUMN)}
   --help, -h                 Show this help message
   --version, -V              Show version number
 
@@ -145,7 +151,7 @@ Scaffold a starter config and kit file.
 Options:
   --dry-run, -n              Preview changes without writing files
   --force                    Overwrite existing files
-  --style <auto|plain|rich>  Output style (default: auto)
+${formatStyleOption(OPTION_COLUMN)}
   --help, -h                 Show this help message
 
 ${DOCS_POINTER}
@@ -196,7 +202,7 @@ Options:
                              command that runs them; combines with --recursive,
                              not with --from or --manifest
   --json                     Output the kit list as JSON
-  --style <auto|plain|rich>  Output style (default: auto)
+${formatStyleOption(OPTION_COLUMN)}
   --help, -h                 Show this help message
 
 Examples:
@@ -263,7 +269,7 @@ Options:
                                     incompatible with --json
   --report-on <severity>            Show this severity or above (error, warn,
                                     recommend)
-  --style <auto|plain|rich>         Output style (default: auto)
+${formatStyleOption(RUN_OPTION_COLUMN)}
   --help, -h                        Show this help message
 
 Positional args accept relative paths (e.g., shared/deploy). A name containing a
@@ -314,7 +320,7 @@ Options:
   --recursive                Verify every kit project below the working
                              directory, each against its own manifest and
                              config; not combinable with --manifest or --config
-  --style <auto|plain|rich>  Output style (default: auto)
+${formatStyleOption(OPTION_COLUMN)}
   --help, -h                 Show this help message
 
 ${DOCS_POINTER}
@@ -329,3 +335,16 @@ export const COMMAND_HELP: Readonly<Record<string, string>> = {
   run: RUN_HELP,
   verify: VERIFY_HELP,
 };
+
+// region | Helpers
+
+/** Renders the `--style` option line with its description wrapped from `column`. */
+function formatStyleOption(column: number): string {
+  const description = wrapToWidth(
+    'Output style: auto (detected), plain (ASCII words), or rich (emoji); default: auto',
+    { width: HELP_WIDTH, indent: column, hanging: true },
+  );
+  return `${'  --style <auto|plain|rich>'.padEnd(column)}${description}`;
+}
+
+// endregion | Helpers

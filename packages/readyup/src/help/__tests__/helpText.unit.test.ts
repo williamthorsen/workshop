@@ -9,4 +9,15 @@ describe('COMMAND_HELP', () => {
 
     expect(overlong).toStrictEqual([]);
   });
+
+  it.each(Object.entries(COMMAND_HELP).filter(([, text]) => text.includes('--style')))(
+    'pairs each --style value with its meaning in the %s help',
+    (_name, text) => {
+      const flowed = text.replaceAll(/\s+/g, ' ');
+
+      expect(flowed).toContain('auto (detected)');
+      expect(flowed).toContain('plain (ASCII words)');
+      expect(flowed).toContain('rich (emoji)');
+    },
+  );
 });

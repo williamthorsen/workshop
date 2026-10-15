@@ -23,7 +23,8 @@ export const rdyKitTemplate = `import { defineRdyKit } from 'readyup';
  * true on a pass; \`detail\` explains why this status; \`fix\` says what to do about it.
  *
  * The rules that need judgment -- above all, when a check should skip rather than pass --
- * are in the consult-readyup-kits skill.
+ * are in the consult-readyup-kits skill; to install it, see "Agent guidance" in
+ * \`rdy help authoring\`.
  */
 export default defineRdyKit({
   checklists: [

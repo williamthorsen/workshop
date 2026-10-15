@@ -347,6 +347,8 @@ Each section names the command that runs the kits beneath it:
 
 Because the sections name invocations rather than files, one file can appear in both. An internal source that `compile.include` and `compile.exclude` also select is listed under **Uncompiled** by its path below `compile.srcDir` and under **Internal** by its name within the bucket, because it is available to both commands and `rdy run --all --jit` runs it. To keep the internal bucket out of the compile sweep, and out of **Uncompiled** with it, exclude it: `include: '*.ts'` selects the top level alone, and `exclude: 'internal/**'` names the directory.
 
+A section that contains a kit named `default` brackets its placeholder, as in `rdy run [<kit>[:<checklist>,...]]`, because an invocation without a kit name runs `default`.
+
 Each compiled kit is followed by the checklists that its manifest records, in the order that the kit declares them, and each command shows how to select them: `rdy run deploy:build` runs one. The checklists come from the manifest alone, because listing never loads a kit, so a kit under **Uncompiled** or **Internal** lists none, and neither does a kit read from disk without a manifest.
 
 Kits from the config's `sources` get their own section, each named source-first so that a kit reads the same here as in the heading that `rdy run` gives it, and any installed dependency that publishes kits and that the config names in neither `sources` nor `omittedSources` is named as a candidate, in the spelling that would add it, and the first candidate shows the config syntax:
