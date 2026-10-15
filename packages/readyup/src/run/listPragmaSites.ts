@@ -1,6 +1,6 @@
 import { blankComments } from '../portable/blankNonCode.ts';
 import { getLineAtOffset } from '../portable/getLineAtOffset.ts';
-import { createIgnorePragmaMatcher } from './pragma-token.ts';
+import { createIgnorePragmaMatcher, readCheckIds } from './pragma-token.ts';
 
 /** One pragma in a source, and the line that it covers. */
 export interface PragmaSite {
@@ -12,6 +12,9 @@ export interface PragmaSite {
 
   /** The token as written, which is what a report names it by. */
   readonly token: string;
+
+  /** The check ids that the pragma names, empty when it covers every check. */
+  readonly checkIds: readonly string[];
 }
 
 /** Characters that a comment may contain between its opening delimiter and a pragma anchored to it. */
@@ -45,7 +48,8 @@ export function listPragmaSites(text: string): readonly PragmaSite[] {
     if (!isCommentAnchored(text, blanked, match.index)) continue;
 
     const line = getLineAtOffset(text, match.index);
-    sites.push({ coveredLine: match[1] === undefined ? line : line + 1, line, token: match[0] });
+    const checkIds = readCheckIds(text.slice(match.index + match[0].length));
+    sites.push({ checkIds, coveredLine: match[1] === undefined ? line : line + 1, line, token: match[0] });
   }
 
   return sites;
