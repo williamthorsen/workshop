@@ -82,7 +82,7 @@ describe('default kit', () => {
 
       expect(pickResult(results, SOURCES_CHECK)).toMatchObject({
         status: 'failed',
-        detail: 'missing from "sources": npm:unlisted-kit',
+        detail: 'npm:unlisted-kit is not listed in "sources"',
       });
     });
 

@@ -49,7 +49,9 @@ export default defineRdyKit({
               .map((name) => `npm:${name}`)
               .filter((spelling) => !omittedSources.includes(spelling));
             const listed = sources.map((configured) => configured.spelling);
-            return missingFrom('from "sources"', expected, listed);
+            const outcome = missingFrom('kit-publishing dependencies', expected, listed);
+            if (outcome.ok) return outcome;
+            return { ...outcome, detail: describeUnlisted(expected.filter((spelling) => !listed.includes(spelling))) };
           },
           fix: `Add each package to "sources" in ${CONFIG_PATH} so that 'rdy run --sources' runs its kits, or to "omittedSources" to leave it out on purpose`,
         },
@@ -61,3 +63,13 @@ export default defineRdyKit({
     },
   ],
 });
+
+// region | Helpers
+
+/** Builds the failure detail naming the kit-publishing dependencies that "sources" omits. */
+function describeUnlisted(unlisted: readonly string[]): string {
+  const list = new Intl.ListFormat('en', { type: 'conjunction' }).format(unlisted);
+  return `${list} ${unlisted.length === 1 ? 'is' : 'are'} not listed in "sources"`;
+}
+
+// endregion | Helpers

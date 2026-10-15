@@ -18,7 +18,7 @@ describe(missingFrom, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing fields: a, c',
+      detail: 'Of the fields, a and c are missing',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
     });
   });
@@ -28,9 +28,21 @@ describe(missingFrom, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing deps: x, y',
+      detail: 'Of the deps, x and y are missing',
       progress: { type: 'fraction', passedCount: 0, count: 2 },
     });
+  });
+
+  it('lists three or more missing items in a series', () => {
+    const result = missingFrom('files', ['a', 'b', 'c'], []);
+
+    expect(result).toMatchObject({ ok: false, detail: 'Of the files, a, b, and c are missing' });
+  });
+
+  it('uses a singular verb when one item is missing', () => {
+    const result = missingFrom('files', ['a', 'b'], ['a']);
+
+    expect(result).toMatchObject({ ok: false, detail: 'Of the files, b is missing' });
   });
 
   it('returns ok with zero counts for an empty expected list', () => {

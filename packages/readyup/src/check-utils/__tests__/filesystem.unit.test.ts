@@ -146,7 +146,7 @@ describe(filesExist, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing files: b.txt, c.txt',
+      detail: 'Of the files, b.txt and c.txt are missing',
       progress: { type: 'fraction', passedCount: 1, count: 3 },
     });
   });
@@ -158,7 +158,7 @@ describe(filesExist, () => {
 
     expect(result).toStrictEqual({
       ok: false,
-      detail: 'missing files: missing.txt',
+      detail: 'Of the files, missing.txt is missing',
       progress: { type: 'fraction', passedCount: 1, count: 2 },
     });
   });
