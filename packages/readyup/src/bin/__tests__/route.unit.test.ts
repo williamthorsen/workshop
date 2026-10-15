@@ -240,6 +240,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -266,6 +267,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -285,6 +287,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -309,6 +312,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -333,6 +337,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -374,6 +379,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: 'path.ts',
       fromValue: undefined,
       urlValue: undefined,
@@ -395,6 +401,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -468,6 +475,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: 'kit.ts',
       fromValue: undefined,
       urlValue: undefined,
@@ -490,6 +498,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: 'github:org/repo',
       urlValue: undefined,
@@ -512,6 +521,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: 'https://example.com/kit.js',
@@ -534,6 +544,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -552,6 +563,7 @@ describe(routeCommand, () => {
     mockParseRunArgs.mockReturnValue({
       kitSpecifiers: [],
       checklists: undefined,
+      checklistChecks: undefined,
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
@@ -784,6 +796,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue({
         kitSpecifiers: [],
         checklists: undefined,
+        checklistChecks: undefined,
         filePath: 'foo.ts',
         fromValue: undefined,
         urlValue: undefined,
@@ -805,6 +818,7 @@ describe(routeCommand, () => {
       mockParseRunArgs.mockReturnValue({
         kitSpecifiers: [{ kitName: 'onboarding', checklists: [] }],
         checklists: undefined,
+        checklistChecks: undefined,
         filePath: undefined,
         fromValue: undefined,
         urlValue: undefined,
@@ -1059,6 +1073,7 @@ function parsedRunArgs(overrides?: Record<string, unknown>) {
   return {
     kitSpecifiers: [],
     checklists: undefined,
+    checklistChecks: undefined,
     filePath: undefined,
     fromValue: undefined,
     urlValue: undefined,

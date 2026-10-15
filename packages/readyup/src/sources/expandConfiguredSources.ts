@@ -7,6 +7,7 @@ import { buildRepositoryProvenance, type KitProvenance } from '../kits/KitProven
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { buildRepositoryKitUrl, buildRepositoryManifestUrl, type RepositorySource } from '../remote/kitSourceUrls.ts';
@@ -23,6 +24,7 @@ export interface SourceKit {
   kitName: string;
   description: string | undefined;
   checklists: string[] | undefined;
+  checklistChecks: RdyManifestChecklistChecks[] | undefined;
   location: { path: string } | { url: string };
   provenance: KitProvenance;
 }
@@ -32,6 +34,7 @@ interface PublishedKit {
   name: string;
   description: string | undefined;
   checklists: string[] | undefined;
+  checklistChecks: RdyManifestChecklistChecks[] | undefined;
 }
 
 /**
@@ -97,6 +100,7 @@ function expandPackage(
     kitName: kit.name,
     description: kit.description,
     checklists: kit.checklists,
+    checklistChecks: kit.checklistChecks,
     location: { path: path.join(kitsDir, `${kit.name}${extension}`) },
     provenance,
   }));
@@ -145,6 +149,7 @@ async function expandRepository(
     kitName: kit.name,
     description: kit.description,
     checklists: kit.checklists,
+    checklistChecks: kit.checklistChecks,
     location: { url: buildRepositoryKitUrl(source, kit.name, extension) },
     provenance,
   }));
@@ -164,6 +169,7 @@ function listPublishedKits(root: string, kitsDir: string, extension: string): Pu
       name: kit.name,
       description: kit.description,
       checklists: kit.checklists,
+      checklistChecks: kit.checklistChecks,
     }));
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) throw error;
@@ -171,6 +177,7 @@ function listPublishedKits(root: string, kitsDir: string, extension: string): Pu
       name,
       description: undefined,
       checklists: undefined,
+      checklistChecks: undefined,
     }));
   }
 }

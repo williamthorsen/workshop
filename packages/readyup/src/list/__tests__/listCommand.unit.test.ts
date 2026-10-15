@@ -672,6 +672,7 @@ function buildPackageKit(overrides: Partial<SourceKit>): SourceKit {
     kitName: 'default',
     description: undefined,
     checklists: undefined,
+    checklistChecks: undefined,
     location: { path: '/pkg/.readyup/kits/default.js' },
     provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
     ...overrides,

@@ -1030,6 +1030,7 @@ function buildKit(
     kitName,
     description,
     checklists,
+    checklistChecks: undefined,
     location: { path: `node_modules/${packageName}/.readyup/kits/${kitName}.js` },
     provenance: { kind: 'package', packageName, version: '2.1.0', source: `npm:${packageName}` },
   };

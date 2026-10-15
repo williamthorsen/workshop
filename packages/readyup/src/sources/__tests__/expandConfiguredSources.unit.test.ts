@@ -23,7 +23,15 @@ const it = baseIt.extend(
           version: 1,
           // Only one kit is described, so the pair covers both branches of each optional field.
           kits: [
-            { name: 'drift', description: 'Dependency drift', checklists: ['lockfile', 'ranges'] },
+            {
+              name: 'drift',
+              description: 'Dependency drift',
+              checklists: ['lockfile', 'ranges'],
+              checklistChecks: [
+                { checklist: 'lockfile', checks: ['Lockfile is current'] },
+                { checklist: 'ranges', checks: [] },
+              ],
+            },
             { name: 'preflight' },
           ],
         }),
@@ -55,6 +63,10 @@ describe(expandConfiguredSources, () => {
         kitName: 'drift',
         description: 'Dependency drift',
         checklists: ['lockfile', 'ranges'],
+        checklistChecks: [
+          { checklist: 'lockfile', checks: ['Lockfile is current'] },
+          { checklist: 'ranges', checks: [] },
+        ],
         location: { path: temp.resolve('node_modules/@acme/kits/.readyup/kits/drift.js') },
         provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },
@@ -64,6 +76,7 @@ describe(expandConfiguredSources, () => {
         kitName: 'preflight',
         description: undefined,
         checklists: undefined,
+        checklistChecks: undefined,
         location: { path: temp.resolve('node_modules/@acme/kits/.readyup/kits/preflight.js') },
         provenance: { kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' },
       },

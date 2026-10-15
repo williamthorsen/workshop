@@ -30,6 +30,7 @@ export function buildManifestEntry(
       manifestDir === undefined ? kit.path : path.relative(process.cwd(), path.resolve(manifestDir, kit.path));
   }
   if (kit.checklists !== undefined) entry.checklists = kit.checklists;
+  if (kit.checklistChecks !== undefined) entry.checklistChecks = kit.checklistChecks;
   if (kit.description !== undefined) entry.description = kit.description;
   if (kit.readyupVersion !== undefined) entry.readyupVersion = kit.readyupVersion;
 

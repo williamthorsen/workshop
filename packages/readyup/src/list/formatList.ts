@@ -3,6 +3,7 @@ import path from 'node:path';
 import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
+import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import type { SourceGroup } from '../sources/collectSourceGroups.ts';
 import type { SourceKit } from '../sources/expandConfiguredSources.ts';
 
@@ -28,6 +29,7 @@ export interface KitView {
   name: string;
   description?: string | undefined;
   checklists?: readonly string[] | undefined;
+  checklistChecks?: readonly RdyManifestChecklistChecks[] | undefined;
 }
 
 // -- Compiled-section style discriminants --
@@ -489,7 +491,12 @@ function resolveSourceToken(kind: SourceGroup['kind']): 'sourcePackage' | 'sourc
 
 /** Returns the row that a source's kit is listed as, named by the kit alone. */
 function toKitView(kit: SourceKit): KitView {
-  return { name: kit.kitName, description: kit.description, checklists: kit.checklists };
+  return {
+    name: kit.kitName,
+    description: kit.description,
+    checklists: kit.checklists,
+    checklistChecks: kit.checklistChecks,
+  };
 }
 
 // endregion | Helpers

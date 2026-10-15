@@ -187,7 +187,11 @@ async function runFromMode(fromArg: string, json: boolean, noCache: boolean): Pr
     sourceKits.kind === 'remote'
       ? formatManifestView({ fromArg, kits: sourceKits.kits, manifestPath: sourceKits.manifestUrl })
       : formatConsumerView({
-          compiledKits: sourceKits.kits.map(({ name, checklists }) => ({ name, checklists })),
+          compiledKits: sourceKits.kits.map(({ name, checklists, checklistChecks }) => ({
+            name,
+            checklists,
+            checklistChecks,
+          })),
           fromArg,
           kitsDir: path.relative(process.cwd(), sourceKits.kitsDir) || '.',
         });
@@ -237,7 +241,11 @@ async function runOwnerMode(
     .map((name) => `npm:${name}`)
     .filter((spelling) => !configuredSpellings.has(spelling) && !config.omittedSources.includes(spelling));
 
-  const compiledKits = compiledEntries.map(({ name, checklists }) => ({ name, checklists }));
+  const compiledKits = compiledEntries.map(({ name, checklists, checklistChecks }) => ({
+    name,
+    checklists,
+    checklistChecks,
+  }));
   writeHuman(
     formatOwnerView({
       sourceKits,
@@ -246,6 +254,7 @@ async function runOwnerMode(
       configuredKits: configuredKits.map((kit) => ({
         name: describeSourceKit(kit),
         checklists: kit.checklists,
+        checklistChecks: kit.checklistChecks,
         sourceKind: kit.provenance.kind === 'repository' ? 'repository' : 'package',
       })),
       availableSources,
@@ -341,7 +350,12 @@ async function runRecursiveMode(json: boolean): Promise<number> {
     const kits = collectProjectKits(project);
     views.push({
       dir: project.dir,
-      compiledKits: kits.map(({ name, description, checklists }) => ({ name, description, checklists })),
+      compiledKits: kits.map(({ name, description, checklists, checklistChecks }) => ({
+        name,
+        description,
+        checklists,
+        checklistChecks,
+      })),
       compiledStyle: resolveCompiledStyle(project.absolutePath, project.config.compile.outDir, root),
     });
     entries.push(...kits);
@@ -434,6 +448,7 @@ function buildSourceKitEntry(kit: SourceKit, configured: boolean, project?: stri
     ...('path' in kit.location && { path: kit.location.path }),
     ...(kit.description !== undefined && { description: kit.description }),
     ...(kit.checklists !== undefined && { checklists: kit.checklists }),
+    ...(kit.checklistChecks !== undefined && { checklistChecks: kit.checklistChecks }),
   };
 }
 
